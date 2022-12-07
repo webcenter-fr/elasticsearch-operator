@@ -1,0 +1,179 @@
+metadata:
+  name: test-data-os
+  namespace: default
+spec:
+  podManagementPolicy: Parallel
+  replicas: 3
+  selector:
+    matchLabels:
+      cluster: test
+      nodeGroup: data
+  serviceName: test-data-os-headless
+  template:
+    metadata:
+      labels:
+        cluster: test
+        nodeGroup: data
+      name: test-data-os
+    spec:
+      affinity:
+        podAntiAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+          - labelSelector:
+              matchLabels:
+                cluster: test
+                nodeGroup: data
+            topologyKey: rack
+      containers:
+      - command:
+        - sh
+        - -c
+        - |
+          #!/usr/bin/env bash
+          set -euo pipefail
+
+          ./bin/elasticsearch-plugin install -b repository-s3
+          bash elasticsearch-docker-entrypoint.sh
+        env:
+        - name: node.cluster_manager
+          value: "false"
+        - name: node.data
+          value: "true"
+        - name: node.ingest
+          value: "false"
+        - name: node.ml
+          value: "false"
+        - name: node.remote_cluster_client
+          value: "false"
+        - name: node.transform
+          value: "false"
+        - name: node.name
+          valueFrom:
+            fieldRef:
+              apiVersion: v1
+              fieldPath: metadata.name
+        - name: host
+          valueFrom:
+            fieldRef:
+              apiVersion: v1
+              fieldPath: spec.nodeName
+        - name: ELASTICSEARCH_JAVA_OPTS
+          value: -Xms30g -Xmx30g
+        - name: cluster.initial_master_nodes
+          value: test-master-os-0 test-master-os-1 test-master-os-2
+        - name: discovery.seed_hosts
+          value: test-master-os-headless
+        - name: cluster.name
+          value: test
+        - name: network.host
+          value: 0.0.0.0
+        - name: bootstrap.memory_lock
+          value: "true"
+        - name: DISABLE_INSTALL_DEMO_CONFIG
+          value: "true"
+        image: docker.elastic.co/elasticsearch/elasticsearch:2.3.0
+        livenessProbe:
+          failureThreshold: 10
+          periodSeconds: 30
+          successThreshold: 1
+          tcpSocket:
+            port: 9300
+          timeoutSeconds: 5
+        name: elasticsearch
+        ports:
+        - containerPort: 9200
+          name: http
+          protocol: TCP
+        - containerPort: 9300
+          name: transport
+          protocol: TCP
+        readinessProbe:
+          failureThreshold: 3
+          periodSeconds: 30
+          successThreshold: 1
+          tcpSocket:
+            port: 9200
+          timeoutSeconds: 5
+        resources:
+          limits:
+            cpu: "8"
+            memory: 64Gi
+          requests:
+            cpu: "5"
+            memory: 30Gi
+        securityContext:
+          capabilities:
+            drop:
+            - ALL
+          runAsNonRoot: true
+          runAsUser: 1000
+        startupProbe:
+          failureThreshold: 30
+          initialDelaySeconds: 10
+          periodSeconds: 10
+          successThreshold: 1
+          tcpSocket:
+            port: 9200
+          timeoutSeconds: 5
+        volumeMounts:
+        - mountPath: /mnt/snapshot
+          name: snapshot
+        - mountPath: /usr/share/elasticsearch/config/certs/node
+          name: node-tls
+        - mountPath: /usr/share/elasticsearch/config/certs/api
+          name: api-tls
+        - mountPath: /usr/share/elasticsearch/data
+          name: elasticsearch-data
+        - mountPath: /usr/share/elasticsearch/config/elasticsearch.yml
+          name: elasticsearch-config
+          subPath: elasticsearch.yml
+        - mountPath: /usr/share/elasticsearch/config/log4.yaml
+          name: elasticsearch-config
+          subPath: log4.yaml
+      initContainers:
+      - command:
+        - sysctl
+        - -w
+        - vm.max_map_count=262144
+        image: docker.elastic.co/elasticsearch/elasticsearch:2.3.0
+        name: configure-sysctl
+        resources:
+          limits:
+            cpu: 300m
+            memory: 500Mi
+          requests:
+            cpu: 100m
+            memory: 100Mi
+        securityContext:
+          privileged: true
+          runAsUser: 0
+      nodeSelector:
+        project: elasticsearch
+      securityContext:
+        fsGroup: 1000
+      terminationGracePeriodSeconds: 120
+      tolerations:
+      - effect: NoSchedule
+        key: project
+        operator: Equal
+        value: elasticsearch
+      volumes:
+      - name: node-tls
+        secret:
+          secretName: test-os-tls-transport
+      - name: api-tls
+        secret:
+          secretName: test-os-tls-api
+      - configMap:
+          name: test-data-os-config
+        name: elasticsearch-config
+      - name: snapshot
+        nfs:
+          path: /snapshot
+          server: nfsserver
+      - name: elasticsearch-security
+        secret:
+          secretName: elasticsearch-security
+      - hostPath:
+          path: /data/elasticsearch
+        name: elasticsearch-data

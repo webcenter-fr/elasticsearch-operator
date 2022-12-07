@@ -1,0 +1,72 @@
+apiVersion: elasticsearch.k8s.webcenter.fr/v1alpha1
+kind: Elasticsearch
+metadata:
+  name: es-sample
+  labels:
+    env: test
+spec:
+  version: 8.5.1
+  endpoint:
+    ingress:
+      enabled: true
+      host: es-sample.cluster.local
+      secretRef:
+        name: es-sample-tls
+      annotations:
+        nginx.ingress.kubernetes.io/ssl-redirect: "true"
+        nginx.ingress.kubernetes.io/proxy-body-size: 512M
+        nginx.ingress.kubernetes.io/proxy-connect-timeout: "600"
+        nginx.ingress.kubernetes.io/proxy-read-timeout: "600"
+        nginx.ingress.kubernetes.io/proxy-send-timeout: "600"
+  globalNodeGroup:
+    config:
+      elasticsearch.yml: |
+        action.destructive_requires_name: true
+        cluster.routing.allocation.disk.watermark.flood_stage: 1gb
+        cluster.routing.allocation.disk.watermark.high: 1gb
+        cluster.routing.allocation.disk.watermark.low: 2gb
+        gateway.expected_data_nodes: 3
+        gateway.recover_after_data_nodes: 2
+        gateway.recover_after_time: 5m
+        http.cors.allow-credentials: true
+        http.cors.allow-headers: X-Requested-With,X-Auth-Token,Content-Type, Content-Length, Authorization
+        http.cors.allow-origin: /.*/
+        http.cors.enabled: true
+        http.max_content_length: 500mb
+        path.repo:
+          - /mnt/snapshot
+        xpack.monitoring.collection.enabled: true
+        xpack.security.audit.enabled: true
+        xpack.security.audit.logfile.events.exclude:
+          - access_granted
+        xpack.security.authc:
+          anonymous:
+            authz_exception: false
+            roles: monitoring
+            username: anonymous_user
+          realms:
+            active_directory.active_directory:
+              bind_dn: ${ELASTICSEARCH_LDAP_USER}
+              domain_name: HM
+              follow_referrals: true
+              group_search:
+                base_dn: OU=Groupes Utilisateurs,DC=HM,DC=DM,DC=AD
+                scope: sub_tree
+              load_balance.type: failover
+              order: 2
+              timeout.ldap_search: 60s
+              unmapped_groups_as_roles: false
+              url:
+              - ldap://dcn37cti2.hm.dm.ad:389
+              - ldap://dcn37cti4.hm.dm.ad:389
+              user_search:
+                base_dn: DC=HM,DC=DM,DC=AD
+                scope: sub_tree
+  nodeGroups:
+    - name: all
+      replicas: 3
+      roles:
+        - master
+        - data
+        - ingest
+      jvm: "-Xms512M -Xmx512M"

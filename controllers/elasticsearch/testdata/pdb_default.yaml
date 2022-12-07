@@ -1,0 +1,16 @@
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: test-master-es
+  namespace: default
+  labels:
+    cluster: test
+    elasticsearch.k8s.webcenter.fr: "true"
+  annotations:
+    elasticsearch.k8s.webcenter.fr: "true"
+spec:
+  maxUnAvailable: 1
+  selector:
+    matchLabels:
+      cluster: test
+      nodeGroup: master

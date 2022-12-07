@@ -1,0 +1,49 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  annotations:
+    elasticsearch.k8s.webcenter.fr: "true"
+  creationTimestamp: null
+  labels:
+    cluster: test
+    elasticsearch.k8s.webcenter.fr: "true"
+    label1: value1
+    nodeGroup: master
+  name: test-master-config-es
+  namespace: default
+data:
+  log4j.yml: |
+    log.test: test
+  elasticsearch.yml: |
+    key:
+        value: fake
+    node:
+        name: test
+        roles:
+            - master
+        value: test
+        value2: test2
+    xpack:
+        security:
+            authc:
+                realms:
+                    file:
+                        file1:
+                            order: -100
+                    native:
+                        native1:
+                            order: -99
+            enabled: true
+            http:
+                ssl:
+                    certificate: /usr/share/elasticsearch/config/api-cert/tls.crt
+                    certificate_authorities: /usr/share/elasticsearch/config/api-cert/ca.crt
+                    enabled: true
+                    key: /usr/share/elasticsearch/config/api-cert/tls.key
+            transport:
+                ssl:
+                    certificate: /usr/share/elasticsearch/config/transport-cert/${POD_NAME}.crt
+                    certificate_authorities: /usr/share/elasticsearch/config/transport-cert/ca.crt
+                    enabled: true
+                    key: /usr/share/elasticsearch/config/transport-cert/${POD_NAME}.key
+                    verification_mode: certificate

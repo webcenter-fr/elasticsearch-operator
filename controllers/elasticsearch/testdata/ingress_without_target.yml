@@ -1,0 +1,24 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  labels:
+    cluster: test
+    elasticsearch.k8s.webcenter.fr: "true"
+  annotations:
+    nginx.ingress.kubernetes.io/backend-protocol: HTTPS
+    nginx.ingress.kubernetes.io/force-ssl-redirect: "true"
+    elasticsearch.k8s.webcenter.fr: "true"
+  name: test-es
+  namespace: default
+spec:
+  rules:
+  - host: my-test.cluster.local
+    http:
+      paths:
+      - backend:
+          service:
+            name: test-es
+            port:
+              number: 9200
+        path: /
+        pathType: Prefix

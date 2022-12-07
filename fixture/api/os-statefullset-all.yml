@@ -1,0 +1,144 @@
+metadata:
+  name: test-all-os
+  namespace: default
+spec:
+  podManagementPolicy: Parallel
+  replicas: 1
+  selector:
+    matchLabels:
+      cluster: test
+      nodeGroup: all
+  serviceName: test-all-os-headless
+  template:
+    metadata:
+      labels:
+        cluster: test
+        nodeGroup: all
+      name: test-all-os
+    spec:
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - podAffinityTerm:
+                labelSelector:
+                  matchLabels:
+                    cluster: test
+                    nodeGroup: all
+                topologyKey: kubernetes.io/hostname
+              weight: 10
+      containers:
+      - command:
+        - sh
+        - -c
+        - |
+          #!/usr/bin/env bash
+          set -euo pipefail
+
+          bash elasticsearch-docker-entrypoint.sh
+        env:
+        - name: node.cluster_manager
+          value: "true"
+        - name: node.data
+          value: "true"
+        - name: node.ingest
+          value: "true"
+        - name: node.ml
+          value: "false"
+        - name: node.remote_cluster_client
+          value: "false"
+        - name: node.transform
+          value: "false"
+        - name: node.name
+          valueFrom:
+            fieldRef:
+              apiVersion: v1
+              fieldPath: metadata.name
+        - name: host
+          valueFrom:
+            fieldRef:
+              apiVersion: v1
+              fieldPath: spec.nodeName
+        - name: cluster.initial_master_nodes
+          value: test-all-os-0
+        - name: ELASTICSEARCH_JAVA_OPTS
+          value: ''
+        - name: discovery.seed_hosts
+          value: test-all-os-headless
+        - name: cluster.name
+          value: test
+        - name: network.host
+          value: 0.0.0.0
+        - name: bootstrap.memory_lock
+          value: "true"
+        - name: DISABLE_INSTALL_DEMO_CONFIG
+          value: "true"
+        - name: discovery.type
+          value: single-node
+        image: docker.elastic.co/elasticsearch/elasticsearch:latest
+        livenessProbe:
+          failureThreshold: 10
+          periodSeconds: 30
+          successThreshold: 1
+          tcpSocket:
+            port: 9300
+          timeoutSeconds: 5
+        name: elasticsearch
+        ports:
+        - containerPort: 9200
+          name: http
+          protocol: TCP
+        - containerPort: 9300
+          name: transport
+          protocol: TCP
+        readinessProbe:
+          failureThreshold: 3
+          periodSeconds: 30
+          successThreshold: 1
+          tcpSocket:
+            port: 9200
+          timeoutSeconds: 5
+        securityContext:
+          capabilities:
+            drop:
+            - ALL
+          runAsNonRoot: true
+          runAsUser: 1000
+        startupProbe:
+          failureThreshold: 30
+          initialDelaySeconds: 10
+          periodSeconds: 10
+          successThreshold: 1
+          tcpSocket:
+            port: 9200
+          timeoutSeconds: 5
+        volumeMounts:
+        - mountPath: /usr/share/elasticsearch/config/certs/node
+          name: node-tls
+        - mountPath: /usr/share/elasticsearch/config/certs/api
+          name: api-tls
+        - mountPath: /usr/share/elasticsearch/config/elasticsearch.yml
+          name: elasticsearch-config
+          subPath: elasticsearch.yml
+      initContainers:
+      - command:
+        - sysctl
+        - -w
+        - vm.max_map_count=262144
+        image: docker.elastic.co/elasticsearch/elasticsearch:latest
+        name: configure-sysctl
+        securityContext:
+          privileged: true
+          runAsUser: 0
+      securityContext:
+        fsGroup: 1000
+      terminationGracePeriodSeconds: 120
+      volumes:
+      - name: node-tls
+        secret:
+          secretName: test-os-tls-transport
+      - name: api-tls
+        secret:
+          secretName: test-os-tls-api
+      - configMap:
+          name: test-all-os-config
+        name: elasticsearcg-config
