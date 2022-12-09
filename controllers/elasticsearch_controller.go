@@ -122,7 +122,22 @@ func (r *ElasticsearchReconciler) Reconcile(ctx context.Context, req ctrl.Reques
 		}),
 	})
 
-	return reconciler.Reconcile(ctx, req, es, data, tlsReconsiler, configmapReconciler, serviceReconciler, pdbReconciler, ingressReconciler, loadBalancerReconciler)
+	credentialReconciler := esctrl.NewCredentialReconciler(r.Client, r.Scheme, common.Reconciler{
+		Recorder: r.recorder,
+		Log: r.log.WithFields(logrus.Fields{
+			"phase": "credential",
+		}),
+	})
+
+	return reconciler.Reconcile(ctx, req, es, data,
+		tlsReconsiler,
+		credentialReconciler,
+		configmapReconciler,
+		serviceReconciler,
+		pdbReconciler,
+		ingressReconciler,
+		loadBalancerReconciler,
+	)
 }
 
 // SetupWithManager sets up the controller with the Manager.

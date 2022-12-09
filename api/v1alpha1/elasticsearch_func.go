@@ -3,10 +3,7 @@ package v1alpha1
 // IsSelfManagedSecretForTlsApi return true if the operator manage the certificates for Api layout
 // It return false if secret is provided
 func (h *Elasticsearch) IsSelfManagedSecretForTlsApi() bool {
-	if h.Spec.Tls.CertificateSecretRef != nil {
-		return false
-	}
-	return true
+	return h.Spec.Tls.CertificateSecretRef == nil
 }
 
 // IsTlsApiEnabled return true if TLS is enabled on API endpoint

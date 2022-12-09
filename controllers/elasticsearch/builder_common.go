@@ -91,8 +91,8 @@ func GetSecretNameForPkiApi(elasticsearch *elasticsearchapi.Elasticsearch) (secr
 	return fmt.Sprintf("%s-pki-api-es", elasticsearch.Name)
 }
 
-// GetSecretNameForAdminCredentials permit to get the secret name that store the admin credentials
-func GetSecretNameForAdminCredentials(elasticsearch *elasticsearchapi.Elasticsearch) (secretName string) {
+// GetSecretNameForCredentials permit to get the secret name that store the credentials
+func GetSecretNameForCredentials(elasticsearch *elasticsearchapi.Elasticsearch) (secretName string) {
 	return fmt.Sprintf("%s-credential-es", elasticsearch.Name)
 }
 

@@ -2,6 +2,7 @@ package helper
 
 import (
 	"reflect"
+	"strings"
 )
 
 // Generic function to remove item from a slice
@@ -21,4 +22,15 @@ func DeleteItemFromSlice(x any, index int) any {
 	}
 
 	return expectedSlice.Interface()
+}
+
+func StringToSlice(value, separator string) (result []string) {
+	if value == "" {
+		return []string{}
+	}
+	result = strings.Split(value, separator)
+	for i, s := range result {
+		result[i] = strings.TrimSpace(s)
+	}
+	return result
 }

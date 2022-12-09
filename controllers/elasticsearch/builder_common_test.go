@@ -183,7 +183,7 @@ func TestGetSecretNameForPkiApi(t *testing.T) {
 	assert.Equal(t, "test-pki-api-es", GetSecretNameForPkiApi(o))
 }
 
-func TestGetSecretNameForAdminCredentials(t *testing.T) {
+func TestGetSecretNameForCredentials(t *testing.T) {
 
 	o := &elasticsearchapi.Elasticsearch{
 		ObjectMeta: metav1.ObjectMeta{
@@ -193,7 +193,7 @@ func TestGetSecretNameForAdminCredentials(t *testing.T) {
 		Spec: elasticsearchapi.ElasticsearchSpec{},
 	}
 
-	assert.Equal(t, "test-credential-es", GetSecretNameForAdminCredentials(o))
+	assert.Equal(t, "test-credential-es", GetSecretNameForCredentials(o))
 
 }
 
