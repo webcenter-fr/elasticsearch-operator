@@ -276,10 +276,14 @@ func BuildStatefullsets(es *elasticsearchapi.Elasticsearch) (statefullsets []*ap
 		pluginInstallation.WriteString(`#!/usr/bin/env bash
 set -euo pipefail
 
-if [[ -f /mnt/keystore/elasticsearch.keystore ]]; then
+`)
+		if es.Spec.GlobalNodeGroup.KeystoreSecretRef != nil {
+			pluginInstallation.WriteString(`if [[ -f /mnt/keystore/elasticsearch.keystore ]]; then
   cp /mnt/keystore/elasticsearch.keystore /usr/share/elasticsearch/config/elasticsearch.keystore
 fi
+
 `)
+		}
 		for _, plugin := range es.Spec.PluginsList {
 			pluginInstallation.WriteString(fmt.Sprintf("./bin/elasticsearch-plugin install -b %s\n", plugin))
 		}
@@ -315,10 +319,7 @@ fi
 		}
 
 		// Compute annotations
-		ptb.WithAnnotations(es.Annotations, k8sbuilder.Merge).
-			WithAnnotations(es.Spec.GlobalNodeGroup.Annotations, k8sbuilder.Merge).
-			WithAnnotations(nodeGroup.Annotations, k8sbuilder.Merge).
-			WithAnnotations(configMapChecksumAnnotations, k8sbuilder.Merge)
+		ptb.WithAnnotations(configMapChecksumAnnotations, k8sbuilder.Merge)
 
 		// Compute NodeSelector
 		ptb.WithNodeSelector(nodeGroup.NodeSelector, k8sbuilder.Merge)
@@ -379,9 +380,8 @@ fi
 				Command: []string{
 					"/bin/bash",
 					"-c",
-					`
-#!/bin/bash
-set -e
+					`#!/usr/bin/env bash
+set -euo pipefail
 
 elasticsearch-keystore create
 for i in /mnt/keystoreSecrets/*/*; do
@@ -481,8 +481,8 @@ cp -a /usr/share/elasticsearch/config/elasticsearch.keystore /mnt/keystore/
 			ObjectMeta: metav1.ObjectMeta{
 				Namespace:   es.Namespace,
 				Name:        GetNodeGroupName(es, nodeGroup.Name),
-				Labels:      getLabels(es, map[string]string{"nodeGroup": nodeGroup.Name}),
-				Annotations: getAnnotations(es),
+				Labels:      getLabels(es, map[string]string{"nodeGroup": nodeGroup.Name}, es.Spec.GlobalNodeGroup.Labels, nodeGroup.Labels),
+				Annotations: getAnnotations(es, es.Spec.GlobalNodeGroup.Annotations, nodeGroup.Annotations),
 			},
 			Spec: appv1.StatefulSetSpec{
 				Replicas: pointer.Int32(nodeGroup.Replicas),
@@ -492,7 +492,7 @@ cp -a /usr/share/elasticsearch/config/elasticsearch.keystore /mnt/keystore/
 				Selector: &metav1.LabelSelector{
 					MatchLabels: map[string]string{
 						"cluster":   es.Name,
-						"nodeGroup": es.Name,
+						"nodeGroup": nodeGroup.Name,
 					},
 				},
 

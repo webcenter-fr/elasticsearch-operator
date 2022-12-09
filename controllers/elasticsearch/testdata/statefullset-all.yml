@@ -1,29 +1,39 @@
 metadata:
-  name: test-client-os
+  name: test-all-es
   namespace: default
+  labels:
+    cluster: test
+    nodeGroup: all
+    elasticsearch.k8s.webcenter.fr: "true"
+  annotations:
+    elasticsearch.k8s.webcenter.fr: "true"
 spec:
   podManagementPolicy: Parallel
-  replicas: 2
+  replicas: 1
   selector:
     matchLabels:
       cluster: test
-      nodeGroup: client
-  serviceName: test-client-os-headless
+      nodeGroup: all
+  serviceName: test-all-headless-es
   template:
     metadata:
       labels:
         cluster: test
-        nodeGroup: client
-      name: test-client-os
+        nodeGroup: all
+      annotations:
+        elasticsearch.k8s.webcenter.fr/checksum-elasticsearch.yml: "2a0a8650b1d7a5f22e433877319457161489869868b894d448b2616477b521aa"
+      name: test-all-es
     spec:
       affinity:
         podAntiAffinity:
-          requiredDuringSchedulingIgnoredDuringExecution:
-          - labelSelector:
-              matchLabels:
-                cluster: test
-                nodeGroup: client
-            topologyKey: rack
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - podAffinityTerm:
+                labelSelector:
+                  matchLabels:
+                    cluster: test
+                    nodeGroup: all
+                topologyKey: kubernetes.io/hostname
+              weight: 10
       containers:
       - command:
         - sh
@@ -32,13 +42,12 @@ spec:
           #!/usr/bin/env bash
           set -euo pipefail
 
-          ./bin/elasticsearch-plugin install -b repository-s3
           bash elasticsearch-docker-entrypoint.sh
         env:
-        - name: node.cluster_manager
-          value: "false"
+        - name: node.master
+          value: "true"
         - name: node.data
-          value: "false"
+          value: "true"
         - name: node.ingest
           value: "true"
         - name: node.ml
@@ -47,31 +56,46 @@ spec:
           value: "false"
         - name: node.transform
           value: "false"
-        - name: node.name
+        - name: ELASTIC_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: test-credential-es
+              key: elastic
+        - name: POD_NAME
           valueFrom:
             fieldRef:
               apiVersion: v1
               fieldPath: metadata.name
-        - name: host
+        - name: NODE_NAME
           valueFrom:
             fieldRef:
               apiVersion: v1
               fieldPath: spec.nodeName
-        - name: ELASTICSEARCH_JAVA_OPTS
-          value: -Xms2g -Xmx2g
+        - name: POD_IP
+          valueFrom:
+            fieldRef:
+              apiVersion: v1
+              fieldPath: status.podIP
+        - name: NAMESPACE
+          valueFrom:
+            fieldRef:
+              apiVersion: v1
+              fieldPath: metadata.namespace
         - name: cluster.initial_master_nodes
-          value: test-master-os-0 test-master-os-1 test-master-os-2
+          value: test-all-es-0
+        - name: ELASTICSEARCH_JAVA_OPTS
+          value: ''
         - name: discovery.seed_hosts
-          value: test-master-os-headless
+          value: test-all-headless-es
         - name: cluster.name
           value: test
         - name: network.host
           value: 0.0.0.0
         - name: bootstrap.memory_lock
           value: "true"
-        - name: DISABLE_INSTALL_DEMO_CONFIG
-          value: "true"
-        image: docker.elastic.co/elasticsearch/elasticsearch:2.3.0
+        - name: discovery.type
+          value: single-node
+        image: docker.elastic.co/elasticsearch/elasticsearch:latest
         livenessProbe:
           failureThreshold: 10
           periodSeconds: 30
@@ -94,13 +118,6 @@ spec:
           tcpSocket:
             port: 9200
           timeoutSeconds: 5
-        resources:
-          limits:
-            cpu: "4"
-            memory: 4Gi
-          requests:
-            cpu: "2"
-            memory: 2Gi
         securityContext:
           capabilities:
             drop:
@@ -116,34 +133,22 @@ spec:
             port: 9200
           timeoutSeconds: 5
         volumeMounts:
-        - mountPath: /mnt/snapshot
-          name: snapshot
         - mountPath: /usr/share/elasticsearch/config/certs/node
           name: node-tls
         - mountPath: /usr/share/elasticsearch/config/certs/api
           name: api-tls
-        - mountPath: /usr/share/elasticsearch/data
-          name: elasticsearch-data
         - mountPath: /usr/share/elasticsearch/config/elasticsearch.yml
           name: elasticsearch-config
           subPath: elasticsearch.yml
-        - mountPath: /usr/share/elasticsearch/config/log4.yaml
-          name: elasticsearch-config
-          subPath: log4.yaml
+        - mountPath: /mnt/keystore
+          name: keystore
       initContainers:
       - command:
         - sysctl
         - -w
         - vm.max_map_count=262144
-        image: docker.elastic.co/elasticsearch/elasticsearch:2.3.0
+        image: docker.elastic.co/elasticsearch/elasticsearch:latest
         name: configure-sysctl
-        resources:
-          limits:
-            cpu: 300m
-            memory: 500Mi
-          requests:
-            cpu: 100m
-            memory: 100Mi
         securityContext:
           privileged: true
           runAsUser: 0
@@ -153,28 +158,12 @@ spec:
       volumes:
       - name: node-tls
         secret:
-          secretName: test-os-tls-transport
+          secretName: test-tls-transport-es
       - name: api-tls
         secret:
-          secretName: test-os-tls-api
+          secretName: test-tls-api-es
       - configMap:
-          name: test-client-os-config
+          name: test-all-config-es
         name: elasticsearch-config
-      - name: snapshot
-        nfs:
-          path: /snapshot
-          server: nfsserver
-      - name: elasticsearch-security
-        secret:
-          secretName: elasticsearch-security
-  volumeClaimTemplates:
-  - metadata:
-      creationTimestamp: null
-      name: elasticsearch-data
-    spec:
-      accessModes:
-      - ReadWriteOnce
-      resources:
-        requests:
-          storage: 5Gi
-      storageClassName: local-path
+      - name: keystore
+        emptyDir: {}

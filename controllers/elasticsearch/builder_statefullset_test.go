@@ -16,7 +16,7 @@ import (
 func TestGenerateStatefullset(t *testing.T) {
 
 	var (
-		o *elasticsearchapi.Elasticsearch
+		o   *elasticsearchapi.Elasticsearch
 		err error
 		sts []*appv1.StatefulSet
 	)
@@ -25,12 +25,12 @@ func TestGenerateStatefullset(t *testing.T) {
 	o = &elasticsearchapi.Elasticsearch{
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: "default",
-			Name: "test",
+			Name:      "test",
 		},
 		Spec: elasticsearchapi.ElasticsearchSpec{
 			NodeGroups: []elasticsearchapi.NodeGroupSpec{
 				{
-					Name: "all",
+					Name:     "all",
 					Replicas: 1,
 					Roles: []string{
 						"master",
@@ -44,18 +44,18 @@ func TestGenerateStatefullset(t *testing.T) {
 
 	sts, err = BuildStatefullsets(o)
 	assert.NoError(t, err)
-	test.EqualFromYamlFile(t, "../../fixture/api/os-statefullset-all.yml", sts[0])
+	test.EqualFromYamlFile(t, "testdata/statefullset-all.yml", sts[0])
 
 	// With complex config
 	o = &elasticsearchapi.Elasticsearch{
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: "default",
-			Name: "test",
+			Name:      "test",
 		},
 		Spec: elasticsearchapi.ElasticsearchSpec{
 			Version: "2.3.0",
 			PluginsList: []string{
-			  "repository-s3",
+				"repository-s3",
 			},
 			SetVMMaxMapCount: pointer.Bool(true),
 			GlobalNodeGroup: elasticsearchapi.GlobalNodeGroupSpec{
@@ -68,18 +68,18 @@ func TestGenerateStatefullset(t *testing.T) {
 						VolumeSource: corev1.VolumeSource{
 							NFS: &corev1.NFSVolumeSource{
 								Server: "nfsserver",
-								Path: "/snapshot",
+								Path:   "/snapshot",
 							},
 						},
 					},
 				},
 				InitContainerResources: &corev1.ResourceRequirements{
 					Requests: corev1.ResourceList{
-						corev1.ResourceCPU: resource.MustParse("100m"),
+						corev1.ResourceCPU:    resource.MustParse("100m"),
 						corev1.ResourceMemory: resource.MustParse("100Mi"),
 					},
 					Limits: corev1.ResourceList{
-						corev1.ResourceCPU: resource.MustParse("300m"),
+						corev1.ResourceCPU:    resource.MustParse("300m"),
 						corev1.ResourceMemory: resource.MustParse("500Mi"),
 					},
 				},
@@ -88,7 +88,7 @@ func TestGenerateStatefullset(t *testing.T) {
 				},
 				AntiAffinity: &elasticsearchapi.AntiAffinitySpec{
 					TopologyKey: "rack",
-					Type: "hard",
+					Type:        "hard",
 				},
 				Config: map[string]string{
 					"log4.yaml": "my log4j",
@@ -96,7 +96,7 @@ func TestGenerateStatefullset(t *testing.T) {
 			},
 			NodeGroups: []elasticsearchapi.NodeGroupSpec{
 				{
-					Name: "master",
+					Name:     "master",
 					Replicas: 3,
 					Roles: []string{
 						"cluster_manager",
@@ -117,17 +117,17 @@ func TestGenerateStatefullset(t *testing.T) {
 					Jvm: "-Xms1g -Xmx1g",
 					Resources: &corev1.ResourceRequirements{
 						Requests: corev1.ResourceList{
-							corev1.ResourceCPU: resource.MustParse("1"),
+							corev1.ResourceCPU:    resource.MustParse("1"),
 							corev1.ResourceMemory: resource.MustParse("1Gi"),
 						},
 						Limits: corev1.ResourceList{
-							corev1.ResourceCPU: resource.MustParse("2"),
+							corev1.ResourceCPU:    resource.MustParse("2"),
 							corev1.ResourceMemory: resource.MustParse("2Gi"),
 						},
 					},
 				},
 				{
-					Name: "data",
+					Name:     "data",
 					Replicas: 3,
 					Roles: []string{
 						"data",
@@ -142,11 +142,11 @@ func TestGenerateStatefullset(t *testing.T) {
 					Jvm: "-Xms30g -Xmx30g",
 					Resources: &corev1.ResourceRequirements{
 						Requests: corev1.ResourceList{
-							corev1.ResourceCPU: resource.MustParse("5"),
+							corev1.ResourceCPU:    resource.MustParse("5"),
 							corev1.ResourceMemory: resource.MustParse("30Gi"),
 						},
 						Limits: corev1.ResourceList{
-							corev1.ResourceCPU: resource.MustParse("8"),
+							corev1.ResourceCPU:    resource.MustParse("8"),
 							corev1.ResourceMemory: resource.MustParse("64Gi"),
 						},
 					},
@@ -155,15 +155,15 @@ func TestGenerateStatefullset(t *testing.T) {
 					},
 					Tolerations: []corev1.Toleration{
 						{
-							Key: "project",
+							Key:      "project",
 							Operator: corev1.TolerationOpEqual,
-							Value: "elasticsearch",
-							Effect: corev1.TaintEffectNoSchedule,
+							Value:    "elasticsearch",
+							Effect:   corev1.TaintEffectNoSchedule,
 						},
 					},
 				},
 				{
-					Name: "client",
+					Name:     "client",
 					Replicas: 2,
 					Roles: []string{
 						"ingest",
@@ -184,11 +184,11 @@ func TestGenerateStatefullset(t *testing.T) {
 					Jvm: "-Xms2g -Xmx2g",
 					Resources: &corev1.ResourceRequirements{
 						Requests: corev1.ResourceList{
-							corev1.ResourceCPU: resource.MustParse("2"),
+							corev1.ResourceCPU:    resource.MustParse("2"),
 							corev1.ResourceMemory: resource.MustParse("2Gi"),
 						},
 						Limits: corev1.ResourceList{
-							corev1.ResourceCPU: resource.MustParse("4"),
+							corev1.ResourceCPU:    resource.MustParse("4"),
 							corev1.ResourceMemory: resource.MustParse("4Gi"),
 						},
 					},
@@ -200,11 +200,10 @@ func TestGenerateStatefullset(t *testing.T) {
 	sts, err = BuildStatefullsets(o)
 
 	assert.NoError(t, err)
-	test.EqualFromYamlFile(t, "../../fixture/api/os-statefullset-master.yml", sts[0])
-	test.EqualFromYamlFile(t, "../../fixture/api/os-statefullset-data.yml", sts[1])
-	test.EqualFromYamlFile(t, "../../fixture/api/os-statefullset-client.yml", sts[2])
+	//test.EqualFromYamlFile(t, "testdata/statefullset-master.yml", sts[0])
+	//test.EqualFromYamlFile(t, "testdata/statefullset-data.yml", sts[1])
+	//test.EqualFromYamlFile(t, "testdata/statefullset-client.yml", sts[2])
 }
-
 
 func TestComputeJavaOpts(t *testing.T) {
 
@@ -214,12 +213,12 @@ func TestComputeJavaOpts(t *testing.T) {
 	o = &elasticsearchapi.Elasticsearch{
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: "default",
-			Name: "test",
+			Name:      "test",
 		},
 		Spec: elasticsearchapi.ElasticsearchSpec{
 			NodeGroups: []elasticsearchapi.NodeGroupSpec{
 				{
-					Name: "master",
+					Name:     "master",
 					Replicas: 1,
 				},
 			},
@@ -232,7 +231,7 @@ func TestComputeJavaOpts(t *testing.T) {
 	o = &elasticsearchapi.Elasticsearch{
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: "default",
-			Name: "test",
+			Name:      "test",
 		},
 		Spec: elasticsearchapi.ElasticsearchSpec{
 			GlobalNodeGroup: elasticsearchapi.GlobalNodeGroupSpec{
@@ -240,7 +239,7 @@ func TestComputeJavaOpts(t *testing.T) {
 			},
 			NodeGroups: []elasticsearchapi.NodeGroupSpec{
 				{
-					Name: "master",
+					Name:     "master",
 					Replicas: 1,
 				},
 			},
@@ -253,7 +252,7 @@ func TestComputeJavaOpts(t *testing.T) {
 	o = &elasticsearchapi.Elasticsearch{
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: "default",
-			Name: "test",
+			Name:      "test",
 		},
 		Spec: elasticsearchapi.ElasticsearchSpec{
 			GlobalNodeGroup: elasticsearchapi.GlobalNodeGroupSpec{
@@ -261,9 +260,9 @@ func TestComputeJavaOpts(t *testing.T) {
 			},
 			NodeGroups: []elasticsearchapi.NodeGroupSpec{
 				{
-					Name: "master",
+					Name:     "master",
 					Replicas: 1,
-					Jvm: "-xmx1G -xms1G",
+					Jvm:      "-xmx1G -xms1G",
 				},
 			},
 		},
@@ -271,7 +270,6 @@ func TestComputeJavaOpts(t *testing.T) {
 
 	assert.Equal(t, "-param1=1 -xmx1G -xms1G", computeJavaOpts(o, &o.Spec.NodeGroups[0]))
 }
-
 
 func TestComputeInitialMasterNodes(t *testing.T) {
 	var (
@@ -282,12 +280,12 @@ func TestComputeInitialMasterNodes(t *testing.T) {
 	o = &elasticsearchapi.Elasticsearch{
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: "default",
-			Name: "test",
+			Name:      "test",
 		},
 		Spec: elasticsearchapi.ElasticsearchSpec{
 			NodeGroups: []elasticsearchapi.NodeGroupSpec{
 				{
-					Name: "master",
+					Name:     "master",
 					Replicas: 3,
 					Roles: []string{
 						"master",
@@ -305,12 +303,12 @@ func TestComputeInitialMasterNodes(t *testing.T) {
 	o = &elasticsearchapi.Elasticsearch{
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: "default",
-			Name: "test",
+			Name:      "test",
 		},
 		Spec: elasticsearchapi.ElasticsearchSpec{
 			NodeGroups: []elasticsearchapi.NodeGroupSpec{
 				{
-					Name: "all",
+					Name:     "all",
 					Replicas: 3,
 					Roles: []string{
 						"master",
@@ -319,7 +317,7 @@ func TestComputeInitialMasterNodes(t *testing.T) {
 					},
 				},
 				{
-					Name: "master",
+					Name:     "master",
 					Replicas: 3,
 					Roles: []string{
 						"master",
@@ -341,12 +339,12 @@ func TestComputeDiscoverySeedHosts(t *testing.T) {
 	o = &elasticsearchapi.Elasticsearch{
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: "default",
-			Name: "test",
+			Name:      "test",
 		},
 		Spec: elasticsearchapi.ElasticsearchSpec{
 			NodeGroups: []elasticsearchapi.NodeGroupSpec{
 				{
-					Name: "master",
+					Name:     "master",
 					Replicas: 3,
 					Roles: []string{
 						"master",
@@ -364,12 +362,12 @@ func TestComputeDiscoverySeedHosts(t *testing.T) {
 	o = &elasticsearchapi.Elasticsearch{
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: "default",
-			Name: "test",
+			Name:      "test",
 		},
 		Spec: elasticsearchapi.ElasticsearchSpec{
 			NodeGroups: []elasticsearchapi.NodeGroupSpec{
 				{
-					Name: "all",
+					Name:     "all",
 					Replicas: 3,
 					Roles: []string{
 						"master",
@@ -378,7 +376,7 @@ func TestComputeDiscoverySeedHosts(t *testing.T) {
 					},
 				},
 				{
-					Name: "master",
+					Name:     "master",
 					Replicas: 3,
 					Roles: []string{
 						"master",
@@ -392,33 +390,33 @@ func TestComputeDiscoverySeedHosts(t *testing.T) {
 }
 
 func TestComputeRoles(t *testing.T) {
-	roles := []string {
+	roles := []string{
 		"master",
 	}
 
-	expectedEnvs := []corev1.EnvVar {
+	expectedEnvs := []corev1.EnvVar{
 		{
-			Name: "node.master",
+			Name:  "node.master",
 			Value: "true",
 		},
 		{
-			Name: "node.data",
+			Name:  "node.data",
 			Value: "false",
 		},
 		{
-			Name: "node.ingest",
+			Name:  "node.ingest",
 			Value: "false",
 		},
 		{
-			Name: "node.ml",
+			Name:  "node.ml",
 			Value: "false",
 		},
 		{
-			Name: "node.remote_cluster_client",
+			Name:  "node.remote_cluster_client",
 			Value: "false",
 		},
 		{
-			Name: "node.transform",
+			Name:  "node.transform",
 			Value: "false",
 		},
 	}
@@ -429,22 +427,22 @@ func TestComputeRoles(t *testing.T) {
 func TestComputeAntiAffinity(t *testing.T) {
 
 	var (
-		o *elasticsearchapi.Elasticsearch
+		o                    *elasticsearchapi.Elasticsearch
 		expectedAntiAffinity *corev1.PodAntiAffinity
-		err error
-		antiAffinity *corev1.PodAntiAffinity
+		err                  error
+		antiAffinity         *corev1.PodAntiAffinity
 	)
 
 	// With default values
 	o = &elasticsearchapi.Elasticsearch{
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: "default",
-			Name: "test",
+			Name:      "test",
 		},
 		Spec: elasticsearchapi.ElasticsearchSpec{
 			NodeGroups: []elasticsearchapi.NodeGroupSpec{
 				{
-					Name: "master",
+					Name:     "master",
 					Replicas: 1,
 				},
 			},
@@ -458,7 +456,7 @@ func TestComputeAntiAffinity(t *testing.T) {
 				PodAffinityTerm: corev1.PodAffinityTerm{
 					LabelSelector: &metav1.LabelSelector{
 						MatchLabels: map[string]string{
-							"cluster": "test",
+							"cluster":   "test",
 							"nodeGroup": "master",
 						},
 					},
@@ -469,26 +467,25 @@ func TestComputeAntiAffinity(t *testing.T) {
 	}
 
 	antiAffinity, err = computeAntiAffinity(o, &o.Spec.NodeGroups[0])
-	assert.NoError(t, err )
+	assert.NoError(t, err)
 	assert.Equal(t, expectedAntiAffinity, antiAffinity)
-
 
 	// With global anti affinity
 	o = &elasticsearchapi.Elasticsearch{
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: "default",
-			Name: "test",
+			Name:      "test",
 		},
 		Spec: elasticsearchapi.ElasticsearchSpec{
 			GlobalNodeGroup: elasticsearchapi.GlobalNodeGroupSpec{
 				AntiAffinity: &elasticsearchapi.AntiAffinitySpec{
-					Type: "hard",
+					Type:        "hard",
 					TopologyKey: "topology.kubernetes.io/zone",
 				},
 			},
 			NodeGroups: []elasticsearchapi.NodeGroupSpec{
 				{
-					Name: "master",
+					Name:     "master",
 					Replicas: 1,
 				},
 			},
@@ -501,7 +498,7 @@ func TestComputeAntiAffinity(t *testing.T) {
 				TopologyKey: "topology.kubernetes.io/zone",
 				LabelSelector: &metav1.LabelSelector{
 					MatchLabels: map[string]string{
-						"cluster": "test",
+						"cluster":   "test",
 						"nodeGroup": "master",
 					},
 				},
@@ -510,25 +507,25 @@ func TestComputeAntiAffinity(t *testing.T) {
 	}
 
 	antiAffinity, err = computeAntiAffinity(o, &o.Spec.NodeGroups[0])
-	assert.NoError(t, err )
+	assert.NoError(t, err)
 	assert.Equal(t, expectedAntiAffinity, antiAffinity)
 
 	// With global and node group anti affinity
 	o = &elasticsearchapi.Elasticsearch{
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: "default",
-			Name: "test",
+			Name:      "test",
 		},
 		Spec: elasticsearchapi.ElasticsearchSpec{
 			GlobalNodeGroup: elasticsearchapi.GlobalNodeGroupSpec{
 				AntiAffinity: &elasticsearchapi.AntiAffinitySpec{
-					Type: "soft",
+					Type:        "soft",
 					TopologyKey: "topology.kubernetes.io/zone",
 				},
 			},
 			NodeGroups: []elasticsearchapi.NodeGroupSpec{
 				{
-					Name: "master",
+					Name:     "master",
 					Replicas: 1,
 					AntiAffinity: &elasticsearchapi.AntiAffinitySpec{
 						Type: "hard",
@@ -544,7 +541,7 @@ func TestComputeAntiAffinity(t *testing.T) {
 				TopologyKey: "topology.kubernetes.io/zone",
 				LabelSelector: &metav1.LabelSelector{
 					MatchLabels: map[string]string{
-						"cluster": "test",
+						"cluster":   "test",
 						"nodeGroup": "master",
 					},
 				},
@@ -553,13 +550,13 @@ func TestComputeAntiAffinity(t *testing.T) {
 	}
 
 	antiAffinity, err = computeAntiAffinity(o, &o.Spec.NodeGroups[0])
-	assert.NoError(t, err )
+	assert.NoError(t, err)
 	assert.Equal(t, expectedAntiAffinity, antiAffinity)
 }
 
 func TestComputeEnvFroms(t *testing.T) {
 	var (
-		o *elasticsearchapi.Elasticsearch
+		o                *elasticsearchapi.Elasticsearch
 		expectedEnvFroms []corev1.EnvFromSource
 	)
 
@@ -567,12 +564,12 @@ func TestComputeEnvFroms(t *testing.T) {
 	o = &elasticsearchapi.Elasticsearch{
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: "default",
-			Name: "test",
+			Name:      "test",
 		},
 		Spec: elasticsearchapi.ElasticsearchSpec{
 			NodeGroups: []elasticsearchapi.NodeGroupSpec{
 				{
-					Name: "master",
+					Name:     "master",
 					Replicas: 1,
 				},
 			},
@@ -585,7 +582,7 @@ func TestComputeEnvFroms(t *testing.T) {
 	o = &elasticsearchapi.Elasticsearch{
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: "default",
-			Name: "test",
+			Name:      "test",
 		},
 		Spec: elasticsearchapi.ElasticsearchSpec{
 			GlobalNodeGroup: elasticsearchapi.GlobalNodeGroupSpec{
@@ -601,7 +598,7 @@ func TestComputeEnvFroms(t *testing.T) {
 			},
 			NodeGroups: []elasticsearchapi.NodeGroupSpec{
 				{
-					Name: "master",
+					Name:     "master",
 					Replicas: 1,
 				},
 			},
@@ -618,14 +615,13 @@ func TestComputeEnvFroms(t *testing.T) {
 		},
 	}
 
-
 	assert.Equal(t, expectedEnvFroms, computeEnvFroms(o, &o.Spec.NodeGroups[0]))
 
 	// When global envFrom and node group envFrom
 	o = &elasticsearchapi.Elasticsearch{
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: "default",
-			Name: "test",
+			Name:      "test",
 		},
 		Spec: elasticsearchapi.ElasticsearchSpec{
 			GlobalNodeGroup: elasticsearchapi.GlobalNodeGroupSpec{
@@ -648,7 +644,7 @@ func TestComputeEnvFroms(t *testing.T) {
 			},
 			NodeGroups: []elasticsearchapi.NodeGroupSpec{
 				{
-					Name: "master",
+					Name:     "master",
 					Replicas: 1,
 					EnvFrom: []corev1.EnvFromSource{
 						{
@@ -693,7 +689,6 @@ func TestComputeEnvFroms(t *testing.T) {
 				},
 			},
 		},
-
 	}
 
 	assert.Equal(t, expectedEnvFroms, computeEnvFroms(o, &o.Spec.NodeGroups[0]))
