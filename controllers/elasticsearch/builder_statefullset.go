@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/codingsince1985/checksum"
 	"github.com/disaster37/k8sbuilder"
 	"github.com/pkg/errors"
 	"github.com/thoas/go-funk"
@@ -61,7 +62,25 @@ func BuildStatefullsets(es *elasticsearchapi.Elasticsearch) (statefullsets []*ap
 			WithEnv(computeRoles(nodeGroup.Roles), k8sbuilder.Merge).
 			WithEnv([]corev1.EnvVar{
 				{
-					Name: "node.name",
+					Name: "NODE_NAME",
+					ValueFrom: &corev1.EnvVarSource{
+						FieldRef: &corev1.ObjectFieldSelector{
+							APIVersion: "v1",
+							FieldPath:  "spec.nodeName",
+						},
+					},
+				},
+				{
+					Name: "NAMESPACE",
+					ValueFrom: &corev1.EnvVarSource{
+						FieldRef: &corev1.ObjectFieldSelector{
+							APIVersion: "v1",
+							FieldPath:  "metadata.namespace",
+						},
+					},
+				},
+				{
+					Name: "POD_NAME",
 					ValueFrom: &corev1.EnvVarSource{
 						FieldRef: &corev1.ObjectFieldSelector{
 							APIVersion: "v1",
@@ -70,11 +89,11 @@ func BuildStatefullsets(es *elasticsearchapi.Elasticsearch) (statefullsets []*ap
 					},
 				},
 				{
-					Name: "host",
+					Name: "POD_IP",
 					ValueFrom: &corev1.EnvVarSource{
 						FieldRef: &corev1.ObjectFieldSelector{
 							APIVersion: "v1",
-							FieldPath:  "spec.nodeName",
+							FieldPath:  "status.podIP",
 						},
 					},
 				},
@@ -103,8 +122,15 @@ func BuildStatefullsets(es *elasticsearchapi.Elasticsearch) (statefullsets []*ap
 					Value: "true",
 				},
 				{
-					Name:  "DISABLE_INSTALL_DEMO_CONFIG",
-					Value: "true",
+					Name: "ELASTIC_PASSWORD",
+					ValueFrom: &corev1.EnvVarSource{
+						SecretKeyRef: &corev1.SecretKeySelector{
+							LocalObjectReference: corev1.LocalObjectReference{
+								Name: GetSecretNameForCredentials(es),
+							},
+							Key: "elastic",
+						},
+					},
 				},
 			}, k8sbuilder.Merge)
 		if len(es.Spec.NodeGroups) == 1 && es.Spec.NodeGroups[0].Replicas == 1 {
@@ -172,6 +198,10 @@ func BuildStatefullsets(es *elasticsearchapi.Elasticsearch) (statefullsets []*ap
 				{
 					Name:      "api-tls",
 					MountPath: "/usr/share/elasticsearch/config/certs/api",
+				},
+				{
+					Name:      "keystore",
+					MountPath: "/mnt/keystore",
 				},
 			}, k8sbuilder.Merge)
 		if nodeGroup.Persistence != nil && (nodeGroup.Persistence.Volume != nil || nodeGroup.Persistence.VolumeClaimSpec != nil) {
@@ -241,11 +271,14 @@ func BuildStatefullsets(es *elasticsearchapi.Elasticsearch) (statefullsets []*ap
 			},
 		}, k8sbuilder.OverwriteIfDefaultValue)
 
-		// Add specific command to handle plugin installation
+		// Add specific command to handle plugin installation and keystore
 		var pluginInstallation strings.Builder
 		pluginInstallation.WriteString(`#!/usr/bin/env bash
 set -euo pipefail
 
+if [[ -f /mnt/keystore/elasticsearch.keystore ]]; then
+  cp /mnt/keystore/elasticsearch.keystore /usr/share/elasticsearch/config/elasticsearch.keystore
+fi
 `)
 		for _, plugin := range es.Spec.PluginsList {
 			pluginInstallation.WriteString(fmt.Sprintf("./bin/elasticsearch-plugin install -b %s\n", plugin))
@@ -269,10 +302,23 @@ set -euo pipefail
 			"nodeGroup": nodeGroup.Name,
 		}, k8sbuilder.Merge)
 
+		// Computes pods annotations to force reconcil
+		configMapChecksumAnnotations := map[string]string{}
+		for _, configMap := range configMaps {
+			for file, contend := range configMap.Data {
+				sum, err := checksum.SHA256sumReader(strings.NewReader(contend))
+				if err != nil {
+					return nil, errors.Wrapf(err, "Error when generate checksum for %s/%s", configMap.Name, file)
+				}
+				configMapChecksumAnnotations[fmt.Sprintf("%s/checksum-%s", elasticsearchAnnotationKey, file)] = sum
+			}
+		}
+
 		// Compute annotations
 		ptb.WithAnnotations(es.Annotations, k8sbuilder.Merge).
 			WithAnnotations(es.Spec.GlobalNodeGroup.Annotations, k8sbuilder.Merge).
-			WithAnnotations(nodeGroup.Annotations, k8sbuilder.Merge)
+			WithAnnotations(nodeGroup.Annotations, k8sbuilder.Merge).
+			WithAnnotations(configMapChecksumAnnotations, k8sbuilder.Merge)
 
 		// Compute NodeSelector
 		ptb.WithNodeSelector(nodeGroup.NodeSelector, k8sbuilder.Merge)
@@ -315,6 +361,49 @@ set -euo pipefail
 
 			ptb.WithInitContainers([]corev1.Container{*icb.Container()}, k8sbuilder.Merge)
 		}
+		if es.Spec.GlobalNodeGroup.KeystoreSecretRef != nil {
+			kcb := k8sbuilder.NewContainerBuilder().WithContainer(&corev1.Container{
+				Name:            "init-keystore",
+				Image:           GetContainerImage(es),
+				ImagePullPolicy: es.Spec.ImagePullPolicy,
+				VolumeMounts: []corev1.VolumeMount{
+					{
+						Name:      "keystore",
+						MountPath: "/mnt/keystore",
+					},
+					{
+						Name:      "elasticsearch-keystore",
+						MountPath: "/mnt/keystoreSecrets",
+					},
+				},
+				Command: []string{
+					"/bin/bash",
+					"-c",
+					`
+#!/bin/bash
+set -e
+
+elasticsearch-keystore create
+for i in /mnt/keystoreSecrets/*/*; do
+    key=$(basename $i)
+    echo "Adding file $i to keystore key $key"
+    elasticsearch-keystore add-file "$key" "$i"
+done
+
+# Add the bootstrap password since otherwise the Elasticsearch entrypoint tries to do this on startup
+if [ ! -z ${ELASTIC_PASSWORD+x} ]; then
+  echo 'Adding env $ELASTIC_PASSWORD to keystore as key bootstrap.password'
+  echo "$ELASTIC_PASSWORD" | elasticsearch-keystore add -x bootstrap.password
+fi
+
+cp -a /usr/share/elasticsearch/config/elasticsearch.keystore /mnt/keystore/
+					`,
+				},
+			})
+			kcb.WithResource(es.Spec.GlobalNodeGroup.InitContainerResources)
+
+			ptb.WithInitContainers([]corev1.Container{*kcb.Container()}, k8sbuilder.Merge)
+		}
 
 		// Compute volumes
 		ptb.WithVolumes([]corev1.Volume{
@@ -342,6 +431,12 @@ set -euo pipefail
 							Name: GetNodeGroupConfigMapName(es, nodeGroup.Name),
 						},
 					},
+				},
+			},
+			{
+				Name: "keystore",
+				VolumeSource: corev1.VolumeSource{
+					EmptyDir: &corev1.EmptyDirVolumeSource{},
 				},
 			},
 		}, k8sbuilder.Merge)
