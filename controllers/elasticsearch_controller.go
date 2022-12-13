@@ -24,7 +24,10 @@ import (
 	elasticsearchv1alpha1 "github.com/webcenter-fr/elasticsearch-operator/api/v1alpha1"
 	"github.com/webcenter-fr/elasticsearch-operator/controllers/common"
 	esctrl "github.com/webcenter-fr/elasticsearch-operator/controllers/elasticsearch"
+	appv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
+	networkingv1 "k8s.io/api/networking/v1"
+	policyv1 "k8s.io/api/policy/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -129,12 +132,20 @@ func (r *ElasticsearchReconciler) Reconcile(ctx context.Context, req ctrl.Reques
 		}),
 	})
 
+	statefulsetReconciler := esctrl.NewStatefulsetReconciler(r.Client, r.Scheme, common.Reconciler{
+		Recorder: r.recorder,
+		Log: r.log.WithFields(logrus.Fields{
+			"phase": "statefulset",
+		}),
+	})
+
 	return reconciler.Reconcile(ctx, req, es, data,
 		tlsReconsiler,
 		credentialReconciler,
 		configmapReconciler,
 		serviceReconciler,
 		pdbReconciler,
+		statefulsetReconciler,
 		ingressReconciler,
 		loadBalancerReconciler,
 	)
@@ -145,6 +156,11 @@ func (h *ElasticsearchReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&elasticsearchv1alpha1.Elasticsearch{}).
 		Owns(&corev1.ConfigMap{}).
+		Owns(&corev1.Secret{}).
+		Owns(&networkingv1.Ingress{}).
+		Owns(&corev1.Service{}).
+		Owns(&policyv1.PodDisruptionBudget{}).
+		Owns(&appv1.StatefulSet{}).
 		Complete(h)
 }
 

@@ -21,7 +21,7 @@ import (
 )
 
 const (
-	ServiceCondition = "ElasticsearchService"
+	ServiceCondition = "Service"
 	ServicePhase     = "Generate services"
 )
 
@@ -266,7 +266,7 @@ func (r *ServiceReconciler) OnSuccess(ctx context.Context, resource client.Objec
 			Type:    ServiceCondition,
 			Reason:  "Success",
 			Status:  metav1.ConditionTrue,
-			Message: "Services up to date",
+			Message: "Services are up to date",
 		})
 	}
 

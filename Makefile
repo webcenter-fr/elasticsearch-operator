@@ -105,9 +105,11 @@ vet: ## Run go vet against code.
 test: manifests generate fmt envtest ## Run tests.
 	KUBEBUILDER_ASSETS="$(shell $(ENVTEST) use $(ENVTEST_K8S_VERSION) -p path)" go test ./api/... ./pkg/... ./controllers/...  -v -coverprofile cover.out $(TESTARGS) -timeout 600s -v -count 1 -parallel 1
 
+.PHONY: test-acc
 test-acc:
 	go test ./acctests/... -v $(TESTARGS) -timeout 1200s
 
+.PHONY: generate-json-schema
 generate-json-schema:
 	curl -L https://raw.githubusercontent.com/yannh/kubeconform/master/scripts/openapi2jsonschema.py -o bin/openapi2jsonschema.py
 	mkdir -p json-schema
@@ -123,9 +125,11 @@ build: generate fmt vet ## Build manager binary.
 run: manifests generate fmt vet ## Run a controller from your host.
 	LOG_LEVEL=debug go run .
 
+.PHONY: install-sample
 install-sample: manifests kustomize ## Install samples
 	$(KUSTOMIZE) build config/samples | kubectl apply -f -
 
+.PHONY: uninstall-sample
 uninstall-sample: manifests kustomize ## Uninstall samples
 	$(KUSTOMIZE) build config/samples | kubectl delete -f -
 
@@ -137,6 +141,7 @@ docker-build: test ## Build docker image with the manager.
 docker-push: ## Push docker image with the manager.
 	docker push ${IMG}
 
+.PHONY:docker-buildx
 docker-buildx: test ## Build docker image with the manager.
 	docker buildx build -t ${IMG} . --push --build-arg http_proxy="$(http_proxy)" --build-arg https_proxy="$(https_proxy)"
 

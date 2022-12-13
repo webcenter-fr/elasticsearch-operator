@@ -22,7 +22,7 @@ import (
 )
 
 const (
-	IngressCondition = "ElasticsearchIngress"
+	IngressCondition = "Ingress"
 	IngressPhase     = "Generate ingress"
 )
 

@@ -1,6 +1,14 @@
+apiVersion: apps/v1
+kind: StatefulSet
 metadata:
-  name: test-client-os
+  name: test-client-es
   namespace: default
+  labels:
+    cluster: test
+    nodeGroup: client
+    elasticsearch.k8s.webcenter.fr: "true"
+  annotations:
+    elasticsearch.k8s.webcenter.fr: "true"
 spec:
   podManagementPolicy: Parallel
   replicas: 2
@@ -8,13 +16,16 @@ spec:
     matchLabels:
       cluster: test
       nodeGroup: client
-  serviceName: test-client-os-headless
+  serviceName: test-client-headless-es
   template:
     metadata:
       labels:
         cluster: test
         nodeGroup: client
-      name: test-client-os
+      annotations:
+        elasticsearch.k8s.webcenter.fr/checksum-elasticsearch.yml: 2a0a8650b1d7a5f22e433877319457161489869868b894d448b2616477b521aa
+        elasticsearch.k8s.webcenter.fr/checksum-log4.yaml: 949e3031476b60f9f8cea06e1d683f3fb6e689856bdc58590036fd018c40149c
+      name: test-client-es
     spec:
       affinity:
         podAntiAffinity:
@@ -32,10 +43,14 @@ spec:
           #!/usr/bin/env bash
           set -euo pipefail
 
+          if [[ -f /mnt/keystore/elasticsearch.keystore ]]; then
+            cp /mnt/keystore/elasticsearch.keystore /usr/share/elasticsearch/config/elasticsearch.keystore
+          fi
+
           ./bin/elasticsearch-plugin install -b repository-s3
           bash elasticsearch-docker-entrypoint.sh
         env:
-        - name: node.cluster_manager
+        - name: node.master
           value: "false"
         - name: node.data
           value: "false"
@@ -47,29 +62,42 @@ spec:
           value: "false"
         - name: node.transform
           value: "false"
-        - name: node.name
+        - name: ELASTIC_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: test-credential-es
+              key: elastic
+        - name: POD_NAME
           valueFrom:
             fieldRef:
               apiVersion: v1
               fieldPath: metadata.name
-        - name: host
+        - name: NODE_NAME
           valueFrom:
             fieldRef:
               apiVersion: v1
               fieldPath: spec.nodeName
+        - name: POD_IP
+          valueFrom:
+            fieldRef:
+              apiVersion: v1
+              fieldPath: status.podIP
+        - name: NAMESPACE
+          valueFrom:
+            fieldRef:
+              apiVersion: v1
+              fieldPath: metadata.namespace
         - name: ELASTICSEARCH_JAVA_OPTS
           value: -Xms2g -Xmx2g
         - name: cluster.initial_master_nodes
-          value: test-master-os-0 test-master-os-1 test-master-os-2
+          value: test-master-es-0 test-master-es-1 test-master-es-2
         - name: discovery.seed_hosts
-          value: test-master-os-headless
+          value: test-master-headless-es
         - name: cluster.name
           value: test
         - name: network.host
           value: 0.0.0.0
         - name: bootstrap.memory_lock
-          value: "true"
-        - name: DISABLE_INSTALL_DEMO_CONFIG
           value: "true"
         image: docker.elastic.co/elasticsearch/elasticsearch:2.3.0
         livenessProbe:
@@ -130,6 +158,8 @@ spec:
         - mountPath: /usr/share/elasticsearch/config/log4.yaml
           name: elasticsearch-config
           subPath: log4.yaml
+        - mountPath: /mnt/keystore
+          name: keystore
       initContainers:
       - command:
         - sysctl
@@ -167,9 +197,16 @@ spec:
               echo "$ELASTIC_PASSWORD" | elasticsearch-keystore add -x bootstrap.password
             fi
 
-            cp -a /usr/share/elasticsearch/config/elasticsearch.keystore /mnt/keystore/  
-        image: docker.elastic.co/elasticsearch/elasticsearch:latest
+            cp -a /usr/share/elasticsearch/config/elasticsearch.keystore /mnt/keystore/
+        image: docker.elastic.co/elasticsearch/elasticsearch:2.3.0
         name: init-keystore
+        resources:
+          limits:
+            cpu: 300m
+            memory: 500Mi
+          requests:
+            cpu: 100m
+            memory: 100Mi
         volumeMounts:
           - name: keystore
             mountPath: /mnt/keystore
@@ -181,18 +218,20 @@ spec:
       volumes:
       - name: node-tls
         secret:
-          secretName: test-os-tls-transport
+          secretName: test-tls-transport-es
       - name: api-tls
         secret:
-          secretName: test-os-tls-api
+          secretName: test-tls-api-es
       - configMap:
-          name: test-client-os-config
+          name: test-client-config-es
         name: elasticsearch-config
       - name: snapshot
         nfs:
           path: /snapshot
           server: nfsserver
-      - name: elasticsearch-security
+      - name: keystore
+        emptyDir: {}
+      - name: elasticsearch-keystore
         secret:
           secretName: elasticsearch-security
   volumeClaimTemplates:

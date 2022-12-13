@@ -13,16 +13,16 @@ import (
 func TestBuildLoadbalancer(t *testing.T) {
 
 	var (
-		err error
+		err     error
 		service *corev1.Service
-		o *elasticsearchapi.Elasticsearch
+		o       *elasticsearchapi.Elasticsearch
 	)
 
 	// With default values
 	o = &elasticsearchapi.Elasticsearch{
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: "default",
-			Name: "test",
+			Name:      "test",
 		},
 		Spec: elasticsearchapi.ElasticsearchSpec{},
 	}
@@ -35,7 +35,7 @@ func TestBuildLoadbalancer(t *testing.T) {
 	o = &elasticsearchapi.Elasticsearch{
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: "default",
-			Name: "test",
+			Name:      "test",
 		},
 		Spec: elasticsearchapi.ElasticsearchSpec{
 			Endpoint: elasticsearchapi.EndpointSpec{
@@ -54,22 +54,22 @@ func TestBuildLoadbalancer(t *testing.T) {
 	o = &elasticsearchapi.Elasticsearch{
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: "default",
-			Name: "test",
+			Name:      "test",
 		},
 		Spec: elasticsearchapi.ElasticsearchSpec{
 			NodeGroups: []elasticsearchapi.NodeGroupSpec{
 				{
-					Name: "master",
+					Name:     "master",
 					Replicas: 3,
 				},
 				{
-					Name: "data",
+					Name:     "data",
 					Replicas: 1,
 				},
 			},
 			Endpoint: elasticsearchapi.EndpointSpec{
 				LoadBalancer: &elasticsearchapi.LoadBalancerSpec{
-					Enabled: true,
+					Enabled:             true,
 					TargetNodeGroupName: "master",
 				},
 			},
@@ -84,16 +84,16 @@ func TestBuildLoadbalancer(t *testing.T) {
 	o = &elasticsearchapi.Elasticsearch{
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: "default",
-			Name: "test",
+			Name:      "test",
 		},
 		Spec: elasticsearchapi.ElasticsearchSpec{
 			NodeGroups: []elasticsearchapi.NodeGroupSpec{
 				{
-					Name: "master",
+					Name:     "master",
 					Replicas: 3,
 				},
 				{
-					Name: "data",
+					Name:     "data",
 					Replicas: 1,
 				},
 			},
@@ -113,18 +113,18 @@ func TestBuildLoadbalancer(t *testing.T) {
 	o = &elasticsearchapi.Elasticsearch{
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: "default",
-			Name: "test",
+			Name:      "test",
 		},
 		Spec: elasticsearchapi.ElasticsearchSpec{
 			NodeGroups: []elasticsearchapi.NodeGroupSpec{
 				{
-					Name: "data",
+					Name:     "data",
 					Replicas: 1,
 				},
 			},
 			Endpoint: elasticsearchapi.EndpointSpec{
 				LoadBalancer: &elasticsearchapi.LoadBalancerSpec{
-					Enabled: true,
+					Enabled:             true,
 					TargetNodeGroupName: "master",
 				},
 			},

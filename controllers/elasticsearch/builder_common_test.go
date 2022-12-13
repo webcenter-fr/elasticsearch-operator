@@ -358,12 +358,12 @@ func TestIsMasterRole(t *testing.T) {
 	o = &elasticsearchapi.Elasticsearch{
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: "default",
-			Name: "test",
+			Name:      "test",
 		},
 		Spec: elasticsearchapi.ElasticsearchSpec{
 			NodeGroups: []elasticsearchapi.NodeGroupSpec{
 				{
-					Name: "master",
+					Name:     "master",
 					Replicas: 1,
 					Roles: []string{
 						"master",
@@ -379,12 +379,12 @@ func TestIsMasterRole(t *testing.T) {
 	o = &elasticsearchapi.Elasticsearch{
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: "default",
-			Name: "test",
+			Name:      "test",
 		},
 		Spec: elasticsearchapi.ElasticsearchSpec{
 			NodeGroups: []elasticsearchapi.NodeGroupSpec{
 				{
-					Name: "master",
+					Name:     "master",
 					Replicas: 1,
 					Roles: []string{
 						"data",
@@ -402,12 +402,12 @@ func TestIsMasterRole(t *testing.T) {
 	o = &elasticsearchapi.Elasticsearch{
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: "default",
-			Name: "test",
+			Name:      "test",
 		},
 		Spec: elasticsearchapi.ElasticsearchSpec{
 			NodeGroups: []elasticsearchapi.NodeGroupSpec{
 				{
-					Name: "master",
+					Name:     "master",
 					Replicas: 1,
 					Roles: []string{
 						"data",

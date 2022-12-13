@@ -33,7 +33,7 @@ type CredentialReconciler struct {
 }
 
 func NewCredentialReconciler(client client.Client, scheme *runtime.Scheme, reconciler common.Reconciler) controller.K8sReconciler {
-	return &IngressReconciler{
+	return &CredentialReconciler{
 		Reconciler: reconciler,
 		Client:     client,
 		Scheme:     scheme,
@@ -64,12 +64,12 @@ func (r *CredentialReconciler) Configure(ctx context.Context, req ctrl.Request, 
 	return res, nil
 }
 
-// Read existing ingress
+// Read existing secret
 func (r *CredentialReconciler) Read(ctx context.Context, resource client.Object, data map[string]any) (res ctrl.Result, err error) {
 	o := resource.(*elasticsearchapi.Elasticsearch)
 	s := &corev1.Secret{}
 
-	// Read current ingress
+	// Read current secret
 	if err = r.Client.Get(ctx, types.NamespacedName{Namespace: o.Namespace, Name: GetSecretNameForCredentials(o)}, s); err != nil {
 		if !k8serrors.IsNotFound(err) {
 			return res, errors.Wrapf(err, "Error when read secret %s", GetSecretNameForCredentials(o))

@@ -21,7 +21,7 @@ import (
 )
 
 const (
-	ConfigmapCondition = "ElasticsearchConfigmap"
+	ConfigmapCondition = "Configmap"
 	ConfigmapPhase     = "Generate configmaps"
 )
 

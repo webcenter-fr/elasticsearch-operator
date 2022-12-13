@@ -82,7 +82,7 @@ func BuildTransportSecret(o *elasticsearchapi.Elasticsearch, rootCA *goca.CA) (s
 				return nil, errors.Wrapf(err, "Error when generate node certificate for %s", nodeName)
 			}
 			s.Data[fmt.Sprintf("%s.crt", nodeName)] = []byte(nodeCrt.Certificate)
-			s.Data[fmt.Sprintf("%s.key", nodeName)] = []byte(nodeCrt.PrivateKey)
+			s.Data[fmt.Sprintf("%s.key", nodeName)] = []byte(nodeCrt.RsaPrivateKey)
 		}
 	}
 
@@ -154,7 +154,7 @@ func BuildApiSecret(o *elasticsearchapi.Elasticsearch, rootCA *goca.CA) (s *core
 		Data: map[string][]byte{
 			"ca.crt":  []byte(rootCA.GetCertificate()),
 			"tls.crt": []byte(apiCrt.Certificate),
-			"tls.key": []byte(apiCrt.PrivateKey),
+			"tls.key": []byte(apiCrt.RsaPrivateKey),
 		},
 	}
 
@@ -172,11 +172,10 @@ func generateNodeCertificate(o *elasticsearchapi.Elasticsearch, nodeGroupName, n
 		Province:           "internal",
 		Intermediate:       false,
 		DNSNames: []string{
-			nodeName,
 			fmt.Sprintf("%s.%s", nodeName, GetNodeGroupServiceNameHeadless(o, nodeGroupName)),
 			GetNodeGroupServiceName(o, nodeGroupName),
 			GetNodeGroupServiceNameHeadless(o, nodeGroupName),
-			fmt.Sprintf("%s.%s.svc", GetGlobalServiceName(o), o.Namespace),
+			fmt.Sprintf("%s.%s.svc", nodeName, o.Namespace),
 		},
 		IPAddresses: []net.IP{
 			net.ParseIP("127.0.0.1"),
@@ -191,7 +190,7 @@ func generateNodeCertificate(o *elasticsearchapi.Elasticsearch, nodeGroupName, n
 func generateApiCertificate(o *elasticsearchapi.Elasticsearch, rootCA *goca.CA) (nodeCrt *goca.Certificate, err error) {
 
 	var ips []net.IP
-	dnsNames := []string{o.Name}
+	dnsNames := []string{}
 
 	if o.Spec.Tls.SelfSignedCertificate != nil && len(o.Spec.Tls.SelfSignedCertificate.AltNames) > 0 {
 		dnsNames = append(dnsNames, o.Spec.Tls.SelfSignedCertificate.AltNames...)

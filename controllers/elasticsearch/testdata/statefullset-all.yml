@@ -1,3 +1,5 @@
+apiVersion: apps/v1
+kind: StatefulSet
 metadata:
   name: test-all-es
   namespace: default

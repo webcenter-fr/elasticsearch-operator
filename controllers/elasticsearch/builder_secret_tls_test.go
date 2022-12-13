@@ -13,17 +13,17 @@ import (
 
 func TestBuildTransportPkiSecret(t *testing.T) {
 	var (
-		o *elasticsearchapi.Elasticsearch
-		s *corev1.Secret
-		ca *goca.CA
+		o   *elasticsearchapi.Elasticsearch
+		s   *corev1.Secret
+		ca  *goca.CA
 		err error
 	)
 
-	labels := map[string]string {
-		"cluster": "test",
+	labels := map[string]string{
+		"cluster":                        "test",
 		"elasticsearch.k8s.webcenter.fr": "true",
 	}
-	annotations := map[string]string {
+	annotations := map[string]string{
 		"elasticsearch.k8s.webcenter.fr": "true",
 	}
 
@@ -36,7 +36,7 @@ func TestBuildTransportPkiSecret(t *testing.T) {
 		Spec: elasticsearchapi.ElasticsearchSpec{
 			NodeGroups: []elasticsearchapi.NodeGroupSpec{
 				{
-					Name: "master",
+					Name:     "master",
 					Replicas: 3,
 				},
 			},
@@ -61,17 +61,17 @@ func TestBuildTransportPkiSecret(t *testing.T) {
 
 func TestBuildApiPkiSecret(t *testing.T) {
 	var (
-		o *elasticsearchapi.Elasticsearch
-		s *corev1.Secret
-		ca *goca.CA
+		o   *elasticsearchapi.Elasticsearch
+		s   *corev1.Secret
+		ca  *goca.CA
 		err error
 	)
 
-	labels := map[string]string {
-		"cluster": "test",
+	labels := map[string]string{
+		"cluster":                        "test",
 		"elasticsearch.k8s.webcenter.fr": "true",
 	}
-	annotations := map[string]string {
+	annotations := map[string]string{
 		"elasticsearch.k8s.webcenter.fr": "true",
 	}
 
@@ -87,7 +87,7 @@ func TestBuildApiPkiSecret(t *testing.T) {
 			},
 			NodeGroups: []elasticsearchapi.NodeGroupSpec{
 				{
-					Name: "master",
+					Name:     "master",
 					Replicas: 3,
 				},
 			},
@@ -111,11 +111,10 @@ func TestBuildApiPkiSecret(t *testing.T) {
 				CertificateSecretRef: &corev1.LocalObjectReference{
 					Name: "test",
 				},
-				
 			},
 			NodeGroups: []elasticsearchapi.NodeGroupSpec{
 				{
-					Name: "master",
+					Name:     "master",
 					Replicas: 3,
 				},
 			},
@@ -136,11 +135,10 @@ func TestBuildApiPkiSecret(t *testing.T) {
 		Spec: elasticsearchapi.ElasticsearchSpec{
 			Tls: elasticsearchapi.TlsSpec{
 				Enabled: pointer.Bool(true),
-
 			},
 			NodeGroups: []elasticsearchapi.NodeGroupSpec{
 				{
-					Name: "master",
+					Name:     "master",
 					Replicas: 3,
 				},
 			},
@@ -165,27 +163,27 @@ func TestBuildApiPkiSecret(t *testing.T) {
 
 func TestBuildTransportSecret(t *testing.T) {
 	var (
-		o *elasticsearchapi.Elasticsearch
-		s *corev1.Secret
+		o   *elasticsearchapi.Elasticsearch
+		s   *corev1.Secret
 		err error
 	)
 
 	ca, err := goca.NewCA("test", nil, nil, goca.Identity{
-		Organization: "test",
+		Organization:       "test",
 		OrganizationalUnit: "test",
-		Country: "test",
-		Locality: "est",
-		Province: "test",
+		Country:            "test",
+		Locality:           "est",
+		Province:           "test",
 	})
 	if err != nil {
 		panic(err)
 	}
 
-	labels := map[string]string {
-		"cluster": "test",
+	labels := map[string]string{
+		"cluster":                        "test",
 		"elasticsearch.k8s.webcenter.fr": "true",
 	}
-	annotations := map[string]string {
+	annotations := map[string]string{
 		"elasticsearch.k8s.webcenter.fr": "true",
 	}
 
@@ -198,7 +196,7 @@ func TestBuildTransportSecret(t *testing.T) {
 		Spec: elasticsearchapi.ElasticsearchSpec{
 			NodeGroups: []elasticsearchapi.NodeGroupSpec{
 				{
-					Name: "master",
+					Name:     "master",
 					Replicas: 3,
 				},
 			},
@@ -223,27 +221,27 @@ func TestBuildTransportSecret(t *testing.T) {
 
 func TestBuildApiSecret(t *testing.T) {
 	var (
-		o *elasticsearchapi.Elasticsearch
-		s *corev1.Secret
+		o   *elasticsearchapi.Elasticsearch
+		s   *corev1.Secret
 		err error
 	)
 
 	ca, err := goca.NewCA("test", nil, nil, goca.Identity{
-		Organization: "test",
+		Organization:       "test",
 		OrganizationalUnit: "test",
-		Country: "test",
-		Locality: "est",
-		Province: "test",
+		Country:            "test",
+		Locality:           "est",
+		Province:           "test",
 	})
 	if err != nil {
 		panic(err)
 	}
 
-	labels := map[string]string {
-		"cluster": "test",
+	labels := map[string]string{
+		"cluster":                        "test",
 		"elasticsearch.k8s.webcenter.fr": "true",
 	}
-	annotations := map[string]string {
+	annotations := map[string]string{
 		"elasticsearch.k8s.webcenter.fr": "true",
 	}
 
@@ -259,7 +257,7 @@ func TestBuildApiSecret(t *testing.T) {
 			},
 			NodeGroups: []elasticsearchapi.NodeGroupSpec{
 				{
-					Name: "master",
+					Name:     "master",
 					Replicas: 3,
 				},
 			},
@@ -285,7 +283,7 @@ func TestBuildApiSecret(t *testing.T) {
 			},
 			NodeGroups: []elasticsearchapi.NodeGroupSpec{
 				{
-					Name: "master",
+					Name:     "master",
 					Replicas: 3,
 				},
 			},
@@ -308,7 +306,7 @@ func TestBuildApiSecret(t *testing.T) {
 			},
 			NodeGroups: []elasticsearchapi.NodeGroupSpec{
 				{
-					Name: "master",
+					Name:     "master",
 					Replicas: 3,
 				},
 			},

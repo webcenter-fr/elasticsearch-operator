@@ -1,7 +1,7 @@
 apiVersion: elasticsearch.k8s.webcenter.fr/v1alpha1
 kind: Elasticsearch
 metadata:
-  name: es-sample
+  name: sample
   labels:
     env: test
 spec:
@@ -19,6 +19,10 @@ spec:
         nginx.ingress.kubernetes.io/proxy-read-timeout: "600"
         nginx.ingress.kubernetes.io/proxy-send-timeout: "600"
   globalNodeGroup:
+    additionalVolumes:
+      - name: snapshot
+        emptyDir: {}
+        mountPath: /mnt/snapshot
     config:
       elasticsearch.yml: |
         action.destructive_requires_name: true
@@ -44,24 +48,6 @@ spec:
             authz_exception: false
             roles: monitoring
             username: anonymous_user
-          realms:
-            active_directory.active_directory:
-              bind_dn: ${ELASTICSEARCH_LDAP_USER}
-              domain_name: HM
-              follow_referrals: true
-              group_search:
-                base_dn: OU=Groupes Utilisateurs,DC=HM,DC=DM,DC=AD
-                scope: sub_tree
-              load_balance.type: failover
-              order: 2
-              timeout.ldap_search: 60s
-              unmapped_groups_as_roles: false
-              url:
-              - ldap://dcn37cti2.hm.dm.ad:389
-              - ldap://dcn37cti4.hm.dm.ad:389
-              user_search:
-                base_dn: DC=HM,DC=DM,DC=AD
-                scope: sub_tree
   nodeGroups:
     - name: all
       replicas: 3
@@ -69,4 +55,11 @@ spec:
         - master
         - data
         - ingest
-      jvm: "-Xms512M -Xmx512M"
+      jvm: "-Xms4512M -Xmx512M"
+      resources:
+        requests:
+          cpu: 300m
+          memory: 1Gi
+        limits:
+          cpu: 1000m
+          memory: 1Gi

@@ -318,6 +318,12 @@ type NodeGroupSpec struct {
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
 	// +optional
 	PodDisruptionBudgetSpec *policyv1.PodDisruptionBudgetSpec `json:"podDisruptionBudget,omitempty"`
+
+	// WaitClusterStatus permit to wait the cluster state on readyness probe
+	// +operator-sdk:csv:customresourcedefinitions:type=spec
+	// +optional
+	// +kubebuilder:default:=green
+	WaitClusterStatus string `json:"waitClusterStatus,omitempty"`
 }
 
 type PersistenceSpec struct {

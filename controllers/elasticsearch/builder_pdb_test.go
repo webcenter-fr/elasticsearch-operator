@@ -14,16 +14,16 @@ import (
 func TestBuildPodDisruptionBudget(t *testing.T) {
 
 	var (
-		err error
+		err  error
 		pdbs []policyv1.PodDisruptionBudget
-		o *elasticsearchapi.Elasticsearch
+		o    *elasticsearchapi.Elasticsearch
 	)
 
 	// With default values
 	o = &elasticsearchapi.Elasticsearch{
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: "default",
-			Name: "test",
+			Name:      "test",
 		},
 		Spec: elasticsearchapi.ElasticsearchSpec{},
 	}
@@ -36,12 +36,12 @@ func TestBuildPodDisruptionBudget(t *testing.T) {
 	o = &elasticsearchapi.Elasticsearch{
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: "default",
-			Name: "test",
+			Name:      "test",
 		},
 		Spec: elasticsearchapi.ElasticsearchSpec{
 			NodeGroups: []elasticsearchapi.NodeGroupSpec{
 				{
-					Name: "master",
+					Name:     "master",
 					Replicas: 1,
 				},
 			},
@@ -50,7 +50,7 @@ func TestBuildPodDisruptionBudget(t *testing.T) {
 
 	pdbs, err = BuildPodDisruptionBudget(o)
 	assert.NoError(t, err)
-	assert.Equal(t,1, len(pdbs))
+	assert.Equal(t, 1, len(pdbs))
 	test.EqualFromYamlFile(t, "testdata/pdb_default.yaml", &pdbs[0], test.CleanApi)
 
 	// When Pdb is defined on global
@@ -58,18 +58,18 @@ func TestBuildPodDisruptionBudget(t *testing.T) {
 	o = &elasticsearchapi.Elasticsearch{
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: "default",
-			Name: "test",
+			Name:      "test",
 		},
 		Spec: elasticsearchapi.ElasticsearchSpec{
 			NodeGroups: []elasticsearchapi.NodeGroupSpec{
 				{
-					Name: "master",
+					Name:     "master",
 					Replicas: 1,
 				},
 			},
 			GlobalNodeGroup: elasticsearchapi.GlobalNodeGroupSpec{
 				PodDisruptionBudgetSpec: &policyv1.PodDisruptionBudgetSpec{
-					MinAvailable: &minUnavailable,
+					MinAvailable:   &minUnavailable,
 					MaxUnavailable: nil,
 				},
 			},
@@ -78,7 +78,7 @@ func TestBuildPodDisruptionBudget(t *testing.T) {
 
 	pdbs, err = BuildPodDisruptionBudget(o)
 	assert.NoError(t, err)
-	assert.Equal(t,1, len(pdbs))
+	assert.Equal(t, 1, len(pdbs))
 	test.EqualFromYamlFile(t, "testdata/pdb_with_global_spec.yaml", &pdbs[0], test.CleanApi)
 
 	// When Pdb is defined on nodeGroup
@@ -86,22 +86,22 @@ func TestBuildPodDisruptionBudget(t *testing.T) {
 	o = &elasticsearchapi.Elasticsearch{
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: "default",
-			Name: "test",
+			Name:      "test",
 		},
 		Spec: elasticsearchapi.ElasticsearchSpec{
 			NodeGroups: []elasticsearchapi.NodeGroupSpec{
 				{
-					Name: "master",
+					Name:     "master",
 					Replicas: 1,
 					PodDisruptionBudgetSpec: &policyv1.PodDisruptionBudgetSpec{
-						MinAvailable: &minUnavailable,
+						MinAvailable:   &minUnavailable,
 						MaxUnavailable: nil,
 					},
 				},
 			},
 			GlobalNodeGroup: elasticsearchapi.GlobalNodeGroupSpec{
 				PodDisruptionBudgetSpec: &policyv1.PodDisruptionBudgetSpec{
-					MinAvailable: &minUnavailable,
+					MinAvailable:   &minUnavailable,
 					MaxUnavailable: nil,
 				},
 			},
@@ -110,7 +110,7 @@ func TestBuildPodDisruptionBudget(t *testing.T) {
 
 	pdbs, err = BuildPodDisruptionBudget(o)
 	assert.NoError(t, err)
-	assert.Equal(t,1, len(pdbs))
+	assert.Equal(t, 1, len(pdbs))
 	test.EqualFromYamlFile(t, "testdata/pdb_with_global_and_local_spec.yaml", &pdbs[0], test.CleanApi)
 
 }

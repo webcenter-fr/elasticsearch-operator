@@ -13,9 +13,9 @@ import (
 func TestBuildServices(t *testing.T) {
 
 	var (
-		err             error
-		services        []corev1.Service
-		o               *elasticsearchapi.Elasticsearch
+		err      error
+		services []corev1.Service
+		o        *elasticsearchapi.Elasticsearch
 	)
 	// With default values
 	o = &elasticsearchapi.Elasticsearch{

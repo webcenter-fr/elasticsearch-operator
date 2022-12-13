@@ -13,12 +13,12 @@ import (
 	"k8s.io/utils/pointer"
 )
 
-func TestGenerateStatefullset(t *testing.T) {
+func TestBuildStatefulset(t *testing.T) {
 
 	var (
 		o   *elasticsearchapi.Elasticsearch
 		err error
-		sts []*appv1.StatefulSet
+		sts []appv1.StatefulSet
 	)
 
 	// With default values
@@ -42,9 +42,9 @@ func TestGenerateStatefullset(t *testing.T) {
 		},
 	}
 
-	sts, err = BuildStatefullsets(o)
+	sts, err = BuildStatefulsets(o)
 	assert.NoError(t, err)
-	test.EqualFromYamlFile(t, "testdata/statefullset-all.yml", sts[0])
+	test.EqualFromYamlFile(t, "testdata/statefullset-all.yml", &sts[0], test.CleanApi)
 
 	// With complex config
 	o = &elasticsearchapi.Elasticsearch{
@@ -99,7 +99,7 @@ func TestGenerateStatefullset(t *testing.T) {
 					Name:     "master",
 					Replicas: 3,
 					Roles: []string{
-						"cluster_manager",
+						"master",
 					},
 					Persistence: &elasticsearchapi.PersistenceSpec{
 						VolumeClaimSpec: &corev1.PersistentVolumeClaimSpec{
@@ -197,12 +197,12 @@ func TestGenerateStatefullset(t *testing.T) {
 		},
 	}
 
-	sts, err = BuildStatefullsets(o)
+	sts, err = BuildStatefulsets(o)
 
 	assert.NoError(t, err)
-	//test.EqualFromYamlFile(t, "testdata/statefullset-master.yml", sts[0])
-	//test.EqualFromYamlFile(t, "testdata/statefullset-data.yml", sts[1])
-	//test.EqualFromYamlFile(t, "testdata/statefullset-client.yml", sts[2])
+	test.EqualFromYamlFile(t, "testdata/statefullset-master.yml", &sts[0], test.CleanApi)
+	test.EqualFromYamlFile(t, "testdata/statefullset-data.yml", &sts[1], test.CleanApi)
+	test.EqualFromYamlFile(t, "testdata/statefullset-client.yml", &sts[2], test.CleanApi)
 }
 
 func TestComputeJavaOpts(t *testing.T) {
