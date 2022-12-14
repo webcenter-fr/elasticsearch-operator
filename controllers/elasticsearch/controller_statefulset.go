@@ -21,10 +21,24 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
+type statefulsetPhase string
+
 const (
 	StatefulsetCondition = "Statefulset"
 	StatefulsetPhase     = "Generate statefullset"
 )
+
+/*
+var (
+	phaseCreate                tlsPhase = "create"
+	phaseUpdateTransportPki    tlsPhase = "updateTransportPki"
+	phasePropagateTransportPki tlsPhase = "propagateTransportPki"
+	phaseUpdateCertificates    tlsPhase = "updateCertificates"
+	phasePropagateCertificates tlsPhase = "propagateCertificates"
+	phaseCleanTransportCA      tlsPhase = "cleanTransportCA"
+	phaseNormal                tlsPhase = "normal"
+)
+*/
 
 type StatefulsetReconciler struct {
 	common.Reconciler
