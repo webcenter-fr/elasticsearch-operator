@@ -37,18 +37,18 @@ const (
 	TlsConditionGenerateCertificate   = "TlsGenerateCertificates"
 	TlsConditionPropagateCertificate  = "TlsPropagateCertificates"
 	TlsCondition                      = "TlsReady"
-	TlsPhase                          = "Generate certificates"
-	DefaultRenewCertificate           = -time.Hour * 24 * 7 // 7 days before expired
+	TlsPhase                          = "Tls"
+	DefaultRenewCertificate           = -time.Hour * 24 * 30 // 7 days before expired
 )
 
 var (
-	phaseTlsCreate                tlsPhase = "create"
-	phaseTlsUpdateTransportPki    tlsPhase = "updateTransportPki"
-	phaseTlsPropagateTransportPki tlsPhase = "propagateTransportPki"
-	phaseTlsUpdateCertificates    tlsPhase = "updateCertificates"
-	phaseTlsPropagateCertificates tlsPhase = "propagateCertificates"
-	phaseTlsCleanTransportCA      tlsPhase = "cleanTransportCA"
-	phaseTlsNormal                tlsPhase = "normal"
+	phaseTlsCreate                tlsPhase = "tlsCreate"
+	phaseTlsUpdateTransportPki    tlsPhase = "tlsUpdateTransportPki"
+	phaseTlsPropagateTransportPki tlsPhase = "tlsPropagateTransportPki"
+	phaseTlsUpdateCertificates    tlsPhase = "tlsUpdateCertificates"
+	phaseTlsPropagateCertificates tlsPhase = "tlsPropagateCertificates"
+	phaseTlsCleanTransportCA      tlsPhase = "tlsCleanTransportCA"
+	phaseTlsNormal                tlsPhase = "tlsNormal"
 )
 
 type TlsReconciler struct {
@@ -58,7 +58,7 @@ type TlsReconciler struct {
 	name   string
 }
 
-func NewTlsReconciler(client client.Client, scheme *runtime.Scheme, reconciler common.Reconciler) controller.K8sReconciler {
+func NewTlsReconciler(client client.Client, scheme *runtime.Scheme, reconciler common.Reconciler) controller.K8sPhaseReconciler {
 	return &TlsReconciler{
 		Reconciler: reconciler,
 		Client:     client,
@@ -781,7 +781,7 @@ func (r *TlsReconciler) OnSuccess(ctx context.Context, resource client.Object, d
 		// It's a kind of last hope
 		// Need to delete all pod to force to reconcil with right ca / certificates
 		podList := &corev1.PodList{}
-		labelSelectors, err := labels.Parse(fmt.Sprintf("cluster=%s,%s=true", o.Name, elasticsearchAnnotationKey))
+		labelSelectors, err := labels.Parse(fmt.Sprintf("cluster=%s,%s=true", o.Name, ElasticsearchAnnotationKey))
 		if err != nil {
 			return res, errors.Wrap(err, "Error when generate label selector")
 		}
@@ -806,7 +806,7 @@ func (r *TlsReconciler) OnSuccess(ctx context.Context, resource client.Object, d
 			Type:    TlsCondition,
 			Reason:  "Success",
 			Status:  metav1.ConditionTrue,
-			Message: "Tls ready",
+			Message: "Ready",
 		})
 
 		condition.SetStatusCondition(&o.Status.Conditions, metav1.Condition{
@@ -883,9 +883,9 @@ func (r *TlsReconciler) OnSuccess(ctx context.Context, resource client.Object, d
 		stsList := &appv1.StatefulSetList{}
 		podList := &corev1.PodList{}
 		// Then, check if all Sts receive the new CA
-		annotation := fmt.Sprintf("%s/ca-checksum", elasticsearchAnnotationKey)
+		annotation := fmt.Sprintf("%s/ca-checksum", ElasticsearchAnnotationKey)
 		caChecksum := fmt.Sprintf("%x", sha256.Sum256(sTransportPki.Data["ca.crt"]))
-		labelSelectors, err := labels.Parse(fmt.Sprintf("cluster=%s,%s=true", o.Name, elasticsearchAnnotationKey))
+		labelSelectors, err := labels.Parse(fmt.Sprintf("cluster=%s,%s=true", o.Name, ElasticsearchAnnotationKey))
 		if err != nil {
 			return res, errors.Wrap(err, "Error when generate label selector")
 		}
@@ -967,9 +967,9 @@ func (r *TlsReconciler) OnSuccess(ctx context.Context, resource client.Object, d
 		// And Sts finished rolling upgrade
 		stsList := &appv1.StatefulSetList{}
 		podList := &corev1.PodList{}
-		annotation := fmt.Sprintf("%s/ca-checksum", elasticsearchAnnotationKey)
+		annotation := fmt.Sprintf("%s/ca-checksum", ElasticsearchAnnotationKey)
 		caChecksum := fmt.Sprintf("%x", sha256.Sum256(sTransport.Data["ca.crt"]))
-		labelSelectors, err := labels.Parse(fmt.Sprintf("cluster=%s,%s=true", o.Name, elasticsearchAnnotationKey))
+		labelSelectors, err := labels.Parse(fmt.Sprintf("cluster=%s,%s=true", o.Name, ElasticsearchAnnotationKey))
 		if err != nil {
 			return res, errors.Wrap(err, "Error when generate label selector")
 		}
@@ -1041,7 +1041,7 @@ func (r *TlsReconciler) OnSuccess(ctx context.Context, resource client.Object, d
 			Type:    TlsCondition,
 			Reason:  "Success",
 			Status:  metav1.ConditionTrue,
-			Message: "Tls ready",
+			Message: "Ready",
 		})
 
 		r.Log.Info("Clean old transport CA certificate successfully")

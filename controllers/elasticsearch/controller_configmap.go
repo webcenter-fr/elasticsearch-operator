@@ -21,8 +21,8 @@ import (
 )
 
 const (
-	ConfigmapCondition = "Configmap"
-	ConfigmapPhase     = "Generate configmaps"
+	ConfigmapCondition = "ConfigmapReady"
+	ConfigmapPhase     = "Configmap"
 )
 
 type ConfigMapReconciler struct {
@@ -32,7 +32,7 @@ type ConfigMapReconciler struct {
 	name   string
 }
 
-func NewConfiMapReconciler(client client.Client, scheme *runtime.Scheme, reconciler common.Reconciler) controller.K8sReconciler {
+func NewConfiMapReconciler(client client.Client, scheme *runtime.Scheme, reconciler common.Reconciler) controller.K8sPhaseReconciler {
 	return &ConfigMapReconciler{
 		Reconciler: reconciler,
 		Client:     client,
@@ -70,7 +70,7 @@ func (r *ConfigMapReconciler) Read(ctx context.Context, resource client.Object, 
 	cmList := &corev1.ConfigMapList{}
 
 	// Read current node group configmaps
-	labelSelectors, err := labels.Parse(fmt.Sprintf("cluster=%s,%s=true", o.Name, elasticsearchAnnotationKey))
+	labelSelectors, err := labels.Parse(fmt.Sprintf("cluster=%s,%s=true", o.Name, ElasticsearchAnnotationKey))
 	if err != nil {
 		return res, errors.Wrap(err, "Error when generate label selector")
 	}
@@ -262,7 +262,7 @@ func (r *ConfigMapReconciler) OnSuccess(ctx context.Context, resource client.Obj
 			Type:    ConfigmapCondition,
 			Reason:  "Success",
 			Status:  metav1.ConditionTrue,
-			Message: "Configmaps up to date",
+			Message: "Ready",
 		})
 	}
 

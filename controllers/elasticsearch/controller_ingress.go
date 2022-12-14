@@ -22,8 +22,8 @@ import (
 )
 
 const (
-	IngressCondition = "Ingress"
-	IngressPhase     = "Generate ingress"
+	IngressCondition = "IngressReady"
+	IngressPhase     = "Ingress"
 )
 
 type IngressReconciler struct {
@@ -33,7 +33,7 @@ type IngressReconciler struct {
 	name   string
 }
 
-func NewIngressReconciler(client client.Client, scheme *runtime.Scheme, reconciler common.Reconciler) controller.K8sReconciler {
+func NewIngressReconciler(client client.Client, scheme *runtime.Scheme, reconciler common.Reconciler) controller.K8sPhaseReconciler {
 	return &IngressReconciler{
 		Reconciler: reconciler,
 		Client:     client,
@@ -255,7 +255,7 @@ func (r *IngressReconciler) OnSuccess(ctx context.Context, resource client.Objec
 			Type:    IngressCondition,
 			Reason:  "Success",
 			Status:  metav1.ConditionTrue,
-			Message: "Ingress is up to date",
+			Message: "Ready",
 		})
 	}
 

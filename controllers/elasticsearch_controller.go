@@ -18,16 +18,24 @@ package controllers
 
 import (
 	"context"
+	"fmt"
+	"time"
 
+	"emperror.dev/errors"
 	"github.com/disaster37/operator-sdk-extra/pkg/controller"
 	"github.com/sirupsen/logrus"
+	elasticsearchapi "github.com/webcenter-fr/elasticsearch-operator/api/v1alpha1"
 	elasticsearchv1alpha1 "github.com/webcenter-fr/elasticsearch-operator/api/v1alpha1"
 	"github.com/webcenter-fr/elasticsearch-operator/controllers/common"
+	"github.com/webcenter-fr/elasticsearch-operator/controllers/elasticsearch"
 	esctrl "github.com/webcenter-fr/elasticsearch-operator/controllers/elasticsearch"
 	appv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	networkingv1 "k8s.io/api/networking/v1"
 	policyv1 "k8s.io/api/policy/v1"
+	condition "k8s.io/apimachinery/pkg/api/meta"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -36,6 +44,7 @@ import (
 const (
 	ElasticsearchFinalizer = "elasticsearch.k8s.webcenter.fr/finalizer"
 	ElasticsearchCondition = "ElasticsearchReady"
+	ElasticsearchPhase     = "running"
 )
 
 // ElasticsearchReconciler reconciles a Elasticsearch object
@@ -165,27 +174,81 @@ func (h *ElasticsearchReconciler) SetupWithManager(mgr ctrl.Manager) error {
 }
 
 func (h *ElasticsearchReconciler) Configure(ctx context.Context, req ctrl.Request, resource client.Object) (res ctrl.Result, err error) {
-	return
+	o := resource.(*elasticsearchapi.Elasticsearch)
+
+	// Init condition status if not exist
+	if condition.FindStatusCondition(o.Status.Conditions, ElasticsearchCondition) == nil {
+		condition.SetStatusCondition(&o.Status.Conditions, metav1.Condition{
+			Type:   ElasticsearchCondition,
+			Status: metav1.ConditionFalse,
+			Reason: "Initialize",
+		})
+	}
+
+	return res, nil
 }
 func (h *ElasticsearchReconciler) Read(ctx context.Context, r client.Object, data map[string]any) (res ctrl.Result, err error) {
 	return
 }
-func (h *ElasticsearchReconciler) Create(ctx context.Context, r client.Object, data map[string]any) (res ctrl.Result, err error) {
-	return
-}
-func (h *ElasticsearchReconciler) Update(ctx context.Context, r client.Object, data map[string]any) (res ctrl.Result, err error) {
-	return
-}
-func (h *ElasticsearchReconciler) Delete(ctx context.Context, r client.Object, data map[string]any) (res ctrl.Result, err error) {
+
+func (h *ElasticsearchReconciler) Delete(ctx context.Context, r client.Object, data map[string]any) (err error) {
 	controllerMetrics.WithLabelValues(h.name).Dec()
 	return
 }
 func (h *ElasticsearchReconciler) OnError(ctx context.Context, r client.Object, data map[string]any, currentErr error) (res ctrl.Result, err error) {
 	totalErrors.Inc()
-	return
+	return res, currentErr
 }
-func (h *ElasticsearchReconciler) OnSuccess(ctx context.Context, r client.Object, data map[string]any, diff controller.K8sDiff) (res ctrl.Result, err error) {
-	return
+func (h *ElasticsearchReconciler) OnSuccess(ctx context.Context, r client.Object, data map[string]any) (res ctrl.Result, err error) {
+	o := r.(*elasticsearchapi.Elasticsearch)
+
+	// Wait few time, to be sure Satefulset created
+	time.Sleep(1 * time.Second)
+
+	// Check all statefulsets are ready to change Phase status and set main condition to true
+	stsList := &appv1.StatefulSetList{}
+	labelSelectors, err := labels.Parse(fmt.Sprintf("cluster=%s,%s=true", o.Name, elasticsearch.ElasticsearchAnnotationKey))
+	if err != nil {
+		return res, errors.Wrap(err, "Error when generate label selector")
+	}
+	if err = h.Client.List(ctx, stsList, &client.ListOptions{Namespace: o.Namespace, LabelSelector: labelSelectors}, &client.ListOptions{}); err != nil {
+		return res, errors.Wrapf(err, "Error when read Elasticsearch statefullsets")
+	}
+
+	isReady := true
+	for _, sts := range stsList.Items {
+		if sts.Status.ReadyReplicas != *sts.Spec.Replicas {
+			isReady = false
+			break
+		}
+	}
+
+	if isReady {
+		if !condition.IsStatusConditionPresentAndEqual(o.Status.Conditions, ElasticsearchCondition, metav1.ConditionTrue) {
+			condition.SetStatusCondition(&o.Status.Conditions, metav1.Condition{
+				Type:   ElasticsearchCondition,
+				Status: metav1.ConditionTrue,
+				Reason: "Ready",
+			})
+
+			o.Status.Phase = "running"
+		}
+
+		return res, nil
+	}
+
+	if !condition.IsStatusConditionPresentAndEqual(o.Status.Conditions, ElasticsearchCondition, metav1.ConditionFalse) {
+		condition.SetStatusCondition(&o.Status.Conditions, metav1.Condition{
+			Type:   ElasticsearchCondition,
+			Status: metav1.ConditionFalse,
+			Reason: "NotReady",
+		})
+
+	}
+
+	o.Status.Phase = "starting"
+
+	return ctrl.Result{RequeueAfter: time.Second * 30}, nil
 }
 func (h *ElasticsearchReconciler) Diff(ctx context.Context, r client.Object, data map[string]any) (diff controller.K8sDiff, res ctrl.Result, err error) {
 	return

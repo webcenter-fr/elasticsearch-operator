@@ -8,7 +8,7 @@ require (
 	github.com/disaster37/goca v1.0.4-0.20221213082455-a233467aa7fe
 	github.com/disaster37/k8s-objectmatcher v1.8.2-0.20221214085057-348a8a800e18
 	github.com/disaster37/k8sbuilder v0.0.0-20221212105448-99cdf3ba3e4a
-	github.com/disaster37/operator-sdk-extra v0.0.18-0.20221213110236-31685cb1f4f0
+	github.com/disaster37/operator-sdk-extra v0.0.18-0.20221214144538-de9be9cf7fa6
 	github.com/elastic/go-ucfg v0.8.6
 	github.com/go-logr/logr v1.2.3
 	github.com/google/go-cmp v0.5.9

@@ -22,8 +22,8 @@ import (
 )
 
 const (
-	PdbCondition = "PodDisruptionBudget"
-	PdbPhase     = "Generate pod disruption budget"
+	PdbCondition = "PodDisruptionBudgetReady"
+	PdbPhase     = "PodDisruptionBudget"
 )
 
 type PdbReconciler struct {
@@ -33,7 +33,7 @@ type PdbReconciler struct {
 	name   string
 }
 
-func NewPdbReconciler(client client.Client, scheme *runtime.Scheme, reconciler common.Reconciler) controller.K8sReconciler {
+func NewPdbReconciler(client client.Client, scheme *runtime.Scheme, reconciler common.Reconciler) controller.K8sPhaseReconciler {
 	return &PdbReconciler{
 		Reconciler: reconciler,
 		Client:     client,
@@ -71,7 +71,7 @@ func (r *PdbReconciler) Read(ctx context.Context, resource client.Object, data m
 	pdbList := &policyv1.PodDisruptionBudgetList{}
 
 	// Read current node group pdbs
-	labelSelectors, err := labels.Parse(fmt.Sprintf("cluster=%s,%s=true", o.Name, elasticsearchAnnotationKey))
+	labelSelectors, err := labels.Parse(fmt.Sprintf("cluster=%s,%s=true", o.Name, ElasticsearchAnnotationKey))
 	if err != nil {
 		return res, errors.Wrap(err, "Error when generate label selector")
 	}
@@ -269,7 +269,7 @@ func (r *PdbReconciler) OnSuccess(ctx context.Context, resource client.Object, d
 			Type:    PdbCondition,
 			Reason:  "Success",
 			Status:  metav1.ConditionTrue,
-			Message: "Services up to date",
+			Message: "Ready",
 		})
 	}
 

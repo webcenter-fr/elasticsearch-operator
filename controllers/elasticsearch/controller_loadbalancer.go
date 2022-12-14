@@ -21,8 +21,8 @@ import (
 )
 
 const (
-	LoadBalancerCondition = "LoadBalancer"
-	LoadBalancerPhase     = "Generate load balancer"
+	LoadBalancerCondition = "LoadBalancerReady"
+	LoadBalancerPhase     = "LoadBalancer"
 )
 
 type LoadBalancerReconciler struct {
@@ -32,7 +32,7 @@ type LoadBalancerReconciler struct {
 	name   string
 }
 
-func NewLoadBalancerReconciler(client client.Client, scheme *runtime.Scheme, reconciler common.Reconciler) controller.K8sReconciler {
+func NewLoadBalancerReconciler(client client.Client, scheme *runtime.Scheme, reconciler common.Reconciler) controller.K8sPhaseReconciler {
 	return &LoadBalancerReconciler{
 		Reconciler: reconciler,
 		Client:     client,
@@ -252,7 +252,7 @@ func (r *LoadBalancerReconciler) OnSuccess(ctx context.Context, resource client.
 			Type:    LoadBalancerCondition,
 			Reason:  "Success",
 			Status:  metav1.ConditionTrue,
-			Message: "Load balancer is up to date",
+			Message: "Ready",
 		})
 	}
 

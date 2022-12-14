@@ -53,7 +53,7 @@ func BuildStatefulsets(es *elasticsearchapi.Elasticsearch) (statefullsets []appv
 			if err != nil {
 				return nil, errors.Wrapf(err, "Error when generate checksum for %s/%s", configMap.Name, file)
 			}
-			configMapChecksumAnnotations[fmt.Sprintf("%s/checksum-%s", elasticsearchAnnotationKey, file)] = sum
+			configMapChecksumAnnotations[fmt.Sprintf("%s/checksum-%s", ElasticsearchAnnotationKey, file)] = sum
 		}
 	}
 

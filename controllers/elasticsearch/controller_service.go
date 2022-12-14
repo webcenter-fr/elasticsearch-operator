@@ -21,8 +21,8 @@ import (
 )
 
 const (
-	ServiceCondition = "Service"
-	ServicePhase     = "Generate services"
+	ServiceCondition = "ServiceReady"
+	ServicePhase     = "Service"
 )
 
 type ServiceReconciler struct {
@@ -32,7 +32,7 @@ type ServiceReconciler struct {
 	name   string
 }
 
-func NewServiceReconciler(client client.Client, scheme *runtime.Scheme, reconciler common.Reconciler) controller.K8sReconciler {
+func NewServiceReconciler(client client.Client, scheme *runtime.Scheme, reconciler common.Reconciler) controller.K8sPhaseReconciler {
 	return &ServiceReconciler{
 		Reconciler: reconciler,
 		Client:     client,
@@ -70,7 +70,7 @@ func (r *ServiceReconciler) Read(ctx context.Context, resource client.Object, da
 	serviceList := &corev1.ServiceList{}
 
 	// Read current node group services
-	labelSelectors, err := labels.Parse(fmt.Sprintf("cluster=%s,%s=true", o.Name, elasticsearchAnnotationKey))
+	labelSelectors, err := labels.Parse(fmt.Sprintf("cluster=%s,%s=true", o.Name, ElasticsearchAnnotationKey))
 	if err != nil {
 		return res, errors.Wrap(err, "Error when generate label selector")
 	}
@@ -266,7 +266,7 @@ func (r *ServiceReconciler) OnSuccess(ctx context.Context, resource client.Objec
 			Type:    ServiceCondition,
 			Reason:  "Success",
 			Status:  metav1.ConditionTrue,
-			Message: "Services are up to date",
+			Message: "Ready",
 		})
 	}
 

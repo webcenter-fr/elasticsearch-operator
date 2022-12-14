@@ -21,8 +21,8 @@ import (
 )
 
 const (
-	CredentialCondition = "Credential"
-	CredentialPhase     = "Generate credential"
+	CredentialCondition = "CredentialReady"
+	CredentialPhase     = "Credential"
 )
 
 type CredentialReconciler struct {
@@ -32,7 +32,7 @@ type CredentialReconciler struct {
 	name   string
 }
 
-func NewCredentialReconciler(client client.Client, scheme *runtime.Scheme, reconciler common.Reconciler) controller.K8sReconciler {
+func NewCredentialReconciler(client client.Client, scheme *runtime.Scheme, reconciler common.Reconciler) controller.K8sPhaseReconciler {
 	return &CredentialReconciler{
 		Reconciler: reconciler,
 		Client:     client,
@@ -249,7 +249,7 @@ func (r *CredentialReconciler) OnSuccess(ctx context.Context, resource client.Ob
 			Type:    CredentialCondition,
 			Reason:  "Success",
 			Status:  metav1.ConditionTrue,
-			Message: "Credential secret is up to date",
+			Message: "Ready",
 		})
 	}
 

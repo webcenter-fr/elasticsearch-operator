@@ -3,7 +3,10 @@ package elasticsearch
 import (
 	"context"
 	"fmt"
+	"strings"
+	"time"
 
+	"github.com/codingsince1985/checksum"
 	"github.com/disaster37/k8s-objectmatcher/patch"
 	"github.com/disaster37/operator-sdk-extra/pkg/controller"
 	"github.com/disaster37/operator-sdk-extra/pkg/helper"
@@ -17,6 +20,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime"
+	podutil "k8s.io/kubectl/pkg/util/podutils"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
@@ -24,21 +28,16 @@ import (
 type statefulsetPhase string
 
 const (
-	StatefulsetCondition = "Statefulset"
-	StatefulsetPhase     = "Generate statefullset"
+	StatefulsetCondition        = "StatefulsetReady"
+	StatefulsetConditionUpgrade = "StatefulsetUpgrade"
+	StatefulsetPhase            = "Statefullset"
 )
 
-/*
 var (
-	phaseCreate                tlsPhase = "create"
-	phaseUpdateTransportPki    tlsPhase = "updateTransportPki"
-	phasePropagateTransportPki tlsPhase = "propagateTransportPki"
-	phaseUpdateCertificates    tlsPhase = "updateCertificates"
-	phasePropagateCertificates tlsPhase = "propagateCertificates"
-	phaseCleanTransportCA      tlsPhase = "cleanTransportCA"
-	phaseNormal                tlsPhase = "normal"
+	phaseStsUpgrade         statefulsetPhase = "statefulsetUpgrade"
+	phaseStsUpgradeFinished statefulsetPhase = "statefulsetUpgradeFinished"
+	phaseStsNormal          statefulsetPhase = "statefulsetNormal"
 )
-*/
 
 type StatefulsetReconciler struct {
 	common.Reconciler
@@ -47,7 +46,7 @@ type StatefulsetReconciler struct {
 	name   string
 }
 
-func NewStatefulsetReconciler(client client.Client, scheme *runtime.Scheme, reconciler common.Reconciler) controller.K8sReconciler {
+func NewStatefulsetReconciler(client client.Client, scheme *runtime.Scheme, reconciler common.Reconciler) controller.K8sPhaseReconciler {
 	return &StatefulsetReconciler{
 		Reconciler: reconciler,
 		Client:     client,
@@ -85,7 +84,7 @@ func (r *StatefulsetReconciler) Read(ctx context.Context, resource client.Object
 	stsList := &appv1.StatefulSetList{}
 
 	// Read current satefulsets
-	labelSelectors, err := labels.Parse(fmt.Sprintf("cluster=%s,%s=true", o.Name, elasticsearchAnnotationKey))
+	labelSelectors, err := labels.Parse(fmt.Sprintf("cluster=%s,%s=true", o.Name, ElasticsearchAnnotationKey))
 	if err != nil {
 		return res, errors.Wrap(err, "Error when generate label selector")
 	}
@@ -188,6 +187,54 @@ func (r *StatefulsetReconciler) Diff(ctx context.Context, resource client.Object
 	stsToUpdate := make([]appv1.StatefulSet, 0)
 	stsToCreate := make([]appv1.StatefulSet, 0)
 
+	// Add some code to avoid reconcile multiple statefullset on same time
+	// It avoid to have multiple pod that exit the cluster on same time
+
+	// Check if on current upgrade phase, to wait the end
+	if condition.IsStatusConditionPresentAndEqual(o.Status.Conditions, StatefulsetConditionUpgrade, metav1.ConditionTrue) && condition.IsStatusConditionPresentAndEqual(o.Status.Conditions, StatefulsetCondition, metav1.ConditionFalse) {
+		r.Log.Debugf("Detect phase: %s", phaseStsUpgrade)
+
+		podList := &corev1.PodList{}
+		for _, sts := range currentStatefulsets {
+			if sts.Annotations[fmt.Sprintf("%s/upgrade", ElasticsearchAnnotationKey)] == "true" {
+				// Check the pod state
+				labelSelectors := labels.SelectorFromSet(sts.Spec.Template.Labels)
+				if err = r.Client.List(ctx, podList, &client.ListOptions{Namespace: o.Namespace, LabelSelector: labelSelectors}); err != nil {
+					return diff, res, errors.Wrapf(err, "Error when read Elasticsearch pods")
+				}
+
+				isFinished := true
+				annotation := fmt.Sprintf("%s/upgrade-checksum", ElasticsearchAnnotationKey)
+				stsChecksum := sts.Spec.Template.Annotations[annotation]
+				for _, p := range podList.Items {
+					// The pod must have CA checksum annotation and need to be ready
+					if p.Annotations[annotation] == "" || p.Annotations[annotation] != stsChecksum || !podutil.IsPodReady(&p) {
+						isFinished = false
+					}
+				}
+				if !isFinished {
+					// All Sts not yet finished upgrade
+					r.Log.Info("Phase statefulset upgrade: wait pod to be ready")
+					return diff, ctrl.Result{RequeueAfter: time.Second * 30}, nil
+				}
+
+				r.Log.Infof("Statefulset %s successfully finished upgrade", sts.Name)
+
+				// Clean annotations
+				sts.Annotations[fmt.Sprintf("%s/upgrade", ElasticsearchAnnotationKey)] = "false"
+				stsToUpdate = append(stsToUpdate, sts)
+				diff.NeedUpdate = true
+
+				data["newStatefulsets"] = stsToCreate
+				data["statefulsets"] = stsToUpdate
+				data["oldStatefulsets"] = currentStatefulsets
+				data["phase"] = phaseStsUpgradeFinished
+
+				return diff, res, nil
+			}
+		}
+
+	}
 	for _, expectedSts := range expectedStatefulsets {
 		isFound := false
 		for i, currentSts := range currentStatefulsets {
@@ -203,8 +250,24 @@ func (r *StatefulsetReconciler) Diff(ctx context.Context, resource client.Object
 					updatedSts := patchResult.Patched.(*appv1.StatefulSet)
 					diff.NeedUpdate = true
 					diff.Diff.WriteString(fmt.Sprintf("diff %s: %s\n", updatedSts.Name, string(patchResult.Patch)))
+
+					// Add annotations to wait reconcile
+					updatedSts.Annotations[fmt.Sprintf("%s/upgrade", ElasticsearchAnnotationKey)] = "true"
+					sum, err := checksum.SHA256sumReader(strings.NewReader(updatedSts.ResourceVersion))
+					if err != nil {
+						return diff, res, errors.Wrapf(err, "Error when generate checksum to track statefulset %s upgrade", updatedSts.Name)
+					}
+					updatedSts.Spec.Template.Annotations[fmt.Sprintf("%s/upgrade-checksum", ElasticsearchAnnotationKey)] = sum
+
 					stsToUpdate = append(stsToUpdate, *updatedSts)
 					r.Log.Debugf("Need update statefulset %s", updatedSts.Name)
+
+					data["newStatefulsets"] = stsToCreate
+					data["statefulsets"] = stsToUpdate
+					data["oldStatefulsets"] = currentStatefulsets
+					data["phase"] = phaseStsUpgrade
+
+					return diff, res, nil
 				}
 
 				// Remove items found
@@ -245,6 +308,7 @@ func (r *StatefulsetReconciler) Diff(ctx context.Context, resource client.Object
 	data["newStatefulsets"] = stsToCreate
 	data["statefulsets"] = stsToUpdate
 	data["oldStatefulsets"] = currentStatefulsets
+	data["phase"] = phaseStsNormal
 
 	return diff, res, nil
 }
@@ -270,6 +334,56 @@ func (r *StatefulsetReconciler) OnError(ctx context.Context, resource client.Obj
 // OnSuccess permit to set status condition on the right state is everithink is good
 func (r *StatefulsetReconciler) OnSuccess(ctx context.Context, resource client.Object, data map[string]any, diff controller.K8sDiff) (res ctrl.Result, err error) {
 	o := resource.(*elasticsearchapi.Elasticsearch)
+	var (
+		d any
+	)
+
+	d, err = helper.Get(data, "phase")
+	if err != nil {
+		return res, err
+	}
+	phase := d.(statefulsetPhase)
+
+	switch phase {
+	case phaseStsUpgrade:
+		condition.SetStatusCondition(&o.Status.Conditions, metav1.Condition{
+			Type:    StatefulsetCondition,
+			Reason:  "Success",
+			Status:  metav1.ConditionFalse,
+			Message: "Statefulsets are being upgraded",
+		})
+
+		condition.SetStatusCondition(&o.Status.Conditions, metav1.Condition{
+			Type:    StatefulsetConditionUpgrade,
+			Reason:  "Success",
+			Status:  metav1.ConditionTrue,
+			Message: "Statefulsets are being upgraded",
+		})
+
+		r.Recorder.Eventf(resource, corev1.EventTypeNormal, "Completed", "Statefulsets are being upgraded")
+
+		return ctrl.Result{Requeue: true}, nil
+
+	case phaseStsUpgradeFinished:
+		condition.SetStatusCondition(&o.Status.Conditions, metav1.Condition{
+			Type:    StatefulsetCondition,
+			Reason:  "Success",
+			Status:  metav1.ConditionTrue,
+			Message: "Statefulsets are ready",
+		})
+
+		condition.SetStatusCondition(&o.Status.Conditions, metav1.Condition{
+			Type:    StatefulsetConditionUpgrade,
+			Reason:  "Success",
+			Status:  metav1.ConditionTrue,
+			Message: "Statefulsets are finished to be upgraded",
+		})
+
+		r.Recorder.Eventf(resource, corev1.EventTypeNormal, "Completed", "Statefulsets are finished to be upgraded")
+
+		return ctrl.Result{Requeue: true}, nil
+
+	}
 
 	if diff.NeedCreate || diff.NeedUpdate || diff.NeedDelete {
 		r.Recorder.Eventf(resource, corev1.EventTypeNormal, "Completed", "Statefulsets successfully updated")
@@ -281,7 +395,16 @@ func (r *StatefulsetReconciler) OnSuccess(ctx context.Context, resource client.O
 			Type:    StatefulsetCondition,
 			Reason:  "Success",
 			Status:  metav1.ConditionTrue,
-			Message: "Statefulsets are up to date",
+			Message: "Ready",
+		})
+	}
+
+	if !condition.IsStatusConditionPresentAndEqual(o.Status.Conditions, StatefulsetConditionUpgrade, metav1.ConditionFalse) {
+		condition.SetStatusCondition(&o.Status.Conditions, metav1.Condition{
+			Type:    StatefulsetConditionUpgrade,
+			Reason:  "Success",
+			Status:  metav1.ConditionFalse,
+			Message: "No current upgrade",
 		})
 	}
 

@@ -158,7 +158,7 @@ func GetNodeGroupNameFromNodeName(nodeName string) (nodeGroupName string) {
 func getLabels(elasticsearch *elasticsearchapi.Elasticsearch, customLabels ...map[string]string) (labels map[string]string) {
 	labels = map[string]string{
 		"cluster":                  elasticsearch.Name,
-		elasticsearchAnnotationKey: "true",
+		ElasticsearchAnnotationKey: "true",
 	}
 	for _, label := range customLabels {
 		for key, val := range label {
@@ -174,7 +174,7 @@ func getLabels(elasticsearch *elasticsearchapi.Elasticsearch, customLabels ...ma
 // getLabels permit to return global label must be set on all resources
 func getAnnotations(elasticsearch *elasticsearchapi.Elasticsearch, customAnnotation ...map[string]string) (annotations map[string]string) {
 	annotations = map[string]string{
-		elasticsearchAnnotationKey: "true",
+		ElasticsearchAnnotationKey: "true",
 	}
 	for _, annotation := range customAnnotation {
 		for key, val := range annotation {
