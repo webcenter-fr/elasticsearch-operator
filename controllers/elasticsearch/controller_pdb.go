@@ -181,7 +181,9 @@ func (r *PdbReconciler) Diff(ctx context.Context, resource client.Object, data m
 			if currentPdb.Name == expectedPdb.Name {
 				isFound = true
 
-				patchResult, err := patch.DefaultPatchMaker.Calculate(&currentPdb, &expectedPdb, patch.CleanMetadata(), patch.IgnoreStatusFields())
+				// Copy TypeMeta to work with IgnorePDBSelector()
+				expectedPdb.TypeMeta = currentPdb.TypeMeta
+				patchResult, err := patch.DefaultPatchMaker.Calculate(&currentPdb, &expectedPdb, patch.IgnorePDBSelector(), patch.CleanMetadata(), patch.IgnoreStatusFields())
 				if err != nil {
 					return diff, res, errors.Wrapf(err, "Error when diffing pdb %s", currentPdb.Name)
 				}

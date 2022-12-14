@@ -364,13 +364,11 @@ fi`,
 			WithPodTemplateSpec(nodeGroup.PodTemplate, k8sbuilder.Merge)
 
 		// Compute labels
-		ptb.WithLabels(es.Labels).
+		ptb.WithLabels(getLabels(es, map[string]string{
+			"nodeGroup": nodeGroup.Name,
+		})).
 			WithLabels(es.Spec.GlobalNodeGroup.Labels, k8sbuilder.Merge).
-			WithLabels(nodeGroup.Labels, k8sbuilder.Merge).
-			WithLabels(map[string]string{
-				"cluster":   es.Name,
-				"nodeGroup": nodeGroup.Name,
-			}, k8sbuilder.Merge)
+			WithLabels(nodeGroup.Labels, k8sbuilder.Merge)
 
 		// Compute annotations
 		ptb.WithAnnotations(configMapChecksumAnnotations, k8sbuilder.Merge)
