@@ -355,9 +355,6 @@ func (r *TlsReconciler) Diff(ctx context.Context, resource client.Object, data m
 	if sTransport == nil {
 		r.Log.Debugf("Detect phase: %s", phaseCreate)
 
-		// @ TODO handle is stranport secret has been deleted
-		// Need to delete all pod to force to reconcil with right ca
-
 		diff.Diff.WriteString("Generate new certificates\n")
 
 		// Generate transport PKI
@@ -779,6 +776,30 @@ func (r *TlsReconciler) OnSuccess(ctx context.Context, resource client.Object, d
 
 	switch phase {
 	case phaseCreate:
+
+		// Check if pod already exist. Need to delete them to have a chance to reconcile
+		// It's a kind of last hope
+		// Need to delete all pod to force to reconcil with right ca / certificates
+		podList := &corev1.PodList{}
+		labelSelectors, err := labels.Parse(fmt.Sprintf("cluster=%s,%s=true", o.Name, elasticsearchAnnotationKey))
+		if err != nil {
+			return res, errors.Wrap(err, "Error when generate label selector")
+		}
+		if err = r.Client.List(ctx, podList, &client.ListOptions{Namespace: o.Namespace, LabelSelector: labelSelectors}, &client.ListOptions{}); err != nil {
+			return res, errors.Wrapf(err, "Error when read Elasticsearch pods")
+		}
+		if len(podList.Items) > 0 {
+			r.Log.Warn("Transport secret have been deleted and Elasticsearch pods already exists. Start to delete them for the last hope to reconcile")
+			for _, p := range podList.Items {
+				if err = r.Client.Delete(ctx, &p); err != nil {
+					return res, errors.Wrapf(err, "Error when delete pod %s", p.Name)
+				}
+				r.Log.Infof("Successfully delete pod %s", p.Name)
+			}
+
+			r.Recorder.Eventf(resource, corev1.EventTypeNormal, "Completed", "Existing pod successfully deleted")
+		}
+
 		r.Recorder.Eventf(resource, corev1.EventTypeNormal, "Completed", "Tls secrets successfully generated")
 
 		condition.SetStatusCondition(&o.Status.Conditions, metav1.Condition{
