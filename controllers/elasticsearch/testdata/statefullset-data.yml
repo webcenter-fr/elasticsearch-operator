@@ -22,6 +22,7 @@ spec:
       labels:
         cluster: test
         nodeGroup: data
+        elasticsearch.k8s.webcenter.fr: "true"
       annotations:
         elasticsearch.k8s.webcenter.fr/checksum-elasticsearch.yml: 2a0a8650b1d7a5f22e433877319457161489869868b894d448b2616477b521aa
         elasticsearch.k8s.webcenter.fr/checksum-log4.yaml: 949e3031476b60f9f8cea06e1d683f3fb6e689856bdc58590036fd018c40149c
@@ -244,3 +245,7 @@ spec:
       - name: elasticsearch-keystore
         secret:
           secretName: elasticsearch-security
+      - name: config
+        emptyDir: {}
+      - name: plugin
+        emptyDir: {}

@@ -181,10 +181,6 @@ func BuildStatefulsets(es *elasticsearchapi.Elasticsearch) (statefullsets []appv
 						},
 					},
 				},
-				{
-					Name:  "PROB_WAIT_STATUS",
-					Value: nodeGroup.WaitClusterStatus,
-				},
 			}, k8sbuilder.Merge)
 		if len(es.Spec.NodeGroups) == 1 && es.Spec.NodeGroups[0].Replicas == 1 {
 			// Cluster with only one node
@@ -207,6 +203,21 @@ func BuildStatefulsets(es *elasticsearchapi.Elasticsearch) (statefullsets []appv
 				{
 					Name:  "PROBE_SCHEME",
 					Value: "http",
+				},
+			}, k8sbuilder.Merge)
+		}
+		if nodeGroup.WaitClusterStatus == "" {
+			cb.WithEnv([]corev1.EnvVar{
+				{
+					Name:  "PROBE_WAIT_STATUS",
+					Value: "green",
+				},
+			}, k8sbuilder.Merge)
+		} else {
+			cb.WithEnv([]corev1.EnvVar{
+				{
+					Name:  "PROBE_WAIT_STATUS",
+					Value: nodeGroup.WaitClusterStatus,
 				},
 			}, k8sbuilder.Merge)
 		}
@@ -303,9 +314,10 @@ func BuildStatefulsets(es *elasticsearchapi.Elasticsearch) (statefullsets []appv
 			ProbeHandler: corev1.ProbeHandler{
 				Exec: &corev1.ExecAction{
 					Command: []string{
-						"bash",
+						"/bin/bash",
 						"-c",
-						`set -euo pipefail
+						`#!/usr/bin/env bash
+set -euo pipefail
 
 # Implementation based on Elasticsearch helm template
 
@@ -313,33 +325,34 @@ export NSS_SDB_USE_CACHE=no
 
 STARTER_FILE=/tmp/.es_starter_file
 if [ -f ${STARTER_FILE} ]; then
-	HTTP_CODE=$(curl --output /dev/null -k -XGET -s -w '%{http_code}' -u elastic:${ELASTIC_PASSWORD} ${PROBE_SCHEME}://127.0.0.1:9200/)
-	RC=$?
-	if [[ ${RC} -ne 0 ]]; then
-		echo "Failed to get Elasticsearch API"
-		exit ${RC}
-	fi
-	if [[ ${HTTP_CODE} == "200" ]]; then
-		exit 0
-	else
-		echo "Elasticsearch API return code ${HTTP_CODE}
-		exit 1
-	fi
+  HTTP_CODE=$(curl --output /dev/null -k -XGET -s -w '%{http_code}' -u elastic:${ELASTIC_PASSWORD} ${PROBE_SCHEME}://127.0.0.1:9200/)
+  RC=$?
+  if [[ ${RC} -ne 0 ]]; then
+    echo "Failed to get Elasticsearch API"
+    exit ${RC}
+  fi
+  if [[ ${HTTP_CODE} == "200" ]]; then
+    exit 0
+  else
+    echo "Elasticsearch API return code ${HTTP_CODE}
+    exit 1
+  fi
 else
-  	HTTP_CODE=$(curl --output /dev/null -k -XGET -s -w '%{http_code}' -u elastic:${ELASTIC_PASSWORD} --fail ${PROBE_SCHEME}://127.0.0.1:9200/_cluster/health?wait_for_status=${PROB_WAIT_STATUS}&timeout=1s)
-	RC=$?
-	if [[ ${RC} -ne 0 ]]; then
-		echo "Failed to get Elasticsearch API"
-		exit ${RC}
-	fi
-	if [[ ${HTTP_CODE} == "200" ]]; then
-		touch ${STARTER_FILE}
-		exit 0
-	else
-		echo "Elasticsearch API return code ${HTTP_CODE}
-		exit 1
-	fi
-fi`,
+  HTTP_CODE=$(curl --output /dev/null -k -XGET -s -w '%{http_code}' -u elastic:${ELASTIC_PASSWORD} --fail ${PROBE_SCHEME}://127.0.0.1:9200/_cluster/health?wait_for_status=${PROBE_WAIT_STATUS}&timeout=1s)
+  RC=$?
+  if [[ ${RC} -ne 0 ]]; then
+    echo "Failed to get Elasticsearch API"
+    exit ${RC}
+  fi
+  if [[ ${HTTP_CODE} == "200" ]]; then
+    touch ${STARTER_FILE}
+    exit 0
+  else
+    echo "Elasticsearch API return code ${HTTP_CODE}
+    exit 1
+  fi
+fi
+`,
 					},
 				},
 			},
@@ -526,8 +539,8 @@ cp -a /usr/share/elasticsearch/config/* /mnt/config/
 
 # Move configmaps
 if [ -d /mnt/configmap ]; then
-	echo "Move custom configs"
-	cp -rf /mnt/configmap/* /mnt/config/
+  echo "Move custom configs"
+  cp -rf /mnt/configmap/* /mnt/config/
 fi
 
 # Move certificates
@@ -540,15 +553,15 @@ cp /mnt/certs/node/${POD_NAME}.key /mnt/config/transport-cert/
 
 # Move keystore
 if [ -f /mnt/keystore/elasticsearch.keystore ]; then
-    echo "Move keystore"
-	cp /mnt/keystore/elasticsearch.keystore /mnt/config
+  echo "Move keystore"
+  cp /mnt/keystore/elasticsearch.keystore /mnt/config
 fi
 
 # Set right
 echo "Set right"
 chown -R elasticsearch:elasticsearch /mnt/config
 if [ -d /mnt/data ]; then
-	chown -v elasticsearch:elasticsearch /mnt/data
+  chown -v elasticsearch:elasticsearch /mnt/data
 fi
 
 `)
@@ -557,11 +570,11 @@ fi
 		}
 		command.WriteString(`
 if [ -d /mnt/plugins ]; then
- cp -a /usr/share/elasticsearch/plugins/* /mnt/plugins/
+  cp -a /usr/share/elasticsearch/plugins/* /mnt/plugins/
 fi
 `)
 		ccb.Container().Command = []string{
-			"sh",
+			"/bin/bash",
 			"-c",
 			command.String(),
 		}
