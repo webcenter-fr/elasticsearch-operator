@@ -33,7 +33,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 
 	"github.com/sirupsen/logrus"
-	elasticsearchv1alpha1 "github.com/webcenter-fr/elasticsearch-operator/api/v1alpha1"
+	elasticsearchapi "github.com/webcenter-fr/elasticsearch-operator/api/v1alpha1"
 	"github.com/webcenter-fr/elasticsearch-operator/controllers"
 	"github.com/webcenter-fr/elasticsearch-operator/pkg/helper"
 	//+kubebuilder:scaffold:imports
@@ -49,7 +49,7 @@ var (
 func init() {
 	utilruntime.Must(clientgoscheme.AddToScheme(scheme))
 
-	utilruntime.Must(elasticsearchv1alpha1.AddToScheme(scheme))
+	utilruntime.Must(elasticsearchapi.AddToScheme(scheme))
 	//+kubebuilder:scaffold:scheme
 }
 

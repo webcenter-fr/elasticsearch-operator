@@ -235,7 +235,7 @@ func (h *ElasticsearchReconciler) OnSuccess(ctx context.Context, r client.Object
 		return res, nil
 	}
 
-	if !condition.IsStatusConditionPresentAndEqual(o.Status.Conditions, ElasticsearchCondition, metav1.ConditionFalse) {
+	if !condition.IsStatusConditionPresentAndEqual(o.Status.Conditions, ElasticsearchCondition, metav1.ConditionFalse) || (condition.FindStatusCondition(o.Status.Conditions, ElasticsearchCondition) != nil && condition.FindStatusCondition(o.Status.Conditions, ElasticsearchCondition).Reason != "NotReady") {
 		condition.SetStatusCondition(&o.Status.Conditions, metav1.Condition{
 			Type:   ElasticsearchCondition,
 			Status: metav1.ConditionFalse,
@@ -248,9 +248,7 @@ func (h *ElasticsearchReconciler) OnSuccess(ctx context.Context, r client.Object
 
 	return ctrl.Result{RequeueAfter: time.Second * 30}, nil
 }
-func (h *ElasticsearchReconciler) Diff(ctx context.Context, r client.Object, data map[string]any) (diff controller.K8sDiff, res ctrl.Result, err error) {
-	return
-}
+
 func (h *ElasticsearchReconciler) Name() string {
 	return "elasticsearch"
 }
