@@ -1,12 +1,13 @@
 package elasticsearch
 
 import (
+	"bytes"
 	"context"
-	"crypto/sha256"
 	"crypto/x509"
 	"fmt"
 	"time"
 
+	"github.com/codingsince1985/checksum"
 	"github.com/disaster37/goca"
 	"github.com/disaster37/goca/cert"
 	"github.com/disaster37/operator-sdk-extra/pkg/controller"
@@ -15,8 +16,8 @@ import (
 	"github.com/thoas/go-funk"
 	elasticsearchapi "github.com/webcenter-fr/elasticsearch-operator/api/v1alpha1"
 	"github.com/webcenter-fr/elasticsearch-operator/controllers/common"
-	"github.com/webcenter-fr/elasticsearch-operator/pkg/pki"
 	localhelper "github.com/webcenter-fr/elasticsearch-operator/pkg/helper"
+	"github.com/webcenter-fr/elasticsearch-operator/pkg/pki"
 	appv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
@@ -885,7 +886,10 @@ func (r *TlsReconciler) OnSuccess(ctx context.Context, resource client.Object, d
 		podList := &corev1.PodList{}
 		// Then, check if all Sts receive the new CA
 		annotation := fmt.Sprintf("%s/ca-checksum", ElasticsearchAnnotationKey)
-		caChecksum := fmt.Sprintf("%x", sha256.Sum256(sTransportPki.Data["ca.crt"]))
+		caChecksum, err := checksum.SHA256sumReader(bytes.NewReader(sTransportPki.Data["ca.crt"]))
+		if err != nil {
+			return res, errors.Wrap(err, "Error when generate checksum from ca.crt")
+		}
 		labelSelectors, err := labels.Parse(fmt.Sprintf("cluster=%s,%s=true", o.Name, ElasticsearchAnnotationKey))
 		if err != nil {
 			return res, errors.Wrap(err, "Error when generate label selector")
@@ -969,7 +973,10 @@ func (r *TlsReconciler) OnSuccess(ctx context.Context, resource client.Object, d
 		stsList := &appv1.StatefulSetList{}
 		podList := &corev1.PodList{}
 		annotation := fmt.Sprintf("%s/ca-checksum", ElasticsearchAnnotationKey)
-		caChecksum := fmt.Sprintf("%x", sha256.Sum256(sTransport.Data["ca.crt"]))
+		caChecksum, err := checksum.SHA256sumReader(bytes.NewReader(sTransport.Data["ca.crt"]))
+		if err != nil {
+			return res, errors.Wrap(err, "Error when generate checksum from ca.crt")
+		}
 		labelSelectors, err := labels.Parse(fmt.Sprintf("cluster=%s,%s=true", o.Name, ElasticsearchAnnotationKey))
 		if err != nil {
 			return res, errors.Wrap(err, "Error when generate label selector")
