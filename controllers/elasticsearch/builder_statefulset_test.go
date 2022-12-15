@@ -91,7 +91,7 @@ func TestBuildStatefulset(t *testing.T) {
 					Type:        "hard",
 				},
 				Config: map[string]string{
-					"log4.yaml": "my log4j",
+					"log4j.yaml": "my log4j",
 				},
 			},
 			NodeGroups: []elasticsearchapi.NodeGroupSpec{
@@ -297,7 +297,7 @@ func TestComputeInitialMasterNodes(t *testing.T) {
 		},
 	}
 
-	assert.Equal(t, "test-master-es-0 test-master-es-1 test-master-es-2", computeInitialMasterNodes(o))
+	assert.Equal(t, "test-master-es-0, test-master-es-1, test-master-es-2", computeInitialMasterNodes(o))
 
 	// With multiple node groups
 	o = &elasticsearchapi.Elasticsearch{
@@ -327,7 +327,7 @@ func TestComputeInitialMasterNodes(t *testing.T) {
 		},
 	}
 
-	assert.Equal(t, "test-all-es-0 test-all-es-1 test-all-es-2 test-master-es-0 test-master-es-1 test-master-es-2", computeInitialMasterNodes(o))
+	assert.Equal(t, "test-all-es-0, test-all-es-1, test-all-es-2, test-master-es-0, test-master-es-1, test-master-es-2", computeInitialMasterNodes(o))
 }
 
 func TestComputeDiscoverySeedHosts(t *testing.T) {
@@ -386,42 +386,25 @@ func TestComputeDiscoverySeedHosts(t *testing.T) {
 		},
 	}
 
-	assert.Equal(t, "test-all-headless-es test-master-headless-es", computeDiscoverySeedHosts(o))
+	assert.Equal(t, "test-all-headless-es, test-master-headless-es", computeDiscoverySeedHosts(o))
 }
 
 func TestComputeRoles(t *testing.T) {
-	roles := []string{
+	var roles []string
+
+	roles = []string{
 		"master",
 	}
 
-	expectedEnvs := []corev1.EnvVar{
-		{
-			Name:  "node.master",
-			Value: "true",
-		},
-		{
-			Name:  "node.data",
-			Value: "false",
-		},
-		{
-			Name:  "node.ingest",
-			Value: "false",
-		},
-		{
-			Name:  "node.ml",
-			Value: "false",
-		},
-		{
-			Name:  "node.remote_cluster_client",
-			Value: "false",
-		},
-		{
-			Name:  "node.transform",
-			Value: "false",
-		},
+	assert.Equal(t, "master", computeRoles(roles))
+
+	roles = []string{
+		"master",
+		"data",
+		"ingest",
 	}
 
-	assert.Equal(t, expectedEnvs, computeRoles(roles))
+	assert.Equal(t, "master, data, ingest", computeRoles(roles))
 }
 
 func TestComputeAntiAffinity(t *testing.T) {

@@ -25,7 +25,7 @@ spec:
         elasticsearch.k8s.webcenter.fr: "true"
       annotations:
         elasticsearch.k8s.webcenter.fr/checksum-elasticsearch.yml: 2a0a8650b1d7a5f22e433877319457161489869868b894d448b2616477b521aa
-        elasticsearch.k8s.webcenter.fr/checksum-log4.yaml: 949e3031476b60f9f8cea06e1d683f3fb6e689856bdc58590036fd018c40149c
+        elasticsearch.k8s.webcenter.fr/checksum-log4j.yaml: 949e3031476b60f9f8cea06e1d683f3fb6e689856bdc58590036fd018c40149c
       name: test-data-es
     spec:
       affinity:
@@ -37,32 +37,24 @@ spec:
                 nodeGroup: data
             topologyKey: rack
       containers:
-      - command:
-        - sh
-        - -c
-        - |
-          #!/usr/bin/env bash
-          set -euo pipefail
-
-          if [[ -f /mnt/keystore/elasticsearch.keystore ]]; then
-            cp /mnt/keystore/elasticsearch.keystore /usr/share/elasticsearch/config/elasticsearch.keystore
-          fi
-
-          ./bin/elasticsearch-plugin install -b repository-s3
-          bash elasticsearch-docker-entrypoint.sh
-        env:
-        - name: node.master
-          value: "false"
-        - name: node.data
-          value: "true"
-        - name: node.ingest
-          value: "false"
-        - name: node.ml
-          value: "false"
-        - name: node.remote_cluster_client
-          value: "false"
-        - name: node.transform
-          value: "false"
+      - env:
+        - name: network.publish_host
+          valueFrom:
+            fieldRef:
+              apiVersion: v1
+              fieldPath: status.podIP
+        - name: node.attr.node_name
+          valueFrom:
+            fieldRef:
+              apiVersion: v1
+              fieldPath: spec.nodeName
+        - name: node.name
+          valueFrom:
+            fieldRef:
+              apiVersion: v1
+              fieldPath: metadata.name
+        - name: node.roles
+          value: data
         - name: ELASTIC_PASSWORD
           valueFrom:
             secretKeyRef:
@@ -91,15 +83,17 @@ spec:
         - name: ELASTICSEARCH_JAVA_OPTS
           value: -Xms30g -Xmx30g
         - name: cluster.initial_master_nodes
-          value: test-master-es-0 test-master-es-1 test-master-es-2
+          value: test-master-es-0, test-master-es-1, test-master-es-2
         - name: discovery.seed_hosts
           value: test-master-headless-es
         - name: cluster.name
           value: test
         - name: network.host
           value: 0.0.0.0
-        - name: bootstrap.memory_lock
-          value: "true"
+        - name: PROBE_WAIT_STATUS
+          value: green
+        - name: PROBE_SCHEME
+          value: https
         image: docker.elastic.co/elasticsearch/elasticsearch:2.3.0
         livenessProbe:
           failureThreshold: 10
@@ -120,8 +114,47 @@ spec:
           failureThreshold: 3
           periodSeconds: 30
           successThreshold: 1
-          tcpSocket:
-            port: 9200
+          exec:
+            command:
+              - /bin/bash
+              - -c
+              - |
+                  #!/usr/bin/env bash
+                  set -euo pipefail
+
+                  # Implementation based on Elasticsearch helm template
+
+                  export NSS_SDB_USE_CACHE=no
+
+                  STARTER_FILE=/tmp/.es_starter_file
+                  if [ -f ${STARTER_FILE} ]; then
+                    HTTP_CODE=$(curl --output /dev/null -k -XGET -s -w '%{http_code}' -u elastic:${ELASTIC_PASSWORD} ${PROBE_SCHEME}://127.0.0.1:9200/)
+                    RC=$?
+                    if [[ ${RC} -ne 0 ]]; then
+                      echo "Failed to get Elasticsearch API"
+                      exit ${RC}
+                    fi
+                    if [[ ${HTTP_CODE} == "200" ]]; then
+                      exit 0
+                    else
+                      echo "Elasticsearch API return code ${HTTP_CODE}
+                      exit 1
+                    fi
+                  else
+                    HTTP_CODE=$(curl --output /dev/null -k -XGET -s -w '%{http_code}' -u elastic:${ELASTIC_PASSWORD} --fail ${PROBE_SCHEME}://127.0.0.1:9200/_cluster/health?wait_for_status=${PROBE_WAIT_STATUS}&timeout=1s)
+                    RC=$?
+                    if [[ ${RC} -ne 0 ]]; then
+                      echo "Failed to get Elasticsearch API"
+                      exit ${RC}
+                    fi
+                    if [[ ${HTTP_CODE} == "200" ]]; then
+                      touch ${STARTER_FILE}
+                      exit 0
+                    else
+                      echo "Elasticsearch API return code ${HTTP_CODE}
+                      exit 1
+                    fi
+                  fi
           timeoutSeconds: 5
         resources:
           limits:
@@ -147,20 +180,12 @@ spec:
         volumeMounts:
         - mountPath: /mnt/snapshot
           name: snapshot
-        - mountPath: /usr/share/elasticsearch/config/certs/node
-          name: node-tls
-        - mountPath: /usr/share/elasticsearch/config/certs/api
-          name: api-tls
         - mountPath: /usr/share/elasticsearch/data
           name: elasticsearch-data
-        - mountPath: /usr/share/elasticsearch/config/elasticsearch.yml
-          name: elasticsearch-config
-          subPath: elasticsearch.yml
-        - mountPath: /usr/share/elasticsearch/config/log4.yaml
-          name: elasticsearch-config
-          subPath: log4.yaml
-        - mountPath: /mnt/keystore
-          name: keystore
+        - mountPath: /usr/share/elasticsearch/config
+          name: config
+        - mountPath: /usr/share/elasticsearch/plugins
+          name: plugin 
       initContainers:
       - command:
         - sysctl
@@ -213,6 +238,99 @@ spec:
             mountPath: /mnt/keystore
           - name: elasticsearch-keystore
             mountPath: /mnt/keystoreSecrets
+      - command:
+        - /bin/bash
+        - -c
+        - |
+            #!/usr/bin/env bash
+            set -euo pipefail
+            
+            # Move original config
+            echo "Move original elasticsearch configs"
+            cp -a /usr/share/elasticsearch/config/* /mnt/config/
+
+            # Move configmaps
+            if [ -d /mnt/configmap ]; then
+              echo "Move custom configs"
+              cp -rf /mnt/configmap/* /mnt/config/
+            fi
+
+            # Move certificates
+            echo "Move cerficates"
+            mkdir -p /mnt/config/api-cert /mnt/config/transport-cert
+            cp /mnt/certs/api/* /mnt/config/api-cert/
+            cp /mnt/certs/node/ca.crt /mnt/config/transport-cert/
+            cp /mnt/certs/node/${POD_NAME}.crt /mnt/config/transport-cert/
+            cp /mnt/certs/node/${POD_NAME}.key /mnt/config/transport-cert/
+
+            # Move keystore
+            if [ -f /mnt/keystore/elasticsearch.keystore ]; then
+              echo "Move keystore"
+              cp /mnt/keystore/elasticsearch.keystore /mnt/config
+            fi
+
+            # Set right
+            echo "Set right"
+            chown -R elasticsearch:elasticsearch /mnt/config
+            if [ -d /mnt/data ]; then
+              chown -v elasticsearch:elasticsearch /mnt/data
+            fi
+
+            ./bin/elasticsearch-plugin install -b repository-s3
+
+            if [ -d /mnt/plugins ]; then
+              cp -a /usr/share/elasticsearch/plugins/* /mnt/plugins/
+            fi
+
+        image: docker.elastic.co/elasticsearch/elasticsearch:2.3.0
+        name: init-filesystem
+        env:
+        - name: POD_NAME
+          valueFrom:
+            fieldRef:
+              apiVersion: v1
+              fieldPath: metadata.name
+        - name: NODE_NAME
+          valueFrom:
+            fieldRef:
+              apiVersion: v1
+              fieldPath: spec.nodeName
+        - name: POD_IP
+          valueFrom:
+            fieldRef:
+              apiVersion: v1
+              fieldPath: status.podIP
+        - name: NAMESPACE
+          valueFrom:
+            fieldRef:
+              apiVersion: v1
+              fieldPath: metadata.namespace
+        volumeMounts:
+          - name: config
+            mountPath: /mnt/config
+          - name: node-tls
+            mountPath: /mnt/certs/node
+          - name: api-tls
+            mountPath: /mnt/certs/api
+          - name: elasticsearch-config
+            mountPath: /mnt/configmap/elasticsearch.yml
+            subPath: elasticsearch.yml
+          - name: elasticsearch-config
+            mountPath: /mnt/configmap/log4j.yaml
+            subPath: log4j.yaml
+          - name: elasticsearch-data
+            mountPath: /mnt/data
+          - name: plugin
+            mountPath: /mnt/plugins
+        securityContext:
+          runAsUser: 0
+        resources:
+          limits:
+            cpu: 300m
+            memory: 500Mi
+          requests:
+            cpu: 100m
+            memory: 100Mi
       nodeSelector:
         project: elasticsearch
       securityContext:
