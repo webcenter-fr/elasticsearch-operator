@@ -16,6 +16,7 @@ import (
 	elasticsearchapi "github.com/webcenter-fr/elasticsearch-operator/api/v1alpha1"
 	"github.com/webcenter-fr/elasticsearch-operator/controllers/common"
 	"github.com/webcenter-fr/elasticsearch-operator/pkg/pki"
+	localhelper "github.com/webcenter-fr/elasticsearch-operator/pkg/helper"
 	appv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
@@ -696,12 +697,12 @@ func (r *TlsReconciler) Diff(ctx context.Context, resource client.Object, data m
 	}
 	for _, s := range secrets {
 		isUpdated := false
-		if strDiff := common.DiffLabels(getLabels(o), s.Labels); strDiff != "" {
+		if strDiff := localhelper.DiffLabels(getLabels(o), s.Labels); strDiff != "" {
 			diff.Diff.WriteString(strDiff + "\n")
 			s.Labels = getLabels(o)
 			isUpdated = true
 		}
-		if strDiff := common.DiffAnnotations(getAnnotations(o), s.Annotations); strDiff != "" {
+		if strDiff := localhelper.DiffAnnotations(getAnnotations(o), s.Annotations); strDiff != "" {
 			diff.Diff.WriteString(strDiff + "\n")
 			s.Annotations = getAnnotations(o)
 			isUpdated = true

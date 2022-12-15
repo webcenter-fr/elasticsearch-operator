@@ -25,9 +25,7 @@ import (
 	"github.com/disaster37/operator-sdk-extra/pkg/controller"
 	"github.com/sirupsen/logrus"
 	elasticsearchapi "github.com/webcenter-fr/elasticsearch-operator/api/v1alpha1"
-	elasticsearchv1alpha1 "github.com/webcenter-fr/elasticsearch-operator/api/v1alpha1"
 	"github.com/webcenter-fr/elasticsearch-operator/controllers/common"
-	"github.com/webcenter-fr/elasticsearch-operator/controllers/elasticsearch"
 	esctrl "github.com/webcenter-fr/elasticsearch-operator/controllers/elasticsearch"
 	appv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -89,7 +87,7 @@ func (r *ElasticsearchReconciler) Reconcile(ctx context.Context, req ctrl.Reques
 		return ctrl.Result{}, err
 	}
 
-	es := &elasticsearchv1alpha1.Elasticsearch{}
+	es := &elasticsearchapi.Elasticsearch{}
 	data := map[string]any{}
 
 	tlsReconsiler := esctrl.NewTlsReconciler(r.Client, r.Scheme, common.Reconciler{
@@ -163,7 +161,7 @@ func (r *ElasticsearchReconciler) Reconcile(ctx context.Context, req ctrl.Reques
 // SetupWithManager sets up the controller with the Manager.
 func (h *ElasticsearchReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
-		For(&elasticsearchv1alpha1.Elasticsearch{}).
+		For(&elasticsearchapi.Elasticsearch{}).
 		Owns(&corev1.ConfigMap{}).
 		Owns(&corev1.Secret{}).
 		Owns(&networkingv1.Ingress{}).
@@ -207,7 +205,7 @@ func (h *ElasticsearchReconciler) OnSuccess(ctx context.Context, r client.Object
 
 	// Check all statefulsets are ready to change Phase status and set main condition to true
 	stsList := &appv1.StatefulSetList{}
-	labelSelectors, err := labels.Parse(fmt.Sprintf("cluster=%s,%s=true", o.Name, elasticsearch.ElasticsearchAnnotationKey))
+	labelSelectors, err := labels.Parse(fmt.Sprintf("cluster=%s,%s=true", o.Name, esctrl.ElasticsearchAnnotationKey))
 	if err != nil {
 		return res, errors.Wrap(err, "Error when generate label selector")
 	}
