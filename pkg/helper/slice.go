@@ -5,8 +5,11 @@ import (
 	"strings"
 )
 
-// Generic function to remove item from a slice
+// DeleteItemFromSlice is a generic function to remove item from a slice
 func DeleteItemFromSlice(x any, index int) any {
+	if x == nil || reflect.ValueOf(x).IsNil() {
+		return x
+	}
 	xValue := reflect.ValueOf(x)
 	xType := xValue.Type()
 	if xType.Kind() != reflect.Slice {
@@ -24,6 +27,8 @@ func DeleteItemFromSlice(x any, index int) any {
 	return expectedSlice.Interface()
 }
 
+// StringToSlice permit to convert string with separator to slice
+// Is like strings.Split with trimSpaces each items
 func StringToSlice(value, separator string) (result []string) {
 	if value == "" {
 		return []string{}
