@@ -258,7 +258,7 @@ func doUpdateElasticsearchStep() test.TestStep {
 				"test": "fu",
 			}
 
-			data["lastUpdate"] = condition.FindStatusCondition(es.Status.Conditions, ElasticsearchCondition).LastTransitionTime
+			data["lastUpdate"] = condition.FindStatusCondition(es.Status.Conditions, LoadBalancerCondition).LastTransitionTime
 
 			if err = c.Update(context.Background(), es); err != nil {
 				return err
@@ -267,6 +267,27 @@ func doUpdateElasticsearchStep() test.TestStep {
 			return nil
 		},
 		Check: func(t *testing.T, c client.Client, key types.NamespacedName, o client.Object, data map[string]any) (err error) {
+			es := &elasticsearchapi.Elasticsearch{}
+
+			lastUpdate := data["lastUpdate"].(metav1.Time)
+
+			isTimeout, err := RunWithTimeout(func() error {
+				if err := c.Get(context.Background(), key, es); err != nil {
+					t.Fatal("Elasticsearch not found")
+				}
+
+				// In envtest, no kubelet
+				// So the Elasticsearch condition never set as true
+				if condition.FindStatusCondition(es.Status.Conditions, StatefulsetCondition).LastTransitionTime.After(lastUpdate.Time) {
+					return nil
+				}
+
+				return errors.New("Not yet updated")
+
+			}, time.Second*30, time.Second*1)
+			if err != nil || isTimeout {
+				t.Fatalf("All Elasticsearch step upgrading not finished: %s", err.Error())
+			}
 
 			return nil
 		},

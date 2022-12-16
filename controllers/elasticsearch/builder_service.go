@@ -1,6 +1,8 @@
 package elasticsearch
 
 import (
+	"fmt"
+
 	elasticsearchapi "github.com/webcenter-fr/elasticsearch-operator/api/v1alpha1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -24,9 +26,11 @@ func BuildServices(es *elasticsearchapi.Elasticsearch) (services []corev1.Servic
 	// Generate cluster service
 	service = &corev1.Service{
 		ObjectMeta: metav1.ObjectMeta{
-			Namespace:   es.Namespace,
-			Name:        GetGlobalServiceName(es),
-			Labels:      getLabels(es),
+			Namespace: es.Namespace,
+			Name:      GetGlobalServiceName(es),
+			Labels: getLabels(es, map[string]string{
+				fmt.Sprintf("%s/service", ElasticsearchAnnotationKey): "true",
+			}),
 			Annotations: getAnnotations(es),
 		},
 		Spec: corev1.ServiceSpec{
@@ -58,9 +62,12 @@ func BuildServices(es *elasticsearchapi.Elasticsearch) (services []corev1.Servic
 	for _, nodeGroup := range es.Spec.NodeGroups {
 		service = &corev1.Service{
 			ObjectMeta: metav1.ObjectMeta{
-				Namespace:   es.Namespace,
-				Name:        GetNodeGroupServiceName(es, nodeGroup.Name),
-				Labels:      getLabels(es, map[string]string{"nodeGroup": nodeGroup.Name}),
+				Namespace: es.Namespace,
+				Name:      GetNodeGroupServiceName(es, nodeGroup.Name),
+				Labels: getLabels(es, map[string]string{
+					"nodeGroup": nodeGroup.Name,
+					fmt.Sprintf("%s/service", ElasticsearchAnnotationKey): "true",
+				}),
 				Annotations: getAnnotations(es),
 			},
 			Spec: corev1.ServiceSpec{
@@ -89,9 +96,12 @@ func BuildServices(es *elasticsearchapi.Elasticsearch) (services []corev1.Servic
 
 		headlessService = &corev1.Service{
 			ObjectMeta: metav1.ObjectMeta{
-				Namespace:   es.Namespace,
-				Name:        GetNodeGroupServiceNameHeadless(es, nodeGroup.Name),
-				Labels:      getLabels(es, map[string]string{"nodeGroup": nodeGroup.Name}),
+				Namespace: es.Namespace,
+				Name:      GetNodeGroupServiceNameHeadless(es, nodeGroup.Name),
+				Labels: getLabels(es, map[string]string{
+					"nodeGroup": nodeGroup.Name,
+					fmt.Sprintf("%s/service", ElasticsearchAnnotationKey): "true",
+				}),
 				Annotations: getAnnotations(es, defaultHeadlessAnnotations),
 			},
 			Spec: corev1.ServiceSpec{

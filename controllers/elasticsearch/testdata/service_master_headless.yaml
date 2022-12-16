@@ -7,6 +7,7 @@ metadata:
     cluster: test
     nodeGroup: master
     elasticsearch.k8s.webcenter.fr: "true"
+    elasticsearch.k8s.webcenter.fr/service: "true"
   annotations:
     elasticsearch.k8s.webcenter.fr: "true"
     service.alpha.kubernetes.io/tolerate-unready-endpoints: "true"
