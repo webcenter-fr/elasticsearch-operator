@@ -34,7 +34,7 @@ import (
 
 	"github.com/sirupsen/logrus"
 	elasticsearchapi "github.com/webcenter-fr/elasticsearch-operator/api/v1alpha1"
-	"github.com/webcenter-fr/elasticsearch-operator/controllers"
+	"github.com/webcenter-fr/elasticsearch-operator/controllers/elasticsearch"
 	"github.com/webcenter-fr/elasticsearch-operator/pkg/helper"
 	//+kubebuilder:scaffold:imports
 )
@@ -127,12 +127,12 @@ func main() {
 	}
 
 	// Set platform controllers
-	elasticsearchontroller := controllers.NewElasticsearchReconciler(mgr.GetClient(), mgr.GetScheme())
+	elasticsearchontroller := elasticsearch.NewElasticsearchReconciler(mgr.GetClient(), mgr.GetScheme())
 	elasticsearchontroller.SetLogger(log.WithFields(logrus.Fields{
 		"type": "ElasticsearchController",
 	}))
 	elasticsearchontroller.SetRecorder(mgr.GetEventRecorderFor("elasticsearch-controller"))
-	elasticsearchontroller.SetReconsiler(elasticsearchontroller)
+	elasticsearchontroller.SetReconciler(elasticsearchontroller)
 	if err = elasticsearchontroller.SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "Elasticsearch")
 		os.Exit(1)

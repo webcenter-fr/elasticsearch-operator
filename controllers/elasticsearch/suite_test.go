@@ -1,4 +1,4 @@
-package controllers
+package elasticsearch
 
 import (
 	"path/filepath"
@@ -43,7 +43,7 @@ func (t *ControllerTestSuite) SetupSuite() {
 	// Setup testenv
 	testEnv = &envtest.Environment{
 		CRDDirectoryPaths: []string{
-			filepath.Join("..", "config", "crd", "bases"),
+			filepath.Join("../..", "config", "crd", "bases"),
 		},
 		ErrorIfCRDPathMissing:    true,
 		ControlPlaneStopTimeout:  120 * time.Second,
@@ -81,7 +81,7 @@ func (t *ControllerTestSuite) SetupSuite() {
 		"type": "elasticsearchController",
 	}))
 	elasticsearchReconciler.SetRecorder(k8sManager.GetEventRecorderFor("elasticsearch-controller"))
-	elasticsearchReconciler.SetReconsiler(elasticsearchReconciler)
+	elasticsearchReconciler.SetReconciler(elasticsearchReconciler)
 	if err = elasticsearchReconciler.SetupWithManager(k8sManager); err != nil {
 		panic(err)
 	}

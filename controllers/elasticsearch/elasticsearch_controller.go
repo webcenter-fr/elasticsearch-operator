@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package controllers
+package elasticsearch
 
 import (
 	"context"
@@ -26,7 +26,6 @@ import (
 	"github.com/sirupsen/logrus"
 	elasticsearchapi "github.com/webcenter-fr/elasticsearch-operator/api/v1alpha1"
 	"github.com/webcenter-fr/elasticsearch-operator/controllers/common"
-	esctrl "github.com/webcenter-fr/elasticsearch-operator/controllers/elasticsearch"
 	appv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	networkingv1 "k8s.io/api/networking/v1"
@@ -47,7 +46,7 @@ const (
 
 // ElasticsearchReconciler reconciles a Elasticsearch object
 type ElasticsearchReconciler struct {
-	Reconciler
+	common.Controller
 	client.Client
 	Scheme *runtime.Scheme
 	name   string
@@ -61,7 +60,7 @@ func NewElasticsearchReconciler(client client.Client, scheme *runtime.Scheme) *E
 		name:   "elasticsearch",
 	}
 
-	controllerMetrics.WithLabelValues(r.name).Add(0)
+	common.ControllerMetrics.WithLabelValues(r.name).Add(0)
 
 	return r
 }
@@ -82,7 +81,7 @@ func NewElasticsearchReconciler(client client.Client, scheme *runtime.Scheme) *E
 // For more details, check Reconcile and its Result here:
 // - https://pkg.go.dev/sigs.k8s.io/controller-runtime@v0.12.2/pkg/reconcile
 func (r *ElasticsearchReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
-	reconciler, err := controller.NewStdK8sReconciler(r.Client, ElasticsearchFinalizer, r.reconciler, r.log, r.recorder)
+	reconciler, err := controller.NewStdK8sReconciler(r.Client, ElasticsearchFinalizer, r.GetReconciler(), r.GetLogger(), r.GetRecorder())
 	if err != nil {
 		return ctrl.Result{}, err
 	}
@@ -90,58 +89,58 @@ func (r *ElasticsearchReconciler) Reconcile(ctx context.Context, req ctrl.Reques
 	es := &elasticsearchapi.Elasticsearch{}
 	data := map[string]any{}
 
-	tlsReconsiler := esctrl.NewTlsReconciler(r.Client, r.Scheme, common.Reconciler{
-		Recorder: r.recorder,
-		Log: r.log.WithFields(logrus.Fields{
+	tlsReconsiler := NewTlsReconciler(r.Client, r.Scheme, common.Reconciler{
+		Recorder: r.GetRecorder(),
+		Log: r.GetLogger().WithFields(logrus.Fields{
 			"phase": "tls",
 		}),
 	})
 
-	configmapReconciler := esctrl.NewConfiMapReconciler(r.Client, r.Scheme, common.Reconciler{
-		Recorder: r.recorder,
-		Log: r.log.WithFields(logrus.Fields{
+	configmapReconciler := NewConfiMapReconciler(r.Client, r.Scheme, common.Reconciler{
+		Recorder: r.GetRecorder(),
+		Log: r.GetLogger().WithFields(logrus.Fields{
 			"phase": "configmap",
 		}),
 	})
 
-	serviceReconciler := esctrl.NewServiceReconciler(r.Client, r.Scheme, common.Reconciler{
-		Recorder: r.recorder,
-		Log: r.log.WithFields(logrus.Fields{
+	serviceReconciler := NewServiceReconciler(r.Client, r.Scheme, common.Reconciler{
+		Recorder: r.GetRecorder(),
+		Log: r.GetLogger().WithFields(logrus.Fields{
 			"phase": "service",
 		}),
 	})
 
-	ingressReconciler := esctrl.NewIngressReconciler(r.Client, r.Scheme, common.Reconciler{
-		Recorder: r.recorder,
-		Log: r.log.WithFields(logrus.Fields{
+	ingressReconciler := NewIngressReconciler(r.Client, r.Scheme, common.Reconciler{
+		Recorder: r.GetRecorder(),
+		Log: r.GetLogger().WithFields(logrus.Fields{
 			"phase": "ingress",
 		}),
 	})
 
-	loadBalancerReconciler := esctrl.NewLoadBalancerReconciler(r.Client, r.Scheme, common.Reconciler{
-		Recorder: r.recorder,
-		Log: r.log.WithFields(logrus.Fields{
+	loadBalancerReconciler := NewLoadBalancerReconciler(r.Client, r.Scheme, common.Reconciler{
+		Recorder: r.GetRecorder(),
+		Log: r.GetLogger().WithFields(logrus.Fields{
 			"phase": "loadBalancer",
 		}),
 	})
 
-	pdbReconciler := esctrl.NewPdbReconciler(r.Client, r.Scheme, common.Reconciler{
-		Recorder: r.recorder,
-		Log: r.log.WithFields(logrus.Fields{
+	pdbReconciler := NewPdbReconciler(r.Client, r.Scheme, common.Reconciler{
+		Recorder: r.GetRecorder(),
+		Log: r.GetLogger().WithFields(logrus.Fields{
 			"phase": "podDisruptionBudget",
 		}),
 	})
 
-	credentialReconciler := esctrl.NewCredentialReconciler(r.Client, r.Scheme, common.Reconciler{
-		Recorder: r.recorder,
-		Log: r.log.WithFields(logrus.Fields{
+	credentialReconciler := NewCredentialReconciler(r.Client, r.Scheme, common.Reconciler{
+		Recorder: r.GetRecorder(),
+		Log: r.GetLogger().WithFields(logrus.Fields{
 			"phase": "credential",
 		}),
 	})
 
-	statefulsetReconciler := esctrl.NewStatefulsetReconciler(r.Client, r.Scheme, common.Reconciler{
-		Recorder: r.recorder,
-		Log: r.log.WithFields(logrus.Fields{
+	statefulsetReconciler := NewStatefulsetReconciler(r.Client, r.Scheme, common.Reconciler{
+		Recorder: r.GetRecorder(),
+		Log: r.GetLogger().WithFields(logrus.Fields{
 			"phase": "statefulset",
 		}),
 	})
@@ -190,11 +189,11 @@ func (h *ElasticsearchReconciler) Read(ctx context.Context, r client.Object, dat
 }
 
 func (h *ElasticsearchReconciler) Delete(ctx context.Context, r client.Object, data map[string]any) (err error) {
-	controllerMetrics.WithLabelValues(h.name).Dec()
+	common.ControllerMetrics.WithLabelValues(h.name).Dec()
 	return
 }
 func (h *ElasticsearchReconciler) OnError(ctx context.Context, r client.Object, data map[string]any, currentErr error) (res ctrl.Result, err error) {
-	totalErrors.Inc()
+	common.TotalErrors.Inc()
 	return res, currentErr
 }
 func (h *ElasticsearchReconciler) OnSuccess(ctx context.Context, r client.Object, data map[string]any) (res ctrl.Result, err error) {
@@ -205,7 +204,7 @@ func (h *ElasticsearchReconciler) OnSuccess(ctx context.Context, r client.Object
 
 	// Check all statefulsets are ready to change Phase status and set main condition to true
 	stsList := &appv1.StatefulSetList{}
-	labelSelectors, err := labels.Parse(fmt.Sprintf("cluster=%s,%s=true", o.Name, esctrl.ElasticsearchAnnotationKey))
+	labelSelectors, err := labels.Parse(fmt.Sprintf("cluster=%s,%s=true", o.Name, ElasticsearchAnnotationKey))
 	if err != nil {
 		return res, errors.Wrap(err, "Error when generate label selector")
 	}
