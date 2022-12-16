@@ -117,7 +117,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
   release_docker_image:
-    needs: [acctest-openshift, acctest-k8s]
+    needs: [acctest-k8s]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
