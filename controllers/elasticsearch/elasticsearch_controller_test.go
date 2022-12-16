@@ -35,6 +35,7 @@ func (t *ControllerTestSuite) TestElasticsearchController() {
 	testCase.Steps = []test.TestStep{
 		doCreateElasticsearchStep(),
 		doUpdateElasticsearchStep(),
+		doUpdateElasticsearchIncreaseNodeGroupStep(),
 		doDeleteElasticsearchStep(),
 	}
 
@@ -269,6 +270,15 @@ func doUpdateElasticsearchStep() test.TestStep {
 		Check: func(t *testing.T, c client.Client, key types.NamespacedName, o client.Object, data map[string]any) (err error) {
 			es := &elasticsearchapi.Elasticsearch{}
 
+			var (
+				s   *corev1.Secret
+				svc *corev1.Service
+				i   *networkingv1.Ingress
+				cm  *corev1.ConfigMap
+				pdb *policyv1.PodDisruptionBudget
+				sts *appv1.StatefulSet
+			)
+
 			lastUpdate := data["lastUpdate"].(metav1.Time)
 
 			isTimeout, err := RunWithTimeout(func() error {
@@ -278,7 +288,7 @@ func doUpdateElasticsearchStep() test.TestStep {
 
 				// In envtest, no kubelet
 				// So the Elasticsearch condition never set as true
-				if condition.FindStatusCondition(es.Status.Conditions, StatefulsetCondition).LastTransitionTime.After(lastUpdate.Time) {
+				if condition.FindStatusCondition(es.Status.Conditions, LoadBalancerCondition).LastTransitionTime.After(lastUpdate.Time) {
 					return nil
 				}
 
@@ -287,6 +297,310 @@ func doUpdateElasticsearchStep() test.TestStep {
 			}, time.Second*30, time.Second*1)
 			if err != nil || isTimeout {
 				t.Fatalf("All Elasticsearch step upgrading not finished: %s", err.Error())
+			}
+
+			// Secrets for node PKI and certificates must exist
+			s = &corev1.Secret{}
+			if err = c.Get(context.Background(), types.NamespacedName{Namespace: key.Namespace, Name: GetSecretNameForPkiTransport(es)}, s); err != nil {
+				t.Fatal(err)
+			}
+			assert.Equal(t, "fu", s.Labels["test"])
+			assert.NotEmpty(t, s.Data)
+			assert.NotEmpty(t, s.OwnerReferences)
+			assert.NotEmpty(t, s.Annotations[patch.LastAppliedConfig])
+
+			s = &corev1.Secret{}
+			if err = c.Get(context.Background(), types.NamespacedName{Namespace: key.Namespace, Name: GetSecretNameForTlsTransport(es)}, s); err != nil {
+				t.Fatal(err)
+			}
+			assert.Equal(t, "fu", s.Labels["test"])
+			assert.NotEmpty(t, s.Data)
+			assert.NotEmpty(t, s.OwnerReferences)
+			assert.NotEmpty(t, s.Annotations[patch.LastAppliedConfig])
+
+			// Secrets for API PKI and certificates must exist
+			s = &corev1.Secret{}
+			if err = c.Get(context.Background(), types.NamespacedName{Namespace: key.Namespace, Name: GetSecretNameForPkiApi(es)}, s); err != nil {
+				t.Fatal(err)
+			}
+			assert.Equal(t, "fu", s.Labels["test"])
+			assert.NotEmpty(t, s.Data)
+			assert.NotEmpty(t, s.OwnerReferences)
+			assert.NotEmpty(t, s.Annotations[patch.LastAppliedConfig])
+
+			s = &corev1.Secret{}
+			if err = c.Get(context.Background(), types.NamespacedName{Namespace: key.Namespace, Name: GetSecretNameForTlsApi(es)}, s); err != nil {
+				t.Fatal(err)
+			}
+			assert.Equal(t, "fu", s.Labels["test"])
+			assert.NotEmpty(t, s.Data)
+			assert.NotEmpty(t, s.OwnerReferences)
+			assert.NotEmpty(t, s.Annotations[patch.LastAppliedConfig])
+
+			// Secrets for internal credentials must exist
+			s = &corev1.Secret{}
+			if err = c.Get(context.Background(), types.NamespacedName{Namespace: key.Namespace, Name: GetSecretNameForCredentials(es)}, s); err != nil {
+				t.Fatal(err)
+			}
+			assert.Equal(t, "fu", s.Labels["test"])
+			assert.NotEmpty(t, s.Data)
+			assert.NotEmpty(t, s.OwnerReferences)
+			assert.NotEmpty(t, s.Annotations[patch.LastAppliedConfig])
+
+			// Services must exists
+			svc = &corev1.Service{}
+			if err = c.Get(context.Background(), types.NamespacedName{Namespace: key.Namespace, Name: GetGlobalServiceName(es)}, svc); err != nil {
+				t.Fatal(err)
+			}
+			assert.Equal(t, "fu", svc.Labels["test"])
+			assert.NotEmpty(t, svc.OwnerReferences)
+			assert.NotEmpty(t, svc.Annotations[patch.LastAppliedConfig])
+
+			for _, nodeGroup := range es.Spec.NodeGroups {
+				svc = &corev1.Service{}
+				if err = c.Get(context.Background(), types.NamespacedName{Namespace: key.Namespace, Name: GetNodeGroupServiceName(es, nodeGroup.Name)}, svc); err != nil {
+					t.Fatal(err)
+				}
+				assert.Equal(t, "fu", svc.Labels["test"])
+				assert.NotEmpty(t, svc.OwnerReferences)
+				assert.NotEmpty(t, svc.Annotations[patch.LastAppliedConfig])
+
+				svc = &corev1.Service{}
+				if err = c.Get(context.Background(), types.NamespacedName{Namespace: key.Namespace, Name: GetNodeGroupServiceNameHeadless(es, nodeGroup.Name)}, svc); err != nil {
+					t.Fatal(err)
+				}
+				assert.Equal(t, "fu", svc.Labels["test"])
+				assert.NotEmpty(t, svc.OwnerReferences)
+				assert.NotEmpty(t, svc.Annotations[patch.LastAppliedConfig])
+			}
+
+			// Load balancer must exist
+			svc = &corev1.Service{}
+			if err = c.Get(context.Background(), types.NamespacedName{Namespace: key.Namespace, Name: GetLoadBalancerName(es)}, svc); err != nil {
+				t.Fatal(err)
+			}
+			assert.Equal(t, "fu", svc.Labels["test"])
+			assert.NotEmpty(t, svc.OwnerReferences)
+			assert.NotEmpty(t, svc.Annotations[patch.LastAppliedConfig])
+
+			// Ingress must exist
+			i = &networkingv1.Ingress{}
+			if err = c.Get(context.Background(), types.NamespacedName{Namespace: key.Namespace, Name: GetIngressName(es)}, i); err != nil {
+				t.Fatal(err)
+			}
+			assert.Equal(t, "fu", i.Labels["test"])
+			assert.NotEmpty(t, i.OwnerReferences)
+			assert.NotEmpty(t, i.Annotations[patch.LastAppliedConfig])
+
+			// ConfigMaps must exist
+			for _, nodeGroup := range es.Spec.NodeGroups {
+				cm = &corev1.ConfigMap{}
+				if err = c.Get(context.Background(), types.NamespacedName{Namespace: key.Namespace, Name: GetNodeGroupConfigMapName(es, nodeGroup.Name)}, cm); err != nil {
+					t.Fatal(err)
+				}
+				assert.Equal(t, "fu", cm.Labels["test"])
+				assert.NotEmpty(t, cm.OwnerReferences)
+				assert.NotEmpty(t, cm.Annotations[patch.LastAppliedConfig])
+			}
+
+			// PDB must exist
+			for _, nodeGroup := range es.Spec.NodeGroups {
+				pdb = &policyv1.PodDisruptionBudget{}
+				if err = c.Get(context.Background(), types.NamespacedName{Namespace: key.Namespace, Name: GetNodeGroupPDBName(es, nodeGroup.Name)}, pdb); err != nil {
+					t.Fatal(err)
+				}
+				assert.Equal(t, "fu", pdb.Labels["test"])
+				assert.NotEmpty(t, pdb.OwnerReferences)
+				assert.NotEmpty(t, pdb.Annotations[patch.LastAppliedConfig])
+			}
+
+			// Statefulset musts exist
+			for _, nodeGroup := range es.Spec.NodeGroups {
+				sts = &appv1.StatefulSet{}
+				if err = c.Get(context.Background(), types.NamespacedName{Namespace: key.Namespace, Name: GetNodeGroupName(es, nodeGroup.Name)}, sts); err != nil {
+					t.Fatal(err)
+				}
+				assert.Equal(t, "fu", sts.Labels["test"])
+				assert.NotEmpty(t, sts.OwnerReferences)
+				assert.NotEmpty(t, sts.Annotations[patch.LastAppliedConfig])
+			}
+
+			return nil
+		},
+	}
+}
+
+func doUpdateElasticsearchIncreaseNodeGroupStep() test.TestStep {
+	return test.TestStep{
+		Name: "update",
+		Do: func(c client.Client, key types.NamespacedName, o client.Object, data map[string]any) (err error) {
+			logrus.Infof("=== Update Elasticsearch cluster %s/%s ===", key.Namespace, key.Name)
+
+			if o == nil {
+				return errors.New("Elasticsearch is null")
+			}
+			es := o.(*elasticsearchapi.Elasticsearch)
+
+			// Add labels must force to update all resources
+			es.Spec.NodeGroups = append(es.Spec.NodeGroups, elasticsearchapi.NodeGroupSpec{
+				Name:     "data",
+				Replicas: 1,
+				Roles: []string{
+					"data",
+				},
+			})
+
+			data["lastUpdate"] = condition.FindStatusCondition(es.Status.Conditions, LoadBalancerCondition).LastTransitionTime
+
+			if err = c.Update(context.Background(), es); err != nil {
+				return err
+			}
+
+			return nil
+		},
+		Check: func(t *testing.T, c client.Client, key types.NamespacedName, o client.Object, data map[string]any) (err error) {
+			es := &elasticsearchapi.Elasticsearch{}
+
+			var (
+				s   *corev1.Secret
+				svc *corev1.Service
+				i   *networkingv1.Ingress
+				cm  *corev1.ConfigMap
+				pdb *policyv1.PodDisruptionBudget
+				sts *appv1.StatefulSet
+			)
+
+			lastUpdate := data["lastUpdate"].(metav1.Time)
+
+			isTimeout, err := RunWithTimeout(func() error {
+				if err := c.Get(context.Background(), key, es); err != nil {
+					t.Fatal("Elasticsearch not found")
+				}
+
+				// In envtest, no kubelet
+				// So the Elasticsearch condition never set as true
+				if condition.FindStatusCondition(es.Status.Conditions, LoadBalancerCondition).LastTransitionTime.After(lastUpdate.Time) {
+					return nil
+				}
+
+				return errors.New("Not yet updated")
+
+			}, time.Second*30, time.Second*1)
+			if err != nil || isTimeout {
+				t.Fatalf("All Elasticsearch step upgrading not finished: %s", err.Error())
+			}
+
+			// Secrets for node PKI and certificates must exist
+			s = &corev1.Secret{}
+			if err = c.Get(context.Background(), types.NamespacedName{Namespace: key.Namespace, Name: GetSecretNameForPkiTransport(es)}, s); err != nil {
+				t.Fatal(err)
+			}
+			assert.NotEmpty(t, s.Data)
+			assert.NotEmpty(t, s.OwnerReferences)
+			assert.NotEmpty(t, s.Annotations[patch.LastAppliedConfig])
+
+			s = &corev1.Secret{}
+			if err = c.Get(context.Background(), types.NamespacedName{Namespace: key.Namespace, Name: GetSecretNameForTlsTransport(es)}, s); err != nil {
+				t.Fatal(err)
+			}
+			assert.NotEmpty(t, s.Data)
+			assert.NotEmpty(t, s.OwnerReferences)
+			assert.NotEmpty(t, s.Annotations[patch.LastAppliedConfig])
+
+			// Secrets for API PKI and certificates must exist
+			s = &corev1.Secret{}
+			if err = c.Get(context.Background(), types.NamespacedName{Namespace: key.Namespace, Name: GetSecretNameForPkiApi(es)}, s); err != nil {
+				t.Fatal(err)
+			}
+			assert.NotEmpty(t, s.Data)
+			assert.NotEmpty(t, s.OwnerReferences)
+			assert.NotEmpty(t, s.Annotations[patch.LastAppliedConfig])
+
+			s = &corev1.Secret{}
+			if err = c.Get(context.Background(), types.NamespacedName{Namespace: key.Namespace, Name: GetSecretNameForTlsApi(es)}, s); err != nil {
+				t.Fatal(err)
+			}
+			assert.NotEmpty(t, s.Data)
+			assert.NotEmpty(t, s.OwnerReferences)
+			assert.NotEmpty(t, s.Annotations[patch.LastAppliedConfig])
+
+			// Secrets for internal credentials must exist
+			s = &corev1.Secret{}
+			if err = c.Get(context.Background(), types.NamespacedName{Namespace: key.Namespace, Name: GetSecretNameForCredentials(es)}, s); err != nil {
+				t.Fatal(err)
+			}
+			assert.NotEmpty(t, s.Data)
+			assert.NotEmpty(t, s.OwnerReferences)
+			assert.NotEmpty(t, s.Annotations[patch.LastAppliedConfig])
+
+			// Services must exists
+			svc = &corev1.Service{}
+			if err = c.Get(context.Background(), types.NamespacedName{Namespace: key.Namespace, Name: GetGlobalServiceName(es)}, svc); err != nil {
+				t.Fatal(err)
+			}
+			assert.NotEmpty(t, svc.OwnerReferences)
+			assert.NotEmpty(t, svc.Annotations[patch.LastAppliedConfig])
+
+			for _, nodeGroup := range es.Spec.NodeGroups {
+				svc = &corev1.Service{}
+				if err = c.Get(context.Background(), types.NamespacedName{Namespace: key.Namespace, Name: GetNodeGroupServiceName(es, nodeGroup.Name)}, svc); err != nil {
+					t.Fatal(err)
+				}
+				assert.NotEmpty(t, svc.OwnerReferences)
+				assert.NotEmpty(t, svc.Annotations[patch.LastAppliedConfig])
+
+				svc = &corev1.Service{}
+				if err = c.Get(context.Background(), types.NamespacedName{Namespace: key.Namespace, Name: GetNodeGroupServiceNameHeadless(es, nodeGroup.Name)}, svc); err != nil {
+					t.Fatal(err)
+				}
+				assert.NotEmpty(t, svc.OwnerReferences)
+				assert.NotEmpty(t, svc.Annotations[patch.LastAppliedConfig])
+			}
+
+			// Load balancer must exist
+			svc = &corev1.Service{}
+			if err = c.Get(context.Background(), types.NamespacedName{Namespace: key.Namespace, Name: GetLoadBalancerName(es)}, svc); err != nil {
+				t.Fatal(err)
+			}
+			assert.NotEmpty(t, svc.OwnerReferences)
+			assert.NotEmpty(t, svc.Annotations[patch.LastAppliedConfig])
+
+			// Ingress must exist
+			i = &networkingv1.Ingress{}
+			if err = c.Get(context.Background(), types.NamespacedName{Namespace: key.Namespace, Name: GetIngressName(es)}, i); err != nil {
+				t.Fatal(err)
+			}
+			assert.NotEmpty(t, i.OwnerReferences)
+			assert.NotEmpty(t, i.Annotations[patch.LastAppliedConfig])
+
+			// ConfigMaps must exist
+			for _, nodeGroup := range es.Spec.NodeGroups {
+				cm = &corev1.ConfigMap{}
+				if err = c.Get(context.Background(), types.NamespacedName{Namespace: key.Namespace, Name: GetNodeGroupConfigMapName(es, nodeGroup.Name)}, cm); err != nil {
+					t.Fatal(err)
+				}
+				assert.NotEmpty(t, cm.OwnerReferences)
+				assert.NotEmpty(t, cm.Annotations[patch.LastAppliedConfig])
+			}
+
+			// PDB must exist
+			for _, nodeGroup := range es.Spec.NodeGroups {
+				pdb = &policyv1.PodDisruptionBudget{}
+				if err = c.Get(context.Background(), types.NamespacedName{Namespace: key.Namespace, Name: GetNodeGroupPDBName(es, nodeGroup.Name)}, pdb); err != nil {
+					t.Fatal(err)
+				}
+				assert.NotEmpty(t, pdb.OwnerReferences)
+				assert.NotEmpty(t, pdb.Annotations[patch.LastAppliedConfig])
+			}
+
+			// Statefulset musts exist
+			for _, nodeGroup := range es.Spec.NodeGroups {
+				sts = &appv1.StatefulSet{}
+				if err = c.Get(context.Background(), types.NamespacedName{Namespace: key.Namespace, Name: GetNodeGroupName(es, nodeGroup.Name)}, sts); err != nil {
+					t.Fatal(err)
+				}
+				assert.NotEmpty(t, sts.OwnerReferences)
+				assert.NotEmpty(t, sts.Annotations[patch.LastAppliedConfig])
 			}
 
 			return nil
