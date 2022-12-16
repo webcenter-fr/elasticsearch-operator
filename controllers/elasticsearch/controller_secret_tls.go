@@ -10,6 +10,7 @@ import (
 	"github.com/codingsince1985/checksum"
 	"github.com/disaster37/goca"
 	"github.com/disaster37/goca/cert"
+	"github.com/disaster37/k8s-objectmatcher/patch"
 	"github.com/disaster37/operator-sdk-extra/pkg/controller"
 	"github.com/disaster37/operator-sdk-extra/pkg/helper"
 	"github.com/pkg/errors"
@@ -372,6 +373,9 @@ func (r *TlsReconciler) Diff(ctx context.Context, resource client.Object, data m
 			if err != nil {
 				return diff, res, errors.Wrap(err, "Error when set as owner reference")
 			}
+			if err := patch.DefaultAnnotator.SetLastAppliedAnnotation(sTransportPki); err != nil {
+				return diff, res, errors.Wrapf(err, "Error when set diff annotation on secret %s", sTransportPki.Name)
+			}
 			secretToCreate = append(secretToCreate, *sTransportPki)
 		}
 
@@ -383,6 +387,9 @@ func (r *TlsReconciler) Diff(ctx context.Context, resource client.Object, data m
 		err = ctrl.SetControllerReference(o, sTransport, r.Scheme)
 		if err != nil {
 			return diff, res, errors.Wrap(err, "Error when set as owner reference")
+		}
+		if err := patch.DefaultAnnotator.SetLastAppliedAnnotation(sTransport); err != nil {
+			return diff, res, errors.Wrapf(err, "Error when set diff annotation on secret %s", sTransport.Name)
 		}
 		secretToCreate = append(secretToCreate, *sTransport)
 
@@ -402,6 +409,9 @@ func (r *TlsReconciler) Diff(ctx context.Context, resource client.Object, data m
 				if err != nil {
 					return diff, res, errors.Wrap(err, "Error when set as owner reference")
 				}
+				if err := patch.DefaultAnnotator.SetLastAppliedAnnotation(sApiPki); err != nil {
+					return diff, res, errors.Wrapf(err, "Error when set diff annotation on secret %s", sApiPki.Name)
+				}
 				secretToCreate = append(secretToCreate, *sApiPki)
 			}
 
@@ -417,6 +427,9 @@ func (r *TlsReconciler) Diff(ctx context.Context, resource client.Object, data m
 				err = ctrl.SetControllerReference(o, sApi, r.Scheme)
 				if err != nil {
 					return diff, res, errors.Wrap(err, "Error when set as owner reference")
+				}
+				if err := patch.DefaultAnnotator.SetLastAppliedAnnotation(sApi); err != nil {
+					return diff, res, errors.Wrapf(err, "Error when set diff annotation on secret %s", sApi.Name)
 				}
 				secretToCreate = append(secretToCreate, *sApi)
 			}
@@ -470,6 +483,9 @@ func (r *TlsReconciler) Diff(ctx context.Context, resource client.Object, data m
 			if err != nil {
 				return diff, res, errors.Wrap(err, "Error when set as owner reference")
 			}
+			if err := patch.DefaultAnnotator.SetLastAppliedAnnotation(sTransport); err != nil {
+				return diff, res, errors.Wrapf(err, "Error when set diff annotation on secret %s", sTransport.Name)
+			}
 			secretToCreate = append(secretToCreate, *sTransport)
 		}
 
@@ -487,6 +503,9 @@ func (r *TlsReconciler) Diff(ctx context.Context, resource client.Object, data m
 				if err != nil {
 					return diff, res, errors.Wrap(err, "Error when set as owner reference")
 				}
+				if err := patch.DefaultAnnotator.SetLastAppliedAnnotation(sApiPki); err != nil {
+					return diff, res, errors.Wrapf(err, "Error when set diff annotation on secret %s", sApiPki.Name)
+				}
 				secretToCreate = append(secretToCreate, *sApiPki)
 			}
 
@@ -502,6 +521,9 @@ func (r *TlsReconciler) Diff(ctx context.Context, resource client.Object, data m
 				err = ctrl.SetControllerReference(o, sApi, r.Scheme)
 				if err != nil {
 					return diff, res, errors.Wrap(err, "Error when set as owner reference")
+				}
+				if err := patch.DefaultAnnotator.SetLastAppliedAnnotation(sApi); err != nil {
+					return diff, res, errors.Wrapf(err, "Error when set diff annotation on secret %s", sApi.Name)
 				}
 				secretToCreate = append(secretToCreate, *sApi)
 			}
@@ -582,6 +604,9 @@ func (r *TlsReconciler) Diff(ctx context.Context, resource client.Object, data m
 			if err != nil {
 				return diff, res, errors.Wrap(err, "Error when set as owner reference")
 			}
+			if err := patch.DefaultAnnotator.SetLastAppliedAnnotation(sApiPki); err != nil {
+				return diff, res, errors.Wrapf(err, "Error when set diff annotation on secret %s", sApiPki.Name)
+			}
 			secretToCreate = append(secretToCreate, *sApiPki)
 		}
 		if apiCrt != nil {
@@ -597,6 +622,9 @@ func (r *TlsReconciler) Diff(ctx context.Context, resource client.Object, data m
 			err = ctrl.SetControllerReference(o, sApi, r.Scheme)
 			if err != nil {
 				return diff, res, errors.Wrap(err, "Error when set as owner reference")
+			}
+			if err := patch.DefaultAnnotator.SetLastAppliedAnnotation(sApi); err != nil {
+				return diff, res, errors.Wrapf(err, "Error when set diff annotation on secret %s", sApi.Name)
 			}
 			secretToCreate = append(secretToCreate, *sApi)
 
@@ -634,6 +662,9 @@ func (r *TlsReconciler) Diff(ctx context.Context, resource client.Object, data m
 			err = ctrl.SetControllerReference(o, sTransportPki, r.Scheme)
 			if err != nil {
 				return diff, res, errors.Wrap(err, "Error when set as owner reference")
+			}
+			if err := patch.DefaultAnnotator.SetLastAppliedAnnotation(sTransportPki); err != nil {
+				return diff, res, errors.Wrapf(err, "Error when set diff annotation on secret %s", sTransportPki.Name)
 			}
 			secretToCreate = append(secretToCreate, *sTransportPki)
 		}

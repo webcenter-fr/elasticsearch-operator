@@ -210,6 +210,10 @@ func (r *ConfigMapReconciler) Diff(ctx context.Context, resource client.Object, 
 				return diff, res, errors.Wrapf(err, "Error when set owner reference")
 			}
 
+			if err := patch.DefaultAnnotator.SetLastAppliedAnnotation(&expectedCm); err != nil {
+				return diff, res, errors.Wrapf(err, "Error when set diff annotation on configMap %s", expectedCm.Name)
+			}
+
 			cmToCreate = append(cmToCreate, expectedCm)
 
 			r.Log.Debugf("Need create configmap %s", expectedCm.Name)

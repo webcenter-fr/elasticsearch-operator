@@ -1,6 +1,7 @@
 package helper
 
 import (
+	"github.com/disaster37/k8s-objectmatcher/patch"
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
 	"github.com/kr/pretty"
@@ -50,7 +51,7 @@ func DiffLabels(expected, current map[string]string) (diff string) {
 func DiffAnnotations(expected, current map[string]string) (diff string) {
 	excludeKeys := []string{
 		"kubectl.kubernetes.io/last-applied-configuration",
-		"banzaicloud.com/last-applied",
+		patch.LastAppliedConfig,
 	}
 	return DiffMapString(expected, current, excludeKeys)
 }
