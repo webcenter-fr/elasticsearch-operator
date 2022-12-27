@@ -192,13 +192,15 @@ func (r *TlsReconciler) Read(ctx context.Context, resource client.Object, data m
 		// Load node certificates
 		r := regexp.MustCompile(`^(.*)\.crt$`)
 		for key, value := range sTransport.Data {
-			rRes := r.FindStringSubmatch(key)
-			if len(rRes) > 1 {
-				nodeCrt, err := cert.LoadCertFromPem(value)
-				if err != nil {
-					return res, errors.Wrapf(err, "Error when load node certificate %s", rRes[1])
+			if key != "ca.crt" {
+				rRes := r.FindStringSubmatch(key)
+				if len(rRes) > 1 {
+					nodeCrt, err := cert.LoadCertFromPem(value)
+					if err != nil {
+						return res, errors.Wrapf(err, "Error when load node certificate %s", rRes[1])
+					}
+					nodeCertificates[rRes[1]] = *nodeCrt
 				}
-				nodeCertificates[rRes[1]] = *nodeCrt
 			}
 		}
 	}
