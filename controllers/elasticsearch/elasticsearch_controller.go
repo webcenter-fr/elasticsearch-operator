@@ -39,9 +39,10 @@ import (
 )
 
 const (
-	ElasticsearchFinalizer = "elasticsearch.k8s.webcenter.fr/finalizer"
-	ElasticsearchCondition = "ElasticsearchReady"
-	ElasticsearchPhase     = "running"
+	ElasticsearchFinalizer     = "elasticsearch.k8s.webcenter.fr/finalizer"
+	ElasticsearchCondition     = "ElasticsearchReady"
+	ElasticsearchPhaseRunning  = "running"
+	ElasticsearchPhaseStarting = "starting"
 )
 
 // ElasticsearchReconciler reconciles a Elasticsearch object
@@ -228,7 +229,7 @@ func (h *ElasticsearchReconciler) OnSuccess(ctx context.Context, r client.Object
 				Reason: "Ready",
 			})
 
-			o.Status.Phase = "running"
+			o.Status.Phase = ElasticsearchPhaseRunning
 		}
 
 		return res, nil
@@ -243,7 +244,7 @@ func (h *ElasticsearchReconciler) OnSuccess(ctx context.Context, r client.Object
 
 	}
 
-	o.Status.Phase = "starting"
+	o.Status.Phase = ElasticsearchPhaseStarting
 
 	return ctrl.Result{RequeueAfter: time.Second * 30}, nil
 }

@@ -375,7 +375,7 @@ func (r *StatefulsetReconciler) OnSuccess(ctx context.Context, resource client.O
 		condition.SetStatusCondition(&o.Status.Conditions, metav1.Condition{
 			Type:    StatefulsetConditionUpgrade,
 			Reason:  "Success",
-			Status:  metav1.ConditionTrue,
+			Status:  metav1.ConditionFalse,
 			Message: "Statefulsets are finished to be upgraded",
 		})
 

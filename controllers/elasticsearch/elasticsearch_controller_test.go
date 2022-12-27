@@ -259,11 +259,13 @@ func doUpdateElasticsearchStep() test.TestStep {
 				"test": "fu",
 			}
 
-			data["lastUpdate"] = condition.FindStatusCondition(es.Status.Conditions, LoadBalancerCondition).LastTransitionTime
+			data["lastVersion"] = es.ResourceVersion
 
 			if err = c.Update(context.Background(), es); err != nil {
 				return err
 			}
+
+			time.Sleep(5 * time.Second)
 
 			return nil
 		},
@@ -279,7 +281,7 @@ func doUpdateElasticsearchStep() test.TestStep {
 				sts *appv1.StatefulSet
 			)
 
-			lastUpdate := data["lastUpdate"].(metav1.Time)
+			lastVersion := data["lastVersion"].(string)
 
 			isTimeout, err := RunWithTimeout(func() error {
 				if err := c.Get(context.Background(), key, es); err != nil {
@@ -288,7 +290,7 @@ func doUpdateElasticsearchStep() test.TestStep {
 
 				// In envtest, no kubelet
 				// So the Elasticsearch condition never set as true
-				if condition.FindStatusCondition(es.Status.Conditions, LoadBalancerCondition).LastTransitionTime.After(lastUpdate.Time) {
+				if lastVersion != es.ResourceVersion && (es.Status.Phase == ElasticsearchPhaseStarting) {
 					return nil
 				}
 
@@ -450,11 +452,13 @@ func doUpdateElasticsearchIncreaseNodeGroupStep() test.TestStep {
 				},
 			})
 
-			data["lastUpdate"] = condition.FindStatusCondition(es.Status.Conditions, LoadBalancerCondition).LastTransitionTime
+			data["lastVersion"] = es.ResourceVersion
 
 			if err = c.Update(context.Background(), es); err != nil {
 				return err
 			}
+
+			time.Sleep(5 * time.Second)
 
 			return nil
 		},
@@ -470,7 +474,7 @@ func doUpdateElasticsearchIncreaseNodeGroupStep() test.TestStep {
 				sts *appv1.StatefulSet
 			)
 
-			lastUpdate := data["lastUpdate"].(metav1.Time)
+			lastVersion := data["lastVersion"].(string)
 
 			isTimeout, err := RunWithTimeout(func() error {
 				if err := c.Get(context.Background(), key, es); err != nil {
@@ -479,7 +483,7 @@ func doUpdateElasticsearchIncreaseNodeGroupStep() test.TestStep {
 
 				// In envtest, no kubelet
 				// So the Elasticsearch condition never set as true
-				if condition.FindStatusCondition(es.Status.Conditions, LoadBalancerCondition).LastTransitionTime.After(lastUpdate.Time) {
+				if lastVersion != es.ResourceVersion && (es.Status.Phase == ElasticsearchPhaseStarting) {
 					return nil
 				}
 
