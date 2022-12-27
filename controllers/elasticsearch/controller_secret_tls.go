@@ -5,6 +5,7 @@ import (
 	"context"
 	"crypto/x509"
 	"fmt"
+	"regexp"
 	"time"
 
 	"github.com/codingsince1985/checksum"
@@ -189,13 +190,15 @@ func (r *TlsReconciler) Read(ctx context.Context, resource client.Object, data m
 	// Load nodes certificates
 	if sTransport != nil {
 		// Load node certificates
-		for _, nodeName := range GetNodeNames(o) {
-			if sTransport.Data[fmt.Sprintf("%s.crt", nodeName)] != nil {
-				nodeCrt, err := cert.LoadCertFromPem(sTransport.Data[fmt.Sprintf("%s.crt", nodeName)])
+		r := regexp.MustCompile(`^(.*)\.crt$`)
+		for key, value := range sTransport.Data {
+			rRes := r.FindStringSubmatch(key)
+			if len(rRes) > 1 {
+				nodeCrt, err := cert.LoadCertFromPem(value)
 				if err != nil {
-					return res, errors.Wrapf(err, "Error when load node certificate %s", nodeName)
+					return res, errors.Wrapf(err, "Error when load node certificate %s", rRes[1])
 				}
-				nodeCertificates[nodeName] = *nodeCrt
+				nodeCertificates[rRes[1]] = *nodeCrt
 			}
 		}
 	}
