@@ -1,0 +1,12 @@
+apiVersion: kibana.k8s.webcenter.fr/v1alpha1
+kind: Kibana
+metadata:
+  labels:
+    app.kubernetes.io/name: kibana
+    app.kubernetes.io/instance: kibana-sample
+    app.kubernetes.io/part-of: bootstrap
+    app.kubernetes.io/managed-by: kustomize
+    app.kubernetes.io/created-by: bootstrap
+  name: kibana-sample
+spec:
+  # TODO(user): Add fields here

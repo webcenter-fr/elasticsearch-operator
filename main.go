@@ -33,8 +33,11 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 
 	"github.com/sirupsen/logrus"
-	elasticsearchapi "github.com/webcenter-fr/elasticsearch-operator/api/v1alpha1"
+
+	elasticsearchapi "github.com/webcenter-fr/elasticsearch-operator/apis/elasticsearch/v1alpha1"
+	kibanav1alpha1 "github.com/webcenter-fr/elasticsearch-operator/apis/kibana/v1alpha1"
 	"github.com/webcenter-fr/elasticsearch-operator/controllers/elasticsearch"
+	kibanacontrollers "github.com/webcenter-fr/elasticsearch-operator/controllers/kibana"
 	"github.com/webcenter-fr/elasticsearch-operator/pkg/helper"
 	//+kubebuilder:scaffold:imports
 )
@@ -50,6 +53,7 @@ func init() {
 	utilruntime.Must(clientgoscheme.AddToScheme(scheme))
 
 	utilruntime.Must(elasticsearchapi.AddToScheme(scheme))
+	utilruntime.Must(kibanav1alpha1.AddToScheme(scheme))
 	//+kubebuilder:scaffold:scheme
 }
 
@@ -135,6 +139,13 @@ func main() {
 	elasticsearchontroller.SetReconciler(elasticsearchontroller)
 	if err = elasticsearchontroller.SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "Elasticsearch")
+		os.Exit(1)
+	}
+	if err = (&kibanacontrollers.KibanaReconciler{
+		Client: mgr.GetClient(),
+		Scheme: mgr.GetScheme(),
+	}).SetupWithManager(mgr); err != nil {
+		setupLog.Error(err, "unable to create controller", "controller", "Kibana")
 		os.Exit(1)
 	}
 	//+kubebuilder:scaffold:builder

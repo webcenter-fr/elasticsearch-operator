@@ -3,6 +3,7 @@ module github.com/webcenter-fr/elasticsearch-operator
 go 1.19
 
 require (
+	emperror.dev/errors v0.8.1
 	github.com/codingsince1985/checksum v1.2.5
 	github.com/davecgh/go-spew v1.1.1
 	github.com/disaster37/goca v1.0.4-0.20221213082455-a233467aa7fe
@@ -14,6 +15,7 @@ require (
 	github.com/google/go-cmp v0.5.9
 	github.com/imdario/mergo v0.3.13
 	github.com/kr/pretty v0.2.0
+	github.com/onsi/ginkgo/v2 v2.4.0
 	github.com/onsi/gomega v1.24.0
 	github.com/pkg/errors v0.9.1
 	github.com/prometheus/client_golang v1.14.0
@@ -34,7 +36,6 @@ require (
 
 require (
 	cloud.google.com/go v0.97.0 // indirect
-	emperror.dev/errors v0.8.1 // indirect
 	github.com/Azure/go-autorest v14.2.0+incompatible // indirect
 	github.com/Azure/go-autorest/autorest v0.11.27 // indirect
 	github.com/Azure/go-autorest/autorest/adal v0.9.20 // indirect

@@ -5,7 +5,7 @@ import (
 	"regexp"
 
 	"github.com/thoas/go-funk"
-	elasticsearchapi "github.com/webcenter-fr/elasticsearch-operator/api/v1alpha1"
+	elasticsearchapi "github.com/webcenter-fr/elasticsearch-operator/apis/elasticsearch/v1alpha1"
 )
 
 const (

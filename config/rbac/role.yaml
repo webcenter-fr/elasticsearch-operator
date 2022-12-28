@@ -49,3 +49,29 @@ rules:
   - get
   - patch
   - update
+- apiGroups:
+  - kibana.k8s.webcenter.fr
+  resources:
+  - kibanas
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - kibana.k8s.webcenter.fr
+  resources:
+  - kibanas/finalizers
+  verbs:
+  - update
+- apiGroups:
+  - kibana.k8s.webcenter.fr
+  resources:
+  - kibanas/status
+  verbs:
+  - get
+  - patch
+  - update

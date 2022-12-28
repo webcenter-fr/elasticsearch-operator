@@ -8,6 +8,7 @@ import (
 	"github.com/onsi/gomega/gexec"
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/suite"
+	elasticsearchapi "github.com/webcenter-fr/elasticsearch-operator/apis/elasticsearch/v1alpha1"
 	"k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/rest"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -15,8 +16,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/envtest"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
-
-	elasticsearchapi "github.com/webcenter-fr/elasticsearch-operator/api/v1alpha1"
 	//+kubebuilder:scaffold:imports
 )
 

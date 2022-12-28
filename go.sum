@@ -106,8 +106,6 @@ github.com/disaster37/k8s-objectmatcher v1.8.2-0.20221214085057-348a8a800e18 h1:
 github.com/disaster37/k8s-objectmatcher v1.8.2-0.20221214085057-348a8a800e18/go.mod h1:2nRtPBxwgkwCBjerqlRF4oV9pqAVC1bxtl6Y4/iAt3U=
 github.com/disaster37/k8sbuilder v0.0.0-20221212105448-99cdf3ba3e4a h1:lnWGfEQinyYZyTJyj/h/aR0F6kUAx8RIVLL76rEDgcg=
 github.com/disaster37/k8sbuilder v0.0.0-20221212105448-99cdf3ba3e4a/go.mod h1:2vdStC+YE7ds6QECx03TyRkdyxO35OYhO1I6PeVwu/o=
-github.com/disaster37/operator-sdk-extra v0.0.18-0.20221213110236-31685cb1f4f0 h1:G5zI8MZH1TSYe3Nhj/lyC5jBtfYXZdj8pcV59SaFhbs=
-github.com/disaster37/operator-sdk-extra v0.0.18-0.20221213110236-31685cb1f4f0/go.mod h1:c5LT8vnQ3VEkQzqDdkHMwMuS+QD+ym4c6+hcx9ng7f8=
 github.com/disaster37/operator-sdk-extra v0.0.18-0.20221214144538-de9be9cf7fa6 h1:hW3ienOcm2QXrtunymvgEGzEIEC1VChhw0KwGyq8gds=
 github.com/disaster37/operator-sdk-extra v0.0.18-0.20221214144538-de9be9cf7fa6/go.mod h1:c5LT8vnQ3VEkQzqDdkHMwMuS+QD+ym4c6+hcx9ng7f8=
 github.com/docopt/docopt-go v0.0.0-20180111231733-ee0de3bc6815/go.mod h1:WwZ+bS3ebgob9U8Nd0kOddGdZWjyMGR8Wziv+TBNwSE=
@@ -302,6 +300,7 @@ github.com/niemeyer/pretty v0.0.0-20200227124842-a10e7caefd8e/go.mod h1:zD1mROLA
 github.com/nxadm/tail v1.4.8 h1:nPr65rt6Y5JFSKQO7qToXr7pePgD6Gwiw05lkbyAQTE=
 github.com/onsi/ginkgo v1.16.5 h1:8xi0RTUf59SOSfEtZMvwTvXYMzG4gV23XVHOZiXNtnE=
 github.com/onsi/ginkgo/v2 v2.4.0 h1:+Ig9nvqgS5OBSACXNk15PLdp0U9XPYROt9CFzVdFGIs=
+github.com/onsi/ginkgo/v2 v2.4.0/go.mod h1:iHkDK1fKGcBoEHT5W7YBq4RFWaQulw+caOMkAt4OrFo=
 github.com/onsi/gomega v1.24.0 h1:+0glovB9Jd6z3VR+ScSwQqXVTIfJcGA9UBM8yzQxhqg=
 github.com/onsi/gomega v1.24.0/go.mod h1:Z/NWtiqwBrwUt4/2loMmHL63EDLnYHmVbuBpDr2vQAg=
 github.com/pkg/errors v0.8.0/go.mod h1:bwawxfHBFNV+L2hUp1rHADufV3IMtnDRdf1r5NINEl0=

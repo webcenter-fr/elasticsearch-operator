@@ -8,5 +8,9 @@
 ## Create new API object
 
 ```bash
+operator-sdk edit --multigroup=true
+```
+
+```bash
 operator-sdk create api --group kibana --version v1alpha1 --kind Kibana --resource
 ```
