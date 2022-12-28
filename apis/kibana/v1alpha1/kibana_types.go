@@ -20,8 +20,8 @@ import (
 	"github.com/webcenter-fr/elasticsearch-operator/apis/shared"
 	corev1 "k8s.io/api/core/v1"
 	networkingv1 "k8s.io/api/networking/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	policyv1 "k8s.io/api/policy/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 // EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!
@@ -35,13 +35,19 @@ type KibanaSpec struct {
 
 	shared.ImageSpec `json:",inline"`
 
+	// ElasticsearchRef is the Elasticsearch ref to connect on.
+	// The Elasticsearch must be on the same namespace as Kibana
+	// +operator-sdk:csv:customresourcedefinitions:type=spec
+	// +optional
+	ElasticsearchRef *ElasticsearchRef `json:"elasticsearchRef,omitempty"`
+
 	// Version is the Kibana version to use
 	// Default is use the latest
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
 	// +optional
 	Version string `json:"version,omitempty"`
 
-	// Endpoint permit to set endpoints to access on Elasticsearch from external kubernetes
+	// Endpoint permit to set endpoints to access on Kibana from external kubernetes
 	// You can set ingress and / or load balancer
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
 	// +optional
@@ -52,6 +58,35 @@ type KibanaSpec struct {
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
 	// +optional
 	Config map[string]string `json:"config,omitempty"`
+
+	// KeystoreSecretRef is the secret that store the security settings
+	// +operator-sdk:csv:customresourcedefinitions:type=spec
+	// +optional
+	KeystoreSecretRef *corev1.LocalObjectReference `json:"keystoreSecretRef,omitempty"`
+
+	// Tls permit to set the TLS setting for Kibana access
+	// +operator-sdk:csv:customresourcedefinitions:type=spec
+	// +optional
+	Tls TlsSpec `json:"tls,omitempty"`
+}
+
+type ElasticsearchRef struct {
+
+	// Name is the Elasticsearch cluster deployed by operator
+	// +operator-sdk:csv:customresourcedefinitions:type=spec
+	Name string `json:"name,omitempty"`
+
+	// Namespace is the namespace where Elasticsearch is deployed by operator
+	// No need to set if Kibana is deployed on the same namespace
+	// +operator-sdk:csv:customresourcedefinitions:type=spec
+	// +optional
+	Namespace string `json:"namespace,omitempty"`
+
+	// TargetNodeGroup is the target Elasticsearch node group to use as service to connect on Elasticsearch
+	// Default, it use the global service
+	// +operator-sdk:csv:customresourcedefinitions:type=spec
+	// +optional
+	TargetNodeGroup string `json:"targetNodeGroup,omitempty"`
 }
 
 type EndpointSpec struct {
@@ -106,6 +141,38 @@ type IngressSpec struct {
 	IngressSpec *networkingv1.IngressSpec `json:"ingressSpec,omitempty"`
 }
 
+type TlsSpec struct {
+
+	// Enabled permit to enabled TLS on Kibana
+	// +operator-sdk:csv:customresourcedefinitions:type=spec
+	// +optional
+	Enabled *bool `json:"enabled,omitempty"`
+
+	// SelfSignedCertificate permit to set self signed certificate settings
+	// +operator-sdk:csv:customresourcedefinitions:type=spec
+	// +optional
+	SelfSignedCertificate *SelfSignedCertificateSpec `json:"selfSignedCertificate,omitempty"`
+
+	// CertificateSecretRef is the secret that store your custom certificates.
+	// It need to have the following keys: tls.key, tls.crt and optionally ca.crt
+	// +operator-sdk:csv:customresourcedefinitions:type=spec
+	// +optional
+	CertificateSecretRef *corev1.LocalObjectReference `json:"certificateSecretRef,omitempty"`
+}
+
+type SelfSignedCertificateSpec struct {
+
+	// AltIps permit to set subject alt names of type ip when generate certificate
+	// +operator-sdk:csv:customresourcedefinitions:type=spec
+	// +optional
+	AltIps []string `json:"altIPs:,omitempty"`
+
+	// AltNames permit to set subject alt names of type dns when generate certificate
+	// +operator-sdk:csv:customresourcedefinitions:type=spec
+	// +optional
+	AltNames []string `json:"altNames:,omitempty"`
+}
+
 type DeploymentSpec struct {
 	// Replicas is the number of replicas
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
@@ -116,7 +183,7 @@ type DeploymentSpec struct {
 	// +optional
 	AntiAffinity *AntiAffinitySpec `json:"antiAffinity,omitempty"`
 
-	// Resources permit to set ressources on Elasticsearch container
+	// Resources permit to set ressources on Kibana container
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
 	// +optional
 	Resources *corev1.ResourceRequirements `json:"resources,omitempty"`
