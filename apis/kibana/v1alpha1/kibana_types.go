@@ -47,6 +47,12 @@ type KibanaSpec struct {
 	// +optional
 	Version string `json:"version,omitempty"`
 
+	// PluginsList is the list of additionnal plugin to install on each Kibana instance
+	// Default is empty
+	// +operator-sdk:csv:customresourcedefinitions:type=spec
+	// +optional
+	PluginsList []string `json:"pluginsList,omitempty"`
+
 	// Endpoint permit to set endpoints to access on Kibana from external kubernetes
 	// You can set ingress and / or load balancer
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
