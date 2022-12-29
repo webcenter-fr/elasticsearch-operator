@@ -17,7 +17,8 @@ func BuildLoadbalancer(es *elasticsearchapi.Elasticsearch) (service *corev1.Serv
 	}
 
 	selector := map[string]string{
-		"cluster": es.Name,
+		"cluster":                  es.Name,
+		ElasticsearchAnnotationKey: "true",
 	}
 	if es.Spec.Endpoint.LoadBalancer.TargetNodeGroupName != "" {
 		// Check the node group specified exist
