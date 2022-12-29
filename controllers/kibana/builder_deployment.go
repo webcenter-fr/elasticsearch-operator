@@ -6,6 +6,7 @@ import (
 
 	"github.com/codingsince1985/checksum"
 	"github.com/disaster37/k8sbuilder"
+	"github.com/elastic/go-ucfg"
 	"github.com/pkg/errors"
 	elasticsearchapi "github.com/webcenter-fr/elasticsearch-operator/apis/elasticsearch/v1alpha1"
 	kibanaapi "github.com/webcenter-fr/elasticsearch-operator/apis/kibana/v1alpha1"
@@ -52,6 +53,10 @@ func BuildDeployment(kb *kibanaapi.Kibana, es *elasticsearchapi.Elasticsearch) (
 	cb.WithEnvFrom(kb.Spec.Deployment.EnvFrom, k8sbuilder.Merge)
 
 	// Compute Env
+	probePath, err := computeProbePath(configMap)
+	if err != nil {
+		return nil, errors.Wrap(err, "Error when get probe path to use from kibana config")
+	}
 	cb.WithEnv(kb.Spec.Deployment.Env, k8sbuilder.Merge).
 		WithEnv([]corev1.EnvVar{
 			{
@@ -116,6 +121,10 @@ func BuildDeployment(kb *kibanaapi.Kibana, es *elasticsearchapi.Elasticsearch) (
 			{
 				Name:  "server.host",
 				Value: "0.0.0.0",
+			},
+			{
+				Name:  "PROBE_PATH",
+				Value: probePath,
 			},
 		}, k8sbuilder.Merge)
 	if kb.IsTlsEnabled() {
@@ -210,34 +219,17 @@ set -euo pipefail
 
 export NSS_SDB_USE_CACHE=no
 
-STARTER_FILE=/tmp/.es_starter_file
-if [ -f ${STARTER_FILE} ]; then
-  HTTP_CODE=$(curl --output /dev/null -k -XGET -s -w '%{http_code}' -u elastic:${ELASTIC_PASSWORD} ${PROBE_SCHEME}://127.0.0.1:9200/)
-  RC=$?
-  if [[ ${RC} -ne 0 ]]; then
-    echo "Failed to get Elasticsearch API"
-    exit ${RC}
-  fi
-  if [[ ${HTTP_CODE} == "200" ]]; then
-    exit 0
-  else
-    echo "Elasticsearch API return code ${HTTP_CODE}
-    exit 1
-  fi
+HTTP_CODE=$(curl --output /dev/null -k -XGET -s -w '%{http_code}' -u elastic:${ELASTIC_PASSWORD} ${PROBE_SCHEME}://127.0.0.1:5601${PROBE_PATH})
+RC=$?
+if [[ ${RC} -ne 0 ]]; then
+  echo "Failed to get Kibana"
+  exit ${RC}
+fi
+if [[ ${HTTP_CODE} == "200" ]]; then
+  exit 0
 else
-  HTTP_CODE=$(curl --output /dev/null -k -XGET -s -w '%{http_code}' -u elastic:${ELASTIC_PASSWORD} --fail ${PROBE_SCHEME}://127.0.0.1:9200/_cluster/health?wait_for_status=${PROBE_WAIT_STATUS}&timeout=1s)
-  RC=$?
-  if [[ ${RC} -ne 0 ]]; then
-    echo "Failed to get Elasticsearch API"
-    exit ${RC}
-  fi
-  if [[ ${HTTP_CODE} == "200" ]]; then
-    touch ${STARTER_FILE}
-    exit 0
-  else
-    echo "Elasticsearch API return code ${HTTP_CODE}
-    exit 1
-  fi
+  echo "Kibana return code ${HTTP_CODE}
+  exit 1
 fi
 `,
 				},
@@ -632,4 +624,19 @@ func computeNodeOpts(kb *kibanaapi.Kibana) string {
 	}
 
 	return strings.Join(nodeOpts, " ")
+}
+
+// computeProbePath permit to compute the probe path to use on readynessProbe
+func computeProbePath(cm *corev1.ConfigMap) (path string, err error) {
+	if cm == nil || cm.Data["kibana.yml"] == "" {
+		return "/", nil
+	}
+
+	path, err = helper.GetSetting("server.basePath", []byte(cm.Data["kibana.yml"]))
+	if ucfg.ErrMissing == err {
+		return "/", nil
+	}
+
+	return path, nil
+
 }
