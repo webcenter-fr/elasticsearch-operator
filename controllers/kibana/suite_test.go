@@ -75,17 +75,16 @@ func (t *ControllerTestSuite) SetupSuite() {
 	t.k8sClient = k8sClient
 
 	// Init controllers
-	/*
-		elasticsearchReconciler := NewElasticsearchReconciler(k8sClient, scheme.Scheme)
-		elasticsearchReconciler.SetLogger(logrus.WithFields(logrus.Fields{
-			"type": "elasticsearchController",
-		}))
-		elasticsearchReconciler.SetRecorder(k8sManager.GetEventRecorderFor("elasticsearch-controller"))
-		elasticsearchReconciler.SetReconciler(elasticsearchReconciler)
-		if err = elasticsearchReconciler.SetupWithManager(k8sManager); err != nil {
-			panic(err)
-		}
-	*/
+
+	kibanaReconciler := NewKibanaReconciler(k8sClient, scheme.Scheme)
+	kibanaReconciler.SetLogger(logrus.WithFields(logrus.Fields{
+		"type": "kibanaController",
+	}))
+	kibanaReconciler.SetRecorder(k8sManager.GetEventRecorderFor("kibana-controller"))
+	kibanaReconciler.SetReconciler(kibanaReconciler)
+	if err = kibanaReconciler.SetupWithManager(k8sManager); err != nil {
+		panic(err)
+	}
 
 	go func() {
 		err = k8sManager.Start(ctrl.SetupSignalHandler())

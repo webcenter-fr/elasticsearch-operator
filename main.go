@@ -35,8 +35,8 @@ import (
 	"github.com/sirupsen/logrus"
 
 	elasticsearchapi "github.com/webcenter-fr/elasticsearch-operator/apis/elasticsearch/v1alpha1"
-	kibanav1alpha1 "github.com/webcenter-fr/elasticsearch-operator/apis/kibana/v1alpha1"
-	"github.com/webcenter-fr/elasticsearch-operator/controllers/elasticsearch"
+	kibanaapi "github.com/webcenter-fr/elasticsearch-operator/apis/kibana/v1alpha1"
+	elasticsearchcontrollers "github.com/webcenter-fr/elasticsearch-operator/controllers/elasticsearch"
 	kibanacontrollers "github.com/webcenter-fr/elasticsearch-operator/controllers/kibana"
 	"github.com/webcenter-fr/elasticsearch-operator/pkg/helper"
 	//+kubebuilder:scaffold:imports
@@ -53,7 +53,7 @@ func init() {
 	utilruntime.Must(clientgoscheme.AddToScheme(scheme))
 
 	utilruntime.Must(elasticsearchapi.AddToScheme(scheme))
-	utilruntime.Must(kibanav1alpha1.AddToScheme(scheme))
+	utilruntime.Must(kibanaapi.AddToScheme(scheme))
 	//+kubebuilder:scaffold:scheme
 }
 
@@ -131,20 +131,24 @@ func main() {
 	}
 
 	// Set platform controllers
-	elasticsearchontroller := elasticsearch.NewElasticsearchReconciler(mgr.GetClient(), mgr.GetScheme())
-	elasticsearchontroller.SetLogger(log.WithFields(logrus.Fields{
+	elasticsearchController := elasticsearchcontrollers.NewElasticsearchReconciler(mgr.GetClient(), mgr.GetScheme())
+	elasticsearchController.SetLogger(log.WithFields(logrus.Fields{
 		"type": "ElasticsearchController",
 	}))
-	elasticsearchontroller.SetRecorder(mgr.GetEventRecorderFor("elasticsearch-controller"))
-	elasticsearchontroller.SetReconciler(elasticsearchontroller)
-	if err = elasticsearchontroller.SetupWithManager(mgr); err != nil {
+	elasticsearchController.SetRecorder(mgr.GetEventRecorderFor("elasticsearch-controller"))
+	elasticsearchController.SetReconciler(elasticsearchController)
+	if err = elasticsearchController.SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "Elasticsearch")
 		os.Exit(1)
 	}
-	if err = (&kibanacontrollers.KibanaReconciler{
-		Client: mgr.GetClient(),
-		Scheme: mgr.GetScheme(),
-	}).SetupWithManager(mgr); err != nil {
+
+	kibanaController := kibanacontrollers.NewKibanaReconciler(mgr.GetClient(), mgr.GetScheme())
+	kibanaController.SetLogger(log.WithFields(logrus.Fields{
+		"type": "KibanaController",
+	}))
+	kibanaController.SetRecorder(mgr.GetEventRecorderFor("kibana-controller"))
+	kibanaController.SetReconciler(kibanaController)
+	if err = kibanaController.SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "Kibana")
 		os.Exit(1)
 	}
