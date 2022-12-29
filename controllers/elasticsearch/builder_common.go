@@ -171,7 +171,7 @@ func getLabels(elasticsearch *elasticsearchapi.Elasticsearch, customLabels ...ma
 	return labels
 }
 
-// getLabels permit to return global label must be set on all resources
+// getAnnotations permit to return global annotations must be set on all resources
 func getAnnotations(elasticsearch *elasticsearchapi.Elasticsearch, customAnnotation ...map[string]string) (annotations map[string]string) {
 	annotations = map[string]string{
 		ElasticsearchAnnotationKey: "true",

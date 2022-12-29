@@ -420,3 +420,52 @@ func TestIsMasterRole(t *testing.T) {
 
 	assert.False(t, IsMasterRole(o, o.Spec.NodeGroups[0].Name))
 }
+
+func TestGetLabels(t *testing.T) {
+	var expectedLabels map[string]string
+
+	// With default values
+	o := &elasticsearchapi.Elasticsearch{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: "default",
+			Name:      "test",
+		},
+		Spec: elasticsearchapi.ElasticsearchSpec{},
+	}
+
+	expectedLabels = map[string]string{
+		"cluster":                 "test",
+		"elasticsearch.k8s.webcenter.fr": "true",
+	}
+
+	assert.Equal(t, expectedLabels, getLabels(o))
+
+	// With additional labels
+	expectedLabels["foo"] = "bar"
+
+	assert.Equal(t, expectedLabels, getLabels(o, map[string]string{"foo": "bar"}))
+}
+
+func TestGetAnnotations(t *testing.T) {
+	var expectedAnnotations map[string]string
+
+	// With default values
+	o := &elasticsearchapi.Elasticsearch{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: "default",
+			Name:      "test",
+		},
+		Spec: elasticsearchapi.ElasticsearchSpec{},
+	}
+
+	expectedAnnotations = map[string]string{
+		"elasticsearch.k8s.webcenter.fr": "true",
+	}
+
+	assert.Equal(t, expectedAnnotations, getAnnotations(o))
+
+	// With additional annottaions
+	expectedAnnotations["foo"] = "bar"
+
+	assert.Equal(t, expectedAnnotations, getAnnotations(o, map[string]string{"foo": "bar"}))
+}
