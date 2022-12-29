@@ -110,3 +110,8 @@ func getAnnotations(kb *kibanaapi.Kibana, customAnnotation ...map[string]string)
 
 	return annotations
 }
+
+// GetSecretNameForCredentials permit to get the secret name that store the credentials
+func GetSecretNameForCredentials(kb *kibanaapi.Kibana) (secretName string) {
+	return fmt.Sprintf("%s-credential-kb", kb.Name)
+}

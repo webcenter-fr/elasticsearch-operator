@@ -239,6 +239,16 @@ type DeploymentSpec struct {
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
 	// +optional
 	PodDisruptionBudgetSpec *policyv1.PodDisruptionBudgetSpec `json:"podDisruptionBudget,omitempty"`
+
+	// Node permit to set extra option on Node process
+	// +operator-sdk:csv:customresourcedefinitions:type=spec
+	// +optional
+	Node string `json:"node,omitempty"`
+
+	// InitContainerResources permit to set resources on init containers
+	// +operator-sdk:csv:customresourcedefinitions:type=spec
+	// +optional
+	InitContainerResources *corev1.ResourceRequirements `json:"initContainerResources,omitempty"`
 }
 
 type AntiAffinitySpec struct {

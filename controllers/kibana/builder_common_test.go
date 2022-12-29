@@ -203,3 +203,16 @@ func TestGetAnnotations(t *testing.T) {
 	assert.Equal(t, expectedAnnotations, getAnnotations(o, map[string]string{"foo": "bar"}))
 }
 
+func TestGetSecretNameForCredentials(t *testing.T) {
+
+	o := &kibanaapi.Kibana{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: "default",
+			Name:      "test",
+		},
+		Spec: kibanaapi.KibanaSpec{},
+	}
+
+	assert.Equal(t, "test-credential-kb", GetSecretNameForCredentials(o))
+
+}

@@ -23,6 +23,9 @@ func BuildConfigMap(kb *kibanaapi.Kibana) (configMap *corev1.ConfigMap, err erro
 server.ssl.enabled: true
 server.ssl.certificate: /usr/share/kibana/config/api-cert/tls.crt
 server.ssl.key: /usr/share/kibana/config/api-cert/tls.key
+elasticsearch.ssl.verificationMode: certificate
+elasticsearch.ssl.certificateAuthorities:
+  - /usr/share/kibana/config/api-cert/elasticsearch-ca.crt
 `
 	} else {
 		injectedConfigMap["kibana.yml"] = "server.ssl.enabled: false\n"
