@@ -74,6 +74,11 @@ type KibanaSpec struct {
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
 	// +optional
 	Tls TlsSpec `json:"tls,omitempty"`
+
+	// Deployment permit to set the deployment settings
+	// +operator-sdk:csv:customresourcedefinitions:type=spec
+	// +optional
+	Deployment DeploymentSpec `json:"deployment,omitempty"`
 }
 
 type ElasticsearchRef struct {
