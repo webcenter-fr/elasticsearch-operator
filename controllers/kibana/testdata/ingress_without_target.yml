@@ -1,0 +1,24 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  labels:
+    cluster: test
+    kibana.k8s.webcenter.fr: "true"
+  annotations:
+    nginx.ingress.kubernetes.io/backend-protocol: HTTPS
+    nginx.ingress.kubernetes.io/force-ssl-redirect: "true"
+    kibana.k8s.webcenter.fr: "true"
+  name: test-kb
+  namespace: default
+spec:
+  rules:
+  - host: my-test.cluster.local
+    http:
+      paths:
+      - backend:
+          service:
+            name: test-kb
+            port:
+              number: 5601
+        path: /
+        pathType: Prefix
