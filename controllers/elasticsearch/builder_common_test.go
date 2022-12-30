@@ -434,7 +434,7 @@ func TestGetLabels(t *testing.T) {
 	}
 
 	expectedLabels = map[string]string{
-		"cluster":                 "test",
+		"cluster":                        "test",
 		"elasticsearch.k8s.webcenter.fr": "true",
 	}
 

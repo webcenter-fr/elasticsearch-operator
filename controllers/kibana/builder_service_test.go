@@ -13,9 +13,9 @@ import (
 func TestBuildService(t *testing.T) {
 
 	var (
-		err      error
+		err     error
 		service *corev1.Service
-		o        *kibanaapi.Kibana
+		o       *kibanaapi.Kibana
 	)
 	// With default values
 	o = &kibanaapi.Kibana{

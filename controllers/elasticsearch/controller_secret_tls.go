@@ -1027,9 +1027,6 @@ func (r *TlsReconciler) OnSuccess(ctx context.Context, resource client.Object, d
 		if err = r.Client.List(ctx, stsList, &client.ListOptions{Namespace: o.Namespace, LabelSelector: labelSelectors}); err != nil {
 			return res, errors.Wrapf(err, "Error when read Elasticsearch statefullsets")
 		}
-		if err = r.Client.List(ctx, podList, &client.ListOptions{Namespace: o.Namespace, LabelSelector: labelSelectors}); err != nil {
-			return res, errors.Wrapf(err, "Error when read Elasticsearch pods")
-		}
 
 		// First, check if one sts currently upgraded
 		for _, sts := range stsList.Items {

@@ -37,7 +37,7 @@ func BuildServices(es *elasticsearchapi.Elasticsearch) (services []corev1.Servic
 			Type:            corev1.ServiceTypeClusterIP,
 			SessionAffinity: corev1.ServiceAffinityNone,
 			Selector: map[string]string{
-				"cluster": es.Name,
+				"cluster":                  es.Name,
 				ElasticsearchAnnotationKey: "true",
 			},
 			Ports: []corev1.ServicePort{
@@ -75,8 +75,8 @@ func BuildServices(es *elasticsearchapi.Elasticsearch) (services []corev1.Servic
 				Type:            corev1.ServiceTypeClusterIP,
 				SessionAffinity: corev1.ServiceAffinityNone,
 				Selector: map[string]string{
-					"cluster":   es.Name,
-					"nodeGroup": nodeGroup.Name,
+					"cluster":                  es.Name,
+					"nodeGroup":                nodeGroup.Name,
 					ElasticsearchAnnotationKey: "true",
 				},
 				Ports: []corev1.ServicePort{
@@ -112,8 +112,8 @@ func BuildServices(es *elasticsearchapi.Elasticsearch) (services []corev1.Servic
 				Type:                     corev1.ServiceTypeClusterIP,
 				SessionAffinity:          corev1.ServiceAffinityNone,
 				Selector: map[string]string{
-					"cluster":   es.Name,
-					"nodeGroup": nodeGroup.Name,
+					"cluster":                  es.Name,
+					"nodeGroup":                nodeGroup.Name,
 					ElasticsearchAnnotationKey: "true",
 				},
 				Ports: []corev1.ServicePort{

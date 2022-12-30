@@ -287,7 +287,7 @@ fi
 		kcb := k8sbuilder.NewContainerBuilder().WithContainer(&corev1.Container{
 			Name:            "init-keystore",
 			Image:           GetContainerImage(kb),
-			ImagePullPolicy: es.Spec.ImagePullPolicy,
+			ImagePullPolicy: kb.Spec.ImagePullPolicy,
 			VolumeMounts: []corev1.VolumeMount{
 				{
 					Name:      "keystore",
@@ -316,14 +316,14 @@ cp -a /usr/share/kibana/config/kibana.keystore /mnt/keystore/
 `,
 			},
 		})
-		kcb.WithResource(es.Spec.GlobalNodeGroup.InitContainerResources)
+		kcb.WithResource(kb.Spec.Deployment.InitContainerResources)
 
 		ptb.WithInitContainers([]corev1.Container{*kcb.Container()}, k8sbuilder.Merge)
 	}
 	ccb := k8sbuilder.NewContainerBuilder().WithContainer(&corev1.Container{
 		Name:            "init-filesystem",
 		Image:           GetContainerImage(kb),
-		ImagePullPolicy: es.Spec.ImagePullPolicy,
+		ImagePullPolicy: kb.Spec.ImagePullPolicy,
 		SecurityContext: &corev1.SecurityContext{
 			RunAsUser: pointer.Int64(0),
 		},
@@ -406,7 +406,7 @@ echo "Set right"
 chown -R kibana:kibana /mnt/config
 
 `)
-	for _, plugin := range es.Spec.PluginsList {
+	for _, plugin := range kb.Spec.PluginsList {
 		command.WriteString(fmt.Sprintf("./bin/kibana-plugin install -b %s\n", plugin))
 	}
 	command.WriteString(`
@@ -431,7 +431,7 @@ fi
 	}
 	ccb.WithVolumeMount(additionalVolumeMounts, k8sbuilder.Merge)
 
-	if len(es.Spec.PluginsList) > 0 {
+	if len(kb.Spec.PluginsList) > 0 {
 		ccb.WithVolumeMount([]corev1.VolumeMount{
 			{
 				Name:      "plugin",
@@ -505,8 +505,8 @@ fi
 	// Compute Deployment
 	dpl = &appv1.Deployment{
 		ObjectMeta: metav1.ObjectMeta{
-			Namespace:   es.Namespace,
-			Name:        es.Name,
+			Namespace:   kb.Namespace,
+			Name:        kb.Name,
 			Labels:      getLabels(kb, kb.Spec.Deployment.Labels),
 			Annotations: getAnnotations(kb, kb.Spec.Deployment.Annotations),
 		},
@@ -514,7 +514,7 @@ fi
 			Replicas: pointer.Int32(kb.Spec.Deployment.Replicas),
 			Selector: &metav1.LabelSelector{
 				MatchLabels: map[string]string{
-					"cluster":           es.Name,
+					"cluster":           kb.Name,
 					KibanaAnnotationKey: "true",
 				},
 			},
@@ -544,7 +544,7 @@ func getKibanaContainer(podTemplate *corev1.PodTemplateSpec) (container *corev1.
 // computeElasticsearchHosts permit to get the target Elasticsearch cluster to connect on
 func computeElasticsearchHosts(kb *kibanaapi.Kibana, es *elasticsearchapi.Elasticsearch) string {
 
-	if kb.Spec.ElasticsearchRef != nil {
+	if kb.Spec.ElasticsearchRef != nil && kb.Spec.ElasticsearchRef.Name != "" {
 		scheme := "https"
 		if !es.IsTlsApiEnabled() {
 			scheme = "http"

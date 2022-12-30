@@ -90,6 +90,48 @@ func (r *KibanaReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 	kb := &kibanaapi.Kibana{}
 	data := map[string]any{}
 
+	tlsReconciler := NewTlsReconciler(r.Client, r.Scheme, common.Reconciler{
+		Recorder: r.GetRecorder(),
+		Log: r.GetLogger().WithFields(logrus.Fields{
+			"phase": "tls",
+		}),
+	})
+
+	credentialReconciler := NewCredentialReconciler(r.Client, r.Scheme, common.Reconciler{
+		Recorder: r.GetRecorder(),
+		Log: r.GetLogger().WithFields(logrus.Fields{
+			"phase": "credential",
+		}),
+	})
+
+	configMapReconciler := NewConfiMapReconciler(r.Client, r.Scheme, common.Reconciler{
+		Recorder: r.GetRecorder(),
+		Log: r.GetLogger().WithFields(logrus.Fields{
+			"phase": "configMap",
+		}),
+	})
+
+	serviceReconciler := NewServiceReconciler(r.Client, r.Scheme, common.Reconciler{
+		Recorder: r.GetRecorder(),
+		Log: r.GetLogger().WithFields(logrus.Fields{
+			"phase": "service",
+		}),
+	})
+
+	pdbReconciler := NewPdbReconciler(r.Client, r.Scheme, common.Reconciler{
+		Recorder: r.GetRecorder(),
+		Log: r.GetLogger().WithFields(logrus.Fields{
+			"phase": "pdb",
+		}),
+	})
+
+	deploymentReconciler := NewDeploymentReconciler(r.Client, r.Scheme, common.Reconciler{
+		Recorder: r.GetRecorder(),
+		Log: r.GetLogger().WithFields(logrus.Fields{
+			"phase": "deployment",
+		}),
+	})
+
 	ingressReconciler := NewIngressReconciler(r.Client, r.Scheme, common.Reconciler{
 		Recorder: r.GetRecorder(),
 		Log: r.GetLogger().WithFields(logrus.Fields{
@@ -105,6 +147,12 @@ func (r *KibanaReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 	})
 
 	return reconciler.Reconcile(ctx, req, kb, data,
+		tlsReconciler,
+		credentialReconciler,
+		configMapReconciler,
+		serviceReconciler,
+		pdbReconciler,
+		deploymentReconciler,
 		ingressReconciler,
 		loadBalancerReconciler,
 	)

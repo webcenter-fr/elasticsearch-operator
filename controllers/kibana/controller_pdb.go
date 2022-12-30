@@ -1,4 +1,4 @@
-package elasticsearch
+package kibana
 
 import (
 	"context"
@@ -8,15 +8,15 @@ import (
 	"github.com/disaster37/operator-sdk-extra/pkg/controller"
 	"github.com/disaster37/operator-sdk-extra/pkg/helper"
 	"github.com/pkg/errors"
-	elasticsearchapi "github.com/webcenter-fr/elasticsearch-operator/apis/elasticsearch/v1alpha1"
+	kibanaapi "github.com/webcenter-fr/elasticsearch-operator/apis/kibana/v1alpha1"
 	"github.com/webcenter-fr/elasticsearch-operator/controllers/common"
-	helperdiff "github.com/webcenter-fr/elasticsearch-operator/pkg/helper"
 	corev1 "k8s.io/api/core/v1"
 	policyv1 "k8s.io/api/policy/v1"
+	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	condition "k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/types"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
@@ -49,7 +49,7 @@ func (r *PdbReconciler) Name() string {
 
 // Configure permit to init condition
 func (r *PdbReconciler) Configure(ctx context.Context, req ctrl.Request, resource client.Object) (res ctrl.Result, err error) {
-	o := resource.(*elasticsearchapi.Elasticsearch)
+	o := resource.(*kibanaapi.Kibana)
 
 	// Init condition status if not exist
 	if condition.FindStatusCondition(o.Status.Conditions, PdbCondition) == nil {
@@ -67,25 +67,25 @@ func (r *PdbReconciler) Configure(ctx context.Context, req ctrl.Request, resourc
 
 // Read existing pdbs
 func (r *PdbReconciler) Read(ctx context.Context, resource client.Object, data map[string]any) (res ctrl.Result, err error) {
-	o := resource.(*elasticsearchapi.Elasticsearch)
-	pdbList := &policyv1.PodDisruptionBudgetList{}
+	o := resource.(*kibanaapi.Kibana)
+	pdb := &policyv1.PodDisruptionBudget{}
 
-	// Read current node group pdbs
-	labelSelectors, err := labels.Parse(fmt.Sprintf("cluster=%s,%s=true", o.Name, ElasticsearchAnnotationKey))
-	if err != nil {
-		return res, errors.Wrap(err, "Error when generate label selector")
+	// Read current pdb
+	if err = r.Client.Get(ctx, types.NamespacedName{Namespace: o.Namespace, Name: GetPDBName(o)}, pdb); err != nil {
+		if !k8serrors.IsNotFound(err) {
+			return res, errors.Wrapf(err, "Error when read PDB")
+		}
+		pdb = nil
 	}
-	if err = r.Client.List(ctx, pdbList, &client.ListOptions{Namespace: o.Namespace, LabelSelector: labelSelectors}); err != nil {
-		return res, errors.Wrapf(err, "Error when read PDB")
-	}
-	data["currentPdbs"] = pdbList.Items
 
-	// Generate expected node group pdbs
-	expectedPdbs, err := BuildPodDisruptionBudget(o)
+	data["currentPdb"] = pdb
+
+	// Generate expected pdb
+	expectedPdb, err := BuildPodDisruptionBudget(o)
 	if err != nil {
-		return res, errors.Wrap(err, "Error when generate pdbs")
+		return res, errors.Wrap(err, "Error when generate pdb")
 	}
-	data["expectedPdbs"] = expectedPdbs
+	data["expectedPdb"] = expectedPdb
 
 	return res, nil
 }
@@ -150,20 +150,20 @@ func (r *PdbReconciler) Delete(ctx context.Context, resource client.Object, data
 
 // Diff permit to check if pdbs are up to date
 func (r *PdbReconciler) Diff(ctx context.Context, resource client.Object, data map[string]interface{}) (diff controller.K8sDiff, res ctrl.Result, err error) {
-	o := resource.(*elasticsearchapi.Elasticsearch)
+	o := resource.(*kibanaapi.Kibana)
 	var d any
 
-	d, err = helper.Get(data, "currentPdbs")
+	d, err = helper.Get(data, "currentPdb")
 	if err != nil {
 		return diff, res, err
 	}
-	currentPdbs := d.([]policyv1.PodDisruptionBudget)
+	currentPdb := d.(*policyv1.PodDisruptionBudget)
 
-	d, err = helper.Get(data, "expectedPdbs")
+	d, err = helper.Get(data, "expectedPdb")
 	if err != nil {
 		return diff, res, err
 	}
-	expectedPdbs := d.([]policyv1.PodDisruptionBudget)
+	expectedPdb := d.(*policyv1.PodDisruptionBudget)
 
 	diff = controller.K8sDiff{
 		NeedCreate: false,
@@ -173,73 +173,60 @@ func (r *PdbReconciler) Diff(ctx context.Context, resource client.Object, data m
 
 	pdbToUpdate := make([]policyv1.PodDisruptionBudget, 0)
 	pdbToCreate := make([]policyv1.PodDisruptionBudget, 0)
+	pdbToDelete := make([]policyv1.PodDisruptionBudget, 0)
 
-	for _, expectedPdb := range expectedPdbs {
-		isFound := false
-		for i, currentPdb := range currentPdbs {
-			// Need compare pdb
-			if currentPdb.Name == expectedPdb.Name {
-				isFound = true
+	// Not yet exist
+	if currentPdb == nil {
+		// Need create pdbs
+		diff.NeedCreate = true
+		diff.Diff.WriteString(fmt.Sprintf("Pdb %s not yet exist\n", expectedPdb.Name))
 
-				// Copy TypeMeta to work with IgnorePDBSelector()
-				expectedPdb.TypeMeta = currentPdb.TypeMeta
-				patchResult, err := patch.DefaultPatchMaker.Calculate(&currentPdb, &expectedPdb, patch.IgnorePDBSelector(), patch.CleanMetadata(), patch.IgnoreStatusFields())
-				if err != nil {
-					return diff, res, errors.Wrapf(err, "Error when diffing pdb %s", currentPdb.Name)
-				}
-				if !patchResult.IsEmpty() {
-					updatedPdb := patchResult.Patched.(*policyv1.PodDisruptionBudget)
-					diff.NeedUpdate = true
-					diff.Diff.WriteString(fmt.Sprintf("diff %s: %s\n", updatedPdb.Name, string(patchResult.Patch)))
-					pdbToUpdate = append(pdbToUpdate, *updatedPdb)
-					r.Log.Debugf("Need update pdb %s", updatedPdb.Name)
-				}
-
-				// Remove items found
-				currentPdbs = helperdiff.DeleteItemFromSlice(currentPdbs, i).([]policyv1.PodDisruptionBudget)
-
-				break
-			}
+		// Set owner
+		err = ctrl.SetControllerReference(o, expectedPdb, r.Scheme)
+		if err != nil {
+			return diff, res, errors.Wrapf(err, "Error when set owner reference")
 		}
 
-		if !isFound {
-			// Need create pdbs
-			diff.NeedCreate = true
-			diff.Diff.WriteString(fmt.Sprintf("Pdb %s not yet exist\n", expectedPdb.Name))
-
-			// Set owner
-			err = ctrl.SetControllerReference(o, &expectedPdb, r.Scheme)
-			if err != nil {
-				return diff, res, errors.Wrapf(err, "Error when set owner reference")
-			}
-
-			if err := patch.DefaultAnnotator.SetLastAppliedAnnotation(&expectedPdb); err != nil {
-				return diff, res, errors.Wrapf(err, "Error when set diff annotation on pdb %s", expectedPdb.Name)
-			}
-
-			pdbToCreate = append(pdbToCreate, expectedPdb)
-
-			r.Log.Debugf("Need create pdb %s", expectedPdb.Name)
+		if err := patch.DefaultAnnotator.SetLastAppliedAnnotation(expectedPdb); err != nil {
+			return diff, res, errors.Wrapf(err, "Error when set diff annotation on pdb %s", expectedPdb.Name)
 		}
+
+		pdbToCreate = append(pdbToCreate, *expectedPdb)
+
+		r.Log.Debugf("Need create pdb %s", expectedPdb.Name)
+
+		data["newPdbs"] = pdbToCreate
+		data["pdbs"] = pdbToUpdate
+		data["oldPdbs"] = pdbToDelete
+
+		return diff, res, nil
 	}
 
-	if len(currentPdbs) > 0 {
-		diff.NeedDelete = true
-		for _, pdb := range currentPdbs {
-			diff.Diff.WriteString(fmt.Sprintf("Need delete pdb %s\n", pdb.Name))
-		}
+	// Check if PDB is up to date
+	// Copy TypeMeta to work with IgnorePDBSelector()
+	expectedPdb.TypeMeta = currentPdb.TypeMeta
+	patchResult, err := patch.DefaultPatchMaker.Calculate(currentPdb, expectedPdb, patch.IgnorePDBSelector(), patch.CleanMetadata(), patch.IgnoreStatusFields())
+	if err != nil {
+		return diff, res, errors.Wrapf(err, "Error when diffing pdb %s", currentPdb.Name)
+	}
+	if !patchResult.IsEmpty() {
+		updatedPdb := patchResult.Patched.(*policyv1.PodDisruptionBudget)
+		diff.NeedUpdate = true
+		diff.Diff.WriteString(fmt.Sprintf("diff %s: %s\n", updatedPdb.Name, string(patchResult.Patch)))
+		pdbToUpdate = append(pdbToUpdate, *updatedPdb)
+		r.Log.Debugf("Need update pdb %s", updatedPdb.Name)
 	}
 
 	data["newPdbs"] = pdbToCreate
 	data["pdbs"] = pdbToUpdate
-	data["oldPdbs"] = currentPdbs
+	data["oldPdbs"] = pdbToDelete
 
 	return diff, res, nil
 }
 
 // OnError permit to set status condition on the right state and record error
 func (r *PdbReconciler) OnError(ctx context.Context, resource client.Object, data map[string]any, currentErr error) (res ctrl.Result, err error) {
-	o := resource.(*elasticsearchapi.Elasticsearch)
+	o := resource.(*kibanaapi.Kibana)
 
 	r.Log.Error(currentErr)
 	r.Recorder.Event(resource, corev1.EventTypeWarning, "Failed", currentErr.Error())
@@ -257,10 +244,10 @@ func (r *PdbReconciler) OnError(ctx context.Context, resource client.Object, dat
 
 // OnSuccess permit to set status condition on the right state is everithink is good
 func (r *PdbReconciler) OnSuccess(ctx context.Context, resource client.Object, data map[string]any, diff controller.K8sDiff) (res ctrl.Result, err error) {
-	o := resource.(*elasticsearchapi.Elasticsearch)
+	o := resource.(*kibanaapi.Kibana)
 
 	if diff.NeedCreate || diff.NeedUpdate || diff.NeedDelete {
-		r.Recorder.Eventf(resource, corev1.EventTypeNormal, "Completed", "Pdbs successfully updated")
+		r.Recorder.Eventf(resource, corev1.EventTypeNormal, "Completed", "Pdb successfully updated")
 	}
 
 	// Update condition status if needed
