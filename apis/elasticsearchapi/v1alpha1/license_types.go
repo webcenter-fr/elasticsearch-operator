@@ -54,9 +54,9 @@ type LicenseStatus struct {
 	// +operator-sdk:csv:customresourcedefinitions:type=status
 	ExpireAt string `json:"expireAt"`
 
-	// LicenseHash is the Hash of the current license
+	// LicenseChecksum is the checksum of the current license
 	// +operator-sdk:csv:customresourcedefinitions:type=status
-	LicenseHash string `json:"licenseHash"`
+	LicenseChecksum string `json:"licenseChecksum"`
 
 	// List of conditions
 	// +operator-sdk:csv:customresourcedefinitions:type=status

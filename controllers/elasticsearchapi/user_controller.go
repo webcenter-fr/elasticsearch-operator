@@ -28,7 +28,7 @@ import (
 	core "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	condition "k8s.io/apimachinery/pkg/api/meta"
-	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -100,9 +100,9 @@ func (r *UserReconciler) Configure(ctx context.Context, req ctrl.Request, resour
 
 	// Init condition status if not exist
 	if condition.FindStatusCondition(o.Status.Conditions, userCondition) == nil {
-		condition.SetStatusCondition(&o.Status.Conditions, v1.Condition{
+		condition.SetStatusCondition(&o.Status.Conditions, metav1.Condition{
 			Type:   userCondition,
-			Status: v1.ConditionFalse,
+			Status: metav1.ConditionFalse,
 			Reason: "Initialize",
 		})
 	}
@@ -352,9 +352,9 @@ func (r *UserReconciler) OnError(ctx context.Context, resource client.Object, da
 	r.log.Error(err)
 	r.recorder.Event(resource, core.EventTypeWarning, "Failed", err.Error())
 
-	condition.SetStatusCondition(&user.Status.Conditions, v1.Condition{
+	condition.SetStatusCondition(&user.Status.Conditions, metav1.Condition{
 		Type:    userCondition,
-		Status:  v1.ConditionFalse,
+		Status:  metav1.ConditionFalse,
 		Reason:  "Failed",
 		Message: err.Error(),
 	})
@@ -365,9 +365,9 @@ func (r *UserReconciler) OnSuccess(ctx context.Context, resource client.Object, 
 	user := resource.(*elasticsearchapicrd.User)
 
 	if diff.NeedCreate {
-		condition.SetStatusCondition(&user.Status.Conditions, v1.Condition{
+		condition.SetStatusCondition(&user.Status.Conditions, metav1.Condition{
 			Type:    userCondition,
-			Status:  v1.ConditionTrue,
+			Status:  metav1.ConditionTrue,
 			Reason:  "Success",
 			Message: "User successfully created",
 		})
@@ -376,9 +376,9 @@ func (r *UserReconciler) OnSuccess(ctx context.Context, resource client.Object, 
 	}
 
 	if diff.NeedUpdate {
-		condition.SetStatusCondition(&user.Status.Conditions, v1.Condition{
+		condition.SetStatusCondition(&user.Status.Conditions, metav1.Condition{
 			Type:    userCondition,
-			Status:  v1.ConditionTrue,
+			Status:  metav1.ConditionTrue,
 			Reason:  "Success",
 			Message: "User successfully updated",
 		})
@@ -387,11 +387,11 @@ func (r *UserReconciler) OnSuccess(ctx context.Context, resource client.Object, 
 	}
 
 	// Update condition status if needed
-	if condition.IsStatusConditionPresentAndEqual(user.Status.Conditions, userCondition, v1.ConditionFalse) {
-		condition.SetStatusCondition(&user.Status.Conditions, v1.Condition{
+	if condition.IsStatusConditionPresentAndEqual(user.Status.Conditions, userCondition, metav1.ConditionFalse) {
+		condition.SetStatusCondition(&user.Status.Conditions, metav1.Condition{
 			Type:    userCondition,
 			Reason:  "Success",
-			Status:  v1.ConditionTrue,
+			Status:  metav1.ConditionTrue,
 			Message: "User already set",
 		})
 
