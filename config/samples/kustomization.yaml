@@ -3,4 +3,5 @@ resources:
 - elasticsearch_v1alpha1_elasticsearch.yaml
 - kibana_v1alpha1_kibana.yaml
 - elasticsearchapi_v1alpha1_user.yaml
+- elasticsearchapi_v1alpha1_license.yaml
 #+kubebuilder:scaffold:manifestskustomizesamples
