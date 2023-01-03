@@ -3,14 +3,14 @@ package kibana
 import (
 	"github.com/disaster37/k8sbuilder"
 	"github.com/pkg/errors"
-	kibanaapi "github.com/webcenter-fr/elasticsearch-operator/apis/kibana/v1alpha1"
+	kibanacrd "github.com/webcenter-fr/elasticsearch-operator/apis/kibana/v1alpha1"
 	policyv1 "k8s.io/api/policy/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
 )
 
 // GeneratePodDisruptionBudget permit to generate pod disruption budgets for each node group
-func BuildPodDisruptionBudget(kb *kibanaapi.Kibana) (pdb *policyv1.PodDisruptionBudget, err error) {
+func BuildPodDisruptionBudget(kb *kibanacrd.Kibana) (pdb *policyv1.PodDisruptionBudget, err error) {
 
 	maxUnavailable := intstr.FromInt(1)
 	pdb = &policyv1.PodDisruptionBudget{

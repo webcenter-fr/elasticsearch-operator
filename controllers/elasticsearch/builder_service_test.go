@@ -4,7 +4,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
-	elasticsearchapi "github.com/webcenter-fr/elasticsearch-operator/apis/elasticsearch/v1alpha1"
+	elasticsearchcrd "github.com/webcenter-fr/elasticsearch-operator/apis/elasticsearch/v1alpha1"
 	"github.com/webcenter-fr/elasticsearch-operator/pkg/test"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -15,15 +15,15 @@ func TestBuildServices(t *testing.T) {
 	var (
 		err      error
 		services []corev1.Service
-		o        *elasticsearchapi.Elasticsearch
+		o        *elasticsearchcrd.Elasticsearch
 	)
 	// With default values
-	o = &elasticsearchapi.Elasticsearch{
+	o = &elasticsearchcrd.Elasticsearch{
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: "default",
 			Name:      "test",
 		},
-		Spec: elasticsearchapi.ElasticsearchSpec{},
+		Spec: elasticsearchcrd.ElasticsearchSpec{},
 	}
 
 	services, err = BuildServices(o)
@@ -32,13 +32,13 @@ func TestBuildServices(t *testing.T) {
 	test.EqualFromYamlFile(t, "testdata/service_default.yaml", &services[0], test.CleanApi)
 
 	// When nodes Groups
-	o = &elasticsearchapi.Elasticsearch{
+	o = &elasticsearchcrd.Elasticsearch{
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: "default",
 			Name:      "test",
 		},
-		Spec: elasticsearchapi.ElasticsearchSpec{
-			NodeGroups: []elasticsearchapi.NodeGroupSpec{
+		Spec: elasticsearchcrd.ElasticsearchSpec{
+			NodeGroups: []elasticsearchcrd.NodeGroupSpec{
 				{
 					Name: "master",
 				},

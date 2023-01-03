@@ -3,14 +3,14 @@ package kibana
 import (
 	"fmt"
 
-	kibanaapi "github.com/webcenter-fr/elasticsearch-operator/apis/kibana/v1alpha1"
+	kibanacrd "github.com/webcenter-fr/elasticsearch-operator/apis/kibana/v1alpha1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
 )
 
 // BuilderService permit to generate service
-func BuildService(kb *kibanaapi.Kibana) (service *corev1.Service, err error) {
+func BuildService(kb *kibanacrd.Kibana) (service *corev1.Service, err error) {
 
 	service = &corev1.Service{
 		ObjectMeta: metav1.ObjectMeta{

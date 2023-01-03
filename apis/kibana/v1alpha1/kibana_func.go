@@ -31,3 +31,12 @@ func (h *Kibana) IsLoadBalancerEnabled() bool {
 
 	return false
 }
+
+// IsElasticsearchRef return true if ElasticsearchRef is setted
+func (h *Kibana) IsElasticsearchRef() bool {
+	if h.Spec.ElasticsearchRef != nil && h.Spec.ElasticsearchRef.Name != "" {
+		return true
+	}
+
+	return false
+}

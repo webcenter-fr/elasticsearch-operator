@@ -1,7 +1,7 @@
 package kibana
 
 import (
-	kibanaapi "github.com/webcenter-fr/elasticsearch-operator/apis/kibana/v1alpha1"
+	kibanacrd "github.com/webcenter-fr/elasticsearch-operator/apis/kibana/v1alpha1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
@@ -9,7 +9,7 @@ import (
 
 // GenerateLoadbalancer permit to generate Loadbalancer throught service
 // It return nil if Loadbalancer is disabled
-func BuildLoadbalancer(kb *kibanaapi.Kibana) (service *corev1.Service, err error) {
+func BuildLoadbalancer(kb *kibanacrd.Kibana) (service *corev1.Service, err error) {
 
 	if !kb.IsLoadBalancerEnabled() {
 		return nil, nil

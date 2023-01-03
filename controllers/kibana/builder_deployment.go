@@ -8,8 +8,8 @@ import (
 	"github.com/disaster37/k8sbuilder"
 	"github.com/elastic/go-ucfg"
 	"github.com/pkg/errors"
-	elasticsearchapi "github.com/webcenter-fr/elasticsearch-operator/apis/elasticsearch/v1alpha1"
-	kibanaapi "github.com/webcenter-fr/elasticsearch-operator/apis/kibana/v1alpha1"
+	elasticsearchcrd "github.com/webcenter-fr/elasticsearch-operator/apis/elasticsearch/v1alpha1"
+	kibanacrd "github.com/webcenter-fr/elasticsearch-operator/apis/kibana/v1alpha1"
 	"github.com/webcenter-fr/elasticsearch-operator/controllers/elasticsearch"
 	"github.com/webcenter-fr/elasticsearch-operator/pkg/helper"
 	appv1 "k8s.io/api/apps/v1"
@@ -20,11 +20,11 @@ import (
 )
 
 // BuildDeployment permit to generate deployment for Kibana
-func BuildDeployment(kb *kibanaapi.Kibana, es *elasticsearchapi.Elasticsearch) (dpl *appv1.Deployment, err error) {
+func BuildDeployment(kb *kibanacrd.Kibana, es *elasticsearchcrd.Elasticsearch) (dpl *appv1.Deployment, err error) {
 
 	// Generate confimaps to know what file to mount
 	// And to generate checksum
-	configMap, err := BuildConfigMap(kb)
+	configMap, err := BuildConfigMap(kb, es)
 	if err != nil {
 		return nil, errors.Wrap(err, "Error when generate configMap")
 	}
@@ -119,7 +119,7 @@ func BuildDeployment(kb *kibanaapi.Kibana, es *elasticsearchapi.Elasticsearch) (
 				},
 			},
 			{
-				Name:  "server.host",
+				Name:  "SERVER_HOST",
 				Value: "0.0.0.0",
 			},
 			{
@@ -215,11 +215,11 @@ func BuildDeployment(kb *kibanaapi.Kibana, es *elasticsearchapi.Elasticsearch) (
 					`#!/usr/bin/env bash
 set -euo pipefail
 
-# Implementation based on Elasticsearch helm template
+# Implementation based on Kibana helm template
 
 export NSS_SDB_USE_CACHE=no
 
-HTTP_CODE=$(curl --output /dev/null -k -XGET -s -w '%{http_code}' -u elastic:${ELASTIC_PASSWORD} ${PROBE_SCHEME}://127.0.0.1:5601${PROBE_PATH})
+HTTP_CODE=$(curl --output /dev/null -k -XGET -s --fail -L -w '%{http_code}' ${PROBE_SCHEME}://127.0.0.1:5601${PROBE_PATH})
 RC=$?
 if [[ ${RC} -ne 0 ]]; then
   echo "Failed to get Kibana"
@@ -228,7 +228,7 @@ fi
 if [[ ${HTTP_CODE} == "200" ]]; then
   exit 0
 else
-  echo "Kibana return code ${HTTP_CODE}
+  echo "Kibana return code ${HTTP_CODE}"
   exit 1
 fi
 `,
@@ -370,10 +370,6 @@ cp -a /usr/share/kibana/config/kibana.keystore /mnt/keystore/
 				Name:      "config",
 				MountPath: "/mnt/config",
 			},
-			{
-				Name:      "tls",
-				MountPath: "/mnt/certs",
-			},
 		},
 	})
 	var command strings.Builder
@@ -391,9 +387,18 @@ if [ -d /mnt/configmap ]; then
 fi
 
 # Move certificates
-echo "Move cerficates"
-mkdir -p /mnt/config/api-cert
-cp /mnt/certs/* /mnt/config/api-cert/
+if [ -d /mnt/certs ]; then
+  echo "Move cerficates"
+  mkdir -p /mnt/config/api-cert
+  cp /mnt/certs/* /mnt/config/api-cert/
+fi
+
+# Move CA Elasticsearch
+if [ -d /mnt/ca-elasticsearch ]; then
+	echo "Move CA certificate"
+	mkdir -p /mnt/config/es-ca
+	cp /mnt/ca-elasticsearch/* /mnt/config/es-ca/
+fi
 
 # Move keystore
 if [ -f /mnt/keystore/kibana.keystore ]; then
@@ -430,6 +435,23 @@ fi
 		})
 	}
 	ccb.WithVolumeMount(additionalVolumeMounts, k8sbuilder.Merge)
+	if kb.IsTlsEnabled() {
+		ccb.WithVolumeMount([]corev1.VolumeMount{
+			{
+				Name:      "tls",
+				MountPath: "/mnt/certs",
+			},
+		}, k8sbuilder.Merge)
+	}
+
+	if kb.IsElasticsearchRef() && es.IsTlsApiEnabled() {
+		ccb.WithVolumeMount([]corev1.VolumeMount{
+			{
+				Name:      "ca-elasticsearch",
+				MountPath: "/mnt/ca-elasticsearch",
+			},
+		}, k8sbuilder.Merge)
+	}
 
 	if len(kb.Spec.PluginsList) > 0 {
 		ccb.WithVolumeMount([]corev1.VolumeMount{
@@ -444,14 +466,6 @@ fi
 
 	// Compute volumes
 	ptb.WithVolumes([]corev1.Volume{
-		{
-			Name: "tls",
-			VolumeSource: corev1.VolumeSource{
-				Secret: &corev1.SecretVolumeSource{
-					SecretName: GetSecretNameForTls(kb),
-				},
-			},
-		},
 		{
 			Name: "kibana-config",
 			VolumeSource: corev1.VolumeSource{
@@ -489,6 +503,30 @@ fi
 				VolumeSource: corev1.VolumeSource{
 					Secret: &corev1.SecretVolumeSource{
 						SecretName: GetSecretNameForKeystore(kb),
+					},
+				},
+			},
+		}, k8sbuilder.Merge)
+	}
+	if kb.IsTlsEnabled() {
+		ptb.WithVolumes([]corev1.Volume{
+			{
+				Name: "tls",
+				VolumeSource: corev1.VolumeSource{
+					Secret: &corev1.SecretVolumeSource{
+						SecretName: GetSecretNameForTls(kb),
+					},
+				},
+			},
+		}, k8sbuilder.Merge)
+	}
+	if kb.IsElasticsearchRef() && es.IsTlsApiEnabled() {
+		ptb.WithVolumes([]corev1.Volume{
+			{
+				Name: "ca-elasticsearch",
+				VolumeSource: corev1.VolumeSource{
+					Secret: &corev1.SecretVolumeSource{
+						SecretName: GetSecretNameForCAElasticsearch(kb),
 					},
 				},
 			},
@@ -542,7 +580,7 @@ func getKibanaContainer(podTemplate *corev1.PodTemplateSpec) (container *corev1.
 }
 
 // computeElasticsearchHosts permit to get the target Elasticsearch cluster to connect on
-func computeElasticsearchHosts(kb *kibanaapi.Kibana, es *elasticsearchapi.Elasticsearch) string {
+func computeElasticsearchHosts(kb *kibanacrd.Kibana, es *elasticsearchcrd.Elasticsearch) string {
 
 	if kb.Spec.ElasticsearchRef != nil && kb.Spec.ElasticsearchRef.Name != "" {
 		scheme := "https"
@@ -562,15 +600,15 @@ func computeElasticsearchHosts(kb *kibanaapi.Kibana, es *elasticsearchapi.Elasti
 
 // computeAntiAffinity permit to get  anti affinity spec
 // Default to soft anti affinity
-func computeAntiAffinity(kb *kibanaapi.Kibana) (antiAffinity *corev1.PodAntiAffinity, err error) {
-	var expectedAntiAffinity *kibanaapi.AntiAffinitySpec
+func computeAntiAffinity(kb *kibanacrd.Kibana) (antiAffinity *corev1.PodAntiAffinity, err error) {
+	var expectedAntiAffinity *kibanacrd.AntiAffinitySpec
 
 	antiAffinity = &corev1.PodAntiAffinity{}
 	topologyKey := "kubernetes.io/hostname"
 
 	// Check if need to merge anti affinity spec
 	if kb.Spec.Deployment.AntiAffinity != nil {
-		expectedAntiAffinity = &kibanaapi.AntiAffinitySpec{}
+		expectedAntiAffinity = &kibanacrd.AntiAffinitySpec{}
 		if err = helper.Merge(expectedAntiAffinity, kb.Spec.Deployment.AntiAffinity); err != nil {
 			return nil, errors.Wrap(err, "Error when merge global anti affinity")
 		}
@@ -616,7 +654,7 @@ func computeAntiAffinity(kb *kibanaapi.Kibana) (antiAffinity *corev1.PodAntiAffi
 }
 
 // computeNodeOpts permit to get computed NODE_OPTIONS
-func computeNodeOpts(kb *kibanaapi.Kibana) string {
+func computeNodeOpts(kb *kibanacrd.Kibana) string {
 	nodeOpts := []string{}
 
 	if kb.Spec.Deployment.Node != "" {
@@ -629,7 +667,7 @@ func computeNodeOpts(kb *kibanaapi.Kibana) string {
 // computeProbePath permit to compute the probe path to use on readynessProbe
 func computeProbePath(cm *corev1.ConfigMap) (path string, err error) {
 	if cm == nil || cm.Data["kibana.yml"] == "" {
-		return "/", nil
+		return "/app/kibana", nil
 	}
 
 	path, err = helper.GetSetting("server.basePath", []byte(cm.Data["kibana.yml"]))

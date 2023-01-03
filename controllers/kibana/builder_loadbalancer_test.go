@@ -4,7 +4,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
-	kibanaapi "github.com/webcenter-fr/elasticsearch-operator/apis/kibana/v1alpha1"
+	kibanacrd "github.com/webcenter-fr/elasticsearch-operator/apis/kibana/v1alpha1"
 	"github.com/webcenter-fr/elasticsearch-operator/pkg/test"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -15,16 +15,16 @@ func TestBuildLoadbalancer(t *testing.T) {
 	var (
 		err     error
 		service *corev1.Service
-		o       *kibanaapi.Kibana
+		o       *kibanacrd.Kibana
 	)
 
 	// With default values
-	o = &kibanaapi.Kibana{
+	o = &kibanacrd.Kibana{
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: "default",
 			Name:      "test",
 		},
-		Spec: kibanaapi.KibanaSpec{},
+		Spec: kibanacrd.KibanaSpec{},
 	}
 
 	service, err = BuildLoadbalancer(o)
@@ -32,14 +32,14 @@ func TestBuildLoadbalancer(t *testing.T) {
 	assert.Nil(t, service)
 
 	// When load balancer is disabled
-	o = &kibanaapi.Kibana{
+	o = &kibanacrd.Kibana{
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: "default",
 			Name:      "test",
 		},
-		Spec: kibanaapi.KibanaSpec{
-			Endpoint: kibanaapi.EndpointSpec{
-				LoadBalancer: &kibanaapi.LoadBalancerSpec{
+		Spec: kibanacrd.KibanaSpec{
+			Endpoint: kibanacrd.EndpointSpec{
+				LoadBalancer: &kibanacrd.LoadBalancerSpec{
 					Enabled: false,
 				},
 			},
@@ -51,14 +51,14 @@ func TestBuildLoadbalancer(t *testing.T) {
 	assert.Nil(t, service)
 
 	// When load balancer is enabled
-	o = &kibanaapi.Kibana{
+	o = &kibanacrd.Kibana{
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: "default",
 			Name:      "test",
 		},
-		Spec: kibanaapi.KibanaSpec{
-			Endpoint: kibanaapi.EndpointSpec{
-				LoadBalancer: &kibanaapi.LoadBalancerSpec{
+		Spec: kibanacrd.KibanaSpec{
+			Endpoint: kibanacrd.EndpointSpec{
+				LoadBalancer: &kibanacrd.LoadBalancerSpec{
 					Enabled: true,
 				},
 			},

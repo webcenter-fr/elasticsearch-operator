@@ -3,7 +3,7 @@ package elasticsearch
 import (
 	"github.com/disaster37/k8sbuilder"
 	"github.com/pkg/errors"
-	elasticsearchapi "github.com/webcenter-fr/elasticsearch-operator/apis/elasticsearch/v1alpha1"
+	elasticsearchcrd "github.com/webcenter-fr/elasticsearch-operator/apis/elasticsearch/v1alpha1"
 	networkingv1 "k8s.io/api/networking/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -11,7 +11,7 @@ import (
 // BuildIngress permit to generate Ingress object
 // It return error if ingress spec is not provided
 // It return nil if ingress is disabled
-func BuildIngress(es *elasticsearchapi.Elasticsearch) (ingress *networkingv1.Ingress, err error) {
+func BuildIngress(es *elasticsearchcrd.Elasticsearch) (ingress *networkingv1.Ingress, err error) {
 	if !es.IsIngressEnabled() {
 		return nil, nil
 	}

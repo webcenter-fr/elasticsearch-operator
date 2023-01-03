@@ -4,14 +4,15 @@ import (
 	"fmt"
 
 	"github.com/pkg/errors"
-	kibanaapi "github.com/webcenter-fr/elasticsearch-operator/apis/kibana/v1alpha1"
+	elasticsearchcrd "github.com/webcenter-fr/elasticsearch-operator/apis/elasticsearch/v1alpha1"
+	kibanacrd "github.com/webcenter-fr/elasticsearch-operator/apis/kibana/v1alpha1"
 	"github.com/webcenter-fr/elasticsearch-operator/pkg/helper"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 // BuildConfigMap permit to generate config map
-func BuildConfigMap(kb *kibanaapi.Kibana) (configMap *corev1.ConfigMap, err error) {
+func BuildConfigMap(kb *kibanacrd.Kibana, es *elasticsearchcrd.Elasticsearch) (configMap *corev1.ConfigMap, err error) {
 	var (
 		expectedConfig map[string]string
 	)
@@ -23,12 +24,17 @@ func BuildConfigMap(kb *kibanaapi.Kibana) (configMap *corev1.ConfigMap, err erro
 server.ssl.enabled: true
 server.ssl.certificate: /usr/share/kibana/config/api-cert/tls.crt
 server.ssl.key: /usr/share/kibana/config/api-cert/tls.key
-elasticsearch.ssl.verificationMode: certificate
-elasticsearch.ssl.certificateAuthorities:
-  - /usr/share/kibana/config/api-cert/elasticsearch-ca.crt
 `
 	} else {
 		injectedConfigMap["kibana.yml"] = "server.ssl.enabled: false\n"
+	}
+
+	if es != nil && es.IsTlsApiEnabled() && es.IsSelfManagedSecretForTlsApi() {
+		injectedConfigMap["kibana.yml"] += `
+elasticsearch.ssl.verificationMode: certificate
+elasticsearch.ssl.certificateAuthorities:
+  - /usr/share/kibana/config/es-ca/ca.crt
+`
 	}
 
 	if kb.IsIngressEnabled() {

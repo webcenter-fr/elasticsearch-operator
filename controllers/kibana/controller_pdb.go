@@ -8,7 +8,7 @@ import (
 	"github.com/disaster37/operator-sdk-extra/pkg/controller"
 	"github.com/disaster37/operator-sdk-extra/pkg/helper"
 	"github.com/pkg/errors"
-	kibanaapi "github.com/webcenter-fr/elasticsearch-operator/apis/kibana/v1alpha1"
+	kibanacrd "github.com/webcenter-fr/elasticsearch-operator/apis/kibana/v1alpha1"
 	"github.com/webcenter-fr/elasticsearch-operator/controllers/common"
 	corev1 "k8s.io/api/core/v1"
 	policyv1 "k8s.io/api/policy/v1"
@@ -49,7 +49,7 @@ func (r *PdbReconciler) Name() string {
 
 // Configure permit to init condition
 func (r *PdbReconciler) Configure(ctx context.Context, req ctrl.Request, resource client.Object) (res ctrl.Result, err error) {
-	o := resource.(*kibanaapi.Kibana)
+	o := resource.(*kibanacrd.Kibana)
 
 	// Init condition status if not exist
 	if condition.FindStatusCondition(o.Status.Conditions, PdbCondition) == nil {
@@ -67,7 +67,7 @@ func (r *PdbReconciler) Configure(ctx context.Context, req ctrl.Request, resourc
 
 // Read existing pdbs
 func (r *PdbReconciler) Read(ctx context.Context, resource client.Object, data map[string]any) (res ctrl.Result, err error) {
-	o := resource.(*kibanaapi.Kibana)
+	o := resource.(*kibanacrd.Kibana)
 	pdb := &policyv1.PodDisruptionBudget{}
 
 	// Read current pdb
@@ -150,7 +150,7 @@ func (r *PdbReconciler) Delete(ctx context.Context, resource client.Object, data
 
 // Diff permit to check if pdbs are up to date
 func (r *PdbReconciler) Diff(ctx context.Context, resource client.Object, data map[string]interface{}) (diff controller.K8sDiff, res ctrl.Result, err error) {
-	o := resource.(*kibanaapi.Kibana)
+	o := resource.(*kibanacrd.Kibana)
 	var d any
 
 	d, err = helper.Get(data, "currentPdb")
@@ -226,7 +226,7 @@ func (r *PdbReconciler) Diff(ctx context.Context, resource client.Object, data m
 
 // OnError permit to set status condition on the right state and record error
 func (r *PdbReconciler) OnError(ctx context.Context, resource client.Object, data map[string]any, currentErr error) (res ctrl.Result, err error) {
-	o := resource.(*kibanaapi.Kibana)
+	o := resource.(*kibanacrd.Kibana)
 
 	r.Log.Error(currentErr)
 	r.Recorder.Event(resource, corev1.EventTypeWarning, "Failed", currentErr.Error())
@@ -244,7 +244,7 @@ func (r *PdbReconciler) OnError(ctx context.Context, resource client.Object, dat
 
 // OnSuccess permit to set status condition on the right state is everithink is good
 func (r *PdbReconciler) OnSuccess(ctx context.Context, resource client.Object, data map[string]any, diff controller.K8sDiff) (res ctrl.Result, err error) {
-	o := resource.(*kibanaapi.Kibana)
+	o := resource.(*kibanacrd.Kibana)
 
 	if diff.NeedCreate || diff.NeedUpdate || diff.NeedDelete {
 		r.Recorder.Eventf(resource, corev1.EventTypeNormal, "Completed", "Pdb successfully updated")

@@ -2,7 +2,7 @@ package elasticsearch
 
 import (
 	"github.com/pkg/errors"
-	elasticsearchapi "github.com/webcenter-fr/elasticsearch-operator/apis/elasticsearch/v1alpha1"
+	elasticsearchcrd "github.com/webcenter-fr/elasticsearch-operator/apis/elasticsearch/v1alpha1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
@@ -10,7 +10,7 @@ import (
 
 // GenerateLoadbalancer permit to generate Loadbalancer throught service
 // It return nil if Loadbalancer is disabled
-func BuildLoadbalancer(es *elasticsearchapi.Elasticsearch) (service *corev1.Service, err error) {
+func BuildLoadbalancer(es *elasticsearchcrd.Elasticsearch) (service *corev1.Service, err error) {
 
 	if !es.IsLoadBalancerEnabled() {
 		return nil, nil

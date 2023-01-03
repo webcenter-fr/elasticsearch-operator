@@ -11,8 +11,9 @@ import (
 	"github.com/disaster37/operator-sdk-extra/pkg/test"
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
-	elasticsearchapi "github.com/webcenter-fr/elasticsearch-operator/apis/elasticsearch/v1alpha1"
+	elasticsearchcrd "github.com/webcenter-fr/elasticsearch-operator/apis/elasticsearch/v1alpha1"
 	localhelper "github.com/webcenter-fr/elasticsearch-operator/pkg/helper"
+	localtest "github.com/webcenter-fr/elasticsearch-operator/pkg/test"
 	appv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	networkingv1 "k8s.io/api/networking/v1"
@@ -25,12 +26,12 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-func (t *ControllerTestSuite) TestElasticsearchController() {
+func (t *ElasticsearchControllerTestSuite) TestElasticsearchController() {
 	key := types.NamespacedName{
 		Name:      "t-csg-" + localhelper.RandomString(10),
 		Namespace: "default",
 	}
-	es := &elasticsearchapi.Elasticsearch{}
+	es := &elasticsearchcrd.Elasticsearch{}
 	data := map[string]any{}
 
 	testCase := test.NewTestCase(t.T(), t.k8sClient, key, es, 5*time.Second, data)
@@ -51,25 +52,25 @@ func doCreateElasticsearchStep() test.TestStep {
 		Do: func(c client.Client, key types.NamespacedName, o client.Object, data map[string]any) (err error) {
 			logrus.Infof("=== Add new Elasticsearch cluster %s/%s ===", key.Namespace, key.Name)
 
-			es := &elasticsearchapi.Elasticsearch{
+			es := &elasticsearchcrd.Elasticsearch{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      key.Name,
 					Namespace: key.Namespace,
 				},
-				Spec: elasticsearchapi.ElasticsearchSpec{
-					Endpoint: elasticsearchapi.EndpointSpec{
-						Ingress: &elasticsearchapi.IngressSpec{
+				Spec: elasticsearchcrd.ElasticsearchSpec{
+					Endpoint: elasticsearchcrd.EndpointSpec{
+						Ingress: &elasticsearchcrd.IngressSpec{
 							Enabled: true,
 							Host:    "test.cluster.local",
 							SecretRef: &corev1.LocalObjectReference{
 								Name: "test-tls",
 							},
 						},
-						LoadBalancer: &elasticsearchapi.LoadBalancerSpec{
+						LoadBalancer: &elasticsearchcrd.LoadBalancerSpec{
 							Enabled: true,
 						},
 					},
-					NodeGroups: []elasticsearchapi.NodeGroupSpec{
+					NodeGroups: []elasticsearchcrd.NodeGroupSpec{
 						{
 							Name:     "single",
 							Replicas: 1,
@@ -100,7 +101,7 @@ func doCreateElasticsearchStep() test.TestStep {
 			return nil
 		},
 		Check: func(t *testing.T, c client.Client, key types.NamespacedName, o client.Object, data map[string]any) (err error) {
-			es := &elasticsearchapi.Elasticsearch{}
+			es := &elasticsearchcrd.Elasticsearch{}
 			var (
 				s   *corev1.Secret
 				svc *corev1.Service
@@ -110,7 +111,7 @@ func doCreateElasticsearchStep() test.TestStep {
 				sts *appv1.StatefulSet
 			)
 
-			isTimeout, err := RunWithTimeout(func() error {
+			isTimeout, err := localtest.RunWithTimeout(func() error {
 				if err := c.Get(context.Background(), key, es); err != nil {
 					t.Fatal("Elasticsearch not found")
 				}
@@ -255,7 +256,7 @@ func doUpdateElasticsearchStep() test.TestStep {
 			if o == nil {
 				return errors.New("Elasticsearch is null")
 			}
-			es := o.(*elasticsearchapi.Elasticsearch)
+			es := o.(*elasticsearchcrd.Elasticsearch)
 
 			// Add labels must force to update all resources
 			es.Labels = map[string]string{
@@ -273,7 +274,7 @@ func doUpdateElasticsearchStep() test.TestStep {
 			return nil
 		},
 		Check: func(t *testing.T, c client.Client, key types.NamespacedName, o client.Object, data map[string]any) (err error) {
-			es := &elasticsearchapi.Elasticsearch{}
+			es := &elasticsearchcrd.Elasticsearch{}
 
 			var (
 				s   *corev1.Secret
@@ -286,7 +287,7 @@ func doUpdateElasticsearchStep() test.TestStep {
 
 			lastVersion := data["lastVersion"].(string)
 
-			isTimeout, err := RunWithTimeout(func() error {
+			isTimeout, err := localtest.RunWithTimeout(func() error {
 				if err := c.Get(context.Background(), key, es); err != nil {
 					t.Fatal("Elasticsearch not found")
 				}
@@ -444,10 +445,10 @@ func doUpdateElasticsearchIncreaseNodeGroupStep() test.TestStep {
 			if o == nil {
 				return errors.New("Elasticsearch is null")
 			}
-			es := o.(*elasticsearchapi.Elasticsearch)
+			es := o.(*elasticsearchcrd.Elasticsearch)
 
 			// Add labels must force to update all resources
-			es.Spec.NodeGroups = append(es.Spec.NodeGroups, elasticsearchapi.NodeGroupSpec{
+			es.Spec.NodeGroups = append(es.Spec.NodeGroups, elasticsearchcrd.NodeGroupSpec{
 				Name:     "data",
 				Replicas: 1,
 				Roles: []string{
@@ -466,7 +467,7 @@ func doUpdateElasticsearchIncreaseNodeGroupStep() test.TestStep {
 			return nil
 		},
 		Check: func(t *testing.T, c client.Client, key types.NamespacedName, o client.Object, data map[string]any) (err error) {
-			es := &elasticsearchapi.Elasticsearch{}
+			es := &elasticsearchcrd.Elasticsearch{}
 
 			var (
 				s   *corev1.Secret
@@ -479,7 +480,7 @@ func doUpdateElasticsearchIncreaseNodeGroupStep() test.TestStep {
 
 			lastVersion := data["lastVersion"].(string)
 
-			isTimeout, err := RunWithTimeout(func() error {
+			isTimeout, err := localtest.RunWithTimeout(func() error {
 				if err := c.Get(context.Background(), key, es); err != nil {
 					t.Fatal("Elasticsearch not found")
 				}
@@ -624,13 +625,13 @@ func doUpdateElasticsearchDecreaseNodeGroupStep() test.TestStep {
 			if o == nil {
 				return errors.New("Elasticsearch is null")
 			}
-			es := o.(*elasticsearchapi.Elasticsearch)
+			es := o.(*elasticsearchcrd.Elasticsearch)
 
 			data["lastVersion"] = es.ResourceVersion
 			data["oldES"] = es.DeepCopy()
 
 			// Add labels must force to update all resources
-			es.Spec.NodeGroups = []elasticsearchapi.NodeGroupSpec{
+			es.Spec.NodeGroups = []elasticsearchcrd.NodeGroupSpec{
 				es.Spec.NodeGroups[0],
 			}
 
@@ -643,7 +644,7 @@ func doUpdateElasticsearchDecreaseNodeGroupStep() test.TestStep {
 			return nil
 		},
 		Check: func(t *testing.T, c client.Client, key types.NamespacedName, o client.Object, data map[string]any) (err error) {
-			es := &elasticsearchapi.Elasticsearch{}
+			es := &elasticsearchcrd.Elasticsearch{}
 
 			var (
 				s   *corev1.Secret
@@ -655,9 +656,9 @@ func doUpdateElasticsearchDecreaseNodeGroupStep() test.TestStep {
 			)
 
 			lastVersion := data["lastVersion"].(string)
-			oldES := data["oldES"].(*elasticsearchapi.Elasticsearch)
+			oldES := data["oldES"].(*elasticsearchcrd.Elasticsearch)
 
-			isTimeout, err := RunWithTimeout(func() error {
+			isTimeout, err := localtest.RunWithTimeout(func() error {
 				if err := c.Get(context.Background(), key, es); err != nil {
 					t.Fatal("Elasticsearch not found")
 				}
@@ -860,7 +861,7 @@ func doDeleteElasticsearchStep() test.TestStep {
 			if o == nil {
 				return errors.New("Centreon serviceGroup is null")
 			}
-			es := o.(*elasticsearchapi.Elasticsearch)
+			es := o.(*elasticsearchcrd.Elasticsearch)
 
 			wait := int64(0)
 			if err = c.Delete(context.Background(), es, &client.DeleteOptions{GracePeriodSeconds: &wait}); err != nil {

@@ -8,7 +8,7 @@ import (
 	"github.com/disaster37/operator-sdk-extra/pkg/controller"
 	"github.com/disaster37/operator-sdk-extra/pkg/helper"
 	"github.com/pkg/errors"
-	kibanaapi "github.com/webcenter-fr/elasticsearch-operator/apis/kibana/v1alpha1"
+	kibanacrd "github.com/webcenter-fr/elasticsearch-operator/apis/kibana/v1alpha1"
 	"github.com/webcenter-fr/elasticsearch-operator/controllers/common"
 	corev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
@@ -48,7 +48,7 @@ func (r *LoadBalancerReconciler) Name() string {
 
 // Configure permit to init condition
 func (r *LoadBalancerReconciler) Configure(ctx context.Context, req ctrl.Request, resource client.Object) (res ctrl.Result, err error) {
-	o := resource.(*kibanaapi.Kibana)
+	o := resource.(*kibanacrd.Kibana)
 
 	// Init condition status if not exist
 	if condition.FindStatusCondition(o.Status.Conditions, LoadBalancerCondition) == nil {
@@ -66,7 +66,7 @@ func (r *LoadBalancerReconciler) Configure(ctx context.Context, req ctrl.Request
 
 // Read existing load balancer
 func (r *LoadBalancerReconciler) Read(ctx context.Context, resource client.Object, data map[string]any) (res ctrl.Result, err error) {
-	o := resource.(*kibanaapi.Kibana)
+	o := resource.(*kibanacrd.Kibana)
 	lb := &corev1.Service{}
 
 	// Read current load balancer
@@ -148,7 +148,7 @@ func (r *LoadBalancerReconciler) Delete(ctx context.Context, resource client.Obj
 
 // Diff permit to check if load balancer is up to date
 func (r *LoadBalancerReconciler) Diff(ctx context.Context, resource client.Object, data map[string]interface{}) (diff controller.K8sDiff, res ctrl.Result, err error) {
-	o := resource.(*kibanaapi.Kibana)
+	o := resource.(*kibanacrd.Kibana)
 	var d any
 
 	d, err = helper.Get(data, "currentLoadBalancer")
@@ -222,7 +222,7 @@ func (r *LoadBalancerReconciler) Diff(ctx context.Context, resource client.Objec
 
 // OnError permit to set status condition on the right state and record error
 func (r *LoadBalancerReconciler) OnError(ctx context.Context, resource client.Object, data map[string]any, currentErr error) (res ctrl.Result, err error) {
-	o := resource.(*kibanaapi.Kibana)
+	o := resource.(*kibanacrd.Kibana)
 
 	r.Log.Error(currentErr)
 	r.Recorder.Event(resource, corev1.EventTypeWarning, "Failed", currentErr.Error())
@@ -240,7 +240,7 @@ func (r *LoadBalancerReconciler) OnError(ctx context.Context, resource client.Ob
 
 // OnSuccess permit to set status condition on the right state is everithink is good
 func (r *LoadBalancerReconciler) OnSuccess(ctx context.Context, resource client.Object, data map[string]any, diff controller.K8sDiff) (res ctrl.Result, err error) {
-	o := resource.(*kibanaapi.Kibana)
+	o := resource.(*kibanacrd.Kibana)
 
 	if diff.NeedCreate || diff.NeedUpdate || diff.NeedDelete {
 		r.Recorder.Eventf(resource, corev1.EventTypeNormal, "Completed", "Load balancer successfully updated")

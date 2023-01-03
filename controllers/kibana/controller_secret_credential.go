@@ -9,8 +9,8 @@ import (
 	"github.com/disaster37/operator-sdk-extra/pkg/controller"
 	"github.com/disaster37/operator-sdk-extra/pkg/helper"
 	"github.com/pkg/errors"
-	elasticsearchapi "github.com/webcenter-fr/elasticsearch-operator/apis/elasticsearch/v1alpha1"
-	kibanaapi "github.com/webcenter-fr/elasticsearch-operator/apis/kibana/v1alpha1"
+	elasticsearchcrd "github.com/webcenter-fr/elasticsearch-operator/apis/elasticsearch/v1alpha1"
+	kibanacrd "github.com/webcenter-fr/elasticsearch-operator/apis/kibana/v1alpha1"
 	"github.com/webcenter-fr/elasticsearch-operator/controllers/common"
 	elasticsearchcontrollers "github.com/webcenter-fr/elasticsearch-operator/controllers/elasticsearch"
 	corev1 "k8s.io/api/core/v1"
@@ -51,7 +51,7 @@ func (r *CredentialReconciler) Name() string {
 
 // Configure permit to init condition
 func (r *CredentialReconciler) Configure(ctx context.Context, req ctrl.Request, resource client.Object) (res ctrl.Result, err error) {
-	o := resource.(*kibanaapi.Kibana)
+	o := resource.(*kibanacrd.Kibana)
 
 	// Init condition status if not exist
 	if condition.FindStatusCondition(o.Status.Conditions, CredentialCondition) == nil {
@@ -69,13 +69,14 @@ func (r *CredentialReconciler) Configure(ctx context.Context, req ctrl.Request, 
 
 // Read existing secret
 func (r *CredentialReconciler) Read(ctx context.Context, resource client.Object, data map[string]any) (res ctrl.Result, err error) {
-	o := resource.(*kibanaapi.Kibana)
-	es := &elasticsearchapi.Elasticsearch{}
+	o := resource.(*kibanacrd.Kibana)
 	s := &corev1.Secret{}
 	sEs := &corev1.Secret{}
 
+	var es *elasticsearchcrd.Elasticsearch
+
 	// Check if mirror credentials from Elasticsearch CRD
-	if o.Spec.ElasticsearchRef == nil || o.Spec.ElasticsearchRef.Name == "" {
+	if !o.IsElasticsearchRef() {
 		return res, nil
 	}
 
@@ -89,18 +90,13 @@ func (r *CredentialReconciler) Read(ctx context.Context, resource client.Object,
 	data["currentSecretCredential"] = s
 
 	// Read Elasticsearch
-	target := types.NamespacedName{Name: o.Spec.ElasticsearchRef.Name}
-	if o.Spec.ElasticsearchRef.Namespace != "" {
-		target.Namespace = o.Spec.ElasticsearchRef.Namespace
-	} else {
-		target.Namespace = o.Namespace
+	es, err = GetElasticsearchRef(ctx, r.Client, o)
+	if err != nil {
+		return res, errors.Wrap(err, "Error when read elasticsearchRef")
 	}
-	if err = r.Client.Get(ctx, target, es); err != nil {
-		if k8serrors.IsNotFound(err) {
-			r.Log.Warnf("Elasticsearch not found %s/%s, try latter", target.Namespace, target.Name)
-			return ctrl.Result{RequeueAfter: 30 * time.Second}, nil
-		}
-		return res, errors.Wrapf(err, "Error when read elasticsearch %s/%s", target.Namespace, target.Name)
+	if es == nil {
+		r.Log.Warn("ElasticsearchRef not found, try latter")
+		return ctrl.Result{RequeueAfter: 30 * time.Second}, nil
 	}
 
 	// Read secret that store Elasticsearch crdentials
@@ -182,7 +178,7 @@ func (r *CredentialReconciler) Delete(ctx context.Context, resource client.Objec
 
 // Diff permit to check if credential secret is up to date
 func (r *CredentialReconciler) Diff(ctx context.Context, resource client.Object, data map[string]interface{}) (diff controller.K8sDiff, res ctrl.Result, err error) {
-	o := resource.(*kibanaapi.Kibana)
+	o := resource.(*kibanacrd.Kibana)
 	var d any
 
 	diff = controller.K8sDiff{
@@ -192,7 +188,7 @@ func (r *CredentialReconciler) Diff(ctx context.Context, resource client.Object,
 	}
 
 	// No credential to mirror
-	if o.Spec.ElasticsearchRef == nil || o.Spec.ElasticsearchRef.Name == "" {
+	if !o.IsElasticsearchRef() {
 		return diff, res, nil
 	}
 
@@ -232,9 +228,6 @@ func (r *CredentialReconciler) Diff(ctx context.Context, resource client.Object,
 
 	} else {
 
-		// Never update credentials
-		expectedSecretCredential.Data = currentSecretCredential.Data
-
 		// Check if need update secret
 		patchResult, err := patch.DefaultPatchMaker.Calculate(currentSecretCredential, expectedSecretCredential, patch.CleanMetadata(), patch.IgnoreStatusFields())
 		if err != nil {
@@ -258,7 +251,7 @@ func (r *CredentialReconciler) Diff(ctx context.Context, resource client.Object,
 
 // OnError permit to set status condition on the right state and record error
 func (r *CredentialReconciler) OnError(ctx context.Context, resource client.Object, data map[string]any, currentErr error) (res ctrl.Result, err error) {
-	o := resource.(*kibanaapi.Kibana)
+	o := resource.(*kibanacrd.Kibana)
 
 	r.Log.Error(currentErr)
 	r.Recorder.Event(resource, corev1.EventTypeWarning, "Failed", currentErr.Error())
@@ -276,7 +269,7 @@ func (r *CredentialReconciler) OnError(ctx context.Context, resource client.Obje
 
 // OnSuccess permit to set status condition on the right state is everithink is good
 func (r *CredentialReconciler) OnSuccess(ctx context.Context, resource client.Object, data map[string]any, diff controller.K8sDiff) (res ctrl.Result, err error) {
-	o := resource.(*kibanaapi.Kibana)
+	o := resource.(*kibanacrd.Kibana)
 
 	if diff.NeedCreate || diff.NeedUpdate || diff.NeedDelete {
 		r.Recorder.Eventf(resource, corev1.EventTypeNormal, "Completed", "Credential secret successfully updated")

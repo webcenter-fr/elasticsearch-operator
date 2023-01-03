@@ -4,26 +4,26 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
-	kibanaapi "github.com/webcenter-fr/elasticsearch-operator/apis/kibana/v1alpha1"
+	kibanacrd "github.com/webcenter-fr/elasticsearch-operator/apis/kibana/v1alpha1"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/utils/pointer"
 )
 
 func TestGetSecretNameForTls(t *testing.T) {
-	o := &kibanaapi.Kibana{
+	o := &kibanacrd.Kibana{
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: "default",
 			Name:      "test",
 		},
-		Spec: kibanaapi.KibanaSpec{},
+		Spec: kibanacrd.KibanaSpec{},
 	}
 
 	// With default value
 	assert.Equal(t, "test-tls-kb", GetSecretNameForTls(o))
 
 	// When specify TLS secret
-	o.Spec.Tls = kibanaapi.TlsSpec{
+	o.Spec.Tls = kibanacrd.TlsSpec{
 		CertificateSecretRef: &v1.LocalObjectReference{
 			Name: "my-secret",
 		},
@@ -33,38 +33,50 @@ func TestGetSecretNameForTls(t *testing.T) {
 }
 
 func TestGetSecretNameForPki(t *testing.T) {
-	o := &kibanaapi.Kibana{
+	o := &kibanacrd.Kibana{
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: "default",
 			Name:      "test",
 		},
-		Spec: kibanaapi.KibanaSpec{},
+		Spec: kibanacrd.KibanaSpec{},
 	}
 
 	assert.Equal(t, "test-pki-kb", GetSecretNameForPki(o))
 }
 
-func TestGetSecretNameForKeystore(t *testing.T) {
-	var o *kibanaapi.Kibana
-
-	// When default value
-	o = &kibanaapi.Kibana{
+func TestGetSecretNameForCAElasticsearch(t *testing.T) {
+	o := &kibanacrd.Kibana{
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: "default",
 			Name:      "test",
 		},
-		Spec: kibanaapi.KibanaSpec{},
+		Spec: kibanacrd.KibanaSpec{},
+	}
+
+	assert.Equal(t, "test-ca-es-kb", GetSecretNameForCAElasticsearch(o))
+}
+
+func TestGetSecretNameForKeystore(t *testing.T) {
+	var o *kibanacrd.Kibana
+
+	// When default value
+	o = &kibanacrd.Kibana{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: "default",
+			Name:      "test",
+		},
+		Spec: kibanacrd.KibanaSpec{},
 	}
 
 	assert.Equal(t, "", GetSecretNameForKeystore(o))
 
 	// When keystore is provided
-	o = &kibanaapi.Kibana{
+	o = &kibanacrd.Kibana{
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: "default",
 			Name:      "test",
 		},
-		Spec: kibanaapi.KibanaSpec{
+		Spec: kibanacrd.KibanaSpec{
 			KeystoreSecretRef: &v1.LocalObjectReference{
 				Name: "my-secret",
 			},
@@ -75,60 +87,60 @@ func TestGetSecretNameForKeystore(t *testing.T) {
 }
 
 func TestGetConfigMapName(t *testing.T) {
-	o := &kibanaapi.Kibana{
+	o := &kibanacrd.Kibana{
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: "default",
 			Name:      "test",
 		},
-		Spec: kibanaapi.KibanaSpec{},
+		Spec: kibanacrd.KibanaSpec{},
 	}
 
 	assert.Equal(t, "test-config-kb", GetConfigMapName(o))
 }
 
 func TestGetServiceName(t *testing.T) {
-	o := &kibanaapi.Kibana{
+	o := &kibanacrd.Kibana{
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: "default",
 			Name:      "test",
 		},
-		Spec: kibanaapi.KibanaSpec{},
+		Spec: kibanacrd.KibanaSpec{},
 	}
 
 	assert.Equal(t, "test-kb", GetServiceName(o))
 }
 
 func TestGetLoadBalancerName(t *testing.T) {
-	o := &kibanaapi.Kibana{
+	o := &kibanacrd.Kibana{
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: "default",
 			Name:      "test",
 		},
-		Spec: kibanaapi.KibanaSpec{},
+		Spec: kibanacrd.KibanaSpec{},
 	}
 
 	assert.Equal(t, "test-lb-kb", GetLoadBalancerName(o))
 }
 
 func TestGetIngressName(t *testing.T) {
-	o := &kibanaapi.Kibana{
+	o := &kibanacrd.Kibana{
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: "default",
 			Name:      "test",
 		},
-		Spec: kibanaapi.KibanaSpec{},
+		Spec: kibanacrd.KibanaSpec{},
 	}
 
 	assert.Equal(t, "test-kb", GetIngressName(o))
 }
 
 func TestGetPDBName(t *testing.T) {
-	o := &kibanaapi.Kibana{
+	o := &kibanacrd.Kibana{
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: "default",
 			Name:      "test",
 		},
-		Spec: kibanaapi.KibanaSpec{},
+		Spec: kibanacrd.KibanaSpec{},
 	}
 
 	assert.Equal(t, "test-kb", GetPDBName(o))
@@ -136,12 +148,12 @@ func TestGetPDBName(t *testing.T) {
 
 func TestGetContainerImage(t *testing.T) {
 	// With default values
-	o := &kibanaapi.Kibana{
+	o := &kibanacrd.Kibana{
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: "default",
 			Name:      "test",
 		},
-		Spec: kibanaapi.KibanaSpec{},
+		Spec: kibanacrd.KibanaSpec{},
 	}
 	assert.Equal(t, "docker.elastic.co/kibana/kibana:latest", GetContainerImage(o))
 
@@ -158,12 +170,12 @@ func TestGetLabels(t *testing.T) {
 	var expectedLabels map[string]string
 
 	// With default values
-	o := &kibanaapi.Kibana{
+	o := &kibanacrd.Kibana{
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: "default",
 			Name:      "test",
 		},
-		Spec: kibanaapi.KibanaSpec{},
+		Spec: kibanacrd.KibanaSpec{},
 	}
 
 	expectedLabels = map[string]string{
@@ -183,12 +195,12 @@ func TestGetAnnotations(t *testing.T) {
 	var expectedAnnotations map[string]string
 
 	// With default values
-	o := &kibanaapi.Kibana{
+	o := &kibanacrd.Kibana{
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: "default",
 			Name:      "test",
 		},
-		Spec: kibanaapi.KibanaSpec{},
+		Spec: kibanacrd.KibanaSpec{},
 	}
 
 	expectedAnnotations = map[string]string{
@@ -205,12 +217,12 @@ func TestGetAnnotations(t *testing.T) {
 
 func TestGetSecretNameForCredentials(t *testing.T) {
 
-	o := &kibanaapi.Kibana{
+	o := &kibanacrd.Kibana{
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: "default",
 			Name:      "test",
 		},
-		Spec: kibanaapi.KibanaSpec{},
+		Spec: kibanacrd.KibanaSpec{},
 	}
 
 	assert.Equal(t, "test-credential-kb", GetSecretNameForCredentials(o))

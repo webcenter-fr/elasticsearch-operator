@@ -4,7 +4,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
-	kibanaapi "github.com/webcenter-fr/elasticsearch-operator/apis/kibana/v1alpha1"
+	kibanacrd "github.com/webcenter-fr/elasticsearch-operator/apis/kibana/v1alpha1"
 	"github.com/webcenter-fr/elasticsearch-operator/pkg/test"
 	v1 "k8s.io/api/core/v1"
 	networkingv1 "k8s.io/api/networking/v1"
@@ -15,31 +15,31 @@ import (
 func TestBuildIngress(t *testing.T) {
 	var (
 		err error
-		o   *kibanaapi.Kibana
+		o   *kibanacrd.Kibana
 		i   *networkingv1.Ingress
 	)
 
 	// With default values
-	o = &kibanaapi.Kibana{
+	o = &kibanacrd.Kibana{
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: "default",
 			Name:      "test",
 		},
-		Spec: kibanaapi.KibanaSpec{},
+		Spec: kibanacrd.KibanaSpec{},
 	}
 	i, err = BuildIngress(o)
 	assert.NoError(t, err)
 	assert.Nil(t, i)
 
 	// When ingress is disabled
-	o = &kibanaapi.Kibana{
+	o = &kibanacrd.Kibana{
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: "default",
 			Name:      "test",
 		},
-		Spec: kibanaapi.KibanaSpec{
-			Endpoint: kibanaapi.EndpointSpec{
-				Ingress: &kibanaapi.IngressSpec{
+		Spec: kibanacrd.KibanaSpec{
+			Endpoint: kibanacrd.EndpointSpec{
+				Ingress: &kibanacrd.IngressSpec{
 					Enabled: false,
 				},
 			},
@@ -50,14 +50,14 @@ func TestBuildIngress(t *testing.T) {
 	assert.Nil(t, i)
 
 	// When ingress is enabled
-	o = &kibanaapi.Kibana{
+	o = &kibanacrd.Kibana{
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: "default",
 			Name:      "test",
 		},
-		Spec: kibanaapi.KibanaSpec{
-			Endpoint: kibanaapi.EndpointSpec{
-				Ingress: &kibanaapi.IngressSpec{
+		Spec: kibanacrd.KibanaSpec{
+			Endpoint: kibanacrd.EndpointSpec{
+				Ingress: &kibanacrd.IngressSpec{
 					Enabled: true,
 					Host:    "my-test.cluster.local",
 				},
@@ -70,7 +70,7 @@ func TestBuildIngress(t *testing.T) {
 	test.EqualFromYamlFile(t, "testdata/ingress_without_target.yml", i, test.CleanApi)
 
 	// When ingress is enabled and specify all options
-	o = &kibanaapi.Kibana{
+	o = &kibanacrd.Kibana{
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: "default",
 			Name:      "test",
@@ -81,9 +81,9 @@ func TestBuildIngress(t *testing.T) {
 				"globalAnnotation": "globalAnnotation",
 			},
 		},
-		Spec: kibanaapi.KibanaSpec{
-			Endpoint: kibanaapi.EndpointSpec{
-				Ingress: &kibanaapi.IngressSpec{
+		Spec: kibanacrd.KibanaSpec{
+			Endpoint: kibanacrd.EndpointSpec{
+				Ingress: &kibanacrd.IngressSpec{
 					Enabled: true,
 					Host:    "my-test.cluster.local",
 					SecretRef: &v1.LocalObjectReference{

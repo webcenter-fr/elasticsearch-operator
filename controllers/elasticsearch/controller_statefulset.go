@@ -11,7 +11,7 @@ import (
 	"github.com/disaster37/operator-sdk-extra/pkg/controller"
 	"github.com/disaster37/operator-sdk-extra/pkg/helper"
 	"github.com/pkg/errors"
-	elasticsearchapi "github.com/webcenter-fr/elasticsearch-operator/apis/elasticsearch/v1alpha1"
+	elasticsearchcrd "github.com/webcenter-fr/elasticsearch-operator/apis/elasticsearch/v1alpha1"
 	"github.com/webcenter-fr/elasticsearch-operator/controllers/common"
 	helperdiff "github.com/webcenter-fr/elasticsearch-operator/pkg/helper"
 	appv1 "k8s.io/api/apps/v1"
@@ -62,7 +62,7 @@ func (r *StatefulsetReconciler) Name() string {
 
 // Configure permit to init condition
 func (r *StatefulsetReconciler) Configure(ctx context.Context, req ctrl.Request, resource client.Object) (res ctrl.Result, err error) {
-	o := resource.(*elasticsearchapi.Elasticsearch)
+	o := resource.(*elasticsearchcrd.Elasticsearch)
 
 	// Init condition status if not exist
 	if condition.FindStatusCondition(o.Status.Conditions, StatefulsetCondition) == nil {
@@ -80,7 +80,7 @@ func (r *StatefulsetReconciler) Configure(ctx context.Context, req ctrl.Request,
 
 // Read existing satefulsets
 func (r *StatefulsetReconciler) Read(ctx context.Context, resource client.Object, data map[string]any) (res ctrl.Result, err error) {
-	o := resource.(*elasticsearchapi.Elasticsearch)
+	o := resource.(*elasticsearchcrd.Elasticsearch)
 	stsList := &appv1.StatefulSetList{}
 
 	// Read current satefulsets
@@ -163,7 +163,7 @@ func (r *StatefulsetReconciler) Delete(ctx context.Context, resource client.Obje
 
 // Diff permit to check if statefulset is up to date
 func (r *StatefulsetReconciler) Diff(ctx context.Context, resource client.Object, data map[string]interface{}) (diff controller.K8sDiff, res ctrl.Result, err error) {
-	o := resource.(*elasticsearchapi.Elasticsearch)
+	o := resource.(*elasticsearchcrd.Elasticsearch)
 	var d any
 
 	d, err = helper.Get(data, "currentStatefulsets")
@@ -315,7 +315,7 @@ func (r *StatefulsetReconciler) Diff(ctx context.Context, resource client.Object
 
 // OnError permit to set status condition on the right state and record error
 func (r *StatefulsetReconciler) OnError(ctx context.Context, resource client.Object, data map[string]any, currentErr error) (res ctrl.Result, err error) {
-	o := resource.(*elasticsearchapi.Elasticsearch)
+	o := resource.(*elasticsearchcrd.Elasticsearch)
 
 	r.Log.Error(currentErr)
 	r.Recorder.Event(resource, corev1.EventTypeWarning, "Failed", currentErr.Error())
@@ -333,7 +333,7 @@ func (r *StatefulsetReconciler) OnError(ctx context.Context, resource client.Obj
 
 // OnSuccess permit to set status condition on the right state is everithink is good
 func (r *StatefulsetReconciler) OnSuccess(ctx context.Context, resource client.Object, data map[string]any, diff controller.K8sDiff) (res ctrl.Result, err error) {
-	o := resource.(*elasticsearchapi.Elasticsearch)
+	o := resource.(*elasticsearchcrd.Elasticsearch)
 	var (
 		d any
 	)

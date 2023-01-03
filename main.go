@@ -34,9 +34,11 @@ import (
 
 	"github.com/sirupsen/logrus"
 
-	elasticsearchapi "github.com/webcenter-fr/elasticsearch-operator/apis/elasticsearch/v1alpha1"
-	kibanaapi "github.com/webcenter-fr/elasticsearch-operator/apis/kibana/v1alpha1"
+	elasticsearchcrd "github.com/webcenter-fr/elasticsearch-operator/apis/elasticsearch/v1alpha1"
+	elasticsearchapicrd "github.com/webcenter-fr/elasticsearch-operator/apis/elasticsearchapi/v1alpha1"
+	kibanacrd "github.com/webcenter-fr/elasticsearch-operator/apis/kibana/v1alpha1"
 	elasticsearchcontrollers "github.com/webcenter-fr/elasticsearch-operator/controllers/elasticsearch"
+	elasticsearchapicontrollers "github.com/webcenter-fr/elasticsearch-operator/controllers/elasticsearchapi"
 	kibanacontrollers "github.com/webcenter-fr/elasticsearch-operator/controllers/kibana"
 	"github.com/webcenter-fr/elasticsearch-operator/pkg/helper"
 	//+kubebuilder:scaffold:imports
@@ -52,8 +54,9 @@ var (
 func init() {
 	utilruntime.Must(clientgoscheme.AddToScheme(scheme))
 
-	utilruntime.Must(elasticsearchapi.AddToScheme(scheme))
-	utilruntime.Must(kibanaapi.AddToScheme(scheme))
+	utilruntime.Must(elasticsearchcrd.AddToScheme(scheme))
+	utilruntime.Must(kibanacrd.AddToScheme(scheme))
+	utilruntime.Must(elasticsearchapicrd.AddToScheme(scheme))
 	//+kubebuilder:scaffold:scheme
 }
 
@@ -152,6 +155,18 @@ func main() {
 		setupLog.Error(err, "unable to create controller", "controller", "Kibana")
 		os.Exit(1)
 	}
+
+	elasticsearchUserController := elasticsearchapicontrollers.NewUserReconciler(mgr.GetClient(), mgr.GetScheme())
+	elasticsearchUserController.SetLogger(log.WithFields(logrus.Fields{
+		"type": "ElasticsearchUserController",
+	}))
+	elasticsearchUserController.SetRecorder(mgr.GetEventRecorderFor("elasticsearch-user-controller"))
+	elasticsearchUserController.SetReconciler(elasticsearchUserController)
+	if err = elasticsearchUserController.SetupWithManager(mgr); err != nil {
+		setupLog.Error(err, "unable to create controller", "controller", "ElasticsearchUser")
+		os.Exit(1)
+	}
+
 	//+kubebuilder:scaffold:builder
 
 	if err := mgr.AddHealthzCheck("healthz", healthz.Ping); err != nil {

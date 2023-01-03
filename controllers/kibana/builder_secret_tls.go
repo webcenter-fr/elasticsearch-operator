@@ -6,7 +6,7 @@ import (
 
 	"github.com/disaster37/goca"
 	"github.com/pkg/errors"
-	kibanaapi "github.com/webcenter-fr/elasticsearch-operator/apis/kibana/v1alpha1"
+	kibanacrd "github.com/webcenter-fr/elasticsearch-operator/apis/kibana/v1alpha1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -17,7 +17,7 @@ const (
 )
 
 // BuildPkiSecret generate the secret that store transport PKI
-func BuildPkiSecret(o *kibanaapi.Kibana) (sPki *corev1.Secret, rootCA *goca.CA, err error) {
+func BuildPkiSecret(o *kibanacrd.Kibana) (sPki *corev1.Secret, rootCA *goca.CA, err error) {
 
 	if !o.IsTlsEnabled() || !o.IsSelfManagedSecretForTls() {
 		return nil, nil, nil
@@ -60,7 +60,7 @@ func BuildPkiSecret(o *kibanaapi.Kibana) (sPki *corev1.Secret, rootCA *goca.CA, 
 }
 
 // BuildTlsSecret generate the secret that store the http certificates
-func BuildTlsSecret(o *kibanaapi.Kibana, rootCA *goca.CA) (s *corev1.Secret, err error) {
+func BuildTlsSecret(o *kibanacrd.Kibana, rootCA *goca.CA) (s *corev1.Secret, err error) {
 
 	if !o.IsTlsEnabled() || !o.IsSelfManagedSecretForTls() {
 		return nil, nil
@@ -89,7 +89,7 @@ func BuildTlsSecret(o *kibanaapi.Kibana, rootCA *goca.CA) (s *corev1.Secret, err
 	return s, nil
 }
 
-func generateCertificate(o *kibanaapi.Kibana, rootCA *goca.CA) (nodeCrt *goca.Certificate, err error) {
+func generateCertificate(o *kibanacrd.Kibana, rootCA *goca.CA) (nodeCrt *goca.Certificate, err error) {
 
 	var ips []net.IP
 	dnsNames := []string{}

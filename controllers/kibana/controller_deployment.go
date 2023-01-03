@@ -9,8 +9,8 @@ import (
 	"github.com/disaster37/operator-sdk-extra/pkg/controller"
 	"github.com/disaster37/operator-sdk-extra/pkg/helper"
 	"github.com/pkg/errors"
-	elasticsearchapi "github.com/webcenter-fr/elasticsearch-operator/apis/elasticsearch/v1alpha1"
-	kibanaapi "github.com/webcenter-fr/elasticsearch-operator/apis/kibana/v1alpha1"
+	elasticsearchcrd "github.com/webcenter-fr/elasticsearch-operator/apis/elasticsearch/v1alpha1"
+	kibanacrd "github.com/webcenter-fr/elasticsearch-operator/apis/kibana/v1alpha1"
 	"github.com/webcenter-fr/elasticsearch-operator/controllers/common"
 	appv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -53,7 +53,7 @@ func (r *DeploymentReconciler) Name() string {
 
 // Configure permit to init condition
 func (r *DeploymentReconciler) Configure(ctx context.Context, req ctrl.Request, resource client.Object) (res ctrl.Result, err error) {
-	o := resource.(*kibanaapi.Kibana)
+	o := resource.(*kibanacrd.Kibana)
 
 	// Init condition status if not exist
 	if condition.FindStatusCondition(o.Status.Conditions, DeploymentCondition) == nil {
@@ -71,9 +71,9 @@ func (r *DeploymentReconciler) Configure(ctx context.Context, req ctrl.Request, 
 
 // Read existing satefulsets
 func (r *DeploymentReconciler) Read(ctx context.Context, resource client.Object, data map[string]any) (res ctrl.Result, err error) {
-	o := resource.(*kibanaapi.Kibana)
-	es := &elasticsearchapi.Elasticsearch{}
+	o := resource.(*kibanacrd.Kibana)
 	dpl := &appv1.Deployment{}
+	var es *elasticsearchcrd.Elasticsearch
 
 	if err = r.Client.Get(ctx, types.NamespacedName{Namespace: o.Namespace, Name: o.Name}, dpl); err != nil {
 		if !k8serrors.IsNotFound(err) {
@@ -85,19 +85,14 @@ func (r *DeploymentReconciler) Read(ctx context.Context, resource client.Object,
 	data["currentDeployment"] = dpl
 
 	// Read Elasticsearch
-	if o.Spec.ElasticsearchRef != nil && o.Spec.ElasticsearchRef.Name != "" {
-		target := types.NamespacedName{Name: o.Spec.ElasticsearchRef.Name}
-		if o.Spec.ElasticsearchRef.Namespace != "" {
-			target.Namespace = o.Spec.ElasticsearchRef.Namespace
-		} else {
-			target.Namespace = o.Namespace
+	if o.IsElasticsearchRef() {
+		es, err = GetElasticsearchRef(ctx, r.Client, o)
+		if err != nil {
+			return res, errors.Wrap(err, "Error when read ElasticsearchRef")
 		}
-		if err = r.Client.Get(ctx, target, es); err != nil {
-			if k8serrors.IsNotFound(err) {
-				r.Log.Warnf("Elasticsearch not found %s/%s, try latter", target.Namespace, target.Name)
-				return ctrl.Result{RequeueAfter: 30 * time.Second}, nil
-			}
-			return res, errors.Wrapf(err, "Error when read Elasticsearch %s/%s", target.Namespace, target.Name)
+		if es == nil {
+			r.Log.Warn("ElasticsearchRef not found, try latter")
+			return ctrl.Result{RequeueAfter: 30 * time.Second}, nil
 		}
 	} else {
 		es = nil
@@ -173,7 +168,7 @@ func (r *DeploymentReconciler) Delete(ctx context.Context, resource client.Objec
 
 // Diff permit to check if deployment is up to date
 func (r *DeploymentReconciler) Diff(ctx context.Context, resource client.Object, data map[string]interface{}) (diff controller.K8sDiff, res ctrl.Result, err error) {
-	o := resource.(*kibanaapi.Kibana)
+	o := resource.(*kibanacrd.Kibana)
 	var d any
 
 	d, err = helper.Get(data, "currentDeployment")
@@ -248,7 +243,7 @@ func (r *DeploymentReconciler) Diff(ctx context.Context, resource client.Object,
 
 // OnError permit to set status condition on the right state and record error
 func (r *DeploymentReconciler) OnError(ctx context.Context, resource client.Object, data map[string]any, currentErr error) (res ctrl.Result, err error) {
-	o := resource.(*kibanaapi.Kibana)
+	o := resource.(*kibanacrd.Kibana)
 
 	r.Log.Error(currentErr)
 	r.Recorder.Event(resource, corev1.EventTypeWarning, "Failed", currentErr.Error())
@@ -266,7 +261,7 @@ func (r *DeploymentReconciler) OnError(ctx context.Context, resource client.Obje
 
 // OnSuccess permit to set status condition on the right state is everithink is good
 func (r *DeploymentReconciler) OnSuccess(ctx context.Context, resource client.Object, data map[string]any, diff controller.K8sDiff) (res ctrl.Result, err error) {
-	o := resource.(*kibanaapi.Kibana)
+	o := resource.(*kibanacrd.Kibana)
 
 	if diff.NeedCreate || diff.NeedUpdate || diff.NeedDelete {
 		r.Recorder.Eventf(resource, corev1.EventTypeNormal, "Completed", "Deployment successfully updated")

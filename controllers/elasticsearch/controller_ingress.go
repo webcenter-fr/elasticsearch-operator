@@ -8,7 +8,7 @@ import (
 	"github.com/disaster37/operator-sdk-extra/pkg/controller"
 	"github.com/disaster37/operator-sdk-extra/pkg/helper"
 	"github.com/pkg/errors"
-	elasticsearchapi "github.com/webcenter-fr/elasticsearch-operator/apis/elasticsearch/v1alpha1"
+	elasticsearchcrd "github.com/webcenter-fr/elasticsearch-operator/apis/elasticsearch/v1alpha1"
 	"github.com/webcenter-fr/elasticsearch-operator/controllers/common"
 	corev1 "k8s.io/api/core/v1"
 	networkingv1 "k8s.io/api/networking/v1"
@@ -49,7 +49,7 @@ func (r *IngressReconciler) Name() string {
 
 // Configure permit to init condition
 func (r *IngressReconciler) Configure(ctx context.Context, req ctrl.Request, resource client.Object) (res ctrl.Result, err error) {
-	o := resource.(*elasticsearchapi.Elasticsearch)
+	o := resource.(*elasticsearchcrd.Elasticsearch)
 
 	// Init condition status if not exist
 	if condition.FindStatusCondition(o.Status.Conditions, IngressCondition) == nil {
@@ -67,7 +67,7 @@ func (r *IngressReconciler) Configure(ctx context.Context, req ctrl.Request, res
 
 // Read existing ingress
 func (r *IngressReconciler) Read(ctx context.Context, resource client.Object, data map[string]any) (res ctrl.Result, err error) {
-	o := resource.(*elasticsearchapi.Elasticsearch)
+	o := resource.(*elasticsearchcrd.Elasticsearch)
 	ingress := &networkingv1.Ingress{}
 
 	// Read current ingress
@@ -149,7 +149,7 @@ func (r *IngressReconciler) Delete(ctx context.Context, resource client.Object, 
 
 // Diff permit to check if ingress is up to date
 func (r *IngressReconciler) Diff(ctx context.Context, resource client.Object, data map[string]interface{}) (diff controller.K8sDiff, res ctrl.Result, err error) {
-	o := resource.(*elasticsearchapi.Elasticsearch)
+	o := resource.(*elasticsearchcrd.Elasticsearch)
 	var d any
 
 	d, err = helper.Get(data, "currentIngress")
@@ -225,7 +225,7 @@ func (r *IngressReconciler) Diff(ctx context.Context, resource client.Object, da
 
 // OnError permit to set status condition on the right state and record error
 func (r *IngressReconciler) OnError(ctx context.Context, resource client.Object, data map[string]any, currentErr error) (res ctrl.Result, err error) {
-	o := resource.(*elasticsearchapi.Elasticsearch)
+	o := resource.(*elasticsearchcrd.Elasticsearch)
 
 	r.Log.Error(currentErr)
 	r.Recorder.Event(resource, corev1.EventTypeWarning, "Failed", currentErr.Error())
@@ -243,7 +243,7 @@ func (r *IngressReconciler) OnError(ctx context.Context, resource client.Object,
 
 // OnSuccess permit to set status condition on the right state is everithink is good
 func (r *IngressReconciler) OnSuccess(ctx context.Context, resource client.Object, data map[string]any, diff controller.K8sDiff) (res ctrl.Result, err error) {
-	o := resource.(*elasticsearchapi.Elasticsearch)
+	o := resource.(*elasticsearchcrd.Elasticsearch)
 
 	if diff.NeedCreate || diff.NeedUpdate || diff.NeedDelete {
 		r.Recorder.Eventf(resource, corev1.EventTypeNormal, "Completed", "Ingress successfully updated")

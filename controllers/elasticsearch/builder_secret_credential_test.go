@@ -4,7 +4,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
-	elasticsearchapi "github.com/webcenter-fr/elasticsearch-operator/apis/elasticsearch/v1alpha1"
+	elasticsearchcrd "github.com/webcenter-fr/elasticsearch-operator/apis/elasticsearch/v1alpha1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -13,16 +13,16 @@ func TestBuildCredentialSecret(t *testing.T) {
 	var (
 		err error
 		s   *corev1.Secret
-		o   *elasticsearchapi.Elasticsearch
+		o   *elasticsearchcrd.Elasticsearch
 	)
 
 	// With default values
-	o = &elasticsearchapi.Elasticsearch{
+	o = &elasticsearchcrd.Elasticsearch{
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: "default",
 			Name:      "test",
 		},
-		Spec: elasticsearchapi.ElasticsearchSpec{},
+		Spec: elasticsearchcrd.ElasticsearchSpec{},
 	}
 
 	labels := map[string]string{
@@ -43,5 +43,8 @@ func TestBuildCredentialSecret(t *testing.T) {
 	assert.NotEmpty(t, s.Data["elastic"])
 	assert.NotEmpty(t, s.Data["kibana_system"])
 	assert.NotEmpty(t, s.Data["logstash_system"])
+	assert.NotEmpty(t, s.Data["beats_system"])
+	assert.NotEmpty(t, s.Data["apm_system"])
+	assert.NotEmpty(t, s.Data["remote_monitoring_user"])
 
 }

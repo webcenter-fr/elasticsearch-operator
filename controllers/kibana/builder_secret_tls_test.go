@@ -5,7 +5,7 @@ import (
 
 	"github.com/disaster37/goca"
 	"github.com/stretchr/testify/assert"
-	kibanaapi "github.com/webcenter-fr/elasticsearch-operator/apis/kibana/v1alpha1"
+	kibanacrd "github.com/webcenter-fr/elasticsearch-operator/apis/kibana/v1alpha1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/utils/pointer"
@@ -13,7 +13,7 @@ import (
 
 func TestBuildPkiSecret(t *testing.T) {
 	var (
-		o   *kibanaapi.Kibana
+		o   *kibanacrd.Kibana
 		s   *corev1.Secret
 		ca  *goca.CA
 		err error
@@ -28,12 +28,12 @@ func TestBuildPkiSecret(t *testing.T) {
 	}
 
 	// When default value
-	o = &kibanaapi.Kibana{
+	o = &kibanacrd.Kibana{
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: "default",
 			Name:      "test",
 		},
-		Spec: kibanaapi.KibanaSpec{},
+		Spec: kibanacrd.KibanaSpec{},
 	}
 
 	s, ca, err = BuildPkiSecret(o)
@@ -52,13 +52,13 @@ func TestBuildPkiSecret(t *testing.T) {
 	assert.Equal(t, ca.GetCRL(), string(s.Data["ca.crl"]))
 
 	// When TLS is enabled
-	o = &kibanaapi.Kibana{
+	o = &kibanacrd.Kibana{
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: "default",
 			Name:      "test",
 		},
-		Spec: kibanaapi.KibanaSpec{
-			Tls: kibanaapi.TlsSpec{
+		Spec: kibanacrd.KibanaSpec{
+			Tls: kibanacrd.TlsSpec{
 				Enabled: pointer.Bool(true),
 			},
 		},
@@ -80,13 +80,13 @@ func TestBuildPkiSecret(t *testing.T) {
 	assert.Equal(t, ca.GetCRL(), string(s.Data["ca.crl"]))
 
 	// When TLS is disabled
-	o = &kibanaapi.Kibana{
+	o = &kibanacrd.Kibana{
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: "default",
 			Name:      "test",
 		},
-		Spec: kibanaapi.KibanaSpec{
-			Tls: kibanaapi.TlsSpec{
+		Spec: kibanacrd.KibanaSpec{
+			Tls: kibanacrd.TlsSpec{
 				Enabled: pointer.Bool(false),
 			},
 		},
@@ -98,13 +98,13 @@ func TestBuildPkiSecret(t *testing.T) {
 	assert.Nil(t, s)
 
 	// When Tls is enabled but not self managed
-	o = &kibanaapi.Kibana{
+	o = &kibanacrd.Kibana{
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: "default",
 			Name:      "test",
 		},
-		Spec: kibanaapi.KibanaSpec{
-			Tls: kibanaapi.TlsSpec{
+		Spec: kibanacrd.KibanaSpec{
+			Tls: kibanacrd.TlsSpec{
 				Enabled: pointer.Bool(true),
 				CertificateSecretRef: &corev1.LocalObjectReference{
 					Name: "test",
@@ -121,7 +121,7 @@ func TestBuildPkiSecret(t *testing.T) {
 
 func TestBuildTlsSecret(t *testing.T) {
 	var (
-		o   *kibanaapi.Kibana
+		o   *kibanacrd.Kibana
 		s   *corev1.Secret
 		err error
 	)
@@ -146,13 +146,13 @@ func TestBuildTlsSecret(t *testing.T) {
 	}
 
 	// When tls is disabled
-	o = &kibanaapi.Kibana{
+	o = &kibanacrd.Kibana{
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: "default",
 			Name:      "test",
 		},
-		Spec: kibanaapi.KibanaSpec{
-			Tls: kibanaapi.TlsSpec{
+		Spec: kibanacrd.KibanaSpec{
+			Tls: kibanacrd.TlsSpec{
 				Enabled: pointer.Bool(false),
 			},
 		},
@@ -163,13 +163,13 @@ func TestBuildTlsSecret(t *testing.T) {
 	assert.Nil(t, s)
 
 	// When tls is enabled and not self signed
-	o = &kibanaapi.Kibana{
+	o = &kibanacrd.Kibana{
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: "default",
 			Name:      "test",
 		},
-		Spec: kibanaapi.KibanaSpec{
-			Tls: kibanaapi.TlsSpec{
+		Spec: kibanacrd.KibanaSpec{
+			Tls: kibanacrd.TlsSpec{
 				Enabled: pointer.Bool(true),
 				CertificateSecretRef: &corev1.LocalObjectReference{
 					Name: "test",
@@ -183,13 +183,13 @@ func TestBuildTlsSecret(t *testing.T) {
 	assert.Nil(t, s)
 
 	// When tls is enabled and self signed
-	o = &kibanaapi.Kibana{
+	o = &kibanacrd.Kibana{
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: "default",
 			Name:      "test",
 		},
-		Spec: kibanaapi.KibanaSpec{
-			Tls: kibanaapi.TlsSpec{
+		Spec: kibanacrd.KibanaSpec{
+			Tls: kibanacrd.TlsSpec{
 				Enabled: pointer.Bool(true),
 			},
 		},

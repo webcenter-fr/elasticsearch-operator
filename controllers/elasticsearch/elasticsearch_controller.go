@@ -24,7 +24,8 @@ import (
 	"emperror.dev/errors"
 	"github.com/disaster37/operator-sdk-extra/pkg/controller"
 	"github.com/sirupsen/logrus"
-	elasticsearchapi "github.com/webcenter-fr/elasticsearch-operator/apis/elasticsearch/v1alpha1"
+	elasticsearchcrd "github.com/webcenter-fr/elasticsearch-operator/apis/elasticsearch/v1alpha1"
+	elasticsearchapicrd "github.com/webcenter-fr/elasticsearch-operator/apis/elasticsearchapi/v1alpha1"
 	"github.com/webcenter-fr/elasticsearch-operator/controllers/common"
 	appv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -87,7 +88,7 @@ func (r *ElasticsearchReconciler) Reconcile(ctx context.Context, req ctrl.Reques
 		return ctrl.Result{}, err
 	}
 
-	es := &elasticsearchapi.Elasticsearch{}
+	es := &elasticsearchcrd.Elasticsearch{}
 	data := map[string]any{}
 
 	tlsReconsiler := NewTlsReconciler(r.Client, r.Scheme, common.Reconciler{
@@ -146,6 +147,13 @@ func (r *ElasticsearchReconciler) Reconcile(ctx context.Context, req ctrl.Reques
 		}),
 	})
 
+	userReconciler := NewSystemUserReconciler(r.Client, r.Scheme, common.Reconciler{
+		Recorder: r.GetRecorder(),
+		Log: r.GetLogger().WithFields(logrus.Fields{
+			"phase": "systemUser",
+		}),
+	})
+
 	return reconciler.Reconcile(ctx, req, es, data,
 		tlsReconsiler,
 		credentialReconciler,
@@ -155,24 +163,26 @@ func (r *ElasticsearchReconciler) Reconcile(ctx context.Context, req ctrl.Reques
 		statefulsetReconciler,
 		ingressReconciler,
 		loadBalancerReconciler,
+		userReconciler,
 	)
 }
 
 // SetupWithManager sets up the controller with the Manager.
 func (h *ElasticsearchReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
-		For(&elasticsearchapi.Elasticsearch{}).
+		For(&elasticsearchcrd.Elasticsearch{}).
 		Owns(&corev1.ConfigMap{}).
 		Owns(&corev1.Secret{}).
 		Owns(&networkingv1.Ingress{}).
 		Owns(&corev1.Service{}).
 		Owns(&policyv1.PodDisruptionBudget{}).
 		Owns(&appv1.StatefulSet{}).
+		Owns(&elasticsearchapicrd.User{}).
 		Complete(h)
 }
 
 func (h *ElasticsearchReconciler) Configure(ctx context.Context, req ctrl.Request, resource client.Object) (res ctrl.Result, err error) {
-	o := resource.(*elasticsearchapi.Elasticsearch)
+	o := resource.(*elasticsearchcrd.Elasticsearch)
 
 	// Init condition status if not exist
 	if condition.FindStatusCondition(o.Status.Conditions, ElasticsearchCondition) == nil {
@@ -198,7 +208,7 @@ func (h *ElasticsearchReconciler) OnError(ctx context.Context, r client.Object, 
 	return res, currentErr
 }
 func (h *ElasticsearchReconciler) OnSuccess(ctx context.Context, r client.Object, data map[string]any) (res ctrl.Result, err error) {
-	o := r.(*elasticsearchapi.Elasticsearch)
+	o := r.(*elasticsearchcrd.Elasticsearch)
 
 	// Wait few time, to be sure Satefulset created
 	time.Sleep(1 * time.Second)

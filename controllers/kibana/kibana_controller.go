@@ -23,8 +23,7 @@ import (
 	"emperror.dev/errors"
 	"github.com/disaster37/operator-sdk-extra/pkg/controller"
 	"github.com/sirupsen/logrus"
-	elasticsearchapi "github.com/webcenter-fr/elasticsearch-operator/apis/elasticsearch/v1alpha1"
-	kibanaapi "github.com/webcenter-fr/elasticsearch-operator/apis/kibana/v1alpha1"
+	kibanacrd "github.com/webcenter-fr/elasticsearch-operator/apis/kibana/v1alpha1"
 	"github.com/webcenter-fr/elasticsearch-operator/controllers/common"
 	appv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -87,13 +86,20 @@ func (r *KibanaReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 		return ctrl.Result{}, err
 	}
 
-	kb := &kibanaapi.Kibana{}
+	kb := &kibanacrd.Kibana{}
 	data := map[string]any{}
 
 	tlsReconciler := NewTlsReconciler(r.Client, r.Scheme, common.Reconciler{
 		Recorder: r.GetRecorder(),
 		Log: r.GetLogger().WithFields(logrus.Fields{
 			"phase": "tls",
+		}),
+	})
+
+	caElasticsearchReconciler := NewCAElasticsearchReconciler(r.Client, r.Scheme, common.Reconciler{
+		Recorder: r.GetRecorder(),
+		Log: r.GetLogger().WithFields(logrus.Fields{
+			"phase": "caElasticsearch",
 		}),
 	})
 
@@ -148,6 +154,7 @@ func (r *KibanaReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 
 	return reconciler.Reconcile(ctx, req, kb, data,
 		tlsReconciler,
+		caElasticsearchReconciler,
 		credentialReconciler,
 		configMapReconciler,
 		serviceReconciler,
@@ -161,7 +168,7 @@ func (r *KibanaReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 // SetupWithManager sets up the controller with the Manager.
 func (h *KibanaReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
-		For(&elasticsearchapi.Elasticsearch{}).
+		For(&kibanacrd.Kibana{}).
 		Owns(&corev1.ConfigMap{}).
 		Owns(&corev1.Secret{}).
 		Owns(&networkingv1.Ingress{}).
@@ -172,7 +179,7 @@ func (h *KibanaReconciler) SetupWithManager(mgr ctrl.Manager) error {
 }
 
 func (h *KibanaReconciler) Configure(ctx context.Context, req ctrl.Request, resource client.Object) (res ctrl.Result, err error) {
-	o := resource.(*kibanaapi.Kibana)
+	o := resource.(*kibanacrd.Kibana)
 
 	// Init condition status if not exist
 	if condition.FindStatusCondition(o.Status.Conditions, KibanaCondition) == nil {
@@ -198,7 +205,7 @@ func (h *KibanaReconciler) OnError(ctx context.Context, r client.Object, data ma
 	return res, currentErr
 }
 func (h *KibanaReconciler) OnSuccess(ctx context.Context, r client.Object, data map[string]any) (res ctrl.Result, err error) {
-	o := r.(*kibanaapi.Kibana)
+	o := r.(*kibanacrd.Kibana)
 
 	// Wait few time, to be sure Satefulset created
 	time.Sleep(1 * time.Second)

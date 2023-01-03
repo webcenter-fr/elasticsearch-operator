@@ -16,7 +16,7 @@ import (
 	"github.com/disaster37/operator-sdk-extra/pkg/helper"
 	"github.com/pkg/errors"
 	"github.com/thoas/go-funk"
-	elasticsearchapi "github.com/webcenter-fr/elasticsearch-operator/apis/elasticsearch/v1alpha1"
+	elasticsearchcrd "github.com/webcenter-fr/elasticsearch-operator/apis/elasticsearch/v1alpha1"
 	"github.com/webcenter-fr/elasticsearch-operator/controllers/common"
 	localhelper "github.com/webcenter-fr/elasticsearch-operator/pkg/helper"
 	"github.com/webcenter-fr/elasticsearch-operator/pkg/pki"
@@ -78,7 +78,7 @@ func (r *TlsReconciler) Name() string {
 
 // Configure permit to init condition
 func (r *TlsReconciler) Configure(ctx context.Context, req ctrl.Request, resource client.Object) (res ctrl.Result, err error) {
-	o := resource.(*elasticsearchapi.Elasticsearch)
+	o := resource.(*elasticsearchcrd.Elasticsearch)
 
 	// Init condition status if not exist
 	if condition.FindStatusCondition(o.Status.Conditions, TlsCondition) == nil {
@@ -127,7 +127,7 @@ func (r *TlsReconciler) Configure(ctx context.Context, req ctrl.Request, resourc
 
 // Read existing transport TLS secret
 func (r *TlsReconciler) Read(ctx context.Context, resource client.Object, data map[string]any) (res ctrl.Result, err error) {
-	o := resource.(*elasticsearchapi.Elasticsearch)
+	o := resource.(*elasticsearchcrd.Elasticsearch)
 	sTransport := &corev1.Secret{}
 	sTransportPki := &corev1.Secret{}
 	sApi := &corev1.Secret{}
@@ -294,7 +294,7 @@ func (r *TlsReconciler) Delete(ctx context.Context, resource client.Object, data
 
 // Diff permit to check if transport secrets are up to date
 func (r *TlsReconciler) Diff(ctx context.Context, resource client.Object, data map[string]interface{}) (diff controller.K8sDiff, res ctrl.Result, err error) {
-	o := resource.(*elasticsearchapi.Elasticsearch)
+	o := resource.(*elasticsearchcrd.Elasticsearch)
 	var (
 		d         any
 		needRenew bool
@@ -777,7 +777,7 @@ func (r *TlsReconciler) Diff(ctx context.Context, resource client.Object, data m
 
 // OnError permit to set status condition on the right state and record error
 func (r *TlsReconciler) OnError(ctx context.Context, resource client.Object, data map[string]any, currentErr error) (res ctrl.Result, err error) {
-	o := resource.(*elasticsearchapi.Elasticsearch)
+	o := resource.(*elasticsearchcrd.Elasticsearch)
 
 	r.Log.Error(currentErr)
 	r.Recorder.Event(resource, corev1.EventTypeWarning, "Failed", currentErr.Error())
@@ -796,7 +796,7 @@ func (r *TlsReconciler) OnError(ctx context.Context, resource client.Object, dat
 
 // OnSuccess permit to set status condition on the right state is everithink is good
 func (r *TlsReconciler) OnSuccess(ctx context.Context, resource client.Object, data map[string]any, diff controller.K8sDiff) (res ctrl.Result, err error) {
-	o := resource.(*elasticsearchapi.Elasticsearch)
+	o := resource.(*elasticsearchcrd.Elasticsearch)
 	var (
 		d any
 	)

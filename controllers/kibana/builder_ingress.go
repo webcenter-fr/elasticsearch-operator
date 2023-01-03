@@ -3,7 +3,7 @@ package kibana
 import (
 	"github.com/disaster37/k8sbuilder"
 	"github.com/pkg/errors"
-	kibanaapi "github.com/webcenter-fr/elasticsearch-operator/apis/kibana/v1alpha1"
+	kibanacrd "github.com/webcenter-fr/elasticsearch-operator/apis/kibana/v1alpha1"
 	networkingv1 "k8s.io/api/networking/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -11,7 +11,7 @@ import (
 // BuildIngress permit to generate Ingress object
 // It return error if ingress spec is not provided
 // It return nil if ingress is disabled
-func BuildIngress(kb *kibanaapi.Kibana) (ingress *networkingv1.Ingress, err error) {
+func BuildIngress(kb *kibanacrd.Kibana) (ingress *networkingv1.Ingress, err error) {
 	if !kb.IsIngressEnabled() {
 		return nil, nil
 	}
