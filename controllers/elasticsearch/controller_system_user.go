@@ -66,7 +66,7 @@ func (r *SystemUserReconciler) Configure(ctx context.Context, req ctrl.Request, 
 	return res, nil
 }
 
-// Read existing ingress
+// Read existing users
 func (r *SystemUserReconciler) Read(ctx context.Context, resource client.Object, data map[string]any) (res ctrl.Result, err error) {
 	o := resource.(*elasticsearchcrd.Elasticsearch)
 	userList := &elasticsearchapicrd.UserList{}
@@ -97,7 +97,7 @@ func (r *SystemUserReconciler) Read(ctx context.Context, resource client.Object,
 	return res, nil
 }
 
-// Create will create ingress
+// Create will create users
 func (r *SystemUserReconciler) Create(ctx context.Context, resource client.Object, data map[string]interface{}) (res ctrl.Result, err error) {
 	var d any
 
@@ -116,7 +116,7 @@ func (r *SystemUserReconciler) Create(ctx context.Context, resource client.Objec
 	return res, nil
 }
 
-// Update will update ingress
+// Update will update users
 func (r *SystemUserReconciler) Update(ctx context.Context, resource client.Object, data map[string]interface{}) (res ctrl.Result, err error) {
 	var d any
 
@@ -135,7 +135,7 @@ func (r *SystemUserReconciler) Update(ctx context.Context, resource client.Objec
 	return res, nil
 }
 
-// Delete permit to delete ingress
+// Delete permit to delete users
 func (r *SystemUserReconciler) Delete(ctx context.Context, resource client.Object, data map[string]interface{}) (res ctrl.Result, err error) {
 
 	var d any

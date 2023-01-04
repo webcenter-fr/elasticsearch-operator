@@ -111,7 +111,7 @@ func doMockUser(mockES *mocks.MockElasticsearchHandler) func(stepName *string, d
 			return "", nil
 		})
 
-		mockES.EXPECT().UserUpdate(gomock.Any(), gomock.Any()).AnyTimes().DoAndReturn(func(name string, policy *olivere.XPackSecurityPutUserRequest) error {
+		mockES.EXPECT().UserUpdate(gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes().DoAndReturn(func(name string, policy *olivere.XPackSecurityPutUserRequest, isProtected ...bool) error {
 			switch *stepName {
 			case "update":
 				isUpdated = true

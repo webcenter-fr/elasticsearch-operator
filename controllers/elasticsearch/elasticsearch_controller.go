@@ -33,10 +33,14 @@ import (
 	policyv1 "k8s.io/api/policy/v1"
 	condition "k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/fields"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/types"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/handler"
+	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
 
 const (
@@ -154,6 +158,13 @@ func (r *ElasticsearchReconciler) Reconcile(ctx context.Context, req ctrl.Reques
 		}),
 	})
 
+	licenseReconciler := NewLicenseReconciler(r.Client, r.Scheme, common.Reconciler{
+		Recorder: r.GetRecorder(),
+		Log: r.GetLogger().WithFields(logrus.Fields{
+			"phase": "license",
+		}),
+	})
+
 	return reconciler.Reconcile(ctx, req, es, data,
 		tlsReconsiler,
 		credentialReconciler,
@@ -164,6 +175,7 @@ func (r *ElasticsearchReconciler) Reconcile(ctx context.Context, req ctrl.Reques
 		ingressReconciler,
 		loadBalancerReconciler,
 		userReconciler,
+		licenseReconciler,
 	)
 }
 
@@ -178,7 +190,44 @@ func (h *ElasticsearchReconciler) SetupWithManager(mgr ctrl.Manager) error {
 		Owns(&policyv1.PodDisruptionBudget{}).
 		Owns(&appv1.StatefulSet{}).
 		Owns(&elasticsearchapicrd.User{}).
+		Owns(&elasticsearchapicrd.License{}).
 		Complete(h)
+}
+
+// watchSecret permit to update elasticsearch if secretRef change
+func watchSecret(c client.Client) handler.MapFunc {
+	return func(a client.Object) []reconcile.Request {
+		var (
+			listElasticsearch *elasticsearchcrd.ElasticsearchList
+			fs                fields.Selector
+		)
+
+		reconcileRequests := make([]reconcile.Request, 0)
+
+		// Keystore secret
+		listElasticsearch = &elasticsearchcrd.ElasticsearchList{}
+		fs = fields.ParseSelectorOrDie(fmt.Sprintf("spec.globalNodeGroup.keystoreSecretRef.name=%s", a.GetName()))
+		// Get all elasticsearch linked with secret
+		if err := c.List(context.Background(), listElasticsearch, &client.ListOptions{Namespace: a.GetNamespace(), FieldSelector: fs}); err != nil {
+			panic(err)
+		}
+		for _, e := range listElasticsearch.Items {
+			reconcileRequests = append(reconcileRequests, reconcile.Request{NamespacedName: types.NamespacedName{Name: e.Name, Namespace: e.Namespace}})
+		}
+
+		// TLS secret
+		listElasticsearch = &elasticsearchcrd.ElasticsearchList{}
+		fs = fields.ParseSelectorOrDie(fmt.Sprintf("spec.tls.certificateSecretRef.name=%s", a.GetName()))
+		// Get all elasticsearch linked with secret
+		if err := c.List(context.Background(), listElasticsearch, &client.ListOptions{Namespace: a.GetNamespace(), FieldSelector: fs}); err != nil {
+			panic(err)
+		}
+		for _, e := range listElasticsearch.Items {
+			reconcileRequests = append(reconcileRequests, reconcile.Request{NamespacedName: types.NamespacedName{Name: e.Name, Namespace: e.Namespace}})
+		}
+
+		return reconcileRequests
+	}
 }
 
 func (h *ElasticsearchReconciler) Configure(ctx context.Context, req ctrl.Request, resource client.Object) (res ctrl.Result, err error) {

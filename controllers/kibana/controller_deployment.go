@@ -73,6 +73,8 @@ func (r *DeploymentReconciler) Configure(ctx context.Context, req ctrl.Request, 
 func (r *DeploymentReconciler) Read(ctx context.Context, resource client.Object, data map[string]any) (res ctrl.Result, err error) {
 	o := resource.(*kibanacrd.Kibana)
 	dpl := &appv1.Deployment{}
+	secretKeystore := &corev1.Secret{}
+	secretApiCrt := &corev1.Secret{}
 	var es *elasticsearchcrd.Elasticsearch
 
 	if err = r.Client.Get(ctx, types.NamespacedName{Namespace: o.Namespace, Name: o.Name}, dpl); err != nil {
@@ -98,8 +100,34 @@ func (r *DeploymentReconciler) Read(ctx context.Context, resource client.Object,
 		es = nil
 	}
 
+	// Read keystore secret if needed
+	if o.Spec.KeystoreSecretRef != nil && o.Spec.KeystoreSecretRef.Name != "" {
+		if err = r.Client.Get(ctx, types.NamespacedName{Namespace: o.Namespace, Name: o.Spec.KeystoreSecretRef.Name}, secretKeystore); err != nil {
+			if !k8serrors.IsNotFound(err) {
+				return res, errors.Wrapf(err, "Error when read secret %s", o.Spec.KeystoreSecretRef.Name)
+			}
+			r.Log.Warnf("Secret %s not yet exist, try again later", o.Spec.KeystoreSecretRef.Name)
+			return ctrl.Result{RequeueAfter: 30 * time.Second}, nil
+		}
+	} else {
+		secretKeystore = nil
+	}
+
+	// Read APi Crt if needed
+	if o.IsTlsEnabled() && !o.IsSelfManagedSecretForTls() {
+		if err = r.Client.Get(ctx, types.NamespacedName{Namespace: o.Namespace, Name: o.Spec.Tls.CertificateSecretRef.Name}, secretApiCrt); err != nil {
+			if !k8serrors.IsNotFound(err) {
+				return res, errors.Wrapf(err, "Error when read secret %s", o.Spec.Tls.CertificateSecretRef.Name)
+			}
+			r.Log.Warnf("Secret %s not yet exist, try again later", o.Spec.Tls.CertificateSecretRef.Name)
+			return ctrl.Result{RequeueAfter: 30 * time.Second}, nil
+		}
+	} else {
+		secretApiCrt = nil
+	}
+
 	// Generate expected deployment
-	expectedDeployment, err := BuildDeployment(o, es)
+	expectedDeployment, err := BuildDeployment(o, es, secretKeystore, secretApiCrt)
 	if err != nil {
 		return res, errors.Wrap(err, "Error when generate deployment")
 	}

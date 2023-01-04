@@ -19,6 +19,7 @@ func TestBuildStatefulset(t *testing.T) {
 		o   *elasticsearchcrd.Elasticsearch
 		err error
 		sts []appv1.StatefulSet
+		s   *corev1.Secret
 	)
 
 	// With default values
@@ -42,7 +43,7 @@ func TestBuildStatefulset(t *testing.T) {
 		},
 	}
 
-	sts, err = BuildStatefulsets(o)
+	sts, err = BuildStatefulsets(o, nil, nil)
 	assert.NoError(t, err)
 	test.EqualFromYamlFile(t, "testdata/statefullset-all.yml", &sts[0], test.CleanApi)
 
@@ -197,12 +198,64 @@ func TestBuildStatefulset(t *testing.T) {
 		},
 	}
 
-	sts, err = BuildStatefulsets(o)
+	s = &corev1.Secret{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: "default",
+			Name:      "elasticsearch-security",
+		},
+		Data: map[string][]byte{
+			"key1": []byte("secret1"),
+		},
+	}
 
+	sts, err = BuildStatefulsets(o, s, nil)
 	assert.NoError(t, err)
 	test.EqualFromYamlFile(t, "testdata/statefullset-master.yml", &sts[0], test.CleanApi)
 	test.EqualFromYamlFile(t, "testdata/statefullset-data.yml", &sts[1], test.CleanApi)
 	test.EqualFromYamlFile(t, "testdata/statefullset-client.yml", &sts[2], test.CleanApi)
+
+	// When use external API cert
+	o = &elasticsearchcrd.Elasticsearch{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: "default",
+			Name:      "test",
+		},
+		Spec: elasticsearchcrd.ElasticsearchSpec{
+			Tls: elasticsearchcrd.TlsSpec{
+				Enabled: pointer.Bool(true),
+				CertificateSecretRef: &corev1.LocalObjectReference{
+					Name: "api-certificates",
+				},
+			},
+			NodeGroups: []elasticsearchcrd.NodeGroupSpec{
+				{
+					Name:     "all",
+					Replicas: 1,
+					Roles: []string{
+						"master",
+						"data",
+						"ingest",
+					},
+				},
+			},
+		},
+	}
+
+	s = &corev1.Secret{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: "default",
+			Name:      "api-certificates",
+		},
+		Data: map[string][]byte{
+			"tls.crt": []byte("secret1"),
+			"tls.key": []byte("secret2"),
+			"ca.crt":  []byte("secret3"),
+		},
+	}
+
+	sts, err = BuildStatefulsets(o, nil, s)
+	assert.NoError(t, err)
+	test.EqualFromYamlFile(t, "testdata/statefullset-all-external-tls.yml", &sts[0], test.CleanApi)
 }
 
 func TestComputeJavaOpts(t *testing.T) {

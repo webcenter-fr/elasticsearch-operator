@@ -12,6 +12,7 @@ import (
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
 	elasticsearchcrd "github.com/webcenter-fr/elasticsearch-operator/apis/elasticsearch/v1alpha1"
+	elasticsearchapicrd "github.com/webcenter-fr/elasticsearch-operator/apis/elasticsearchapi/v1alpha1"
 	localhelper "github.com/webcenter-fr/elasticsearch-operator/pkg/helper"
 	localtest "github.com/webcenter-fr/elasticsearch-operator/pkg/test"
 	appv1 "k8s.io/api/apps/v1"
@@ -40,6 +41,7 @@ func (t *ElasticsearchControllerTestSuite) TestElasticsearchController() {
 		doUpdateElasticsearchStep(),
 		doUpdateElasticsearchIncreaseNodeGroupStep(),
 		doUpdateElasticsearchDecreaseNodeGroupStep(),
+		doUpdateElasticsearchAddLicenseStep(),
 		doDeleteElasticsearchStep(),
 	}
 
@@ -103,12 +105,13 @@ func doCreateElasticsearchStep() test.TestStep {
 		Check: func(t *testing.T, c client.Client, key types.NamespacedName, o client.Object, data map[string]any) (err error) {
 			es := &elasticsearchcrd.Elasticsearch{}
 			var (
-				s   *corev1.Secret
-				svc *corev1.Service
-				i   *networkingv1.Ingress
-				cm  *corev1.ConfigMap
-				pdb *policyv1.PodDisruptionBudget
-				sts *appv1.StatefulSet
+				s    *corev1.Secret
+				svc  *corev1.Service
+				i    *networkingv1.Ingress
+				cm   *corev1.ConfigMap
+				pdb  *policyv1.PodDisruptionBudget
+				sts  *appv1.StatefulSet
+				user *elasticsearchapicrd.User
 			)
 
 			isTimeout, err := localtest.RunWithTimeout(func() error {
@@ -242,6 +245,23 @@ func doCreateElasticsearchStep() test.TestStep {
 				assert.NotEmpty(t, sts.Annotations[patch.LastAppliedConfig])
 			}
 
+			// Users musts exist
+			userList := []string{
+				GetUserSystemName(es, "kibana_system"),
+				GetUserSystemName(es, "logstash_system"),
+				GetUserSystemName(es, "beats_system"),
+				GetUserSystemName(es, "apm_system"),
+				GetUserSystemName(es, "remote_monitoring_user"),
+			}
+			for _, name := range userList {
+				user = &elasticsearchapicrd.User{}
+				if err = c.Get(context.Background(), types.NamespacedName{Namespace: key.Namespace, Name: name}, user); err != nil {
+					t.Fatal(err)
+				}
+				assert.NotEmpty(t, user.OwnerReferences)
+				assert.NotEmpty(t, user.Annotations[patch.LastAppliedConfig])
+			}
+
 			return nil
 		},
 	}
@@ -277,12 +297,13 @@ func doUpdateElasticsearchStep() test.TestStep {
 			es := &elasticsearchcrd.Elasticsearch{}
 
 			var (
-				s   *corev1.Secret
-				svc *corev1.Service
-				i   *networkingv1.Ingress
-				cm  *corev1.ConfigMap
-				pdb *policyv1.PodDisruptionBudget
-				sts *appv1.StatefulSet
+				s    *corev1.Secret
+				svc  *corev1.Service
+				i    *networkingv1.Ingress
+				cm   *corev1.ConfigMap
+				pdb  *policyv1.PodDisruptionBudget
+				sts  *appv1.StatefulSet
+				user *elasticsearchapicrd.User
 			)
 
 			lastVersion := data["lastVersion"].(string)
@@ -431,6 +452,24 @@ func doUpdateElasticsearchStep() test.TestStep {
 				assert.NotEmpty(t, sts.Annotations[patch.LastAppliedConfig])
 			}
 
+			// Users musts exist
+			userList := []string{
+				GetUserSystemName(es, "kibana_system"),
+				GetUserSystemName(es, "logstash_system"),
+				GetUserSystemName(es, "beats_system"),
+				GetUserSystemName(es, "apm_system"),
+				GetUserSystemName(es, "remote_monitoring_user"),
+			}
+			for _, name := range userList {
+				user = &elasticsearchapicrd.User{}
+				if err = c.Get(context.Background(), types.NamespacedName{Namespace: key.Namespace, Name: name}, user); err != nil {
+					t.Fatal(err)
+				}
+				assert.Equal(t, "fu", user.Labels["test"])
+				assert.NotEmpty(t, user.OwnerReferences)
+				assert.NotEmpty(t, user.Annotations[patch.LastAppliedConfig])
+			}
+
 			return nil
 		},
 	}
@@ -470,12 +509,13 @@ func doUpdateElasticsearchIncreaseNodeGroupStep() test.TestStep {
 			es := &elasticsearchcrd.Elasticsearch{}
 
 			var (
-				s   *corev1.Secret
-				svc *corev1.Service
-				i   *networkingv1.Ingress
-				cm  *corev1.ConfigMap
-				pdb *policyv1.PodDisruptionBudget
-				sts *appv1.StatefulSet
+				s    *corev1.Secret
+				svc  *corev1.Service
+				i    *networkingv1.Ingress
+				cm   *corev1.ConfigMap
+				pdb  *policyv1.PodDisruptionBudget
+				sts  *appv1.StatefulSet
+				user *elasticsearchapicrd.User
 			)
 
 			lastVersion := data["lastVersion"].(string)
@@ -611,6 +651,23 @@ func doUpdateElasticsearchIncreaseNodeGroupStep() test.TestStep {
 				assert.NotEmpty(t, sts.Annotations[patch.LastAppliedConfig])
 			}
 
+			// Users musts exist
+			userList := []string{
+				GetUserSystemName(es, "kibana_system"),
+				GetUserSystemName(es, "logstash_system"),
+				GetUserSystemName(es, "beats_system"),
+				GetUserSystemName(es, "apm_system"),
+				GetUserSystemName(es, "remote_monitoring_user"),
+			}
+			for _, name := range userList {
+				user = &elasticsearchapicrd.User{}
+				if err = c.Get(context.Background(), types.NamespacedName{Namespace: key.Namespace, Name: name}, user); err != nil {
+					t.Fatal(err)
+				}
+				assert.NotEmpty(t, user.OwnerReferences)
+				assert.NotEmpty(t, user.Annotations[patch.LastAppliedConfig])
+			}
+
 			return nil
 		},
 	}
@@ -647,12 +704,13 @@ func doUpdateElasticsearchDecreaseNodeGroupStep() test.TestStep {
 			es := &elasticsearchcrd.Elasticsearch{}
 
 			var (
-				s   *corev1.Secret
-				svc *corev1.Service
-				i   *networkingv1.Ingress
-				cm  *corev1.ConfigMap
-				pdb *policyv1.PodDisruptionBudget
-				sts *appv1.StatefulSet
+				s    *corev1.Secret
+				svc  *corev1.Service
+				i    *networkingv1.Ingress
+				cm   *corev1.ConfigMap
+				pdb  *policyv1.PodDisruptionBudget
+				sts  *appv1.StatefulSet
+				user *elasticsearchapicrd.User
 			)
 
 			lastVersion := data["lastVersion"].(string)
@@ -846,6 +904,301 @@ func doUpdateElasticsearchDecreaseNodeGroupStep() test.TestStep {
 				}
 
 			}
+
+			// Users musts exist
+			userList := []string{
+				GetUserSystemName(es, "kibana_system"),
+				GetUserSystemName(es, "logstash_system"),
+				GetUserSystemName(es, "beats_system"),
+				GetUserSystemName(es, "apm_system"),
+				GetUserSystemName(es, "remote_monitoring_user"),
+			}
+			for _, name := range userList {
+				user = &elasticsearchapicrd.User{}
+				if err = c.Get(context.Background(), types.NamespacedName{Namespace: key.Namespace, Name: name}, user); err != nil {
+					t.Fatal(err)
+				}
+				assert.Equal(t, "fu", user.Labels["test"])
+				assert.NotEmpty(t, user.OwnerReferences)
+				assert.NotEmpty(t, user.Annotations[patch.LastAppliedConfig])
+			}
+
+			return nil
+		},
+	}
+}
+
+func doUpdateElasticsearchAddLicenseStep() test.TestStep {
+	return test.TestStep{
+		Name: "update",
+		Do: func(c client.Client, key types.NamespacedName, o client.Object, data map[string]any) (err error) {
+			logrus.Infof("=== Add license on Elasticsearch cluster %s/%s ===", key.Namespace, key.Name)
+
+			if o == nil {
+				return errors.New("Elasticsearch is null")
+			}
+			es := o.(*elasticsearchcrd.Elasticsearch)
+
+			data["lastVersion"] = es.ResourceVersion
+			data["oldES"] = es.DeepCopy()
+
+			// Add secret that contain license
+			s := &corev1.Secret{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "license",
+					Namespace: es.Namespace,
+				},
+				Type: corev1.SecretTypeOpaque,
+				Data: map[string][]byte{
+					"license": []byte(`{"license": "fake"}`),
+				},
+			}
+			if err = c.Create(context.Background(), s); err != nil {
+				return err
+			}
+
+			es.Spec.LicenseSecretRef = &corev1.LocalObjectReference{
+				Name: "license",
+			}
+
+			if err = c.Update(context.Background(), es); err != nil {
+				return err
+			}
+
+			time.Sleep(5 * time.Second)
+
+			return nil
+		},
+		Check: func(t *testing.T, c client.Client, key types.NamespacedName, o client.Object, data map[string]any) (err error) {
+			es := &elasticsearchcrd.Elasticsearch{}
+
+			var (
+				s       *corev1.Secret
+				svc     *corev1.Service
+				i       *networkingv1.Ingress
+				cm      *corev1.ConfigMap
+				pdb     *policyv1.PodDisruptionBudget
+				sts     *appv1.StatefulSet
+				user    *elasticsearchapicrd.User
+				license *elasticsearchapicrd.License
+			)
+
+			lastVersion := data["lastVersion"].(string)
+			oldES := data["oldES"].(*elasticsearchcrd.Elasticsearch)
+
+			isTimeout, err := localtest.RunWithTimeout(func() error {
+				if err := c.Get(context.Background(), key, es); err != nil {
+					t.Fatal("Elasticsearch not found")
+				}
+
+				// In envtest, no kubelet
+				// So the Elasticsearch condition never set as true
+				if lastVersion != es.ResourceVersion && (es.Status.Phase == ElasticsearchPhaseStarting) {
+					return nil
+				}
+
+				return errors.New("Not yet updated")
+
+			}, time.Second*30, time.Second*1)
+			if err != nil || isTimeout {
+				t.Fatalf("All Elasticsearch step upgrading not finished: %s", err.Error())
+			}
+
+			// Secrets for node PKI and certificates must exist
+			s = &corev1.Secret{}
+			if err = c.Get(context.Background(), types.NamespacedName{Namespace: key.Namespace, Name: GetSecretNameForPkiTransport(es)}, s); err != nil {
+				t.Fatal(err)
+			}
+			assert.NotEmpty(t, s.Data)
+			assert.NotEmpty(t, s.OwnerReferences)
+			assert.NotEmpty(t, s.Annotations[patch.LastAppliedConfig])
+
+			s = &corev1.Secret{}
+			if err = c.Get(context.Background(), types.NamespacedName{Namespace: key.Namespace, Name: GetSecretNameForTlsTransport(es)}, s); err != nil {
+				t.Fatal(err)
+			}
+			assert.NotEmpty(t, s.Data)
+			assert.NotEmpty(t, s.OwnerReferences)
+			assert.NotEmpty(t, s.Annotations[patch.LastAppliedConfig])
+			for _, nodeGroup := range oldES.Spec.NodeGroups {
+				for _, nodeName := range GetNodeGroupNodeNames(oldES, nodeGroup.Name) {
+					if nodeGroup.Name == "data" {
+						assert.Empty(t, s.Data[fmt.Sprintf("%s.crt", nodeName)])
+						assert.Empty(t, s.Data[fmt.Sprintf("%s.key", nodeName)])
+					} else {
+						assert.NotEmpty(t, s.Data[fmt.Sprintf("%s.crt", nodeName)])
+						assert.NotEmpty(t, s.Data[fmt.Sprintf("%s.key", nodeName)])
+					}
+				}
+			}
+
+			// Secrets for API PKI and certificates must exist
+			s = &corev1.Secret{}
+			if err = c.Get(context.Background(), types.NamespacedName{Namespace: key.Namespace, Name: GetSecretNameForPkiApi(es)}, s); err != nil {
+				t.Fatal(err)
+			}
+			assert.NotEmpty(t, s.Data)
+			assert.NotEmpty(t, s.OwnerReferences)
+			assert.NotEmpty(t, s.Annotations[patch.LastAppliedConfig])
+
+			s = &corev1.Secret{}
+			if err = c.Get(context.Background(), types.NamespacedName{Namespace: key.Namespace, Name: GetSecretNameForTlsApi(es)}, s); err != nil {
+				t.Fatal(err)
+			}
+			assert.NotEmpty(t, s.Data)
+			assert.NotEmpty(t, s.OwnerReferences)
+			assert.NotEmpty(t, s.Annotations[patch.LastAppliedConfig])
+
+			// Secrets for internal credentials must exist
+			s = &corev1.Secret{}
+			if err = c.Get(context.Background(), types.NamespacedName{Namespace: key.Namespace, Name: GetSecretNameForCredentials(es)}, s); err != nil {
+				t.Fatal(err)
+			}
+			assert.NotEmpty(t, s.Data)
+			assert.NotEmpty(t, s.OwnerReferences)
+			assert.NotEmpty(t, s.Annotations[patch.LastAppliedConfig])
+
+			// Services must exists
+			svc = &corev1.Service{}
+			if err = c.Get(context.Background(), types.NamespacedName{Namespace: key.Namespace, Name: GetGlobalServiceName(es)}, svc); err != nil {
+				t.Fatal(err)
+			}
+			assert.NotEmpty(t, svc.OwnerReferences)
+			assert.NotEmpty(t, svc.Annotations[patch.LastAppliedConfig])
+
+			for _, nodeGroup := range oldES.Spec.NodeGroups {
+				if nodeGroup.Name == "data" {
+					svc = &corev1.Service{}
+					if err = c.Get(context.Background(), types.NamespacedName{Namespace: key.Namespace, Name: GetNodeGroupServiceName(es, nodeGroup.Name)}, svc); err != nil {
+						if !k8serrors.IsNotFound(err) {
+							t.Fatal(err)
+						}
+					}
+
+					svc = &corev1.Service{}
+					if err = c.Get(context.Background(), types.NamespacedName{Namespace: key.Namespace, Name: GetNodeGroupServiceNameHeadless(es, nodeGroup.Name)}, svc); err != nil {
+						if !k8serrors.IsNotFound(err) {
+							t.Fatal(err)
+						}
+					}
+				} else {
+					svc = &corev1.Service{}
+					if err = c.Get(context.Background(), types.NamespacedName{Namespace: key.Namespace, Name: GetNodeGroupServiceName(es, nodeGroup.Name)}, svc); err != nil {
+						t.Fatal(err)
+					}
+					assert.NotEmpty(t, svc.OwnerReferences)
+					assert.NotEmpty(t, svc.Annotations[patch.LastAppliedConfig])
+
+					svc = &corev1.Service{}
+					if err = c.Get(context.Background(), types.NamespacedName{Namespace: key.Namespace, Name: GetNodeGroupServiceNameHeadless(es, nodeGroup.Name)}, svc); err != nil {
+						t.Fatal(err)
+					}
+					assert.NotEmpty(t, svc.OwnerReferences)
+					assert.NotEmpty(t, svc.Annotations[patch.LastAppliedConfig])
+				}
+
+			}
+
+			// Load balancer must exist
+			svc = &corev1.Service{}
+			if err = c.Get(context.Background(), types.NamespacedName{Namespace: key.Namespace, Name: GetLoadBalancerName(es)}, svc); err != nil {
+				t.Fatal(err)
+			}
+			assert.NotEmpty(t, svc.OwnerReferences)
+			assert.NotEmpty(t, svc.Annotations[patch.LastAppliedConfig])
+
+			// Ingress must exist
+			i = &networkingv1.Ingress{}
+			if err = c.Get(context.Background(), types.NamespacedName{Namespace: key.Namespace, Name: GetIngressName(es)}, i); err != nil {
+				t.Fatal(err)
+			}
+			assert.NotEmpty(t, i.OwnerReferences)
+			assert.NotEmpty(t, i.Annotations[patch.LastAppliedConfig])
+
+			// ConfigMaps must exist
+			for _, nodeGroup := range es.Spec.NodeGroups {
+				if nodeGroup.Name == "data" {
+					cm = &corev1.ConfigMap{}
+					if err = c.Get(context.Background(), types.NamespacedName{Namespace: key.Namespace, Name: GetNodeGroupConfigMapName(es, nodeGroup.Name)}, cm); err != nil {
+						if !k8serrors.IsNotFound(err) {
+							t.Fatal(err)
+						}
+					}
+				} else {
+					cm = &corev1.ConfigMap{}
+					if err = c.Get(context.Background(), types.NamespacedName{Namespace: key.Namespace, Name: GetNodeGroupConfigMapName(es, nodeGroup.Name)}, cm); err != nil {
+						t.Fatal(err)
+					}
+					assert.NotEmpty(t, cm.OwnerReferences)
+					assert.NotEmpty(t, cm.Annotations[patch.LastAppliedConfig])
+				}
+
+			}
+
+			// PDB must exist
+			for _, nodeGroup := range es.Spec.NodeGroups {
+				if nodeGroup.Name == "data" {
+					pdb = &policyv1.PodDisruptionBudget{}
+					if err = c.Get(context.Background(), types.NamespacedName{Namespace: key.Namespace, Name: GetNodeGroupPDBName(es, nodeGroup.Name)}, pdb); err != nil {
+						if !k8serrors.IsNotFound(err) {
+							t.Fatal(err)
+						}
+					}
+				} else {
+					pdb = &policyv1.PodDisruptionBudget{}
+					if err = c.Get(context.Background(), types.NamespacedName{Namespace: key.Namespace, Name: GetNodeGroupPDBName(es, nodeGroup.Name)}, pdb); err != nil {
+						t.Fatal(err)
+					}
+					assert.NotEmpty(t, pdb.OwnerReferences)
+					assert.NotEmpty(t, pdb.Annotations[patch.LastAppliedConfig])
+				}
+
+			}
+
+			// Statefulset musts exist
+			for _, nodeGroup := range es.Spec.NodeGroups {
+				if nodeGroup.Name == "data" {
+					sts = &appv1.StatefulSet{}
+					if err = c.Get(context.Background(), types.NamespacedName{Namespace: key.Namespace, Name: GetNodeGroupName(es, nodeGroup.Name)}, sts); err != nil {
+						if !k8serrors.IsNotFound(err) {
+							t.Fatal(err)
+						}
+					}
+				} else {
+					sts = &appv1.StatefulSet{}
+					if err = c.Get(context.Background(), types.NamespacedName{Namespace: key.Namespace, Name: GetNodeGroupName(es, nodeGroup.Name)}, sts); err != nil {
+						t.Fatal(err)
+					}
+					assert.NotEmpty(t, sts.OwnerReferences)
+					assert.NotEmpty(t, sts.Annotations[patch.LastAppliedConfig])
+				}
+
+			}
+
+			// Users musts exist
+			userList := []string{
+				GetUserSystemName(es, "kibana_system"),
+				GetUserSystemName(es, "logstash_system"),
+				GetUserSystemName(es, "beats_system"),
+				GetUserSystemName(es, "apm_system"),
+				GetUserSystemName(es, "remote_monitoring_user"),
+			}
+			for _, name := range userList {
+				user = &elasticsearchapicrd.User{}
+				if err = c.Get(context.Background(), types.NamespacedName{Namespace: key.Namespace, Name: name}, user); err != nil {
+					t.Fatal(err)
+				}
+				assert.NotEmpty(t, user.OwnerReferences)
+				assert.NotEmpty(t, user.Annotations[patch.LastAppliedConfig])
+			}
+
+			// License must exist
+			license = &elasticsearchapicrd.License{}
+			if err = c.Get(context.Background(), types.NamespacedName{Namespace: key.Namespace, Name: GetLicenseName(es)}, license); err != nil {
+				t.Fatal(err)
+			}
+			assert.NotEmpty(t, license.OwnerReferences)
+			assert.NotEmpty(t, license.Annotations[patch.LastAppliedConfig])
 
 			return nil
 		},

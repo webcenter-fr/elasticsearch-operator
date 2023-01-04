@@ -75,6 +75,11 @@ type ElasticsearchSpec struct {
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
 	// +optional
 	Tls TlsSpec `json:"tls,omitempty"`
+
+	// LicenseSecretRef permit to set secret that contain Elasticsearch license on key `license`
+	// +operator-sdk:csv:customresourcedefinitions:type=spec
+	// +optional
+	LicenseSecretRef *corev1.LocalObjectReference `json:"licenseSecretRef,omitempty"`
 }
 
 type EndpointSpec struct {

@@ -1,6 +1,7 @@
 package kibana
 
 import (
+	"bytes"
 	"fmt"
 	"strings"
 
@@ -16,11 +17,12 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
+	"k8s.io/apimachinery/pkg/util/json"
 	"k8s.io/utils/pointer"
 )
 
 // BuildDeployment permit to generate deployment for Kibana
-func BuildDeployment(kb *kibanacrd.Kibana, es *elasticsearchcrd.Elasticsearch) (dpl *appv1.Deployment, err error) {
+func BuildDeployment(kb *kibanacrd.Kibana, es *elasticsearchcrd.Elasticsearch, keystoreSecret *corev1.Secret, apiCrtSecret *corev1.Secret) (dpl *appv1.Deployment, err error) {
 
 	// Generate confimaps to know what file to mount
 	// And to generate checksum
@@ -36,6 +38,34 @@ func BuildDeployment(kb *kibanacrd.Kibana, es *elasticsearchcrd.Elasticsearch) (
 			return nil, errors.Wrapf(err, "Error when generate checksum for %s/%s", configMap.Name, file)
 		}
 		configMapChecksumAnnotations[fmt.Sprintf("%s/checksum-%s", KibanaAnnotationKey, file)] = sum
+	}
+
+	secretChecksumAnnotations := map[string]string{}
+	// Compute checksum annotation for keystore secrets
+	if kb.Spec.KeystoreSecretRef != nil && kb.Spec.KeystoreSecretRef.Name != "" && keystoreSecret != nil {
+		//Convert secret contend to json string and them checksum it
+		j, err := json.Marshal(keystoreSecret.Data)
+		if err != nil {
+			return nil, errors.Wrapf(err, "Error when convert data of secret %s on json string", keystoreSecret.Name)
+		}
+		sum, err := checksum.SHA256sumReader(bytes.NewReader(j))
+		if err != nil {
+			return nil, errors.Wrapf(err, "Error when generate checksum for keystore %s", keystoreSecret.Name)
+		}
+		secretChecksumAnnotations[fmt.Sprintf("%s/checksum-keystore", KibanaAnnotationKey)] = sum
+	}
+	// Compute checksum annotation for external API certs
+	if kb.IsTlsEnabled() && !kb.IsSelfManagedSecretForTls() && apiCrtSecret != nil {
+		//Convert secret contend to json string and them checksum it
+		j, err := json.Marshal(apiCrtSecret.Data)
+		if err != nil {
+			return nil, errors.Wrapf(err, "Error when convert data of secret %s on json string", apiCrtSecret.Name)
+		}
+		sum, err := checksum.SHA256sumReader(bytes.NewReader(j))
+		if err != nil {
+			return nil, errors.Wrapf(err, "Error when generate checksum for apiCrt %s", apiCrtSecret.Name)
+		}
+		secretChecksumAnnotations[fmt.Sprintf("%s/checksum-api-certs", KibanaAnnotationKey)] = sum
 	}
 
 	cb := k8sbuilder.NewContainerBuilder()
@@ -259,7 +289,8 @@ fi
 		WithLabels(kb.Spec.Deployment.Labels, k8sbuilder.Merge)
 
 	// Compute annotations
-	ptb.WithAnnotations(configMapChecksumAnnotations, k8sbuilder.Merge)
+	ptb.WithAnnotations(configMapChecksumAnnotations, k8sbuilder.Merge).
+		WithAnnotations(secretChecksumAnnotations, k8sbuilder.Merge)
 
 	// Compute NodeSelector
 	ptb.WithNodeSelector(kb.Spec.Deployment.NodeSelector, k8sbuilder.Merge)

@@ -15,6 +15,7 @@ package elasticsearchapi
 
 import (
 	"context"
+	"fmt"
 	"time"
 
 	eshandler "github.com/disaster37/es-handler/v8"
@@ -29,10 +30,14 @@ import (
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	condition "k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/fields"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/handler"
+	"sigs.k8s.io/controller-runtime/pkg/reconcile"
+	"sigs.k8s.io/controller-runtime/pkg/source"
 )
 
 const (
@@ -90,7 +95,30 @@ func (r *UserReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.
 func (r *UserReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&elasticsearchapicrd.User{}).
+		Watches(&source.Kind{Type: &core.Secret{}}, handler.EnqueueRequestsFromMapFunc(watchUserSecret(r.Client))).
 		Complete(r)
+}
+
+// watchUserSecret permit to update user if secret change
+func watchUserSecret(c client.Client) handler.MapFunc {
+	return func(a client.Object) []reconcile.Request {
+
+		reconcileRequests := make([]reconcile.Request, 0)
+		listUsers := &elasticsearchapicrd.UserList{}
+
+		fs := fields.ParseSelectorOrDie(fmt.Sprintf("spec.secretRef.name=%s", a.GetName()))
+
+		// Get all users linked with secret
+		if err := c.List(context.Background(), listUsers, &client.ListOptions{Namespace: a.GetNamespace(), FieldSelector: fs}); err != nil {
+			panic(err)
+		}
+
+		for _, u := range listUsers.Items {
+			reconcileRequests = append(reconcileRequests, reconcile.Request{NamespacedName: types.NamespacedName{Name: u.Name, Namespace: u.Namespace}})
+		}
+
+		return reconcileRequests
+	}
 }
 
 // Configure permit to init Elasticsearch handler

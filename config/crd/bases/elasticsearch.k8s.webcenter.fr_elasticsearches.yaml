@@ -9843,6 +9843,16 @@ spec:
                   type: object
                   x-kubernetes-map-type: atomic
                 type: array
+              licenseSecretRef:
+                description: LicenseSecretRef permit to set secret that contain Elasticsearch
+                  license on key `license`
+                properties:
+                  name:
+                    description: 'Name of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                      TODO: Add other useful fields. apiVersion, kind, uid?'
+                    type: string
+                type: object
+                x-kubernetes-map-type: atomic
               nodeGroups:
                 description: NodeGroups permit to groups node per use case For exemple
                   master, data and ingest

@@ -1,6 +1,7 @@
 package elasticsearch
 
 import (
+	"context"
 	"path/filepath"
 	"testing"
 	"time"
@@ -8,6 +9,8 @@ import (
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/suite"
 	elasticsearchcrd "github.com/webcenter-fr/elasticsearch-operator/apis/elasticsearch/v1alpha1"
+	elasticsearchapicrd "github.com/webcenter-fr/elasticsearch-operator/apis/elasticsearchapi/v1alpha1"
+	kibanacrd "github.com/webcenter-fr/elasticsearch-operator/apis/kibana/v1alpha1"
 	"k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/rest"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -58,7 +61,15 @@ func (t *ElasticsearchControllerTestSuite) SetupSuite() {
 	if err != nil {
 		panic(err)
 	}
+	err = elasticsearchapicrd.AddToScheme(scheme.Scheme)
+	if err != nil {
+		panic(err)
+	}
 	err = elasticsearchcrd.AddToScheme(scheme.Scheme)
+	if err != nil {
+		panic(err)
+	}
+	err = kibanacrd.AddToScheme(scheme.Scheme)
 	if err != nil {
 		panic(err)
 	}
@@ -72,6 +83,27 @@ func (t *ElasticsearchControllerTestSuite) SetupSuite() {
 	}
 	k8sClient := k8sManager.GetClient()
 	t.k8sClient = k8sClient
+
+	// Add indexers on Elasticsearch to track secret change
+	if err := k8sManager.GetFieldIndexer().IndexField(context.Background(), &elasticsearchcrd.Elasticsearch{}, "spec.tls.certificateSecretRef.name", func(o client.Object) []string {
+		p := o.(*elasticsearchcrd.Elasticsearch)
+		if p.IsTlsApiEnabled() && !p.IsSelfManagedSecretForTlsApi() {
+			return []string{p.Spec.Tls.CertificateSecretRef.Name}
+		}
+		return []string{}
+	}); err != nil {
+		panic(err)
+	}
+
+	if err := k8sManager.GetFieldIndexer().IndexField(context.Background(), &elasticsearchcrd.Elasticsearch{}, "spec.globalNodeGroup.keystoreSecretRef.name", func(o client.Object) []string {
+		p := o.(*elasticsearchcrd.Elasticsearch)
+		if p.Spec.GlobalNodeGroup.KeystoreSecretRef != nil {
+			return []string{p.Spec.GlobalNodeGroup.KeystoreSecretRef.Name}
+		}
+		return []string{}
+	}); err != nil {
+		panic(err)
+	}
 
 	// Init controllers
 	elasticsearchReconciler := NewElasticsearchReconciler(k8sClient, scheme.Scheme)

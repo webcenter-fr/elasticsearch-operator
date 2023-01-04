@@ -1,42 +1,43 @@
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
-  name: test-data-es
+  name: test-all-es
   namespace: default
   labels:
     cluster: test
-    nodeGroup: data
+    nodeGroup: all
     elasticsearch.k8s.webcenter.fr: "true"
   annotations:
     elasticsearch.k8s.webcenter.fr: "true"
 spec:
   podManagementPolicy: Parallel
-  replicas: 3
+  replicas: 1
   selector:
     matchLabels:
       cluster: test
-      nodeGroup: data
-  serviceName: test-data-headless-es
+      nodeGroup: all
+  serviceName: test-all-headless-es
   template:
     metadata:
       labels:
         cluster: test
-        nodeGroup: data
+        nodeGroup: all
         elasticsearch.k8s.webcenter.fr: "true"
       annotations:
-        elasticsearch.k8s.webcenter.fr/checksum-elasticsearch.yml: 2a0a8650b1d7a5f22e433877319457161489869868b894d448b2616477b521aa
-        elasticsearch.k8s.webcenter.fr/checksum-log4j.yaml: 949e3031476b60f9f8cea06e1d683f3fb6e689856bdc58590036fd018c40149c
-        elasticsearch.k8s.webcenter.fr/checksum-keystore: 2c1eef3af7f9998f3e29ccd7a2927fdf62ca82080ea74b67e9454aae3c2adc98
-      name: test-data-es
+        elasticsearch.k8s.webcenter.fr/checksum-elasticsearch.yml: "2a0a8650b1d7a5f22e433877319457161489869868b894d448b2616477b521aa"
+        elasticsearch.k8s.webcenter.fr/checksum-api-certs: "53b47b289c9912c920ad03f4c114537fe6f9480756f7034cf9fd19017aaad026"
+      name: test-all-es
     spec:
       affinity:
         podAntiAffinity:
-          requiredDuringSchedulingIgnoredDuringExecution:
-          - labelSelector:
-              matchLabels:
-                cluster: test
-                nodeGroup: data
-            topologyKey: rack
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - podAffinityTerm:
+                labelSelector:
+                  matchLabels:
+                    cluster: test
+                    nodeGroup: all
+                topologyKey: kubernetes.io/hostname
+              weight: 10
       containers:
       - env:
         - name: network.publish_host
@@ -55,7 +56,7 @@ spec:
               apiVersion: v1
               fieldPath: metadata.name
         - name: node.roles
-          value: data
+          value: master, data, ingest
         - name: ELASTIC_PASSWORD
           valueFrom:
             secretKeyRef:
@@ -81,21 +82,23 @@ spec:
             fieldRef:
               apiVersion: v1
               fieldPath: metadata.namespace
-        - name: ELASTICSEARCH_JAVA_OPTS
-          value: -Xms30g -Xmx30g
         - name: cluster.initial_master_nodes
-          value: test-master-es-0, test-master-es-1, test-master-es-2
+          value: test-all-es-0
+        - name: ELASTICSEARCH_JAVA_OPTS
+          value: ''
         - name: discovery.seed_hosts
-          value: test-master-headless-es
+          value: test-all-headless-es
         - name: cluster.name
           value: test
         - name: network.host
           value: 0.0.0.0
+        - name: discovery.type
+          value: single-node
         - name: PROBE_WAIT_STATUS
           value: green
         - name: PROBE_SCHEME
           value: https
-        image: docker.elastic.co/elasticsearch/elasticsearch:2.3.0
+        image: docker.elastic.co/elasticsearch/elasticsearch:latest
         livenessProbe:
           failureThreshold: 10
           periodSeconds: 30
@@ -157,13 +160,6 @@ spec:
                     fi
                   fi
           timeoutSeconds: 5
-        resources:
-          limits:
-            cpu: "8"
-            memory: 64Gi
-          requests:
-            cpu: "5"
-            memory: 30Gi
         securityContext:
           capabilities:
             drop:
@@ -179,66 +175,18 @@ spec:
             port: 9200
           timeoutSeconds: 5
         volumeMounts:
-        - mountPath: /mnt/snapshot
-          name: snapshot
-        - mountPath: /usr/share/elasticsearch/data
-          name: elasticsearch-data
         - mountPath: /usr/share/elasticsearch/config
           name: config
-        - mountPath: /usr/share/elasticsearch/plugins
-          name: plugin 
       initContainers:
       - command:
         - sysctl
         - -w
         - vm.max_map_count=262144
-        image: docker.elastic.co/elasticsearch/elasticsearch:2.3.0
+        image: docker.elastic.co/elasticsearch/elasticsearch:latest
         name: configure-sysctl
-        resources:
-          limits:
-            cpu: 300m
-            memory: 500Mi
-          requests:
-            cpu: 100m
-            memory: 100Mi
         securityContext:
           privileged: true
           runAsUser: 0
-      - command:
-        - /bin/bash
-        - -c
-        - |
-            #!/usr/bin/env bash
-            set -euo pipefail
-
-            elasticsearch-keystore create
-            for i in /mnt/keystoreSecrets/*/*; do
-                key=$(basename $i)
-                echo "Adding file $i to keystore key $key"
-                elasticsearch-keystore add-file "$key" "$i"
-            done
-
-            # Add the bootstrap password since otherwise the Elasticsearch entrypoint tries to do this on startup
-            if [ ! -z ${ELASTIC_PASSWORD+x} ]; then
-              echo 'Adding env $ELASTIC_PASSWORD to keystore as key bootstrap.password'
-              echo "$ELASTIC_PASSWORD" | elasticsearch-keystore add -x bootstrap.password
-            fi
-
-            cp -a /usr/share/elasticsearch/config/elasticsearch.keystore /mnt/keystore/
-        image: docker.elastic.co/elasticsearch/elasticsearch:2.3.0
-        name: init-keystore
-        resources:
-          limits:
-            cpu: 300m
-            memory: 500Mi
-          requests:
-            cpu: 100m
-            memory: 100Mi
-        volumeMounts:
-          - name: keystore
-            mountPath: /mnt/keystore
-          - name: elasticsearch-keystore
-            mountPath: /mnt/keystoreSecrets
       - command:
         - /bin/bash
         - -c
@@ -277,13 +225,12 @@ spec:
               chown -v elasticsearch:elasticsearch /mnt/data
             fi
 
-            ./bin/elasticsearch-plugin install -b repository-s3
 
             if [ -d /mnt/plugins ]; then
               cp -a /usr/share/elasticsearch/plugins/* /mnt/plugins/
             fi
 
-        image: docker.elastic.co/elasticsearch/elasticsearch:2.3.0
+        image: docker.elastic.co/elasticsearch/elasticsearch:latest
         name: init-filesystem
         env:
         - name: POD_NAME
@@ -316,54 +263,23 @@ spec:
           - name: elasticsearch-config
             mountPath: /mnt/configmap/elasticsearch.yml
             subPath: elasticsearch.yml
-          - name: elasticsearch-config
-            mountPath: /mnt/configmap/log4j.yaml
-            subPath: log4j.yaml
-          - name: elasticsearch-data
-            mountPath: /mnt/data
-          - name: plugin
-            mountPath: /mnt/plugins
         securityContext:
           runAsUser: 0
-        resources:
-          limits:
-            cpu: 300m
-            memory: 500Mi
-          requests:
-            cpu: 100m
-            memory: 100Mi
-      nodeSelector:
-        project: elasticsearch
       securityContext:
         fsGroup: 1000
       terminationGracePeriodSeconds: 120
-      tolerations:
-      - effect: NoSchedule
-        key: project
-        operator: Equal
-        value: elasticsearch
       volumes:
       - name: node-tls
         secret:
           secretName: test-tls-transport-es
       - name: api-tls
         secret:
-          secretName: test-tls-api-es
+          secretName: api-certificates
       - configMap:
-          name: test-data-config-es
+          name: test-all-config-es
         name: elasticsearch-config
-      - name: snapshot
-        nfs:
-          path: /snapshot
-          server: nfsserver
-      - hostPath:
-          path: /data/elasticsearch
-        name: elasticsearch-data
       - name: keystore
         emptyDir: {}
-      - name: elasticsearch-keystore
-        secret:
-          secretName: elasticsearch-security
       - name: config
         emptyDir: {}
       - name: plugin

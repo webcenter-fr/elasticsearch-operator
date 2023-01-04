@@ -481,3 +481,19 @@ func TestGetUserSystemName(t *testing.T) {
 
 	assert.Equal(t, "test-kibana-system-es", GetUserSystemName(o, "kibana_system"))
 }
+
+func TestGetLicenseName(t *testing.T) {
+	o := &elasticsearchcrd.Elasticsearch{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: "default",
+			Name:      "test",
+		},
+		Spec: elasticsearchcrd.ElasticsearchSpec{},
+	}
+
+	assert.Equal(t, "test-es", GetLicenseName(o))
+}
+
+func TestGetElasticsearchNameFromSecretApiTlsName(t *testing.T) {
+	assert.Equal(t, "test", GetElasticsearchNameFromSecretApiTlsName("test-tls-api-es"))
+}

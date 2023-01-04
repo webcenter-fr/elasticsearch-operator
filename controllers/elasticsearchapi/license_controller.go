@@ -32,10 +32,14 @@ import (
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	condition "k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/fields"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/handler"
+	"sigs.k8s.io/controller-runtime/pkg/reconcile"
+	"sigs.k8s.io/controller-runtime/pkg/source"
 )
 
 const (
@@ -97,7 +101,30 @@ func (r *LicenseReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 func (r *LicenseReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&elasticsearchapicrd.License{}).
+		Watches(&source.Kind{Type: &core.Secret{}}, handler.EnqueueRequestsFromMapFunc(watchLicenseSecret(r.Client))).
 		Complete(r)
+}
+
+// watchLicenseSecret permit to update license if secret change
+func watchLicenseSecret(c client.Client) handler.MapFunc {
+	return func(a client.Object) []reconcile.Request {
+
+		reconcileRequests := make([]reconcile.Request, 0)
+		listLicenses := &elasticsearchapicrd.LicenseList{}
+
+		fs := fields.ParseSelectorOrDie(fmt.Sprintf("spec.secretRef.name=%s", a.GetName()))
+
+		// Get all license linked with secret
+		if err := c.List(context.Background(), listLicenses, &client.ListOptions{Namespace: a.GetNamespace(), FieldSelector: fs}); err != nil {
+			panic(err)
+		}
+
+		for _, l := range listLicenses.Items {
+			reconcileRequests = append(reconcileRequests, reconcile.Request{NamespacedName: types.NamespacedName{Name: l.Name, Namespace: l.Namespace}})
+		}
+
+		return reconcileRequests
+	}
 }
 
 // Configure permit to init Elasticsearch handler

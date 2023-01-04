@@ -198,6 +198,25 @@ func IsMasterRole(elasticsearch *elasticsearchcrd.Elasticsearch, nodeGroupName s
 	return false
 }
 
+// GetUserSystemName return the name for system users
 func GetUserSystemName(es *elasticsearchcrd.Elasticsearch, username string) string {
 	return fmt.Sprintf("%s-%s-es", es.Name, strings.ReplaceAll(username, "_", "-"))
+}
+
+// GetLicenseName return the name for the license
+func GetLicenseName(es *elasticsearchcrd.Elasticsearch) string {
+	return fmt.Sprintf("%s-es", es.Name)
+}
+
+// GetElasticsearchNameFromSecretApiTlsName return the Elasticsearch name from secret name that store TLS API
+func GetElasticsearchNameFromSecretApiTlsName(secretApiTlsName string) (elasticsearchName string) {
+	//r := regexp.MustCompile(`^(.+)-\d+$`)
+	r := regexp.MustCompile(`^(.+)-tls-api-es`)
+	res := r.FindStringSubmatch(secretApiTlsName)
+
+	if len(res) > 1 {
+		return res[1]
+	}
+
+	return ""
 }

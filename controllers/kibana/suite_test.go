@@ -1,12 +1,15 @@
 package kibana
 
 import (
+	"context"
 	"path/filepath"
 	"testing"
 	"time"
 
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/suite"
+	elasticsearchcrd "github.com/webcenter-fr/elasticsearch-operator/apis/elasticsearch/v1alpha1"
+	elasticsearchapicrd "github.com/webcenter-fr/elasticsearch-operator/apis/elasticsearchapi/v1alpha1"
 	kibanacrd "github.com/webcenter-fr/elasticsearch-operator/apis/kibana/v1alpha1"
 	"k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/rest"
@@ -58,6 +61,14 @@ func (t *ControllerTestSuite) SetupSuite() {
 	if err != nil {
 		panic(err)
 	}
+	err = elasticsearchapicrd.AddToScheme(scheme.Scheme)
+	if err != nil {
+		panic(err)
+	}
+	err = elasticsearchcrd.AddToScheme(scheme.Scheme)
+	if err != nil {
+		panic(err)
+	}
 	err = kibanacrd.AddToScheme(scheme.Scheme)
 	if err != nil {
 		panic(err)
@@ -72,6 +83,37 @@ func (t *ControllerTestSuite) SetupSuite() {
 	}
 	k8sClient := k8sManager.GetClient()
 	t.k8sClient = k8sClient
+
+	// Add indexers on Kibana to track secret change
+	if err := k8sManager.GetFieldIndexer().IndexField(context.Background(), &kibanacrd.Kibana{}, "spec.tls.certificateSecretRef.name", func(o client.Object) []string {
+		p := o.(*kibanacrd.Kibana)
+		if p.IsTlsEnabled() && !p.IsSelfManagedSecretForTls() {
+			return []string{p.Spec.Tls.CertificateSecretRef.Name}
+		}
+		return []string{}
+	}); err != nil {
+		panic(err)
+	}
+
+	if err := k8sManager.GetFieldIndexer().IndexField(context.Background(), &kibanacrd.Kibana{}, "spec.keystoreSecretRef.name", func(o client.Object) []string {
+		p := o.(*kibanacrd.Kibana)
+		if p.Spec.KeystoreSecretRef != nil {
+			return []string{p.Spec.KeystoreSecretRef.Name}
+		}
+		return []string{}
+	}); err != nil {
+		panic(err)
+	}
+
+	if err := k8sManager.GetFieldIndexer().IndexField(context.Background(), &kibanacrd.Kibana{}, "spec.elasticsearchRef.name", func(o client.Object) []string {
+		p := o.(*kibanacrd.Kibana)
+		if p.Spec.KeystoreSecretRef != nil {
+			return []string{p.Spec.KeystoreSecretRef.Name}
+		}
+		return []string{}
+	}); err != nil {
+		panic(err)
+	}
 
 	// Init controllers
 

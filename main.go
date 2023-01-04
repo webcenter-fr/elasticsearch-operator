@@ -17,6 +17,7 @@ limitations under the License.
 package main
 
 import (
+	"context"
 	"flag"
 	"os"
 
@@ -29,6 +30,7 @@ import (
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/cache"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/healthz"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 
@@ -135,6 +137,79 @@ func main() {
 		os.Exit(1)
 	}
 
+	// Add indexers on License to track secret change
+	if err := mgr.GetFieldIndexer().IndexField(context.Background(), &elasticsearchapicrd.License{}, "spec.secretRef.name", func(o client.Object) []string {
+		p := o.(*elasticsearchapicrd.License)
+		if p.Spec.SecretRef != nil {
+			return []string{p.Spec.SecretRef.Name}
+		}
+		return []string{}
+	}); err != nil {
+		panic(err)
+	}
+
+	if err := mgr.GetFieldIndexer().IndexField(context.Background(), &elasticsearchapicrd.User{}, "spec.secretRef.name", func(o client.Object) []string {
+		p := o.(*elasticsearchapicrd.User)
+		if p.Spec.SecretRef != nil {
+			return []string{p.Spec.SecretRef.Name}
+		}
+		return []string{}
+	}); err != nil {
+		panic(err)
+	}
+
+	// Add indexers on Elasticsearch to track secret change
+	if err := mgr.GetFieldIndexer().IndexField(context.Background(), &elasticsearchcrd.Elasticsearch{}, "spec.tls.certificateSecretRef.name", func(o client.Object) []string {
+		p := o.(*elasticsearchcrd.Elasticsearch)
+		if p.IsTlsApiEnabled() && !p.IsSelfManagedSecretForTlsApi() {
+			return []string{p.Spec.Tls.CertificateSecretRef.Name}
+		}
+		return []string{}
+	}); err != nil {
+		panic(err)
+	}
+
+	if err := mgr.GetFieldIndexer().IndexField(context.Background(), &elasticsearchcrd.Elasticsearch{}, "spec.globalNodeGroup.keystoreSecretRef.name", func(o client.Object) []string {
+		p := o.(*elasticsearchcrd.Elasticsearch)
+		if p.Spec.GlobalNodeGroup.KeystoreSecretRef != nil {
+			return []string{p.Spec.GlobalNodeGroup.KeystoreSecretRef.Name}
+		}
+		return []string{}
+	}); err != nil {
+		panic(err)
+	}
+
+	// Add indexers on Kibana to track secret change
+	if err := mgr.GetFieldIndexer().IndexField(context.Background(), &kibanacrd.Kibana{}, "spec.tls.certificateSecretRef.name", func(o client.Object) []string {
+		p := o.(*kibanacrd.Kibana)
+		if p.IsTlsEnabled() && !p.IsSelfManagedSecretForTls() {
+			return []string{p.Spec.Tls.CertificateSecretRef.Name}
+		}
+		return []string{}
+	}); err != nil {
+		panic(err)
+	}
+
+	if err := mgr.GetFieldIndexer().IndexField(context.Background(), &kibanacrd.Kibana{}, "spec.keystoreSecretRef.name", func(o client.Object) []string {
+		p := o.(*kibanacrd.Kibana)
+		if p.Spec.KeystoreSecretRef != nil {
+			return []string{p.Spec.KeystoreSecretRef.Name}
+		}
+		return []string{}
+	}); err != nil {
+		panic(err)
+	}
+
+	if err := mgr.GetFieldIndexer().IndexField(context.Background(), &kibanacrd.Kibana{}, "spec.elasticsearchRef.name", func(o client.Object) []string {
+		p := o.(*kibanacrd.Kibana)
+		if p.Spec.KeystoreSecretRef != nil {
+			return []string{p.Spec.KeystoreSecretRef.Name}
+		}
+		return []string{}
+	}); err != nil {
+		panic(err)
+	}
+
 	// Set platform controllers
 	elasticsearchController := elasticsearchcontrollers.NewElasticsearchReconciler(mgr.GetClient(), mgr.GetScheme())
 	elasticsearchController.SetLogger(log.WithFields(logrus.Fields{
@@ -169,11 +244,14 @@ func main() {
 		os.Exit(1)
 	}
 
-	if err = (&elasticsearchapicontrollers.LicenseReconciler{
-		Client: mgr.GetClient(),
-		Scheme: mgr.GetScheme(),
-	}).SetupWithManager(mgr); err != nil {
-		setupLog.Error(err, "unable to create controller", "controller", "License")
+	elasticsearchLicenseController := elasticsearchapicontrollers.NewUserReconciler(mgr.GetClient(), mgr.GetScheme())
+	elasticsearchLicenseController.SetLogger(log.WithFields(logrus.Fields{
+		"type": "ElasticsearchLicenseController",
+	}))
+	elasticsearchLicenseController.SetRecorder(mgr.GetEventRecorderFor("elasticsearch-license-controller"))
+	elasticsearchLicenseController.SetReconciler(elasticsearchLicenseController)
+	if err = elasticsearchLicenseController.SetupWithManager(mgr); err != nil {
+		setupLog.Error(err, "unable to create controller", "controller", "ElasticsearchLicense")
 		os.Exit(1)
 	}
 	//+kubebuilder:scaffold:builder

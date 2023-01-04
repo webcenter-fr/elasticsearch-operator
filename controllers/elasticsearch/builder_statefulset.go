@@ -1,6 +1,7 @@
 package elasticsearch
 
 import (
+	"bytes"
 	"fmt"
 	"strings"
 
@@ -14,6 +15,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
+	"k8s.io/apimachinery/pkg/util/json"
 	"k8s.io/utils/pointer"
 )
 
@@ -34,7 +36,7 @@ var (
 )
 
 // GenerateStatefullsets permit to generate statefullsets for each node groups
-func BuildStatefulsets(es *elasticsearchcrd.Elasticsearch) (statefullsets []appv1.StatefulSet, err error) {
+func BuildStatefulsets(es *elasticsearchcrd.Elasticsearch, keystoreSecret *corev1.Secret, apiCrtSecret *corev1.Secret) (statefullsets []appv1.StatefulSet, err error) {
 	var (
 		sts *appv1.StatefulSet
 	)
@@ -55,6 +57,34 @@ func BuildStatefulsets(es *elasticsearchcrd.Elasticsearch) (statefullsets []appv
 			}
 			configMapChecksumAnnotations[fmt.Sprintf("%s/checksum-%s", ElasticsearchAnnotationKey, file)] = sum
 		}
+	}
+
+	secretChecksumAnnotations := map[string]string{}
+	// Compute checksum annotation for keystore secrets
+	if es.Spec.GlobalNodeGroup.KeystoreSecretRef != nil && es.Spec.GlobalNodeGroup.KeystoreSecretRef.Name != "" && keystoreSecret != nil {
+		//Convert secret contend to json string and them checksum it
+		j, err := json.Marshal(keystoreSecret.Data)
+		if err != nil {
+			return nil, errors.Wrapf(err, "Error when convert data of secret %s on json string", keystoreSecret.Name)
+		}
+		sum, err := checksum.SHA256sumReader(bytes.NewReader(j))
+		if err != nil {
+			return nil, errors.Wrapf(err, "Error when generate checksum for keystore %s", keystoreSecret.Name)
+		}
+		secretChecksumAnnotations[fmt.Sprintf("%s/checksum-keystore", ElasticsearchAnnotationKey)] = sum
+	}
+	// Compute checksum annotation for external API certs
+	if es.IsTlsApiEnabled() && !es.IsSelfManagedSecretForTlsApi() && apiCrtSecret != nil {
+		//Convert secret contend to json string and them checksum it
+		j, err := json.Marshal(apiCrtSecret.Data)
+		if err != nil {
+			return nil, errors.Wrapf(err, "Error when convert data of secret %s on json string", apiCrtSecret.Name)
+		}
+		sum, err := checksum.SHA256sumReader(bytes.NewReader(j))
+		if err != nil {
+			return nil, errors.Wrapf(err, "Error when generate checksum for apiCrt %s", apiCrtSecret.Name)
+		}
+		secretChecksumAnnotations[fmt.Sprintf("%s/checksum-api-certs", ElasticsearchAnnotationKey)] = sum
 	}
 
 	for _, nodeGroup := range es.Spec.NodeGroups {
@@ -384,7 +414,8 @@ fi
 			WithLabels(nodeGroup.Labels, k8sbuilder.Merge)
 
 		// Compute annotations
-		ptb.WithAnnotations(configMapChecksumAnnotations, k8sbuilder.Merge)
+		ptb.WithAnnotations(configMapChecksumAnnotations, k8sbuilder.Merge).
+			WithAnnotations(secretChecksumAnnotations, k8sbuilder.Merge)
 
 		// Compute NodeSelector
 		ptb.WithNodeSelector(nodeGroup.NodeSelector, k8sbuilder.Merge)

@@ -24,6 +24,30 @@ rules:
   verbs:
   - update
 - apiGroups:
+  - ""
+  resources:
+  - events
+  verbs:
+  - create
+  - get
+  - patch
+- apiGroups:
+  - ""
+  resources:
+  - secrets
+  verbs:
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - elasticsearch.k8s.elastic.co
+  resources:
+  - elasticsearches
+  verbs:
+  - get
+- apiGroups:
   - elasticsearch.k8s.webcenter.fr
   resources:
   - elasticsearches
@@ -71,6 +95,32 @@ rules:
   - elasticsearchapi.k8s.webcenter.fr
   resources:
   - users/status
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
+  - elk.k8s.webcenter.fr
+  resources:
+  - licenses
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - elk.k8s.webcenter.fr
+  resources:
+  - licenses/finalizers
+  verbs:
+  - update
+- apiGroups:
+  - elk.k8s.webcenter.fr
+  resources:
+  - licenses/status
   verbs:
   - get
   - patch

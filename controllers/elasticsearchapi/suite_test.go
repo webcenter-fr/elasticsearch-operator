@@ -1,6 +1,7 @@
 package elasticsearchapi
 
 import (
+	"context"
 	"path/filepath"
 	"testing"
 	"time"
@@ -10,6 +11,9 @@ import (
 	"github.com/golang/mock/gomock"
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/suite"
+	elasticsearchcrd "github.com/webcenter-fr/elasticsearch-operator/apis/elasticsearch/v1alpha1"
+	elasticsearchapicrd "github.com/webcenter-fr/elasticsearch-operator/apis/elasticsearchapi/v1alpha1"
+	kibanacrd "github.com/webcenter-fr/elasticsearch-operator/apis/kibana/v1alpha1"
 	"k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/rest"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -17,8 +21,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/envtest"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
-
-	elasticsearchapicrd "github.com/webcenter-fr/elasticsearch-operator/apis/elasticsearchapi/v1alpha1"
+	//+kubebuilder:scaffold:imports
 	//+kubebuilder:scaffold:imports
 )
 
@@ -71,6 +74,14 @@ func (t *ElasticsearchapiControllerTestSuite) SetupSuite() {
 	if err != nil {
 		panic(err)
 	}
+	err = elasticsearchcrd.AddToScheme(scheme.Scheme)
+	if err != nil {
+		panic(err)
+	}
+	err = kibanacrd.AddToScheme(scheme.Scheme)
+	if err != nil {
+		panic(err)
+	}
 
 	// Init k8smanager and k8sclient
 	k8sManager, err := ctrl.NewManager(cfg, ctrl.Options{
@@ -82,6 +93,27 @@ func (t *ElasticsearchapiControllerTestSuite) SetupSuite() {
 	k8sClient := k8sManager.GetClient()
 	t.k8sClient = k8sClient
 
+	// Add indexers on License to track secret change
+	if err := k8sManager.GetFieldIndexer().IndexField(context.Background(), &elasticsearchapicrd.License{}, "spec.secretRef.name", func(o client.Object) []string {
+		p := o.(*elasticsearchapicrd.License)
+		if p.Spec.SecretRef != nil {
+			return []string{p.Spec.SecretRef.Name}
+		}
+		return []string{}
+	}); err != nil {
+		panic(err)
+	}
+
+	if err := k8sManager.GetFieldIndexer().IndexField(context.Background(), &elasticsearchapicrd.User{}, "spec.secretRef.name", func(o client.Object) []string {
+		p := o.(*elasticsearchapicrd.User)
+		if p.Spec.SecretRef != nil {
+			return []string{p.Spec.SecretRef.Name}
+		}
+		return []string{}
+	}); err != nil {
+		panic(err)
+	}
+
 	// Init controllers
 	userReconciler := NewUserReconciler(k8sClient, scheme.Scheme)
 	userReconciler.SetLogger(logrus.WithFields(logrus.Fields{
@@ -90,6 +122,16 @@ func (t *ElasticsearchapiControllerTestSuite) SetupSuite() {
 	userReconciler.SetRecorder(k8sManager.GetEventRecorderFor("elasticsearch-user-controller"))
 	userReconciler.SetReconciler(mock.NewMockReconciler(userReconciler, t.mockElasticsearchHandler))
 	if err = userReconciler.SetupWithManager(k8sManager); err != nil {
+		panic(err)
+	}
+
+	licenseReconciler := NewLicenseReconciler(k8sClient, scheme.Scheme)
+	licenseReconciler.SetLogger(logrus.WithFields(logrus.Fields{
+		"type": "elasticsearchLicenseController",
+	}))
+	licenseReconciler.SetRecorder(k8sManager.GetEventRecorderFor("elasticsearch-license-controller"))
+	licenseReconciler.SetReconciler(mock.NewMockReconciler(licenseReconciler, t.mockElasticsearchHandler))
+	if err = licenseReconciler.SetupWithManager(k8sManager); err != nil {
 		panic(err)
 	}
 
