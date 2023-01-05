@@ -13,6 +13,11 @@ data:
   log4j.yml: |
     log.test: test
   kibana.yml: |
+    elasticsearch:
+        ssl:
+            certificateAuthorities:
+                - /usr/share/kibana/config/es-ca/ca.crt
+            verificationMode: certificate
     node:
         value: test
         value2: test

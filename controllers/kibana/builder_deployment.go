@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	"github.com/codingsince1985/checksum"
+	"github.com/davecgh/go-spew/spew"
 	"github.com/disaster37/k8sbuilder"
 	"github.com/elastic/go-ucfg"
 	"github.com/pkg/errors"
@@ -130,25 +131,6 @@ func BuildDeployment(kb *kibanacrd.Kibana, es *elasticsearchcrd.Elasticsearch, k
 				Value: computeNodeOpts(kb),
 			},
 			{
-				Name:  "ELASTICSEARCH_HOSTS",
-				Value: computeElasticsearchHosts(kb, es),
-			},
-			{
-				Name:  "ELASTICSEARCH_USERNAME",
-				Value: "kibana_system",
-			},
-			{
-				Name: "ELASTICSEARCH_PASSWORD",
-				ValueFrom: &corev1.EnvVarSource{
-					SecretKeyRef: &corev1.SecretKeySelector{
-						LocalObjectReference: corev1.LocalObjectReference{
-							Name: GetSecretNameForCredentials(kb),
-						},
-						Key: "kibana_system",
-					},
-				},
-			},
-			{
 				Name:  "SERVER_HOST",
 				Value: "0.0.0.0",
 			},
@@ -169,6 +151,29 @@ func BuildDeployment(kb *kibanacrd.Kibana, es *elasticsearchcrd.Elasticsearch, k
 			{
 				Name:  "PROBE_SCHEME",
 				Value: "http",
+			},
+		}, k8sbuilder.Merge)
+	}
+	if kb.IsElasticsearchRef() {
+		cb.WithEnv([]corev1.EnvVar{
+			{
+				Name:  "ELASTICSEARCH_HOSTS",
+				Value: computeElasticsearchHosts(kb, es),
+			},
+			{
+				Name:  "ELASTICSEARCH_USERNAME",
+				Value: "kibana_system",
+			},
+			{
+				Name: "ELASTICSEARCH_PASSWORD",
+				ValueFrom: &corev1.EnvVarSource{
+					SecretKeyRef: &corev1.SecretKeySelector{
+						LocalObjectReference: corev1.LocalObjectReference{
+							Name: GetSecretNameForCredentials(kb),
+						},
+						Key: "kibana_system",
+					},
+				},
 			},
 		}, k8sbuilder.Merge)
 	}
@@ -426,9 +431,9 @@ fi
 
 # Move CA Elasticsearch
 if [ -d /mnt/ca-elasticsearch ]; then
-	echo "Move CA certificate"
-	mkdir -p /mnt/config/es-ca
-	cp /mnt/ca-elasticsearch/* /mnt/config/es-ca/
+  echo "Move CA certificate"
+  mkdir -p /mnt/config/es-ca
+  cp /mnt/ca-elasticsearch/* /mnt/config/es-ca/
 fi
 
 # Move keystore
@@ -569,13 +574,13 @@ fi
 		FSGroup: pointer.Int64(1000),
 	}, k8sbuilder.Merge)
 
-	ptb.PodTemplate().Name = kb.Name
+	ptb.PodTemplate().Name = GetDeploymentName(kb)
 
 	// Compute Deployment
 	dpl = &appv1.Deployment{
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace:   kb.Namespace,
-			Name:        kb.Name,
+			Name:        GetDeploymentName(kb),
 			Labels:      getLabels(kb, kb.Spec.Deployment.Labels),
 			Annotations: getAnnotations(kb, kb.Spec.Deployment.Annotations),
 		},
@@ -703,8 +708,10 @@ func computeProbePath(cm *corev1.ConfigMap) (path string, err error) {
 
 	path, err = helper.GetSetting("server.basePath", []byte(cm.Data["kibana.yml"]))
 	if ucfg.ErrMissing == err {
-		return "/", nil
+		return "/app/kibana", nil
 	}
+
+	spew.Dump(cm.Data["kibana.yml"])
 
 	return path, nil
 

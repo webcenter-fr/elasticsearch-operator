@@ -146,6 +146,18 @@ func TestGetPDBName(t *testing.T) {
 	assert.Equal(t, "test-kb", GetPDBName(o))
 }
 
+func TestGetDeploymentName(t *testing.T) {
+	o := &kibanacrd.Kibana{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: "default",
+			Name:      "test",
+		},
+		Spec: kibanacrd.KibanaSpec{},
+	}
+
+	assert.Equal(t, "test-kb", GetDeploymentName(o))
+}
+
 func TestGetContainerImage(t *testing.T) {
 	// With default values
 	o := &kibanacrd.Kibana{

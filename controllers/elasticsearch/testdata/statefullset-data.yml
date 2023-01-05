@@ -16,6 +16,7 @@ spec:
     matchLabels:
       cluster: test
       nodeGroup: data
+      elasticsearch.k8s.webcenter.fr: "true"
   serviceName: test-data-headless-es
   template:
     metadata:
@@ -36,6 +37,7 @@ spec:
               matchLabels:
                 cluster: test
                 nodeGroup: data
+                elasticsearch.k8s.webcenter.fr: "true"
             topologyKey: rack
       containers:
       - env:
@@ -138,7 +140,7 @@ spec:
                     if [[ ${HTTP_CODE} == "200" ]]; then
                       exit 0
                     else
-                      echo "Elasticsearch API return code ${HTTP_CODE}
+                      echo "Elasticsearch API return code ${HTTP_CODE}"
                       exit 1
                     fi
                   else
@@ -152,7 +154,7 @@ spec:
                       touch ${STARTER_FILE}
                       exit 0
                     else
-                      echo "Elasticsearch API return code ${HTTP_CODE}
+                      echo "Elasticsearch API return code ${HTTP_CODE}"
                       exit 1
                     fi
                   fi
@@ -332,8 +334,9 @@ spec:
           requests:
             cpu: 100m
             memory: 100Mi
-      nodeSelector:
-        project: elasticsearch
+     - configMapRef:
+  
+          name: special-config
       securityContext:
         fsGroup: 1000
       terminationGracePeriodSeconds: 120

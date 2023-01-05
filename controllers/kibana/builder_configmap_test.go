@@ -83,6 +83,17 @@ node.value2: test`,
 			},
 		},
 	}
+	es = &elasticsearchcrd.Elasticsearch{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: "default",
+			Name:      "test",
+		},
+		Spec: elasticsearchcrd.ElasticsearchSpec{
+			Tls: elasticsearchcrd.TlsSpec{
+				Enabled: pointer.Bool(false),
+			},
+		},
+	}
 
 	configMap, err = BuildConfigMap(o, es)
 	assert.NoError(t, err)

@@ -72,6 +72,11 @@ func GetPDBName(kb *kibanacrd.Kibana) (serviceName string) {
 	return fmt.Sprintf("%s-kb", kb.Name)
 }
 
+// GetDeploymentName permit to get the deployement name
+func GetDeploymentName(kb *kibanacrd.Kibana) (name string) {
+	return fmt.Sprintf("%s-kb", kb.Name)
+}
+
 // GetContainerImage permit to get the image name
 func GetContainerImage(kb *kibanacrd.Kibana) string {
 	version := "latest"

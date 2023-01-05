@@ -84,6 +84,15 @@ func GetSetting(key string, config []byte) (value string, err error) {
 		return "", errors.Wrapf(err, "Error when load config: %s", spew.Sprint(config))
 	}
 
-	return yConfig.String(key, -1)
+	hasField, err := yConfig.Has(key, -1, ucfg.PathSep("."))
+	if err != nil {
+		return "", errors.Wrapf(err, "Error when check if field %s exist", key)
+	}
+
+	if hasField {
+		return yConfig.String(key, -1, ucfg.PathSep("."))
+	}
+
+	return "", ucfg.ErrMissing
 
 }

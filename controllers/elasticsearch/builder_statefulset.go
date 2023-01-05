@@ -364,7 +364,7 @@ if [ -f ${STARTER_FILE} ]; then
   if [[ ${HTTP_CODE} == "200" ]]; then
     exit 0
   else
-    echo "Elasticsearch API return code ${HTTP_CODE}
+    echo "Elasticsearch API return code ${HTTP_CODE}"
     exit 1
   fi
 else
@@ -378,7 +378,7 @@ else
     touch ${STARTER_FILE}
     exit 0
   else
-    echo "Elasticsearch API return code ${HTTP_CODE}
+    echo "Elasticsearch API return code ${HTTP_CODE}"
     exit 1
   fi
 fi
@@ -741,8 +741,9 @@ fi
 				ServiceName:         GetNodeGroupServiceNameHeadless(es, nodeGroup.Name),
 				Selector: &metav1.LabelSelector{
 					MatchLabels: map[string]string{
-						"cluster":   es.Name,
-						"nodeGroup": nodeGroup.Name,
+						"cluster":                  es.Name,
+						"nodeGroup":                nodeGroup.Name,
+						ElasticsearchAnnotationKey: "true",
 					},
 				},
 
@@ -849,8 +850,9 @@ func computeAntiAffinity(es *elasticsearchcrd.Elasticsearch, nodeGroup *elastics
 				TopologyKey: topologyKey,
 				LabelSelector: &metav1.LabelSelector{
 					MatchLabels: map[string]string{
-						"cluster":   es.Name,
-						"nodeGroup": nodeGroup.Name,
+						"cluster":                  es.Name,
+						"nodeGroup":                nodeGroup.Name,
+						ElasticsearchAnnotationKey: "true",
 					},
 				},
 			},
@@ -866,8 +868,9 @@ func computeAntiAffinity(es *elasticsearchcrd.Elasticsearch, nodeGroup *elastics
 				TopologyKey: topologyKey,
 				LabelSelector: &metav1.LabelSelector{
 					MatchLabels: map[string]string{
-						"cluster":   es.Name,
-						"nodeGroup": nodeGroup.Name,
+						"cluster":                  es.Name,
+						"nodeGroup":                nodeGroup.Name,
+						ElasticsearchAnnotationKey: "true",
 					},
 				},
 			},

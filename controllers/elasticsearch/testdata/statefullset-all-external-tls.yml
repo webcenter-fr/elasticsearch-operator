@@ -16,6 +16,7 @@ spec:
     matchLabels:
       cluster: test
       nodeGroup: all
+      elasticsearch.k8s.webcenter.fr: "true"
   serviceName: test-all-headless-es
   template:
     metadata:
@@ -36,6 +37,7 @@ spec:
                   matchLabels:
                     cluster: test
                     nodeGroup: all
+                    elasticsearch.k8s.webcenter.fr: "true"
                 topologyKey: kubernetes.io/hostname
               weight: 10
       containers:
@@ -141,7 +143,7 @@ spec:
                     if [[ ${HTTP_CODE} == "200" ]]; then
                       exit 0
                     else
-                      echo "Elasticsearch API return code ${HTTP_CODE}
+                      echo "Elasticsearch API return code ${HTTP_CODE}"
                       exit 1
                     fi
                   else
@@ -155,7 +157,7 @@ spec:
                       touch ${STARTER_FILE}
                       exit 0
                     else
-                      echo "Elasticsearch API return code ${HTTP_CODE}
+                      echo "Elasticsearch API return code ${HTTP_CODE}"
                       exit 1
                     fi
                   fi
