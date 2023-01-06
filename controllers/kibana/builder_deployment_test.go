@@ -47,7 +47,7 @@ func TestBuildDeployment(t *testing.T) {
 		Spec: elasticsearchcrd.ElasticsearchSpec{},
 	}
 
-	dpl, err = BuildDeployment(o, es, nil, nil)
+	dpl, err = BuildDeployment(o, es, nil, nil, nil)
 	assert.NoError(t, err)
 	test.EqualFromYamlFile(t, "testdata/deployment_default.yml", dpl, test.CleanApi)
 
@@ -71,9 +71,47 @@ func TestBuildDeployment(t *testing.T) {
 		Spec: elasticsearchcrd.ElasticsearchSpec{},
 	}
 
-	dpl, err = BuildDeployment(o, es, nil, nil)
+	dpl, err = BuildDeployment(o, es, nil, nil, nil)
 	assert.NoError(t, err)
 	test.EqualFromYamlFile(t, "testdata/deployment_default_with_external_es.yml", dpl, test.CleanApi)
+
+	// With default values and external elasticsearch and custom CA Elasticsearch
+	o = &kibanacrd.Kibana{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: "default",
+			Name:      "test",
+		},
+		Spec: kibanacrd.KibanaSpec{
+			Deployment: kibanacrd.DeploymentSpec{
+				Replicas: 1,
+			},
+			Tls: kibanacrd.TlsSpec{
+				ElasticsearchCaSecretRef: &v1.LocalObjectReference{
+					Name: "custom-ca-es",
+				},
+			},
+		},
+	}
+	es = &elasticsearchcrd.Elasticsearch{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: "default",
+			Name:      "test",
+		},
+		Spec: elasticsearchcrd.ElasticsearchSpec{},
+	}
+	s = &corev1.Secret{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: "default",
+			Name:      "custom-ca-es",
+		},
+		Data: map[string][]byte{
+			"ca.crt": []byte("secret3"),
+		},
+	}
+
+	dpl, err = BuildDeployment(o, es, nil, nil, s)
+	assert.NoError(t, err)
+	test.EqualFromYamlFile(t, "testdata/deployment_custom_ca_es_with_external_es.yml", dpl, test.CleanApi)
 
 	// When use external API cert
 	o = &kibanacrd.Kibana{
@@ -114,7 +152,7 @@ func TestBuildDeployment(t *testing.T) {
 		},
 	}
 
-	dpl, err = BuildDeployment(o, es, nil, s)
+	dpl, err = BuildDeployment(o, es, nil, s, nil)
 	assert.NoError(t, err)
 	test.EqualFromYamlFile(t, "testdata/deployment_with_external_certs.yml", dpl, test.CleanApi)
 
@@ -208,7 +246,7 @@ func TestBuildDeployment(t *testing.T) {
 		},
 	}
 
-	dpl, err = BuildDeployment(o, es, s, nil)
+	dpl, err = BuildDeployment(o, es, s, nil, nil)
 	assert.NoError(t, err)
 	test.EqualFromYamlFile(t, "testdata/deployment_complet.yml", dpl, test.CleanApi)
 }

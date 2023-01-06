@@ -334,11 +334,10 @@ spec:
           requests:
             cpu: 100m
             memory: 100Mi
-     - configMapRef:
-  
-          name: special-config
       securityContext:
         fsGroup: 1000
+      nodeSelector:
+        project: elasticsearch
       terminationGracePeriodSeconds: 120
       tolerations:
       - effect: NoSchedule

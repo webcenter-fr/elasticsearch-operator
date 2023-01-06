@@ -23,7 +23,7 @@ import (
 )
 
 // BuildDeployment permit to generate deployment for Kibana
-func BuildDeployment(kb *kibanacrd.Kibana, es *elasticsearchcrd.Elasticsearch, keystoreSecret *corev1.Secret, apiCrtSecret *corev1.Secret) (dpl *appv1.Deployment, err error) {
+func BuildDeployment(kb *kibanacrd.Kibana, es *elasticsearchcrd.Elasticsearch, keystoreSecret *corev1.Secret, apiCrtSecret *corev1.Secret, esCASecret *corev1.Secret) (dpl *appv1.Deployment, err error) {
 
 	// Generate confimaps to know what file to mount
 	// And to generate checksum
@@ -67,6 +67,19 @@ func BuildDeployment(kb *kibanacrd.Kibana, es *elasticsearchcrd.Elasticsearch, k
 			return nil, errors.Wrapf(err, "Error when generate checksum for apiCrt %s", apiCrtSecret.Name)
 		}
 		secretChecksumAnnotations[fmt.Sprintf("%s/checksum-api-certs", KibanaAnnotationKey)] = sum
+	}
+	// Compute checksum annotation for external CA Elasticsearch secret
+	if !kb.IsElasticsearchRef() && kb.Spec.Tls.ElasticsearchCaSecretRef != nil && esCASecret != nil {
+		//Convert secret contend to json string and them checksum it
+		j, err := json.Marshal(esCASecret.Data)
+		if err != nil {
+			return nil, errors.Wrapf(err, "Error when convert data of secret %s on json string", esCASecret.Name)
+		}
+		sum, err := checksum.SHA256sumReader(bytes.NewReader(j))
+		if err != nil {
+			return nil, errors.Wrapf(err, "Error when generate checksum for CA Elasticsearch %s", esCASecret.Name)
+		}
+		secretChecksumAnnotations[fmt.Sprintf("%s/checksum-ca-elasticsearch", KibanaAnnotationKey)] = sum
 	}
 
 	cb := k8sbuilder.NewContainerBuilder()
@@ -480,7 +493,7 @@ fi
 		}, k8sbuilder.Merge)
 	}
 
-	if kb.IsElasticsearchRef() && es.IsTlsApiEnabled() {
+	if (kb.IsElasticsearchRef() && es.IsTlsApiEnabled()) || (!kb.IsElasticsearchRef() && kb.Spec.Tls.ElasticsearchCaSecretRef != nil) {
 		ccb.WithVolumeMount([]corev1.VolumeMount{
 			{
 				Name:      "ca-elasticsearch",
@@ -563,6 +576,17 @@ fi
 				VolumeSource: corev1.VolumeSource{
 					Secret: &corev1.SecretVolumeSource{
 						SecretName: GetSecretNameForCAElasticsearch(kb),
+					},
+				},
+			},
+		}, k8sbuilder.Merge)
+	} else if !kb.IsElasticsearchRef() && kb.Spec.Tls.ElasticsearchCaSecretRef != nil {
+		ptb.WithVolumes([]corev1.Volume{
+			{
+				Name: "ca-elasticsearch",
+				VolumeSource: corev1.VolumeSource{
+					Secret: &corev1.SecretVolumeSource{
+						SecretName: esCASecret.Name,
 					},
 				},
 			},

@@ -168,6 +168,12 @@ type TlsSpec struct {
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
 	// +optional
 	CertificateSecretRef *corev1.LocalObjectReference `json:"certificateSecretRef,omitempty"`
+
+	// ElasticsearchCaSecretRef is the secret that store your custom CA certificate to connect on Elasticsearch API.
+	// It need to have the following keys: ca.crt
+	// +operator-sdk:csv:customresourcedefinitions:type=spec
+	// +optional
+	ElasticsearchCaSecretRef *corev1.LocalObjectReference `json:"elasticsearchCASecretRef,omitempty"`
 }
 
 type SelfSignedCertificateSpec struct {

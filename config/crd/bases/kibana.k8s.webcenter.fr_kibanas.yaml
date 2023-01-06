@@ -8343,6 +8343,17 @@ spec:
                         type: string
                     type: object
                     x-kubernetes-map-type: atomic
+                  elasticsearchCASecretRef:
+                    description: 'ElasticsearchCaSecretRef is the secret that store
+                      your custom CA certificate to connect on Elasticsearch API.
+                      It need to have the following keys: ca.crt'
+                    properties:
+                      name:
+                        description: 'Name of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                          TODO: Add other useful fields. apiVersion, kind, uid?'
+                        type: string
+                    type: object
+                    x-kubernetes-map-type: atomic
                   enabled:
                     description: Enabled permit to enabled TLS on Kibana
                     type: boolean

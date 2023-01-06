@@ -29,7 +29,7 @@ server.ssl.key: /usr/share/kibana/config/api-cert/tls.key
 		injectedConfigMap["kibana.yml"] = "server.ssl.enabled: false\n"
 	}
 
-	if es != nil && es.IsTlsApiEnabled() && es.IsSelfManagedSecretForTlsApi() {
+	if (es != nil && es.IsTlsApiEnabled() && es.IsSelfManagedSecretForTlsApi()) || (es == nil && kb.Spec.Tls.ElasticsearchCaSecretRef != nil) {
 		injectedConfigMap["kibana.yml"] += `
 elasticsearch.ssl.verificationMode: certificate
 elasticsearch.ssl.certificateAuthorities:

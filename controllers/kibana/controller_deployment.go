@@ -75,6 +75,7 @@ func (r *DeploymentReconciler) Read(ctx context.Context, resource client.Object,
 	dpl := &appv1.Deployment{}
 	secretKeystore := &corev1.Secret{}
 	secretApiCrt := &corev1.Secret{}
+	secretCustomCAElasticsearch := &corev1.Secret{}
 	var es *elasticsearchcrd.Elasticsearch
 
 	if err = r.Client.Get(ctx, types.NamespacedName{Namespace: o.Namespace, Name: o.Name}, dpl); err != nil {
@@ -126,8 +127,25 @@ func (r *DeploymentReconciler) Read(ctx context.Context, resource client.Object,
 		secretApiCrt = nil
 	}
 
+	// Read Custom CA Elasticsearch if needed
+	if !o.IsElasticsearchRef() && o.Spec.Tls.ElasticsearchCaSecretRef != nil {
+		if err = r.Client.Get(ctx, types.NamespacedName{Namespace: o.Namespace, Name: o.Spec.Tls.ElasticsearchCaSecretRef.Name}, secretCustomCAElasticsearch); err != nil {
+			if !k8serrors.IsNotFound(err) {
+				return res, errors.Wrapf(err, "Error when read secret %s", o.Spec.Tls.ElasticsearchCaSecretRef.Name)
+			}
+			r.Log.Warnf("Secret %s not yet exist, try again later", o.Spec.Tls.ElasticsearchCaSecretRef.Name)
+			return ctrl.Result{RequeueAfter: 30 * time.Second}, nil
+		}
+
+		if len(secretCustomCAElasticsearch.Data["ca.crt"]) == 0 {
+			return res, errors.Errorf("Secret %s must have a key `ca.crt`", secretCustomCAElasticsearch.Name)
+		}
+	} else {
+		secretCustomCAElasticsearch = nil
+	}
+
 	// Generate expected deployment
-	expectedDeployment, err := BuildDeployment(o, es, secretKeystore, secretApiCrt)
+	expectedDeployment, err := BuildDeployment(o, es, secretKeystore, secretApiCrt, secretCustomCAElasticsearch)
 	if err != nil {
 		return res, errors.Wrap(err, "Error when generate deployment")
 	}
