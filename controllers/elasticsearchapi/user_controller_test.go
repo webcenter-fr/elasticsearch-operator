@@ -13,6 +13,7 @@ import (
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
 	elasticsearchapicrd "github.com/webcenter-fr/elasticsearch-operator/apis/elasticsearchapi/v1alpha1"
+	"github.com/webcenter-fr/elasticsearch-operator/apis/shared"
 	localhelper "github.com/webcenter-fr/elasticsearch-operator/pkg/helper"
 	localtest "github.com/webcenter-fr/elasticsearch-operator/pkg/test"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
@@ -154,8 +155,10 @@ func doCreateUserStep() test.TestStep {
 					Namespace: key.Namespace,
 				},
 				Spec: elasticsearchapicrd.UserSpec{
-					ElasticsearchRefSpec: elasticsearchapicrd.ElasticsearchRefSpec{
-						Name: "test",
+					ElasticsearchRef: shared.ElasticsearchRef{
+						ManagedElasticsearchRef: &shared.ElasticsearchManagedRef{
+							Name: "test",
+						},
 					},
 					Username:     "test",
 					Enabled:      true,

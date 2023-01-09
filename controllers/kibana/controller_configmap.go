@@ -82,7 +82,7 @@ func (r *ConfigMapReconciler) Read(ctx context.Context, resource client.Object, 
 	data["currentConfigmap"] = cm
 
 	// Read Elasticsearch
-	if o.IsElasticsearchRef() {
+	if o.Spec.ElasticsearchRef.IsManaged() {
 		es, err = GetElasticsearchRef(ctx, r.Client, o)
 		if err != nil {
 			return res, errors.Wrap(err, "Error when read ElasticsearchRef")

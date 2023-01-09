@@ -6,6 +6,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	elasticsearchcrd "github.com/webcenter-fr/elasticsearch-operator/apis/elasticsearch/v1alpha1"
 	kibanacrd "github.com/webcenter-fr/elasticsearch-operator/apis/kibana/v1alpha1"
+	"github.com/webcenter-fr/elasticsearch-operator/apis/shared"
 	"github.com/webcenter-fr/elasticsearch-operator/pkg/test"
 	appv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -31,8 +32,10 @@ func TestBuildDeployment(t *testing.T) {
 			Name:      "test",
 		},
 		Spec: kibanacrd.KibanaSpec{
-			ElasticsearchRef: &kibanacrd.ElasticsearchRef{
-				Name: "test",
+			ElasticsearchRef: shared.ElasticsearchRef{
+				ManagedElasticsearchRef: &shared.ElasticsearchManagedRef{
+					Name: "test",
+				},
 			},
 			Deployment: kibanacrd.DeploymentSpec{
 				Replicas: 1,
@@ -61,17 +64,20 @@ func TestBuildDeployment(t *testing.T) {
 			Deployment: kibanacrd.DeploymentSpec{
 				Replicas: 1,
 			},
+			ElasticsearchRef: shared.ElasticsearchRef{
+				ExternalElasticsearchRef: &shared.ElasticsearchExternalRef{
+					Addresses: []string{
+						"https://es1:9200",
+					},
+					SecretRef: &v1.LocalObjectReference{
+						Name: "es-credential",
+					},
+				},
+			},
 		},
-	}
-	es = &elasticsearchcrd.Elasticsearch{
-		ObjectMeta: metav1.ObjectMeta{
-			Namespace: "default",
-			Name:      "test",
-		},
-		Spec: elasticsearchcrd.ElasticsearchSpec{},
 	}
 
-	dpl, err = BuildDeployment(o, es, nil, nil, nil)
+	dpl, err = BuildDeployment(o, nil, nil, nil, nil)
 	assert.NoError(t, err)
 	test.EqualFromYamlFile(t, "testdata/deployment_default_with_external_es.yml", dpl, test.CleanApi)
 
@@ -90,14 +96,17 @@ func TestBuildDeployment(t *testing.T) {
 					Name: "custom-ca-es",
 				},
 			},
+			ElasticsearchRef: shared.ElasticsearchRef{
+				ExternalElasticsearchRef: &shared.ElasticsearchExternalRef{
+					Addresses: []string{
+						"https://es1:9200",
+					},
+					SecretRef: &v1.LocalObjectReference{
+						Name: "es-credential",
+					},
+				},
+			},
 		},
-	}
-	es = &elasticsearchcrd.Elasticsearch{
-		ObjectMeta: metav1.ObjectMeta{
-			Namespace: "default",
-			Name:      "test",
-		},
-		Spec: elasticsearchcrd.ElasticsearchSpec{},
 	}
 	s = &corev1.Secret{
 		ObjectMeta: metav1.ObjectMeta{
@@ -109,7 +118,7 @@ func TestBuildDeployment(t *testing.T) {
 		},
 	}
 
-	dpl, err = BuildDeployment(o, es, nil, nil, s)
+	dpl, err = BuildDeployment(o, nil, nil, nil, s)
 	assert.NoError(t, err)
 	test.EqualFromYamlFile(t, "testdata/deployment_custom_ca_es_with_external_es.yml", dpl, test.CleanApi)
 
@@ -120,8 +129,10 @@ func TestBuildDeployment(t *testing.T) {
 			Name:      "test",
 		},
 		Spec: kibanacrd.KibanaSpec{
-			ElasticsearchRef: &kibanacrd.ElasticsearchRef{
-				Name: "test",
+			ElasticsearchRef: shared.ElasticsearchRef{
+				ManagedElasticsearchRef: &shared.ElasticsearchManagedRef{
+					Name: "test",
+				},
 			},
 			Deployment: kibanacrd.DeploymentSpec{
 				Replicas: 1,
@@ -163,8 +174,10 @@ func TestBuildDeployment(t *testing.T) {
 			Name:      "test",
 		},
 		Spec: kibanacrd.KibanaSpec{
-			ElasticsearchRef: &kibanacrd.ElasticsearchRef{
-				Name: "test",
+			ElasticsearchRef: shared.ElasticsearchRef{
+				ManagedElasticsearchRef: &shared.ElasticsearchManagedRef{
+					Name: "test",
+				},
 			},
 			Deployment: kibanacrd.DeploymentSpec{
 				Replicas: 1,

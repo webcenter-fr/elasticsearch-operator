@@ -36,14 +36,14 @@ type KibanaSpec struct {
 	shared.ImageSpec `json:",inline"`
 
 	// ElasticsearchRef is the Elasticsearch ref to connect on.
-	// The Elasticsearch must be on the same namespace as Kibana
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
-	ElasticsearchRef *ElasticsearchRef `json:"elasticsearchRef,omitempty"`
+	ElasticsearchRef shared.ElasticsearchRef `json:"elasticsearchRef,omitempty"`
 
 	// Version is the Kibana version to use
 	// Default is use the latest
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
 	// +optional
+	// +kubebuilder:default: latest
 	Version string `json:"version,omitempty"`
 
 	// PluginsList is the list of additionnal plugin to install on each Kibana instance
@@ -80,25 +80,6 @@ type KibanaSpec struct {
 	Deployment DeploymentSpec `json:"deployment,omitempty"`
 }
 
-type ElasticsearchRef struct {
-
-	// Name is the Elasticsearch cluster deployed by operator
-	// +operator-sdk:csv:customresourcedefinitions:type=spec
-	Name string `json:"name,omitempty"`
-
-	// Namespace is the namespace where Elasticsearch is deployed by operator
-	// No need to set if Kibana is deployed on the same namespace
-	// +operator-sdk:csv:customresourcedefinitions:type=spec
-	// +optional
-	Namespace string `json:"namespace,omitempty"`
-
-	// TargetNodeGroup is the target Elasticsearch node group to use as service to connect on Elasticsearch
-	// Default, it use the global service
-	// +operator-sdk:csv:customresourcedefinitions:type=spec
-	// +optional
-	TargetNodeGroup string `json:"targetNodeGroup,omitempty"`
-}
-
 type EndpointSpec struct {
 	// Ingress permit to set ingress settings
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
@@ -116,6 +97,7 @@ type LoadBalancerSpec struct {
 	// Cloud provider need to support it
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
 	// +optional
+	// +kubebuilder:default: false
 	Enabled bool `json:"enabled,omitempty"`
 }
 
@@ -124,6 +106,7 @@ type IngressSpec struct {
 	// Enabled permit to enabled / disabled ingress
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
 	// +optional
+	// +kubebuilder:default: false
 	Enabled bool `json:"enabled,omitempty"`
 
 	// Host is the hostname to access on Kibana
@@ -156,6 +139,7 @@ type TlsSpec struct {
 	// Enabled permit to enabled TLS on Kibana
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
 	// +optional
+	// +kubebuilder:default: true
 	Enabled *bool `json:"enabled,omitempty"`
 
 	// SelfSignedCertificate permit to set self signed certificate settings
@@ -168,6 +152,24 @@ type TlsSpec struct {
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
 	// +optional
 	CertificateSecretRef *corev1.LocalObjectReference `json:"certificateSecretRef,omitempty"`
+
+	// ValidityDays is the number of days that certificates are valid
+	// +operator-sdk:csv:customresourcedefinitions:type=spec
+	// +optional
+	// +kubebuilder:default: 365
+	ValidityDays *int `json:"validityDays,omitempty"`
+
+	// RenewalDays is the number of days before certificate expire to become effective renewal
+	// +operator-sdk:csv:customresourcedefinitions:type=spec
+	// +optional
+	// +kubebuilder:default: 30
+	RenewalDays *int `json:"renewalDays,omitempty"`
+
+	// KeySize is the key size when generate privates keys
+	// +operator-sdk:csv:customresourcedefinitions:type=spec
+	// +optional
+	// +kubebuilder:default: 2048
+	KeySize *int `json:"keySize,omitempty"`
 
 	// ElasticsearchCaSecretRef is the secret that store your custom CA certificate to connect on Elasticsearch API.
 	// It need to have the following keys: ca.crt
@@ -192,6 +194,7 @@ type SelfSignedCertificateSpec struct {
 type DeploymentSpec struct {
 	// Replicas is the number of replicas
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
+	// +kubebuilder:default: 1
 	Replicas int32 `json:"replicas,omitempty"`
 
 	// AntiAffinity permit to set anti affinity policy
@@ -260,6 +263,7 @@ type AntiAffinitySpec struct {
 
 	// Type permit to set anti affinity as soft or hard
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
+	// +kubebuilder:default: soft
 	Type string `json:"type,omitempty"`
 
 	// TopologyKey is the topology key to use

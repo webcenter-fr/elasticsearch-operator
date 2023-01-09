@@ -88,7 +88,7 @@ func (r *DeploymentReconciler) Read(ctx context.Context, resource client.Object,
 	data["currentDeployment"] = dpl
 
 	// Read Elasticsearch
-	if o.IsElasticsearchRef() {
+	if o.Spec.ElasticsearchRef.IsManaged() {
 		es, err = GetElasticsearchRef(ctx, r.Client, o)
 		if err != nil {
 			return res, errors.Wrap(err, "Error when read ElasticsearchRef")
@@ -128,7 +128,7 @@ func (r *DeploymentReconciler) Read(ctx context.Context, resource client.Object,
 	}
 
 	// Read Custom CA Elasticsearch if needed
-	if !o.IsElasticsearchRef() && o.Spec.Tls.ElasticsearchCaSecretRef != nil {
+	if !o.Spec.ElasticsearchRef.IsManaged() && o.Spec.Tls.ElasticsearchCaSecretRef != nil {
 		if err = r.Client.Get(ctx, types.NamespacedName{Namespace: o.Namespace, Name: o.Spec.Tls.ElasticsearchCaSecretRef.Name}, secretCustomCAElasticsearch); err != nil {
 			if !k8serrors.IsNotFound(err) {
 				return res, errors.Wrapf(err, "Error when read secret %s", o.Spec.Tls.ElasticsearchCaSecretRef.Name)

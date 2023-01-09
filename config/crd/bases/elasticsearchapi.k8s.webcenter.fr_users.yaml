@@ -36,24 +36,50 @@ spec:
             description: UserSpec defines the desired state of User
             properties:
               elasticsearchRef:
-                description: ElasticsearchRefSpec is the Elasticsearch cluster reference
+                description: ElasticsearchRef is the Elasticsearch ref to connect
+                  on.
                 properties:
-                  addresses:
-                    description: Addresses is the list of Elasticsearch addresses
-                    items:
-                      type: string
-                    type: array
-                  name:
-                    description: Name is the Elasticsearch name object If empty, it
-                      use Adresses and secretName to connect on external elasticsearch
-                      (not managed by operator)
-                    type: string
-                  secretName:
-                    description: SecretName is the secret that contain the setting
-                      to connect on Elasticsearch that is not managed by ECK. It need
-                      to contain only one entry. The user is the key, and the password
-                      is the data
-                    type: string
+                  external:
+                    description: ExternalElasticsearchRef is the external Elasticsearch
+                      cluster not managed by operator
+                    properties:
+                      addresses:
+                        description: Addresses is the list of Elasticsearch addresses
+                        items:
+                          type: string
+                        type: array
+                      secretRef:
+                        description: SecretName is the secret that contain the setting
+                          to connect on Elasticsearch that is not managed by ECK.
+                          It need to contain only one entry. The user is the key,
+                          and the password is the data
+                        properties:
+                          name:
+                            description: 'Name of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                              TODO: Add other useful fields. apiVersion, kind, uid?'
+                            type: string
+                        type: object
+                        x-kubernetes-map-type: atomic
+                    type: object
+                  managed:
+                    description: ManagedElasticsearchRef is the managed Elasticsearch
+                      cluster by operator
+                    properties:
+                      name:
+                        description: Name is the Elasticsearch cluster deployed by
+                          operator
+                        type: string
+                      namespace:
+                        description: Namespace is the namespace where Elasticsearch
+                          is deployed by operator No need to set if Kibana is deployed
+                          on the same namespace
+                        type: string
+                      targetNodeGroup:
+                        description: TargetNodeGroup is the target Elasticsearch node
+                          group to use as service to connect on Elasticsearch Default,
+                          it use the global service
+                        type: string
+                    type: object
                 type: object
               email:
                 description: Email is the email user
@@ -97,8 +123,6 @@ spec:
               username:
                 description: Username is the user name
                 type: string
-            required:
-            - elasticsearchRef
             type: object
           status:
             description: UserStatus defines the observed state of User

@@ -78,7 +78,7 @@ func (r *CAElasticsearchReconciler) Read(ctx context.Context, resource client.Ob
 	var expectedSecretCAElasticsearch *corev1.Secret
 
 	// Check if mirror CAApiPKI from Elasticsearch CRD
-	if !o.IsElasticsearchRef() {
+	if !o.Spec.ElasticsearchRef.IsManaged() {
 		return res, nil
 	}
 
@@ -107,12 +107,12 @@ func (r *CAElasticsearchReconciler) Read(ctx context.Context, resource client.Ob
 		return res, nil
 	}
 
-	// Read secret that store Elasticsearch ApiPKI
-	if err = r.Client.Get(ctx, types.NamespacedName{Namespace: es.Namespace, Name: elasticsearchcontrollers.GetSecretNameForPkiApi(es)}, sEs); err != nil {
+	// Read secret that store Elasticsearch API certs
+	if err = r.Client.Get(ctx, types.NamespacedName{Namespace: es.Namespace, Name: elasticsearchcontrollers.GetSecretNameForTlsApi(es)}, sEs); err != nil {
 		if !k8serrors.IsNotFound(err) {
-			return res, errors.Wrapf(err, "Error when read secret %s", elasticsearchcontrollers.GetSecretNameForPkiApi(es))
+			return res, errors.Wrapf(err, "Error when read secret %s", elasticsearchcontrollers.GetSecretNameForTlsApi(es))
 		}
-		r.Log.Warnf("Secret not found %s/%s, try latter", es.Namespace, elasticsearchcontrollers.GetSecretNameForPkiApi(es))
+		r.Log.Warnf("Secret not found %s/%s, try latter", es.Namespace, elasticsearchcontrollers.GetSecretNameForTlsApi(es))
 		return ctrl.Result{RequeueAfter: 30 * time.Second}, nil
 	}
 
@@ -196,7 +196,7 @@ func (r *CAElasticsearchReconciler) Diff(ctx context.Context, resource client.Ob
 	}
 
 	// No PkiCA to mirror
-	if !o.IsElasticsearchRef() {
+	if !o.Spec.ElasticsearchRef.IsManaged() {
 		return diff, res, nil
 	}
 

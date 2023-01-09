@@ -76,7 +76,7 @@ func (r *CredentialReconciler) Read(ctx context.Context, resource client.Object,
 	var es *elasticsearchcrd.Elasticsearch
 
 	// Check if mirror credentials from Elasticsearch CRD
-	if !o.IsElasticsearchRef() {
+	if !o.Spec.ElasticsearchRef.IsManaged() {
 		return res, nil
 	}
 
@@ -188,7 +188,7 @@ func (r *CredentialReconciler) Diff(ctx context.Context, resource client.Object,
 	}
 
 	// No credential to mirror
-	if !o.IsElasticsearchRef() {
+	if !o.Spec.ElasticsearchRef.IsManaged() {
 		return diff, res, nil
 	}
 

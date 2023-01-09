@@ -20,7 +20,7 @@ spec:
         cluster: test
         kibana.k8s.webcenter.fr: "true"
       annotations:
-        kibana.k8s.webcenter.fr/checksum-kibana.yml: "b73103aeb4b29fc37098851788c8256fc9b5bf794ab97e574bc212f3e2633f88"
+        kibana.k8s.webcenter.fr/checksum-kibana.yml: "c330bc0e0b94bffceee87797b585c8dd6958e7a47f64b645852e39bd5ab15b40"
       name: test-kb
     spec:
       affinity:
@@ -59,6 +59,18 @@ spec:
           value: ''
         - name: SERVER_HOST
           value: 0.0.0.0
+        - name: ELASTICSEARCH_HOSTS
+          value: '[https://es1:9200]'
+        - name: ELASTICSEARCH_USERNAME
+          valueFrom:
+            secretKeyRef:
+              name: es-credential
+              key: username
+        - name: ELASTICSEARCH_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: es-credential
+              key: password
         - name: PROBE_PATH
           value: /app/kibana
         - name: PROBE_SCHEME

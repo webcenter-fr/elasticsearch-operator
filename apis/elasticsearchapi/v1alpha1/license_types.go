@@ -14,6 +14,7 @@ limitations under the License.
 package v1alpha1
 
 import (
+	"github.com/webcenter-fr/elasticsearch-operator/apis/shared"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -27,9 +28,9 @@ type LicenseSpec struct {
 	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
 	// Important: Run "make" to regenerate code after modifying this file
 
-	// ElasticsearchRefSpec is the Elasticsearch cluster reference
+	// ElasticsearchRef is the Elasticsearch ref to connect on.
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
-	ElasticsearchRefSpec ElasticsearchRefSpec `json:"elasticsearchRef"`
+	ElasticsearchRef shared.ElasticsearchRef `json:"elasticsearchRef,omitempty"`
 
 	// SecretName is the secret that contain the license
 	// +operator-sdk:csv:customresourcedefinitions:type=spec

@@ -13,6 +13,7 @@ import (
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
 	elasticsearchapicrd "github.com/webcenter-fr/elasticsearch-operator/apis/elasticsearchapi/v1alpha1"
+	"github.com/webcenter-fr/elasticsearch-operator/apis/shared"
 	localhelper "github.com/webcenter-fr/elasticsearch-operator/pkg/helper"
 	localtest "github.com/webcenter-fr/elasticsearch-operator/pkg/test"
 	core "k8s.io/api/core/v1"
@@ -162,8 +163,10 @@ func doEnableBasicLicenseStep() test.TestStep {
 					Namespace: key.Namespace,
 				},
 				Spec: elasticsearchapicrd.LicenseSpec{
-					ElasticsearchRefSpec: elasticsearchapicrd.ElasticsearchRefSpec{
-						Name: "test",
+					ElasticsearchRef: shared.ElasticsearchRef{
+						ManagedElasticsearchRef: &shared.ElasticsearchManagedRef{
+							Name: "test",
+						},
 					},
 					SecretRef: &core.LocalObjectReference{
 						Name: key.Name,
@@ -283,8 +286,10 @@ func doUpdateToEnterpriseLicenseStep() test.TestStep {
 					Namespace: key.Namespace,
 				},
 				Spec: elasticsearchapicrd.LicenseSpec{
-					ElasticsearchRefSpec: elasticsearchapicrd.ElasticsearchRefSpec{
-						Name: "test",
+					ElasticsearchRef: shared.ElasticsearchRef{
+						ManagedElasticsearchRef: &shared.ElasticsearchManagedRef{
+							Name: "test",
+						},
 					},
 					SecretRef: &core.LocalObjectReference{
 						Name: key.Name,

@@ -17,14 +17,14 @@ const (
 
 // GetElasticsearchRef permit to get Elasticsearch
 func GetElasticsearchRef(ctx context.Context, c client.Client, kb *kibanacrd.Kibana) (es *elasticsearchcrd.Elasticsearch, err error) {
-	if !kb.IsElasticsearchRef() {
+	if !kb.Spec.ElasticsearchRef.IsManaged() {
 		return nil, nil
 	}
 
 	es = &elasticsearchcrd.Elasticsearch{}
-	target := types.NamespacedName{Name: kb.Spec.ElasticsearchRef.Name}
-	if kb.Spec.ElasticsearchRef.Namespace != "" {
-		target.Namespace = kb.Spec.ElasticsearchRef.Namespace
+	target := types.NamespacedName{Name: kb.Spec.ElasticsearchRef.ManagedElasticsearchRef.Name}
+	if kb.Spec.ElasticsearchRef.ManagedElasticsearchRef.Namespace != "" {
+		target.Namespace = kb.Spec.ElasticsearchRef.ManagedElasticsearchRef.Namespace
 	} else {
 		target.Namespace = kb.Namespace
 	}
@@ -36,5 +36,4 @@ func GetElasticsearchRef(ctx context.Context, c client.Client, kb *kibanacrd.Kib
 	}
 
 	return es, nil
-
 }

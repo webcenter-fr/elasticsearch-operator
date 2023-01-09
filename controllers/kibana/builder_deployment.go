@@ -69,7 +69,7 @@ func BuildDeployment(kb *kibanacrd.Kibana, es *elasticsearchcrd.Elasticsearch, k
 		secretChecksumAnnotations[fmt.Sprintf("%s/checksum-api-certs", KibanaAnnotationKey)] = sum
 	}
 	// Compute checksum annotation for external CA Elasticsearch secret
-	if !kb.IsElasticsearchRef() && kb.Spec.Tls.ElasticsearchCaSecretRef != nil && esCASecret != nil {
+	if !kb.Spec.ElasticsearchRef.IsManaged() && kb.Spec.Tls.ElasticsearchCaSecretRef != nil && esCASecret != nil {
 		//Convert secret contend to json string and them checksum it
 		j, err := json.Marshal(esCASecret.Data)
 		if err != nil {
@@ -167,7 +167,7 @@ func BuildDeployment(kb *kibanacrd.Kibana, es *elasticsearchcrd.Elasticsearch, k
 			},
 		}, k8sbuilder.Merge)
 	}
-	if kb.IsElasticsearchRef() {
+	if kb.Spec.ElasticsearchRef.IsManaged() {
 		cb.WithEnv([]corev1.EnvVar{
 			{
 				Name:  "ELASTICSEARCH_HOSTS",
@@ -185,6 +185,35 @@ func BuildDeployment(kb *kibanacrd.Kibana, es *elasticsearchcrd.Elasticsearch, k
 							Name: GetSecretNameForCredentials(kb),
 						},
 						Key: "kibana_system",
+					},
+				},
+			},
+		}, k8sbuilder.Merge)
+	} else {
+		cb.WithEnv([]corev1.EnvVar{
+			{
+				Name:  "ELASTICSEARCH_HOSTS",
+				Value: computeElasticsearchHosts(kb, es),
+			},
+			{
+				Name: "ELASTICSEARCH_USERNAME",
+				ValueFrom: &corev1.EnvVarSource{
+					SecretKeyRef: &corev1.SecretKeySelector{
+						LocalObjectReference: corev1.LocalObjectReference{
+							Name: kb.Spec.ElasticsearchRef.ExternalElasticsearchRef.SecretRef.Name,
+						},
+						Key: "username",
+					},
+				},
+			},
+			{
+				Name: "ELASTICSEARCH_PASSWORD",
+				ValueFrom: &corev1.EnvVarSource{
+					SecretKeyRef: &corev1.SecretKeySelector{
+						LocalObjectReference: corev1.LocalObjectReference{
+							Name: kb.Spec.ElasticsearchRef.ExternalElasticsearchRef.SecretRef.Name,
+						},
+						Key: "password",
 					},
 				},
 			},
@@ -493,7 +522,7 @@ fi
 		}, k8sbuilder.Merge)
 	}
 
-	if (kb.IsElasticsearchRef() && es.IsTlsApiEnabled()) || (!kb.IsElasticsearchRef() && kb.Spec.Tls.ElasticsearchCaSecretRef != nil) {
+	if (kb.Spec.ElasticsearchRef.IsManaged() && es.IsTlsApiEnabled()) || (!kb.Spec.ElasticsearchRef.IsManaged() && kb.Spec.Tls.ElasticsearchCaSecretRef != nil) {
 		ccb.WithVolumeMount([]corev1.VolumeMount{
 			{
 				Name:      "ca-elasticsearch",
@@ -569,7 +598,7 @@ fi
 			},
 		}, k8sbuilder.Merge)
 	}
-	if kb.IsElasticsearchRef() && es.IsTlsApiEnabled() {
+	if kb.Spec.ElasticsearchRef.IsManaged() && es.IsTlsApiEnabled() {
 		ptb.WithVolumes([]corev1.Volume{
 			{
 				Name: "ca-elasticsearch",
@@ -580,7 +609,7 @@ fi
 				},
 			},
 		}, k8sbuilder.Merge)
-	} else if !kb.IsElasticsearchRef() && kb.Spec.Tls.ElasticsearchCaSecretRef != nil {
+	} else if !kb.Spec.ElasticsearchRef.IsManaged() && kb.Spec.Tls.ElasticsearchCaSecretRef != nil {
 		ptb.WithVolumes([]corev1.Volume{
 			{
 				Name: "ca-elasticsearch",
@@ -642,19 +671,19 @@ func getKibanaContainer(podTemplate *corev1.PodTemplateSpec) (container *corev1.
 // computeElasticsearchHosts permit to get the target Elasticsearch cluster to connect on
 func computeElasticsearchHosts(kb *kibanacrd.Kibana, es *elasticsearchcrd.Elasticsearch) string {
 
-	if kb.Spec.ElasticsearchRef != nil && kb.Spec.ElasticsearchRef.Name != "" {
+	if kb.Spec.ElasticsearchRef.IsManaged() {
 		scheme := "https"
 		if !es.IsTlsApiEnabled() {
 			scheme = "http"
 		}
-		if kb.Spec.ElasticsearchRef.TargetNodeGroup == "" {
+		if kb.Spec.ElasticsearchRef.ManagedElasticsearchRef.TargetNodeGroup == "" {
 			return fmt.Sprintf("%s://%s.%s.svc:9200", scheme, elasticsearch.GetGlobalServiceName(es), es.Namespace)
 		} else {
-			return fmt.Sprintf("%s://%s.%s.svc:9200", scheme, elasticsearch.GetNodeGroupServiceName(es, kb.Spec.ElasticsearchRef.TargetNodeGroup), es.Namespace)
+			return fmt.Sprintf("%s://%s.%s.svc:9200", scheme, elasticsearch.GetNodeGroupServiceName(es, kb.Spec.ElasticsearchRef.ManagedElasticsearchRef.TargetNodeGroup), es.Namespace)
 		}
 	}
 
-	return ""
+	return fmt.Sprintf("[%s]", strings.Join(kb.Spec.ElasticsearchRef.ExternalElasticsearchRef.Addresses, ","))
 
 }
 

@@ -13,7 +13,7 @@ import (
 
 const (
 	certKeySize  = 2048
-	certValidity = 397
+	certValidity = 365
 )
 
 // BuildPkiSecret generate the secret that store transport PKI
@@ -21,6 +21,22 @@ func BuildPkiSecret(o *kibanacrd.Kibana) (sPki *corev1.Secret, rootCA *goca.CA, 
 
 	if !o.IsTlsEnabled() || !o.IsSelfManagedSecretForTls() {
 		return nil, nil, nil
+	}
+
+	var (
+		keySize      int
+		validityDays int
+	)
+
+	if o.Spec.Tls.ValidityDays != nil {
+		validityDays = *o.Spec.Tls.ValidityDays
+	} else {
+		validityDays = certValidity
+	}
+	if o.Spec.Tls.KeySize != nil {
+		keySize = *o.Spec.Tls.KeySize
+	} else {
+		keySize = certKeySize
 	}
 
 	// Generate new PKI
@@ -31,8 +47,8 @@ func BuildPkiSecret(o *kibanacrd.Kibana) (sPki *corev1.Secret, rootCA *goca.CA, 
 		Locality:           "internal",
 		Province:           "internal",
 		Intermediate:       false,
-		Valid:              certValidity,
-		KeyBitSize:         certKeySize,
+		Valid:              validityDays,
+		KeyBitSize:         keySize,
 	}
 
 	rootCA, err = goca.New(fmt.Sprintf("%s-api", o.Name), rootCAIdentity)
@@ -94,6 +110,22 @@ func generateCertificate(o *kibanacrd.Kibana, rootCA *goca.CA) (nodeCrt *goca.Ce
 	var ips []net.IP
 	dnsNames := []string{}
 
+	var (
+		keySize      int
+		validityDays int
+	)
+
+	if o.Spec.Tls.ValidityDays != nil {
+		validityDays = *o.Spec.Tls.ValidityDays
+	} else {
+		validityDays = certValidity
+	}
+	if o.Spec.Tls.KeySize != nil {
+		keySize = *o.Spec.Tls.KeySize
+	} else {
+		keySize = certKeySize
+	}
+
 	if o.Spec.Tls.SelfSignedCertificate != nil && len(o.Spec.Tls.SelfSignedCertificate.AltNames) > 0 {
 		dnsNames = append(dnsNames, o.Spec.Tls.SelfSignedCertificate.AltNames...)
 	}
@@ -118,8 +150,8 @@ func generateCertificate(o *kibanacrd.Kibana, rootCA *goca.CA) (nodeCrt *goca.Ce
 		Intermediate:       false,
 		DNSNames:           dnsNames,
 		IPAddresses:        ips,
-		Valid:              certValidity,
-		KeyBitSize:         certKeySize,
+		Valid:              validityDays,
+		KeyBitSize:         keySize,
 	}
 
 	return rootCA.IssueCertificate(o.Name, apiIdentity)

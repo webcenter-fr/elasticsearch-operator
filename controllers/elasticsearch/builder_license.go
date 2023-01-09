@@ -4,6 +4,7 @@ import (
 	"github.com/pkg/errors"
 	elasticsearchcrd "github.com/webcenter-fr/elasticsearch-operator/apis/elasticsearch/v1alpha1"
 	elasticsearchapicrd "github.com/webcenter-fr/elasticsearch-operator/apis/elasticsearchapi/v1alpha1"
+	"github.com/webcenter-fr/elasticsearch-operator/apis/shared"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -27,8 +28,10 @@ func BuildLicense(es *elasticsearchcrd.Elasticsearch, s *corev1.Secret) (license
 			Annotations: getAnnotations(es),
 		},
 		Spec: elasticsearchapicrd.LicenseSpec{
-			ElasticsearchRefSpec: elasticsearchapicrd.ElasticsearchRefSpec{
-				Name: es.Name,
+			ElasticsearchRef: shared.ElasticsearchRef{
+				ManagedElasticsearchRef: &shared.ElasticsearchManagedRef{
+					Name: es.Name,
+				},
 			},
 			SecretRef: &corev1.LocalObjectReference{
 				Name: s.Name,

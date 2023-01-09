@@ -6,6 +6,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	elasticsearchcrd "github.com/webcenter-fr/elasticsearch-operator/apis/elasticsearch/v1alpha1"
 	kibanacrd "github.com/webcenter-fr/elasticsearch-operator/apis/kibana/v1alpha1"
+	"github.com/webcenter-fr/elasticsearch-operator/apis/shared"
 	"github.com/webcenter-fr/elasticsearch-operator/pkg/test"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -32,8 +33,10 @@ func TestBuildConfigMap(t *testing.T) {
 			},
 		},
 		Spec: kibanacrd.KibanaSpec{
-			ElasticsearchRef: &kibanacrd.ElasticsearchRef{
-				Name: "test",
+			ElasticsearchRef: shared.ElasticsearchRef{
+				ManagedElasticsearchRef: &shared.ElasticsearchManagedRef{
+					Name: "test",
+				},
 			},
 			Config: map[string]string{
 				"kibana.yml": `node.value: test
@@ -71,8 +74,10 @@ node.value2: test`,
 			},
 		},
 		Spec: kibanacrd.KibanaSpec{
-			ElasticsearchRef: &kibanacrd.ElasticsearchRef{
-				Name: "test",
+			ElasticsearchRef: shared.ElasticsearchRef{
+				ManagedElasticsearchRef: &shared.ElasticsearchManagedRef{
+					Name: "test",
+				},
 			},
 			Tls: kibanacrd.TlsSpec{
 				Enabled: pointer.Bool(false),

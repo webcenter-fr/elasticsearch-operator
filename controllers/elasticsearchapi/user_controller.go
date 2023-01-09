@@ -136,7 +136,7 @@ func (r *UserReconciler) Configure(ctx context.Context, req ctrl.Request, resour
 	}
 
 	// Get elasticsearch handler / client
-	meta, err = GetElasticsearchHandler(ctx, &o.Spec.ElasticsearchRefSpec, r.Client, req, r.log)
+	meta, err = GetElasticsearchHandler(ctx, o.Spec.ElasticsearchRef, r.Client, req, r.log)
 	if err != nil {
 		r.recorder.Eventf(resource, core.EventTypeWarning, "Failed", "Unable to init elasticsearch handler: %s", err.Error())
 		return nil, err
