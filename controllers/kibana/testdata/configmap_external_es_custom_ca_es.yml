@@ -1,0 +1,29 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  annotations:
+    kibana.k8s.webcenter.fr: "true"
+  labels:
+    cluster: test
+    kibana.k8s.webcenter.fr: "true"
+    label1: value1
+  name: test-config-kb
+  namespace: default
+data:
+  log4j.yml: |
+    log.test: test
+  kibana.yml: |
+    elasticsearch:
+        ssl:
+            certificateAuthorities:
+                - /usr/share/kibana/config/es-ca/ca.crt
+            verificationMode: certificate
+    node:
+        value: test
+        value2: test
+    server:
+        ssl:
+            certificate: /usr/share/kibana/config/api-cert/tls.crt
+            enabled: true
+            key: /usr/share/kibana/config/api-cert/tls.key
+    

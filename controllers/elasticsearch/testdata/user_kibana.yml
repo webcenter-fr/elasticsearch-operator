@@ -1,0 +1,20 @@
+apiVersion: elasticsearchapi.k8s.webcenter.fr/v1alpha1
+kind: User
+metadata:
+  namespace: default
+  name: test-kibana-system-es
+  labels:
+    cluster: test
+    elasticsearch.k8s.webcenter.fr: "true"
+  annotations:
+    elasticsearch.k8s.webcenter.fr: "true"
+spec:
+  elasticsearchRef:
+    managed:
+      name: test
+  username: kibana_system
+  enabled: true
+  secretRef:
+    name: test-credential-es
+    key: kibana_system
+  isProtected: true

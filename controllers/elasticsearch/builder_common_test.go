@@ -4,20 +4,20 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
-	elasticsearchapi "github.com/webcenter-fr/elasticsearch-operator/api/v1alpha1"
+	elasticsearchcrd "github.com/webcenter-fr/elasticsearch-operator/apis/elasticsearch/v1alpha1"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/utils/pointer"
 )
 
 func TestGetNodeGroupName(t *testing.T) {
-	o := &elasticsearchapi.Elasticsearch{
+	o := &elasticsearchcrd.Elasticsearch{
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: "default",
 			Name:      "test",
 		},
-		Spec: elasticsearchapi.ElasticsearchSpec{
-			NodeGroups: []elasticsearchapi.NodeGroupSpec{
+		Spec: elasticsearchcrd.ElasticsearchSpec{
+			NodeGroups: []elasticsearchcrd.NodeGroupSpec{
 				{
 					Name:     "master",
 					Replicas: 3,
@@ -34,13 +34,13 @@ func TestGetNodeGroupName(t *testing.T) {
 }
 
 func TestGetNodeNames(t *testing.T) {
-	o := &elasticsearchapi.Elasticsearch{
+	o := &elasticsearchcrd.Elasticsearch{
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: "default",
 			Name:      "test",
 		},
-		Spec: elasticsearchapi.ElasticsearchSpec{
-			NodeGroups: []elasticsearchapi.NodeGroupSpec{
+		Spec: elasticsearchcrd.ElasticsearchSpec{
+			NodeGroups: []elasticsearchcrd.NodeGroupSpec{
 				{
 					Name:     "master",
 					Replicas: 3,
@@ -64,13 +64,13 @@ func TestGetNodeNames(t *testing.T) {
 }
 
 func TestGetNodeGroupNodeNames(t *testing.T) {
-	o := &elasticsearchapi.Elasticsearch{
+	o := &elasticsearchcrd.Elasticsearch{
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: "default",
 			Name:      "test",
 		},
-		Spec: elasticsearchapi.ElasticsearchSpec{
-			NodeGroups: []elasticsearchapi.NodeGroupSpec{
+		Spec: elasticsearchcrd.ElasticsearchSpec{
+			NodeGroups: []elasticsearchcrd.NodeGroupSpec{
 				{
 					Name:     "master",
 					Replicas: 3,
@@ -93,13 +93,13 @@ func TestGetNodeGroupNodeNames(t *testing.T) {
 }
 
 func TestGetSecretNameForTlsTransport(t *testing.T) {
-	o := &elasticsearchapi.Elasticsearch{
+	o := &elasticsearchcrd.Elasticsearch{
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: "default",
 			Name:      "test",
 		},
-		Spec: elasticsearchapi.ElasticsearchSpec{
-			NodeGroups: []elasticsearchapi.NodeGroupSpec{
+		Spec: elasticsearchcrd.ElasticsearchSpec{
+			NodeGroups: []elasticsearchcrd.NodeGroupSpec{
 				{
 					Name:     "master",
 					Replicas: 3,
@@ -116,13 +116,13 @@ func TestGetSecretNameForTlsTransport(t *testing.T) {
 }
 
 func TestGetSecretNameForPkiTransport(t *testing.T) {
-	o := &elasticsearchapi.Elasticsearch{
+	o := &elasticsearchcrd.Elasticsearch{
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: "default",
 			Name:      "test",
 		},
-		Spec: elasticsearchapi.ElasticsearchSpec{
-			NodeGroups: []elasticsearchapi.NodeGroupSpec{
+		Spec: elasticsearchcrd.ElasticsearchSpec{
+			NodeGroups: []elasticsearchcrd.NodeGroupSpec{
 				{
 					Name:     "master",
 					Replicas: 3,
@@ -139,19 +139,19 @@ func TestGetSecretNameForPkiTransport(t *testing.T) {
 }
 
 func TestGetSecretNameForTlsApi(t *testing.T) {
-	o := &elasticsearchapi.Elasticsearch{
+	o := &elasticsearchcrd.Elasticsearch{
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: "default",
 			Name:      "test",
 		},
-		Spec: elasticsearchapi.ElasticsearchSpec{},
+		Spec: elasticsearchcrd.ElasticsearchSpec{},
 	}
 
 	// With default value
 	assert.Equal(t, "test-tls-api-es", GetSecretNameForTlsApi(o))
 
 	// When specify TLS secret
-	o.Spec.Tls = elasticsearchapi.TlsSpec{
+	o.Spec.Tls = elasticsearchcrd.TlsSpec{
 		CertificateSecretRef: &v1.LocalObjectReference{
 			Name: "my-secret",
 		},
@@ -161,13 +161,13 @@ func TestGetSecretNameForTlsApi(t *testing.T) {
 }
 
 func TestGetSecretNameForPkiApi(t *testing.T) {
-	o := &elasticsearchapi.Elasticsearch{
+	o := &elasticsearchcrd.Elasticsearch{
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: "default",
 			Name:      "test",
 		},
-		Spec: elasticsearchapi.ElasticsearchSpec{
-			NodeGroups: []elasticsearchapi.NodeGroupSpec{
+		Spec: elasticsearchcrd.ElasticsearchSpec{
+			NodeGroups: []elasticsearchcrd.NodeGroupSpec{
 				{
 					Name:     "master",
 					Replicas: 3,
@@ -185,12 +185,12 @@ func TestGetSecretNameForPkiApi(t *testing.T) {
 
 func TestGetSecretNameForCredentials(t *testing.T) {
 
-	o := &elasticsearchapi.Elasticsearch{
+	o := &elasticsearchcrd.Elasticsearch{
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: "default",
 			Name:      "test",
 		},
-		Spec: elasticsearchapi.ElasticsearchSpec{},
+		Spec: elasticsearchcrd.ElasticsearchSpec{},
 	}
 
 	assert.Equal(t, "test-credential-es", GetSecretNameForCredentials(o))
@@ -198,13 +198,13 @@ func TestGetSecretNameForCredentials(t *testing.T) {
 }
 
 func TestGetNodeGroupConfigMapName(t *testing.T) {
-	o := &elasticsearchapi.Elasticsearch{
+	o := &elasticsearchcrd.Elasticsearch{
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: "default",
 			Name:      "test",
 		},
-		Spec: elasticsearchapi.ElasticsearchSpec{
-			NodeGroups: []elasticsearchapi.NodeGroupSpec{
+		Spec: elasticsearchcrd.ElasticsearchSpec{
+			NodeGroups: []elasticsearchcrd.NodeGroupSpec{
 				{
 					Name:     "master",
 					Replicas: 3,
@@ -221,49 +221,49 @@ func TestGetNodeGroupConfigMapName(t *testing.T) {
 }
 
 func TestGetGlobalServiceName(t *testing.T) {
-	o := &elasticsearchapi.Elasticsearch{
+	o := &elasticsearchcrd.Elasticsearch{
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: "default",
 			Name:      "test",
 		},
-		Spec: elasticsearchapi.ElasticsearchSpec{},
+		Spec: elasticsearchcrd.ElasticsearchSpec{},
 	}
 
 	assert.Equal(t, "test-es", GetGlobalServiceName(o))
 }
 
 func TestGetLoadBalancerName(t *testing.T) {
-	o := &elasticsearchapi.Elasticsearch{
+	o := &elasticsearchcrd.Elasticsearch{
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: "default",
 			Name:      "test",
 		},
-		Spec: elasticsearchapi.ElasticsearchSpec{},
+		Spec: elasticsearchcrd.ElasticsearchSpec{},
 	}
 
 	assert.Equal(t, "test-lb-es", GetLoadBalancerName(o))
 }
 
 func TestGetIngressName(t *testing.T) {
-	o := &elasticsearchapi.Elasticsearch{
+	o := &elasticsearchcrd.Elasticsearch{
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: "default",
 			Name:      "test",
 		},
-		Spec: elasticsearchapi.ElasticsearchSpec{},
+		Spec: elasticsearchcrd.ElasticsearchSpec{},
 	}
 
 	assert.Equal(t, "test-es", GetIngressName(o))
 }
 
 func TestGetNodeGroupServiceName(t *testing.T) {
-	o := &elasticsearchapi.Elasticsearch{
+	o := &elasticsearchcrd.Elasticsearch{
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: "default",
 			Name:      "test",
 		},
-		Spec: elasticsearchapi.ElasticsearchSpec{
-			NodeGroups: []elasticsearchapi.NodeGroupSpec{
+		Spec: elasticsearchcrd.ElasticsearchSpec{
+			NodeGroups: []elasticsearchcrd.NodeGroupSpec{
 				{
 					Name:     "master",
 					Replicas: 3,
@@ -280,13 +280,13 @@ func TestGetNodeGroupServiceName(t *testing.T) {
 }
 
 func TestGetNodeGroupServiceNameHeadless(t *testing.T) {
-	o := &elasticsearchapi.Elasticsearch{
+	o := &elasticsearchcrd.Elasticsearch{
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: "default",
 			Name:      "test",
 		},
-		Spec: elasticsearchapi.ElasticsearchSpec{
-			NodeGroups: []elasticsearchapi.NodeGroupSpec{
+		Spec: elasticsearchcrd.ElasticsearchSpec{
+			NodeGroups: []elasticsearchcrd.NodeGroupSpec{
 				{
 					Name:     "master",
 					Replicas: 3,
@@ -303,13 +303,13 @@ func TestGetNodeGroupServiceNameHeadless(t *testing.T) {
 }
 
 func TestGetNodeGroupPDBName(t *testing.T) {
-	o := &elasticsearchapi.Elasticsearch{
+	o := &elasticsearchcrd.Elasticsearch{
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: "default",
 			Name:      "test",
 		},
-		Spec: elasticsearchapi.ElasticsearchSpec{
-			NodeGroups: []elasticsearchapi.NodeGroupSpec{
+		Spec: elasticsearchcrd.ElasticsearchSpec{
+			NodeGroups: []elasticsearchcrd.NodeGroupSpec{
 				{
 					Name:     "master",
 					Replicas: 3,
@@ -327,12 +327,12 @@ func TestGetNodeGroupPDBName(t *testing.T) {
 
 func TestGetContainerImage(t *testing.T) {
 	// With default values
-	o := &elasticsearchapi.Elasticsearch{
+	o := &elasticsearchcrd.Elasticsearch{
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: "default",
 			Name:      "test",
 		},
-		Spec: elasticsearchapi.ElasticsearchSpec{},
+		Spec: elasticsearchcrd.ElasticsearchSpec{},
 	}
 	assert.Equal(t, "docker.elastic.co/elasticsearch/elasticsearch:latest", GetContainerImage(o))
 
@@ -352,16 +352,16 @@ func TestGetNodeGroupNameFromNodeName(t *testing.T) {
 
 func TestIsMasterRole(t *testing.T) {
 
-	var o *elasticsearchapi.Elasticsearch
+	var o *elasticsearchcrd.Elasticsearch
 
 	// With only master role
-	o = &elasticsearchapi.Elasticsearch{
+	o = &elasticsearchcrd.Elasticsearch{
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: "default",
 			Name:      "test",
 		},
-		Spec: elasticsearchapi.ElasticsearchSpec{
-			NodeGroups: []elasticsearchapi.NodeGroupSpec{
+		Spec: elasticsearchcrd.ElasticsearchSpec{
+			NodeGroups: []elasticsearchcrd.NodeGroupSpec{
 				{
 					Name:     "master",
 					Replicas: 1,
@@ -376,13 +376,13 @@ func TestIsMasterRole(t *testing.T) {
 	assert.True(t, IsMasterRole(o, o.Spec.NodeGroups[0].Name))
 
 	// With multiple role
-	o = &elasticsearchapi.Elasticsearch{
+	o = &elasticsearchcrd.Elasticsearch{
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: "default",
 			Name:      "test",
 		},
-		Spec: elasticsearchapi.ElasticsearchSpec{
-			NodeGroups: []elasticsearchapi.NodeGroupSpec{
+		Spec: elasticsearchcrd.ElasticsearchSpec{
+			NodeGroups: []elasticsearchcrd.NodeGroupSpec{
 				{
 					Name:     "master",
 					Replicas: 1,
@@ -399,13 +399,13 @@ func TestIsMasterRole(t *testing.T) {
 	assert.True(t, IsMasterRole(o, o.Spec.NodeGroups[0].Name))
 
 	// Without master role
-	o = &elasticsearchapi.Elasticsearch{
+	o = &elasticsearchcrd.Elasticsearch{
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: "default",
 			Name:      "test",
 		},
-		Spec: elasticsearchapi.ElasticsearchSpec{
-			NodeGroups: []elasticsearchapi.NodeGroupSpec{
+		Spec: elasticsearchcrd.ElasticsearchSpec{
+			NodeGroups: []elasticsearchcrd.NodeGroupSpec{
 				{
 					Name:     "master",
 					Replicas: 1,
@@ -419,4 +419,81 @@ func TestIsMasterRole(t *testing.T) {
 	}
 
 	assert.False(t, IsMasterRole(o, o.Spec.NodeGroups[0].Name))
+}
+
+func TestGetLabels(t *testing.T) {
+	var expectedLabels map[string]string
+
+	// With default values
+	o := &elasticsearchcrd.Elasticsearch{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: "default",
+			Name:      "test",
+		},
+		Spec: elasticsearchcrd.ElasticsearchSpec{},
+	}
+
+	expectedLabels = map[string]string{
+		"cluster":                        "test",
+		"elasticsearch.k8s.webcenter.fr": "true",
+	}
+
+	assert.Equal(t, expectedLabels, getLabels(o))
+
+	// With additional labels
+	expectedLabels["foo"] = "bar"
+
+	assert.Equal(t, expectedLabels, getLabels(o, map[string]string{"foo": "bar"}))
+}
+
+func TestGetAnnotations(t *testing.T) {
+	var expectedAnnotations map[string]string
+
+	// With default values
+	o := &elasticsearchcrd.Elasticsearch{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: "default",
+			Name:      "test",
+		},
+		Spec: elasticsearchcrd.ElasticsearchSpec{},
+	}
+
+	expectedAnnotations = map[string]string{
+		"elasticsearch.k8s.webcenter.fr": "true",
+	}
+
+	assert.Equal(t, expectedAnnotations, getAnnotations(o))
+
+	// With additional annottaions
+	expectedAnnotations["foo"] = "bar"
+
+	assert.Equal(t, expectedAnnotations, getAnnotations(o, map[string]string{"foo": "bar"}))
+}
+
+func TestGetUserSystemName(t *testing.T) {
+	o := &elasticsearchcrd.Elasticsearch{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: "default",
+			Name:      "test",
+		},
+		Spec: elasticsearchcrd.ElasticsearchSpec{},
+	}
+
+	assert.Equal(t, "test-kibana-system-es", GetUserSystemName(o, "kibana_system"))
+}
+
+func TestGetLicenseName(t *testing.T) {
+	o := &elasticsearchcrd.Elasticsearch{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: "default",
+			Name:      "test",
+		},
+		Spec: elasticsearchcrd.ElasticsearchSpec{},
+	}
+
+	assert.Equal(t, "test-es", GetLicenseName(o))
+}
+
+func TestGetElasticsearchNameFromSecretApiTlsName(t *testing.T) {
+	assert.Equal(t, "test", GetElasticsearchNameFromSecretApiTlsName("test-tls-api-es"))
 }

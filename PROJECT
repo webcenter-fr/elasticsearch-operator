@@ -1,6 +1,7 @@
 domain: k8s.webcenter.fr
 layout:
 - go.kubebuilder.io/v3
+multigroup: true
 plugins:
   manifests.sdk.operatorframework.io/v2: {}
   scorecard.sdk.operatorframework.io/v2: {}
@@ -15,5 +16,32 @@ resources:
   group: elasticsearch
   kind: Elasticsearch
   path: github.com/webcenter-fr/elasticsearch-operator/api/v1alpha1
+  version: v1alpha1
+- api:
+    crdVersion: v1
+    namespaced: true
+  controller: true
+  domain: k8s.webcenter.fr
+  group: kibana
+  kind: Kibana
+  path: github.com/webcenter-fr/elasticsearch-operator/apis/kibana/v1alpha1
+  version: v1alpha1
+- api:
+    crdVersion: v1
+    namespaced: true
+  controller: true
+  domain: k8s.webcenter.fr
+  group: elasticsearchapi
+  kind: User
+  path: github.com/webcenter-fr/elasticsearch-operator/apis/elasticsearchapi/v1alpha1
+  version: v1alpha1
+- api:
+    crdVersion: v1
+    namespaced: true
+  controller: true
+  domain: k8s.webcenter.fr
+  group: elasticsearchapi
+  kind: License
+  path: github.com/webcenter-fr/elasticsearch-operator/apis/elasticsearchapi/v1alpha1
   version: v1alpha1
 version: "3"

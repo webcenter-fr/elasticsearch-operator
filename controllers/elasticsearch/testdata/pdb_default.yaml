@@ -14,3 +14,4 @@ spec:
     matchLabels:
       cluster: test
       nodeGroup: master
+      elasticsearch.k8s.webcenter.fr: "true"

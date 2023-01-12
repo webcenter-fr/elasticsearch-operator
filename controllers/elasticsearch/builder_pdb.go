@@ -3,14 +3,14 @@ package elasticsearch
 import (
 	"github.com/disaster37/k8sbuilder"
 	"github.com/pkg/errors"
-	elasticsearchapi "github.com/webcenter-fr/elasticsearch-operator/api/v1alpha1"
+	elasticsearchcrd "github.com/webcenter-fr/elasticsearch-operator/apis/elasticsearch/v1alpha1"
 	policyv1 "k8s.io/api/policy/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
 )
 
 // GeneratePodDisruptionBudget permit to generate pod disruption budgets for each node group
-func BuildPodDisruptionBudget(es *elasticsearchapi.Elasticsearch) (podDisruptionBudgets []policyv1.PodDisruptionBudget, err error) {
+func BuildPodDisruptionBudget(es *elasticsearchcrd.Elasticsearch) (podDisruptionBudgets []policyv1.PodDisruptionBudget, err error) {
 	podDisruptionBudgets = make([]policyv1.PodDisruptionBudget, 0, len(es.Spec.NodeGroups))
 	var (
 		pdb *policyv1.PodDisruptionBudget
@@ -28,8 +28,9 @@ func BuildPodDisruptionBudget(es *elasticsearchapi.Elasticsearch) (podDisruption
 			Spec: policyv1.PodDisruptionBudgetSpec{
 				Selector: &metav1.LabelSelector{
 					MatchLabels: map[string]string{
-						"cluster":   es.Name,
-						"nodeGroup": nodeGroup.Name,
+						"cluster":                  es.Name,
+						"nodeGroup":                nodeGroup.Name,
+						ElasticsearchAnnotationKey: "true",
 					},
 				},
 			},

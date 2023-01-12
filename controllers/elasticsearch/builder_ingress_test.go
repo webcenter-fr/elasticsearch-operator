@@ -4,7 +4,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
-	elasticsearchapi "github.com/webcenter-fr/elasticsearch-operator/api/v1alpha1"
+	elasticsearchcrd "github.com/webcenter-fr/elasticsearch-operator/apis/elasticsearch/v1alpha1"
 	"github.com/webcenter-fr/elasticsearch-operator/pkg/test"
 	v1 "k8s.io/api/core/v1"
 	networkingv1 "k8s.io/api/networking/v1"
@@ -15,31 +15,31 @@ import (
 func TestBuildIngress(t *testing.T) {
 	var (
 		err error
-		o   *elasticsearchapi.Elasticsearch
+		o   *elasticsearchcrd.Elasticsearch
 		i   *networkingv1.Ingress
 	)
 
 	// With default values
-	o = &elasticsearchapi.Elasticsearch{
+	o = &elasticsearchcrd.Elasticsearch{
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: "default",
 			Name:      "test",
 		},
-		Spec: elasticsearchapi.ElasticsearchSpec{},
+		Spec: elasticsearchcrd.ElasticsearchSpec{},
 	}
 	i, err = BuildIngress(o)
 	assert.NoError(t, err)
 	assert.Nil(t, i)
 
 	// When ingress is disabled
-	o = &elasticsearchapi.Elasticsearch{
+	o = &elasticsearchcrd.Elasticsearch{
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: "default",
 			Name:      "test",
 		},
-		Spec: elasticsearchapi.ElasticsearchSpec{
-			Endpoint: elasticsearchapi.EndpointSpec{
-				Ingress: &elasticsearchapi.IngressSpec{
+		Spec: elasticsearchcrd.ElasticsearchSpec{
+			Endpoint: elasticsearchcrd.EndpointSpec{
+				Ingress: &elasticsearchcrd.IngressSpec{
 					Enabled: false,
 				},
 			},
@@ -50,20 +50,20 @@ func TestBuildIngress(t *testing.T) {
 	assert.Nil(t, i)
 
 	// When ingress is enabled ans specify target service
-	o = &elasticsearchapi.Elasticsearch{
+	o = &elasticsearchcrd.Elasticsearch{
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: "default",
 			Name:      "test",
 		},
-		Spec: elasticsearchapi.ElasticsearchSpec{
-			Endpoint: elasticsearchapi.EndpointSpec{
-				Ingress: &elasticsearchapi.IngressSpec{
+		Spec: elasticsearchcrd.ElasticsearchSpec{
+			Endpoint: elasticsearchcrd.EndpointSpec{
+				Ingress: &elasticsearchcrd.IngressSpec{
 					Enabled:             true,
 					TargetNodeGroupName: "master",
 					Host:                "my-test.cluster.local",
 				},
 			},
-			NodeGroups: []elasticsearchapi.NodeGroupSpec{
+			NodeGroups: []elasticsearchcrd.NodeGroupSpec{
 				{
 					Name:     "master",
 					Replicas: 3,
@@ -81,19 +81,19 @@ func TestBuildIngress(t *testing.T) {
 	test.EqualFromYamlFile(t, "testdata/ingress_with_target.yml", i, test.CleanApi)
 
 	// When ingress is enabled without specify TargetNodeGroupName
-	o = &elasticsearchapi.Elasticsearch{
+	o = &elasticsearchcrd.Elasticsearch{
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: "default",
 			Name:      "test",
 		},
-		Spec: elasticsearchapi.ElasticsearchSpec{
-			Endpoint: elasticsearchapi.EndpointSpec{
-				Ingress: &elasticsearchapi.IngressSpec{
+		Spec: elasticsearchcrd.ElasticsearchSpec{
+			Endpoint: elasticsearchcrd.EndpointSpec{
+				Ingress: &elasticsearchcrd.IngressSpec{
 					Enabled: true,
 					Host:    "my-test.cluster.local",
 				},
 			},
-			NodeGroups: []elasticsearchapi.NodeGroupSpec{
+			NodeGroups: []elasticsearchcrd.NodeGroupSpec{
 				{
 					Name:     "master",
 					Replicas: 3,
@@ -111,7 +111,7 @@ func TestBuildIngress(t *testing.T) {
 	test.EqualFromYamlFile(t, "testdata/ingress_without_target.yml", i, test.CleanApi)
 
 	// When ingress is enabled and specify all options
-	o = &elasticsearchapi.Elasticsearch{
+	o = &elasticsearchcrd.Elasticsearch{
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: "default",
 			Name:      "test",
@@ -122,9 +122,9 @@ func TestBuildIngress(t *testing.T) {
 				"globalAnnotation": "globalAnnotation",
 			},
 		},
-		Spec: elasticsearchapi.ElasticsearchSpec{
-			Endpoint: elasticsearchapi.EndpointSpec{
-				Ingress: &elasticsearchapi.IngressSpec{
+		Spec: elasticsearchcrd.ElasticsearchSpec{
+			Endpoint: elasticsearchcrd.EndpointSpec{
+				Ingress: &elasticsearchcrd.IngressSpec{
 					Enabled:             true,
 					TargetNodeGroupName: "master",
 					Host:                "my-test.cluster.local",
@@ -142,7 +142,7 @@ func TestBuildIngress(t *testing.T) {
 					},
 				},
 			},
-			NodeGroups: []elasticsearchapi.NodeGroupSpec{
+			NodeGroups: []elasticsearchcrd.NodeGroupSpec{
 				{
 					Name:     "master",
 					Replicas: 3,
@@ -161,20 +161,20 @@ func TestBuildIngress(t *testing.T) {
 
 	// When target nodeGroup not exist
 	// When ingress is enabled
-	o = &elasticsearchapi.Elasticsearch{
+	o = &elasticsearchcrd.Elasticsearch{
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: "default",
 			Name:      "test",
 		},
-		Spec: elasticsearchapi.ElasticsearchSpec{
-			Endpoint: elasticsearchapi.EndpointSpec{
-				Ingress: &elasticsearchapi.IngressSpec{
+		Spec: elasticsearchcrd.ElasticsearchSpec{
+			Endpoint: elasticsearchcrd.EndpointSpec{
+				Ingress: &elasticsearchcrd.IngressSpec{
 					Enabled:             true,
 					TargetNodeGroupName: "master",
 					Host:                "my-test.cluster.local",
 				},
 			},
-			NodeGroups: []elasticsearchapi.NodeGroupSpec{
+			NodeGroups: []elasticsearchcrd.NodeGroupSpec{
 				{
 					Name:     "data",
 					Replicas: 1,

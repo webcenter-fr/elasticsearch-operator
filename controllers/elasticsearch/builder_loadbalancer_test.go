@@ -4,7 +4,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
-	elasticsearchapi "github.com/webcenter-fr/elasticsearch-operator/api/v1alpha1"
+	elasticsearchcrd "github.com/webcenter-fr/elasticsearch-operator/apis/elasticsearch/v1alpha1"
 	"github.com/webcenter-fr/elasticsearch-operator/pkg/test"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -15,16 +15,16 @@ func TestBuildLoadbalancer(t *testing.T) {
 	var (
 		err     error
 		service *corev1.Service
-		o       *elasticsearchapi.Elasticsearch
+		o       *elasticsearchcrd.Elasticsearch
 	)
 
 	// With default values
-	o = &elasticsearchapi.Elasticsearch{
+	o = &elasticsearchcrd.Elasticsearch{
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: "default",
 			Name:      "test",
 		},
-		Spec: elasticsearchapi.ElasticsearchSpec{},
+		Spec: elasticsearchcrd.ElasticsearchSpec{},
 	}
 
 	service, err = BuildLoadbalancer(o)
@@ -32,14 +32,14 @@ func TestBuildLoadbalancer(t *testing.T) {
 	assert.Nil(t, service)
 
 	// When load balancer is disabled
-	o = &elasticsearchapi.Elasticsearch{
+	o = &elasticsearchcrd.Elasticsearch{
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: "default",
 			Name:      "test",
 		},
-		Spec: elasticsearchapi.ElasticsearchSpec{
-			Endpoint: elasticsearchapi.EndpointSpec{
-				LoadBalancer: &elasticsearchapi.LoadBalancerSpec{
+		Spec: elasticsearchcrd.ElasticsearchSpec{
+			Endpoint: elasticsearchcrd.EndpointSpec{
+				LoadBalancer: &elasticsearchcrd.LoadBalancerSpec{
 					Enabled: false,
 				},
 			},
@@ -51,13 +51,13 @@ func TestBuildLoadbalancer(t *testing.T) {
 	assert.Nil(t, service)
 
 	// When load balancer is enabled
-	o = &elasticsearchapi.Elasticsearch{
+	o = &elasticsearchcrd.Elasticsearch{
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: "default",
 			Name:      "test",
 		},
-		Spec: elasticsearchapi.ElasticsearchSpec{
-			NodeGroups: []elasticsearchapi.NodeGroupSpec{
+		Spec: elasticsearchcrd.ElasticsearchSpec{
+			NodeGroups: []elasticsearchcrd.NodeGroupSpec{
 				{
 					Name:     "master",
 					Replicas: 3,
@@ -67,8 +67,8 @@ func TestBuildLoadbalancer(t *testing.T) {
 					Replicas: 1,
 				},
 			},
-			Endpoint: elasticsearchapi.EndpointSpec{
-				LoadBalancer: &elasticsearchapi.LoadBalancerSpec{
+			Endpoint: elasticsearchcrd.EndpointSpec{
+				LoadBalancer: &elasticsearchcrd.LoadBalancerSpec{
 					Enabled:             true,
 					TargetNodeGroupName: "master",
 				},
@@ -81,13 +81,13 @@ func TestBuildLoadbalancer(t *testing.T) {
 	test.EqualFromYamlFile(t, "testdata/loadbalancer_with_target.yaml", service, test.CleanApi)
 
 	// When load balancer is enabled without target node group
-	o = &elasticsearchapi.Elasticsearch{
+	o = &elasticsearchcrd.Elasticsearch{
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: "default",
 			Name:      "test",
 		},
-		Spec: elasticsearchapi.ElasticsearchSpec{
-			NodeGroups: []elasticsearchapi.NodeGroupSpec{
+		Spec: elasticsearchcrd.ElasticsearchSpec{
+			NodeGroups: []elasticsearchcrd.NodeGroupSpec{
 				{
 					Name:     "master",
 					Replicas: 3,
@@ -97,8 +97,8 @@ func TestBuildLoadbalancer(t *testing.T) {
 					Replicas: 1,
 				},
 			},
-			Endpoint: elasticsearchapi.EndpointSpec{
-				LoadBalancer: &elasticsearchapi.LoadBalancerSpec{
+			Endpoint: elasticsearchcrd.EndpointSpec{
+				LoadBalancer: &elasticsearchcrd.LoadBalancerSpec{
 					Enabled: true,
 				},
 			},
@@ -110,20 +110,20 @@ func TestBuildLoadbalancer(t *testing.T) {
 	test.EqualFromYamlFile(t, "testdata/loadbalancer_without_target.yaml", service, test.CleanApi)
 
 	// When load balancer is enabled with target node group that not exist
-	o = &elasticsearchapi.Elasticsearch{
+	o = &elasticsearchcrd.Elasticsearch{
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: "default",
 			Name:      "test",
 		},
-		Spec: elasticsearchapi.ElasticsearchSpec{
-			NodeGroups: []elasticsearchapi.NodeGroupSpec{
+		Spec: elasticsearchcrd.ElasticsearchSpec{
+			NodeGroups: []elasticsearchcrd.NodeGroupSpec{
 				{
 					Name:     "data",
 					Replicas: 1,
 				},
 			},
-			Endpoint: elasticsearchapi.EndpointSpec{
-				LoadBalancer: &elasticsearchapi.LoadBalancerSpec{
+			Endpoint: elasticsearchcrd.EndpointSpec{
+				LoadBalancer: &elasticsearchcrd.LoadBalancerSpec{
 					Enabled:             true,
 					TargetNodeGroupName: "master",
 				},

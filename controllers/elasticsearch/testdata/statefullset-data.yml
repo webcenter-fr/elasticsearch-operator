@@ -16,6 +16,7 @@ spec:
     matchLabels:
       cluster: test
       nodeGroup: data
+      elasticsearch.k8s.webcenter.fr: "true"
   serviceName: test-data-headless-es
   template:
     metadata:
@@ -26,6 +27,7 @@ spec:
       annotations:
         elasticsearch.k8s.webcenter.fr/checksum-elasticsearch.yml: 2a0a8650b1d7a5f22e433877319457161489869868b894d448b2616477b521aa
         elasticsearch.k8s.webcenter.fr/checksum-log4j.yaml: 949e3031476b60f9f8cea06e1d683f3fb6e689856bdc58590036fd018c40149c
+        elasticsearch.k8s.webcenter.fr/checksum-keystore: 2c1eef3af7f9998f3e29ccd7a2927fdf62ca82080ea74b67e9454aae3c2adc98
       name: test-data-es
     spec:
       affinity:
@@ -35,6 +37,7 @@ spec:
               matchLabels:
                 cluster: test
                 nodeGroup: data
+                elasticsearch.k8s.webcenter.fr: "true"
             topologyKey: rack
       containers:
       - env:
@@ -137,7 +140,7 @@ spec:
                     if [[ ${HTTP_CODE} == "200" ]]; then
                       exit 0
                     else
-                      echo "Elasticsearch API return code ${HTTP_CODE}
+                      echo "Elasticsearch API return code ${HTTP_CODE}"
                       exit 1
                     fi
                   else
@@ -151,7 +154,7 @@ spec:
                       touch ${STARTER_FILE}
                       exit 0
                     else
-                      echo "Elasticsearch API return code ${HTTP_CODE}
+                      echo "Elasticsearch API return code ${HTTP_CODE}"
                       exit 1
                     fi
                   fi
@@ -331,10 +334,10 @@ spec:
           requests:
             cpu: 100m
             memory: 100Mi
-      nodeSelector:
-        project: elasticsearch
       securityContext:
         fsGroup: 1000
+      nodeSelector:
+        project: elasticsearch
       terminationGracePeriodSeconds: 120
       tolerations:
       - effect: NoSchedule

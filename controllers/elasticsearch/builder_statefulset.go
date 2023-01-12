@@ -1,6 +1,7 @@
 package elasticsearch
 
 import (
+	"bytes"
 	"fmt"
 	"strings"
 
@@ -8,12 +9,13 @@ import (
 	"github.com/disaster37/k8sbuilder"
 	"github.com/pkg/errors"
 	"github.com/thoas/go-funk"
-	elasticsearchapi "github.com/webcenter-fr/elasticsearch-operator/api/v1alpha1"
+	elasticsearchcrd "github.com/webcenter-fr/elasticsearch-operator/apis/elasticsearch/v1alpha1"
 	"github.com/webcenter-fr/elasticsearch-operator/pkg/helper"
 	appv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
+	"k8s.io/apimachinery/pkg/util/json"
 	"k8s.io/utils/pointer"
 )
 
@@ -34,7 +36,7 @@ var (
 )
 
 // GenerateStatefullsets permit to generate statefullsets for each node groups
-func BuildStatefulsets(es *elasticsearchapi.Elasticsearch) (statefullsets []appv1.StatefulSet, err error) {
+func BuildStatefulsets(es *elasticsearchcrd.Elasticsearch, keystoreSecret *corev1.Secret, apiCrtSecret *corev1.Secret) (statefullsets []appv1.StatefulSet, err error) {
 	var (
 		sts *appv1.StatefulSet
 	)
@@ -55,6 +57,34 @@ func BuildStatefulsets(es *elasticsearchapi.Elasticsearch) (statefullsets []appv
 			}
 			configMapChecksumAnnotations[fmt.Sprintf("%s/checksum-%s", ElasticsearchAnnotationKey, file)] = sum
 		}
+	}
+
+	secretChecksumAnnotations := map[string]string{}
+	// Compute checksum annotation for keystore secrets
+	if es.Spec.GlobalNodeGroup.KeystoreSecretRef != nil && es.Spec.GlobalNodeGroup.KeystoreSecretRef.Name != "" && keystoreSecret != nil {
+		//Convert secret contend to json string and them checksum it
+		j, err := json.Marshal(keystoreSecret.Data)
+		if err != nil {
+			return nil, errors.Wrapf(err, "Error when convert data of secret %s on json string", keystoreSecret.Name)
+		}
+		sum, err := checksum.SHA256sumReader(bytes.NewReader(j))
+		if err != nil {
+			return nil, errors.Wrapf(err, "Error when generate checksum for keystore %s", keystoreSecret.Name)
+		}
+		secretChecksumAnnotations[fmt.Sprintf("%s/checksum-keystore", ElasticsearchAnnotationKey)] = sum
+	}
+	// Compute checksum annotation for external API certs
+	if es.IsTlsApiEnabled() && !es.IsSelfManagedSecretForTlsApi() && apiCrtSecret != nil {
+		//Convert secret contend to json string and them checksum it
+		j, err := json.Marshal(apiCrtSecret.Data)
+		if err != nil {
+			return nil, errors.Wrapf(err, "Error when convert data of secret %s on json string", apiCrtSecret.Name)
+		}
+		sum, err := checksum.SHA256sumReader(bytes.NewReader(j))
+		if err != nil {
+			return nil, errors.Wrapf(err, "Error when generate checksum for apiCrt %s", apiCrtSecret.Name)
+		}
+		secretChecksumAnnotations[fmt.Sprintf("%s/checksum-api-certs", ElasticsearchAnnotationKey)] = sum
 	}
 
 	for _, nodeGroup := range es.Spec.NodeGroups {
@@ -334,7 +364,7 @@ if [ -f ${STARTER_FILE} ]; then
   if [[ ${HTTP_CODE} == "200" ]]; then
     exit 0
   else
-    echo "Elasticsearch API return code ${HTTP_CODE}
+    echo "Elasticsearch API return code ${HTTP_CODE}"
     exit 1
   fi
 else
@@ -348,7 +378,7 @@ else
     touch ${STARTER_FILE}
     exit 0
   else
-    echo "Elasticsearch API return code ${HTTP_CODE}
+    echo "Elasticsearch API return code ${HTTP_CODE}"
     exit 1
   fi
 fi
@@ -384,7 +414,8 @@ fi
 			WithLabels(nodeGroup.Labels, k8sbuilder.Merge)
 
 		// Compute annotations
-		ptb.WithAnnotations(configMapChecksumAnnotations, k8sbuilder.Merge)
+		ptb.WithAnnotations(configMapChecksumAnnotations, k8sbuilder.Merge).
+			WithAnnotations(secretChecksumAnnotations, k8sbuilder.Merge)
 
 		// Compute NodeSelector
 		ptb.WithNodeSelector(nodeGroup.NodeSelector, k8sbuilder.Merge)
@@ -710,8 +741,9 @@ fi
 				ServiceName:         GetNodeGroupServiceNameHeadless(es, nodeGroup.Name),
 				Selector: &metav1.LabelSelector{
 					MatchLabels: map[string]string{
-						"cluster":   es.Name,
-						"nodeGroup": nodeGroup.Name,
+						"cluster":                  es.Name,
+						"nodeGroup":                nodeGroup.Name,
+						ElasticsearchAnnotationKey: "true",
 					},
 				},
 
@@ -754,7 +786,7 @@ func getElasticsearchContainer(podTemplate *corev1.PodTemplateSpec) (container *
 
 // computeEnvFroms permit to compute the envFrom list
 // It just append all, without to keep unique object
-func computeEnvFroms(es *elasticsearchapi.Elasticsearch, nodeGroup *elasticsearchapi.NodeGroupSpec) (envFroms []corev1.EnvFromSource) {
+func computeEnvFroms(es *elasticsearchcrd.Elasticsearch, nodeGroup *elasticsearchcrd.NodeGroupSpec) (envFroms []corev1.EnvFromSource) {
 
 	secrets := make([]any, 0)
 	configMaps := make([]any, 0)
@@ -793,15 +825,15 @@ func computeEnvFroms(es *elasticsearchapi.Elasticsearch, nodeGroup *elasticsearc
 
 // computeAntiAffinity permit to get  anti affinity spec
 // Default to soft anti affinity
-func computeAntiAffinity(es *elasticsearchapi.Elasticsearch, nodeGroup *elasticsearchapi.NodeGroupSpec) (antiAffinity *corev1.PodAntiAffinity, err error) {
-	var expectedAntiAffinity *elasticsearchapi.AntiAffinitySpec
+func computeAntiAffinity(es *elasticsearchcrd.Elasticsearch, nodeGroup *elasticsearchcrd.NodeGroupSpec) (antiAffinity *corev1.PodAntiAffinity, err error) {
+	var expectedAntiAffinity *elasticsearchcrd.AntiAffinitySpec
 
 	antiAffinity = &corev1.PodAntiAffinity{}
 	topologyKey := "kubernetes.io/hostname"
 
 	// Check if need to merge anti affinity spec
 	if nodeGroup.AntiAffinity != nil || es.Spec.GlobalNodeGroup.AntiAffinity != nil {
-		expectedAntiAffinity = &elasticsearchapi.AntiAffinitySpec{}
+		expectedAntiAffinity = &elasticsearchcrd.AntiAffinitySpec{}
 		if err = helper.Merge(expectedAntiAffinity, nodeGroup.AntiAffinity, funk.Get(es.Spec.GlobalNodeGroup, "AntiAffinity")); err != nil {
 			return nil, errors.Wrapf(err, "Error when merge global anti affinity  with node group %s", nodeGroup.Name)
 		}
@@ -818,8 +850,9 @@ func computeAntiAffinity(es *elasticsearchapi.Elasticsearch, nodeGroup *elastics
 				TopologyKey: topologyKey,
 				LabelSelector: &metav1.LabelSelector{
 					MatchLabels: map[string]string{
-						"cluster":   es.Name,
-						"nodeGroup": nodeGroup.Name,
+						"cluster":                  es.Name,
+						"nodeGroup":                nodeGroup.Name,
+						ElasticsearchAnnotationKey: "true",
 					},
 				},
 			},
@@ -835,8 +868,9 @@ func computeAntiAffinity(es *elasticsearchapi.Elasticsearch, nodeGroup *elastics
 				TopologyKey: topologyKey,
 				LabelSelector: &metav1.LabelSelector{
 					MatchLabels: map[string]string{
-						"cluster":   es.Name,
-						"nodeGroup": nodeGroup.Name,
+						"cluster":                  es.Name,
+						"nodeGroup":                nodeGroup.Name,
+						ElasticsearchAnnotationKey: "true",
 					},
 				},
 			},
@@ -860,7 +894,7 @@ func computeRoles(roles []string) string {
 }
 
 // getJavaOpts permit to get computed JAVA_OPTS
-func computeJavaOpts(es *elasticsearchapi.Elasticsearch, nodeGroup *elasticsearchapi.NodeGroupSpec) string {
+func computeJavaOpts(es *elasticsearchcrd.Elasticsearch, nodeGroup *elasticsearchcrd.NodeGroupSpec) string {
 	javaOpts := []string{}
 
 	if es.Spec.GlobalNodeGroup.Jvm != "" {
@@ -875,7 +909,7 @@ func computeJavaOpts(es *elasticsearchapi.Elasticsearch, nodeGroup *elasticsearc
 }
 
 // computeInitialMasterNodes create the list of all master nodes
-func computeInitialMasterNodes(es *elasticsearchapi.Elasticsearch) string {
+func computeInitialMasterNodes(es *elasticsearchcrd.Elasticsearch) string {
 	masterNodes := make([]string, 0, 3)
 	for _, nodeGroup := range es.Spec.NodeGroups {
 		if IsMasterRole(es, nodeGroup.Name) {
@@ -887,7 +921,7 @@ func computeInitialMasterNodes(es *elasticsearchapi.Elasticsearch) string {
 }
 
 // computeDiscoverySeedHosts create the list of all headless service of all masters node groups
-func computeDiscoverySeedHosts(es *elasticsearchapi.Elasticsearch) string {
+func computeDiscoverySeedHosts(es *elasticsearchcrd.Elasticsearch) string {
 	serviceNames := make([]string, 0, 1)
 
 	for _, nodeGroup := range es.Spec.NodeGroups {

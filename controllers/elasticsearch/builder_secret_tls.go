@@ -6,7 +6,7 @@ import (
 
 	"github.com/disaster37/goca"
 	"github.com/pkg/errors"
-	elasticsearchapi "github.com/webcenter-fr/elasticsearch-operator/api/v1alpha1"
+	elasticsearchcrd "github.com/webcenter-fr/elasticsearch-operator/apis/elasticsearch/v1alpha1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -17,7 +17,7 @@ const (
 )
 
 // buildTransportPkiSecret generate the secret that store transport PKI
-func BuildTransportPkiSecret(o *elasticsearchapi.Elasticsearch) (sPki *corev1.Secret, rootCA *goca.CA, err error) {
+func BuildTransportPkiSecret(o *elasticsearchcrd.Elasticsearch) (sPki *corev1.Secret, rootCA *goca.CA, err error) {
 
 	// Generate new PKI
 	rootCAIdentity := goca.Identity{
@@ -56,7 +56,7 @@ func BuildTransportPkiSecret(o *elasticsearchapi.Elasticsearch) (sPki *corev1.Se
 }
 
 // buildTransportSecret generate the secret that store the node certificates
-func BuildTransportSecret(o *elasticsearchapi.Elasticsearch, rootCA *goca.CA) (s *corev1.Secret, err error) {
+func BuildTransportSecret(o *elasticsearchcrd.Elasticsearch, rootCA *goca.CA) (s *corev1.Secret, err error) {
 
 	s = &corev1.Secret{
 		ObjectMeta: metav1.ObjectMeta{
@@ -90,7 +90,7 @@ func BuildTransportSecret(o *elasticsearchapi.Elasticsearch, rootCA *goca.CA) (s
 }
 
 // buildApiPkiSecret generate the secret that store API PKI
-func BuildApiPkiSecret(o *elasticsearchapi.Elasticsearch) (sPki *corev1.Secret, rootCA *goca.CA, err error) {
+func BuildApiPkiSecret(o *elasticsearchcrd.Elasticsearch) (sPki *corev1.Secret, rootCA *goca.CA, err error) {
 
 	if !o.IsTlsApiEnabled() || !o.IsSelfManagedSecretForTlsApi() {
 		return nil, nil, nil
@@ -132,7 +132,7 @@ func BuildApiPkiSecret(o *elasticsearchapi.Elasticsearch) (sPki *corev1.Secret, 
 }
 
 // buildApiSecret generate the secret that store the API certificate
-func BuildApiSecret(o *elasticsearchapi.Elasticsearch, rootCA *goca.CA) (s *corev1.Secret, err error) {
+func BuildApiSecret(o *elasticsearchcrd.Elasticsearch, rootCA *goca.CA) (s *corev1.Secret, err error) {
 
 	if !o.IsTlsApiEnabled() || !o.IsSelfManagedSecretForTlsApi() {
 		return nil, nil
@@ -161,7 +161,7 @@ func BuildApiSecret(o *elasticsearchapi.Elasticsearch, rootCA *goca.CA) (s *core
 	return s, nil
 }
 
-func generateNodeCertificate(o *elasticsearchapi.Elasticsearch, nodeGroupName, nodeName string, rootCA *goca.CA) (nodeCrt *goca.Certificate, err error) {
+func generateNodeCertificate(o *elasticsearchcrd.Elasticsearch, nodeGroupName, nodeName string, rootCA *goca.CA) (nodeCrt *goca.Certificate, err error) {
 
 	// Generate nodes certificates
 	apiIdentity := goca.Identity{
@@ -187,7 +187,7 @@ func generateNodeCertificate(o *elasticsearchapi.Elasticsearch, nodeGroupName, n
 	return rootCA.IssueCertificate(nodeName, apiIdentity)
 }
 
-func generateApiCertificate(o *elasticsearchapi.Elasticsearch, rootCA *goca.CA) (nodeCrt *goca.Certificate, err error) {
+func generateApiCertificate(o *elasticsearchcrd.Elasticsearch, rootCA *goca.CA) (nodeCrt *goca.Certificate, err error) {
 
 	var ips []net.IP
 	dnsNames := []string{}

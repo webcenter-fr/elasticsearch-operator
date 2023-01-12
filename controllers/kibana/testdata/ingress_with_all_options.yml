@@ -1,0 +1,32 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:    
+  annotations:
+    annotationLabel: annotationLabel
+    nginx.ingress.kubernetes.io/backend-protocol: HTTPS
+    nginx.ingress.kubernetes.io/force-ssl-redirect: "true"
+    kibana.k8s.webcenter.fr: "true"
+  labels:
+    cluster: test
+    kibana.k8s.webcenter.fr: "true"
+    globalLabel: globalLabel
+    ingressLabel: ingressLabel
+  name: test-kb
+  namespace: default
+spec:
+  ingressClassName: toto
+  rules:
+  - host: my-test.cluster.local
+    http:
+      paths:
+      - backend:
+          service:
+            name: test-kb
+            port:
+              number: 5601
+        path: /
+        pathType: Prefix
+  tls:
+  - hosts:
+    - my-test.cluster.local
+    secretName: my-secret

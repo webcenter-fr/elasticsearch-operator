@@ -5,7 +5,7 @@ import (
 
 	"github.com/disaster37/goca"
 	"github.com/stretchr/testify/assert"
-	elasticsearchapi "github.com/webcenter-fr/elasticsearch-operator/api/v1alpha1"
+	elasticsearchcrd "github.com/webcenter-fr/elasticsearch-operator/apis/elasticsearch/v1alpha1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/utils/pointer"
@@ -13,7 +13,7 @@ import (
 
 func TestBuildTransportPkiSecret(t *testing.T) {
 	var (
-		o   *elasticsearchapi.Elasticsearch
+		o   *elasticsearchcrd.Elasticsearch
 		s   *corev1.Secret
 		ca  *goca.CA
 		err error
@@ -28,13 +28,13 @@ func TestBuildTransportPkiSecret(t *testing.T) {
 	}
 
 	// When only one node groups
-	o = &elasticsearchapi.Elasticsearch{
+	o = &elasticsearchcrd.Elasticsearch{
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: "default",
 			Name:      "test",
 		},
-		Spec: elasticsearchapi.ElasticsearchSpec{
-			NodeGroups: []elasticsearchapi.NodeGroupSpec{
+		Spec: elasticsearchcrd.ElasticsearchSpec{
+			NodeGroups: []elasticsearchcrd.NodeGroupSpec{
 				{
 					Name:     "master",
 					Replicas: 3,
@@ -61,7 +61,7 @@ func TestBuildTransportPkiSecret(t *testing.T) {
 
 func TestBuildApiPkiSecret(t *testing.T) {
 	var (
-		o   *elasticsearchapi.Elasticsearch
+		o   *elasticsearchcrd.Elasticsearch
 		s   *corev1.Secret
 		ca  *goca.CA
 		err error
@@ -76,16 +76,16 @@ func TestBuildApiPkiSecret(t *testing.T) {
 	}
 
 	// When Tls API is disabled
-	o = &elasticsearchapi.Elasticsearch{
+	o = &elasticsearchcrd.Elasticsearch{
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: "default",
 			Name:      "test",
 		},
-		Spec: elasticsearchapi.ElasticsearchSpec{
-			Tls: elasticsearchapi.TlsSpec{
+		Spec: elasticsearchcrd.ElasticsearchSpec{
+			Tls: elasticsearchcrd.TlsSpec{
 				Enabled: pointer.Bool(false),
 			},
-			NodeGroups: []elasticsearchapi.NodeGroupSpec{
+			NodeGroups: []elasticsearchcrd.NodeGroupSpec{
 				{
 					Name:     "master",
 					Replicas: 3,
@@ -100,19 +100,19 @@ func TestBuildApiPkiSecret(t *testing.T) {
 	assert.Nil(t, s)
 
 	// When Tls API is enabled but not self managed
-	o = &elasticsearchapi.Elasticsearch{
+	o = &elasticsearchcrd.Elasticsearch{
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: "default",
 			Name:      "test",
 		},
-		Spec: elasticsearchapi.ElasticsearchSpec{
-			Tls: elasticsearchapi.TlsSpec{
+		Spec: elasticsearchcrd.ElasticsearchSpec{
+			Tls: elasticsearchcrd.TlsSpec{
 				Enabled: pointer.Bool(true),
 				CertificateSecretRef: &corev1.LocalObjectReference{
 					Name: "test",
 				},
 			},
-			NodeGroups: []elasticsearchapi.NodeGroupSpec{
+			NodeGroups: []elasticsearchcrd.NodeGroupSpec{
 				{
 					Name:     "master",
 					Replicas: 3,
@@ -127,16 +127,16 @@ func TestBuildApiPkiSecret(t *testing.T) {
 	assert.Nil(t, s)
 
 	// When Tls API is enabled and self managed
-	o = &elasticsearchapi.Elasticsearch{
+	o = &elasticsearchcrd.Elasticsearch{
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: "default",
 			Name:      "test",
 		},
-		Spec: elasticsearchapi.ElasticsearchSpec{
-			Tls: elasticsearchapi.TlsSpec{
+		Spec: elasticsearchcrd.ElasticsearchSpec{
+			Tls: elasticsearchcrd.TlsSpec{
 				Enabled: pointer.Bool(true),
 			},
-			NodeGroups: []elasticsearchapi.NodeGroupSpec{
+			NodeGroups: []elasticsearchcrd.NodeGroupSpec{
 				{
 					Name:     "master",
 					Replicas: 3,
@@ -163,7 +163,7 @@ func TestBuildApiPkiSecret(t *testing.T) {
 
 func TestBuildTransportSecret(t *testing.T) {
 	var (
-		o   *elasticsearchapi.Elasticsearch
+		o   *elasticsearchcrd.Elasticsearch
 		s   *corev1.Secret
 		err error
 	)
@@ -188,13 +188,13 @@ func TestBuildTransportSecret(t *testing.T) {
 	}
 
 	// When only one node groups
-	o = &elasticsearchapi.Elasticsearch{
+	o = &elasticsearchcrd.Elasticsearch{
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: "default",
 			Name:      "test",
 		},
-		Spec: elasticsearchapi.ElasticsearchSpec{
-			NodeGroups: []elasticsearchapi.NodeGroupSpec{
+		Spec: elasticsearchcrd.ElasticsearchSpec{
+			NodeGroups: []elasticsearchcrd.NodeGroupSpec{
 				{
 					Name:     "master",
 					Replicas: 3,
@@ -221,7 +221,7 @@ func TestBuildTransportSecret(t *testing.T) {
 
 func TestBuildApiSecret(t *testing.T) {
 	var (
-		o   *elasticsearchapi.Elasticsearch
+		o   *elasticsearchcrd.Elasticsearch
 		s   *corev1.Secret
 		err error
 	)
@@ -246,16 +246,16 @@ func TestBuildApiSecret(t *testing.T) {
 	}
 
 	// When API tls is disabled
-	o = &elasticsearchapi.Elasticsearch{
+	o = &elasticsearchcrd.Elasticsearch{
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: "default",
 			Name:      "test",
 		},
-		Spec: elasticsearchapi.ElasticsearchSpec{
-			Tls: elasticsearchapi.TlsSpec{
+		Spec: elasticsearchcrd.ElasticsearchSpec{
+			Tls: elasticsearchcrd.TlsSpec{
 				Enabled: pointer.Bool(false),
 			},
-			NodeGroups: []elasticsearchapi.NodeGroupSpec{
+			NodeGroups: []elasticsearchcrd.NodeGroupSpec{
 				{
 					Name:     "master",
 					Replicas: 3,
@@ -269,19 +269,19 @@ func TestBuildApiSecret(t *testing.T) {
 	assert.Nil(t, s)
 
 	// When API tls is enabled and not self signed
-	o = &elasticsearchapi.Elasticsearch{
+	o = &elasticsearchcrd.Elasticsearch{
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: "default",
 			Name:      "test",
 		},
-		Spec: elasticsearchapi.ElasticsearchSpec{
-			Tls: elasticsearchapi.TlsSpec{
+		Spec: elasticsearchcrd.ElasticsearchSpec{
+			Tls: elasticsearchcrd.TlsSpec{
 				Enabled: pointer.Bool(true),
 				CertificateSecretRef: &corev1.LocalObjectReference{
 					Name: "test",
 				},
 			},
-			NodeGroups: []elasticsearchapi.NodeGroupSpec{
+			NodeGroups: []elasticsearchcrd.NodeGroupSpec{
 				{
 					Name:     "master",
 					Replicas: 3,
@@ -295,16 +295,16 @@ func TestBuildApiSecret(t *testing.T) {
 	assert.Nil(t, s)
 
 	// When API tls is enabled and self signed
-	o = &elasticsearchapi.Elasticsearch{
+	o = &elasticsearchcrd.Elasticsearch{
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: "default",
 			Name:      "test",
 		},
-		Spec: elasticsearchapi.ElasticsearchSpec{
-			Tls: elasticsearchapi.TlsSpec{
+		Spec: elasticsearchcrd.ElasticsearchSpec{
+			Tls: elasticsearchcrd.TlsSpec{
 				Enabled: pointer.Bool(true),
 			},
-			NodeGroups: []elasticsearchapi.NodeGroupSpec{
+			NodeGroups: []elasticsearchcrd.NodeGroupSpec{
 				{
 					Name:     "master",
 					Replicas: 3,

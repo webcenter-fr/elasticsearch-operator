@@ -2,14 +2,14 @@ package elasticsearch
 
 import (
 	"github.com/pkg/errors"
-	elasticsearchapi "github.com/webcenter-fr/elasticsearch-operator/api/v1alpha1"
+	elasticsearchcrd "github.com/webcenter-fr/elasticsearch-operator/apis/elasticsearch/v1alpha1"
 	"github.com/webcenter-fr/elasticsearch-operator/pkg/helper"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 // BuildConfigMaps permit to generate config maps for each node Groups
-func BuildConfigMaps(es *elasticsearchapi.Elasticsearch) (configMaps []corev1.ConfigMap, err error) {
+func BuildConfigMaps(es *elasticsearchcrd.Elasticsearch) (configMaps []corev1.ConfigMap, err error) {
 	var (
 		configMap      corev1.ConfigMap
 		expectedConfig map[string]string

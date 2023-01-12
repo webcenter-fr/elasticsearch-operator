@@ -1,0 +1,296 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: test-kb
+  namespace: default
+  labels:
+    cluster: test
+    kibana.k8s.webcenter.fr: "true"
+  annotations:
+    kibana.k8s.webcenter.fr: "true"
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      cluster: test
+      kibana.k8s.webcenter.fr: "true"
+  template:
+    metadata:
+      labels:
+        cluster: test
+        kibana.k8s.webcenter.fr: "true"
+      annotations:
+        kibana.k8s.webcenter.fr/checksum-kibana.yml: "b73103aeb4b29fc37098851788c8256fc9b5bf794ab97e574bc212f3e2633f88"
+        kibana.k8s.webcenter.fr/checksum-keystore: "e0254a8990817d8a00deb6123c4a2a7ea7ae48428a65d9514257b3baedc1fb6e"
+        kibana.k8s.webcenter.fr/checksum-log4j.yaml: "949e3031476b60f9f8cea06e1d683f3fb6e689856bdc58590036fd018c40149c"
+      name: test-kb
+    spec:
+      affinity:
+        podAntiAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+          - labelSelector:
+              matchLabels:
+                cluster: test
+                kibana.k8s.webcenter.fr: "true"
+            topologyKey: rack
+      containers:
+      - env:
+        - name: ELASTICSEARCH_USERNAME
+          value: "kibana_system"
+        - name: ELASTICSEARCH_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: test-credential-kb
+              key: kibana_system
+        - name: POD_NAME
+          valueFrom:
+            fieldRef:
+              apiVersion: v1
+              fieldPath: metadata.name
+        - name: NODE_NAME
+          valueFrom:
+            fieldRef:
+              apiVersion: v1
+              fieldPath: spec.nodeName
+        - name: POD_IP
+          valueFrom:
+            fieldRef:
+              apiVersion: v1
+              fieldPath: status.podIP
+        - name: NAMESPACE
+          valueFrom:
+            fieldRef:
+              apiVersion: v1
+              fieldPath: metadata.namespace
+        - name: NODE_OPTIONS
+          value: '--param1'
+        - name: SERVER_HOST
+          value: 0.0.0.0
+        - name: ELASTICSEARCH_HOSTS
+          value: https://test-es.default.svc:9200
+        - name: PROBE_PATH
+          value: /app/kibana
+        - name: PROBE_SCHEME
+          value: https
+        - name: env1
+          value: value1
+        envFrom:
+          - configMapRef:
+              name: test
+        image: docker.elastic.co/kibana/kibana:8.5.1
+        livenessProbe:
+          failureThreshold: 10
+          periodSeconds: 30
+          successThreshold: 1
+          tcpSocket:
+            port: 5601
+          timeoutSeconds: 5
+        name: kibana
+        ports:
+        - containerPort: 5601
+          name: http
+          protocol: TCP
+        readinessProbe:
+          failureThreshold: 3
+          periodSeconds: 30
+          successThreshold: 1
+          exec:
+            command:
+              - /bin/bash
+              - -c
+              - |
+                  #!/usr/bin/env bash
+                  set -euo pipefail
+
+                  # Implementation based on Kibana helm template
+
+                  export NSS_SDB_USE_CACHE=no
+
+                  HTTP_CODE=$(curl --output /dev/null -k -XGET -s --fail -L -w '%{http_code}' ${PROBE_SCHEME}://127.0.0.1:5601${PROBE_PATH})
+                  RC=$?
+                  if [[ ${RC} -ne 0 ]]; then
+                    echo "Failed to get Kibana"
+                    exit ${RC}
+                  fi
+                  if [[ ${HTTP_CODE} == "200" ]]; then
+                    exit 0
+                  else
+                    echo "Kibana return code ${HTTP_CODE}"
+                    exit 1
+                  fi
+          timeoutSeconds: 5
+        resources:
+          limits:
+            cpu: "4"
+            memory: 4Gi
+          requests:
+            cpu: "2"
+            memory: 2Gi
+        securityContext:
+          capabilities:
+            drop:
+            - ALL
+          runAsNonRoot: true
+          runAsUser: 1000
+        startupProbe:
+          failureThreshold: 30
+          initialDelaySeconds: 10
+          periodSeconds: 10
+          successThreshold: 1
+          tcpSocket:
+            port: 5601
+          timeoutSeconds: 5
+        volumeMounts:
+        - mountPath: /usr/share/kibana/config
+          name: config
+      initContainers:
+      - command:
+        - /bin/bash
+        - -c
+        - |
+            #!/usr/bin/env bash
+            set -euo pipefail
+            
+            # Move original config
+            echo "Move original kibana configs"
+            cp -a /usr/share/kibana/config/* /mnt/config/
+
+            # Move configmaps
+            if [ -d /mnt/configmap ]; then
+              echo "Move custom configs"
+              cp -rf /mnt/configmap/* /mnt/config/
+            fi
+
+            # Move certificates
+            if [ -d /mnt/certs ]; then
+              echo "Move cerficates"
+              mkdir -p /mnt/config/api-cert
+              cp /mnt/certs/* /mnt/config/api-cert/
+            fi
+
+            # Move CA Elasticsearch
+            if [ -d /mnt/ca-elasticsearch ]; then
+              echo "Move CA certificate"
+              mkdir -p /mnt/config/es-ca
+              cp /mnt/ca-elasticsearch/* /mnt/config/es-ca/
+            fi
+
+            # Move keystore
+            if [ -f /mnt/keystore/kibana.keystore ]; then
+              echo "Move keystore"
+              cp /mnt/keystore/kibana.keystore /mnt/config
+            fi
+
+            # Set right
+            echo "Set right"
+            chown -R kibana:kibana /mnt/config
+
+
+            if [ -d /mnt/plugins ]; then
+              cp -a /usr/share/kibana/plugins/* /mnt/plugins/
+            fi
+
+        image: docker.elastic.co/kibana/kibana:8.5.1
+        name: init-filesystem
+        resources:
+          limits:
+            cpu: 300m
+            memory: 500Mi
+          requests:
+            cpu: 100m
+            memory: 100Mi
+        env:
+        - name: POD_NAME
+          valueFrom:
+            fieldRef:
+              apiVersion: v1
+              fieldPath: metadata.name
+        - name: NODE_NAME
+          valueFrom:
+            fieldRef:
+              apiVersion: v1
+              fieldPath: spec.nodeName
+        - name: POD_IP
+          valueFrom:
+            fieldRef:
+              apiVersion: v1
+              fieldPath: status.podIP
+        - name: NAMESPACE
+          valueFrom:
+            fieldRef:
+              apiVersion: v1
+              fieldPath: metadata.namespace
+        volumeMounts:
+          - name: config
+            mountPath: /mnt/config
+          - name: tls
+            mountPath: /mnt/certs
+          - name: ca-elasticsearch
+            mountPath: /mnt/ca-elasticsearch
+          - name: kibana-config
+            mountPath: /mnt/configmap/kibana.yml
+            subPath: kibana.yml
+          - name: kibana-config
+            mountPath: /mnt/configmap/log4j.yaml
+            subPath: log4j.yaml
+        securityContext:
+          runAsUser: 0
+      - command:
+        - /bin/bash
+        - -c
+        - |
+            #!/usr/bin/env bash
+            set -euo pipefail
+
+            kibana-keystore create
+            for i in /mnt/keystoreSecrets/*/*; do
+                key=$(basename $i)
+                echo "Adding file $i to keystore key $key"
+                kibana-keystore add-file "$key" "$i"
+            done
+
+
+            cp -a /usr/share/kibana/config/kibana.keystore /mnt/keystore/
+        image: docker.elastic.co/kibana/kibana:8.5.1
+        name: init-keystore
+        resources:
+          limits:
+            cpu: 300m
+            memory: 500Mi
+          requests:
+            cpu: 100m
+            memory: 100Mi
+        volumeMounts:
+          - name: keystore
+            mountPath: /mnt/keystore
+          - name: kibana-keystore
+            mountPath: /mnt/keystoreSecrets
+      securityContext:
+        fsGroup: 1000
+      terminationGracePeriodSeconds: 30
+      nodeSelector:
+        project: kibana
+      tolerations:
+      - effect: NoSchedule
+        key: project
+        operator: Equal
+        value: kibana
+      volumes:
+      - name: tls
+        secret:
+          secretName: test-tls-kb
+      - name: ca-elasticsearch
+        secret:
+          secretName: test-ca-es-kb
+      - configMap:
+          name: test-config-kb
+        name: kibana-config
+      - name: kibana-keystore
+        secret:
+          secretName: keystore
+      - name: keystore
+        emptyDir: {}
+      - name: config
+        emptyDir: {}
+      - name: plugin
+        emptyDir: {}

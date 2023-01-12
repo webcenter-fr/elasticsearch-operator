@@ -14,6 +14,7 @@ spec:
   selector:
     cluster: test
     nodeGroup: master
+    elasticsearch.k8s.webcenter.fr: "true"
   ports:
     - protocol: TCP
       port: 9200

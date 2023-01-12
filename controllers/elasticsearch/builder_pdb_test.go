@@ -4,7 +4,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
-	elasticsearchapi "github.com/webcenter-fr/elasticsearch-operator/api/v1alpha1"
+	elasticsearchcrd "github.com/webcenter-fr/elasticsearch-operator/apis/elasticsearch/v1alpha1"
 	"github.com/webcenter-fr/elasticsearch-operator/pkg/test"
 	policyv1 "k8s.io/api/policy/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -16,16 +16,16 @@ func TestBuildPodDisruptionBudget(t *testing.T) {
 	var (
 		err  error
 		pdbs []policyv1.PodDisruptionBudget
-		o    *elasticsearchapi.Elasticsearch
+		o    *elasticsearchcrd.Elasticsearch
 	)
 
 	// With default values
-	o = &elasticsearchapi.Elasticsearch{
+	o = &elasticsearchcrd.Elasticsearch{
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: "default",
 			Name:      "test",
 		},
-		Spec: elasticsearchapi.ElasticsearchSpec{},
+		Spec: elasticsearchcrd.ElasticsearchSpec{},
 	}
 
 	pdbs, err = BuildPodDisruptionBudget(o)
@@ -33,13 +33,13 @@ func TestBuildPodDisruptionBudget(t *testing.T) {
 	assert.Empty(t, pdbs)
 
 	// When pdb spec not provided, default
-	o = &elasticsearchapi.Elasticsearch{
+	o = &elasticsearchcrd.Elasticsearch{
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: "default",
 			Name:      "test",
 		},
-		Spec: elasticsearchapi.ElasticsearchSpec{
-			NodeGroups: []elasticsearchapi.NodeGroupSpec{
+		Spec: elasticsearchcrd.ElasticsearchSpec{
+			NodeGroups: []elasticsearchcrd.NodeGroupSpec{
 				{
 					Name:     "master",
 					Replicas: 1,
@@ -55,19 +55,19 @@ func TestBuildPodDisruptionBudget(t *testing.T) {
 
 	// When Pdb is defined on global
 	minUnavailable := intstr.FromInt(0)
-	o = &elasticsearchapi.Elasticsearch{
+	o = &elasticsearchcrd.Elasticsearch{
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: "default",
 			Name:      "test",
 		},
-		Spec: elasticsearchapi.ElasticsearchSpec{
-			NodeGroups: []elasticsearchapi.NodeGroupSpec{
+		Spec: elasticsearchcrd.ElasticsearchSpec{
+			NodeGroups: []elasticsearchcrd.NodeGroupSpec{
 				{
 					Name:     "master",
 					Replicas: 1,
 				},
 			},
-			GlobalNodeGroup: elasticsearchapi.GlobalNodeGroupSpec{
+			GlobalNodeGroup: elasticsearchcrd.GlobalNodeGroupSpec{
 				PodDisruptionBudgetSpec: &policyv1.PodDisruptionBudgetSpec{
 					MinAvailable:   &minUnavailable,
 					MaxUnavailable: nil,
@@ -83,13 +83,13 @@ func TestBuildPodDisruptionBudget(t *testing.T) {
 
 	// When Pdb is defined on nodeGroup
 	minUnavailable = intstr.FromInt(10)
-	o = &elasticsearchapi.Elasticsearch{
+	o = &elasticsearchcrd.Elasticsearch{
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: "default",
 			Name:      "test",
 		},
-		Spec: elasticsearchapi.ElasticsearchSpec{
-			NodeGroups: []elasticsearchapi.NodeGroupSpec{
+		Spec: elasticsearchcrd.ElasticsearchSpec{
+			NodeGroups: []elasticsearchcrd.NodeGroupSpec{
 				{
 					Name:     "master",
 					Replicas: 1,
@@ -99,7 +99,7 @@ func TestBuildPodDisruptionBudget(t *testing.T) {
 					},
 				},
 			},
-			GlobalNodeGroup: elasticsearchapi.GlobalNodeGroupSpec{
+			GlobalNodeGroup: elasticsearchcrd.GlobalNodeGroupSpec{
 				PodDisruptionBudgetSpec: &policyv1.PodDisruptionBudgetSpec{
 					MinAvailable:   &minUnavailable,
 					MaxUnavailable: nil,

@@ -1,0 +1,31 @@
+# permissions for end users to edit kibanas.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  labels:
+    app.kubernetes.io/name: clusterrole
+    app.kubernetes.io/instance: kibana-editor-role
+    app.kubernetes.io/component: rbac
+    app.kubernetes.io/created-by: bootstrap
+    app.kubernetes.io/part-of: bootstrap
+    app.kubernetes.io/managed-by: kustomize
+  name: kibana-editor-role
+rules:
+- apiGroups:
+  - kibana.k8s.webcenter.fr
+  resources:
+  - kibanas
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - kibana.k8s.webcenter.fr
+  resources:
+  - kibanas/status
+  verbs:
+  - get

@@ -1,13 +1,16 @@
 package elasticsearch
 
 import (
+	"context"
 	"path/filepath"
 	"testing"
 	"time"
 
-	"github.com/onsi/gomega/gexec"
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/suite"
+	elasticsearchcrd "github.com/webcenter-fr/elasticsearch-operator/apis/elasticsearch/v1alpha1"
+	elasticsearchapicrd "github.com/webcenter-fr/elasticsearch-operator/apis/elasticsearchapi/v1alpha1"
+	kibanacrd "github.com/webcenter-fr/elasticsearch-operator/apis/kibana/v1alpha1"
 	"k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/rest"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -15,24 +18,22 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/envtest"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
-
-	elasticsearchapi "github.com/webcenter-fr/elasticsearch-operator/api/v1alpha1"
 	//+kubebuilder:scaffold:imports
 )
 
 var testEnv *envtest.Environment
 
-type ControllerTestSuite struct {
+type ElasticsearchControllerTestSuite struct {
 	suite.Suite
 	k8sClient client.Client
 	cfg       *rest.Config
 }
 
-func TestControllerSuite(t *testing.T) {
-	suite.Run(t, new(ControllerTestSuite))
+func TestElasticsearchControllerSuite(t *testing.T) {
+	suite.Run(t, new(ElasticsearchControllerTestSuite))
 }
 
-func (t *ControllerTestSuite) SetupSuite() {
+func (t *ElasticsearchControllerTestSuite) SetupSuite() {
 
 	logf.SetLogger(zap.New(zap.UseDevMode(true)))
 	logrus.SetLevel(logrus.TraceLevel)
@@ -60,7 +61,15 @@ func (t *ControllerTestSuite) SetupSuite() {
 	if err != nil {
 		panic(err)
 	}
-	err = elasticsearchapi.AddToScheme(scheme.Scheme)
+	err = elasticsearchapicrd.AddToScheme(scheme.Scheme)
+	if err != nil {
+		panic(err)
+	}
+	err = elasticsearchcrd.AddToScheme(scheme.Scheme)
+	if err != nil {
+		panic(err)
+	}
+	err = kibanacrd.AddToScheme(scheme.Scheme)
 	if err != nil {
 		panic(err)
 	}
@@ -74,6 +83,27 @@ func (t *ControllerTestSuite) SetupSuite() {
 	}
 	k8sClient := k8sManager.GetClient()
 	t.k8sClient = k8sClient
+
+	// Add indexers on Elasticsearch to track secret change
+	if err := k8sManager.GetFieldIndexer().IndexField(context.Background(), &elasticsearchcrd.Elasticsearch{}, "spec.tls.certificateSecretRef.name", func(o client.Object) []string {
+		p := o.(*elasticsearchcrd.Elasticsearch)
+		if p.IsTlsApiEnabled() && !p.IsSelfManagedSecretForTlsApi() {
+			return []string{p.Spec.Tls.CertificateSecretRef.Name}
+		}
+		return []string{}
+	}); err != nil {
+		panic(err)
+	}
+
+	if err := k8sManager.GetFieldIndexer().IndexField(context.Background(), &elasticsearchcrd.Elasticsearch{}, "spec.globalNodeGroup.keystoreSecretRef.name", func(o client.Object) []string {
+		p := o.(*elasticsearchcrd.Elasticsearch)
+		if p.Spec.GlobalNodeGroup.KeystoreSecretRef != nil {
+			return []string{p.Spec.GlobalNodeGroup.KeystoreSecretRef.Name}
+		}
+		return []string{}
+	}); err != nil {
+		panic(err)
+	}
 
 	// Init controllers
 	elasticsearchReconciler := NewElasticsearchReconciler(k8sClient, scheme.Scheme)
@@ -94,8 +124,7 @@ func (t *ControllerTestSuite) SetupSuite() {
 	}()
 }
 
-func (t *ControllerTestSuite) TearDownSuite() {
-	gexec.KillAndWait(5 * time.Second)
+func (t *ElasticsearchControllerTestSuite) TearDownSuite() {
 
 	// Teardown the test environment once controller is fnished.
 	// Otherwise from Kubernetes 1.21+, teardon timeouts waiting on
@@ -106,40 +135,9 @@ func (t *ControllerTestSuite) TearDownSuite() {
 	}
 }
 
-func (t *ControllerTestSuite) BeforeTest(suiteName, testName string) {
+func (t *ElasticsearchControllerTestSuite) BeforeTest(suiteName, testName string) {
 
 }
 
-func (t *ControllerTestSuite) AfterTest(suiteName, testName string) {
-}
-
-func RunWithTimeout(f func() error, timeout time.Duration, interval time.Duration) (isTimeout bool, err error) {
-	control := make(chan bool)
-	timeoutTimer := time.NewTimer(timeout)
-	go func() {
-		loop := true
-		intervalTimer := time.NewTimer(interval)
-		for loop {
-			select {
-			case <-control:
-				return
-			case <-intervalTimer.C:
-				err = f()
-				if err != nil {
-					intervalTimer.Reset(interval)
-				} else {
-					loop = false
-				}
-			}
-		}
-		control <- true
-	}()
-
-	select {
-	case <-control:
-		return false, nil
-	case <-timeoutTimer.C:
-		control <- true
-		return true, err
-	}
+func (t *ElasticsearchControllerTestSuite) AfterTest(suiteName, testName string) {
 }

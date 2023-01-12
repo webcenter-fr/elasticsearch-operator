@@ -11,15 +11,17 @@ import (
 	"github.com/disaster37/operator-sdk-extra/pkg/controller"
 	"github.com/disaster37/operator-sdk-extra/pkg/helper"
 	"github.com/pkg/errors"
-	elasticsearchapi "github.com/webcenter-fr/elasticsearch-operator/api/v1alpha1"
+	elasticsearchcrd "github.com/webcenter-fr/elasticsearch-operator/apis/elasticsearch/v1alpha1"
 	"github.com/webcenter-fr/elasticsearch-operator/controllers/common"
 	helperdiff "github.com/webcenter-fr/elasticsearch-operator/pkg/helper"
 	appv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
+	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	condition "k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/types"
 	podutil "k8s.io/kubectl/pkg/util/podutils"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -62,7 +64,7 @@ func (r *StatefulsetReconciler) Name() string {
 
 // Configure permit to init condition
 func (r *StatefulsetReconciler) Configure(ctx context.Context, req ctrl.Request, resource client.Object) (res ctrl.Result, err error) {
-	o := resource.(*elasticsearchapi.Elasticsearch)
+	o := resource.(*elasticsearchcrd.Elasticsearch)
 
 	// Init condition status if not exist
 	if condition.FindStatusCondition(o.Status.Conditions, StatefulsetCondition) == nil {
@@ -80,8 +82,10 @@ func (r *StatefulsetReconciler) Configure(ctx context.Context, req ctrl.Request,
 
 // Read existing satefulsets
 func (r *StatefulsetReconciler) Read(ctx context.Context, resource client.Object, data map[string]any) (res ctrl.Result, err error) {
-	o := resource.(*elasticsearchapi.Elasticsearch)
+	o := resource.(*elasticsearchcrd.Elasticsearch)
 	stsList := &appv1.StatefulSetList{}
+	secretKeystore := &corev1.Secret{}
+	secretApiCrt := &corev1.Secret{}
 
 	// Read current satefulsets
 	labelSelectors, err := labels.Parse(fmt.Sprintf("cluster=%s,%s=true", o.Name, ElasticsearchAnnotationKey))
@@ -93,8 +97,34 @@ func (r *StatefulsetReconciler) Read(ctx context.Context, resource client.Object
 	}
 	data["currentStatefulsets"] = stsList.Items
 
+	// Read keystore secret if needed
+	if o.Spec.GlobalNodeGroup.KeystoreSecretRef != nil && o.Spec.GlobalNodeGroup.KeystoreSecretRef.Name != "" {
+		if err = r.Client.Get(ctx, types.NamespacedName{Namespace: o.Namespace, Name: o.Spec.GlobalNodeGroup.KeystoreSecretRef.Name}, secretKeystore); err != nil {
+			if !k8serrors.IsNotFound(err) {
+				return res, errors.Wrapf(err, "Error when read secret %s", o.Spec.GlobalNodeGroup.KeystoreSecretRef.Name)
+			}
+			r.Log.Warnf("Secret %s not yet exist, try again later", o.Spec.GlobalNodeGroup.KeystoreSecretRef.Name)
+			return ctrl.Result{RequeueAfter: 30 * time.Second}, nil
+		}
+	} else {
+		secretKeystore = nil
+	}
+
+	// Read APi Crt if needed
+	if o.IsTlsApiEnabled() && !o.IsSelfManagedSecretForTlsApi() {
+		if err = r.Client.Get(ctx, types.NamespacedName{Namespace: o.Namespace, Name: o.Spec.Tls.CertificateSecretRef.Name}, secretApiCrt); err != nil {
+			if !k8serrors.IsNotFound(err) {
+				return res, errors.Wrapf(err, "Error when read secret %s", o.Spec.Tls.CertificateSecretRef.Name)
+			}
+			r.Log.Warnf("Secret %s not yet exist, try again later", o.Spec.Tls.CertificateSecretRef.Name)
+			return ctrl.Result{RequeueAfter: 30 * time.Second}, nil
+		}
+	} else {
+		secretApiCrt = nil
+	}
+
 	// Generate expected statefulsets
-	expectedSts, err := BuildStatefulsets(o)
+	expectedSts, err := BuildStatefulsets(o, secretKeystore, secretApiCrt)
 	if err != nil {
 		return res, errors.Wrap(err, "Error when generate statefulsets")
 	}
@@ -163,7 +193,7 @@ func (r *StatefulsetReconciler) Delete(ctx context.Context, resource client.Obje
 
 // Diff permit to check if statefulset is up to date
 func (r *StatefulsetReconciler) Diff(ctx context.Context, resource client.Object, data map[string]interface{}) (diff controller.K8sDiff, res ctrl.Result, err error) {
-	o := resource.(*elasticsearchapi.Elasticsearch)
+	o := resource.(*elasticsearchcrd.Elasticsearch)
 	var d any
 
 	d, err = helper.Get(data, "currentStatefulsets")
@@ -315,7 +345,7 @@ func (r *StatefulsetReconciler) Diff(ctx context.Context, resource client.Object
 
 // OnError permit to set status condition on the right state and record error
 func (r *StatefulsetReconciler) OnError(ctx context.Context, resource client.Object, data map[string]any, currentErr error) (res ctrl.Result, err error) {
-	o := resource.(*elasticsearchapi.Elasticsearch)
+	o := resource.(*elasticsearchcrd.Elasticsearch)
 
 	r.Log.Error(currentErr)
 	r.Recorder.Event(resource, corev1.EventTypeWarning, "Failed", currentErr.Error())
@@ -333,7 +363,7 @@ func (r *StatefulsetReconciler) OnError(ctx context.Context, resource client.Obj
 
 // OnSuccess permit to set status condition on the right state is everithink is good
 func (r *StatefulsetReconciler) OnSuccess(ctx context.Context, resource client.Object, data map[string]any, diff controller.K8sDiff) (res ctrl.Result, err error) {
-	o := resource.(*elasticsearchapi.Elasticsearch)
+	o := resource.(*elasticsearchcrd.Elasticsearch)
 	var (
 		d any
 	)

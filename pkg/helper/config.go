@@ -73,3 +73,26 @@ func MergeSettings(m1, m2 map[string]string) (res map[string]string, err error) 
 
 	return res, nil
 }
+
+func GetSetting(key string, config []byte) (value string, err error) {
+	if len(config) == 0 {
+		return "", nil
+	}
+
+	yConfig, err := ucfgyaml.NewConfig(config, ucfg.PathSep("."))
+	if err != nil {
+		return "", errors.Wrapf(err, "Error when load config: %s", spew.Sprint(config))
+	}
+
+	hasField, err := yConfig.Has(key, -1, ucfg.PathSep("."))
+	if err != nil {
+		return "", errors.Wrapf(err, "Error when check if field %s exist", key)
+	}
+
+	if hasField {
+		return yConfig.String(key, -1, ucfg.PathSep("."))
+	}
+
+	return "", ucfg.ErrMissing
+
+}

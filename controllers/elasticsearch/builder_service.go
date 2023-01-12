@@ -3,7 +3,7 @@ package elasticsearch
 import (
 	"fmt"
 
-	elasticsearchapi "github.com/webcenter-fr/elasticsearch-operator/api/v1alpha1"
+	elasticsearchcrd "github.com/webcenter-fr/elasticsearch-operator/apis/elasticsearch/v1alpha1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
@@ -12,7 +12,7 @@ import (
 // BuilderServices permit to generate services
 // It generate one for all cluster and for each node group
 // For each node groups, it also generate headless services
-func BuildServices(es *elasticsearchapi.Elasticsearch) (services []corev1.Service, err error) {
+func BuildServices(es *elasticsearchcrd.Elasticsearch) (services []corev1.Service, err error) {
 	services = make([]corev1.Service, 0, (1+len(es.Spec.NodeGroups))*2)
 	var (
 		service         *corev1.Service
@@ -37,7 +37,8 @@ func BuildServices(es *elasticsearchapi.Elasticsearch) (services []corev1.Servic
 			Type:            corev1.ServiceTypeClusterIP,
 			SessionAffinity: corev1.ServiceAffinityNone,
 			Selector: map[string]string{
-				"cluster": es.Name,
+				"cluster":                  es.Name,
+				ElasticsearchAnnotationKey: "true",
 			},
 			Ports: []corev1.ServicePort{
 				{
@@ -74,8 +75,9 @@ func BuildServices(es *elasticsearchapi.Elasticsearch) (services []corev1.Servic
 				Type:            corev1.ServiceTypeClusterIP,
 				SessionAffinity: corev1.ServiceAffinityNone,
 				Selector: map[string]string{
-					"cluster":   es.Name,
-					"nodeGroup": nodeGroup.Name,
+					"cluster":                  es.Name,
+					"nodeGroup":                nodeGroup.Name,
+					ElasticsearchAnnotationKey: "true",
 				},
 				Ports: []corev1.ServicePort{
 					{
@@ -110,8 +112,9 @@ func BuildServices(es *elasticsearchapi.Elasticsearch) (services []corev1.Servic
 				Type:                     corev1.ServiceTypeClusterIP,
 				SessionAffinity:          corev1.ServiceAffinityNone,
 				Selector: map[string]string{
-					"cluster":   es.Name,
-					"nodeGroup": nodeGroup.Name,
+					"cluster":                  es.Name,
+					"nodeGroup":                nodeGroup.Name,
+					ElasticsearchAnnotationKey: "true",
 				},
 				Ports: []corev1.ServicePort{
 					{
