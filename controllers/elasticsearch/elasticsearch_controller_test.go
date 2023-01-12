@@ -1212,7 +1212,7 @@ func doDeleteElasticsearchStep() test.TestStep {
 			logrus.Infof("=== Delete Elasticsearch cluster %s/%s ===", key.Namespace, key.Name)
 
 			if o == nil {
-				return errors.New("Centreon serviceGroup is null")
+				return errors.New("Elasticsearch is null")
 			}
 			es := o.(*elasticsearchcrd.Elasticsearch)
 

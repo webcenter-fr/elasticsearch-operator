@@ -37,8 +37,8 @@ func (t *KibanaControllerTestSuite) TestKibanaController() {
 	testCase := test.NewTestCase(t.T(), t.k8sClient, key, kb, 5*time.Second, data)
 	testCase.Steps = []test.TestStep{
 		doCreateKibanaStep(),
-		//doUpdateKibanaStep(),
-		//doDeleteKibanaStep(),
+		doUpdateKibanaStep(),
+		doDeleteKibanaStep(),
 	}
 
 	testCase.Run()
@@ -246,26 +246,25 @@ func doCreateKibanaStep() test.TestStep {
 	}
 }
 
-/*
 func doUpdateKibanaStep() test.TestStep {
 	return test.TestStep{
 		Name: "update",
 		Do: func(c client.Client, key types.NamespacedName, o client.Object, data map[string]any) (err error) {
-			logrus.Infof("=== Update Elasticsearch cluster %s/%s ===", key.Namespace, key.Name)
+			logrus.Infof("=== Update Kibana cluster %s/%s ===", key.Namespace, key.Name)
 
 			if o == nil {
-				return errors.New("Elasticsearch is null")
+				return errors.New("Kibana is null")
 			}
-			es := o.(*elasticsearchcrd.Elasticsearch)
+			kb := o.(*kibanacrd.Kibana)
 
 			// Add labels must force to update all resources
-			es.Labels = map[string]string{
+			kb.Labels = map[string]string{
 				"test": "fu",
 			}
 
-			data["lastVersion"] = es.ResourceVersion
+			data["lastVersion"] = kb.ResourceVersion
 
-			if err = c.Update(context.Background(), es); err != nil {
+			if err = c.Update(context.Background(), kb); err != nil {
 				return err
 			}
 
@@ -274,28 +273,27 @@ func doUpdateKibanaStep() test.TestStep {
 			return nil
 		},
 		Check: func(t *testing.T, c client.Client, key types.NamespacedName, o client.Object, data map[string]any) (err error) {
-			es := &elasticsearchcrd.Elasticsearch{}
+			kb := &kibanacrd.Kibana{}
 
 			var (
-				s    *corev1.Secret
-				svc  *corev1.Service
-				i    *networkingv1.Ingress
-				cm   *corev1.ConfigMap
-				pdb  *policyv1.PodDisruptionBudget
-				sts  *appv1.StatefulSet
-				user *elasticsearchapicrd.User
+				s   *corev1.Secret
+				svc *corev1.Service
+				i   *networkingv1.Ingress
+				cm  *corev1.ConfigMap
+				pdb *policyv1.PodDisruptionBudget
+				dpl *appv1.Deployment
 			)
 
 			lastVersion := data["lastVersion"].(string)
 
 			isTimeout, err := localtest.RunWithTimeout(func() error {
-				if err := c.Get(context.Background(), key, es); err != nil {
+				if err := c.Get(context.Background(), key, kb); err != nil {
 					t.Fatal("Elasticsearch not found")
 				}
 
 				// In envtest, no kubelet
 				// So the Elasticsearch condition never set as true
-				if lastVersion != es.ResourceVersion && (es.Status.Phase == ElasticsearchPhaseStarting) {
+				if lastVersion != kb.ResourceVersion && (kb.Status.Phase == KibanaPhaseStarting) {
 					return nil
 				}
 
@@ -303,152 +301,101 @@ func doUpdateKibanaStep() test.TestStep {
 
 			}, time.Second*30, time.Second*1)
 			if err != nil || isTimeout {
-				t.Fatalf("All Elasticsearch step upgrading not finished: %s", err.Error())
+				t.Fatalf("All Kibana step upgrading not finished: %s", err.Error())
 			}
 
-			// Secrets for node PKI and certificates must exist
+			// Secrets for PKI and certificates must exist
 			s = &corev1.Secret{}
-			if err = c.Get(context.Background(), types.NamespacedName{Namespace: key.Namespace, Name: GetSecretNameForPkiTransport(es)}, s); err != nil {
+			if err = c.Get(context.Background(), types.NamespacedName{Namespace: key.Namespace, Name: GetSecretNameForPki(kb)}, s); err != nil {
 				t.Fatal(err)
 			}
-			assert.Equal(t, "fu", s.Labels["test"])
 			assert.NotEmpty(t, s.Data)
 			assert.NotEmpty(t, s.OwnerReferences)
 			assert.NotEmpty(t, s.Annotations[patch.LastAppliedConfig])
+			assert.Equal(t, "fu", s.Labels["test"])
 
 			s = &corev1.Secret{}
-			if err = c.Get(context.Background(), types.NamespacedName{Namespace: key.Namespace, Name: GetSecretNameForTlsTransport(es)}, s); err != nil {
+			if err = c.Get(context.Background(), types.NamespacedName{Namespace: key.Namespace, Name: GetSecretNameForTls(kb)}, s); err != nil {
 				t.Fatal(err)
 			}
-			assert.Equal(t, "fu", s.Labels["test"])
 			assert.NotEmpty(t, s.Data)
 			assert.NotEmpty(t, s.OwnerReferences)
 			assert.NotEmpty(t, s.Annotations[patch.LastAppliedConfig])
+			assert.Equal(t, "fu", s.Labels["test"])
 
-			// Secrets for API PKI and certificates must exist
+			// Secrets for CA Elasticsearch
 			s = &corev1.Secret{}
-			if err = c.Get(context.Background(), types.NamespacedName{Namespace: key.Namespace, Name: GetSecretNameForPkiApi(es)}, s); err != nil {
+			if err = c.Get(context.Background(), types.NamespacedName{Namespace: key.Namespace, Name: GetSecretNameForCAElasticsearch(kb)}, s); err != nil {
 				t.Fatal(err)
 			}
-			assert.Equal(t, "fu", s.Labels["test"])
 			assert.NotEmpty(t, s.Data)
 			assert.NotEmpty(t, s.OwnerReferences)
 			assert.NotEmpty(t, s.Annotations[patch.LastAppliedConfig])
+			assert.Equal(t, "fu", s.Labels["test"])
 
+			// Secrets for credentials must exist
 			s = &corev1.Secret{}
-			if err = c.Get(context.Background(), types.NamespacedName{Namespace: key.Namespace, Name: GetSecretNameForTlsApi(es)}, s); err != nil {
+			if err = c.Get(context.Background(), types.NamespacedName{Namespace: key.Namespace, Name: GetSecretNameForCredentials(kb)}, s); err != nil {
 				t.Fatal(err)
 			}
-			assert.Equal(t, "fu", s.Labels["test"])
 			assert.NotEmpty(t, s.Data)
 			assert.NotEmpty(t, s.OwnerReferences)
 			assert.NotEmpty(t, s.Annotations[patch.LastAppliedConfig])
-
-			// Secrets for internal credentials must exist
-			s = &corev1.Secret{}
-			if err = c.Get(context.Background(), types.NamespacedName{Namespace: key.Namespace, Name: GetSecretNameForCredentials(es)}, s); err != nil {
-				t.Fatal(err)
-			}
 			assert.Equal(t, "fu", s.Labels["test"])
-			assert.NotEmpty(t, s.Data)
-			assert.NotEmpty(t, s.OwnerReferences)
-			assert.NotEmpty(t, s.Annotations[patch.LastAppliedConfig])
 
 			// Services must exists
 			svc = &corev1.Service{}
-			if err = c.Get(context.Background(), types.NamespacedName{Namespace: key.Namespace, Name: GetGlobalServiceName(es)}, svc); err != nil {
+			if err = c.Get(context.Background(), types.NamespacedName{Namespace: key.Namespace, Name: GetServiceName(kb)}, svc); err != nil {
 				t.Fatal(err)
 			}
-			assert.Equal(t, "fu", svc.Labels["test"])
 			assert.NotEmpty(t, svc.OwnerReferences)
 			assert.NotEmpty(t, svc.Annotations[patch.LastAppliedConfig])
-
-			for _, nodeGroup := range es.Spec.NodeGroups {
-				svc = &corev1.Service{}
-				if err = c.Get(context.Background(), types.NamespacedName{Namespace: key.Namespace, Name: GetNodeGroupServiceName(es, nodeGroup.Name)}, svc); err != nil {
-					t.Fatal(err)
-				}
-				assert.Equal(t, "fu", svc.Labels["test"])
-				assert.NotEmpty(t, svc.OwnerReferences)
-				assert.NotEmpty(t, svc.Annotations[patch.LastAppliedConfig])
-
-				svc = &corev1.Service{}
-				if err = c.Get(context.Background(), types.NamespacedName{Namespace: key.Namespace, Name: GetNodeGroupServiceNameHeadless(es, nodeGroup.Name)}, svc); err != nil {
-					t.Fatal(err)
-				}
-				assert.Equal(t, "fu", svc.Labels["test"])
-				assert.NotEmpty(t, svc.OwnerReferences)
-				assert.NotEmpty(t, svc.Annotations[patch.LastAppliedConfig])
-			}
+			assert.Equal(t, "fu", svc.Labels["test"])
 
 			// Load balancer must exist
 			svc = &corev1.Service{}
-			if err = c.Get(context.Background(), types.NamespacedName{Namespace: key.Namespace, Name: GetLoadBalancerName(es)}, svc); err != nil {
+			if err = c.Get(context.Background(), types.NamespacedName{Namespace: key.Namespace, Name: GetLoadBalancerName(kb)}, svc); err != nil {
 				t.Fatal(err)
 			}
-			assert.Equal(t, "fu", svc.Labels["test"])
 			assert.NotEmpty(t, svc.OwnerReferences)
 			assert.NotEmpty(t, svc.Annotations[patch.LastAppliedConfig])
+			assert.Equal(t, "fu", svc.Labels["test"])
 
 			// Ingress must exist
 			i = &networkingv1.Ingress{}
-			if err = c.Get(context.Background(), types.NamespacedName{Namespace: key.Namespace, Name: GetIngressName(es)}, i); err != nil {
+			if err = c.Get(context.Background(), types.NamespacedName{Namespace: key.Namespace, Name: GetIngressName(kb)}, i); err != nil {
 				t.Fatal(err)
 			}
-			assert.Equal(t, "fu", i.Labels["test"])
 			assert.NotEmpty(t, i.OwnerReferences)
 			assert.NotEmpty(t, i.Annotations[patch.LastAppliedConfig])
+			assert.Equal(t, "fu", i.Labels["test"])
 
 			// ConfigMaps must exist
-			for _, nodeGroup := range es.Spec.NodeGroups {
-				cm = &corev1.ConfigMap{}
-				if err = c.Get(context.Background(), types.NamespacedName{Namespace: key.Namespace, Name: GetNodeGroupConfigMapName(es, nodeGroup.Name)}, cm); err != nil {
-					t.Fatal(err)
-				}
-				assert.Equal(t, "fu", cm.Labels["test"])
-				assert.NotEmpty(t, cm.OwnerReferences)
-				assert.NotEmpty(t, cm.Annotations[patch.LastAppliedConfig])
+			cm = &corev1.ConfigMap{}
+			if err = c.Get(context.Background(), types.NamespacedName{Namespace: key.Namespace, Name: GetConfigMapName(kb)}, cm); err != nil {
+				t.Fatal(err)
 			}
+			assert.NotEmpty(t, cm.OwnerReferences)
+			assert.NotEmpty(t, cm.Annotations[patch.LastAppliedConfig])
+			assert.Equal(t, "fu", cm.Labels["test"])
 
 			// PDB must exist
-			for _, nodeGroup := range es.Spec.NodeGroups {
-				pdb = &policyv1.PodDisruptionBudget{}
-				if err = c.Get(context.Background(), types.NamespacedName{Namespace: key.Namespace, Name: GetNodeGroupPDBName(es, nodeGroup.Name)}, pdb); err != nil {
-					t.Fatal(err)
-				}
-				assert.Equal(t, "fu", pdb.Labels["test"])
-				assert.NotEmpty(t, pdb.OwnerReferences)
-				assert.NotEmpty(t, pdb.Annotations[patch.LastAppliedConfig])
+			pdb = &policyv1.PodDisruptionBudget{}
+			if err = c.Get(context.Background(), types.NamespacedName{Namespace: key.Namespace, Name: GetPDBName(kb)}, pdb); err != nil {
+				t.Fatal(err)
 			}
+			assert.NotEmpty(t, pdb.OwnerReferences)
+			assert.NotEmpty(t, pdb.Annotations[patch.LastAppliedConfig])
+			assert.Equal(t, "fu", pdb.Labels["test"])
 
-			// Statefulset musts exist
-			for _, nodeGroup := range es.Spec.NodeGroups {
-				sts = &appv1.StatefulSet{}
-				if err = c.Get(context.Background(), types.NamespacedName{Namespace: key.Namespace, Name: GetNodeGroupName(es, nodeGroup.Name)}, sts); err != nil {
-					t.Fatal(err)
-				}
-				assert.Equal(t, "fu", sts.Labels["test"])
-				assert.NotEmpty(t, sts.OwnerReferences)
-				assert.NotEmpty(t, sts.Annotations[patch.LastAppliedConfig])
+			// Deployment musts exist
+			dpl = &appv1.Deployment{}
+			if err = c.Get(context.Background(), types.NamespacedName{Namespace: key.Namespace, Name: GetDeploymentName(kb)}, dpl); err != nil {
+				t.Fatal(err)
 			}
-
-			// Users musts exist
-			userList := []string{
-				GetUserSystemName(es, "kibana_system"),
-				GetUserSystemName(es, "logstash_system"),
-				GetUserSystemName(es, "beats_system"),
-				GetUserSystemName(es, "apm_system"),
-				GetUserSystemName(es, "remote_monitoring_user"),
-			}
-			for _, name := range userList {
-				user = &elasticsearchapicrd.User{}
-				if err = c.Get(context.Background(), types.NamespacedName{Namespace: key.Namespace, Name: name}, user); err != nil {
-					t.Fatal(err)
-				}
-				assert.Equal(t, "fu", user.Labels["test"])
-				assert.NotEmpty(t, user.OwnerReferences)
-				assert.NotEmpty(t, user.Annotations[patch.LastAppliedConfig])
-			}
+			assert.NotEmpty(t, dpl.OwnerReferences)
+			assert.NotEmpty(t, dpl.Annotations[patch.LastAppliedConfig])
+			assert.Equal(t, "fu", dpl.Labels["test"])
 
 			return nil
 		},
@@ -459,15 +406,15 @@ func doDeleteKibanaStep() test.TestStep {
 	return test.TestStep{
 		Name: "delete",
 		Do: func(c client.Client, key types.NamespacedName, o client.Object, data map[string]any) (err error) {
-			logrus.Infof("=== Delete Elasticsearch cluster %s/%s ===", key.Namespace, key.Name)
+			logrus.Infof("=== Delete Kibana cluster %s/%s ===", key.Namespace, key.Name)
 
 			if o == nil {
-				return errors.New("Centreon serviceGroup is null")
+				return errors.New("Kibana is null")
 			}
-			es := o.(*elasticsearchcrd.Elasticsearch)
+			kb := o.(*kibanacrd.Kibana)
 
 			wait := int64(0)
-			if err = c.Delete(context.Background(), es, &client.DeleteOptions{GracePeriodSeconds: &wait}); err != nil {
+			if err = c.Delete(context.Background(), kb, &client.DeleteOptions{GracePeriodSeconds: &wait}); err != nil {
 				return err
 			}
 
@@ -482,5 +429,3 @@ func doDeleteKibanaStep() test.TestStep {
 		},
 	}
 }
-
-*/
