@@ -268,11 +268,12 @@ func (h *KibanaReconciler) OnSuccess(ctx context.Context, r client.Object, data 
 
 	// Check adeployment is ready
 	dpl := &appv1.Deployment{}
-	if err = h.Client.Get(ctx, types.NamespacedName{Name: o.Name, Namespace: o.Namespace}, dpl); err != nil {
+	if err = h.Client.Get(ctx, types.NamespacedName{Name: GetDeploymentName(o), Namespace: o.Namespace}, dpl); err != nil {
 		if !k8serrors.IsNotFound(err) {
-			return ctrl.Result{RequeueAfter: time.Second * 30}, nil
+			return res, errors.Wrapf(err, "Error when read Kibana deployment")
 		}
-		return res, errors.Wrapf(err, "Error when read Kibana deployment")
+		return ctrl.Result{RequeueAfter: time.Second * 30}, nil
+
 	}
 
 	if dpl.Status.ReadyReplicas == *dpl.Spec.Replicas {

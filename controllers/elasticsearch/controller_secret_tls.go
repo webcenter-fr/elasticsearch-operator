@@ -42,7 +42,7 @@ const (
 	TlsConditionPropagateCertificate = "TlsPropagateCertificates"
 	TlsCondition                     = "TlsReady"
 	TlsPhase                         = "Tls"
-	DefaultRenewCertificate          = -time.Hour * 24 * 30 // 7 days before expired
+	DefaultRenewCertificate          = -time.Hour * 24 * 30 // 30 days before expired
 )
 
 var (

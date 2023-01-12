@@ -10,6 +10,7 @@ metadata:
     elasticsearch.k8s.webcenter.fr: "true"
 spec:
   elasticsearchRef:
-    name: test
+    managed:
+      name: test
   secretRef:
     name: license

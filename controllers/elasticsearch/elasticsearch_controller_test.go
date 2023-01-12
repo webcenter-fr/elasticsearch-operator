@@ -29,7 +29,7 @@ import (
 
 func (t *ElasticsearchControllerTestSuite) TestElasticsearchController() {
 	key := types.NamespacedName{
-		Name:      "t-csg-" + localhelper.RandomString(10),
+		Name:      "t-es-" + localhelper.RandomString(10),
 		Namespace: "default",
 	}
 	es := &elasticsearchcrd.Elasticsearch{}

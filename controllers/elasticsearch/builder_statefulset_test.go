@@ -492,8 +492,9 @@ func TestComputeAntiAffinity(t *testing.T) {
 				PodAffinityTerm: corev1.PodAffinityTerm{
 					LabelSelector: &metav1.LabelSelector{
 						MatchLabels: map[string]string{
-							"cluster":   "test",
-							"nodeGroup": "master",
+							"cluster":                        "test",
+							"nodeGroup":                      "master",
+							"elasticsearch.k8s.webcenter.fr": "true",
 						},
 					},
 					TopologyKey: "kubernetes.io/hostname",
@@ -534,8 +535,9 @@ func TestComputeAntiAffinity(t *testing.T) {
 				TopologyKey: "topology.kubernetes.io/zone",
 				LabelSelector: &metav1.LabelSelector{
 					MatchLabels: map[string]string{
-						"cluster":   "test",
-						"nodeGroup": "master",
+						"cluster":                        "test",
+						"nodeGroup":                      "master",
+						"elasticsearch.k8s.webcenter.fr": "true",
 					},
 				},
 			},
@@ -577,8 +579,9 @@ func TestComputeAntiAffinity(t *testing.T) {
 				TopologyKey: "topology.kubernetes.io/zone",
 				LabelSelector: &metav1.LabelSelector{
 					MatchLabels: map[string]string{
-						"cluster":   "test",
-						"nodeGroup": "master",
+						"cluster":                        "test",
+						"nodeGroup":                      "master",
+						"elasticsearch.k8s.webcenter.fr": "true",
 					},
 				},
 			},

@@ -10,7 +10,8 @@ metadata:
     elasticsearch.k8s.webcenter.fr: "true"
 spec:
   elasticsearchRef:
-    name: test
+    managed:
+      name: test
   username: kibana_system
   enabled: true
   secretRef:

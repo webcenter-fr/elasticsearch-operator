@@ -38,6 +38,7 @@ const (
 	TlsConditionPropagateCertificate = "TlsPropagateCertificates"
 	TlsCondition                     = "TlsReady"
 	TlsPhase                         = "Tls"
+	DefaultRenewCertificate          = -time.Hour * 24 * 30 // 30 days before expired
 )
 
 var (
@@ -225,6 +226,11 @@ func (r *TlsReconciler) Diff(ctx context.Context, resource client.Object, data m
 		isUpdated bool
 	)
 
+	defaultRenewCertificate := DefaultRenewCertificate
+	if o.Spec.Tls.RenewalDays != nil {
+		defaultRenewCertificate = time.Duration(*o.Spec.Tls.RenewalDays) * 24 * time.Hour
+	}
+
 	d, err = helper.Get(data, "apiRootCA")
 	if err != nil {
 		return diff, res, err
@@ -353,7 +359,7 @@ func (r *TlsReconciler) Diff(ctx context.Context, resource client.Object, data m
 	if !isRenew {
 		// Check certificate validity if all certificates exists
 		for name, crt := range certificates {
-			needRenew, err = pki.NeedRenewCertificate(&crt, time.Duration(*o.Spec.Tls.RenewalDays)*24*time.Hour, r.Log)
+			needRenew, err = pki.NeedRenewCertificate(&crt, defaultRenewCertificate, r.Log)
 			if err != nil {
 				return diff, res, errors.Wrapf(err, "Error when check expiration of %s certificate", name)
 			}

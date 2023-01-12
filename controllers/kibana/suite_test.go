@@ -11,6 +11,7 @@ import (
 	elasticsearchcrd "github.com/webcenter-fr/elasticsearch-operator/apis/elasticsearch/v1alpha1"
 	elasticsearchapicrd "github.com/webcenter-fr/elasticsearch-operator/apis/elasticsearchapi/v1alpha1"
 	kibanacrd "github.com/webcenter-fr/elasticsearch-operator/apis/kibana/v1alpha1"
+	elasticsearchcontrollers "github.com/webcenter-fr/elasticsearch-operator/controllers/elasticsearch"
 	"k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/rest"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -23,17 +24,17 @@ import (
 
 var testEnv *envtest.Environment
 
-type ControllerTestSuite struct {
+type KibanaControllerTestSuite struct {
 	suite.Suite
 	k8sClient client.Client
 	cfg       *rest.Config
 }
 
 func TestControllerSuite(t *testing.T) {
-	suite.Run(t, new(ControllerTestSuite))
+	suite.Run(t, new(KibanaControllerTestSuite))
 }
 
-func (t *ControllerTestSuite) SetupSuite() {
+func (t *KibanaControllerTestSuite) SetupSuite() {
 
 	logf.SetLogger(zap.New(zap.UseDevMode(true)))
 	logrus.SetLevel(logrus.TraceLevel)
@@ -117,6 +118,16 @@ func (t *ControllerTestSuite) SetupSuite() {
 
 	// Init controllers
 
+	elasticsearchReconciler := elasticsearchcontrollers.NewElasticsearchReconciler(k8sClient, scheme.Scheme)
+	elasticsearchReconciler.SetLogger(logrus.WithFields(logrus.Fields{
+		"type": "elasticsearchController",
+	}))
+	elasticsearchReconciler.SetRecorder(k8sManager.GetEventRecorderFor("elasticsearch-controller"))
+	elasticsearchReconciler.SetReconciler(elasticsearchReconciler)
+	if err = elasticsearchReconciler.SetupWithManager(k8sManager); err != nil {
+		panic(err)
+	}
+
 	kibanaReconciler := NewKibanaReconciler(k8sClient, scheme.Scheme)
 	kibanaReconciler.SetLogger(logrus.WithFields(logrus.Fields{
 		"type": "kibanaController",
@@ -136,7 +147,7 @@ func (t *ControllerTestSuite) SetupSuite() {
 
 }
 
-func (t *ControllerTestSuite) TearDownSuite() {
+func (t *KibanaControllerTestSuite) TearDownSuite() {
 
 	// Teardown the test environment once controller is fnished.
 	// Otherwise from Kubernetes 1.21+, teardon timeouts waiting on
@@ -148,9 +159,9 @@ func (t *ControllerTestSuite) TearDownSuite() {
 
 }
 
-func (t *ControllerTestSuite) BeforeTest(suiteName, testName string) {
+func (t *KibanaControllerTestSuite) BeforeTest(suiteName, testName string) {
 
 }
 
-func (t *ControllerTestSuite) AfterTest(suiteName, testName string) {
+func (t *KibanaControllerTestSuite) AfterTest(suiteName, testName string) {
 }

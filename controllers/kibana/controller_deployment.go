@@ -78,7 +78,7 @@ func (r *DeploymentReconciler) Read(ctx context.Context, resource client.Object,
 	secretCustomCAElasticsearch := &corev1.Secret{}
 	var es *elasticsearchcrd.Elasticsearch
 
-	if err = r.Client.Get(ctx, types.NamespacedName{Namespace: o.Namespace, Name: o.Name}, dpl); err != nil {
+	if err = r.Client.Get(ctx, types.NamespacedName{Namespace: o.Namespace, Name: GetDeploymentName(o)}, dpl); err != nil {
 		if !k8serrors.IsNotFound(err) {
 			return res, errors.Wrapf(err, "Error when read deployment")
 		}
