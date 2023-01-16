@@ -165,6 +165,7 @@ func doCreateRoleStep() test.TestStep {
 				t.Fatalf("Failed to get elasticsearch role: %s", err.Error())
 			}
 			assert.True(t, condition.IsStatusConditionPresentAndEqual(role.Status.Conditions, RoleCondition, metav1.ConditionTrue))
+			assert.True(t, role.Status.Health)
 
 			return nil
 		},
@@ -209,6 +210,7 @@ func doUpdateRoleStep() test.TestStep {
 				t.Fatalf("Failed to get elasticsearch role: %s", err.Error())
 			}
 			assert.True(t, condition.IsStatusConditionPresentAndEqual(role.Status.Conditions, RoleCondition, metav1.ConditionTrue))
+			assert.True(t, role.Status.Health)
 
 			return nil
 		},

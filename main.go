@@ -276,6 +276,17 @@ func main() {
 		os.Exit(1)
 	}
 
+	elasticsearchIlmController := elasticsearchapicontrollers.NewIndexLifecyclePolicyReconciler(mgr.GetClient(), mgr.GetScheme())
+	elasticsearchIlmController.SetLogger(log.WithFields(logrus.Fields{
+		"type": "ElasticsearchIndexLifecyclePolicyController",
+	}))
+	elasticsearchIlmController.SetRecorder(mgr.GetEventRecorderFor("elasticsearch-indexlifecyclepolicy-controller"))
+	elasticsearchIlmController.SetReconciler(elasticsearchIlmController)
+	if err = elasticsearchIlmController.SetupWithManager(mgr); err != nil {
+		setupLog.Error(err, "unable to create controller", "controller", "ElasticsearchIndexLifecyclePolicy")
+		os.Exit(1)
+	}
+
 	//+kubebuilder:scaffold:builder
 
 	if err := mgr.AddHealthzCheck("healthz", healthz.Ping); err != nil {
