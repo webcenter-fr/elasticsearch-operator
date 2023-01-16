@@ -43,8 +43,8 @@ import (
 )
 
 const (
-	licenseFinalizer = "license.elasticsearchapi.k8s.webcenter.fr/finalizer"
-	licenseCondition = "License"
+	LicenseFinalizer = "license.elasticsearchapi.k8s.webcenter.fr/finalizer"
+	LicenseCondition = "License"
 )
 
 // LicenseReconciler reconciles a License object
@@ -68,12 +68,12 @@ func NewLicenseReconciler(client client.Client, scheme *runtime.Scheme) *License
 	return r
 }
 
-//+kubebuilder:rbac:groups=elk.k8s.webcenter.fr,resources=licenses,verbs=get;list;watch;create;update;patch;delete
-//+kubebuilder:rbac:groups=elk.k8s.webcenter.fr,resources=licenses/status,verbs=get;update;patch
-//+kubebuilder:rbac:groups=elk.k8s.webcenter.fr,resources=licenses/finalizers,verbs=update
-//+kubebuilder:rbac:groups="",resources=secrets,verbs=get;list;watch;update;patch
+//+kubebuilder:rbac:groups=elasticsearchapi.k8s.webcenter.fr,resources=licenses,verbs=get;list;watch;create;update;patch;delete
+//+kubebuilder:rbac:groups=elasticsearchapi.k8s.webcenter.fr,resources=licenses/status,verbs=get;update;patch
+//+kubebuilder:rbac:groups=elasticsearchapi.k8s.webcenter.fr,resources=licenses/finalizers,verbs=update
+//+kubebuilder:rbac:groups="",resources=secrets,verbs=get;list;watch
 //+kubebuilder:rbac:groups="",resources=events,verbs=patch;get;create
-//+kubebuilder:rbac:groups="elasticsearch.k8s.elastic.co",resources=elasticsearches,verbs=get
+//+kubebuilder:rbac:groups="elasticsearch.k8s.webcenter.fr",resources=elasticsearches,verbs=get
 
 // Reconcile is part of the main kubernetes reconciliation loop which aims to
 // move the current state of the cluster closer to the desired state.
@@ -86,7 +86,7 @@ func NewLicenseReconciler(client client.Client, scheme *runtime.Scheme) *License
 // - https://pkg.go.dev/sigs.k8s.io/controller-runtime@v0.11.0/pkg/reconcile
 func (r *LicenseReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 
-	reconciler, err := controller.NewStdReconciler(r.Client, licenseFinalizer, r.reconciler, r.log, r.recorder)
+	reconciler, err := controller.NewStdReconciler(r.Client, LicenseFinalizer, r.reconciler, r.log, r.recorder)
 	if err != nil {
 		return ctrl.Result{}, err
 	}
@@ -132,9 +132,9 @@ func (r *LicenseReconciler) Configure(ctx context.Context, req ctrl.Request, res
 	license := resource.(*elasticsearchapicrd.License)
 
 	// Init condition status if not exist
-	if condition.FindStatusCondition(license.Status.Conditions, licenseCondition) == nil {
+	if condition.FindStatusCondition(license.Status.Conditions, LicenseCondition) == nil {
 		condition.SetStatusCondition(&license.Status.Conditions, metav1.Condition{
-			Type:   licenseCondition,
+			Type:   LicenseCondition,
 			Status: metav1.ConditionFalse,
 			Reason: "Initialize",
 		})
@@ -335,20 +335,24 @@ func (r *LicenseReconciler) OnError(ctx context.Context, resource client.Object,
 	r.recorder.Event(resource, core.EventTypeWarning, "Failed", err.Error())
 
 	condition.SetStatusCondition(&license.Status.Conditions, metav1.Condition{
-		Type:    licenseCondition,
+		Type:    LicenseCondition,
 		Status:  metav1.ConditionFalse,
 		Reason:  "Failed",
 		Message: err.Error(),
 	})
+
+	license.Status.Health = false
 }
 
 // OnSuccess permit to set status condition on the right state is everithink is good
 func (r *LicenseReconciler) OnSuccess(ctx context.Context, resource client.Object, data map[string]any, meta any, diff controller.Diff) (err error) {
 	license := resource.(*elasticsearchapicrd.License)
 
+	license.Status.Health = true
+
 	if diff.NeedCreate {
 		condition.SetStatusCondition(&license.Status.Conditions, metav1.Condition{
-			Type:    licenseCondition,
+			Type:    LicenseCondition,
 			Status:  metav1.ConditionTrue,
 			Reason:  "Success",
 			Message: fmt.Sprintf("License of type %s successfully created", license.Status.LicenseType),
@@ -359,7 +363,7 @@ func (r *LicenseReconciler) OnSuccess(ctx context.Context, resource client.Objec
 
 	if diff.NeedUpdate {
 		condition.SetStatusCondition(&license.Status.Conditions, metav1.Condition{
-			Type:    licenseCondition,
+			Type:    LicenseCondition,
 			Status:  metav1.ConditionTrue,
 			Reason:  "Success",
 			Message: fmt.Sprintf("License of type %s successfully updated", license.Status.LicenseType),
@@ -369,9 +373,9 @@ func (r *LicenseReconciler) OnSuccess(ctx context.Context, resource client.Objec
 	}
 
 	// Update condition status if needed
-	if condition.IsStatusConditionPresentAndEqual(license.Status.Conditions, licenseCondition, metav1.ConditionFalse) {
+	if condition.IsStatusConditionPresentAndEqual(license.Status.Conditions, LicenseCondition, metav1.ConditionFalse) {
 		condition.SetStatusCondition(&license.Status.Conditions, metav1.Condition{
-			Type:    licenseCondition,
+			Type:    LicenseCondition,
 			Reason:  "Success",
 			Status:  metav1.ConditionTrue,
 			Message: "License already set",

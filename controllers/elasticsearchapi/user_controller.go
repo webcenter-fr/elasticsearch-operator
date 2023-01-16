@@ -41,8 +41,8 @@ import (
 )
 
 const (
-	userFinalizer = "user.elasticsearchapi.k8s.webcenter.fr/finalizer"
-	userCondition = "User"
+	UserFinalizer = "user.elasticsearchapi.k8s.webcenter.fr/finalizer"
+	UserCondition = "User"
 )
 
 // UserReconciler reconciles a User object
@@ -69,6 +69,9 @@ func NewUserReconciler(client client.Client, scheme *runtime.Scheme) *UserReconc
 //+kubebuilder:rbac:groups=elasticsearchapi.k8s.webcenter.fr,resources=users,verbs=get;list;watch;create;update;patch;delete
 //+kubebuilder:rbac:groups=elasticsearchapi.k8s.webcenter.fr,resources=users/status,verbs=get;update;patch
 //+kubebuilder:rbac:groups=elasticsearchapi.k8s.webcenter.fr,resources=users/finalizers,verbs=update
+//+kubebuilder:rbac:groups="",resources=secrets,verbs=get;list;watch
+//+kubebuilder:rbac:groups="",resources=events,verbs=patch;get;create
+//+kubebuilder:rbac:groups="elasticsearch.k8s.webcenter.fr",resources=elasticsearches,verbs=get
 
 // Reconcile is part of the main kubernetes reconciliation loop which aims to
 // move the current state of the cluster closer to the desired state.
@@ -80,7 +83,7 @@ func NewUserReconciler(client client.Client, scheme *runtime.Scheme) *UserReconc
 // For more details, check Reconcile and its Result here:
 // - https://pkg.go.dev/sigs.k8s.io/controller-runtime@v0.11.0/pkg/reconcile
 func (r *UserReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
-	reconciler, err := controller.NewStdReconciler(r.Client, userFinalizer, r.reconciler, r.log, r.recorder)
+	reconciler, err := controller.NewStdReconciler(r.Client, UserFinalizer, r.reconciler, r.log, r.recorder)
 	if err != nil {
 		return ctrl.Result{}, err
 	}
@@ -127,9 +130,9 @@ func (r *UserReconciler) Configure(ctx context.Context, req ctrl.Request, resour
 	o := resource.(*elasticsearchapicrd.User)
 
 	// Init condition status if not exist
-	if condition.FindStatusCondition(o.Status.Conditions, userCondition) == nil {
+	if condition.FindStatusCondition(o.Status.Conditions, UserCondition) == nil {
 		condition.SetStatusCondition(&o.Status.Conditions, metav1.Condition{
-			Type:   userCondition,
+			Type:   UserCondition,
 			Status: metav1.ConditionFalse,
 			Reason: "Initialize",
 		})
@@ -381,20 +384,24 @@ func (r *UserReconciler) OnError(ctx context.Context, resource client.Object, da
 	r.recorder.Event(resource, core.EventTypeWarning, "Failed", err.Error())
 
 	condition.SetStatusCondition(&user.Status.Conditions, metav1.Condition{
-		Type:    userCondition,
+		Type:    UserCondition,
 		Status:  metav1.ConditionFalse,
 		Reason:  "Failed",
 		Message: err.Error(),
 	})
+
+	user.Status.Health = false
 }
 
 // OnSuccess permit to set status condition on the right state is everithink is good
 func (r *UserReconciler) OnSuccess(ctx context.Context, resource client.Object, data map[string]any, meta any, diff controller.Diff) (err error) {
 	user := resource.(*elasticsearchapicrd.User)
 
+	user.Status.Health = true
+
 	if diff.NeedCreate {
 		condition.SetStatusCondition(&user.Status.Conditions, metav1.Condition{
-			Type:    userCondition,
+			Type:    UserCondition,
 			Status:  metav1.ConditionTrue,
 			Reason:  "Success",
 			Message: "User successfully created",
@@ -405,7 +412,7 @@ func (r *UserReconciler) OnSuccess(ctx context.Context, resource client.Object, 
 
 	if diff.NeedUpdate {
 		condition.SetStatusCondition(&user.Status.Conditions, metav1.Condition{
-			Type:    userCondition,
+			Type:    UserCondition,
 			Status:  metav1.ConditionTrue,
 			Reason:  "Success",
 			Message: "User successfully updated",
@@ -415,9 +422,9 @@ func (r *UserReconciler) OnSuccess(ctx context.Context, resource client.Object, 
 	}
 
 	// Update condition status if needed
-	if condition.IsStatusConditionPresentAndEqual(user.Status.Conditions, userCondition, metav1.ConditionFalse) {
+	if condition.IsStatusConditionPresentAndEqual(user.Status.Conditions, UserCondition, metav1.ConditionFalse) {
 		condition.SetStatusCondition(&user.Status.Conditions, metav1.Condition{
-			Type:    userCondition,
+			Type:    UserCondition,
 			Reason:  "Success",
 			Status:  metav1.ConditionTrue,
 			Message: "User already set",

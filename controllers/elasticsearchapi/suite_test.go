@@ -11,9 +11,6 @@ import (
 	"github.com/golang/mock/gomock"
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/suite"
-	elasticsearchcrd "github.com/webcenter-fr/elasticsearch-operator/apis/elasticsearch/v1alpha1"
-	elasticsearchapicrd "github.com/webcenter-fr/elasticsearch-operator/apis/elasticsearchapi/v1alpha1"
-	kibanacrd "github.com/webcenter-fr/elasticsearch-operator/apis/kibana/v1alpha1"
 	"k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/rest"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -21,6 +18,10 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/envtest"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
+
+	elasticsearchcrd "github.com/webcenter-fr/elasticsearch-operator/apis/elasticsearch/v1alpha1"
+	elasticsearchapicrd "github.com/webcenter-fr/elasticsearch-operator/apis/elasticsearchapi/v1alpha1"
+	kibanacrd "github.com/webcenter-fr/elasticsearch-operator/apis/kibana/v1alpha1"
 	//+kubebuilder:scaffold:imports
 	//+kubebuilder:scaffold:imports
 )
@@ -132,6 +133,26 @@ func (t *ElasticsearchapiControllerTestSuite) SetupSuite() {
 	licenseReconciler.SetRecorder(k8sManager.GetEventRecorderFor("elasticsearch-license-controller"))
 	licenseReconciler.SetReconciler(mock.NewMockReconciler(licenseReconciler, t.mockElasticsearchHandler))
 	if err = licenseReconciler.SetupWithManager(k8sManager); err != nil {
+		panic(err)
+	}
+
+	roleReconciler := NewRoleReconciler(k8sClient, scheme.Scheme)
+	roleReconciler.SetLogger(logrus.WithFields(logrus.Fields{
+		"type": "elasticsearchRoleController",
+	}))
+	roleReconciler.SetRecorder(k8sManager.GetEventRecorderFor("elasticsearch-role-controller"))
+	roleReconciler.SetReconciler(mock.NewMockReconciler(roleReconciler, t.mockElasticsearchHandler))
+	if err = roleReconciler.SetupWithManager(k8sManager); err != nil {
+		panic(err)
+	}
+
+	roleMappingReconciler := NewRoleMappingReconciler(k8sClient, scheme.Scheme)
+	roleMappingReconciler.SetLogger(logrus.WithFields(logrus.Fields{
+		"type": "elasticsearchRoleMappingController",
+	}))
+	roleMappingReconciler.SetRecorder(k8sManager.GetEventRecorderFor("elasticsearch-rolemapping-controller"))
+	roleMappingReconciler.SetReconciler(mock.NewMockReconciler(roleMappingReconciler, t.mockElasticsearchHandler))
+	if err = roleMappingReconciler.SetupWithManager(k8sManager); err != nil {
 		panic(err)
 	}
 

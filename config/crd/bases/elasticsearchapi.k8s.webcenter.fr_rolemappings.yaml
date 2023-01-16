@@ -5,14 +5,14 @@ metadata:
   annotations:
     controller-gen.kubebuilder.io/version: v0.9.2
   creationTimestamp: null
-  name: users.elasticsearchapi.k8s.webcenter.fr
+  name: rolemappings.elasticsearchapi.k8s.webcenter.fr
 spec:
   group: elasticsearchapi.k8s.webcenter.fr
   names:
-    kind: User
-    listKind: UserList
-    plural: users
-    singular: user
+    kind: RoleMapping
+    listKind: RoleMappingList
+    plural: rolemappings
+    singular: rolemapping
   scope: Namespaced
   versions:
   - additionalPrinterColumns:
@@ -22,7 +22,7 @@ spec:
     name: v1alpha1
     schema:
       openAPIV3Schema:
-        description: User is the Schema for the users API
+        description: RoleMapping is the Schema for the rolemappings API
         properties:
           apiVersion:
             description: 'APIVersion defines the versioned schema of this representation
@@ -37,7 +37,7 @@ spec:
           metadata:
             type: object
           spec:
-            description: UserSpec defines the desired state of User
+            description: RoleMappingSpec defines the desired state of RoleMapping
             properties:
               elasticsearchRef:
                 description: ElasticsearchRef is the Elasticsearch ref to connect
@@ -85,51 +85,23 @@ spec:
                         type: string
                     type: object
                 type: object
-              email:
-                description: Email is the email user
-                type: string
               enabled:
-                description: Enabled permit to enable user
-                type: boolean
-              fullName:
-                description: FullName is the full name
-                type: string
-              isProtected:
-                description: IsProtected must be set when you manage protected account
-                  like kibana_system Default to false
+                description: Enabled permit to enable or disable the role mapping
                 type: boolean
               metadata:
-                description: Metadata is the meta data Is JSON string
-                type: string
-              passwordHash:
-                description: PasswordHash is the password as hash
+                description: Metadata is the meta data JSON string
                 type: string
               roles:
-                description: Roles is the list of roles
+                description: Roles is the list of role to map
                 items:
                   type: string
                 type: array
-              secretRef:
-                description: CredentialSecretRef permit to set password. Or you can
-                  use password hash
-                properties:
-                  key:
-                    description: key is the key name on secret to read the effective
-                      password
-                    type: string
-                  name:
-                    description: Name is the secret name
-                    type: string
-                required:
-                - key
-                - name
-                type: object
-              username:
-                description: Username is the user name
+              rules:
+                description: Rules is the mapping rules JSON string
                 type: string
             type: object
           status:
-            description: UserStatus defines the observed state of User
+            description: RoleMappingStatus defines the observed state of RoleMapping
             properties:
               conditions:
                 description: List of conditions
@@ -203,13 +175,9 @@ spec:
               health:
                 description: Health
                 type: boolean
-              passwordHash:
-                description: PasswordHash is the current password hash
-                type: string
             required:
             - conditions
             - health
-            - passwordHash
             type: object
         type: object
     served: true

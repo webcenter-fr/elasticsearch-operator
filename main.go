@@ -210,7 +210,6 @@ func main() {
 		panic(err)
 	}
 
-	// Set platform controllers
 	elasticsearchController := elasticsearchcontrollers.NewElasticsearchReconciler(mgr.GetClient(), mgr.GetScheme())
 	elasticsearchController.SetLogger(log.WithFields(logrus.Fields{
 		"type": "ElasticsearchController",
@@ -254,6 +253,29 @@ func main() {
 		setupLog.Error(err, "unable to create controller", "controller", "ElasticsearchLicense")
 		os.Exit(1)
 	}
+
+	elasticsearchRoleController := elasticsearchapicontrollers.NewRoleReconciler(mgr.GetClient(), mgr.GetScheme())
+	elasticsearchRoleController.SetLogger(log.WithFields(logrus.Fields{
+		"type": "ElasticsearchRoleController",
+	}))
+	elasticsearchRoleController.SetRecorder(mgr.GetEventRecorderFor("elasticsearch-role-controller"))
+	elasticsearchRoleController.SetReconciler(elasticsearchRoleController)
+	if err = elasticsearchRoleController.SetupWithManager(mgr); err != nil {
+		setupLog.Error(err, "unable to create controller", "controller", "ElasticsearchRole")
+		os.Exit(1)
+	}
+
+	elasticsearchRoleMappingController := elasticsearchapicontrollers.NewRoleMappingReconciler(mgr.GetClient(), mgr.GetScheme())
+	elasticsearchRoleMappingController.SetLogger(log.WithFields(logrus.Fields{
+		"type": "ElasticsearchRoleMappingController",
+	}))
+	elasticsearchRoleMappingController.SetRecorder(mgr.GetEventRecorderFor("elasticsearch-rolemapping-controller"))
+	elasticsearchRoleMappingController.SetReconciler(elasticsearchRoleMappingController)
+	if err = elasticsearchRoleMappingController.SetupWithManager(mgr); err != nil {
+		setupLog.Error(err, "unable to create controller", "controller", "ElasticsearchRoleMapping")
+		os.Exit(1)
+	}
+
 	//+kubebuilder:scaffold:builder
 
 	if err := mgr.AddHealthzCheck("healthz", healthz.Ping); err != nil {

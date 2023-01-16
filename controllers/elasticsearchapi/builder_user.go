@@ -7,7 +7,7 @@ import (
 	elasticsearchapicrd "github.com/webcenter-fr/elasticsearch-operator/apis/elasticsearchapi/v1alpha1"
 )
 
-// ToUser permit to convert to User object
+// BuildUser permit to convert to User object
 func BuildUser(o *elasticsearchapicrd.User) (user *olivere.XPackSecurityPutUserRequest, err error) {
 	user = &olivere.XPackSecurityPutUserRequest{
 		Enabled:      o.Spec.Enabled,
