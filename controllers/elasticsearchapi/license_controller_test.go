@@ -188,7 +188,7 @@ func doEnableBasicLicenseStep() test.TestStep {
 				if err := c.Get(context.Background(), key, license); err != nil {
 					t.Fatal(err)
 				}
-				if !condition.IsStatusConditionPresentAndEqual(license.Status.Conditions, licenseCondition, metav1.ConditionTrue) {
+				if !condition.IsStatusConditionPresentAndEqual(license.Status.Conditions, LicenseCondition, metav1.ConditionTrue) {
 					return errors.New("Not yet created")
 				}
 				return nil
@@ -199,7 +199,8 @@ func doEnableBasicLicenseStep() test.TestStep {
 			assert.Empty(t, license.Status.ExpireAt)
 			assert.Empty(t, license.Status.LicenseChecksum)
 			assert.Equal(t, "basic", license.Status.LicenseType)
-			assert.True(t, condition.IsStatusConditionPresentAndEqual(license.Status.Conditions, licenseCondition, metav1.ConditionTrue))
+			assert.True(t, condition.IsStatusConditionPresentAndEqual(license.Status.Conditions, LicenseCondition, metav1.ConditionTrue))
+			assert.True(t, license.Status.Health)
 
 			return nil
 		},
@@ -313,7 +314,7 @@ func doUpdateToEnterpriseLicenseStep() test.TestStep {
 				if err := c.Get(context.Background(), key, license); err != nil {
 					t.Fatal(err)
 				}
-				if !condition.IsStatusConditionPresentAndEqual(license.Status.Conditions, licenseCondition, metav1.ConditionTrue) {
+				if !condition.IsStatusConditionPresentAndEqual(license.Status.Conditions, LicenseCondition, metav1.ConditionTrue) {
 					return errors.New("Not yet created")
 				}
 				return nil
@@ -324,7 +325,8 @@ func doUpdateToEnterpriseLicenseStep() test.TestStep {
 			assert.NotEmpty(t, license.Status.ExpireAt)
 			assert.NotEmpty(t, license.Status.LicenseChecksum)
 			assert.Equal(t, "gold", license.Status.LicenseType)
-			assert.True(t, condition.IsStatusConditionPresentAndEqual(license.Status.Conditions, licenseCondition, metav1.ConditionTrue))
+			assert.True(t, condition.IsStatusConditionPresentAndEqual(license.Status.Conditions, LicenseCondition, metav1.ConditionTrue))
+			assert.True(t, license.Status.Health)
 
 			return nil
 		},
@@ -392,7 +394,8 @@ func doUpdateEnterpriseLicenseStep() test.TestStep {
 			assert.NotEmpty(t, license.Status.ExpireAt)
 			assert.NotEqual(t, data["licenseChecksum"], license.Status.LicenseChecksum)
 			assert.Equal(t, "gold", license.Status.LicenseType)
-			assert.True(t, condition.IsStatusConditionPresentAndEqual(license.Status.Conditions, licenseCondition, metav1.ConditionTrue))
+			assert.True(t, condition.IsStatusConditionPresentAndEqual(license.Status.Conditions, LicenseCondition, metav1.ConditionTrue))
+			assert.True(t, license.Status.Health)
 
 			return nil
 		},

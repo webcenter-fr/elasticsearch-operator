@@ -1,9 +1,12 @@
 /*
 Copyright 2022.
+
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
 You may obtain a copy of the License at
+
     http://www.apache.org/licenses/LICENSE-2.0
+
 Unless required by applicable law or agreed to in writing, software
 distributed under the License is distributed on an "AS IS" BASIS,
 WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -21,9 +24,9 @@ import (
 // EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!
 // NOTE: json tags are required.  Any new fields you add must have json tags for the fields to be serialized.
 
-// UserSpec defines the desired state of User
+// RoleMappingSpec defines the desired state of RoleMapping
 // +k8s:openapi-gen=true
-type UserSpec struct {
+type RoleMappingSpec struct {
 	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
 	// Important: Run "make" to regenerate code after modifying this file
 
@@ -31,64 +34,28 @@ type UserSpec struct {
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
 	ElasticsearchRef shared.ElasticsearchRef `json:"elasticsearchRef,omitempty"`
 
-	// Enabled permit to enable user
+	// Enabled permit to enable or disable the role mapping
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
 	Enabled bool `json:"enabled,omitempty"`
 
-	// Username is the user name
-	// +operator-sdk:csv:customresourcedefinitions:type=spec
-	Username string `json:"username,omitempty"`
-
-	// Email is the email user
-	// +operator-sdk:csv:customresourcedefinitions:type=spec
-	// +optional
-	Email string `json:"email,omitempty"`
-
-	// FullName is the full name
-	// +operator-sdk:csv:customresourcedefinitions:type=spec
-	// +optional
-	FullName string `json:"fullName,omitempty"`
-
-	// Metadata is the meta data
-	// Is JSON string
-	// +operator-sdk:csv:customresourcedefinitions:type=spec
-	// +optional
-	Metadata string `json:"metadata,omitempty"`
-
-	// CredentialSecretRef permit to set password. Or you can use password hash
-	// +operator-sdk:csv:customresourcedefinitions:type=spec
-	// +optional
-	SecretRef *UserSecret `json:"secretRef,omitempty"`
-
-	// PasswordHash is the password as hash
-	// +operator-sdk:csv:customresourcedefinitions:type=spec
-	// +optional
-	PasswordHash string `json:"passwordHash,omitempty"`
-
-	// Roles is the list of roles
+	// Roles is the list of role to map
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
 	Roles []string `json:"roles,omitempty"`
 
-	// IsProtected must be set when you manage protected account like kibana_system
-	// Default to false
+	// Rules is the mapping rules
+	// JSON string
+	// +operator-sdk:csv:customresourcedefinitions:type=spec
+	Rules string `json:"rules,omitempty"`
+
+	// Metadata is the meta data
+	// JSON string
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
 	// +optional
-	IsProtected *bool `json:"isProtected,omitempty"`
+	Metadata string `json:"metadata,omitempty"`
 }
 
-type UserSecret struct {
-
-	// Name is the secret name
-	// +operator-sdk:csv:customresourcedefinitions:type=spec
-	Name string `json:"name"`
-
-	// key is the key name on secret to read the effective password
-	// +operator-sdk:csv:customresourcedefinitions:type=spec
-	Key string `json:"key"`
-}
-
-// UserStatus defines the observed state of User
-type UserStatus struct {
+// RoleMappingStatus defines the observed state of RoleMapping
+type RoleMappingStatus struct {
 	// INSERT ADDITIONAL STATUS FIELD - define observed state of cluster
 	// Important: Run "make" to regenerate code after modifying this file
 
@@ -99,35 +66,31 @@ type UserStatus struct {
 	// Health
 	// +operator-sdk:csv:customresourcedefinitions:type=status
 	Health bool `json:"health"`
-
-	// PasswordHash is the current password hash
-	// +operator-sdk:csv:customresourcedefinitions:type=status
-	PasswordHash string `json:"passwordHash"`
 }
 
 //+kubebuilder:object:root=true
 //+kubebuilder:subresource:status
 
-// User is the Schema for the users API
+// RoleMapping is the Schema for the rolemappings API
 // +operator-sdk:csv:customresourcedefinitions:resources={{None,None,None}}
 // +kubebuilder:printcolumn:name="Health",type="boolean",JSONPath=".status.health"
-type User struct {
+type RoleMapping struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
-	Spec   UserSpec   `json:"spec,omitempty"`
-	Status UserStatus `json:"status,omitempty"`
+	Spec   RoleMappingSpec   `json:"spec,omitempty"`
+	Status RoleMappingStatus `json:"status,omitempty"`
 }
 
 //+kubebuilder:object:root=true
 
-// UserList contains a list of User
-type UserList struct {
+// RoleMappingList contains a list of RoleMapping
+type RoleMappingList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`
-	Items           []User `json:"items"`
+	Items           []RoleMapping `json:"items"`
 }
 
 func init() {
-	SchemeBuilder.Register(&User{}, &UserList{})
+	SchemeBuilder.Register(&RoleMapping{}, &RoleMappingList{})
 }

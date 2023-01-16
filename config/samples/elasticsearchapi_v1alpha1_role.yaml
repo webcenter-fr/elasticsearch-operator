@@ -1,0 +1,12 @@
+apiVersion: elasticsearchapi.k8s.webcenter.fr/v1alpha1
+kind: Role
+metadata:
+  labels:
+    app.kubernetes.io/name: role
+    app.kubernetes.io/instance: role-sample
+    app.kubernetes.io/part-of: bootstrap
+    app.kubernetes.io/managed-by: kustomize
+    app.kubernetes.io/created-by: bootstrap
+  name: role-sample
+spec:
+  # TODO(user): Add fields here

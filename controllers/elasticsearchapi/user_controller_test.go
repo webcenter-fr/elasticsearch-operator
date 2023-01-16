@@ -191,7 +191,8 @@ func doCreateUserStep() test.TestStep {
 			if err != nil || isTimeout {
 				t.Fatalf("Failed to get user: %s", err.Error())
 			}
-			assert.True(t, condition.IsStatusConditionPresentAndEqual(user.Status.Conditions, userCondition, metav1.ConditionTrue))
+			assert.True(t, condition.IsStatusConditionPresentAndEqual(user.Status.Conditions, UserCondition, metav1.ConditionTrue))
+			assert.True(t, user.Status.Health)
 
 			return nil
 		},
@@ -235,7 +236,8 @@ func doUpdateUserStep() test.TestStep {
 			if err != nil || isTimeout {
 				t.Fatalf("Failed to get User: %s", err.Error())
 			}
-			assert.True(t, condition.IsStatusConditionPresentAndEqual(user.Status.Conditions, userCondition, metav1.ConditionTrue))
+			assert.True(t, condition.IsStatusConditionPresentAndEqual(user.Status.Conditions, UserCondition, metav1.ConditionTrue))
+			assert.True(t, user.Status.Health)
 
 			return nil
 		},
@@ -279,7 +281,7 @@ func doUpdateUserPasswordHashStep() test.TestStep {
 			if err != nil || isTimeout {
 				t.Fatalf("Failed to get User: %s", err.Error())
 			}
-			assert.True(t, condition.IsStatusConditionPresentAndEqual(user.Status.Conditions, userCondition, metav1.ConditionTrue))
+			assert.True(t, condition.IsStatusConditionPresentAndEqual(user.Status.Conditions, UserCondition, metav1.ConditionTrue))
 
 			return nil
 		},

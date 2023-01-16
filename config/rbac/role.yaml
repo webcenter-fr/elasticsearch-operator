@@ -38,15 +38,7 @@ rules:
   verbs:
   - get
   - list
-  - patch
-  - update
   - watch
-- apiGroups:
-  - elasticsearch.k8s.elastic.co
-  resources:
-  - elasticsearches
-  verbs:
-  - get
 - apiGroups:
   - elasticsearch.k8s.webcenter.fr
   resources:
@@ -76,6 +68,84 @@ rules:
 - apiGroups:
   - elasticsearchapi.k8s.webcenter.fr
   resources:
+  - licenses
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - elasticsearchapi.k8s.webcenter.fr
+  resources:
+  - licenses/finalizers
+  verbs:
+  - update
+- apiGroups:
+  - elasticsearchapi.k8s.webcenter.fr
+  resources:
+  - licenses/status
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
+  - elasticsearchapi.k8s.webcenter.fr
+  resources:
+  - rolemappings
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - elasticsearchapi.k8s.webcenter.fr
+  resources:
+  - rolemappings/finalizers
+  verbs:
+  - update
+- apiGroups:
+  - elasticsearchapi.k8s.webcenter.fr
+  resources:
+  - rolemappings/status
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
+  - elasticsearchapi.k8s.webcenter.fr
+  resources:
+  - roles
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - elasticsearchapi.k8s.webcenter.fr
+  resources:
+  - roles/finalizers
+  verbs:
+  - update
+- apiGroups:
+  - elasticsearchapi.k8s.webcenter.fr
+  resources:
+  - roles/status
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
+  - elasticsearchapi.k8s.webcenter.fr
+  resources:
   - users
   verbs:
   - create
@@ -95,32 +165,6 @@ rules:
   - elasticsearchapi.k8s.webcenter.fr
   resources:
   - users/status
-  verbs:
-  - get
-  - patch
-  - update
-- apiGroups:
-  - elk.k8s.webcenter.fr
-  resources:
-  - licenses
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
-  - elk.k8s.webcenter.fr
-  resources:
-  - licenses/finalizers
-  verbs:
-  - update
-- apiGroups:
-  - elk.k8s.webcenter.fr
-  resources:
-  - licenses/status
   verbs:
   - get
   - patch

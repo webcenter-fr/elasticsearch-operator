@@ -16,6 +16,9 @@ spec:
   scope: Namespaced
   versions:
   - additionalPrinterColumns:
+    - jsonPath: .status.health
+      name: Health
+      type: boolean
     - jsonPath: .status.licenseType
       name: Type
       type: string
@@ -180,6 +183,9 @@ spec:
               expireAt:
                 description: ExpireAt is the expiration date
                 type: string
+              health:
+                description: Health
+                type: boolean
               licenseChecksum:
                 description: LicenseChecksum is the checksum of the current license
                 type: string
@@ -189,6 +195,7 @@ spec:
             required:
             - conditions
             - expireAt
+            - health
             - licenseChecksum
             - licenseType
             type: object

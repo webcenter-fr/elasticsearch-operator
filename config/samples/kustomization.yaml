@@ -4,4 +4,6 @@ resources:
 - kibana_v1alpha1_kibana.yaml
 - elasticsearchapi_v1alpha1_user.yaml
 - elasticsearchapi_v1alpha1_license.yaml
+- elasticsearchapi_v1alpha1_role.yaml
+- elasticsearchapi_v1alpha1_rolemapping.yaml
 #+kubebuilder:scaffold:manifestskustomizesamples

@@ -1,9 +1,12 @@
 /*
 Copyright 2022.
+
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
 You may obtain a copy of the License at
+
     http://www.apache.org/licenses/LICENSE-2.0
+
 Unless required by applicable law or agreed to in writing, software
 distributed under the License is distributed on an "AS IS" BASIS,
 WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -21,9 +24,9 @@ import (
 // EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!
 // NOTE: json tags are required.  Any new fields you add must have json tags for the fields to be serialized.
 
-// UserSpec defines the desired state of User
+// RoleSpec defines the desired state of Role
 // +k8s:openapi-gen=true
-type UserSpec struct {
+type RoleSpec struct {
 	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
 	// Important: Run "make" to regenerate code after modifying this file
 
@@ -31,64 +34,88 @@ type UserSpec struct {
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
 	ElasticsearchRef shared.ElasticsearchRef `json:"elasticsearchRef,omitempty"`
 
-	// Enabled permit to enable user
-	// +operator-sdk:csv:customresourcedefinitions:type=spec
-	Enabled bool `json:"enabled,omitempty"`
-
-	// Username is the user name
-	// +operator-sdk:csv:customresourcedefinitions:type=spec
-	Username string `json:"username,omitempty"`
-
-	// Email is the email user
+	// Cluster is a list of cluster privileges
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
 	// +optional
-	Email string `json:"email,omitempty"`
+	Cluster []string `json:"cluster,omitempty"`
 
-	// FullName is the full name
+	// Indices is the list of indices permissions
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
 	// +optional
-	FullName string `json:"fullName,omitempty"`
+	Indices []RoleSpecIndicesPermissions `json:"indices,omitempty"`
 
-	// Metadata is the meta data
-	// Is JSON string
+	// Applications is the list of application privilege
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
+	// +optional
+	Applications []RoleSpecApplicationPrivileges `json:"applications,omitempty"`
+
+	// RunAs is the list of users that the owners of this role can impersonate
+	// +operator-sdk:csv:customresourcedefinitions:type=spec
+	// +optional
+	RunAs []string `json:"run_as,omitempty"`
+
+	// Global  defining global privileges
+	// JSON string
+	// +operator-sdk:csv:customresourcedefinitions:type=spec
+	// +optional
+	Global string `json:"global,omitempty"`
+
+	// Metadata is optional meta-data
+	// +operator-sdk:csv:customresourcedefinitions:type=spec
+	// JSON string
 	// +optional
 	Metadata string `json:"metadata,omitempty"`
 
-	// CredentialSecretRef permit to set password. Or you can use password hash
+	// TransientMetadata
+	// JSON string
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
 	// +optional
-	SecretRef *UserSecret `json:"secretRef,omitempty"`
-
-	// PasswordHash is the password as hash
-	// +operator-sdk:csv:customresourcedefinitions:type=spec
-	// +optional
-	PasswordHash string `json:"passwordHash,omitempty"`
-
-	// Roles is the list of roles
-	// +operator-sdk:csv:customresourcedefinitions:type=spec
-	Roles []string `json:"roles,omitempty"`
-
-	// IsProtected must be set when you manage protected account like kibana_system
-	// Default to false
-	// +operator-sdk:csv:customresourcedefinitions:type=spec
-	// +optional
-	IsProtected *bool `json:"isProtected,omitempty"`
+	TransientMetadata string `json:"transient_metadata,omitempty"`
 }
 
-type UserSecret struct {
+// ElasticsearchRoleSpecApplicationPrivileges is the application privileges object
+type RoleSpecApplicationPrivileges struct {
 
-	// Name is the secret name
+	// Application
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
-	Name string `json:"name"`
+	Application string `json:"application,omitempty"`
 
-	// key is the key name on secret to read the effective password
+	// Privileges
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
-	Key string `json:"key"`
+	// +optional
+	Privileges []string `json:"privileges,omitempty"`
+
+	// Resources
+	// +operator-sdk:csv:customresourcedefinitions:type=spec
+	// +optional
+	Resources []string `json:"resources,omitempty"`
 }
 
-// UserStatus defines the observed state of User
-type UserStatus struct {
+// RoleSpecIndicesPermissions is the indices permission object
+type RoleSpecIndicesPermissions struct {
+
+	// Names
+	// +operator-sdk:csv:customresourcedefinitions:type=spec
+	Names []string `json:"names,omitempty"`
+
+	// Privileges
+	// +operator-sdk:csv:customresourcedefinitions:type=spec
+	Privileges []string `json:"privileges,omitempty"`
+
+	// FieldSecurity
+	// JSON string
+	// +operator-sdk:csv:customresourcedefinitions:type=spec
+	// +optional
+	FieldSecurity string `json:"field_security,omitempty"`
+
+	// Query
+	// +operator-sdk:csv:customresourcedefinitions:type=spec
+	// +optional
+	Query string `json:"query,omitempty"`
+}
+
+// RoleStatus defines the observed state of Role
+type RoleStatus struct {
 	// INSERT ADDITIONAL STATUS FIELD - define observed state of cluster
 	// Important: Run "make" to regenerate code after modifying this file
 
@@ -99,35 +126,31 @@ type UserStatus struct {
 	// Health
 	// +operator-sdk:csv:customresourcedefinitions:type=status
 	Health bool `json:"health"`
-
-	// PasswordHash is the current password hash
-	// +operator-sdk:csv:customresourcedefinitions:type=status
-	PasswordHash string `json:"passwordHash"`
 }
 
 //+kubebuilder:object:root=true
 //+kubebuilder:subresource:status
 
-// User is the Schema for the users API
+// Role is the Schema for the roles API
 // +operator-sdk:csv:customresourcedefinitions:resources={{None,None,None}}
 // +kubebuilder:printcolumn:name="Health",type="boolean",JSONPath=".status.health"
-type User struct {
+type Role struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
-	Spec   UserSpec   `json:"spec,omitempty"`
-	Status UserStatus `json:"status,omitempty"`
+	Spec   RoleSpec   `json:"spec,omitempty"`
+	Status RoleStatus `json:"status,omitempty"`
 }
 
 //+kubebuilder:object:root=true
 
-// UserList contains a list of User
-type UserList struct {
+// RoleList contains a list of Role
+type RoleList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`
-	Items           []User `json:"items"`
+	Items           []Role `json:"items"`
 }
 
 func init() {
-	SchemeBuilder.Register(&User{}, &UserList{})
+	SchemeBuilder.Register(&Role{}, &RoleList{})
 }
