@@ -156,6 +156,16 @@ func (t *ElasticsearchapiControllerTestSuite) SetupSuite() {
 		panic(err)
 	}
 
+	ilmReconciler := NewIndexLifecyclePolicyReconciler(k8sClient, scheme.Scheme)
+	ilmReconciler.SetLogger(logrus.WithFields(logrus.Fields{
+		"type": "elasticsearchIndexLifecyclePolicyController",
+	}))
+	ilmReconciler.SetRecorder(k8sManager.GetEventRecorderFor("elasticsearch-indexlifecyclepolicy-controller"))
+	ilmReconciler.SetReconciler(mock.NewMockReconciler(ilmReconciler, t.mockElasticsearchHandler))
+	if err = ilmReconciler.SetupWithManager(k8sManager); err != nil {
+		panic(err)
+	}
+
 	go func() {
 		err = k8sManager.Start(ctrl.SetupSignalHandler())
 		if err != nil {

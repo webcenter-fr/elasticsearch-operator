@@ -68,6 +68,32 @@ rules:
 - apiGroups:
   - elasticsearchapi.k8s.webcenter.fr
   resources:
+  - indexlifecyclepolicies
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - elasticsearchapi.k8s.webcenter.fr
+  resources:
+  - indexlifecyclepolicies/finalizers
+  verbs:
+  - update
+- apiGroups:
+  - elasticsearchapi.k8s.webcenter.fr
+  resources:
+  - indexlifecyclepolicies/status
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
+  - elasticsearchapi.k8s.webcenter.fr
+  resources:
   - licenses
   verbs:
   - create

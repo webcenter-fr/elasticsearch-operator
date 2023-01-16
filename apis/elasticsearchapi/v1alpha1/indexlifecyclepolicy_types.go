@@ -24,9 +24,9 @@ import (
 // EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!
 // NOTE: json tags are required.  Any new fields you add must have json tags for the fields to be serialized.
 
-// RoleMappingSpec defines the desired state of RoleMapping
+// IndexLifecyclePolicySpec defines the desired state of IndexLifecyclePolicy
 // +k8s:openapi-gen=true
-type RoleMappingSpec struct {
+type IndexLifecyclePolicySpec struct {
 	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
 	// Important: Run "make" to regenerate code after modifying this file
 
@@ -34,28 +34,13 @@ type RoleMappingSpec struct {
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
 	ElasticsearchRef shared.ElasticsearchRef `json:"elasticsearchRef,omitempty"`
 
-	// Enabled permit to enable or disable the role mapping
+	// Policy is the raw policy on JSON
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
-	Enabled bool `json:"enabled,omitempty"`
-
-	// Roles is the list of role to map
-	// +operator-sdk:csv:customresourcedefinitions:type=spec
-	Roles []string `json:"roles,omitempty"`
-
-	// Rules is the mapping rules
-	// JSON string
-	// +operator-sdk:csv:customresourcedefinitions:type=spec
-	Rules string `json:"rules,omitempty"`
-
-	// Metadata is the meta data
-	// JSON string
-	// +operator-sdk:csv:customresourcedefinitions:type=spec
-	// +optional
-	Metadata string `json:"metadata,omitempty"`
+	Policy string `json:"policy,omitempty"`
 }
 
-// RoleMappingStatus defines the observed state of RoleMapping
-type RoleMappingStatus struct {
+// IndexLifecyclePolicyStatus defines the observed state of IndexLifecyclePolicy
+type IndexLifecyclePolicyStatus struct {
 	// INSERT ADDITIONAL STATUS FIELD - define observed state of cluster
 	// Important: Run "make" to regenerate code after modifying this file
 
@@ -71,27 +56,27 @@ type RoleMappingStatus struct {
 //+kubebuilder:object:root=true
 //+kubebuilder:subresource:status
 
-// RoleMapping is the Schema for the rolemappings API
+// IndexLifecyclePolicy is the Schema for the indexlifecyclepolicies API
 // +operator-sdk:csv:customresourcedefinitions:resources={{None,None,None}}
 // +kubebuilder:printcolumn:name="Health",type="boolean",JSONPath=".status.health"
 // +kubebuilder:printcolumn:name="Age",type="date",JSONPath=".metadata.creationTimestamp"
-type RoleMapping struct {
+type IndexLifecyclePolicy struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
-	Spec   RoleMappingSpec   `json:"spec,omitempty"`
-	Status RoleMappingStatus `json:"status,omitempty"`
+	Spec   IndexLifecyclePolicySpec   `json:"spec,omitempty"`
+	Status IndexLifecyclePolicyStatus `json:"status,omitempty"`
 }
 
 //+kubebuilder:object:root=true
 
-// RoleMappingList contains a list of RoleMapping
-type RoleMappingList struct {
+// IndexLifecyclePolicyList contains a list of IndexLifecyclePolicy
+type IndexLifecyclePolicyList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`
-	Items           []RoleMapping `json:"items"`
+	Items           []IndexLifecyclePolicy `json:"items"`
 }
 
 func init() {
-	SchemeBuilder.Register(&RoleMapping{}, &RoleMappingList{})
+	SchemeBuilder.Register(&IndexLifecyclePolicy{}, &IndexLifecyclePolicyList{})
 }
