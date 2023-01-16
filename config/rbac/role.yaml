@@ -172,6 +172,32 @@ rules:
 - apiGroups:
   - elasticsearchapi.k8s.webcenter.fr
   resources:
+  - snapshotlifecyclepolicies
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - elasticsearchapi.k8s.webcenter.fr
+  resources:
+  - snapshotlifecyclepolicies/finalizers
+  verbs:
+  - update
+- apiGroups:
+  - elasticsearchapi.k8s.webcenter.fr
+  resources:
+  - snapshotlifecyclepolicies/status
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
+  - elasticsearchapi.k8s.webcenter.fr
+  resources:
   - users
   verbs:
   - create
