@@ -298,6 +298,17 @@ func main() {
 		os.Exit(1)
 	}
 
+	elasticsearchSnapshotRepositoryController := elasticsearchapicontrollers.NewSnapshotRepositoryReconciler(mgr.GetClient(), mgr.GetScheme())
+	elasticsearchSnapshotRepositoryController.SetLogger(log.WithFields(logrus.Fields{
+		"type": "ElasticsearchSnapshotRepositoryController",
+	}))
+	elasticsearchSnapshotRepositoryController.SetRecorder(mgr.GetEventRecorderFor("elasticsearch-snapshotrepository-controller"))
+	elasticsearchSnapshotRepositoryController.SetReconciler(elasticsearchSnapshotRepositoryController)
+	if err = elasticsearchSnapshotRepositoryController.SetupWithManager(mgr); err != nil {
+		setupLog.Error(err, "unable to create controller", "controller", "ElasticsearchSnapshotRepository")
+		os.Exit(1)
+	}
+
 	//+kubebuilder:scaffold:builder
 
 	if err := mgr.AddHealthzCheck("healthz", healthz.Ping); err != nil {

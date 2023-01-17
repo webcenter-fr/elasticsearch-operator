@@ -80,4 +80,13 @@ resources:
   kind: SnapshotLifecyclePolicy
   path: github.com/webcenter-fr/elasticsearch-operator/apis/elasticsearchapi/v1alpha1
   version: v1alpha1
+- api:
+    crdVersion: v1
+    namespaced: true
+  controller: true
+  domain: k8s.webcenter.fr
+  group: elasticsearchapi
+  kind: SnapshotRepository
+  path: github.com/webcenter-fr/elasticsearch-operator/apis/elasticsearchapi/v1alpha1
+  version: v1alpha1
 version: "3"

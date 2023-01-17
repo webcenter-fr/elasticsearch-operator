@@ -92,7 +92,7 @@ spec:
                 description: Email is the email user
                 type: string
               enabled:
-                description: Enabled permit to enable user
+                description: Enabled permit to enable user Default to true
                 type: boolean
               fullName:
                 description: FullName is the full name
@@ -128,7 +128,8 @@ spec:
                 - name
                 type: object
               username:
-                description: Username is the user name
+                description: Username is the user name If empty, it use the ressource
+                  name
                 type: string
             type: object
           status:

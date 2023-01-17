@@ -24,9 +24,9 @@ import (
 // EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!
 // NOTE: json tags are required.  Any new fields you add must have json tags for the fields to be serialized.
 
-// RoleMappingSpec defines the desired state of RoleMapping
+// SnapshotRepositorySpec defines the desired state of SnapshotRepository
 // +k8s:openapi-gen=true
-type RoleMappingSpec struct {
+type SnapshotRepositorySpec struct {
 	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
 	// Important: Run "make" to regenerate code after modifying this file
 
@@ -34,35 +34,24 @@ type RoleMappingSpec struct {
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
 	ElasticsearchRef shared.ElasticsearchRef `json:"elasticsearchRef,omitempty"`
 
-	// Name is the custom role mapping name
+	// Name is the custom snapshot repository name
 	// If empty, it use the ressource name
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
 	// +optional
 	Name string `json:"name,omitempty"`
 
-	// Enabled permit to enable or disable the role mapping
-	// Default to true
+	// Type the Snapshot repository type
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
-	Enabled bool `json:"enabled,omitempty"`
+	Type string `json:"type,omitempty"`
 
-	// Roles is the list of role to map
-	// +operator-sdk:csv:customresourcedefinitions:type=spec
-	Roles []string `json:"roles,omitempty"`
-
-	// Rules is the mapping rules
-	// JSON string
-	// +operator-sdk:csv:customresourcedefinitions:type=spec
-	Rules string `json:"rules,omitempty"`
-
-	// Metadata is the meta data
-	// JSON string
+	// The config of snapshot repository
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
 	// +optional
-	Metadata string `json:"metadata,omitempty"`
+	Settings string `json:"settings,omitempty"`
 }
 
-// RoleMappingStatus defines the observed state of RoleMapping
-type RoleMappingStatus struct {
+// SnapshotRepositoryStatus defines the observed state of SnapshotRepository
+type SnapshotRepositoryStatus struct {
 	// INSERT ADDITIONAL STATUS FIELD - define observed state of cluster
 	// Important: Run "make" to regenerate code after modifying this file
 
@@ -78,27 +67,27 @@ type RoleMappingStatus struct {
 //+kubebuilder:object:root=true
 //+kubebuilder:subresource:status
 
-// RoleMapping is the Schema for the rolemappings API
+// SnapshotRepository is the Schema for the snapshotrepositories API
 // +operator-sdk:csv:customresourcedefinitions:resources={{None,None,None}}
 // +kubebuilder:printcolumn:name="Health",type="boolean",JSONPath=".status.health"
 // +kubebuilder:printcolumn:name="Age",type="date",JSONPath=".metadata.creationTimestamp"
-type RoleMapping struct {
+type SnapshotRepository struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
-	Spec   RoleMappingSpec   `json:"spec,omitempty"`
-	Status RoleMappingStatus `json:"status,omitempty"`
+	Spec   SnapshotRepositorySpec   `json:"spec,omitempty"`
+	Status SnapshotRepositoryStatus `json:"status,omitempty"`
 }
 
 //+kubebuilder:object:root=true
 
-// RoleMappingList contains a list of RoleMapping
-type RoleMappingList struct {
+// SnapshotRepositoryList contains a list of SnapshotRepository
+type SnapshotRepositoryList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`
-	Items           []RoleMapping `json:"items"`
+	Items           []SnapshotRepository `json:"items"`
 }
 
 func init() {
-	SchemeBuilder.Register(&RoleMapping{}, &RoleMappingList{})
+	SchemeBuilder.Register(&SnapshotRepository{}, &SnapshotRepositoryList{})
 }

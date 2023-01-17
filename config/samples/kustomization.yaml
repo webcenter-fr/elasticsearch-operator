@@ -8,4 +8,5 @@ resources:
 - elasticsearchapi_v1alpha1_rolemapping.yaml
 - elasticsearchapi_v1alpha1_indexlifecyclepolicy.yaml
 - elasticsearchapi_v1alpha1_snapshotlifecyclepolicy.yaml
+- elasticsearchapi_v1alpha1_snapshotrepository.yaml
 #+kubebuilder:scaffold:manifestskustomizesamples

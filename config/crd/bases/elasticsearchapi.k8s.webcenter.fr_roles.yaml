@@ -144,6 +144,10 @@ spec:
               metadata:
                 description: Metadata is optional meta-data JSON string
                 type: string
+              name:
+                description: Name is the custom role name If empty, it use the ressource
+                  name
+                type: string
               run_as:
                 description: RunAs is the list of users that the owners of this role
                   can impersonate

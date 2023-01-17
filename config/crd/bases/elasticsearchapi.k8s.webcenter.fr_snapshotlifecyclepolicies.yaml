@@ -145,6 +145,10 @@ spec:
               schedule:
                 description: Schedule is schedule policy
                 type: string
+              snapshotLifecyclePolicyName:
+                description: SnapshotLifecyclePolicyName is the custom snapshot lifecycle
+                  policy name If empty, it use the ressource name
+                type: string
             type: object
           status:
             description: SnapshotLifecyclePolicyStatus defines the observed state

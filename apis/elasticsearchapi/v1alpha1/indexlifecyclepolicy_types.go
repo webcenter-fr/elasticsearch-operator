@@ -34,6 +34,12 @@ type IndexLifecyclePolicySpec struct {
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
 	ElasticsearchRef shared.ElasticsearchRef `json:"elasticsearchRef,omitempty"`
 
+	// Name is the custom index lifecycle policy name
+	// If empty, it use the ressource name
+	// +operator-sdk:csv:customresourcedefinitions:type=spec
+	// +optional
+	Name string `json:"name,omitempty"`
+
 	// Policy is the raw policy on JSON
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
 	Policy string `json:"policy,omitempty"`

@@ -34,6 +34,12 @@ type RoleSpec struct {
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
 	ElasticsearchRef shared.ElasticsearchRef `json:"elasticsearchRef,omitempty"`
 
+	// Name is the custom role name
+	// If empty, it use the ressource name
+	// +operator-sdk:csv:customresourcedefinitions:type=spec
+	// +optional
+	Name string `json:"name,omitempty"`
+
 	// Cluster is a list of cluster privileges
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
 	// +optional

@@ -176,6 +176,16 @@ func (t *ElasticsearchapiControllerTestSuite) SetupSuite() {
 		panic(err)
 	}
 
+	snapshotRepositoryReconciler := NewSnapshotRepositoryReconciler(k8sClient, scheme.Scheme)
+	snapshotRepositoryReconciler.SetLogger(logrus.WithFields(logrus.Fields{
+		"type": "elasticsearchSnapshotRepositoryController",
+	}))
+	snapshotRepositoryReconciler.SetRecorder(k8sManager.GetEventRecorderFor("elasticsearch-snapshotrepository-controller"))
+	snapshotRepositoryReconciler.SetReconciler(mock.NewMockReconciler(snapshotRepositoryReconciler, t.mockElasticsearchHandler))
+	if err = snapshotRepositoryReconciler.SetupWithManager(k8sManager); err != nil {
+		panic(err)
+	}
+
 	go func() {
 		err = k8sManager.Start(ctrl.SetupSignalHandler())
 		if err != nil {

@@ -234,6 +234,7 @@ func doCreateSLMStep() test.TestStep {
 				t.Fatalf("Failed to get SLM: %s", err.Error())
 			}
 			assert.True(t, condition.IsStatusConditionPresentAndEqual(slm.Status.Conditions, SnapshotLifecyclePolicyCondition, metav1.ConditionTrue))
+			assert.True(t, slm.Status.Health)
 
 			return nil
 		},
@@ -278,6 +279,7 @@ func doUpdateSLMStep() test.TestStep {
 				t.Fatalf("Failed to get SLM: %s", err.Error())
 			}
 			assert.True(t, condition.IsStatusConditionPresentAndEqual(slm.Status.Conditions, SnapshotLifecyclePolicyCondition, metav1.ConditionTrue))
+			assert.True(t, slm.Status.Health)
 
 			return nil
 		},

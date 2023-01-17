@@ -132,7 +132,7 @@ func (r *SnapshotLifecyclePolicyReconciler) Read(ctx context.Context, resource c
 	esHandler := meta.(eshandler.ElasticsearchHandler)
 
 	// Read SLM policy from Elasticsearch
-	slmPolicy, err := esHandler.SLMGet(slm.Name)
+	slmPolicy, err := esHandler.SLMGet(slm.GetSnapshotLifecyclePolicyName())
 	if err != nil {
 		return res, errors.Wrap(err, "Unable to get SLM policy from Elasticsearch")
 	}
@@ -164,7 +164,7 @@ func (r *SnapshotLifecyclePolicyReconciler) Create(ctx context.Context, resource
 	}
 
 	// Create policy on Elasticsearch
-	if err = esHandler.SLMUpdate(slm.Name, policy); err != nil {
+	if err = esHandler.SLMUpdate(slm.GetSnapshotLifecyclePolicyName(), policy); err != nil {
 		return res, errors.Wrap(err, "Error when update policy")
 	}
 
@@ -186,7 +186,7 @@ func (r *SnapshotLifecyclePolicyReconciler) Delete(ctx context.Context, resource
 	esHandler := meta.(eshandler.ElasticsearchHandler)
 	slm := resource.(*elasticsearchapicrd.SnapshotLifecyclePolicy)
 
-	if err = esHandler.SLMDelete(slm.Name); err != nil {
+	if err = esHandler.SLMDelete(slm.GetSnapshotLifecyclePolicyName()); err != nil {
 		return errors.Wrap(err, "Error when delete elasticsearch SLM policy")
 	}
 

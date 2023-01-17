@@ -133,7 +133,7 @@ func (r *RoleMappingReconciler) Read(ctx context.Context, resource client.Object
 	esHandler := meta.(eshandler.ElasticsearchHandler)
 
 	// Read role mapping from Elasticsearch
-	currentRoleMapping, err := esHandler.RoleMappingGet(rm.Name)
+	currentRoleMapping, err := esHandler.RoleMappingGet(rm.GetRoleMappingName())
 	if err != nil {
 		return res, errors.Wrap(err, "Unable to get role mapping from Elasticsearch")
 	}
@@ -154,7 +154,7 @@ func (r *RoleMappingReconciler) Create(ctx context.Context, resource client.Obje
 	if err != nil {
 		return res, errors.Wrap(err, "Error when convert to elasticsearch role mapping")
 	}
-	if err = esHandler.RoleMappingUpdate(rm.Name, expectedRoleMapping); err != nil {
+	if err = esHandler.RoleMappingUpdate(rm.GetRoleMappingName(), expectedRoleMapping); err != nil {
 		return res, errors.Wrap(err, "Error when update elasticsearch role mapping")
 	}
 
@@ -176,7 +176,7 @@ func (r *RoleMappingReconciler) Delete(ctx context.Context, resource client.Obje
 	esHandler := meta.(eshandler.ElasticsearchHandler)
 	rm := resource.(*elasticsearchapicrd.RoleMapping)
 
-	if err = esHandler.RoleMappingDelete(rm.Name); err != nil {
+	if err = esHandler.RoleMappingDelete(rm.GetRoleMappingName()); err != nil {
 		return errors.Wrap(err, "Error when delete elasticsearch roleMapping")
 	}
 

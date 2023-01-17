@@ -34,6 +34,12 @@ type SnapshotLifecyclePolicySpec struct {
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
 	ElasticsearchRef shared.ElasticsearchRef `json:"elasticsearchRef,omitempty"`
 
+	// SnapshotLifecyclePolicyName is the custom snapshot lifecycle policy name
+	// If empty, it use the ressource name
+	// +operator-sdk:csv:customresourcedefinitions:type=spec
+	// +optional
+	SnapshotLifecyclePolicyName string `json:"snapshotLifecyclePolicyName,omitempty"`
+
 	// Schedule is schedule policy
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
 	Schedule string `json:"schedule,omitempty"`
