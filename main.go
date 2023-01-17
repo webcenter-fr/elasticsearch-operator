@@ -331,6 +331,17 @@ func main() {
 		os.Exit(1)
 	}
 
+	elasticsearchWatchController := elasticsearchapicontrollers.NewWatchReconciler(mgr.GetClient(), mgr.GetScheme())
+	elasticsearchWatchController.SetLogger(log.WithFields(logrus.Fields{
+		"type": "ElasticsearchWatchController",
+	}))
+	elasticsearchWatchController.SetRecorder(mgr.GetEventRecorderFor("elasticsearch-indextemplate-controller"))
+	elasticsearchWatchController.SetReconciler(elasticsearchWatchController)
+	if err = elasticsearchWatchController.SetupWithManager(mgr); err != nil {
+		setupLog.Error(err, "unable to create controller", "controller", "ElasticsearchWatch")
+		os.Exit(1)
+	}
+
 	//+kubebuilder:scaffold:builder
 
 	if err := mgr.AddHealthzCheck("healthz", healthz.Ping); err != nil {
