@@ -53,3 +53,34 @@ func TestIsProtected(t *testing.T) {
 	assert.True(t, o.IsProtected())
 
 }
+
+func TestGetUsername(t *testing.T) {
+	var o *User
+
+	// When Username is set
+	o = &User{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: "default",
+			Name:      "test",
+		},
+		Spec: UserSpec{
+			Username:    "test2",
+			IsProtected: pointer.Bool(false),
+		},
+	}
+
+	assert.Equal(t, "test2", o.GetUsername())
+
+	// When Username isn't set
+	o = &User{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: "default",
+			Name:      "test",
+		},
+		Spec: UserSpec{
+			IsProtected: pointer.Bool(false),
+		},
+	}
+
+	assert.Equal(t, "test", o.GetUsername())
+}

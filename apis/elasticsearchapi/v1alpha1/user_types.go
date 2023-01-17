@@ -32,11 +32,15 @@ type UserSpec struct {
 	ElasticsearchRef shared.ElasticsearchRef `json:"elasticsearchRef,omitempty"`
 
 	// Enabled permit to enable user
+	// Default to true
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
+	// +optional
 	Enabled bool `json:"enabled,omitempty"`
 
 	// Username is the user name
+	// If empty, it use the ressource name
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
+	// +optional
 	Username string `json:"username,omitempty"`
 
 	// Email is the email user

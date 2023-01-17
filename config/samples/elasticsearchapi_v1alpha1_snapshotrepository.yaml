@@ -1,0 +1,12 @@
+apiVersion: elasticsearchapi.k8s.webcenter.fr/v1alpha1
+kind: SnapshotRepository
+metadata:
+  labels:
+    app.kubernetes.io/name: snapshotrepository
+    app.kubernetes.io/instance: snapshotrepository-sample
+    app.kubernetes.io/part-of: bootstrap
+    app.kubernetes.io/managed-by: kustomize
+    app.kubernetes.io/created-by: bootstrap
+  name: snapshotrepository-sample
+spec:
+  # TODO(user): Add fields here

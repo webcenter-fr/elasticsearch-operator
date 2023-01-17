@@ -166,7 +166,7 @@ func (r *UserReconciler) Read(ctx context.Context, resource client.Object, data 
 	esHandler := meta.(eshandler.ElasticsearchHandler)
 
 	// Read user from Elasticsearch
-	currentUser, err := esHandler.UserGet(o.Spec.Username)
+	currentUser, err := esHandler.UserGet(o.GetUsername())
 	if err != nil {
 		return res, errors.Wrap(err, "Unable to get user from Elasticsearch")
 	}
@@ -224,7 +224,7 @@ func (r *UserReconciler) Create(ctx context.Context, resource client.Object, dat
 		passwordHash = user.Spec.PasswordHash
 	}
 
-	if err = esHandler.UserCreate(user.Spec.Username, expectedUser); err != nil {
+	if err = esHandler.UserCreate(user.GetUsername(), expectedUser); err != nil {
 		return res, errors.Wrap(err, "Error when create user")
 	}
 
@@ -270,7 +270,7 @@ func (r *UserReconciler) Update(ctx context.Context, resource client.Object, dat
 		}
 	}
 
-	if err = esHandler.UserUpdate(user.Spec.Username, expectedUser, user.IsProtected()); err != nil {
+	if err = esHandler.UserUpdate(user.GetUsername(), expectedUser, user.IsProtected()); err != nil {
 		return res, errors.Wrap(err, "Error when update user")
 	}
 
@@ -296,7 +296,7 @@ func (r *UserReconciler) Delete(ctx context.Context, resource client.Object, dat
 		return nil
 	}
 
-	if err = esHandler.UserDelete(user.Spec.Username); err != nil {
+	if err = esHandler.UserDelete(user.GetUsername()); err != nil {
 		return errors.Wrap(err, "Error when delete user")
 	}
 

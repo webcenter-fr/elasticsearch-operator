@@ -24,9 +24,9 @@ import (
 // EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!
 // NOTE: json tags are required.  Any new fields you add must have json tags for the fields to be serialized.
 
-// RoleSpec defines the desired state of Role
+// SnapshotLifecyclePolicySpec defines the desired state of SnapshotLifecyclePolicy
 // +k8s:openapi-gen=true
-type RoleSpec struct {
+type SnapshotLifecyclePolicySpec struct {
 	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
 	// Important: Run "make" to regenerate code after modifying this file
 
@@ -34,94 +34,93 @@ type RoleSpec struct {
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
 	ElasticsearchRef shared.ElasticsearchRef `json:"elasticsearchRef,omitempty"`
 
-	// Name is the custom role name
+	// SnapshotLifecyclePolicyName is the custom snapshot lifecycle policy name
 	// If empty, it use the ressource name
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
 	// +optional
+	SnapshotLifecyclePolicyName string `json:"snapshotLifecyclePolicyName,omitempty"`
+
+	// Schedule is schedule policy
+	// +operator-sdk:csv:customresourcedefinitions:type=spec
+	Schedule string `json:"schedule,omitempty"`
+
+	// Name is the template name to generte final name
+	// +operator-sdk:csv:customresourcedefinitions:type=spec
 	Name string `json:"name,omitempty"`
 
-	// Cluster is a list of cluster privileges
+	// Repository is the target repository to store backup
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
-	// +optional
-	Cluster []string `json:"cluster,omitempty"`
+	Repository string `json:"repository,omitempty"`
 
-	// Indices is the list of indices permissions
+	// Config is the config backup
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
-	// +optional
-	Indices []RoleSpecIndicesPermissions `json:"indices,omitempty"`
+	Config SLMConfig `json:"config,omitempty"`
 
-	// Applications is the list of application privilege
+	//Retention is the retention policy
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
 	// +optional
-	Applications []RoleSpecApplicationPrivileges `json:"applications,omitempty"`
-
-	// RunAs is the list of users that the owners of this role can impersonate
-	// +operator-sdk:csv:customresourcedefinitions:type=spec
-	// +optional
-	RunAs []string `json:"run_as,omitempty"`
-
-	// Global  defining global privileges
-	// JSON string
-	// +operator-sdk:csv:customresourcedefinitions:type=spec
-	// +optional
-	Global string `json:"global,omitempty"`
-
-	// Metadata is optional meta-data
-	// +operator-sdk:csv:customresourcedefinitions:type=spec
-	// JSON string
-	// +optional
-	Metadata string `json:"metadata,omitempty"`
-
-	// TransientMetadata
-	// JSON string
-	// +operator-sdk:csv:customresourcedefinitions:type=spec
-	// +optional
-	TransientMetadata string `json:"transient_metadata,omitempty"`
+	Retention *SLMRetention `json:"retention,omitempty"`
 }
 
-// ElasticsearchRoleSpecApplicationPrivileges is the application privileges object
-type RoleSpecApplicationPrivileges struct {
+// SLMConfig is the config sub section
+type SLMConfig struct {
 
-	// Application
-	// +operator-sdk:csv:customresourcedefinitions:type=spec
-	Application string `json:"application,omitempty"`
-
-	// Privileges
+	// ExpendWildcards
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
 	// +optional
-	Privileges []string `json:"privileges,omitempty"`
+	ExpendWildcards string `json:"expand_wildcards,omitempty"`
 
-	// Resources
+	// IgnoreUnavailable
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
 	// +optional
-	Resources []string `json:"resources,omitempty"`
+	IgnoreUnavailable bool `json:"ignore_unavailable,omitempty"`
+
+	// IncludeGlobalState
+	// +operator-sdk:csv:customresourcedefinitions:type=spec
+	// +optional
+	IncludeGlobalState bool `json:"include_global_state,omitempty"`
+
+	// Indices
+	// +operator-sdk:csv:customresourcedefinitions:type=spec
+	// +optional
+	Indices []string `json:"indices,omitempty"`
+
+	// FeatureStates
+	// +operator-sdk:csv:customresourcedefinitions:type=spec
+	// +optional
+	FeatureStates []string `json:"feature_states,omitempty"`
+
+	// Metadata
+	// +operator-sdk:csv:customresourcedefinitions:type=spec
+	// +optional
+	Metadata map[string]string `json:"metadata,omitempty"`
+
+	// Partial
+	// +operator-sdk:csv:customresourcedefinitions:type=spec
+	// +optional
+	Partial bool `json:"partial,omitempty"`
 }
 
-// RoleSpecIndicesPermissions is the indices permission object
-type RoleSpecIndicesPermissions struct {
+type SLMRetention struct {
 
-	// Names
-	// +operator-sdk:csv:customresourcedefinitions:type=spec
-	Names []string `json:"names,omitempty"`
-
-	// Privileges
-	// +operator-sdk:csv:customresourcedefinitions:type=spec
-	Privileges []string `json:"privileges,omitempty"`
-
-	// FieldSecurity
-	// JSON string
+	// ExpireAfter
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
 	// +optional
-	FieldSecurity string `json:"field_security,omitempty"`
+	ExpireAfter string `json:"expire_after,omitempty"`
 
-	// Query
+	// MaxCount
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
 	// +optional
-	Query string `json:"query,omitempty"`
+	MaxCount int64 `json:"max_count,omitempty"`
+
+	// MinCount
+	// +operator-sdk:csv:customresourcedefinitions:type=spec
+	// +optional
+	MinCount int64 `json:"min_count,omitempty"`
 }
 
-// RoleStatus defines the observed state of Role
-type RoleStatus struct {
+// SnapshotLifecyclePolicyStatus defines the observed state of SnapshotLifecyclePolicy
+type SnapshotLifecyclePolicyStatus struct {
 	// INSERT ADDITIONAL STATUS FIELD - define observed state of cluster
 	// Important: Run "make" to regenerate code after modifying this file
 
@@ -137,27 +136,27 @@ type RoleStatus struct {
 //+kubebuilder:object:root=true
 //+kubebuilder:subresource:status
 
-// Role is the Schema for the roles API
+// SnapshotLifecyclePolicy is the Schema for the snapshotlifecyclepolicies API
 // +operator-sdk:csv:customresourcedefinitions:resources={{None,None,None}}
 // +kubebuilder:printcolumn:name="Health",type="boolean",JSONPath=".status.health"
 // +kubebuilder:printcolumn:name="Age",type="date",JSONPath=".metadata.creationTimestamp"
-type Role struct {
+type SnapshotLifecyclePolicy struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
-	Spec   RoleSpec   `json:"spec,omitempty"`
-	Status RoleStatus `json:"status,omitempty"`
+	Spec   SnapshotLifecyclePolicySpec   `json:"spec,omitempty"`
+	Status SnapshotLifecyclePolicyStatus `json:"status,omitempty"`
 }
 
 //+kubebuilder:object:root=true
 
-// RoleList contains a list of Role
-type RoleList struct {
+// SnapshotLifecyclePolicyList contains a list of SnapshotLifecyclePolicy
+type SnapshotLifecyclePolicyList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`
-	Items           []Role `json:"items"`
+	Items           []SnapshotLifecyclePolicy `json:"items"`
 }
 
 func init() {
-	SchemeBuilder.Register(&Role{}, &RoleList{})
+	SchemeBuilder.Register(&SnapshotLifecyclePolicy{}, &SnapshotLifecyclePolicyList{})
 }

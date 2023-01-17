@@ -134,7 +134,7 @@ func (r *IndexLifecyclePolicyReconciler) Read(ctx context.Context, resource clie
 	esHandler := meta.(eshandler.ElasticsearchHandler)
 
 	// Read ILM policy from Elasticsearch
-	ilmPolicy, err := esHandler.ILMGet(ilm.Name)
+	ilmPolicy, err := esHandler.ILMGet(ilm.GetIndexLifecyclePolicyName())
 	if err != nil {
 		return res, errors.Wrap(err, "Unable to get ILM policy from Elasticsearch")
 	}
@@ -155,7 +155,7 @@ func (r *IndexLifecyclePolicyReconciler) Create(ctx context.Context, resource cl
 	if err = json.Unmarshal([]byte(ilm.Spec.Policy), &policy); err != nil {
 		return res, errors.Wrap(err, "Error on Policy format")
 	}
-	if err = esHandler.ILMUpdate(ilm.Name, policy); err != nil {
+	if err = esHandler.ILMUpdate(ilm.GetIndexLifecyclePolicyName(), policy); err != nil {
 		return res, errors.Wrap(err, "Error when update policy")
 	}
 
@@ -177,7 +177,7 @@ func (r *IndexLifecyclePolicyReconciler) Delete(ctx context.Context, resource cl
 	esHandler := meta.(eshandler.ElasticsearchHandler)
 	ilm := resource.(*elasticsearchapicrd.IndexLifecyclePolicy)
 
-	if err = esHandler.ILMDelete(ilm.Name); err != nil {
+	if err = esHandler.ILMDelete(ilm.GetIndexLifecyclePolicyName()); err != nil {
 		return errors.Wrap(err, "Error when delete elasticsearch ILM policy")
 	}
 

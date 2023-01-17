@@ -89,6 +89,10 @@ spec:
                         type: string
                     type: object
                 type: object
+              name:
+                description: Name is the custom index lifecycle policy name If empty,
+                  it use the ressource name
+                type: string
               policy:
                 description: Policy is the raw policy on JSON
                 type: string

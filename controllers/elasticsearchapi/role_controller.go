@@ -132,7 +132,7 @@ func (r *RoleReconciler) Read(ctx context.Context, resource client.Object, data 
 	esHandler := meta.(eshandler.ElasticsearchHandler)
 
 	// Read role
-	currentRole, err := esHandler.RoleGet(role.Name)
+	currentRole, err := esHandler.RoleGet(role.GetRoleName())
 	if err != nil {
 		return res, errors.Wrap(err, "Unable to get role from Elasticsearch")
 	}
@@ -153,7 +153,7 @@ func (r *RoleReconciler) Create(ctx context.Context, resource client.Object, dat
 	if err != nil {
 		return res, errors.Wrap(err, "Error when convert to elasticsearch role")
 	}
-	if err = esHandler.RoleUpdate(role.Name, expectedRole); err != nil {
+	if err = esHandler.RoleUpdate(role.GetRoleName(), expectedRole); err != nil {
 		return res, errors.Wrap(err, "Error when update elasticsearch role")
 	}
 
@@ -175,7 +175,7 @@ func (r *RoleReconciler) Delete(ctx context.Context, resource client.Object, dat
 	esHandler := meta.(eshandler.ElasticsearchHandler)
 	role := resource.(*elasticsearchapicrd.Role)
 
-	if err = esHandler.RoleDelete(role.Name); err != nil {
+	if err = esHandler.RoleDelete(role.GetRoleName()); err != nil {
 		return errors.Wrap(err, "Error when delete elasticsearch role")
 	}
 
