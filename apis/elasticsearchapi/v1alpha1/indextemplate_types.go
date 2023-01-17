@@ -24,9 +24,9 @@ import (
 // EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!
 // NOTE: json tags are required.  Any new fields you add must have json tags for the fields to be serialized.
 
-// SnapshotLifecyclePolicySpec defines the desired state of SnapshotLifecyclePolicy
+// IndexTemplateSpec defines the desired state of IndexTemplate
 // +k8s:openapi-gen=true
-type SnapshotLifecyclePolicySpec struct {
+type IndexTemplateSpec struct {
 	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
 	// Important: Run "make" to regenerate code after modifying this file
 
@@ -34,93 +34,68 @@ type SnapshotLifecyclePolicySpec struct {
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
 	ElasticsearchRef shared.ElasticsearchRef `json:"elasticsearchRef,omitempty"`
 
-	// SnapshotLifecyclePolicyName is the custom snapshot lifecycle policy name
+	// Name is the custom index template name
 	// If empty, it use the ressource name
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
 	// +optional
-	SnapshotLifecyclePolicyName string `json:"snapshotLifecyclePolicyName,omitempty"`
-
-	// Schedule is schedule policy
-	// +operator-sdk:csv:customresourcedefinitions:type=spec
-	Schedule string `json:"schedule,omitempty"`
-
-	// Name is the template name to generte final name
-	// +operator-sdk:csv:customresourcedefinitions:type=spec
 	Name string `json:"name,omitempty"`
 
-	// Repository is the target repository to store backup
+	// IndexPatterns is the list of index to apply this template
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
-	Repository string `json:"repository,omitempty"`
+	IndexPatterns []string `json:"indexPatterns,omitempty"`
 
-	// Config is the config backup
-	// +operator-sdk:csv:customresourcedefinitions:type=spec
-	Config SLMConfig `json:"config,omitempty"`
-
-	//Retention is the retention policy
+	//ComposedOf is the list of component templates
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
 	// +optional
-	Retention *SLMRetention `json:"retention,omitempty"`
+	ComposedOf []string `json:"composedOf,omitempty"`
+
+	//Priority is the priority to apply this template
+	// +operator-sdk:csv:customresourcedefinitions:type=spec
+	// +optional
+	Priority int `json:"priority,omitempty"`
+
+	// The version
+	// +operator-sdk:csv:customresourcedefinitions:type=spec
+	// +optional
+	Version int `json:"version,omitempty"`
+
+	// Template is the template specification
+	// +operator-sdk:csv:customresourcedefinitions:type=spec
+	// +optional
+	Template *IndexTemplateData `json:"template,omitempty"`
+
+	// Meta is extended info as JSON string
+	// +operator-sdk:csv:customresourcedefinitions:type=spec
+	// +optional
+	Meta string `json:"meta,omitempty"`
+
+	// AllowAutoCreate permit to allow auto create index
+	// +operator-sdk:csv:customresourcedefinitions:type=spec
+	// +optional
+	AllowAutoCreate bool `json:"allowAutoCreate,omitempty"`
 }
 
-// SLMConfig is the config sub section
-type SLMConfig struct {
+// IndexTemplateData is the template specification
+type IndexTemplateData struct {
 
-	// ExpendWildcards
+	// Settings is the template setting as JSON string
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
 	// +optional
-	ExpendWildcards string `json:"expandWildcards,omitempty"`
+	Settings string `json:"settings,omitempty"`
 
-	// IgnoreUnavailable
+	// Mappings is the template mapping as JSON string
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
 	// +optional
-	IgnoreUnavailable bool `json:"ignoreUnavailable,omitempty"`
+	Mappings string `json:"mappings,omitempty"`
 
-	// IncludeGlobalState
+	// Aliases is the template alias as JSON string
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
 	// +optional
-	IncludeGlobalState bool `json:"includeGlobalState,omitempty"`
-
-	// Indices
-	// +operator-sdk:csv:customresourcedefinitions:type=spec
-	// +optional
-	Indices []string `json:"indices,omitempty"`
-
-	// FeatureStates
-	// +operator-sdk:csv:customresourcedefinitions:type=spec
-	// +optional
-	FeatureStates []string `json:"featureStates,omitempty"`
-
-	// Metadata
-	// +operator-sdk:csv:customresourcedefinitions:type=spec
-	// +optional
-	Metadata map[string]string `json:"metadata,omitempty"`
-
-	// Partial
-	// +operator-sdk:csv:customresourcedefinitions:type=spec
-	// +optional
-	Partial bool `json:"partial,omitempty"`
+	Aliases string `json:"aliases,omitempty"`
 }
 
-type SLMRetention struct {
-
-	// ExpireAfter
-	// +operator-sdk:csv:customresourcedefinitions:type=spec
-	// +optional
-	ExpireAfter string `json:"expire_after,omitempty"`
-
-	// MaxCount
-	// +operator-sdk:csv:customresourcedefinitions:type=spec
-	// +optional
-	MaxCount int64 `json:"max_count,omitempty"`
-
-	// MinCount
-	// +operator-sdk:csv:customresourcedefinitions:type=spec
-	// +optional
-	MinCount int64 `json:"min_count,omitempty"`
-}
-
-// SnapshotLifecyclePolicyStatus defines the observed state of SnapshotLifecyclePolicy
-type SnapshotLifecyclePolicyStatus struct {
+// IndexTemplateStatus defines the observed state of IndexTemplate
+type IndexTemplateStatus struct {
 	// INSERT ADDITIONAL STATUS FIELD - define observed state of cluster
 	// Important: Run "make" to regenerate code after modifying this file
 
@@ -136,27 +111,27 @@ type SnapshotLifecyclePolicyStatus struct {
 //+kubebuilder:object:root=true
 //+kubebuilder:subresource:status
 
-// SnapshotLifecyclePolicy is the Schema for the snapshotlifecyclepolicies API
+// IndexTemplate is the Schema for the indextemplates API
 // +operator-sdk:csv:customresourcedefinitions:resources={{None,None,None}}
 // +kubebuilder:printcolumn:name="Health",type="boolean",JSONPath=".status.health"
 // +kubebuilder:printcolumn:name="Age",type="date",JSONPath=".metadata.creationTimestamp"
-type SnapshotLifecyclePolicy struct {
+type IndexTemplate struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
-	Spec   SnapshotLifecyclePolicySpec   `json:"spec,omitempty"`
-	Status SnapshotLifecyclePolicyStatus `json:"status,omitempty"`
+	Spec   IndexTemplateSpec   `json:"spec,omitempty"`
+	Status IndexTemplateStatus `json:"status,omitempty"`
 }
 
 //+kubebuilder:object:root=true
 
-// SnapshotLifecyclePolicyList contains a list of SnapshotLifecyclePolicy
-type SnapshotLifecyclePolicyList struct {
+// IndexTemplateList contains a list of IndexTemplate
+type IndexTemplateList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`
-	Items           []SnapshotLifecyclePolicy `json:"items"`
+	Items           []IndexTemplate `json:"items"`
 }
 
 func init() {
-	SchemeBuilder.Register(&SnapshotLifecyclePolicy{}, &SnapshotLifecyclePolicyList{})
+	SchemeBuilder.Register(&IndexTemplate{}, &IndexTemplateList{})
 }

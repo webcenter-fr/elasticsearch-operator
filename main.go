@@ -309,6 +309,28 @@ func main() {
 		os.Exit(1)
 	}
 
+	elasticsearchComponentTemplateController := elasticsearchapicontrollers.NewComponentTemplateReconciler(mgr.GetClient(), mgr.GetScheme())
+	elasticsearchComponentTemplateController.SetLogger(log.WithFields(logrus.Fields{
+		"type": "ElasticsearchComponentTemplateController",
+	}))
+	elasticsearchComponentTemplateController.SetRecorder(mgr.GetEventRecorderFor("elasticsearch-componenttemplate-controller"))
+	elasticsearchComponentTemplateController.SetReconciler(elasticsearchComponentTemplateController)
+	if err = elasticsearchComponentTemplateController.SetupWithManager(mgr); err != nil {
+		setupLog.Error(err, "unable to create controller", "controller", "ElasticsearchComponentTemplate")
+		os.Exit(1)
+	}
+
+	elasticsearchIndexTemplateController := elasticsearchapicontrollers.NewIndexTemplateReconciler(mgr.GetClient(), mgr.GetScheme())
+	elasticsearchIndexTemplateController.SetLogger(log.WithFields(logrus.Fields{
+		"type": "ElasticsearchIndexTemplateController",
+	}))
+	elasticsearchIndexTemplateController.SetRecorder(mgr.GetEventRecorderFor("elasticsearch-indextemplate-controller"))
+	elasticsearchIndexTemplateController.SetReconciler(elasticsearchIndexTemplateController)
+	if err = elasticsearchIndexTemplateController.SetupWithManager(mgr); err != nil {
+		setupLog.Error(err, "unable to create controller", "controller", "ElasticsearchIndexTemplate")
+		os.Exit(1)
+	}
+
 	//+kubebuilder:scaffold:builder
 
 	if err := mgr.AddHealthzCheck("healthz", healthz.Ping); err != nil {

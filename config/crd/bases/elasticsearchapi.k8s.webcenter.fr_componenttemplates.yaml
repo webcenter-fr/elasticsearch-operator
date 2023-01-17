@@ -5,14 +5,14 @@ metadata:
   annotations:
     controller-gen.kubebuilder.io/version: v0.9.2
   creationTimestamp: null
-  name: roles.elasticsearchapi.k8s.webcenter.fr
+  name: componenttemplates.elasticsearchapi.k8s.webcenter.fr
 spec:
   group: elasticsearchapi.k8s.webcenter.fr
   names:
-    kind: Role
-    listKind: RoleList
-    plural: roles
-    singular: role
+    kind: ComponentTemplate
+    listKind: ComponentTemplateList
+    plural: componenttemplates
+    singular: componenttemplate
   scope: Namespaced
   versions:
   - additionalPrinterColumns:
@@ -25,7 +25,7 @@ spec:
     name: v1alpha1
     schema:
       openAPIV3Schema:
-        description: Role is the Schema for the roles API
+        description: ComponentTemplate is the Schema for the componenttemplates API
         properties:
           apiVersion:
             description: 'APIVersion defines the versioned schema of this representation
@@ -40,34 +40,11 @@ spec:
           metadata:
             type: object
           spec:
-            description: RoleSpec defines the desired state of Role
+            description: ComponentTemplateSpec defines the desired state of ComponentTemplate
             properties:
-              applications:
-                description: Applications is the list of application privilege
-                items:
-                  description: ElasticsearchRoleSpecApplicationPrivileges is the application
-                    privileges object
-                  properties:
-                    application:
-                      description: Application
-                      type: string
-                    privileges:
-                      description: Privileges
-                      items:
-                        type: string
-                      type: array
-                    resources:
-                      description: Resources
-                      items:
-                        type: string
-                      type: array
-                  type: object
-                type: array
-              cluster:
-                description: Cluster is a list of cluster privileges
-                items:
-                  type: string
-                type: array
+              aliases:
+                description: Aliases is the component aliases
+                type: string
               elasticsearchRef:
                 description: ElasticsearchRef is the Elasticsearch ref to connect
                   on.
@@ -114,52 +91,19 @@ spec:
                         type: string
                     type: object
                 type: object
-              global:
-                description: Global  defining global privileges JSON string
-                type: string
-              indices:
-                description: Indices is the list of indices permissions
-                items:
-                  description: RoleSpecIndicesPermissions is the indices permission
-                    object
-                  properties:
-                    fieldSecurity:
-                      description: FieldSecurity JSON string
-                      type: string
-                    names:
-                      description: Names
-                      items:
-                        type: string
-                      type: array
-                    privileges:
-                      description: Privileges
-                      items:
-                        type: string
-                      type: array
-                    query:
-                      description: Query
-                      type: string
-                  type: object
-                type: array
-              metadata:
-                description: Metadata is optional meta-data JSON string
+              mappings:
+                description: Mappings is the component mapping
                 type: string
               name:
-                description: Name is the custom role name If empty, it use the ressource
-                  name
+                description: Name is the custom component template name If empty,
+                  it use the ressource name
                 type: string
-              runAs:
-                description: RunAs is the list of users that the owners of this role
-                  can impersonate
-                items:
-                  type: string
-                type: array
-              transientMetadata:
-                description: TransientMetadata JSON string
+              settings:
+                description: Settings is the component setting
                 type: string
             type: object
           status:
-            description: RoleStatus defines the observed state of Role
+            description: ComponentTemplateStatus defines the observed state of ComponentTemplate
             properties:
               conditions:
                 description: List of conditions

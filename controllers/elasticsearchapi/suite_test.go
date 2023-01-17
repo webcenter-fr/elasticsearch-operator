@@ -186,6 +186,26 @@ func (t *ElasticsearchapiControllerTestSuite) SetupSuite() {
 		panic(err)
 	}
 
+	componentTemplateReconciler := NewComponentTemplateReconciler(k8sClient, scheme.Scheme)
+	componentTemplateReconciler.SetLogger(logrus.WithFields(logrus.Fields{
+		"type": "elasticsearchComponentTemplateController",
+	}))
+	componentTemplateReconciler.SetRecorder(k8sManager.GetEventRecorderFor("elasticsearch-componenttemplate-controller"))
+	componentTemplateReconciler.SetReconciler(mock.NewMockReconciler(componentTemplateReconciler, t.mockElasticsearchHandler))
+	if err = componentTemplateReconciler.SetupWithManager(k8sManager); err != nil {
+		panic(err)
+	}
+
+	indexTemplateReconciler := NewIndexTemplateReconciler(k8sClient, scheme.Scheme)
+	indexTemplateReconciler.SetLogger(logrus.WithFields(logrus.Fields{
+		"type": "elasticsearchIndexTemplateController",
+	}))
+	indexTemplateReconciler.SetRecorder(k8sManager.GetEventRecorderFor("elasticsearch-indextemplate-controller"))
+	indexTemplateReconciler.SetReconciler(mock.NewMockReconciler(indexTemplateReconciler, t.mockElasticsearchHandler))
+	if err = indexTemplateReconciler.SetupWithManager(k8sManager); err != nil {
+		panic(err)
+	}
+
 	go func() {
 		err = k8sManager.Start(ctrl.SetupSignalHandler())
 		if err != nil {
