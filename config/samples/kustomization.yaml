@@ -9,4 +9,6 @@ resources:
 - elasticsearchapi_v1alpha1_indexlifecyclepolicy.yaml
 - elasticsearchapi_v1alpha1_snapshotlifecyclepolicy.yaml
 - elasticsearchapi_v1alpha1_snapshotrepository.yaml
+- elasticsearchapi_v1alpha1_indextemplate.yaml
+- elasticsearchapi_v1alpha1_componenttemplate.yaml
 #+kubebuilder:scaffold:manifestskustomizesamples

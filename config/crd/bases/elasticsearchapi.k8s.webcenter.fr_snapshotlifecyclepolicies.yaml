@@ -47,18 +47,18 @@ spec:
               config:
                 description: Config is the config backup
                 properties:
-                  expand_wildcards:
+                  expandWildcards:
                     description: ExpendWildcards
                     type: string
-                  feature_states:
+                  featureStates:
                     description: FeatureStates
                     items:
                       type: string
                     type: array
-                  ignore_unavailable:
+                  ignoreUnavailable:
                     description: IgnoreUnavailable
                     type: boolean
-                  include_global_state:
+                  includeGlobalState:
                     description: IncludeGlobalState
                     type: boolean
                   indices:

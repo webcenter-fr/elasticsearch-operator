@@ -58,7 +58,7 @@ type RoleSpec struct {
 	// RunAs is the list of users that the owners of this role can impersonate
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
 	// +optional
-	RunAs []string `json:"run_as,omitempty"`
+	RunAs []string `json:"runAs,omitempty"`
 
 	// Global  defining global privileges
 	// JSON string
@@ -76,7 +76,7 @@ type RoleSpec struct {
 	// JSON string
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
 	// +optional
-	TransientMetadata string `json:"transient_metadata,omitempty"`
+	TransientMetadata string `json:"transientMetadata,omitempty"`
 }
 
 // ElasticsearchRoleSpecApplicationPrivileges is the application privileges object
@@ -112,7 +112,7 @@ type RoleSpecIndicesPermissions struct {
 	// JSON string
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
 	// +optional
-	FieldSecurity string `json:"field_security,omitempty"`
+	FieldSecurity string `json:"fieldSecurity,omitempty"`
 
 	// Query
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
