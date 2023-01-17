@@ -124,6 +124,24 @@ type TlsSpec struct {
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
 	// +optional
 	CertificateSecretRef *corev1.LocalObjectReference `json:"certificateSecretRef,omitempty"`
+
+	// ValidityDays is the number of days that certificates are valid
+	// +operator-sdk:csv:customresourcedefinitions:type=spec
+	// +optional
+	// +kubebuilder:default: 365
+	ValidityDays *int `json:"validityDays,omitempty"`
+
+	// RenewalDays is the number of days before certificate expire to become effective renewal
+	// +operator-sdk:csv:customresourcedefinitions:type=spec
+	// +optional
+	// +kubebuilder:default: 30
+	RenewalDays *int `json:"renewalDays,omitempty"`
+
+	// KeySize is the key size when generate privates keys
+	// +operator-sdk:csv:customresourcedefinitions:type=spec
+	// +optional
+	// +kubebuilder:default: 2048
+	KeySize *int `json:"keySize,omitempty"`
 }
 
 type SelfSignedCertificateSpec struct {

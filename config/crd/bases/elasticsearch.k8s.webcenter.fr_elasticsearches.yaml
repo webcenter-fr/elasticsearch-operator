@@ -19793,6 +19793,13 @@ spec:
                   enabled:
                     description: Enabled permit to enabled TLS on API
                     type: boolean
+                  keySize:
+                    description: KeySize is the key size when generate privates keys
+                    type: integer
+                  renewalDays:
+                    description: RenewalDays is the number of days before certificate
+                      expire to become effective renewal
+                    type: integer
                   selfSignedCertificate:
                     description: SelfSignedCertificate permit to set self signed certificate
                       settings
@@ -19810,6 +19817,10 @@ spec:
                           type: string
                         type: array
                     type: object
+                  validityDays:
+                    description: ValidityDays is the number of days that certificates
+                      are valid
+                    type: integer
                 type: object
               version:
                 description: Version is the Elasticsearch version to use Default is

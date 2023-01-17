@@ -19,6 +19,22 @@ const (
 // buildTransportPkiSecret generate the secret that store transport PKI
 func BuildTransportPkiSecret(o *elasticsearchcrd.Elasticsearch) (sPki *corev1.Secret, rootCA *goca.CA, err error) {
 
+	var (
+		keySize      int
+		validityDays int
+	)
+
+	if o.Spec.Tls.ValidityDays != nil {
+		validityDays = *o.Spec.Tls.ValidityDays
+	} else {
+		validityDays = certValidity
+	}
+	if o.Spec.Tls.KeySize != nil {
+		keySize = *o.Spec.Tls.KeySize
+	} else {
+		keySize = certKeySize
+	}
+
 	// Generate new PKI
 	rootCAIdentity := goca.Identity{
 		Organization:       o.Name,
@@ -27,8 +43,8 @@ func BuildTransportPkiSecret(o *elasticsearchcrd.Elasticsearch) (sPki *corev1.Se
 		Locality:           "internal",
 		Province:           "internal",
 		Intermediate:       false,
-		Valid:              certValidity,
-		KeyBitSize:         certKeySize,
+		Valid:              validityDays,
+		KeyBitSize:         keySize,
 	}
 
 	rootCA, err = goca.New(fmt.Sprintf("%s-transport", o.Name), rootCAIdentity)
@@ -96,6 +112,22 @@ func BuildApiPkiSecret(o *elasticsearchcrd.Elasticsearch) (sPki *corev1.Secret, 
 		return nil, nil, nil
 	}
 
+	var (
+		keySize      int
+		validityDays int
+	)
+
+	if o.Spec.Tls.ValidityDays != nil {
+		validityDays = *o.Spec.Tls.ValidityDays
+	} else {
+		validityDays = certValidity
+	}
+	if o.Spec.Tls.KeySize != nil {
+		keySize = *o.Spec.Tls.KeySize
+	} else {
+		keySize = certKeySize
+	}
+
 	rootCAIdentity := goca.Identity{
 		Organization:       o.Name,
 		OrganizationalUnit: "api",
@@ -103,8 +135,8 @@ func BuildApiPkiSecret(o *elasticsearchcrd.Elasticsearch) (sPki *corev1.Secret, 
 		Locality:           "internal",
 		Province:           "internal",
 		Intermediate:       false,
-		Valid:              certValidity,
-		KeyBitSize:         certKeySize,
+		Valid:              validityDays,
+		KeyBitSize:         keySize,
 	}
 
 	rootCA, err = goca.New(fmt.Sprintf("%s-api", o.Name), rootCAIdentity)
@@ -163,6 +195,22 @@ func BuildApiSecret(o *elasticsearchcrd.Elasticsearch, rootCA *goca.CA) (s *core
 
 func generateNodeCertificate(o *elasticsearchcrd.Elasticsearch, nodeGroupName, nodeName string, rootCA *goca.CA) (nodeCrt *goca.Certificate, err error) {
 
+	var (
+		keySize      int
+		validityDays int
+	)
+
+	if o.Spec.Tls.ValidityDays != nil {
+		validityDays = *o.Spec.Tls.ValidityDays
+	} else {
+		validityDays = certValidity
+	}
+	if o.Spec.Tls.KeySize != nil {
+		keySize = *o.Spec.Tls.KeySize
+	} else {
+		keySize = certKeySize
+	}
+
 	// Generate nodes certificates
 	apiIdentity := goca.Identity{
 		Organization:       o.Name,
@@ -180,8 +228,8 @@ func generateNodeCertificate(o *elasticsearchcrd.Elasticsearch, nodeGroupName, n
 		IPAddresses: []net.IP{
 			net.ParseIP("127.0.0.1"),
 		},
-		Valid:      certValidity,
-		KeyBitSize: certKeySize,
+		Valid:      validityDays,
+		KeyBitSize: keySize,
 	}
 
 	return rootCA.IssueCertificate(nodeName, apiIdentity)
@@ -191,6 +239,22 @@ func generateApiCertificate(o *elasticsearchcrd.Elasticsearch, rootCA *goca.CA) 
 
 	var ips []net.IP
 	dnsNames := []string{}
+
+	var (
+		keySize      int
+		validityDays int
+	)
+
+	if o.Spec.Tls.ValidityDays != nil {
+		validityDays = *o.Spec.Tls.ValidityDays
+	} else {
+		validityDays = certValidity
+	}
+	if o.Spec.Tls.KeySize != nil {
+		keySize = *o.Spec.Tls.KeySize
+	} else {
+		keySize = certKeySize
+	}
 
 	if o.Spec.Tls.SelfSignedCertificate != nil && len(o.Spec.Tls.SelfSignedCertificate.AltNames) > 0 {
 		dnsNames = append(dnsNames, o.Spec.Tls.SelfSignedCertificate.AltNames...)
@@ -216,8 +280,8 @@ func generateApiCertificate(o *elasticsearchcrd.Elasticsearch, rootCA *goca.CA) 
 		Intermediate:       false,
 		DNSNames:           dnsNames,
 		IPAddresses:        ips,
-		Valid:              certValidity,
-		KeyBitSize:         certKeySize,
+		Valid:              validityDays,
+		KeyBitSize:         keySize,
 	}
 
 	return rootCA.IssueCertificate(o.Name, apiIdentity)
