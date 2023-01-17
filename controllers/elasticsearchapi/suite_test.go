@@ -206,6 +206,16 @@ func (t *ElasticsearchapiControllerTestSuite) SetupSuite() {
 		panic(err)
 	}
 
+	watchReconciler := NewWatchReconciler(k8sClient, scheme.Scheme)
+	watchReconciler.SetLogger(logrus.WithFields(logrus.Fields{
+		"type": "elasticsearchWatchController",
+	}))
+	watchReconciler.SetRecorder(k8sManager.GetEventRecorderFor("elasticsearch-watch-controller"))
+	watchReconciler.SetReconciler(mock.NewMockReconciler(watchReconciler, t.mockElasticsearchHandler))
+	if err = watchReconciler.SetupWithManager(k8sManager); err != nil {
+		panic(err)
+	}
+
 	go func() {
 		err = k8sManager.Start(ctrl.SetupSignalHandler())
 		if err != nil {

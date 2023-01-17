@@ -300,6 +300,32 @@ rules:
   - patch
   - update
 - apiGroups:
+  - elasticsearchapi.k8s.webcenter.fr
+  resources:
+  - watches
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - elasticsearchapi.k8s.webcenter.fr
+  resources:
+  - watches/finalizers
+  verbs:
+  - update
+- apiGroups:
+  - elasticsearchapi.k8s.webcenter.fr
+  resources:
+  - watches/status
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
   - kibana.k8s.webcenter.fr
   resources:
   - kibanas
