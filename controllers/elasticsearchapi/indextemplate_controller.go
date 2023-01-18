@@ -258,6 +258,8 @@ func (r *IndexTemplateReconciler) OnSuccess(ctx context.Context, resource client
 			Message: "Index template successfully created",
 		})
 
+		r.recorder.Event(resource, core.EventTypeNormal, "Completed", "Index template successfully created")
+
 		return nil
 	}
 
@@ -268,6 +270,8 @@ func (r *IndexTemplateReconciler) OnSuccess(ctx context.Context, resource client
 			Reason:  "Success",
 			Message: "Index template successfully updated",
 		})
+
+		r.recorder.Event(resource, core.EventTypeNormal, "Completed", "Index template successfully updated")
 
 		return nil
 	}

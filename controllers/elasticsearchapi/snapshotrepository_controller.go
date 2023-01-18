@@ -269,6 +269,8 @@ func (r *SnapshotRepositoryReconciler) OnSuccess(ctx context.Context, resource c
 			Message: "Snapshot repository successfully created",
 		})
 
+		r.recorder.Event(resource, core.EventTypeNormal, "Completed", "Snapshot repository successfully created")
+
 		return nil
 	}
 
@@ -279,6 +281,8 @@ func (r *SnapshotRepositoryReconciler) OnSuccess(ctx context.Context, resource c
 			Reason:  "Success",
 			Message: "Snapshot repository successfully updated",
 		})
+
+		r.recorder.Event(resource, core.EventTypeNormal, "Completed", "Snapshot repository successfully updated")
 
 		return nil
 	}

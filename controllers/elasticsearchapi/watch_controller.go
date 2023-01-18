@@ -257,6 +257,8 @@ func (r *WatchReconciler) OnSuccess(ctx context.Context, resource client.Object,
 			Message: "Watch successfully created",
 		})
 
+		r.recorder.Event(resource, core.EventTypeNormal, "Completed", "Watch successfully created")
+
 		return nil
 	}
 
@@ -267,6 +269,8 @@ func (r *WatchReconciler) OnSuccess(ctx context.Context, resource client.Object,
 			Reason:  "Success",
 			Message: "Watch successfully updated",
 		})
+
+		r.recorder.Event(resource, core.EventTypeNormal, "Completed", "Watch successfully updated")
 
 		return nil
 	}

@@ -259,6 +259,8 @@ func (r *ComponentTemplateReconciler) OnSuccess(ctx context.Context, resource cl
 			Message: "Component template successfully created",
 		})
 
+		r.recorder.Event(resource, core.EventTypeNormal, "Completed", "Component template successfully created")
+
 		return nil
 	}
 
@@ -269,6 +271,8 @@ func (r *ComponentTemplateReconciler) OnSuccess(ctx context.Context, resource cl
 			Reason:  "Success",
 			Message: "Component template successfully updated",
 		})
+
+		r.recorder.Event(resource, core.EventTypeNormal, "Completed", "Component template successfully updated")
 
 		return nil
 	}

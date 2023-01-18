@@ -257,6 +257,8 @@ func (r *RoleReconciler) OnSuccess(ctx context.Context, resource client.Object, 
 			Message: "Role successfully created",
 		})
 
+		r.recorder.Event(resource, core.EventTypeNormal, "Completed", "Role successfully created")
+
 		return nil
 	}
 
@@ -267,6 +269,8 @@ func (r *RoleReconciler) OnSuccess(ctx context.Context, resource client.Object, 
 			Reason:  "Success",
 			Message: "Role successfully updated",
 		})
+
+		r.recorder.Event(resource, core.EventTypeNormal, "Completed", "Role successfully updated")
 
 		return nil
 	}

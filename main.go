@@ -38,7 +38,6 @@ import (
 
 	elasticsearchcrd "github.com/webcenter-fr/elasticsearch-operator/apis/elasticsearch/v1alpha1"
 	elasticsearchapicrd "github.com/webcenter-fr/elasticsearch-operator/apis/elasticsearchapi/v1alpha1"
-	elasticsearchapiv1alpha1 "github.com/webcenter-fr/elasticsearch-operator/apis/elasticsearchapi/v1alpha1"
 	kibanacrd "github.com/webcenter-fr/elasticsearch-operator/apis/kibana/v1alpha1"
 	elasticsearchcontrollers "github.com/webcenter-fr/elasticsearch-operator/controllers/elasticsearch"
 	elasticsearchapicontrollers "github.com/webcenter-fr/elasticsearch-operator/controllers/elasticsearchapi"
@@ -60,7 +59,6 @@ func init() {
 	utilruntime.Must(elasticsearchcrd.AddToScheme(scheme))
 	utilruntime.Must(kibanacrd.AddToScheme(scheme))
 	utilruntime.Must(elasticsearchapicrd.AddToScheme(scheme))
-	utilruntime.Must(elasticsearchapiv1alpha1.AddToScheme(scheme))
 	//+kubebuilder:scaffold:scheme
 }
 
@@ -243,7 +241,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	elasticsearchLicenseController := elasticsearchapicontrollers.NewUserReconciler(mgr.GetClient(), mgr.GetScheme())
+	elasticsearchLicenseController := elasticsearchapicontrollers.NewLicenseReconciler(mgr.GetClient(), mgr.GetScheme())
 	elasticsearchLicenseController.SetLogger(log.WithFields(logrus.Fields{
 		"type": "ElasticsearchLicenseController",
 	}))

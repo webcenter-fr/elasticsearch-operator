@@ -258,6 +258,8 @@ func (r *RoleMappingReconciler) OnSuccess(ctx context.Context, resource client.O
 			Message: "RoleMapping successfully created",
 		})
 
+		r.recorder.Event(resource, core.EventTypeNormal, "Completed", "Role mapping successfully created")
+
 		return nil
 	}
 
@@ -268,6 +270,8 @@ func (r *RoleMappingReconciler) OnSuccess(ctx context.Context, resource client.O
 			Reason:  "Success",
 			Message: "RoleMapping successfully updated",
 		})
+
+		r.recorder.Event(resource, core.EventTypeNormal, "Completed", "Role mapping successfully updated")
 
 		return nil
 	}

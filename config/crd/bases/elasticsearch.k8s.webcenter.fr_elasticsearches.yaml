@@ -3,7 +3,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.9.2
+    controller-gen.kubebuilder.io/version: v0.11.1
   creationTimestamp: null
   name: elasticsearches.elasticsearch.k8s.webcenter.fr
 spec:
@@ -851,6 +851,23 @@ spec:
                                     that will be copied into the PVC when creating
                                     it. No other fields are allowed and will be rejected
                                     during validation.
+                                  properties:
+                                    annotations:
+                                      additionalProperties:
+                                        type: string
+                                      type: object
+                                    finalizers:
+                                      items:
+                                        type: string
+                                      type: array
+                                    labels:
+                                      additionalProperties:
+                                        type: string
+                                      type: object
+                                    name:
+                                      type: string
+                                    namespace:
+                                      type: string
                                   type: object
                                 spec:
                                   description: The specification for the PersistentVolumeClaim.
@@ -2296,6 +2313,23 @@ spec:
                     properties:
                       metadata:
                         description: 'Standard object''s metadata. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#metadata'
+                        properties:
+                          annotations:
+                            additionalProperties:
+                              type: string
+                            type: object
+                          finalizers:
+                            items:
+                              type: string
+                            type: array
+                          labels:
+                            additionalProperties:
+                              type: string
+                            type: object
+                          name:
+                            type: string
+                          namespace:
+                            type: string
                         type: object
                       spec:
                         description: 'Specification of the desired behavior of the
@@ -8595,6 +8629,23 @@ spec:
                                             that will be copied into the PVC when
                                             creating it. No other fields are allowed
                                             and will be rejected during validation.
+                                          properties:
+                                            annotations:
+                                              additionalProperties:
+                                                type: string
+                                              type: object
+                                            finalizers:
+                                              items:
+                                                type: string
+                                              type: array
+                                            labels:
+                                              additionalProperties:
+                                                type: string
+                                              type: object
+                                            name:
+                                              type: string
+                                            namespace:
+                                              type: string
                                           type: object
                                         spec:
                                           description: The specification for the PersistentVolumeClaim.
@@ -10533,6 +10584,23 @@ spec:
                                         that will be copied into the PVC when creating
                                         it. No other fields are allowed and will be
                                         rejected during validation.
+                                      properties:
+                                        annotations:
+                                          additionalProperties:
+                                            type: string
+                                          type: object
+                                        finalizers:
+                                          items:
+                                            type: string
+                                          type: array
+                                        labels:
+                                          additionalProperties:
+                                            type: string
+                                          type: object
+                                        name:
+                                          type: string
+                                        namespace:
+                                          type: string
                                       type: object
                                     spec:
                                       description: The specification for the PersistentVolumeClaim.
@@ -11950,12 +12018,29 @@ spec:
                           type: object
                           x-kubernetes-map-type: atomic
                       type: object
-                    podSpec:
-                      description: PodSpec is merged with expected pod It usefull
+                    podTemplate:
+                      description: PodTemplate is merged with expected pod It usefull
                         to add some extra properties on pod spec
                       properties:
                         metadata:
                           description: 'Standard object''s metadata. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#metadata'
+                          properties:
+                            annotations:
+                              additionalProperties:
+                                type: string
+                              type: object
+                            finalizers:
+                              items:
+                                type: string
+                              type: array
+                            labels:
+                              additionalProperties:
+                                type: string
+                              type: object
+                            name:
+                              type: string
+                            namespace:
+                              type: string
                           type: object
                         spec:
                           description: 'Specification of the desired behavior of the
@@ -18424,6 +18509,23 @@ spec:
                                               that will be copied into the PVC when
                                               creating it. No other fields are allowed
                                               and will be rejected during validation.
+                                            properties:
+                                              annotations:
+                                                additionalProperties:
+                                                  type: string
+                                                type: object
+                                              finalizers:
+                                                items:
+                                                  type: string
+                                                type: array
+                                              labels:
+                                                additionalProperties:
+                                                  type: string
+                                                type: object
+                                              name:
+                                                type: string
+                                              namespace:
+                                                type: string
                                             type: object
                                           spec:
                                             description: The specification for the

@@ -268,6 +268,8 @@ func (r *SnapshotLifecyclePolicyReconciler) OnSuccess(ctx context.Context, resou
 			Message: "SLM policy successfully created",
 		})
 
+		r.recorder.Event(resource, core.EventTypeNormal, "Completed", "SLM policy successfully created")
+
 		return nil
 	}
 
@@ -278,6 +280,8 @@ func (r *SnapshotLifecyclePolicyReconciler) OnSuccess(ctx context.Context, resou
 			Reason:  "Success",
 			Message: "SLM policy successfully updated",
 		})
+
+		r.recorder.Event(resource, core.EventTypeNormal, "Completed", "SLM policy successfully updated")
 
 		return nil
 	}

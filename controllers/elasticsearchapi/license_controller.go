@@ -194,14 +194,17 @@ func (r *LicenseReconciler) Read(ctx context.Context, resource client.Object, da
 		}
 		data["expectedLicense"] = &expectedLicense.License
 		data["rawLicense"] = string(licenseB)
+
 	}
 
 	// Read the current license from Elasticsearch
+
 	licenseInfo, err := esHandler.LicenseGet()
 	if err != nil {
 		return res, errors.Wrap(err, "Unable to get current license from Elasticsearch")
 	}
 	data["currentLicense"] = licenseInfo
+
 	return res, nil
 }
 
@@ -358,6 +361,8 @@ func (r *LicenseReconciler) OnSuccess(ctx context.Context, resource client.Objec
 			Message: fmt.Sprintf("License of type %s successfully created", license.Status.LicenseType),
 		})
 
+		r.recorder.Event(resource, core.EventTypeNormal, "Completed", "License successfully created")
+
 		return nil
 	}
 
@@ -368,6 +373,8 @@ func (r *LicenseReconciler) OnSuccess(ctx context.Context, resource client.Objec
 			Reason:  "Success",
 			Message: fmt.Sprintf("License of type %s successfully updated", license.Status.LicenseType),
 		})
+
+		r.recorder.Event(resource, core.EventTypeNormal, "Completed", "License successfully updated")
 
 		return nil
 	}

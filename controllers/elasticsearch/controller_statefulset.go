@@ -272,7 +272,7 @@ func (r *StatefulsetReconciler) Diff(ctx context.Context, resource client.Object
 			if currentSts.Name == expectedSts.Name {
 				isFound = true
 
-				patchResult, err := patch.DefaultPatchMaker.Calculate(&currentSts, &expectedSts, patch.CleanMetadata(), patch.IgnoreStatusFields())
+				patchResult, err := patch.DefaultPatchMaker.Calculate(&currentSts, &expectedSts, patch.CleanMetadata(), patch.IgnoreStatusFields(), patch.IgnoreVolumeClaimTemplateTypeMetaAndStatus())
 				if err != nil {
 					return diff, res, errors.Wrapf(err, "Error when diffing statefulset %s", currentSts.Name)
 				}

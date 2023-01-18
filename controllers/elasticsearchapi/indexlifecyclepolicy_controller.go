@@ -258,6 +258,8 @@ func (r *IndexLifecyclePolicyReconciler) OnSuccess(ctx context.Context, resource
 			Message: "ILM policy successfully created",
 		})
 
+		r.recorder.Event(resource, core.EventTypeNormal, "Completed", "ILM policy successfully created")
+
 		return nil
 	}
 
@@ -268,6 +270,8 @@ func (r *IndexLifecyclePolicyReconciler) OnSuccess(ctx context.Context, resource
 			Reason:  "Success",
 			Message: "ILM policy successfully updated",
 		})
+
+		r.recorder.Event(resource, core.EventTypeNormal, "Completed", "ILM policy successfully updated")
 
 		return nil
 	}

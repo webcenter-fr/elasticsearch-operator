@@ -172,14 +172,6 @@ func BuildStatefulsets(es *elasticsearchcrd.Elasticsearch, keystoreSecret *corev
 					Value: computeJavaOpts(es, &nodeGroup),
 				},
 				{
-					Name:  "cluster.initial_master_nodes",
-					Value: computeInitialMasterNodes(es),
-				},
-				{
-					Name:  "discovery.seed_hosts",
-					Value: computeDiscoverySeedHosts(es),
-				},
-				{
 					Name:  "cluster.name",
 					Value: es.Name,
 				},
@@ -218,6 +210,18 @@ func BuildStatefulsets(es *elasticsearchcrd.Elasticsearch, keystoreSecret *corev
 				{
 					Name:  "discovery.type",
 					Value: "single-node",
+				},
+			}, k8sbuilder.Merge)
+		} else {
+			// Cluster with multiple nodes
+			cb.WithEnv([]corev1.EnvVar{
+				{
+					Name:  "cluster.initial_master_nodes",
+					Value: computeInitialMasterNodes(es),
+				},
+				{
+					Name:  "discovery.seed_hosts",
+					Value: computeDiscoverySeedHosts(es),
 				},
 			}, k8sbuilder.Merge)
 		}
@@ -480,7 +484,7 @@ fi
 set -euo pipefail
 
 elasticsearch-keystore create
-for i in /mnt/keystoreSecrets/*/*; do
+for i in /mnt/keystoreSecrets/*; do
     key=$(basename $i)
     echo "Adding file $i to keystore key $key"
     elasticsearch-keystore add-file "$key" "$i"

@@ -220,6 +220,7 @@ type GlobalNodeGroupSpec struct {
 	// PodTemplate is merged with expected pod
 	// It usefull to add some extra properties on pod spec
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
+	// +kubebuilder:validation:Optional
 	// +optional
 	PodTemplate *corev1.PodTemplateSpec `json:"podTemplate,omitempty"`
 
@@ -331,11 +332,11 @@ type NodeGroupSpec struct {
 	// +optional
 	EnvFrom []corev1.EnvFromSource `json:"envFrom,omitempty"`
 
-	// PodSpec is merged with expected pod
+	// PodTemplate is merged with expected pod
 	// It usefull to add some extra properties on pod spec
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
 	// +optional
-	PodTemplate *corev1.PodTemplateSpec `json:"podSpec,omitempty"`
+	PodTemplate *corev1.PodTemplateSpec `json:"podTemplate,omitempty"`
 
 	// PodDisruptionBudget is the pod disruption budget policy
 	// +operator-sdk:csv:customresourcedefinitions:type=spec

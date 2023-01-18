@@ -83,12 +83,8 @@ spec:
             fieldRef:
               apiVersion: v1
               fieldPath: metadata.namespace
-        - name: cluster.initial_master_nodes
-          value: test-all-es-0
         - name: ELASTICSEARCH_JAVA_OPTS
           value: ''
-        - name: discovery.seed_hosts
-          value: test-all-headless-es
         - name: cluster.name
           value: test
         - name: network.host

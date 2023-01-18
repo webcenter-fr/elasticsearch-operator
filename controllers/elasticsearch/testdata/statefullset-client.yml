@@ -214,7 +214,7 @@ spec:
             set -euo pipefail
 
             elasticsearch-keystore create
-            for i in /mnt/keystoreSecrets/*/*; do
+            for i in /mnt/keystoreSecrets/*; do
                 key=$(basename $i)
                 echo "Adding file $i to keystore key $key"
                 elasticsearch-keystore add-file "$key" "$i"

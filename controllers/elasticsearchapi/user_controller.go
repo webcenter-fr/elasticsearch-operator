@@ -407,6 +407,8 @@ func (r *UserReconciler) OnSuccess(ctx context.Context, resource client.Object, 
 			Message: "User successfully created",
 		})
 
+		r.recorder.Event(resource, core.EventTypeNormal, "Completed", "User successfully created")
+
 		return nil
 	}
 
@@ -417,6 +419,8 @@ func (r *UserReconciler) OnSuccess(ctx context.Context, resource client.Object, 
 			Reason:  "Success",
 			Message: "User successfully updated",
 		})
+
+		r.recorder.Event(resource, core.EventTypeNormal, "Completed", "User successfully updated")
 
 		return nil
 	}
