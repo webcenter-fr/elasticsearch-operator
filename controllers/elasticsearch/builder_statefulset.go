@@ -562,6 +562,10 @@ cp -a /usr/share/elasticsearch/config/elasticsearch.keystore /mnt/keystore/
 					Name:      "api-tls",
 					MountPath: "/mnt/certs/api",
 				},
+				{
+					Name:      "keystore",
+					MountPath: "/mnt/keystore",
+				},
 			},
 		})
 		var command strings.Builder
