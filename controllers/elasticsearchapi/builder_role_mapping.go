@@ -11,8 +11,9 @@ import (
 func BuildRoleMapping(o *elasticsearchapicrd.RoleMapping) (rm *olivere.XPackSecurityRoleMapping, err error) {
 
 	rm = &olivere.XPackSecurityRoleMapping{
-		Enabled: o.Spec.Enabled,
-		Roles:   o.Spec.Roles,
+		Enabled:  o.Spec.Enabled,
+		Roles:    o.Spec.Roles,
+		Metadata: make(map[string]any), // Fix issue on V8, metadata can't be null
 	}
 
 	if o.Spec.Rules != "" {
@@ -24,11 +25,9 @@ func BuildRoleMapping(o *elasticsearchapicrd.RoleMapping) (rm *olivere.XPackSecu
 	}
 
 	if o.Spec.Metadata != "" {
-		meta := make(map[string]any)
-		if err := json.Unmarshal([]byte(o.Spec.Metadata), &meta); err != nil {
+		if err := json.Unmarshal([]byte(o.Spec.Metadata), &rm.Metadata); err != nil {
 			return nil, err
 		}
-		rm.Metadata = meta
 	}
 
 	return rm, nil

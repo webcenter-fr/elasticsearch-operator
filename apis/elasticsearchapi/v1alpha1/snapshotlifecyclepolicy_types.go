@@ -106,17 +106,17 @@ type SLMRetention struct {
 	// ExpireAfter
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
 	// +optional
-	ExpireAfter string `json:"expire_after,omitempty"`
+	ExpireAfter string `json:"expireAfter,omitempty"`
 
 	// MaxCount
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
 	// +optional
-	MaxCount int64 `json:"max_count,omitempty"`
+	MaxCount int64 `json:"maxCount,omitempty"`
 
 	// MinCount
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
 	// +optional
-	MinCount int64 `json:"min_count,omitempty"`
+	MinCount int64 `json:"minCount,omitempty"`
 }
 
 // SnapshotLifecyclePolicyStatus defines the observed state of SnapshotLifecyclePolicy

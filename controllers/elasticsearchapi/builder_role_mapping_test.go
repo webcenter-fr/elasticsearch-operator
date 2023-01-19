@@ -73,6 +73,7 @@ func TestBuildRoleMapping(t *testing.T) {
 				},
 			},
 		},
+		Metadata: map[string]any{},
 	}
 
 	rm, err = BuildRoleMapping(o)

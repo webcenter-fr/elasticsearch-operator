@@ -130,14 +130,14 @@ spec:
               retention:
                 description: Retention is the retention policy
                 properties:
-                  expire_after:
+                  expireAfter:
                     description: ExpireAfter
                     type: string
-                  max_count:
+                  maxCount:
                     description: MaxCount
                     format: int64
                     type: integer
-                  min_count:
+                  minCount:
                     description: MinCount
                     format: int64
                     type: integer

@@ -4,10 +4,13 @@ import (
 	"context"
 	"crypto/tls"
 	"fmt"
+	"net"
 	"net/http"
+	"time"
 
 	eshandler "github.com/disaster37/es-handler/v8"
 	"github.com/disaster37/operator-sdk-extra/pkg/controller"
+	"github.com/elastic/elastic-transport-go/v8/elastictransport"
 	elastic "github.com/elastic/go-elasticsearch/v8"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
@@ -112,12 +115,18 @@ func GetElasticsearchHandler(ctx context.Context, o shared.ElasticsearchRef, cli
 	}
 
 	transport := &http.Transport{
-		Proxy:           http.ProxyFromEnvironment,
-		TLSClientConfig: &tls.Config{},
+		Proxy:                 http.ProxyFromEnvironment,
+		TLSClientConfig:       &tls.Config{},
+		ResponseHeaderTimeout: 10 * time.Second,
+		DialContext:           (&net.Dialer{Timeout: 10 * time.Second}).DialContext,
 	}
 	cfg := elastic.Config{
 		Transport: transport,
 		Addresses: hosts,
+	}
+
+	if log.Level == logrus.DebugLevel {
+		cfg.Logger = &elastictransport.JSONLogger{EnableRequestBody: true, EnableResponseBody: true, Output: log.Logger.Out}
 	}
 
 	if isManaged {
