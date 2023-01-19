@@ -125,7 +125,7 @@ func GetElasticsearchHandler(ctx context.Context, o shared.ElasticsearchRef, cli
 		Addresses: hosts,
 	}
 
-	if log.Level == logrus.DebugLevel {
+	if log.Logger.GetLevel() == logrus.DebugLevel {
 		cfg.Logger = &elastictransport.JSONLogger{EnableRequestBody: true, EnableResponseBody: true, Output: log.Logger.Out}
 	}
 
