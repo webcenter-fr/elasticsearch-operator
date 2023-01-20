@@ -220,3 +220,8 @@ func GetElasticsearchNameFromSecretApiTlsName(secretApiTlsName string) (elastics
 
 	return ""
 }
+
+// GetNetworkPolicyName return the name for network policy
+func GetNetworkPolicyName(es *elasticsearchcrd.Elasticsearch) string {
+	return fmt.Sprintf("%s-allow-api-es", es.Name)
+}

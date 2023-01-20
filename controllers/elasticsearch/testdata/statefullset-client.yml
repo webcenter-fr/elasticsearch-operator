@@ -325,6 +325,8 @@ spec:
             mountPath: /mnt/data
           - name: plugin
             mountPath: /mnt/plugins
+          - name: keystore
+            mountPath: /mnt/keystore
         securityContext:
           runAsUser: 0
         resources:

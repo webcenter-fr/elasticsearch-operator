@@ -260,6 +260,8 @@ spec:
           - name: elasticsearch-config
             mountPath: /mnt/configmap/elasticsearch.yml
             subPath: elasticsearch.yml
+          - name: keystore
+            mountPath: /mnt/keystore
         securityContext:
           runAsUser: 0
       securityContext:

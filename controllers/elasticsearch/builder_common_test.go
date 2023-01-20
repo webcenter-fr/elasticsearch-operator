@@ -497,3 +497,15 @@ func TestGetLicenseName(t *testing.T) {
 func TestGetElasticsearchNameFromSecretApiTlsName(t *testing.T) {
 	assert.Equal(t, "test", GetElasticsearchNameFromSecretApiTlsName("test-tls-api-es"))
 }
+
+func TestGetNetworkPolicyName(t *testing.T) {
+	o := &elasticsearchcrd.Elasticsearch{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: "default",
+			Name:      "test",
+		},
+		Spec: elasticsearchcrd.ElasticsearchSpec{},
+	}
+
+	assert.Equal(t, "test-allow-api-es", GetNetworkPolicyName(o))
+}

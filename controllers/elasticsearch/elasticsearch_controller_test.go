@@ -108,6 +108,7 @@ func doCreateElasticsearchStep() test.TestStep {
 				s    *corev1.Secret
 				svc  *corev1.Service
 				i    *networkingv1.Ingress
+				np   *networkingv1.NetworkPolicy
 				cm   *corev1.ConfigMap
 				pdb  *policyv1.PodDisruptionBudget
 				sts  *appv1.StatefulSet
@@ -235,6 +236,14 @@ func doCreateElasticsearchStep() test.TestStep {
 				assert.NotEmpty(t, pdb.Annotations[patch.LastAppliedConfig])
 			}
 
+			// Network policy must exist
+			np = &networkingv1.NetworkPolicy{}
+			if err = c.Get(context.Background(), types.NamespacedName{Namespace: key.Namespace, Name: GetNetworkPolicyName(es)}, np); err != nil {
+				t.Fatal(err)
+			}
+			assert.NotEmpty(t, np.OwnerReferences)
+			assert.NotEmpty(t, np.Annotations[patch.LastAppliedConfig])
+
 			// Statefulset musts exist
 			for _, nodeGroup := range es.Spec.NodeGroups {
 				sts = &appv1.StatefulSet{}
@@ -300,6 +309,7 @@ func doUpdateElasticsearchStep() test.TestStep {
 				s    *corev1.Secret
 				svc  *corev1.Service
 				i    *networkingv1.Ingress
+				np   *networkingv1.NetworkPolicy
 				cm   *corev1.ConfigMap
 				pdb  *policyv1.PodDisruptionBudget
 				sts  *appv1.StatefulSet
@@ -441,6 +451,15 @@ func doUpdateElasticsearchStep() test.TestStep {
 				assert.NotEmpty(t, pdb.Annotations[patch.LastAppliedConfig])
 			}
 
+			// Network policy must exist
+			np = &networkingv1.NetworkPolicy{}
+			if err = c.Get(context.Background(), types.NamespacedName{Namespace: key.Namespace, Name: GetNetworkPolicyName(es)}, np); err != nil {
+				t.Fatal(err)
+			}
+			assert.Equal(t, "fu", np.Labels["test"])
+			assert.NotEmpty(t, np.OwnerReferences)
+			assert.NotEmpty(t, np.Annotations[patch.LastAppliedConfig])
+
 			// Statefulset musts exist
 			for _, nodeGroup := range es.Spec.NodeGroups {
 				sts = &appv1.StatefulSet{}
@@ -512,6 +531,7 @@ func doUpdateElasticsearchIncreaseNodeGroupStep() test.TestStep {
 				s    *corev1.Secret
 				svc  *corev1.Service
 				i    *networkingv1.Ingress
+				np   *networkingv1.NetworkPolicy
 				cm   *corev1.ConfigMap
 				pdb  *policyv1.PodDisruptionBudget
 				sts  *appv1.StatefulSet
@@ -641,6 +661,14 @@ func doUpdateElasticsearchIncreaseNodeGroupStep() test.TestStep {
 				assert.NotEmpty(t, pdb.Annotations[patch.LastAppliedConfig])
 			}
 
+			// Network policy must exist
+			np = &networkingv1.NetworkPolicy{}
+			if err = c.Get(context.Background(), types.NamespacedName{Namespace: key.Namespace, Name: GetNetworkPolicyName(es)}, np); err != nil {
+				t.Fatal(err)
+			}
+			assert.NotEmpty(t, np.OwnerReferences)
+			assert.NotEmpty(t, np.Annotations[patch.LastAppliedConfig])
+
 			// Statefulset musts exist
 			for _, nodeGroup := range es.Spec.NodeGroups {
 				sts = &appv1.StatefulSet{}
@@ -707,6 +735,7 @@ func doUpdateElasticsearchDecreaseNodeGroupStep() test.TestStep {
 				s    *corev1.Secret
 				svc  *corev1.Service
 				i    *networkingv1.Ingress
+				np   *networkingv1.NetworkPolicy
 				cm   *corev1.ConfigMap
 				pdb  *policyv1.PodDisruptionBudget
 				sts  *appv1.StatefulSet
@@ -885,6 +914,14 @@ func doUpdateElasticsearchDecreaseNodeGroupStep() test.TestStep {
 
 			}
 
+			// Network policy must exist
+			np = &networkingv1.NetworkPolicy{}
+			if err = c.Get(context.Background(), types.NamespacedName{Namespace: key.Namespace, Name: GetNetworkPolicyName(es)}, np); err != nil {
+				t.Fatal(err)
+			}
+			assert.NotEmpty(t, np.OwnerReferences)
+			assert.NotEmpty(t, np.Annotations[patch.LastAppliedConfig])
+
 			// Statefulset musts exist
 			for _, nodeGroup := range es.Spec.NodeGroups {
 				if nodeGroup.Name == "data" {
@@ -976,6 +1013,7 @@ func doUpdateElasticsearchAddLicenseStep() test.TestStep {
 				s       *corev1.Secret
 				svc     *corev1.Service
 				i       *networkingv1.Ingress
+				np      *networkingv1.NetworkPolicy
 				cm      *corev1.ConfigMap
 				pdb     *policyv1.PodDisruptionBudget
 				sts     *appv1.StatefulSet
@@ -1154,6 +1192,14 @@ func doUpdateElasticsearchAddLicenseStep() test.TestStep {
 				}
 
 			}
+
+			// Network policy must exist
+			np = &networkingv1.NetworkPolicy{}
+			if err = c.Get(context.Background(), types.NamespacedName{Namespace: key.Namespace, Name: GetNetworkPolicyName(es)}, np); err != nil {
+				t.Fatal(err)
+			}
+			assert.NotEmpty(t, np.OwnerReferences)
+			assert.NotEmpty(t, np.Annotations[patch.LastAppliedConfig])
 
 			// Statefulset musts exist
 			for _, nodeGroup := range es.Spec.NodeGroups {
