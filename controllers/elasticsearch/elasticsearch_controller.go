@@ -137,6 +137,13 @@ func (r *ElasticsearchReconciler) Reconcile(ctx context.Context, req ctrl.Reques
 		}),
 	})
 
+	networkPolicyReconciler := NewNetworkPolicyReconciler(r.Client, r.Scheme, common.Reconciler{
+		Recorder: r.GetRecorder(),
+		Log: r.GetLogger().WithFields(logrus.Fields{
+			"phase": "networkPolicy",
+		}),
+	})
+
 	credentialReconciler := NewCredentialReconciler(r.Client, r.Scheme, common.Reconciler{
 		Recorder: r.GetRecorder(),
 		Log: r.GetLogger().WithFields(logrus.Fields{
@@ -171,6 +178,7 @@ func (r *ElasticsearchReconciler) Reconcile(ctx context.Context, req ctrl.Reques
 		configmapReconciler,
 		serviceReconciler,
 		pdbReconciler,
+		networkPolicyReconciler,
 		statefulsetReconciler,
 		ingressReconciler,
 		loadBalancerReconciler,
@@ -188,6 +196,7 @@ func (h *ElasticsearchReconciler) SetupWithManager(mgr ctrl.Manager) error {
 		Owns(&networkingv1.Ingress{}).
 		Owns(&corev1.Service{}).
 		Owns(&policyv1.PodDisruptionBudget{}).
+		Owns(&networkingv1.NetworkPolicy{}).
 		Owns(&appv1.StatefulSet{}).
 		Owns(&elasticsearchapicrd.User{}).
 		Owns(&elasticsearchapicrd.License{}).

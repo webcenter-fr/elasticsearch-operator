@@ -23,6 +23,7 @@ spec:
         kubectl.kubernetes.io/default-container: manager
       labels:
         control-plane: controller-manager
+        elasticsearch-operator.k8s.webcenter.fr: "true"
     spec:
       securityContext:
         runAsNonRoot: true
@@ -40,6 +41,12 @@ spec:
         - --leader-elect
         image: controller:latest
         name: manager
+        env:
+        - name: POD_NAME
+          valueFrom:
+            fieldRef:
+              apiVersion: v1
+              fieldPath: metadata.name
         securityContext:
           allowPrivilegeEscalation: false
           capabilities:
