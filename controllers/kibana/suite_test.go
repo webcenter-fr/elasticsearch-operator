@@ -85,6 +85,27 @@ func (t *KibanaControllerTestSuite) SetupSuite() {
 	k8sClient := k8sManager.GetClient()
 	t.k8sClient = k8sClient
 
+	// Add indexers on Elasticsearch to track secret change
+	if err := k8sManager.GetFieldIndexer().IndexField(context.Background(), &elasticsearchcrd.Elasticsearch{}, "spec.tls.certificateSecretRef.name", func(o client.Object) []string {
+		p := o.(*elasticsearchcrd.Elasticsearch)
+		if p.IsTlsApiEnabled() && !p.IsSelfManagedSecretForTlsApi() {
+			return []string{p.Spec.Tls.CertificateSecretRef.Name}
+		}
+		return []string{}
+	}); err != nil {
+		panic(err)
+	}
+
+	if err := k8sManager.GetFieldIndexer().IndexField(context.Background(), &elasticsearchcrd.Elasticsearch{}, "spec.globalNodeGroup.keystoreSecretRef.name", func(o client.Object) []string {
+		p := o.(*elasticsearchcrd.Elasticsearch)
+		if p.Spec.GlobalNodeGroup.KeystoreSecretRef != nil {
+			return []string{p.Spec.GlobalNodeGroup.KeystoreSecretRef.Name}
+		}
+		return []string{}
+	}); err != nil {
+		panic(err)
+	}
+
 	// Add indexers on Kibana to track secret change
 	if err := k8sManager.GetFieldIndexer().IndexField(context.Background(), &kibanacrd.Kibana{}, "spec.tls.certificateSecretRef.name", func(o client.Object) []string {
 		p := o.(*kibanacrd.Kibana)

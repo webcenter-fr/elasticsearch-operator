@@ -3,6 +3,7 @@ package elasticsearch
 import (
 	"context"
 	"fmt"
+	"os"
 	"strings"
 	"time"
 
@@ -328,7 +329,8 @@ func (r *StatefulsetReconciler) Diff(ctx context.Context, resource client.Object
 						isFinished = false
 					}
 				}
-				if !isFinished || len(podList.Items) != int(*sts.Spec.Replicas) {
+				if !isFinished || (len(podList.Items) != int(*sts.Spec.Replicas) && os.Getenv("TEST") != "true") {
+					// Not found a way to detect that we are on envtest, so without kubelet. We use env TEST to to that.
 					// All Sts not yet finished upgrade
 					r.Log.Info("Phase statefulset upgrade: wait pod to be ready")
 					data["phase"] = phaseStsUpgrade

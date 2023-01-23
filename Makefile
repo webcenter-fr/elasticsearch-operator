@@ -103,7 +103,7 @@ vet: ## Run go vet against code.
 
 .PHONY: test
 test: manifests generate fmt envtest ## Run tests.
-	KUBEBUILDER_ASSETS="$(shell $(ENVTEST) use $(ENVTEST_K8S_VERSION) -p path)" go test -p 1 -v -coverprofile cover.out -timeout 1200s -count 1 -covermode=atomic ./apis/... ./pkg/... ./controllers/...  $(TESTARGS)
+	KUBEBUILDER_ASSETS="$(shell $(ENVTEST) use $(ENVTEST_K8S_VERSION) -p path)" TEST=true go test -p 1 -v -coverprofile cover.out -timeout 1200s -count 1 -covermode=atomic ./apis/... ./pkg/... ./controllers/...  $(TESTARGS)
 
 .PHONY: test-acc
 test-acc:
