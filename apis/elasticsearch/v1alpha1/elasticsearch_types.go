@@ -402,6 +402,10 @@ type ElasticsearchStatus struct {
 	// +operator-sdk:csv:customresourcedefinitions:type=status
 	CredentialsRef corev1.LocalObjectReference `json:"credentialsRef"`
 
+	// Health is the cluster health
+	// +operator-sdk:csv:customresourcedefinitions:type=status
+	Health string `json:"health"`
+
 	// List of conditions
 	// +operator-sdk:csv:customresourcedefinitions:type=status
 	Conditions []metav1.Condition `json:"conditions"`
@@ -414,8 +418,9 @@ type ElasticsearchStatus struct {
 // Elasticsearch is the Schema for the elasticsearchs API
 // +operator-sdk:csv:customresourcedefinitions:resources={{None,None,None}}
 // +kubebuilder:printcolumn:name="URL",type="string",JSONPath=".status.url"
-// +kubebuilder:printcolumn:name="CredentialsRef",type="string",JSONPath=".status.credentialsRef"
+// +kubebuilder:printcolumn:name="CredentialsRef",type="string",JSONPath=".status.credentialsRef.name"
 // +kubebuilder:printcolumn:name="Phase",type="string",JSONPath=".status.phase",description="Cluster deployment status"
+// +kubebuilder:printcolumn:name="Health",type="string",JSONPath=".status.health",description="Cluster health"
 // +kubebuilder:printcolumn:name="Age",type="date",JSONPath=".metadata.creationTimestamp"
 type Elasticsearch struct {
 	metav1.TypeMeta   `json:",inline"`

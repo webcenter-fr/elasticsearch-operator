@@ -6,11 +6,12 @@ require (
 	emperror.dev/errors v0.8.1
 	github.com/codingsince1985/checksum v1.2.5
 	github.com/davecgh/go-spew v1.1.1
-	github.com/disaster37/es-handler/v8 v8.0.4
+	github.com/disaster37/es-handler/v8 v8.0.5
 	github.com/disaster37/goca v1.0.4-0.20221213082455-a233467aa7fe
 	github.com/disaster37/k8s-objectmatcher v1.8.2-0.20230118153724-8144c44645a8
 	github.com/disaster37/k8sbuilder v0.0.0-20221212105448-99cdf3ba3e4a
 	github.com/disaster37/operator-sdk-extra v0.0.18-0.20230103150326-7b25c891807e
+	github.com/elastic/elastic-transport-go/v8 v8.1.0
 	github.com/elastic/go-elasticsearch/v8 v8.5.0
 	github.com/elastic/go-ucfg v0.8.6
 	github.com/go-logr/logr v1.2.3
@@ -49,7 +50,6 @@ require (
 	github.com/PuerkitoBio/urlesc v0.0.0-20170810143723-de5bf2ad4578 // indirect
 	github.com/beorn7/perks v1.0.1 // indirect
 	github.com/cespare/xxhash/v2 v2.1.2 // indirect
-	github.com/elastic/elastic-transport-go/v8 v8.1.0 // indirect
 	github.com/emicklei/go-restful/v3 v3.8.0 // indirect
 	github.com/evanphx/json-patch v5.6.0+incompatible // indirect
 	github.com/evanphx/json-patch/v5 v5.6.0 // indirect

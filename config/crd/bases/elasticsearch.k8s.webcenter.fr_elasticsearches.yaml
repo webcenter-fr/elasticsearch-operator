@@ -19,12 +19,16 @@ spec:
     - jsonPath: .status.url
       name: URL
       type: string
-    - jsonPath: .status.credentialsRef
+    - jsonPath: .status.credentialsRef.name
       name: CredentialsRef
       type: string
     - description: Cluster deployment status
       jsonPath: .status.phase
       name: Phase
+      type: string
+    - description: Cluster health
+      jsonPath: .status.health
+      name: Health
       type: string
     - jsonPath: .metadata.creationTimestamp
       name: Age
@@ -20011,6 +20015,9 @@ spec:
                     type: string
                 type: object
                 x-kubernetes-map-type: atomic
+              health:
+                description: Health is the cluster health
+                type: string
               phase:
                 description: Phase is the current cluster deployment phase
                 type: string
@@ -20020,6 +20027,7 @@ spec:
             required:
             - conditions
             - credentialsRef
+            - health
             - phase
             - url
             type: object

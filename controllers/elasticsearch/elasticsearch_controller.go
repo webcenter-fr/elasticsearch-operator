@@ -18,11 +18,17 @@ package elasticsearch
 
 import (
 	"context"
+	"crypto/tls"
 	"fmt"
+	"net"
+	"net/http"
 	"time"
 
 	"emperror.dev/errors"
+	eshandler "github.com/disaster37/es-handler/v8"
 	"github.com/disaster37/operator-sdk-extra/pkg/controller"
+	"github.com/elastic/elastic-transport-go/v8/elastictransport"
+	elastic "github.com/elastic/go-elasticsearch/v8"
 	"github.com/sirupsen/logrus"
 	elasticsearchcrd "github.com/webcenter-fr/elasticsearch-operator/apis/elasticsearch/v1alpha1"
 	elasticsearchapicrd "github.com/webcenter-fr/elasticsearch-operator/apis/elasticsearchapi/v1alpha1"
@@ -31,6 +37,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	networkingv1 "k8s.io/api/networking/v1"
 	policyv1 "k8s.io/api/policy/v1"
+	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	condition "k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/fields"
@@ -41,6 +48,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/handler"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
+	"sigs.k8s.io/controller-runtime/pkg/source"
 )
 
 const (
@@ -200,6 +208,7 @@ func (h *ElasticsearchReconciler) SetupWithManager(mgr ctrl.Manager) error {
 		Owns(&appv1.StatefulSet{}).
 		Owns(&elasticsearchapicrd.User{}).
 		Owns(&elasticsearchapicrd.License{}).
+		Watches(&source.Kind{Type: &corev1.Secret{}}, handler.EnqueueRequestsFromMapFunc(watchSecret(h.Client))).
 		Complete(h)
 }
 
@@ -251,6 +260,31 @@ func (h *ElasticsearchReconciler) Configure(ctx context.Context, req ctrl.Reques
 		})
 	}
 
+	// Get Elasticsearch health
+	// Not blocking way, cluster can be unreachable
+	esHandler, err := h.getElasticsearchHandler(ctx, o, h.GetLogger())
+	if err != nil {
+		h.GetLogger().Warnf("Error when get elasticsearch client: %s", err.Error())
+		o.Status.Health = "Unreachable"
+
+		return res, nil
+	}
+
+	if esHandler == nil {
+		o.Status.Health = "Unreachable"
+	} else {
+		health, err := esHandler.ClusterHealth()
+		if err != nil {
+			h.GetLogger().Warnf("Error when get elasticsearch health: %s", err.Error())
+			o.Status.Health = "Unreachable"
+			return res, nil
+		}
+
+		if o.Status.Health != health.Status {
+			o.Status.Health = health.Status
+		}
+	}
+
 	return res, nil
 }
 func (h *ElasticsearchReconciler) Read(ctx context.Context, r client.Object, data map[string]any) (res ctrl.Result, err error) {
@@ -296,27 +330,127 @@ func (h *ElasticsearchReconciler) OnSuccess(ctx context.Context, r client.Object
 				Status: metav1.ConditionTrue,
 				Reason: "Ready",
 			})
+		}
 
+		if o.Status.Phase != ElasticsearchPhaseRunning {
 			o.Status.Phase = ElasticsearchPhaseRunning
 		}
 
-		return res, nil
-	}
-
-	if !condition.IsStatusConditionPresentAndEqual(o.Status.Conditions, ElasticsearchCondition, metav1.ConditionFalse) || (condition.FindStatusCondition(o.Status.Conditions, ElasticsearchCondition) != nil && condition.FindStatusCondition(o.Status.Conditions, ElasticsearchCondition).Reason != "NotReady") {
+	} else if !condition.IsStatusConditionPresentAndEqual(o.Status.Conditions, ElasticsearchCondition, metav1.ConditionFalse) || (condition.FindStatusCondition(o.Status.Conditions, ElasticsearchCondition) != nil && condition.FindStatusCondition(o.Status.Conditions, ElasticsearchCondition).Reason != "NotReady") {
 		condition.SetStatusCondition(&o.Status.Conditions, metav1.Condition{
 			Type:   ElasticsearchCondition,
 			Status: metav1.ConditionFalse,
 			Reason: "NotReady",
 		})
 
+		if o.Status.Phase != ElasticsearchPhaseStarting {
+			o.Status.Phase = ElasticsearchPhaseStarting
+		}
 	}
 
-	o.Status.Phase = ElasticsearchPhaseStarting
+	o.Status.CredentialsRef = corev1.LocalObjectReference{
+		Name: GetSecretNameForCredentials(o),
+	}
 
-	return ctrl.Result{RequeueAfter: time.Second * 30}, nil
+	url, err := h.computeElasticsearchUrl(ctx, o)
+	if err != nil {
+		return res, err
+	}
+	o.Status.Url = url
+
+	return res, nil
 }
 
 func (h *ElasticsearchReconciler) Name() string {
 	return "elasticsearch"
+}
+
+// computeElasticsearchUrl permit to get the public Elasticsearch url to put it on status
+func (h *ElasticsearchReconciler) computeElasticsearchUrl(ctx context.Context, es *elasticsearchcrd.Elasticsearch) (target string, err error) {
+	var (
+		scheme string
+		url    string
+	)
+
+	if es.IsIngressEnabled() {
+		url = es.Spec.Endpoint.Ingress.Host
+
+		if es.Spec.Endpoint.Ingress.SecretRef != nil {
+			scheme = "https"
+		} else {
+			scheme = "http"
+		}
+	} else if es.IsLoadBalancerEnabled() {
+		// Need to get lb service to get IP and port
+		service := &corev1.Service{}
+		if err = h.Client.Get(ctx, types.NamespacedName{Namespace: es.Namespace, Name: GetLoadBalancerName(es)}, service); err != nil {
+			return "", errors.Wrap(err, "Error when get Load balancer")
+		}
+
+		url = fmt.Sprintf("%s:9200", service.Spec.LoadBalancerIP)
+		if es.IsTlsApiEnabled() {
+			scheme = "https"
+		} else {
+			scheme = "http"
+		}
+	} else {
+		url = fmt.Sprintf("%s.%s.svc:9200", GetGlobalServiceName(es), es.Namespace)
+		if es.IsTlsApiEnabled() {
+			scheme = "https"
+		} else {
+			scheme = "http"
+		}
+	}
+
+	return fmt.Sprintf("%s://%s", scheme, url), nil
+}
+
+func (h *ElasticsearchReconciler) getElasticsearchHandler(ctx context.Context, es *elasticsearchcrd.Elasticsearch, log *logrus.Entry) (esHandler eshandler.ElasticsearchHandler, err error) {
+
+	hosts := []string{}
+
+	// Get Elasticsearch credentials
+	secret := &corev1.Secret{}
+	if err = h.Client.Get(ctx, types.NamespacedName{Namespace: es.Namespace, Name: GetSecretNameForCredentials(es)}, secret); err != nil {
+		if k8serrors.IsNotFound(err) {
+			log.Warnf("Secret %s not yet exist, try later", GetSecretNameForCredentials(es))
+			return nil, nil
+		}
+		log.Errorf("Error when get resource: %s", err.Error())
+		return nil, err
+	}
+
+	serviceName := GetGlobalServiceName(es)
+	if !es.IsTlsApiEnabled() {
+		hosts = append(hosts, fmt.Sprintf("http://%s.%s.svc:9200", serviceName, es.Namespace))
+	} else {
+		hosts = append(hosts, fmt.Sprintf("https://%s.%s.svc:9200", serviceName, es.Namespace))
+	}
+
+	transport := &http.Transport{
+		Proxy: http.ProxyFromEnvironment,
+		TLSClientConfig: &tls.Config{
+			InsecureSkipVerify: true,
+		},
+		ResponseHeaderTimeout: 10 * time.Second,
+		DialContext:           (&net.Dialer{Timeout: 10 * time.Second}).DialContext,
+	}
+	cfg := elastic.Config{
+		Transport: transport,
+		Addresses: hosts,
+		Username:  "elastic",
+		Password:  string(secret.Data["elastic"]),
+	}
+
+	if log.Logger.GetLevel() == logrus.DebugLevel {
+		cfg.Logger = &elastictransport.JSONLogger{EnableRequestBody: true, EnableResponseBody: true, Output: log.Logger.Out}
+	}
+
+	// Create Elasticsearch handler/client
+	esHandler, err = eshandler.NewElasticsearchHandler(cfg, log)
+	if err != nil {
+		return nil, err
+	}
+
+	return esHandler, nil
 }

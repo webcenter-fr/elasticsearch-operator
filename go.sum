@@ -100,8 +100,8 @@ github.com/creack/pty v1.1.9/go.mod h1:oKZEueFk5CKHvIhNR5MUki03XCEU+Q6VDXinZuGJ3
 github.com/davecgh/go-spew v1.1.0/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
 github.com/davecgh/go-spew v1.1.1 h1:vj9j/u1bqnvCEfJOwUhtlOARqs3+rkHYY13jYWTU97c=
 github.com/davecgh/go-spew v1.1.1/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
-github.com/disaster37/es-handler/v8 v8.0.4 h1:ObjA0I+UaBtKUsmuJ/qyti9UqjgeZ0olWIK3OEBZGuk=
-github.com/disaster37/es-handler/v8 v8.0.4/go.mod h1:hU2b2PtDz7GSa0nkMnSUTHgeVvhbk+BZOmiCC+Zx968=
+github.com/disaster37/es-handler/v8 v8.0.5 h1:4kVp8aKHwMQq5wsXVou5Jfzj9L5d6I014vwrEozJsVw=
+github.com/disaster37/es-handler/v8 v8.0.5/go.mod h1:hU2b2PtDz7GSa0nkMnSUTHgeVvhbk+BZOmiCC+Zx968=
 github.com/disaster37/goca v1.0.4-0.20221213082455-a233467aa7fe h1:odMnfLyJhsa80v6OEG1d4G1zeAh0Ng492L0sWxKDXNY=
 github.com/disaster37/goca v1.0.4-0.20221213082455-a233467aa7fe/go.mod h1:4I9l+qKbfjwGvwnNarDz4fXS9E2z+Gm0etjPGZWtby8=
 github.com/disaster37/k8s-objectmatcher v1.8.2-0.20230118153724-8144c44645a8 h1:vudWrT6zutoa5p22OqOS9VzvtPtPcov6UHOdlc9wFT0=
