@@ -23,8 +23,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-type statefulsetPhase string
-
 const (
 	DeploymentCondition = "DeploymentReady"
 	DeploymentPhase     = "Deployment"

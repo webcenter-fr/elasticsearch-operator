@@ -14,7 +14,7 @@ func BuildUserSystem(es *elasticsearchcrd.Elasticsearch, s *corev1.Secret) (user
 
 	users = make([]elasticsearchapicrd.User, 0, len(s.Data))
 
-	for key, _ := range s.Data {
+	for key := range s.Data {
 		if key != "elastic" {
 			user := elasticsearchapicrd.User{
 				ObjectMeta: metav1.ObjectMeta{
