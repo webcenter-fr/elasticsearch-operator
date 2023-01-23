@@ -3,6 +3,7 @@ package elasticsearch
 import (
 	"context"
 	"fmt"
+	"os"
 	"strings"
 	"time"
 
@@ -202,6 +203,9 @@ func (r *StatefulsetReconciler) Diff(ctx context.Context, resource client.Object
 	}
 	currentStatefulsets := d.([]appv1.StatefulSet)
 
+	copyCurrentStatefulsets := make([]appv1.StatefulSet, len(currentStatefulsets))
+	copy(copyCurrentStatefulsets, currentStatefulsets)
+
 	d, err = helper.Get(data, "expectedStatefulsets")
 	if err != nil {
 		return diff, res, err
@@ -215,59 +219,18 @@ func (r *StatefulsetReconciler) Diff(ctx context.Context, resource client.Object
 	}
 
 	stsToUpdate := make([]appv1.StatefulSet, 0)
+	stsToExpectedUpdated := make([]appv1.StatefulSet, 0)
 	stsToCreate := make([]appv1.StatefulSet, 0)
+	data["phase"] = phaseStsNormal
 
 	// Add some code to avoid reconcile multiple statefullset on same time
 	// It avoid to have multiple pod that exit the cluster on same time
 
-	// Check if on current upgrade phase, to wait the end
-	if condition.IsStatusConditionPresentAndEqual(o.Status.Conditions, StatefulsetConditionUpgrade, metav1.ConditionTrue) && condition.IsStatusConditionPresentAndEqual(o.Status.Conditions, StatefulsetCondition, metav1.ConditionFalse) {
-		r.Log.Debugf("Detect phase: %s", phaseStsUpgrade)
-
-		podList := &corev1.PodList{}
-		for _, sts := range currentStatefulsets {
-			if sts.Annotations[fmt.Sprintf("%s/upgrade", ElasticsearchAnnotationKey)] == "true" {
-				// Check the pod state
-				labelSelectors := labels.SelectorFromSet(sts.Spec.Template.Labels)
-				if err = r.Client.List(ctx, podList, &client.ListOptions{Namespace: o.Namespace, LabelSelector: labelSelectors}); err != nil {
-					return diff, res, errors.Wrapf(err, "Error when read Elasticsearch pods")
-				}
-
-				isFinished := true
-				annotation := fmt.Sprintf("%s/upgrade-checksum", ElasticsearchAnnotationKey)
-				stsChecksum := sts.Spec.Template.Annotations[annotation]
-				for _, p := range podList.Items {
-					// The pod must have CA checksum annotation and need to be ready
-					if p.Annotations[annotation] == "" || p.Annotations[annotation] != stsChecksum || !podutil.IsPodReady(&p) {
-						isFinished = false
-					}
-				}
-				if !isFinished {
-					// All Sts not yet finished upgrade
-					r.Log.Info("Phase statefulset upgrade: wait pod to be ready")
-					return diff, ctrl.Result{RequeueAfter: time.Second * 30}, nil
-				}
-
-				r.Log.Infof("Statefulset %s successfully finished upgrade", sts.Name)
-
-				// Clean annotations
-				sts.Annotations[fmt.Sprintf("%s/upgrade", ElasticsearchAnnotationKey)] = "false"
-				stsToUpdate = append(stsToUpdate, sts)
-				diff.NeedUpdate = true
-
-				data["newStatefulsets"] = stsToCreate
-				data["statefulsets"] = stsToUpdate
-				data["oldStatefulsets"] = currentStatefulsets
-				data["phase"] = phaseStsUpgradeFinished
-
-				return diff, res, nil
-			}
-		}
-
-	}
+	// First, we check if some statefullset need to be upgraded
+	// Then we only update Statefullset curretly being upgraded or wait is finished
 	for _, expectedSts := range expectedStatefulsets {
 		isFound := false
-		for i, currentSts := range currentStatefulsets {
+		for i, currentSts := range copyCurrentStatefulsets {
 			// Need compare statefulset
 			if currentSts.Name == expectedSts.Name {
 				isFound = true
@@ -289,19 +252,14 @@ func (r *StatefulsetReconciler) Diff(ctx context.Context, resource client.Object
 					}
 					updatedSts.Spec.Template.Annotations[fmt.Sprintf("%s/upgrade-checksum", ElasticsearchAnnotationKey)] = sum
 
-					stsToUpdate = append(stsToUpdate, *updatedSts)
+					stsToExpectedUpdated = append(stsToExpectedUpdated, *updatedSts)
 					r.Log.Debugf("Need update statefulset %s", updatedSts.Name)
 
-					data["newStatefulsets"] = stsToCreate
-					data["statefulsets"] = stsToUpdate
-					data["oldStatefulsets"] = currentStatefulsets
 					data["phase"] = phaseStsUpgrade
-
-					return diff, res, nil
 				}
 
 				// Remove items found
-				currentStatefulsets = helperdiff.DeleteItemFromSlice(currentStatefulsets, i).([]appv1.StatefulSet)
+				copyCurrentStatefulsets = helperdiff.DeleteItemFromSlice(copyCurrentStatefulsets, i).([]appv1.StatefulSet)
 
 				break
 			}
@@ -328,17 +286,83 @@ func (r *StatefulsetReconciler) Diff(ctx context.Context, resource client.Object
 		}
 	}
 
-	if len(currentStatefulsets) > 0 {
+	if len(copyCurrentStatefulsets) > 0 {
 		diff.NeedDelete = true
 		for _, sts := range currentStatefulsets {
 			diff.Diff.WriteString(fmt.Sprintf("Need delete statefulset %s\n", sts.Name))
 		}
 	}
 
+	// Check if on current upgrade phase, to only upgrade the statefullset currently being upgraded
+	if condition.IsStatusConditionPresentAndEqual(o.Status.Conditions, StatefulsetConditionUpgrade, metav1.ConditionTrue) && condition.IsStatusConditionPresentAndEqual(o.Status.Conditions, StatefulsetCondition, metav1.ConditionFalse) {
+		r.Log.Debugf("Detect phase: %s", phaseStsUpgrade)
+
+		podList := &corev1.PodList{}
+	loopStatefullset:
+		for _, sts := range currentStatefulsets {
+			if sts.Annotations[fmt.Sprintf("%s/upgrade", ElasticsearchAnnotationKey)] == "true" {
+
+				// Check if current statefullset need to be upgraded
+				for _, stsNeedUpgraded := range stsToExpectedUpdated {
+					if stsNeedUpgraded.Name == sts.Name {
+						r.Log.Infof("Detect we need to upgrade Statefullset %s that being already on upgrade state", sts.Name)
+						stsToExpectedUpdated = []appv1.StatefulSet{
+							stsNeedUpgraded,
+						}
+						data["phase"] = phaseStsUpgrade
+						break loopStatefullset
+					}
+				}
+
+				// Check the pod state
+				labelSelectors := labels.SelectorFromSet(sts.Spec.Template.Labels)
+				if err = r.Client.List(ctx, podList, &client.ListOptions{Namespace: o.Namespace, LabelSelector: labelSelectors}); err != nil {
+					return diff, res, errors.Wrapf(err, "Error when read Elasticsearch pods")
+				}
+
+				isFinished := true
+				annotation := fmt.Sprintf("%s/upgrade-checksum", ElasticsearchAnnotationKey)
+				stsChecksum := sts.Spec.Template.Annotations[annotation]
+				for _, p := range podList.Items {
+					// The pod must have upgrade checksum annotation and need to be ready
+					if p.Annotations[annotation] == "" || p.Annotations[annotation] != stsChecksum || !podutil.IsPodReady(&p) {
+						isFinished = false
+					}
+				}
+				if !isFinished || (len(podList.Items) != int(*sts.Spec.Replicas) && os.Getenv("TEST") != "true") {
+					// Not found a way to detect that we are on envtest, so without kubelet. We use env TEST to to that.
+					// All Sts not yet finished upgrade
+					r.Log.Info("Phase statefulset upgrade: wait pod to be ready")
+					data["phase"] = phaseStsUpgrade
+				} else {
+					r.Log.Infof("Statefulset %s successfully finished upgrade", sts.Name)
+
+					// Clean annotations
+					// This annotation not restart pods
+					sts.Annotations[fmt.Sprintf("%s/upgrade", ElasticsearchAnnotationKey)] = "false"
+					stsToUpdate = append(stsToUpdate, sts)
+					diff.NeedUpdate = true
+					data["phase"] = phaseStsUpgradeFinished
+				}
+
+				stsToExpectedUpdated = make([]appv1.StatefulSet, 0)
+
+				break
+
+			}
+		}
+	}
+
+	// Keep only one statefullset to upgrade
+	if len(stsToExpectedUpdated) > 0 {
+		stsToUpdate = append(stsToUpdate, stsToExpectedUpdated[0])
+	}
+
+	r.Log.Debugf("Phase after diff: %s", data["phase"])
+
 	data["newStatefulsets"] = stsToCreate
 	data["statefulsets"] = stsToUpdate
 	data["oldStatefulsets"] = currentStatefulsets
-	data["phase"] = phaseStsNormal
 
 	return diff, res, nil
 }
@@ -374,6 +398,8 @@ func (r *StatefulsetReconciler) OnSuccess(ctx context.Context, resource client.O
 	}
 	phase := d.(statefulsetPhase)
 
+	r.Log.Debugf("Phase on success: %s", phase)
+
 	switch phase {
 	case phaseStsUpgrade:
 		condition.SetStatusCondition(&o.Status.Conditions, metav1.Condition{
@@ -392,7 +418,7 @@ func (r *StatefulsetReconciler) OnSuccess(ctx context.Context, resource client.O
 
 		r.Recorder.Eventf(resource, corev1.EventTypeNormal, "Completed", "Statefulsets are being upgraded")
 
-		return ctrl.Result{Requeue: true}, nil
+		return ctrl.Result{RequeueAfter: time.Second * 30}, nil
 
 	case phaseStsUpgradeFinished:
 		condition.SetStatusCondition(&o.Status.Conditions, metav1.Condition{
