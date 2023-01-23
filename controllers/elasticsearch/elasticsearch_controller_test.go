@@ -271,6 +271,12 @@ func doCreateElasticsearchStep() test.TestStep {
 				assert.NotEmpty(t, user.Annotations[patch.LastAppliedConfig])
 			}
 
+			// Status must be update
+			assert.NotEmpty(t, es.Status.Health)
+			assert.NotEmpty(t, es.Status.Phase)
+			assert.NotEmpty(t, es.Status.Url)
+			assert.NotNil(t, es.Status.CredentialsRef)
+
 			return nil
 		},
 	}
@@ -489,6 +495,12 @@ func doUpdateElasticsearchStep() test.TestStep {
 				assert.NotEmpty(t, user.Annotations[patch.LastAppliedConfig])
 			}
 
+			// Status must be update
+			assert.NotEmpty(t, es.Status.Health)
+			assert.NotEmpty(t, es.Status.Phase)
+			assert.NotEmpty(t, es.Status.Url)
+			assert.NotNil(t, es.Status.CredentialsRef)
+
 			return nil
 		},
 	}
@@ -695,6 +707,12 @@ func doUpdateElasticsearchIncreaseNodeGroupStep() test.TestStep {
 				assert.NotEmpty(t, user.OwnerReferences)
 				assert.NotEmpty(t, user.Annotations[patch.LastAppliedConfig])
 			}
+
+			// Status must be update
+			assert.NotEmpty(t, es.Status.Health)
+			assert.NotEmpty(t, es.Status.Phase)
+			assert.NotEmpty(t, es.Status.Url)
+			assert.NotNil(t, es.Status.CredentialsRef)
 
 			return nil
 		},
@@ -959,6 +977,12 @@ func doUpdateElasticsearchDecreaseNodeGroupStep() test.TestStep {
 				assert.NotEmpty(t, user.OwnerReferences)
 				assert.NotEmpty(t, user.Annotations[patch.LastAppliedConfig])
 			}
+
+			// Status must be update
+			assert.NotEmpty(t, es.Status.Health)
+			assert.NotEmpty(t, es.Status.Phase)
+			assert.NotEmpty(t, es.Status.Url)
+			assert.NotNil(t, es.Status.CredentialsRef)
 
 			return nil
 		},
@@ -1245,6 +1269,12 @@ func doUpdateElasticsearchAddLicenseStep() test.TestStep {
 			}
 			assert.NotEmpty(t, license.OwnerReferences)
 			assert.NotEmpty(t, license.Annotations[patch.LastAppliedConfig])
+
+			// Status must be update
+			assert.NotEmpty(t, es.Status.Health)
+			assert.NotEmpty(t, es.Status.Phase)
+			assert.NotEmpty(t, es.Status.Url)
+			assert.NotNil(t, es.Status.CredentialsRef)
 
 			return nil
 		},
