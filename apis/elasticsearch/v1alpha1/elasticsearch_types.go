@@ -97,13 +97,20 @@ type MonitoringSpec struct {
 }
 
 type PrometheusSpec struct {
+	shared.ImageSpec `json:",inline"`
 
 	// Enabled permit to enable Prometheus monitoring
 	// It will deploy exporter for Elasticsearch and add podMonitor policy
 	// Default to false
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
 	// +optional
-	Enabled *bool `json:"enabled,omitempty"`
+	Enabled bool `json:"enabled,omitempty"`
+
+	// Version is the exporter version to use
+	// Default is use the latest
+	// +operator-sdk:csv:customresourcedefinitions:type=spec
+	// +optional
+	Version string `json:"version,omitempty"`
 }
 
 type EndpointSpec struct {

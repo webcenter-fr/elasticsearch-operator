@@ -79,7 +79,7 @@ spec:
               name: test
         image: docker.elastic.co/kibana/kibana:8.5.1
         livenessProbe:
-          failureThreshold: 10
+          failureThreshold: 3
           periodSeconds: 30
           successThreshold: 1
           tcpSocket:
@@ -92,7 +92,7 @@ spec:
           protocol: TCP
         readinessProbe:
           failureThreshold: 3
-          periodSeconds: 30
+          periodSeconds: 10
           successThreshold: 1
           exec:
             command:

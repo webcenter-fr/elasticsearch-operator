@@ -10,7 +10,8 @@ import (
 )
 
 const (
-	defaultImage = "docker.elastic.co/elasticsearch/elasticsearch"
+	defaultImage         = "docker.elastic.co/elasticsearch/elasticsearch"
+	defaultExporterImage = "quay.io/prometheuscommunity/elasticsearch-exporter"
 )
 
 // GetNodeGroupName permit to get the node group name
@@ -224,4 +225,23 @@ func GetElasticsearchNameFromSecretApiTlsName(secretApiTlsName string) (elastics
 // GetNetworkPolicyName return the name for network policy
 func GetNetworkPolicyName(es *elasticsearchcrd.Elasticsearch) string {
 	return fmt.Sprintf("%s-allow-api-es", es.Name)
+}
+
+// GetExporterImage return the image to use for exporter pod
+func GetExporterImage(es *elasticsearchcrd.Elasticsearch) string {
+	version := "latest"
+	if es.Spec.Monitoring.Prometheus != nil && es.Spec.Monitoring.Prometheus.Version != "" {
+		version = es.Spec.Monitoring.Prometheus.Version
+
+	}
+	if es.Spec.Monitoring.Prometheus != nil && es.Spec.Monitoring.Prometheus.Image != "" {
+		return fmt.Sprintf("%s:%s", es.Spec.Monitoring.Prometheus.Image, version)
+	}
+
+	return fmt.Sprintf("%s:%s", defaultExporterImage, version)
+}
+
+// GetExporterDeployementName return the exporter deployement name
+func GetExporterDeployementName(es *elasticsearchcrd.Elasticsearch) string {
+	return fmt.Sprintf("%s-exporter-es", es.Name)
 }

@@ -180,6 +180,13 @@ func (r *ElasticsearchReconciler) Reconcile(ctx context.Context, req ctrl.Reques
 		}),
 	})
 
+	exporterReconciler := NewExporterReconciler(r.Client, r.Scheme, common.Reconciler{
+		Recorder: r.GetRecorder(),
+		Log: r.GetLogger().WithFields(logrus.Fields{
+			"phase": "exporter",
+		}),
+	})
+
 	return reconciler.Reconcile(ctx, req, es, data,
 		tlsReconsiler,
 		credentialReconciler,
@@ -192,6 +199,7 @@ func (r *ElasticsearchReconciler) Reconcile(ctx context.Context, req ctrl.Reques
 		loadBalancerReconciler,
 		userReconciler,
 		licenseReconciler,
+		exporterReconciler,
 	)
 }
 
@@ -206,6 +214,7 @@ func (h *ElasticsearchReconciler) SetupWithManager(mgr ctrl.Manager) error {
 		Owns(&policyv1.PodDisruptionBudget{}).
 		Owns(&networkingv1.NetworkPolicy{}).
 		Owns(&appv1.StatefulSet{}).
+		Owns(&appv1.Deployment{}).
 		Owns(&elasticsearchapicrd.User{}).
 		Owns(&elasticsearchapicrd.License{}).
 		Watches(&source.Kind{Type: &corev1.Secret{}}, handler.EnqueueRequestsFromMapFunc(watchSecret(h.Client))).

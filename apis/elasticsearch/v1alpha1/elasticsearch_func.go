@@ -40,3 +40,13 @@ func (h *Elasticsearch) IsSetVMMaxMapCount() bool {
 
 	return true
 }
+
+// IsPrometheusMonitoring return true if Prometheus monitoring is enabled
+func (h *Elasticsearch) IsPrometheusMonitoring() bool {
+
+	if h.Spec.Monitoring.Prometheus != nil && h.Spec.Monitoring.Prometheus.Enabled {
+		return true
+	}
+
+	return false
+}

@@ -5,6 +5,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	elasticsearchcrd "github.com/webcenter-fr/elasticsearch-operator/apis/elasticsearch/v1alpha1"
+	"github.com/webcenter-fr/elasticsearch-operator/apis/shared"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/utils/pointer"
@@ -508,4 +509,50 @@ func TestGetNetworkPolicyName(t *testing.T) {
 	}
 
 	assert.Equal(t, "test-allow-api-es", GetNetworkPolicyName(o))
+}
+
+func TestGetExporterImage(t *testing.T) {
+	var o *elasticsearchcrd.Elasticsearch
+
+	// Default value
+	o = &elasticsearchcrd.Elasticsearch{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: "default",
+			Name:      "test",
+		},
+		Spec: elasticsearchcrd.ElasticsearchSpec{},
+	}
+
+	assert.Equal(t, "quay.io/prometheuscommunity/elasticsearch-exporter:latest", GetExporterImage(o))
+
+	// When image is defined
+	o = &elasticsearchcrd.Elasticsearch{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: "default",
+			Name:      "test",
+		},
+		Spec: elasticsearchcrd.ElasticsearchSpec{
+			Monitoring: elasticsearchcrd.MonitoringSpec{
+				Prometheus: &elasticsearchcrd.PrometheusSpec{
+					ImageSpec: shared.ImageSpec{
+						Image: "toto",
+					},
+				},
+			},
+		},
+	}
+
+	assert.Equal(t, "toto:latest", GetExporterImage(o))
+}
+
+func TestGetExporterDeployementName(t *testing.T) {
+	o := &elasticsearchcrd.Elasticsearch{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: "default",
+			Name:      "test",
+		},
+		Spec: elasticsearchcrd.ElasticsearchSpec{},
+	}
+
+	assert.Equal(t, "test-exporter-es", GetExporterDeployementName(o))
 }

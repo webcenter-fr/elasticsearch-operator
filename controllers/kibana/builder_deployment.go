@@ -269,7 +269,7 @@ func BuildDeployment(kb *kibanacrd.Kibana, es *elasticsearchcrd.Elasticsearch, k
 	cb.WithLivenessProbe(&corev1.Probe{
 		TimeoutSeconds:   5,
 		PeriodSeconds:    30,
-		FailureThreshold: 10,
+		FailureThreshold: 3,
 		SuccessThreshold: 1,
 		ProbeHandler: corev1.ProbeHandler{
 			TCPSocket: &corev1.TCPSocketAction{
@@ -281,7 +281,7 @@ func BuildDeployment(kb *kibanacrd.Kibana, es *elasticsearchcrd.Elasticsearch, k
 	// Compute readiness
 	cb.WithReadinessProbe(&corev1.Probe{
 		TimeoutSeconds:   5,
-		PeriodSeconds:    30,
+		PeriodSeconds:    10,
 		FailureThreshold: 3,
 		SuccessThreshold: 1,
 		ProbeHandler: corev1.ProbeHandler{
@@ -627,7 +627,11 @@ fi
 		FSGroup: pointer.Int64(1000),
 	}, k8sbuilder.Merge)
 
+	// Compute pod template name
 	ptb.PodTemplate().Name = GetDeploymentName(kb)
+
+	// Compute pull secret
+	ptb.PodTemplate().Spec.ImagePullSecrets = kb.Spec.ImagePullSecrets
 
 	// Compute Deployment
 	dpl = &appv1.Deployment{

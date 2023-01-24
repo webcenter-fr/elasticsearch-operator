@@ -183,3 +183,49 @@ func TestIsSetVMMaxMapCount(t *testing.T) {
 	}
 	assert.False(t, o.IsSetVMMaxMapCount())
 }
+
+func TestIsPrometheusMonitoring(t *testing.T) {
+	var o *Elasticsearch
+
+	// With default values
+	o = &Elasticsearch{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: "default",
+			Name:      "test",
+		},
+		Spec: ElasticsearchSpec{},
+	}
+	assert.False(t, o.IsPrometheusMonitoring())
+
+	// When enabled
+	o = &Elasticsearch{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: "default",
+			Name:      "test",
+		},
+		Spec: ElasticsearchSpec{
+			Monitoring: MonitoringSpec{
+				Prometheus: &PrometheusSpec{
+					Enabled: true,
+				},
+			},
+		},
+	}
+	assert.True(t, o.IsPrometheusMonitoring())
+
+	// When disabled
+	o = &Elasticsearch{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: "default",
+			Name:      "test",
+		},
+		Spec: ElasticsearchSpec{
+			Monitoring: MonitoringSpec{
+				Prometheus: &PrometheusSpec{
+					Enabled: false,
+				},
+			},
+		},
+	}
+	assert.False(t, o.IsPrometheusMonitoring())
+}

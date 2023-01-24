@@ -9921,6 +9921,32 @@ spec:
                           It will deploy exporter for Elasticsearch and add podMonitor
                           policy Default to false
                         type: boolean
+                      image:
+                        description: Image is the image to use when deploy Elasticsearch
+                          It can be usefull to use internal registry or mirror
+                        type: string
+                      imagePullPolicy:
+                        description: ImagePullPolicy is the image pull policy to use
+                        type: string
+                      imagePullSecrets:
+                        description: ImagePullSecrets is the image pull secrets to
+                          use
+                        items:
+                          description: LocalObjectReference contains enough information
+                            to let you locate the referenced object inside the same
+                            namespace.
+                          properties:
+                            name:
+                              description: 'Name of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                                TODO: Add other useful fields. apiVersion, kind, uid?'
+                              type: string
+                          type: object
+                          x-kubernetes-map-type: atomic
+                        type: array
+                      version:
+                        description: Version is the exporter version to use Default
+                          is use the latest
+                        type: string
                     type: object
                 type: object
               nodeGroups:

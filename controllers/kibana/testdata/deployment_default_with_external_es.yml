@@ -77,7 +77,7 @@ spec:
           value: https
         image: docker.elastic.co/kibana/kibana:latest
         livenessProbe:
-          failureThreshold: 10
+          failureThreshold: 3
           periodSeconds: 30
           successThreshold: 1
           tcpSocket:
@@ -90,7 +90,7 @@ spec:
           protocol: TCP
         readinessProbe:
           failureThreshold: 3
-          periodSeconds: 30
+          periodSeconds: 10
           successThreshold: 1
           exec:
             command:
