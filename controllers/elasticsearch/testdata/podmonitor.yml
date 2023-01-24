@@ -1,0 +1,17 @@
+apiVersion: monitoring.coreos.com/v1
+kind: PodMonitor
+metadata:
+  name: test-exporter-es
+  namespace: default
+  labels:
+    cluster: test
+    elasticsearch.k8s.webcenter.fr: "true"
+  annotations:
+    elasticsearch.k8s.webcenter.fr: "true"
+spec:
+  selector:
+    matchLabels:
+      cluster: test
+      elasticsearch.k8s.webcenter.fr: "true"
+  podMetricsEndpoints:
+  - port: exporter

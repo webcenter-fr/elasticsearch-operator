@@ -12,13 +12,13 @@ spec:
   replicas: 1
   selector:
     matchLabels:
-      cluster: test
-      elasticsearch.k8s.webcenter.fr: "true"
+      exporter: "true"
+      elasticsearch: "true"
   template:
     metadata:
       labels:
-        cluster: test
-        elasticsearch.k8s.webcenter.fr: "true"
+        exporter: "true"
+        elasticsearch: "true"
       name: test-exporter-es
     spec:
       containers:

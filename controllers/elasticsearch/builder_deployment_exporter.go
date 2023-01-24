@@ -148,7 +148,11 @@ func BuildDeploymentExporter(es *elasticsearchcrd.Elasticsearch) (dpl *appv1.Dep
 	})
 
 	// Compute labels
-	ptb.WithLabels(getLabels(es))
+	ptb.WithLabels(es.Labels).
+		WithLabels(map[string]string{
+			"exporter":      "true",
+			"elasticsearch": "true",
+		}, k8sbuilder.Merge)
 
 	// Compute containers
 	ptb.WithContainers([]corev1.Container{*cb.Container()}, k8sbuilder.Merge)
@@ -171,8 +175,8 @@ func BuildDeploymentExporter(es *elasticsearchcrd.Elasticsearch) (dpl *appv1.Dep
 			Replicas: pointer.Int32(1),
 			Selector: &metav1.LabelSelector{
 				MatchLabels: map[string]string{
-					"cluster":                  es.Name,
-					ElasticsearchAnnotationKey: "true",
+					"exporter":      "true",
+					"elasticsearch": "true",
 				},
 			},
 			Template: *ptb.PodTemplate(),
