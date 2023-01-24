@@ -80,6 +80,30 @@ type ElasticsearchSpec struct {
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
 	// +optional
 	LicenseSecretRef *corev1.LocalObjectReference `json:"licenseSecretRef,omitempty"`
+
+	// Monitoring permit to monitor current cluster
+	// Default, it not monitor cluster
+	// +operator-sdk:csv:customresourcedefinitions:type=spec
+	// +optional
+	Monitoring MonitoringSpec `json:"monitoring,omitempty"`
+}
+
+type MonitoringSpec struct {
+
+	// Prometheus permit to monitor cluster with Prometheus en graphana (via exporter)
+	// +operator-sdk:csv:customresourcedefinitions:type=spec
+	// +optional
+	Prometheus *PrometheusSpec `json:"prometheus,omitempty"`
+}
+
+type PrometheusSpec struct {
+
+	// Enabled permit to enable Prometheus monitoring
+	// It will deploy exporter for Elasticsearch and add podMonitor policy
+	// Default to false
+	// +operator-sdk:csv:customresourcedefinitions:type=spec
+	// +optional
+	Enabled *bool `json:"enabled,omitempty"`
 }
 
 type EndpointSpec struct {
