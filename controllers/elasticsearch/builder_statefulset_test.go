@@ -16,10 +16,12 @@ import (
 func TestBuildStatefulset(t *testing.T) {
 
 	var (
-		o   *elasticsearchcrd.Elasticsearch
-		err error
-		sts []appv1.StatefulSet
-		s   *corev1.Secret
+		o          *elasticsearchcrd.Elasticsearch
+		err        error
+		sts        []appv1.StatefulSet
+		sKeystore  *corev1.Secret
+		sApi       *corev1.Secret
+		sTransport *corev1.Secret
 	)
 
 	// With default values
@@ -43,7 +45,7 @@ func TestBuildStatefulset(t *testing.T) {
 		},
 	}
 
-	sts, err = BuildStatefulsets(o, nil, nil)
+	sts, err = BuildStatefulsets(o, nil, nil, nil)
 	assert.NoError(t, err)
 	test.EqualFromYamlFile(t, "testdata/statefullset-all.yml", &sts[0], test.CleanApi)
 
@@ -198,7 +200,7 @@ func TestBuildStatefulset(t *testing.T) {
 		},
 	}
 
-	s = &corev1.Secret{
+	sKeystore = &corev1.Secret{
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: "default",
 			Name:      "elasticsearch-security",
@@ -208,13 +210,13 @@ func TestBuildStatefulset(t *testing.T) {
 		},
 	}
 
-	sts, err = BuildStatefulsets(o, s, nil)
+	sts, err = BuildStatefulsets(o, sKeystore, nil, nil)
 	assert.NoError(t, err)
 	test.EqualFromYamlFile(t, "testdata/statefullset-master.yml", &sts[0], test.CleanApi)
 	test.EqualFromYamlFile(t, "testdata/statefullset-data.yml", &sts[1], test.CleanApi)
 	test.EqualFromYamlFile(t, "testdata/statefullset-client.yml", &sts[2], test.CleanApi)
 
-	// When use external API cert
+	// When secret for certificates is set
 	o = &elasticsearchcrd.Elasticsearch{
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: "default",
@@ -241,7 +243,7 @@ func TestBuildStatefulset(t *testing.T) {
 		},
 	}
 
-	s = &corev1.Secret{
+	sApi = &corev1.Secret{
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: "default",
 			Name:      "api-certificates",
@@ -253,7 +255,19 @@ func TestBuildStatefulset(t *testing.T) {
 		},
 	}
 
-	sts, err = BuildStatefulsets(o, nil, s)
+	sTransport = &corev1.Secret{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: "default",
+			Name:      "transport-certificates",
+		},
+		Data: map[string][]byte{
+			"tls.crt": []byte("secret1"),
+			"tls.key": []byte("secret2"),
+			"ca.crt":  []byte("secret3"),
+		},
+	}
+
+	sts, err = BuildStatefulsets(o, nil, sApi, sTransport)
 	assert.NoError(t, err)
 	test.EqualFromYamlFile(t, "testdata/statefullset-all-external-tls.yml", &sts[0], test.CleanApi)
 }

@@ -1,14 +1,12 @@
 package elasticsearch
 
 import (
-	"bytes"
 	"context"
 	"crypto/x509"
 	"fmt"
 	"regexp"
 	"time"
 
-	"github.com/codingsince1985/checksum"
 	"github.com/disaster37/goca"
 	"github.com/disaster37/goca/cert"
 	"github.com/disaster37/k8s-objectmatcher/patch"
@@ -20,7 +18,6 @@ import (
 	"github.com/webcenter-fr/elasticsearch-operator/controllers/common"
 	localhelper "github.com/webcenter-fr/elasticsearch-operator/pkg/helper"
 	"github.com/webcenter-fr/elasticsearch-operator/pkg/pki"
-	appv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	condition "k8s.io/apimachinery/pkg/api/meta"
@@ -28,7 +25,6 @@ import (
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
-	podutil "k8s.io/kubectl/pkg/util/podutils"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
@@ -832,18 +828,6 @@ func (r *TlsReconciler) OnSuccess(ctx context.Context, resource client.Object, d
 	}
 	phase := d.(tlsPhase)
 
-	d, err = helper.Get(data, "transportTlsSecret")
-	if err != nil {
-		return res, err
-	}
-	sTransport := d.(*corev1.Secret)
-
-	d, err = helper.Get(data, "transportPkiSecret")
-	if err != nil {
-		return res, err
-	}
-	sTransportPki := d.(*corev1.Secret)
-
 	switch phase {
 	case phaseTlsCreate:
 
@@ -909,6 +893,8 @@ func (r *TlsReconciler) OnSuccess(ctx context.Context, resource client.Object, d
 
 		r.Log.Info("Phase Create all certificates successfully finished")
 	case phaseTlsUpdatePki:
+
+		// The statefullset controller will upgrade statefullset because of the checksum certificate change
 		condition.SetStatusCondition(&o.Status.Conditions, metav1.Condition{
 			Type:    TlsConditionGeneratePki,
 			Reason:  "Success",
@@ -945,85 +931,25 @@ func (r *TlsReconciler) OnSuccess(ctx context.Context, resource client.Object, d
 		})
 
 		r.Log.Info("Phase to renew PKI successfully finished")
-		return ctrl.Result{Requeue: true}, nil
+
 	case phaseTlsPropagatePki:
-		// Get all statefullset and pods to check the new CA are successfully be propagated
-		// Here, the ca.crt contain the old CA and the new CA
-		// And Sts finished rolling upgrade
-		stsList := &appv1.StatefulSetList{}
-		podList := &corev1.PodList{}
-		// Then, check if all Sts receive the new CA
-		annotation := fmt.Sprintf("%s/ca-checksum", ElasticsearchAnnotationKey)
-		caChecksum, err := checksum.SHA256sumReader(bytes.NewReader(sTransportPki.Data["ca.crt"]))
-		if err != nil {
-			return res, errors.Wrap(err, "Error when generate checksum from ca.crt")
+		// Wait statefullset controller finished to propagate pki (finished to upgrade all statefullset)
+		if condition.IsStatusConditionPresentAndEqual(o.Status.Conditions, StatefulsetConditionUpgrade, metav1.ConditionFalse) {
+			// all CA upgrade are finished
+			condition.SetStatusCondition(&o.Status.Conditions, metav1.Condition{
+				Type:    TlsConditionPropagatePki,
+				Reason:  "Success",
+				Status:  metav1.ConditionTrue,
+				Message: "PKI generated",
+			})
+
+			r.Log.Info("Phase propagate CA: all statefulset restarted successfully with new CA")
+		} else {
+			r.Log.Info("Phase propagate CA: wait statefullset controller finished to propagate CA certificate")
 		}
-		labelSelectors, err := labels.Parse(fmt.Sprintf("cluster=%s,%s=true", o.Name, ElasticsearchAnnotationKey))
-		if err != nil {
-			return res, errors.Wrap(err, "Error when generate label selector")
-		}
-		if err = r.Client.List(ctx, stsList, &client.ListOptions{Namespace: o.Namespace, LabelSelector: labelSelectors}, &client.ListOptions{}); err != nil {
-			return res, errors.Wrapf(err, "Error when read Elasticsearch statefullsets")
-		}
-
-		// First, check all pod ready on Satefulset already upgraded
-		for _, sts := range stsList.Items {
-			if sts.Spec.Template.Annotations[annotation] != "" && sts.Spec.Template.Annotations[annotation] == caChecksum {
-				labelSelectors = labels.SelectorFromSet(sts.Spec.Template.Labels)
-				if err = r.Client.List(ctx, podList, &client.ListOptions{Namespace: o.Namespace, LabelSelector: labelSelectors}); err != nil {
-					return res, errors.Wrapf(err, "Error when read Elasticsearch pods")
-				}
-
-				isFinished := true
-				for _, p := range podList.Items {
-					// The pod must have CA checksum annotation and need to be ready
-					if p.Annotations[annotation] == "" || p.Annotations[annotation] != caChecksum || !podutil.IsPodReady(&p) {
-						isFinished = false
-					}
-				}
-				if !isFinished {
-					// All Sts not yet finished upgrade
-					r.Log.Info("Phase propagate CA: wait pod to be ready")
-					return ctrl.Result{RequeueAfter: time.Second * 30}, nil
-				}
-			}
-		}
-
-		for _, sts := range stsList.Items {
-
-			// Check CA is updated
-			if sts.Spec.Template.Annotations[annotation] == "" || sts.Spec.Template.Annotations[annotation] != caChecksum {
-				sts.Spec.Template.Annotations[annotation] = caChecksum
-				if err = r.Client.Update(ctx, &sts); err != nil {
-					return res, errors.Wrapf(err, "Error when update statefullset %s", sts.Name)
-				}
-
-				condition.SetStatusCondition(&o.Status.Conditions, metav1.Condition{
-					Type:    TlsConditionPropagatePki,
-					Reason:  "Propagate",
-					Status:  metav1.ConditionFalse,
-					Message: fmt.Sprintf("Propagate PKI on %s", sts.Name),
-				})
-
-				r.Log.Infof("Phase propagate CA: wait statefulset %s start with new CA", sts.Name)
-
-				return ctrl.Result{RequeueAfter: 30 * time.Second}, nil
-
-			}
-		}
-
-		// all CA upgrade are finished
-		condition.SetStatusCondition(&o.Status.Conditions, metav1.Condition{
-			Type:    TlsConditionPropagatePki,
-			Reason:  "Success",
-			Status:  metav1.ConditionTrue,
-			Message: "PKI generated",
-		})
-
-		r.Log.Info("Phase propagate CA: all statefulset restarted successfully with new CA")
-		return ctrl.Result{Requeue: true}, nil
 
 	case phaseTlsUpdateCertificates:
+		// The statefullset controller will upgrade statefullset because of the checksum certificate change
 		condition.SetStatusCondition(&o.Status.Conditions, metav1.Condition{
 			Type:    TlsConditionGenerateCertificate,
 			Reason:  "Success",
@@ -1032,82 +958,23 @@ func (r *TlsReconciler) OnSuccess(ctx context.Context, resource client.Object, d
 		})
 
 		r.Log.Info("Phase propagate certificates: all certificates have been successfully renewed")
-		return ctrl.Result{Requeue: true}, nil
 
 	case phaseTlsPropagateCertificates:
-		// Get all statefullset to check the new certificates to be propagated
-		// Here, ca.crt contain only the new CA
-		// And Sts finished rolling upgrade
-		stsList := &appv1.StatefulSetList{}
-		podList := &corev1.PodList{}
-		annotation := fmt.Sprintf("%s/ca-checksum", ElasticsearchAnnotationKey)
-		caChecksum, err := checksum.SHA256sumReader(bytes.NewReader(sTransport.Data["ca.crt"]))
-		if err != nil {
-			return res, errors.Wrap(err, "Error when generate checksum from ca.crt")
+		// Wait statefullset controller finished to propagate certfificates (finished to upgrade all statefullset)
+		if condition.IsStatusConditionPresentAndEqual(o.Status.Conditions, StatefulsetConditionUpgrade, metav1.ConditionFalse) {
+
+			// all certificate upgrade are finished
+			condition.SetStatusCondition(&o.Status.Conditions, metav1.Condition{
+				Type:    TlsConditionPropagateCertificate,
+				Reason:  "Success",
+				Status:  metav1.ConditionTrue,
+				Message: "Certificates propagated",
+			})
+
+			r.Log.Info("Phase propagate certificates: all nodes have been successfully restarted with new certificates")
+		} else {
+			r.Log.Info("Phase propagate certificates:  wait statefullset controller finished to propagate certificate")
 		}
-		labelSelectors, err := labels.Parse(fmt.Sprintf("cluster=%s,%s=true", o.Name, ElasticsearchAnnotationKey))
-		if err != nil {
-			return res, errors.Wrap(err, "Error when generate label selector")
-		}
-		if err = r.Client.List(ctx, stsList, &client.ListOptions{Namespace: o.Namespace, LabelSelector: labelSelectors}); err != nil {
-			return res, errors.Wrapf(err, "Error when read Elasticsearch statefullsets")
-		}
-
-		// First, check if one sts currently upgraded
-		for _, sts := range stsList.Items {
-			if sts.Spec.Template.Annotations[annotation] != "" && sts.Spec.Template.Annotations[annotation] == caChecksum {
-				labelSelectors = labels.SelectorFromSet(sts.Spec.Template.Labels)
-				if err = r.Client.List(ctx, podList, &client.ListOptions{Namespace: o.Namespace, LabelSelector: labelSelectors}); err != nil {
-					return res, errors.Wrapf(err, "Error when read Elasticsearch pods")
-				}
-
-				isFinished := true
-				for _, p := range podList.Items {
-					// The pod must have CA checksum annotation and need to be ready
-					if p.Annotations[annotation] == "" || p.Annotations[annotation] != caChecksum || !podutil.IsPodReady(&p) {
-						isFinished = false
-					}
-				}
-				if !isFinished {
-					// All Sts not yet finished upgrade
-					r.Log.Info("Phase propagate certificates: wait pod to be ready")
-					return ctrl.Result{RequeueAfter: time.Second * 30}, nil
-				}
-			}
-		}
-
-		// Then, check if all Sts receive the new certificates
-		for _, sts := range stsList.Items {
-			// Check CA is updated
-			if sts.Spec.Template.Annotations[annotation] == "" || sts.Spec.Template.Annotations[annotation] != caChecksum {
-				sts.Spec.Template.Annotations[annotation] = caChecksum
-				if err = r.Client.Update(ctx, &sts); err != nil {
-					return res, errors.Wrapf(err, "Error when update statefullset %s", sts.Name)
-				}
-
-				condition.SetStatusCondition(&o.Status.Conditions, metav1.Condition{
-					Type:    TlsConditionPropagateCertificate,
-					Reason:  "Propagate",
-					Status:  metav1.ConditionFalse,
-					Message: fmt.Sprintf("Propagate certificate on %s", sts.Name),
-				})
-
-				r.Log.Infof("Phase propagate certificates: wait statefulset %s restart with new certificates", sts.Name)
-				return ctrl.Result{RequeueAfter: 30 * time.Second}, nil
-			}
-		}
-
-		// all certificate upgrade are finished
-		condition.SetStatusCondition(&o.Status.Conditions, metav1.Condition{
-			Type:    TlsConditionPropagateCertificate,
-			Reason:  "Success",
-			Status:  metav1.ConditionTrue,
-			Message: "Certificates propagated",
-		})
-
-		r.Log.Info("Phase propagate certificates: all nodes have beed successfully restarted with new certificates")
-
-		return ctrl.Result{Requeue: true}, nil
 
 	case phaseTlsCleanTransportCA:
 		condition.SetStatusCondition(&o.Status.Conditions, metav1.Condition{
