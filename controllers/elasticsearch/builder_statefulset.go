@@ -36,7 +36,7 @@ var (
 )
 
 // GenerateStatefullsets permit to generate statefullsets for each node groups
-func BuildStatefulsets(es *elasticsearchcrd.Elasticsearch, keystoreSecret *corev1.Secret, apiCrtSecret *corev1.Secret) (statefullsets []appv1.StatefulSet, err error) {
+func BuildStatefulsets(es *elasticsearchcrd.Elasticsearch, keystoreSecret *corev1.Secret, apiCrtSecret *corev1.Secret, transportCrtSecret *corev1.Secret) (statefullsets []appv1.StatefulSet, err error) {
 	var (
 		sts *appv1.StatefulSet
 	)
@@ -73,8 +73,8 @@ func BuildStatefulsets(es *elasticsearchcrd.Elasticsearch, keystoreSecret *corev
 		}
 		secretChecksumAnnotations[fmt.Sprintf("%s/checksum-keystore", ElasticsearchAnnotationKey)] = sum
 	}
-	// Compute checksum annotation for external API certs
-	if es.IsTlsApiEnabled() && !es.IsSelfManagedSecretForTlsApi() && apiCrtSecret != nil {
+	// Compute checksum annotation for API certs
+	if es.IsTlsApiEnabled() && apiCrtSecret != nil {
 		//Convert secret contend to json string and them checksum it
 		j, err := json.Marshal(apiCrtSecret.Data)
 		if err != nil {
@@ -82,9 +82,22 @@ func BuildStatefulsets(es *elasticsearchcrd.Elasticsearch, keystoreSecret *corev
 		}
 		sum, err := checksum.SHA256sumReader(bytes.NewReader(j))
 		if err != nil {
-			return nil, errors.Wrapf(err, "Error when generate checksum for apiCrt %s", apiCrtSecret.Name)
+			return nil, errors.Wrapf(err, "Error when generate checksum for API certificate %s", apiCrtSecret.Name)
 		}
 		secretChecksumAnnotations[fmt.Sprintf("%s/checksum-api-certs", ElasticsearchAnnotationKey)] = sum
+	}
+	// Compute checksum annotation for transport certs
+	if transportCrtSecret != nil {
+		//Convert secret contend to json string and them checksum it
+		j, err := json.Marshal(transportCrtSecret.Data)
+		if err != nil {
+			return nil, errors.Wrapf(err, "Error when convert data of secret %s on json string", transportCrtSecret.Name)
+		}
+		sum, err := checksum.SHA256sumReader(bytes.NewReader(j))
+		if err != nil {
+			return nil, errors.Wrapf(err, "Error when generate checksum for transport certificates %s", transportCrtSecret.Name)
+		}
+		secretChecksumAnnotations[fmt.Sprintf("%s/checksum-transport-certs", ElasticsearchAnnotationKey)] = sum
 	}
 
 	for _, nodeGroup := range es.Spec.NodeGroups {

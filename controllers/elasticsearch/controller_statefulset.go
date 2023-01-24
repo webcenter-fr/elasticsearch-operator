@@ -87,6 +87,7 @@ func (r *StatefulsetReconciler) Read(ctx context.Context, resource client.Object
 	stsList := &appv1.StatefulSetList{}
 	secretKeystore := &corev1.Secret{}
 	secretApiCrt := &corev1.Secret{}
+	secretTransportCrt := &corev1.Secret{}
 
 	// Read current satefulsets
 	labelSelectors, err := labels.Parse(fmt.Sprintf("cluster=%s,%s=true", o.Name, ElasticsearchAnnotationKey))
@@ -111,21 +112,42 @@ func (r *StatefulsetReconciler) Read(ctx context.Context, resource client.Object
 		secretKeystore = nil
 	}
 
-	// Read APi Crt if needed
-	if o.IsTlsApiEnabled() && !o.IsSelfManagedSecretForTlsApi() {
-		if err = r.Client.Get(ctx, types.NamespacedName{Namespace: o.Namespace, Name: o.Spec.Tls.CertificateSecretRef.Name}, secretApiCrt); err != nil {
-			if !k8serrors.IsNotFound(err) {
-				return res, errors.Wrapf(err, "Error when read secret %s", o.Spec.Tls.CertificateSecretRef.Name)
+	// Read API certificate secret if needed
+	if o.IsTlsApiEnabled() {
+		if o.IsSelfManagedSecretForTlsApi() {
+			if err = r.Client.Get(ctx, types.NamespacedName{Namespace: o.Namespace, Name: GetSecretNameForTlsApi(o)}, secretApiCrt); err != nil {
+				if !k8serrors.IsNotFound(err) {
+					return res, errors.Wrapf(err, "Error when read secret %s", GetSecretNameForTlsApi(o))
+				}
+				r.Log.Warnf("Secret %s not yet exist, try again later", GetSecretNameForTlsApi(o))
+				return ctrl.Result{RequeueAfter: 30 * time.Second}, nil
 			}
-			r.Log.Warnf("Secret %s not yet exist, try again later", o.Spec.Tls.CertificateSecretRef.Name)
-			return ctrl.Result{RequeueAfter: 30 * time.Second}, nil
+
+		} else {
+			if err = r.Client.Get(ctx, types.NamespacedName{Namespace: o.Namespace, Name: o.Spec.Tls.CertificateSecretRef.Name}, secretApiCrt); err != nil {
+				if !k8serrors.IsNotFound(err) {
+					return res, errors.Wrapf(err, "Error when read secret %s", o.Spec.Tls.CertificateSecretRef.Name)
+				}
+				r.Log.Warnf("Secret %s not yet exist, try again later", o.Spec.Tls.CertificateSecretRef.Name)
+				return ctrl.Result{RequeueAfter: 30 * time.Second}, nil
+			}
 		}
+
 	} else {
 		secretApiCrt = nil
 	}
 
+	// Read transport certicate secret
+	if err = r.Client.Get(ctx, types.NamespacedName{Namespace: o.Namespace, Name: GetSecretNameForTlsTransport(o)}, secretTransportCrt); err != nil {
+		if !k8serrors.IsNotFound(err) {
+			return res, errors.Wrapf(err, "Error when read secret %s", GetSecretNameForTlsTransport(o))
+		}
+		r.Log.Warnf("Secret %s not yet exist, try again later", GetSecretNameForTlsTransport(o))
+		return ctrl.Result{RequeueAfter: 30 * time.Second}, nil
+	}
+
 	// Generate expected statefulsets
-	expectedSts, err := BuildStatefulsets(o, secretKeystore, secretApiCrt)
+	expectedSts, err := BuildStatefulsets(o, secretKeystore, secretApiCrt, secretTransportCrt)
 	if err != nil {
 		return res, errors.Wrap(err, "Error when generate statefulsets")
 	}

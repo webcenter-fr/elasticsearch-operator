@@ -9908,6 +9908,21 @@ spec:
                     type: string
                 type: object
                 x-kubernetes-map-type: atomic
+              monitoring:
+                description: Monitoring permit to monitor current cluster Default,
+                  it not monitor cluster
+                properties:
+                  prometheus:
+                    description: Prometheus permit to monitor cluster with Prometheus
+                      en graphana (via exporter)
+                    properties:
+                      enabled:
+                        description: Enabled permit to enable Prometheus monitoring
+                          It will deploy exporter for Elasticsearch and add podMonitor
+                          policy Default to false
+                        type: boolean
+                    type: object
+                type: object
               nodeGroups:
                 description: NodeGroups permit to groups node per use case For exemple
                   master, data and ingest

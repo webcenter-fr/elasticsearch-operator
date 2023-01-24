@@ -27,6 +27,7 @@ spec:
       annotations:
         elasticsearch.k8s.webcenter.fr/checksum-elasticsearch.yml: "2a0a8650b1d7a5f22e433877319457161489869868b894d448b2616477b521aa"
         elasticsearch.k8s.webcenter.fr/checksum-api-certs: "53b47b289c9912c920ad03f4c114537fe6f9480756f7034cf9fd19017aaad026"
+        elasticsearch.k8s.webcenter.fr/checksum-transport-certs: "53b47b289c9912c920ad03f4c114537fe6f9480756f7034cf9fd19017aaad026"
       name: test-all-es
     spec:
       affinity:
