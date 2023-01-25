@@ -343,7 +343,7 @@ func BuildStatefulsets(es *elasticsearchcrd.Elasticsearch, keystoreSecret *corev
 		cb.WithLivenessProbe(&corev1.Probe{
 			TimeoutSeconds:   5,
 			PeriodSeconds:    30,
-			FailureThreshold: 10,
+			FailureThreshold: 3,
 			SuccessThreshold: 1,
 			ProbeHandler: corev1.ProbeHandler{
 				TCPSocket: &corev1.TCPSocketAction{
@@ -355,7 +355,7 @@ func BuildStatefulsets(es *elasticsearchcrd.Elasticsearch, keystoreSecret *corev
 		// Compute readiness
 		cb.WithReadinessProbe(&corev1.Probe{
 			TimeoutSeconds:   5,
-			PeriodSeconds:    30,
+			PeriodSeconds:    10,
 			FailureThreshold: 3,
 			SuccessThreshold: 1,
 			ProbeHandler: corev1.ProbeHandler{
@@ -745,7 +745,11 @@ fi
 			FSGroup: pointer.Int64(1000),
 		}, k8sbuilder.Merge)
 
+		// Compute pod template name
 		ptb.PodTemplate().Name = GetNodeGroupName(es, nodeGroup.Name)
+
+		// Compute image pull secret
+		ptb.PodTemplate().Spec.ImagePullSecrets = es.Spec.ImagePullSecrets
 
 		// Compute Statefullset
 		sts = &appv1.StatefulSet{

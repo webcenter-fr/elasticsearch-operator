@@ -6,6 +6,7 @@ import (
 	"testing"
 	"time"
 
+	monitoringv1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1"
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/suite"
 	elasticsearchcrd "github.com/webcenter-fr/elasticsearch-operator/apis/elasticsearch/v1alpha1"
@@ -46,6 +47,7 @@ func (t *KibanaControllerTestSuite) SetupSuite() {
 	testEnv = &envtest.Environment{
 		CRDDirectoryPaths: []string{
 			filepath.Join("../..", "config", "crd", "bases"),
+			filepath.Join("../..", "config", "crd", "externals"),
 		},
 		ErrorIfCRDPathMissing:    true,
 		ControlPlaneStopTimeout:  120 * time.Second,
@@ -71,6 +73,10 @@ func (t *KibanaControllerTestSuite) SetupSuite() {
 		panic(err)
 	}
 	err = kibanacrd.AddToScheme(scheme.Scheme)
+	if err != nil {
+		panic(err)
+	}
+	err = monitoringv1.AddToScheme(scheme.Scheme)
 	if err != nil {
 		panic(err)
 	}

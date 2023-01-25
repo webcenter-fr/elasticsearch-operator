@@ -9,6 +9,7 @@ import (
 
 	"github.com/disaster37/k8s-objectmatcher/patch"
 	"github.com/disaster37/operator-sdk-extra/pkg/test"
+	monitoringv1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1"
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
 	elasticsearchcrd "github.com/webcenter-fr/elasticsearch-operator/apis/elasticsearch/v1alpha1"
@@ -72,6 +73,11 @@ func doCreateElasticsearchStep() test.TestStep {
 							Enabled: true,
 						},
 					},
+					Monitoring: elasticsearchcrd.MonitoringSpec{
+						Prometheus: &elasticsearchcrd.PrometheusSpec{
+							Enabled: true,
+						},
+					},
 					NodeGroups: []elasticsearchcrd.NodeGroupSpec{
 						{
 							Name:     "single",
@@ -112,7 +118,9 @@ func doCreateElasticsearchStep() test.TestStep {
 				cm   *corev1.ConfigMap
 				pdb  *policyv1.PodDisruptionBudget
 				sts  *appv1.StatefulSet
+				dpl  *appv1.Deployment
 				user *elasticsearchapicrd.User
+				pm   *monitoringv1.PodMonitor
 			)
 
 			isTimeout, err := localtest.RunWithTimeout(func() error {
@@ -271,6 +279,22 @@ func doCreateElasticsearchStep() test.TestStep {
 				assert.NotEmpty(t, user.Annotations[patch.LastAppliedConfig])
 			}
 
+			// Exporter must exist
+			dpl = &appv1.Deployment{}
+			if err = c.Get(context.Background(), types.NamespacedName{Namespace: key.Namespace, Name: GetExporterDeployementName(es)}, dpl); err != nil {
+				t.Fatal(err)
+			}
+			assert.NotEmpty(t, dpl.OwnerReferences)
+			assert.NotEmpty(t, dpl.Annotations[patch.LastAppliedConfig])
+
+			// Pod monitor must exist
+			pm = &monitoringv1.PodMonitor{}
+			if err = c.Get(context.Background(), types.NamespacedName{Namespace: key.Namespace, Name: GetExporterDeployementName(es)}, pm); err != nil {
+				t.Fatal(err)
+			}
+			assert.NotEmpty(t, pm.OwnerReferences)
+			assert.NotEmpty(t, pm.Annotations[patch.LastAppliedConfig])
+
 			// Status must be update
 			assert.NotEmpty(t, es.Status.Health)
 			assert.NotEmpty(t, es.Status.Phase)
@@ -319,7 +343,9 @@ func doUpdateElasticsearchStep() test.TestStep {
 				cm   *corev1.ConfigMap
 				pdb  *policyv1.PodDisruptionBudget
 				sts  *appv1.StatefulSet
+				dpl  *appv1.Deployment
 				user *elasticsearchapicrd.User
+				pm   *monitoringv1.PodMonitor
 			)
 
 			lastVersion := data["lastVersion"].(string)
@@ -495,6 +521,24 @@ func doUpdateElasticsearchStep() test.TestStep {
 				assert.NotEmpty(t, user.Annotations[patch.LastAppliedConfig])
 			}
 
+			// Exporter must exist
+			dpl = &appv1.Deployment{}
+			if err = c.Get(context.Background(), types.NamespacedName{Namespace: key.Namespace, Name: GetExporterDeployementName(es)}, dpl); err != nil {
+				t.Fatal(err)
+			}
+			assert.Equal(t, "fu", dpl.Labels["test"])
+			assert.NotEmpty(t, dpl.OwnerReferences)
+			assert.NotEmpty(t, dpl.Annotations[patch.LastAppliedConfig])
+
+			// Pod monitor must exist
+			pm = &monitoringv1.PodMonitor{}
+			if err = c.Get(context.Background(), types.NamespacedName{Namespace: key.Namespace, Name: GetExporterDeployementName(es)}, pm); err != nil {
+				t.Fatal(err)
+			}
+			assert.NotEmpty(t, pm.OwnerReferences)
+			assert.NotEmpty(t, pm.Annotations[patch.LastAppliedConfig])
+			assert.Equal(t, "fu", pm.Labels["test"])
+
 			// Status must be update
 			assert.NotEmpty(t, es.Status.Health)
 			assert.NotEmpty(t, es.Status.Phase)
@@ -547,7 +591,9 @@ func doUpdateElasticsearchIncreaseNodeGroupStep() test.TestStep {
 				cm   *corev1.ConfigMap
 				pdb  *policyv1.PodDisruptionBudget
 				sts  *appv1.StatefulSet
+				dpl  *appv1.Deployment
 				user *elasticsearchapicrd.User
+				pm   *monitoringv1.PodMonitor
 			)
 
 			lastVersion := data["lastVersion"].(string)
@@ -708,6 +754,22 @@ func doUpdateElasticsearchIncreaseNodeGroupStep() test.TestStep {
 				assert.NotEmpty(t, user.Annotations[patch.LastAppliedConfig])
 			}
 
+			// Exporter must exist
+			dpl = &appv1.Deployment{}
+			if err = c.Get(context.Background(), types.NamespacedName{Namespace: key.Namespace, Name: GetExporterDeployementName(es)}, dpl); err != nil {
+				t.Fatal(err)
+			}
+			assert.NotEmpty(t, dpl.OwnerReferences)
+			assert.NotEmpty(t, dpl.Annotations[patch.LastAppliedConfig])
+
+			// Pod monitor must exist
+			pm = &monitoringv1.PodMonitor{}
+			if err = c.Get(context.Background(), types.NamespacedName{Namespace: key.Namespace, Name: GetExporterDeployementName(es)}, pm); err != nil {
+				t.Fatal(err)
+			}
+			assert.NotEmpty(t, pm.OwnerReferences)
+			assert.NotEmpty(t, pm.Annotations[patch.LastAppliedConfig])
+
 			// Status must be update
 			assert.NotEmpty(t, es.Status.Health)
 			assert.NotEmpty(t, es.Status.Phase)
@@ -757,7 +819,9 @@ func doUpdateElasticsearchDecreaseNodeGroupStep() test.TestStep {
 				cm   *corev1.ConfigMap
 				pdb  *policyv1.PodDisruptionBudget
 				sts  *appv1.StatefulSet
+				dpl  *appv1.Deployment
 				user *elasticsearchapicrd.User
+				pm   *monitoringv1.PodMonitor
 			)
 
 			lastVersion := data["lastVersion"].(string)
@@ -978,6 +1042,22 @@ func doUpdateElasticsearchDecreaseNodeGroupStep() test.TestStep {
 				assert.NotEmpty(t, user.Annotations[patch.LastAppliedConfig])
 			}
 
+			// Exporter must exist
+			dpl = &appv1.Deployment{}
+			if err = c.Get(context.Background(), types.NamespacedName{Namespace: key.Namespace, Name: GetExporterDeployementName(es)}, dpl); err != nil {
+				t.Fatal(err)
+			}
+			assert.NotEmpty(t, dpl.OwnerReferences)
+			assert.NotEmpty(t, dpl.Annotations[patch.LastAppliedConfig])
+
+			// Pod monitor must exist
+			pm = &monitoringv1.PodMonitor{}
+			if err = c.Get(context.Background(), types.NamespacedName{Namespace: key.Namespace, Name: GetExporterDeployementName(es)}, pm); err != nil {
+				t.Fatal(err)
+			}
+			assert.NotEmpty(t, pm.OwnerReferences)
+			assert.NotEmpty(t, pm.Annotations[patch.LastAppliedConfig])
+
 			// Status must be update
 			assert.NotEmpty(t, es.Status.Health)
 			assert.NotEmpty(t, es.Status.Phase)
@@ -1041,8 +1121,10 @@ func doUpdateElasticsearchAddLicenseStep() test.TestStep {
 				cm      *corev1.ConfigMap
 				pdb     *policyv1.PodDisruptionBudget
 				sts     *appv1.StatefulSet
+				dpl     *appv1.Deployment
 				user    *elasticsearchapicrd.User
 				license *elasticsearchapicrd.License
+				pm      *monitoringv1.PodMonitor
 			)
 
 			lastVersion := data["lastVersion"].(string)
@@ -1269,6 +1351,22 @@ func doUpdateElasticsearchAddLicenseStep() test.TestStep {
 			}
 			assert.NotEmpty(t, license.OwnerReferences)
 			assert.NotEmpty(t, license.Annotations[patch.LastAppliedConfig])
+
+			// Exporter must exist
+			dpl = &appv1.Deployment{}
+			if err = c.Get(context.Background(), types.NamespacedName{Namespace: key.Namespace, Name: GetExporterDeployementName(es)}, dpl); err != nil {
+				t.Fatal(err)
+			}
+			assert.NotEmpty(t, dpl.OwnerReferences)
+			assert.NotEmpty(t, dpl.Annotations[patch.LastAppliedConfig])
+
+			// Pod monitor must exist
+			pm = &monitoringv1.PodMonitor{}
+			if err = c.Get(context.Background(), types.NamespacedName{Namespace: key.Namespace, Name: GetExporterDeployementName(es)}, pm); err != nil {
+				t.Fatal(err)
+			}
+			assert.NotEmpty(t, pm.OwnerReferences)
+			assert.NotEmpty(t, pm.Annotations[patch.LastAppliedConfig])
 
 			// Status must be update
 			assert.NotEmpty(t, es.Status.Health)
