@@ -180,12 +180,8 @@ func (r *ElasticsearchReconciler) Reconcile(ctx context.Context, req ctrl.Reques
 		}),
 	})
 
-	exporterReconciler := NewExporterReconciler(r.Client, r.Scheme, common.Reconciler{
-		Recorder: r.GetRecorder(),
-		Log: r.GetLogger().WithFields(logrus.Fields{
-			"phase": "exporter",
-		}),
-	})
+	exporterReconciler := NewExporterReconciler(r.Client, r.Scheme, r.GetRecorder(), r.GetLogger())
+	podMonitorReconciler := NewPodMonitorReconciler(r.Client, r.Scheme, r.GetRecorder(), r.GetLogger())
 
 	return reconciler.Reconcile(ctx, req, es, data,
 		tlsReconsiler,
@@ -200,6 +196,7 @@ func (r *ElasticsearchReconciler) Reconcile(ctx context.Context, req ctrl.Reques
 		userReconciler,
 		licenseReconciler,
 		exporterReconciler,
+		podMonitorReconciler,
 	)
 }
 

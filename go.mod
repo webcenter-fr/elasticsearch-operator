@@ -10,7 +10,7 @@ require (
 	github.com/disaster37/goca v1.0.4-0.20221213082455-a233467aa7fe
 	github.com/disaster37/k8s-objectmatcher v1.8.2-0.20230118153724-8144c44645a8
 	github.com/disaster37/k8sbuilder v0.0.0-20221212105448-99cdf3ba3e4a
-	github.com/disaster37/operator-sdk-extra v0.0.18-0.20230103150326-7b25c891807e
+	github.com/disaster37/operator-sdk-extra v0.1.0
 	github.com/elastic/elastic-transport-go/v8 v8.1.0
 	github.com/elastic/go-elasticsearch/v8 v8.5.0
 	github.com/elastic/go-ucfg v0.8.6

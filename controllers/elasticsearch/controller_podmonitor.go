@@ -5,10 +5,10 @@ import (
 
 	"github.com/disaster37/operator-sdk-extra/pkg/controller"
 	"github.com/pkg/errors"
+	monitoringv1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1"
 	"github.com/sirupsen/logrus"
 	elasticsearchcrd "github.com/webcenter-fr/elasticsearch-operator/apis/elasticsearch/v1alpha1"
 	"github.com/webcenter-fr/elasticsearch-operator/controllers/common"
-	appv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	condition "k8s.io/apimachinery/pkg/api/meta"
@@ -21,22 +21,22 @@ import (
 )
 
 const (
-	ExporterCondition = "ExporterReady"
-	ExporterPhase     = "Exporter"
+	PodMonitorCondition = "PodMonitorReady"
+	PodMonitorPhase     = "PodMonitor"
 )
 
-type ExporterReconciler struct {
+type PodMonitorReconciler struct {
 	common.Reconciler
 }
 
-func NewExporterReconciler(client client.Client, scheme *runtime.Scheme, recorder record.EventRecorder, log *logrus.Entry) controller.K8sPhaseReconciler {
-	return &ExporterReconciler{
+func NewPodMonitorReconciler(client client.Client, scheme *runtime.Scheme, recorder record.EventRecorder, log *logrus.Entry) controller.K8sPhaseReconciler {
+	return &PodMonitorReconciler{
 		Reconciler: common.Reconciler{
 			Recorder: recorder,
 			Log: log.WithFields(logrus.Fields{
-				"phase": "exporter",
+				"phase": "podMonitor",
 			}),
-			Name:   "exporter",
+			Name:   "podMonitor",
 			Client: client,
 			Scheme: scheme,
 		},
@@ -44,61 +44,61 @@ func NewExporterReconciler(client client.Client, scheme *runtime.Scheme, recorde
 }
 
 // Configure permit to init condition
-func (r *ExporterReconciler) Configure(ctx context.Context, req ctrl.Request, resource client.Object) (res ctrl.Result, err error) {
+func (r *PodMonitorReconciler) Configure(ctx context.Context, req ctrl.Request, resource client.Object) (res ctrl.Result, err error) {
 	o := resource.(*elasticsearchcrd.Elasticsearch)
 
 	// Init condition status if not exist
-	if condition.FindStatusCondition(o.Status.Conditions, ExporterCondition) == nil {
+	if condition.FindStatusCondition(o.Status.Conditions, PodMonitorCondition) == nil {
 		condition.SetStatusCondition(&o.Status.Conditions, metav1.Condition{
-			Type:   ExporterCondition,
+			Type:   PodMonitorCondition,
 			Status: metav1.ConditionFalse,
 			Reason: "Initialize",
 		})
 
-		o.Status.Phase = ExporterPhase
+		o.Status.Phase = PodMonitorPhase
 	}
 
 	return res, nil
 }
 
-// Read existing deployement
-func (r *ExporterReconciler) Read(ctx context.Context, resource client.Object, data map[string]any) (res ctrl.Result, err error) {
+// Read existing podMonitor
+func (r *PodMonitorReconciler) Read(ctx context.Context, resource client.Object, data map[string]any) (res ctrl.Result, err error) {
 	o := resource.(*elasticsearchcrd.Elasticsearch)
-	dpl := &appv1.Deployment{}
+	pm := &monitoringv1.PodMonitor{}
 
-	// Read current deployment
-	if err = r.Client.Get(ctx, types.NamespacedName{Namespace: o.Namespace, Name: GetExporterDeployementName(o)}, dpl); err != nil {
+	// Read current podMonitor
+	if err = r.Client.Get(ctx, types.NamespacedName{Namespace: o.Namespace, Name: GetExporterDeployementName(o)}, pm); err != nil {
 		if !k8serrors.IsNotFound(err) {
-			return res, errors.Wrapf(err, "Error when read exporter deployment")
+			return res, errors.Wrapf(err, "Error when read podMonitor")
 		}
-		dpl = nil
+		pm = nil
 	}
-	data["currentObject"] = dpl
+	data["currentObject"] = pm
 
-	// Generate expected deployement
-	expectedExporter, err := BuildDeploymentExporter(o)
+	// Generate expected podMonitor
+	expectedPm, err := BuildPodMonitor(o)
 	if err != nil {
-		return res, errors.Wrap(err, "Error when generate exporter deployment")
+		return res, errors.Wrap(err, "Error when generate podMonitor")
 	}
-	data["expectedObject"] = expectedExporter
+	data["expectedObject"] = expectedPm
 
 	return res, nil
 }
 
-// Diff permit to check if deployment is up to date
-func (r *ExporterReconciler) Diff(ctx context.Context, resource client.Object, data map[string]interface{}) (diff controller.K8sDiff, res ctrl.Result, err error) {
+// Diff permit to check if podMonitor is up to date
+func (r *PodMonitorReconciler) Diff(ctx context.Context, resource client.Object, data map[string]interface{}) (diff controller.K8sDiff, res ctrl.Result, err error) {
 	return r.Reconciler.StdDiff(ctx, resource, data)
 }
 
 // OnError permit to set status condition on the right state and record error
-func (r *ExporterReconciler) OnError(ctx context.Context, resource client.Object, data map[string]any, currentErr error) (res ctrl.Result, err error) {
+func (r *PodMonitorReconciler) OnError(ctx context.Context, resource client.Object, data map[string]any, currentErr error) (res ctrl.Result, err error) {
 	o := resource.(*elasticsearchcrd.Elasticsearch)
 
 	r.Log.Error(currentErr)
 	r.Recorder.Event(resource, corev1.EventTypeWarning, "Failed", currentErr.Error())
 
 	condition.SetStatusCondition(&o.Status.Conditions, metav1.Condition{
-		Type:    ExporterCondition,
+		Type:    PodMonitorCondition,
 		Status:  metav1.ConditionFalse,
 		Reason:  "Failed",
 		Message: currentErr.Error(),
@@ -109,17 +109,17 @@ func (r *ExporterReconciler) OnError(ctx context.Context, resource client.Object
 }
 
 // OnSuccess permit to set status condition on the right state is everithink is good
-func (r *ExporterReconciler) OnSuccess(ctx context.Context, resource client.Object, data map[string]any, diff controller.K8sDiff) (res ctrl.Result, err error) {
+func (r *PodMonitorReconciler) OnSuccess(ctx context.Context, resource client.Object, data map[string]any, diff controller.K8sDiff) (res ctrl.Result, err error) {
 	o := resource.(*elasticsearchcrd.Elasticsearch)
 
 	if diff.NeedCreate || diff.NeedUpdate || diff.NeedDelete {
-		r.Recorder.Eventf(resource, corev1.EventTypeNormal, "Completed", "Exporter deployment successfully updated")
+		r.Recorder.Eventf(resource, corev1.EventTypeNormal, "Completed", "PodMonitor successfully updated")
 	}
 
 	// Update condition status if needed
-	if !condition.IsStatusConditionPresentAndEqual(o.Status.Conditions, ExporterCondition, metav1.ConditionTrue) {
+	if !condition.IsStatusConditionPresentAndEqual(o.Status.Conditions, PodMonitorCondition, metav1.ConditionTrue) {
 		condition.SetStatusCondition(&o.Status.Conditions, metav1.Condition{
-			Type:    ExporterCondition,
+			Type:    PodMonitorCondition,
 			Reason:  "Success",
 			Status:  metav1.ConditionTrue,
 			Message: "Ready",
