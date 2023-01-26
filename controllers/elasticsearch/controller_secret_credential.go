@@ -2,12 +2,10 @@ package elasticsearch
 
 import (
 	"context"
-	"fmt"
 
-	"github.com/disaster37/k8s-objectmatcher/patch"
 	"github.com/disaster37/operator-sdk-extra/pkg/controller"
-	"github.com/disaster37/operator-sdk-extra/pkg/helper"
 	"github.com/pkg/errors"
+	"github.com/sirupsen/logrus"
 	elasticsearchcrd "github.com/webcenter-fr/elasticsearch-operator/apis/elasticsearch/v1alpha1"
 	"github.com/webcenter-fr/elasticsearch-operator/controllers/common"
 	corev1 "k8s.io/api/core/v1"
@@ -16,6 +14,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/client-go/tools/record"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
@@ -27,23 +26,20 @@ const (
 
 type CredentialReconciler struct {
 	common.Reconciler
-	client.Client
-	Scheme *runtime.Scheme
-	name   string
 }
 
-func NewCredentialReconciler(client client.Client, scheme *runtime.Scheme, reconciler common.Reconciler) controller.K8sPhaseReconciler {
+func NewCredentialReconciler(client client.Client, scheme *runtime.Scheme, recorder record.EventRecorder, log *logrus.Entry) controller.K8sPhaseReconciler {
 	return &CredentialReconciler{
-		Reconciler: reconciler,
-		Client:     client,
-		Scheme:     scheme,
-		name:       "credential",
+		Reconciler: common.Reconciler{
+			Recorder: recorder,
+			Log: log.WithFields(logrus.Fields{
+				"phase": "credential",
+			}),
+			Name:   "credential",
+			Client: client,
+			Scheme: scheme,
+		},
 	}
-}
-
-// Name return the current phase
-func (r *CredentialReconciler) Name() string {
-	return r.name
 }
 
 // Configure permit to init condition
@@ -76,145 +72,21 @@ func (r *CredentialReconciler) Read(ctx context.Context, resource client.Object,
 		}
 		s = nil
 	}
-	data["currentSecretCredential"] = s
+	data["currentObject"] = s
 
 	// Generate expected secret
 	expectedSecretCredential, err := BuildCredentialSecret(o)
 	if err != nil {
 		return res, errors.Wrapf(err, "Error when generate secret %s", GetSecretNameForCredentials(o))
 	}
-	data["expectedSecretCredential"] = expectedSecretCredential
-
-	return res, nil
-}
-
-// Create will create secret
-func (r *CredentialReconciler) Create(ctx context.Context, resource client.Object, data map[string]interface{}) (res ctrl.Result, err error) {
-	var d any
-
-	d, err = helper.Get(data, "newSecrets")
-	if err != nil {
-		return res, err
-	}
-	expectedSecrets := d.([]corev1.Secret)
-
-	for _, s := range expectedSecrets {
-		if err = r.Client.Create(ctx, &s); err != nil {
-			return res, errors.Wrapf(err, "Error when create secret %s", s.Name)
-		}
-	}
-
-	return res, nil
-}
-
-// Update will update secret
-func (r *CredentialReconciler) Update(ctx context.Context, resource client.Object, data map[string]interface{}) (res ctrl.Result, err error) {
-	var d any
-
-	d, err = helper.Get(data, "secrets")
-	if err != nil {
-		return res, err
-	}
-	expectedSecrets := d.([]corev1.Secret)
-
-	for _, s := range expectedSecrets {
-		if err = r.Client.Update(ctx, &s); err != nil {
-			return res, errors.Wrapf(err, "Error when update secret %s", s.Name)
-		}
-	}
-
-	return res, nil
-}
-
-// Delete permit to delete secret
-func (r *CredentialReconciler) Delete(ctx context.Context, resource client.Object, data map[string]interface{}) (res ctrl.Result, err error) {
-
-	var d any
-
-	d, err = helper.Get(data, "oldSecrets")
-	if err != nil {
-		return res, err
-	}
-	oldSecrets := d.([]corev1.Secret)
-
-	for _, s := range oldSecrets {
-		if err = r.Client.Delete(ctx, &s); err != nil {
-			return res, errors.Wrapf(err, "Error when delete secret %s", s.Name)
-		}
-	}
+	data["expectedObject"] = expectedSecretCredential
 
 	return res, nil
 }
 
 // Diff permit to check if credential secret is up to date
 func (r *CredentialReconciler) Diff(ctx context.Context, resource client.Object, data map[string]interface{}) (diff controller.K8sDiff, res ctrl.Result, err error) {
-	o := resource.(*elasticsearchcrd.Elasticsearch)
-	var d any
-
-	d, err = helper.Get(data, "currentSecretCredential")
-	if err != nil {
-		return diff, res, err
-	}
-	currentSecretCredential := d.(*corev1.Secret)
-
-	d, err = helper.Get(data, "expectedSecretCredential")
-	if err != nil {
-		return diff, res, err
-	}
-	expectedSecretCredential := d.(*corev1.Secret)
-
-	diff = controller.K8sDiff{
-		NeedCreate: false,
-		NeedUpdate: false,
-		NeedDelete: false,
-	}
-
-	secretToUpdate := make([]corev1.Secret, 0)
-	secretToCreate := make([]corev1.Secret, 0)
-	secretToDelete := make([]corev1.Secret, 0)
-
-	if currentSecretCredential == nil {
-
-		// Create new credential secret
-		diff.NeedCreate = true
-		diff.Diff.WriteString(fmt.Sprintf("Create secret %s\n", expectedSecretCredential.Name))
-
-		// Set owner
-		err = ctrl.SetControllerReference(o, expectedSecretCredential, r.Scheme)
-		if err != nil {
-			return diff, res, errors.Wrapf(err, "Error when set owner reference")
-		}
-
-		if err := patch.DefaultAnnotator.SetLastAppliedAnnotation(expectedSecretCredential); err != nil {
-			return diff, res, errors.Wrapf(err, "Error when set diff annotation on secret %s", expectedSecretCredential.Name)
-		}
-
-		secretToCreate = append(secretToCreate, *expectedSecretCredential)
-
-	} else {
-
-		// Never update credentials
-		expectedSecretCredential.Data = currentSecretCredential.Data
-
-		// Check if need update secret
-		patchResult, err := patch.DefaultPatchMaker.Calculate(currentSecretCredential, expectedSecretCredential, patch.CleanMetadata(), patch.IgnoreStatusFields())
-		if err != nil {
-			return diff, res, errors.Wrapf(err, "Error when diffing secret %s", currentSecretCredential.Name)
-		}
-		if !patchResult.IsEmpty() {
-			updatedSecret := patchResult.Patched.(*corev1.Secret)
-			diff.NeedUpdate = true
-			diff.Diff.WriteString(fmt.Sprintf("diff %s: %s\n", updatedSecret.Name, string(patchResult.Patch)))
-			secretToUpdate = append(secretToUpdate, *updatedSecret)
-			r.Log.Debugf("Need update secret %s", updatedSecret.Name)
-		}
-	}
-
-	data["newSecrets"] = secretToCreate
-	data["secrets"] = secretToUpdate
-	data["oldSecrets"] = secretToDelete
-
-	return diff, res, nil
+	return r.Reconciler.StdDiff(ctx, resource, data)
 }
 
 // OnError permit to set status condition on the right state and record error

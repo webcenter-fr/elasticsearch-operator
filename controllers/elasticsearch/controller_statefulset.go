@@ -12,6 +12,7 @@ import (
 	"github.com/disaster37/operator-sdk-extra/pkg/controller"
 	"github.com/disaster37/operator-sdk-extra/pkg/helper"
 	"github.com/pkg/errors"
+	"github.com/sirupsen/logrus"
 	elasticsearchcrd "github.com/webcenter-fr/elasticsearch-operator/apis/elasticsearch/v1alpha1"
 	"github.com/webcenter-fr/elasticsearch-operator/controllers/common"
 	helperdiff "github.com/webcenter-fr/elasticsearch-operator/pkg/helper"
@@ -23,6 +24,7 @@ import (
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/client-go/tools/record"
 	podutil "k8s.io/kubectl/pkg/util/podutils"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -44,23 +46,20 @@ var (
 
 type StatefulsetReconciler struct {
 	common.Reconciler
-	client.Client
-	Scheme *runtime.Scheme
-	name   string
 }
 
-func NewStatefulsetReconciler(client client.Client, scheme *runtime.Scheme, reconciler common.Reconciler) controller.K8sPhaseReconciler {
+func NewStatefulsetReconciler(client client.Client, scheme *runtime.Scheme, recorder record.EventRecorder, log *logrus.Entry) controller.K8sPhaseReconciler {
 	return &StatefulsetReconciler{
-		Reconciler: reconciler,
-		Client:     client,
-		Scheme:     scheme,
-		name:       "statefulset",
+		Reconciler: common.Reconciler{
+			Recorder: recorder,
+			Log: log.WithFields(logrus.Fields{
+				"phase": "statefulset",
+			}),
+			Name:   "statefulset",
+			Client: client,
+			Scheme: scheme,
+		},
 	}
-}
-
-// Name return the current phase
-func (r *StatefulsetReconciler) Name() string {
-	return r.name
 }
 
 // Configure permit to init condition
@@ -156,64 +155,6 @@ func (r *StatefulsetReconciler) Read(ctx context.Context, resource client.Object
 	return res, nil
 }
 
-// Create will create statefulset
-func (r *StatefulsetReconciler) Create(ctx context.Context, resource client.Object, data map[string]interface{}) (res ctrl.Result, err error) {
-	var d any
-
-	d, err = helper.Get(data, "newStatefulsets")
-	if err != nil {
-		return res, err
-	}
-	expectedSts := d.([]appv1.StatefulSet)
-
-	for _, sts := range expectedSts {
-		if err = r.Client.Create(ctx, &sts); err != nil {
-			return res, errors.Wrapf(err, "Error when create statefulset %s", sts.Name)
-		}
-	}
-
-	return res, nil
-}
-
-// Update will update statefulset
-func (r *StatefulsetReconciler) Update(ctx context.Context, resource client.Object, data map[string]interface{}) (res ctrl.Result, err error) {
-	var d any
-
-	d, err = helper.Get(data, "statefulsets")
-	if err != nil {
-		return res, err
-	}
-	expectedSts := d.([]appv1.StatefulSet)
-
-	for _, sts := range expectedSts {
-		if err = r.Client.Update(ctx, &sts); err != nil {
-			return res, errors.Wrapf(err, "Error when update statefulset %s", sts.Name)
-		}
-	}
-
-	return res, nil
-}
-
-// Delete permit to delete statefulset
-func (r *StatefulsetReconciler) Delete(ctx context.Context, resource client.Object, data map[string]interface{}) (res ctrl.Result, err error) {
-
-	var d any
-
-	d, err = helper.Get(data, "oldStatefulsets")
-	if err != nil {
-		return res, err
-	}
-	oldSts := d.([]appv1.StatefulSet)
-
-	for _, sts := range oldSts {
-		if err = r.Client.Delete(ctx, &sts); err != nil {
-			return res, errors.Wrapf(err, "Error when delete statefulset %s", sts.Name)
-		}
-	}
-
-	return res, nil
-}
-
 // Diff permit to check if statefulset is up to date
 func (r *StatefulsetReconciler) Diff(ctx context.Context, resource client.Object, data map[string]interface{}) (diff controller.K8sDiff, res ctrl.Result, err error) {
 	o := resource.(*elasticsearchcrd.Elasticsearch)
@@ -240,9 +181,9 @@ func (r *StatefulsetReconciler) Diff(ctx context.Context, resource client.Object
 		NeedDelete: false,
 	}
 
-	stsToUpdate := make([]appv1.StatefulSet, 0)
-	stsToExpectedUpdated := make([]appv1.StatefulSet, 0)
-	stsToCreate := make([]appv1.StatefulSet, 0)
+	stsToUpdate := make([]client.Object, 0)
+	stsToExpectedUpdated := make([]client.Object, 0)
+	stsToCreate := make([]client.Object, 0)
 	data["phase"] = phaseStsNormal
 
 	// Add some code to avoid reconcile multiple statefullset on same time
@@ -274,7 +215,7 @@ func (r *StatefulsetReconciler) Diff(ctx context.Context, resource client.Object
 					}
 					updatedSts.Spec.Template.Annotations[fmt.Sprintf("%s/upgrade-checksum", ElasticsearchAnnotationKey)] = sum
 
-					stsToExpectedUpdated = append(stsToExpectedUpdated, *updatedSts)
+					stsToExpectedUpdated = append(stsToExpectedUpdated, updatedSts)
 					r.Log.Debugf("Need update statefulset %s", updatedSts.Name)
 
 					data["phase"] = phaseStsUpgrade
@@ -302,7 +243,7 @@ func (r *StatefulsetReconciler) Diff(ctx context.Context, resource client.Object
 				return diff, res, errors.Wrapf(err, "Error when set diff annotation on statefulset %s", expectedSts.Name)
 			}
 
-			stsToCreate = append(stsToCreate, expectedSts)
+			stsToCreate = append(stsToCreate, &expectedSts)
 
 			r.Log.Debugf("Need create statefulset %s", expectedSts.Name)
 		}
@@ -326,9 +267,9 @@ func (r *StatefulsetReconciler) Diff(ctx context.Context, resource client.Object
 
 				// Check if current statefullset need to be upgraded
 				for _, stsNeedUpgraded := range stsToExpectedUpdated {
-					if stsNeedUpgraded.Name == sts.Name {
+					if stsNeedUpgraded.GetName() == sts.Name {
 						r.Log.Infof("Detect we need to upgrade Statefullset %s that being already on upgrade state", sts.Name)
-						stsToExpectedUpdated = []appv1.StatefulSet{
+						stsToExpectedUpdated = []client.Object{
 							stsNeedUpgraded,
 						}
 						data["phase"] = phaseStsUpgrade
@@ -362,12 +303,12 @@ func (r *StatefulsetReconciler) Diff(ctx context.Context, resource client.Object
 					// Clean annotations
 					// This annotation not restart pods
 					sts.Annotations[fmt.Sprintf("%s/upgrade", ElasticsearchAnnotationKey)] = "false"
-					stsToUpdate = append(stsToUpdate, sts)
+					stsToUpdate = append(stsToUpdate, &sts)
 					diff.NeedUpdate = true
 					data["phase"] = phaseStsUpgradeFinished
 				}
 
-				stsToExpectedUpdated = make([]appv1.StatefulSet, 0)
+				stsToExpectedUpdated = make([]client.Object, 0)
 
 				break
 
@@ -382,9 +323,9 @@ func (r *StatefulsetReconciler) Diff(ctx context.Context, resource client.Object
 
 	r.Log.Debugf("Phase after diff: %s", data["phase"])
 
-	data["newStatefulsets"] = stsToCreate
-	data["statefulsets"] = stsToUpdate
-	data["oldStatefulsets"] = currentStatefulsets
+	data["listToCreate"] = stsToCreate
+	data["listToUpdate"] = stsToUpdate
+	data["listToDelete"] = helperdiff.ToSliceOfObject(currentStatefulsets)
 
 	return diff, res, nil
 }

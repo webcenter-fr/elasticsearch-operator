@@ -13,6 +13,7 @@ import (
 	"github.com/disaster37/operator-sdk-extra/pkg/controller"
 	"github.com/disaster37/operator-sdk-extra/pkg/helper"
 	"github.com/pkg/errors"
+	"github.com/sirupsen/logrus"
 	"github.com/thoas/go-funk"
 	elasticsearchcrd "github.com/webcenter-fr/elasticsearch-operator/apis/elasticsearch/v1alpha1"
 	"github.com/webcenter-fr/elasticsearch-operator/controllers/common"
@@ -25,6 +26,7 @@ import (
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/client-go/tools/record"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
@@ -53,23 +55,20 @@ var (
 
 type TlsReconciler struct {
 	common.Reconciler
-	client.Client
-	Scheme *runtime.Scheme
-	name   string
 }
 
-func NewTlsReconciler(client client.Client, scheme *runtime.Scheme, reconciler common.Reconciler) controller.K8sPhaseReconciler {
+func NewTlsReconciler(client client.Client, scheme *runtime.Scheme, recorder record.EventRecorder, log *logrus.Entry) controller.K8sPhaseReconciler {
 	return &TlsReconciler{
-		Reconciler: reconciler,
-		Client:     client,
-		Scheme:     scheme,
-		name:       "tls",
+		Reconciler: common.Reconciler{
+			Recorder: recorder,
+			Log: log.WithFields(logrus.Fields{
+				"phase": "tls",
+			}),
+			Name:   "tls",
+			Client: client,
+			Scheme: scheme,
+		},
 	}
-}
-
-// Name return the current phase
-func (r *TlsReconciler) Name() string {
-	return r.name
 }
 
 // Configure permit to init condition
@@ -230,64 +229,6 @@ func (r *TlsReconciler) Read(ctx context.Context, resource client.Object, data m
 	return res, nil
 }
 
-// Create will create TLS secrets
-func (r *TlsReconciler) Create(ctx context.Context, resource client.Object, data map[string]interface{}) (res ctrl.Result, err error) {
-	var d any
-
-	d, err = helper.Get(data, "newTlsSecrets")
-	if err != nil {
-		return res, err
-	}
-	expectedSecrets := d.([]corev1.Secret)
-
-	for _, s := range expectedSecrets {
-		if err = r.Client.Create(ctx, &s); err != nil {
-			return res, errors.Wrapf(err, "Error when create secret %s", s.Name)
-		}
-	}
-
-	return res, nil
-}
-
-// Update will update TLS secrets
-func (r *TlsReconciler) Update(ctx context.Context, resource client.Object, data map[string]interface{}) (res ctrl.Result, err error) {
-	var d any
-
-	d, err = helper.Get(data, "tlsSecrets")
-	if err != nil {
-		return res, err
-	}
-	expectedSecrets := d.([]corev1.Secret)
-
-	for _, s := range expectedSecrets {
-		if err = r.Client.Update(ctx, &s); err != nil {
-			return res, errors.Wrapf(err, "Error when update secret %s", s.Name)
-		}
-	}
-
-	return res, nil
-}
-
-// Delete permit to delete TLS secrets
-func (r *TlsReconciler) Delete(ctx context.Context, resource client.Object, data map[string]interface{}) (res ctrl.Result, err error) {
-
-	var d any
-
-	d, err = helper.Get(data, "oldTlsSecrets")
-	if err != nil {
-		return res, err
-	}
-	oldSecrets := d.([]corev1.Secret)
-
-	for _, s := range oldSecrets {
-		if err = r.Client.Delete(ctx, &s); err != nil {
-			return res, errors.Wrapf(err, "Error when delete secret %s", s.Name)
-		}
-	}
-
-	return res, nil
-}
-
 // Diff permit to check if transport secrets are up to date
 func (r *TlsReconciler) Diff(ctx context.Context, resource client.Object, data map[string]interface{}) (diff controller.K8sDiff, res ctrl.Result, err error) {
 	o := resource.(*elasticsearchcrd.Elasticsearch)
@@ -355,9 +296,9 @@ func (r *TlsReconciler) Diff(ctx context.Context, resource client.Object, data m
 		NeedUpdate: false,
 		NeedDelete: false,
 	}
-	secretToUpdate := make([]corev1.Secret, 0)
-	secretToCreate := make([]corev1.Secret, 0)
-	secretToDelete := make([]corev1.Secret, 0)
+	secretToUpdate := make([]client.Object, 0)
+	secretToCreate := make([]client.Object, 0)
+	secretToDelete := make([]client.Object, 0)
 
 	// phaseInit -> phaseCreate
 	// Generate all certificates
@@ -376,13 +317,13 @@ func (r *TlsReconciler) Diff(ctx context.Context, resource client.Object, data m
 			return diff, res, errors.Wrapf(err, "Error when set diff annotation on secret %s", sTransportPki.Name)
 		}
 		if isUpdated {
-			secretToUpdate = append(secretToUpdate, *sTransportPki)
+			secretToUpdate = append(secretToUpdate, sTransportPki)
 		} else {
 			err = ctrl.SetControllerReference(o, sTransportPki, r.Scheme)
 			if err != nil {
 				return diff, res, errors.Wrap(err, "Error when set as owner reference")
 			}
-			secretToCreate = append(secretToCreate, *sTransportPki)
+			secretToCreate = append(secretToCreate, sTransportPki)
 		}
 
 		// Generate nodes certificates
@@ -397,7 +338,7 @@ func (r *TlsReconciler) Diff(ctx context.Context, resource client.Object, data m
 		if err := patch.DefaultAnnotator.SetLastAppliedAnnotation(sTransport); err != nil {
 			return diff, res, errors.Wrapf(err, "Error when set diff annotation on secret %s", sTransport.Name)
 		}
-		secretToCreate = append(secretToCreate, *sTransport)
+		secretToCreate = append(secretToCreate, sTransport)
 
 		// Handle API certificates
 		if o.IsTlsApiEnabled() && o.IsSelfManagedSecretForTlsApi() {
@@ -412,13 +353,13 @@ func (r *TlsReconciler) Diff(ctx context.Context, resource client.Object, data m
 				return diff, res, errors.Wrapf(err, "Error when set diff annotation on secret %s", sApiPki.Name)
 			}
 			if isUpdated {
-				secretToUpdate = append(secretToUpdate, *sApiPki)
+				secretToUpdate = append(secretToUpdate, sApiPki)
 			} else {
 				err = ctrl.SetControllerReference(o, sApiPki, r.Scheme)
 				if err != nil {
 					return diff, res, errors.Wrap(err, "Error when set as owner reference")
 				}
-				secretToCreate = append(secretToCreate, *sApiPki)
+				secretToCreate = append(secretToCreate, sApiPki)
 			}
 
 			// Generate API certificate
@@ -431,13 +372,13 @@ func (r *TlsReconciler) Diff(ctx context.Context, resource client.Object, data m
 				return diff, res, errors.Wrapf(err, "Error when set diff annotation on secret %s", sApi.Name)
 			}
 			if isUpdated {
-				secretToUpdate = append(secretToUpdate, *sApi)
+				secretToUpdate = append(secretToUpdate, sApi)
 			} else {
 				err = ctrl.SetControllerReference(o, sApi, r.Scheme)
 				if err != nil {
 					return diff, res, errors.Wrap(err, "Error when set as owner reference")
 				}
-				secretToCreate = append(secretToCreate, *sApi)
+				secretToCreate = append(secretToCreate, sApi)
 			}
 		}
 
@@ -451,9 +392,9 @@ func (r *TlsReconciler) Diff(ctx context.Context, resource client.Object, data m
 			diff.NeedDelete = true
 		}
 
-		data["newTlsSecrets"] = secretToCreate
-		data["tlsSecrets"] = secretToUpdate
-		data["oldTlsSecrets"] = secretToDelete
+		data["listToCreate"] = secretToCreate
+		data["listToUpdate"] = secretToUpdate
+		data["listToDelete"] = secretToDelete
 		data["phase"] = phaseTlsCreate
 
 		return diff, res, nil
@@ -486,13 +427,13 @@ func (r *TlsReconciler) Diff(ctx context.Context, resource client.Object, data m
 			return diff, res, errors.Wrapf(err, "Error when set diff annotation on secret %s", sTransport.Name)
 		}
 		if isUpdated {
-			secretToUpdate = append(secretToUpdate, *sTransport)
+			secretToUpdate = append(secretToUpdate, sTransport)
 		} else {
 			err = ctrl.SetControllerReference(o, sTransport, r.Scheme)
 			if err != nil {
 				return diff, res, errors.Wrap(err, "Error when set as owner reference")
 			}
-			secretToCreate = append(secretToCreate, *sTransport)
+			secretToCreate = append(secretToCreate, sTransport)
 		}
 
 		if o.IsTlsApiEnabled() && o.IsSelfManagedSecretForTlsApi() {
@@ -509,13 +450,13 @@ func (r *TlsReconciler) Diff(ctx context.Context, resource client.Object, data m
 				return diff, res, errors.Wrapf(err, "Error when set diff annotation on secret %s", sApi.Name)
 			}
 			if isUpdated {
-				secretToUpdate = append(secretToUpdate, *sApi)
+				secretToUpdate = append(secretToUpdate, sApi)
 			} else {
 				err = ctrl.SetControllerReference(o, sApi, r.Scheme)
 				if err != nil {
 					return diff, res, errors.Wrap(err, "Error when set as owner reference")
 				}
-				secretToCreate = append(secretToCreate, *sApi)
+				secretToCreate = append(secretToCreate, sApi)
 			}
 		}
 
@@ -529,9 +470,9 @@ func (r *TlsReconciler) Diff(ctx context.Context, resource client.Object, data m
 			diff.NeedDelete = true
 		}
 
-		data["newTlsSecrets"] = secretToCreate
-		data["tlsSecrets"] = secretToUpdate
-		data["oldTlsSecrets"] = secretToDelete
+		data["listToCreate"] = secretToCreate
+		data["listToUpdate"] = secretToUpdate
+		data["listToDelete"] = secretToDelete
 		data["phase"] = phaseTlsUpdateCertificates
 
 		return diff, res, nil
@@ -553,21 +494,21 @@ func (r *TlsReconciler) Diff(ctx context.Context, resource client.Object, data m
 
 		if sTransport != nil && transportRootCA != nil {
 			sTransport.Data["ca.crt"] = []byte(transportRootCA.GetCertificate())
-			secretToUpdate = append(secretToUpdate, *sTransport)
+			secretToUpdate = append(secretToUpdate, sTransport)
 			diff.NeedUpdate = true
 			diff.Diff.WriteString(fmt.Sprintf("Clean old ca certificate from secret %s\n", sTransport.Name))
 		}
 
 		if sApi != nil && apiRootCA != nil {
 			sApi.Data["ca.crt"] = []byte(apiRootCA.GetCertificate())
-			secretToUpdate = append(secretToUpdate, *sApi)
+			secretToUpdate = append(secretToUpdate, sApi)
 			diff.NeedUpdate = true
 			diff.Diff.WriteString(fmt.Sprintf("Clean old ca certificate from secret %s\n", sApi.Name))
 		}
 
-		data["newTlsSecrets"] = secretToCreate
-		data["tlsSecrets"] = secretToUpdate
-		data["oldTlsSecrets"] = secretToDelete
+		data["listToCreate"] = secretToCreate
+		data["listToUpdate"] = secretToUpdate
+		data["listToDelete"] = secretToDelete
 		data["phase"] = phaseTlsCleanTransportCA
 
 		return diff, res, nil
@@ -604,7 +545,7 @@ func (r *TlsReconciler) Diff(ctx context.Context, resource client.Object, data m
 			if err := patch.DefaultAnnotator.SetLastAppliedAnnotation(sApiPki); err != nil {
 				return diff, res, errors.Wrapf(err, "Error when set diff annotation on secret %s", sApiPki.Name)
 			}
-			secretToCreate = append(secretToCreate, *sApiPki)
+			secretToCreate = append(secretToCreate, sApiPki)
 		}
 		if apiCrt != nil {
 			certificates["apiCrt"] = *apiCrt
@@ -623,7 +564,7 @@ func (r *TlsReconciler) Diff(ctx context.Context, resource client.Object, data m
 			if err := patch.DefaultAnnotator.SetLastAppliedAnnotation(sApi); err != nil {
 				return diff, res, errors.Wrapf(err, "Error when set diff annotation on secret %s", sApi.Name)
 			}
-			secretToCreate = append(secretToCreate, *sApi)
+			secretToCreate = append(secretToCreate, sApi)
 
 		}
 	}
@@ -659,18 +600,18 @@ func (r *TlsReconciler) Diff(ctx context.Context, resource client.Object, data m
 			return diff, res, errors.Wrapf(err, "Error when set diff annotation on secret %s", sTransportPki.Name)
 		}
 		if isUpdated {
-			secretToUpdate = append(secretToUpdate, *sTransportPki)
+			secretToUpdate = append(secretToUpdate, sTransportPki)
 		} else {
 			err = ctrl.SetControllerReference(o, sTransportPki, r.Scheme)
 			if err != nil {
 				return diff, res, errors.Wrap(err, "Error when set as owner reference")
 			}
-			secretToCreate = append(secretToCreate, *sTransportPki)
+			secretToCreate = append(secretToCreate, sTransportPki)
 		}
 
 		// Append new CA with others CA
 		sTransport.Data["ca.crt"] = []byte(fmt.Sprintf("%s\n%s", string(sTransport.Data["ca.crt"]), transportRootCA.GetCertificate()))
-		secretToUpdate = append(secretToUpdate, *sTransport)
+		secretToUpdate = append(secretToUpdate, sTransport)
 
 		// API PKI
 		if o.IsTlsApiEnabled() && o.IsSelfManagedSecretForTlsApi() {
@@ -685,18 +626,18 @@ func (r *TlsReconciler) Diff(ctx context.Context, resource client.Object, data m
 				return diff, res, errors.Wrapf(err, "Error when set diff annotation on secret %s", sTransportPki.Name)
 			}
 			if isUpdated {
-				secretToUpdate = append(secretToUpdate, *sApiPki)
+				secretToUpdate = append(secretToUpdate, sApiPki)
 			} else {
 				err = ctrl.SetControllerReference(o, sApiPki, r.Scheme)
 				if err != nil {
 					return diff, res, errors.Wrap(err, "Error when set as owner reference")
 				}
-				secretToCreate = append(secretToCreate, *sApiPki)
+				secretToCreate = append(secretToCreate, sApiPki)
 			}
 
 			// Append new CA with others CA
 			sApi.Data["ca.crt"] = []byte(fmt.Sprintf("%s\n%s", string(sApi.Data["ca.crt"]), apiRootCA.GetCertificate()))
-			secretToUpdate = append(secretToUpdate, *sApi)
+			secretToUpdate = append(secretToUpdate, sApi)
 		}
 
 		if len(secretToCreate) > 0 {
@@ -709,11 +650,10 @@ func (r *TlsReconciler) Diff(ctx context.Context, resource client.Object, data m
 			diff.NeedDelete = true
 		}
 
-		data["newTlsSecrets"] = secretToCreate
-		data["tlsSecrets"] = secretToUpdate
-		data["oldTlsSecrets"] = secretToDelete
+		data["listToCreate"] = secretToCreate
+		data["listToUpdate"] = secretToUpdate
+		data["listToDelete"] = secretToDelete
 		data["phase"] = phaseTlsUpdatePki
-		data["transportTlsSecret"] = sTransport
 
 		return diff, res, nil
 	}
@@ -743,19 +683,19 @@ func (r *TlsReconciler) Diff(ctx context.Context, resource client.Object, data m
 		if err := patch.DefaultAnnotator.SetLastAppliedAnnotation(sTransport); err != nil {
 			return diff, res, errors.Wrapf(err, "Error when set diff annotation on secret %s", sTransport.Name)
 		}
-		secretToUpdate = append(secretToUpdate, *sTransport)
+		secretToUpdate = append(secretToUpdate, sTransport)
 	}
 
 	// Check if labels or annotations need to bu upgraded
-	secrets := []corev1.Secret{
-		*sTransportPki,
+	secrets := []*corev1.Secret{
+		sTransportPki,
 	}
 	if len(addedNode) == 0 && len(deletedNode) == 0 {
 		// Not reconcile labels and annotation for transport secret if already updated on previous step
-		secrets = append(secrets, *sTransport)
+		secrets = append(secrets, sTransport)
 	}
 	if o.IsTlsApiEnabled() && o.IsSelfManagedSecretForTlsApi() {
-		secrets = append(secrets, *sApiPki, *sApi)
+		secrets = append(secrets, sApiPki, sApi)
 	}
 	for _, s := range secrets {
 		isUpdated := false
@@ -771,7 +711,7 @@ func (r *TlsReconciler) Diff(ctx context.Context, resource client.Object, data m
 		}
 
 		if isUpdated {
-			if err := patch.DefaultAnnotator.SetLastAppliedAnnotation(&s); err != nil {
+			if err := patch.DefaultAnnotator.SetLastAppliedAnnotation(s); err != nil {
 				return diff, res, errors.Wrapf(err, "Error when set diff annotation on secret %s", s.Name)
 			}
 			secretToUpdate = append(secretToUpdate, s)
@@ -788,9 +728,9 @@ func (r *TlsReconciler) Diff(ctx context.Context, resource client.Object, data m
 		diff.NeedDelete = true
 	}
 
-	data["newTransportSecrets"] = secretToCreate
-	data["tlsSecrets"] = secretToUpdate
-	data["oldTlsSecrets"] = secretToDelete
+	data["listToCreate"] = secretToCreate
+	data["listToUpdate"] = secretToUpdate
+	data["listToDelete"] = secretToDelete
 	data["phase"] = phaseTlsNormal
 
 	return diff, res, nil

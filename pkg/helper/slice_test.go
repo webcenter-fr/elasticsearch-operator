@@ -4,6 +4,9 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	corev1 "k8s.io/api/core/v1"
+	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 func TestStringToSlice(t *testing.T) {
@@ -57,4 +60,21 @@ func TestDeleteItemFromSlice(t *testing.T) {
 	// When slcie is nil
 	assert.Equal(t, nil, DeleteItemFromSlice(nil, 10))
 
+}
+
+func TestToSliceOfObject(t *testing.T) {
+	pods := []corev1.Pod{
+		{
+			ObjectMeta: v1.ObjectMeta{
+				Name:      "test",
+				Namespace: "default",
+			},
+		},
+	}
+
+	expected := []client.Object{
+		&pods[0],
+	}
+
+	assert.Equal(t, expected, ToSliceOfObject(pods))
 }

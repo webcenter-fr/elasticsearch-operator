@@ -2,13 +2,11 @@ package elasticsearch
 
 import (
 	"context"
-	"fmt"
 	"time"
 
-	"github.com/disaster37/k8s-objectmatcher/patch"
 	"github.com/disaster37/operator-sdk-extra/pkg/controller"
-	"github.com/disaster37/operator-sdk-extra/pkg/helper"
 	"github.com/pkg/errors"
+	"github.com/sirupsen/logrus"
 	elasticsearchcrd "github.com/webcenter-fr/elasticsearch-operator/apis/elasticsearch/v1alpha1"
 	elasticsearchapicrd "github.com/webcenter-fr/elasticsearch-operator/apis/elasticsearchapi/v1alpha1"
 	"github.com/webcenter-fr/elasticsearch-operator/controllers/common"
@@ -18,6 +16,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/client-go/tools/record"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
@@ -29,23 +28,20 @@ const (
 
 type LicenseReconciler struct {
 	common.Reconciler
-	client.Client
-	Scheme *runtime.Scheme
-	name   string
 }
 
-func NewLicenseReconciler(client client.Client, scheme *runtime.Scheme, reconciler common.Reconciler) controller.K8sPhaseReconciler {
+func NewLicenseReconciler(client client.Client, scheme *runtime.Scheme, recorder record.EventRecorder, log *logrus.Entry) controller.K8sPhaseReconciler {
 	return &LicenseReconciler{
-		Reconciler: reconciler,
-		Client:     client,
-		Scheme:     scheme,
-		name:       "license",
+		Reconciler: common.Reconciler{
+			Recorder: recorder,
+			Log: log.WithFields(logrus.Fields{
+				"phase": "license",
+			}),
+			Name:   "license",
+			Client: client,
+			Scheme: scheme,
+		},
 	}
-}
-
-// Name return the current phase
-func (r *LicenseReconciler) Name() string {
-	return r.name
 }
 
 // Configure permit to init condition
@@ -79,7 +75,7 @@ func (r *LicenseReconciler) Read(ctx context.Context, resource client.Object, da
 		}
 		license = nil
 	}
-	data["currentLicense"] = license
+	data["currentObject"] = license
 
 	// Check if license is expected
 	if o.Spec.LicenseSecretRef != nil {
@@ -99,143 +95,14 @@ func (r *LicenseReconciler) Read(ctx context.Context, resource client.Object, da
 	if err != nil {
 		return res, errors.Wrap(err, "Error when generate license")
 	}
-	data["expectedLicense"] = expectedLicense
-
-	return res, nil
-}
-
-// Create will create license
-func (r *LicenseReconciler) Create(ctx context.Context, resource client.Object, data map[string]interface{}) (res ctrl.Result, err error) {
-	var d any
-
-	d, err = helper.Get(data, "newLicenses")
-	if err != nil {
-		return res, err
-	}
-	expectedLicenses := d.([]elasticsearchapicrd.License)
-
-	for _, license := range expectedLicenses {
-		if err = r.Client.Create(ctx, &license); err != nil {
-			return res, errors.Wrapf(err, "Error when create license %s", license.Name)
-		}
-	}
-
-	return res, nil
-}
-
-// Update will update licenses
-func (r *LicenseReconciler) Update(ctx context.Context, resource client.Object, data map[string]interface{}) (res ctrl.Result, err error) {
-	var d any
-
-	d, err = helper.Get(data, "licenses")
-	if err != nil {
-		return res, err
-	}
-	expectedLicenses := d.([]elasticsearchapicrd.License)
-
-	for _, license := range expectedLicenses {
-		if err = r.Client.Update(ctx, &license); err != nil {
-			return res, errors.Wrapf(err, "Error when update license %s", license.Name)
-		}
-	}
-
-	return res, nil
-}
-
-// Delete permit to delete licenses
-func (r *LicenseReconciler) Delete(ctx context.Context, resource client.Object, data map[string]interface{}) (res ctrl.Result, err error) {
-
-	var d any
-
-	d, err = helper.Get(data, "oldLicenses")
-	if err != nil {
-		return res, err
-	}
-	oldLicenses := d.([]elasticsearchapicrd.License)
-
-	for _, license := range oldLicenses {
-		if err = r.Client.Delete(ctx, &license); err != nil {
-			return res, errors.Wrapf(err, "Error when delete license %s", license.Name)
-		}
-	}
+	data["expectedObject"] = expectedLicense
 
 	return res, nil
 }
 
 // Diff permit to check if license is up to date
 func (r *LicenseReconciler) Diff(ctx context.Context, resource client.Object, data map[string]interface{}) (diff controller.K8sDiff, res ctrl.Result, err error) {
-	o := resource.(*elasticsearchcrd.Elasticsearch)
-	var d any
-
-	d, err = helper.Get(data, "currentLicense")
-	if err != nil {
-		return diff, res, err
-	}
-	currentLicense := d.(*elasticsearchapicrd.License)
-
-	d, err = helper.Get(data, "expectedLicense")
-	if err != nil {
-		return diff, res, err
-	}
-	expectedLicense := d.(*elasticsearchapicrd.License)
-
-	diff = controller.K8sDiff{
-		NeedCreate: false,
-		NeedUpdate: false,
-		NeedDelete: false,
-	}
-
-	licenseToUpdate := make([]elasticsearchapicrd.License, 0)
-	licenseToCreate := make([]elasticsearchapicrd.License, 0)
-	licenseToDelete := make([]elasticsearchapicrd.License, 0)
-
-	if currentLicense == nil {
-		if expectedLicense != nil {
-			// Create new license
-			diff.NeedCreate = true
-			diff.Diff.WriteString(fmt.Sprintf("Create license %s\n", expectedLicense.Name))
-
-			// Set owner
-			err = ctrl.SetControllerReference(o, expectedLicense, r.Scheme)
-			if err != nil {
-				return diff, res, errors.Wrapf(err, "Error when set owner reference")
-			}
-
-			if err := patch.DefaultAnnotator.SetLastAppliedAnnotation(expectedLicense); err != nil {
-				return diff, res, errors.Wrapf(err, "Error when set diff annotation on license %s", expectedLicense.Name)
-			}
-
-			licenseToCreate = append(licenseToCreate, *expectedLicense)
-		}
-	} else {
-
-		if expectedLicense != nil {
-			// Check if need to update license
-			patchResult, err := patch.DefaultPatchMaker.Calculate(currentLicense, expectedLicense, patch.CleanMetadata(), patch.IgnoreStatusFields())
-			if err != nil {
-				return diff, res, errors.Wrapf(err, "Error when diffing license %s", currentLicense.Name)
-			}
-			if !patchResult.IsEmpty() {
-				updatedLicense := patchResult.Patched.(*elasticsearchapicrd.License)
-				diff.NeedUpdate = true
-				diff.Diff.WriteString(fmt.Sprintf("diff %s: %s\n", updatedLicense.Name, string(patchResult.Patch)))
-				licenseToUpdate = append(licenseToUpdate, *updatedLicense)
-				r.Log.Debugf("Need update ingress %s", updatedLicense.Name)
-			}
-		} else {
-			// Need delete license
-			diff.NeedDelete = true
-			diff.Diff.WriteString(fmt.Sprintf("Delete license %s\n", currentLicense.Name))
-			licenseToDelete = append(licenseToDelete, *currentLicense)
-		}
-
-	}
-
-	data["newLicenses"] = licenseToCreate
-	data["licenses"] = licenseToUpdate
-	data["oldLicenses"] = licenseToDelete
-
-	return diff, res, nil
+	return r.Reconciler.StdDiff(ctx, resource, data)
 }
 
 // OnError permit to set status condition on the right state and record error

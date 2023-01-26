@@ -103,83 +103,17 @@ func (r *ElasticsearchReconciler) Reconcile(ctx context.Context, req ctrl.Reques
 	es := &elasticsearchcrd.Elasticsearch{}
 	data := map[string]any{}
 
-	tlsReconsiler := NewTlsReconciler(r.Client, r.Scheme, common.Reconciler{
-		Recorder: r.GetRecorder(),
-		Log: r.GetLogger().WithFields(logrus.Fields{
-			"phase": "tls",
-		}),
-	})
-
-	configmapReconciler := NewConfiMapReconciler(r.Client, r.Scheme, common.Reconciler{
-		Recorder: r.GetRecorder(),
-		Log: r.GetLogger().WithFields(logrus.Fields{
-			"phase": "configmap",
-		}),
-	})
-
-	serviceReconciler := NewServiceReconciler(r.Client, r.Scheme, common.Reconciler{
-		Recorder: r.GetRecorder(),
-		Log: r.GetLogger().WithFields(logrus.Fields{
-			"phase": "service",
-		}),
-	})
-
-	ingressReconciler := NewIngressReconciler(r.Client, r.Scheme, common.Reconciler{
-		Recorder: r.GetRecorder(),
-		Log: r.GetLogger().WithFields(logrus.Fields{
-			"phase": "ingress",
-		}),
-	})
-
-	loadBalancerReconciler := NewLoadBalancerReconciler(r.Client, r.Scheme, common.Reconciler{
-		Recorder: r.GetRecorder(),
-		Log: r.GetLogger().WithFields(logrus.Fields{
-			"phase": "loadBalancer",
-		}),
-	})
-
-	pdbReconciler := NewPdbReconciler(r.Client, r.Scheme, common.Reconciler{
-		Recorder: r.GetRecorder(),
-		Log: r.GetLogger().WithFields(logrus.Fields{
-			"phase": "podDisruptionBudget",
-		}),
-	})
-
-	networkPolicyReconciler := NewNetworkPolicyReconciler(r.Client, r.Scheme, common.Reconciler{
-		Recorder: r.GetRecorder(),
-		Log: r.GetLogger().WithFields(logrus.Fields{
-			"phase": "networkPolicy",
-		}),
-	})
-
-	credentialReconciler := NewCredentialReconciler(r.Client, r.Scheme, common.Reconciler{
-		Recorder: r.GetRecorder(),
-		Log: r.GetLogger().WithFields(logrus.Fields{
-			"phase": "credential",
-		}),
-	})
-
-	statefulsetReconciler := NewStatefulsetReconciler(r.Client, r.Scheme, common.Reconciler{
-		Recorder: r.GetRecorder(),
-		Log: r.GetLogger().WithFields(logrus.Fields{
-			"phase": "statefulset",
-		}),
-	})
-
-	userReconciler := NewSystemUserReconciler(r.Client, r.Scheme, common.Reconciler{
-		Recorder: r.GetRecorder(),
-		Log: r.GetLogger().WithFields(logrus.Fields{
-			"phase": "systemUser",
-		}),
-	})
-
-	licenseReconciler := NewLicenseReconciler(r.Client, r.Scheme, common.Reconciler{
-		Recorder: r.GetRecorder(),
-		Log: r.GetLogger().WithFields(logrus.Fields{
-			"phase": "license",
-		}),
-	})
-
+	tlsReconsiler := NewTlsReconciler(r.Client, r.Scheme, r.GetRecorder(), r.GetLogger())
+	configmapReconciler := NewConfiMapReconciler(r.Client, r.Scheme, r.GetRecorder(), r.GetLogger())
+	serviceReconciler := NewServiceReconciler(r.Client, r.Scheme, r.GetRecorder(), r.GetLogger())
+	ingressReconciler := NewIngressReconciler(r.Client, r.Scheme, r.GetRecorder(), r.GetLogger())
+	loadBalancerReconciler := NewLoadBalancerReconciler(r.Client, r.Scheme, r.GetRecorder(), r.GetLogger())
+	pdbReconciler := NewPdbReconciler(r.Client, r.Scheme, r.GetRecorder(), r.GetLogger())
+	networkPolicyReconciler := NewNetworkPolicyReconciler(r.Client, r.Scheme, r.GetRecorder(), r.GetLogger())
+	credentialReconciler := NewCredentialReconciler(r.Client, r.Scheme, r.GetRecorder(), r.GetLogger())
+	statefulsetReconciler := NewStatefulsetReconciler(r.Client, r.Scheme, r.GetRecorder(), r.GetLogger())
+	userReconciler := NewSystemUserReconciler(r.Client, r.Scheme, r.GetRecorder(), r.GetLogger())
+	licenseReconciler := NewLicenseReconciler(r.Client, r.Scheme, r.GetRecorder(), r.GetLogger())
 	exporterReconciler := NewExporterReconciler(r.Client, r.Scheme, r.GetRecorder(), r.GetLogger())
 	podMonitorReconciler := NewPodMonitorReconciler(r.Client, r.Scheme, r.GetRecorder(), r.GetLogger())
 
