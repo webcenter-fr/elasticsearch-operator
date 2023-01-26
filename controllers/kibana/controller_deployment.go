@@ -109,30 +109,50 @@ func (r *DeploymentReconciler) Read(ctx context.Context, resource client.Object,
 	}
 
 	// Read APi Crt if needed
-	if o.IsTlsEnabled() && !o.IsSelfManagedSecretForTls() {
-		if err = r.Client.Get(ctx, types.NamespacedName{Namespace: o.Namespace, Name: o.Spec.Tls.CertificateSecretRef.Name}, secretApiCrt); err != nil {
-			if !k8serrors.IsNotFound(err) {
-				return res, errors.Wrapf(err, "Error when read secret %s", o.Spec.Tls.CertificateSecretRef.Name)
+	if o.IsTlsEnabled() {
+		if o.IsSelfManagedSecretForTls() {
+			if err = r.Client.Get(ctx, types.NamespacedName{Namespace: o.Namespace, Name: GetSecretNameForTls(o)}, secretApiCrt); err != nil {
+				if !k8serrors.IsNotFound(err) {
+					return res, errors.Wrapf(err, "Error when read secret %s", GetSecretNameForTls(o))
+				}
+				r.Log.Warnf("Secret %s not yet exist, try again later", GetSecretNameForTls(o))
+				return ctrl.Result{RequeueAfter: 30 * time.Second}, nil
 			}
-			r.Log.Warnf("Secret %s not yet exist, try again later", o.Spec.Tls.CertificateSecretRef.Name)
-			return ctrl.Result{RequeueAfter: 30 * time.Second}, nil
+		} else {
+			if err = r.Client.Get(ctx, types.NamespacedName{Namespace: o.Namespace, Name: o.Spec.Tls.CertificateSecretRef.Name}, secretApiCrt); err != nil {
+				if !k8serrors.IsNotFound(err) {
+					return res, errors.Wrapf(err, "Error when read secret %s", o.Spec.Tls.CertificateSecretRef.Name)
+				}
+				r.Log.Warnf("Secret %s not yet exist, try again later", o.Spec.Tls.CertificateSecretRef.Name)
+				return ctrl.Result{RequeueAfter: 30 * time.Second}, nil
+			}
 		}
 	} else {
 		secretApiCrt = nil
 	}
 
 	// Read Custom CA Elasticsearch if needed
-	if !o.Spec.ElasticsearchRef.IsManaged() && o.Spec.Tls.ElasticsearchCaSecretRef != nil {
-		if err = r.Client.Get(ctx, types.NamespacedName{Namespace: o.Namespace, Name: o.Spec.Tls.ElasticsearchCaSecretRef.Name}, secretCustomCAElasticsearch); err != nil {
-			if !k8serrors.IsNotFound(err) {
-				return res, errors.Wrapf(err, "Error when read secret %s", o.Spec.Tls.ElasticsearchCaSecretRef.Name)
+	if (o.Spec.ElasticsearchRef.IsManaged() && es.IsTlsApiEnabled()) || o.Spec.Tls.ElasticsearchCaSecretRef != nil {
+		if o.Spec.ElasticsearchRef.IsManaged() && es.IsTlsApiEnabled() {
+			if err = r.Client.Get(ctx, types.NamespacedName{Namespace: o.Namespace, Name: GetSecretNameForCAElasticsearch(o)}, secretCustomCAElasticsearch); err != nil {
+				if !k8serrors.IsNotFound(err) {
+					return res, errors.Wrapf(err, "Error when read secret %s", GetSecretNameForCAElasticsearch(o))
+				}
+				r.Log.Warnf("Secret %s not yet exist, try again later", GetSecretNameForCAElasticsearch(o))
+				return ctrl.Result{RequeueAfter: 30 * time.Second}, nil
 			}
-			r.Log.Warnf("Secret %s not yet exist, try again later", o.Spec.Tls.ElasticsearchCaSecretRef.Name)
-			return ctrl.Result{RequeueAfter: 30 * time.Second}, nil
-		}
+		} else {
+			if err = r.Client.Get(ctx, types.NamespacedName{Namespace: o.Namespace, Name: o.Spec.Tls.ElasticsearchCaSecretRef.Name}, secretCustomCAElasticsearch); err != nil {
+				if !k8serrors.IsNotFound(err) {
+					return res, errors.Wrapf(err, "Error when read secret %s", o.Spec.Tls.ElasticsearchCaSecretRef.Name)
+				}
+				r.Log.Warnf("Secret %s not yet exist, try again later", o.Spec.Tls.ElasticsearchCaSecretRef.Name)
+				return ctrl.Result{RequeueAfter: 30 * time.Second}, nil
+			}
 
-		if len(secretCustomCAElasticsearch.Data["ca.crt"]) == 0 {
-			return res, errors.Errorf("Secret %s must have a key `ca.crt`", secretCustomCAElasticsearch.Name)
+			if len(secretCustomCAElasticsearch.Data["ca.crt"]) == 0 {
+				return res, errors.Errorf("Secret %s must have a key `ca.crt`", secretCustomCAElasticsearch.Name)
+			}
 		}
 	} else {
 		secretCustomCAElasticsearch = nil
