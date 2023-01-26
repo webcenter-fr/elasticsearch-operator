@@ -15,3 +15,4 @@ spec:
       elasticsearch.k8s.webcenter.fr: "true"
   podMetricsEndpoints:
   - port: exporter
+    interval: 10s

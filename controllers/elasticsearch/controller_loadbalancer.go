@@ -2,12 +2,10 @@ package elasticsearch
 
 import (
 	"context"
-	"fmt"
 
-	"github.com/disaster37/k8s-objectmatcher/patch"
 	"github.com/disaster37/operator-sdk-extra/pkg/controller"
-	"github.com/disaster37/operator-sdk-extra/pkg/helper"
 	"github.com/pkg/errors"
+	"github.com/sirupsen/logrus"
 	elasticsearchcrd "github.com/webcenter-fr/elasticsearch-operator/apis/elasticsearch/v1alpha1"
 	"github.com/webcenter-fr/elasticsearch-operator/controllers/common"
 	corev1 "k8s.io/api/core/v1"
@@ -16,6 +14,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/client-go/tools/record"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
@@ -27,23 +26,20 @@ const (
 
 type LoadBalancerReconciler struct {
 	common.Reconciler
-	client.Client
-	Scheme *runtime.Scheme
-	name   string
 }
 
-func NewLoadBalancerReconciler(client client.Client, scheme *runtime.Scheme, reconciler common.Reconciler) controller.K8sPhaseReconciler {
+func NewLoadBalancerReconciler(client client.Client, scheme *runtime.Scheme, recorder record.EventRecorder, log *logrus.Entry) controller.K8sPhaseReconciler {
 	return &LoadBalancerReconciler{
-		Reconciler: reconciler,
-		Client:     client,
-		Scheme:     scheme,
-		name:       "loadBalancer",
+		Reconciler: common.Reconciler{
+			Recorder: recorder,
+			Log: log.WithFields(logrus.Fields{
+				"phase": "loadBalancer",
+			}),
+			Name:   "loadBalancer",
+			Client: client,
+			Scheme: scheme,
+		},
 	}
-}
-
-// Name return the current phase
-func (r *LoadBalancerReconciler) Name() string {
-	return r.name
 }
 
 // Configure permit to init condition
@@ -76,148 +72,21 @@ func (r *LoadBalancerReconciler) Read(ctx context.Context, resource client.Objec
 		}
 		lb = nil
 	}
-	data["currentLoadBalancer"] = lb
+	data["currentObject"] = lb
 
 	// Generate expected load balancer
 	expectedLb, err := BuildLoadbalancer(o)
 	if err != nil {
 		return res, errors.Wrap(err, "Error when generate load balancer")
 	}
-	data["expectedLoadBalancer"] = expectedLb
-
-	return res, nil
-}
-
-// Create will create load balancer
-func (r *LoadBalancerReconciler) Create(ctx context.Context, resource client.Object, data map[string]interface{}) (res ctrl.Result, err error) {
-	var d any
-
-	d, err = helper.Get(data, "newLoadBalancers")
-	if err != nil {
-		return res, err
-	}
-	expectedLbs := d.([]corev1.Service)
-
-	for _, lb := range expectedLbs {
-		if err = r.Client.Create(ctx, &lb); err != nil {
-			return res, errors.Wrapf(err, "Error when create load balancer %s", lb.Name)
-		}
-	}
-
-	return res, nil
-}
-
-// Update will update load balancer
-func (r *LoadBalancerReconciler) Update(ctx context.Context, resource client.Object, data map[string]interface{}) (res ctrl.Result, err error) {
-	var d any
-
-	d, err = helper.Get(data, "loadBalancers")
-	if err != nil {
-		return res, err
-	}
-	expectedLbs := d.([]corev1.Service)
-
-	for _, lb := range expectedLbs {
-		if err = r.Client.Update(ctx, &lb); err != nil {
-			return res, errors.Wrapf(err, "Error when update load balancer %s", lb.Name)
-		}
-	}
-
-	return res, nil
-}
-
-// Delete permit to delete load balancer
-func (r *LoadBalancerReconciler) Delete(ctx context.Context, resource client.Object, data map[string]interface{}) (res ctrl.Result, err error) {
-
-	var d any
-
-	d, err = helper.Get(data, "oldLoadBalancers")
-	if err != nil {
-		return res, err
-	}
-	oldLbs := d.([]corev1.Service)
-
-	for _, lb := range oldLbs {
-		if err = r.Client.Delete(ctx, &lb); err != nil {
-			return res, errors.Wrapf(err, "Error when delete load balancer %s", lb.Name)
-		}
-	}
+	data["expectedObject"] = expectedLb
 
 	return res, nil
 }
 
 // Diff permit to check if load balancer is up to date
 func (r *LoadBalancerReconciler) Diff(ctx context.Context, resource client.Object, data map[string]interface{}) (diff controller.K8sDiff, res ctrl.Result, err error) {
-	o := resource.(*elasticsearchcrd.Elasticsearch)
-	var d any
-
-	d, err = helper.Get(data, "currentLoadBalancer")
-	if err != nil {
-		return diff, res, err
-	}
-	currentLb := d.(*corev1.Service)
-
-	d, err = helper.Get(data, "expectedLoadBalancer")
-	if err != nil {
-		return diff, res, err
-	}
-	expectedLb := d.(*corev1.Service)
-
-	diff = controller.K8sDiff{
-		NeedCreate: false,
-		NeedUpdate: false,
-		NeedDelete: false,
-	}
-
-	lbToUpdate := make([]corev1.Service, 0)
-	lbToCreate := make([]corev1.Service, 0)
-	lbToDelete := make([]corev1.Service, 0)
-
-	if currentLb == nil {
-		if expectedLb != nil {
-			// Create new load balancer
-			diff.NeedCreate = true
-			diff.Diff.WriteString(fmt.Sprintf("Create load balancer %s\n", expectedLb.Name))
-
-			// Set owner
-			err = ctrl.SetControllerReference(o, expectedLb, r.Scheme)
-			if err != nil {
-				return diff, res, errors.Wrapf(err, "Error when set owner reference")
-			}
-
-			if err := patch.DefaultAnnotator.SetLastAppliedAnnotation(expectedLb); err != nil {
-				return diff, res, errors.Wrapf(err, "Error when set diff annotation on load balancer %s", expectedLb.Name)
-			}
-
-			lbToCreate = append(lbToCreate, *expectedLb)
-		}
-	} else {
-		if expectedLb != nil {
-			// Check if need to update load balancer
-			patchResult, err := patch.DefaultPatchMaker.Calculate(currentLb, expectedLb, patch.CleanMetadata(), patch.IgnoreStatusFields())
-			if err != nil {
-				return diff, res, errors.Wrapf(err, "Error when diffing load balancer %s", currentLb.Name)
-			}
-			if !patchResult.IsEmpty() {
-				updatedLb := patchResult.Patched.(*corev1.Service)
-				diff.NeedUpdate = true
-				diff.Diff.WriteString(fmt.Sprintf("diff %s: %s\n", updatedLb.Name, string(patchResult.Patch)))
-				lbToUpdate = append(lbToUpdate, *updatedLb)
-				r.Log.Debugf("Need update load balancer %s", updatedLb.Name)
-			}
-		} else {
-			// Need delete load balancer
-			diff.NeedDelete = true
-			diff.Diff.WriteString(fmt.Sprintf("Delete load balancer %s\n", currentLb.Name))
-			lbToDelete = append(lbToDelete, *currentLb)
-		}
-	}
-
-	data["newLoadBalancers"] = lbToCreate
-	data["loadBalancers"] = lbToUpdate
-	data["oldLoadBalancers"] = lbToDelete
-
-	return diff, res, nil
+	return r.Reconciler.StdDiff(ctx, resource, data)
 }
 
 // OnError permit to set status condition on the right state and record error

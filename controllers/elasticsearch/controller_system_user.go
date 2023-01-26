@@ -4,20 +4,19 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/disaster37/k8s-objectmatcher/patch"
 	"github.com/disaster37/operator-sdk-extra/pkg/controller"
-	"github.com/disaster37/operator-sdk-extra/pkg/helper"
 	"github.com/pkg/errors"
+	"github.com/sirupsen/logrus"
 	elasticsearchcrd "github.com/webcenter-fr/elasticsearch-operator/apis/elasticsearch/v1alpha1"
 	elasticsearchapicrd "github.com/webcenter-fr/elasticsearch-operator/apis/elasticsearchapi/v1alpha1"
 	"github.com/webcenter-fr/elasticsearch-operator/controllers/common"
-	helperdiff "github.com/webcenter-fr/elasticsearch-operator/pkg/helper"
 	corev1 "k8s.io/api/core/v1"
 	condition "k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/client-go/tools/record"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
@@ -29,23 +28,20 @@ const (
 
 type SystemUserReconciler struct {
 	common.Reconciler
-	client.Client
-	Scheme *runtime.Scheme
-	name   string
 }
 
-func NewSystemUserReconciler(client client.Client, scheme *runtime.Scheme, reconciler common.Reconciler) controller.K8sPhaseReconciler {
+func NewSystemUserReconciler(client client.Client, scheme *runtime.Scheme, recorder record.EventRecorder, log *logrus.Entry) controller.K8sPhaseReconciler {
 	return &SystemUserReconciler{
-		Reconciler: reconciler,
-		Client:     client,
-		Scheme:     scheme,
-		name:       "systemUser",
+		Reconciler: common.Reconciler{
+			Recorder: recorder,
+			Log: log.WithFields(logrus.Fields{
+				"phase": "systemUser",
+			}),
+			Name:   "systemUser",
+			Client: client,
+			Scheme: scheme,
+		},
 	}
-}
-
-// Name return the current phase
-func (r *SystemUserReconciler) Name() string {
-	return r.name
 }
 
 // Configure permit to init condition
@@ -80,7 +76,7 @@ func (r *SystemUserReconciler) Read(ctx context.Context, resource client.Object,
 	if err = r.Client.List(ctx, userList, &client.ListOptions{Namespace: o.Namespace, LabelSelector: labelSelectors}); err != nil {
 		return res, errors.Wrapf(err, "Error when read system users")
 	}
-	data["currentUsers"] = userList.Items
+	data["currentObjects"] = userList.Items
 
 	// Read secret that store credentials
 	if err = r.Client.Get(ctx, types.NamespacedName{Namespace: o.Namespace, Name: GetSecretNameForCredentials(o)}, s); err != nil {
@@ -92,154 +88,14 @@ func (r *SystemUserReconciler) Read(ctx context.Context, resource client.Object,
 	if err != nil {
 		return res, errors.Wrap(err, "Error when generate system users")
 	}
-	data["expectedUsers"] = expectedUsers
-
-	return res, nil
-}
-
-// Create will create users
-func (r *SystemUserReconciler) Create(ctx context.Context, resource client.Object, data map[string]interface{}) (res ctrl.Result, err error) {
-	var d any
-
-	d, err = helper.Get(data, "newUsers")
-	if err != nil {
-		return res, err
-	}
-	expectedUsers := d.([]elasticsearchapicrd.User)
-
-	for _, u := range expectedUsers {
-		if err = r.Client.Create(ctx, &u); err != nil {
-			return res, errors.Wrapf(err, "Error when create user %s", u.Name)
-		}
-	}
-
-	return res, nil
-}
-
-// Update will update users
-func (r *SystemUserReconciler) Update(ctx context.Context, resource client.Object, data map[string]interface{}) (res ctrl.Result, err error) {
-	var d any
-
-	d, err = helper.Get(data, "users")
-	if err != nil {
-		return res, err
-	}
-	expectedUsers := d.([]elasticsearchapicrd.User)
-
-	for _, u := range expectedUsers {
-		if err = r.Client.Update(ctx, &u); err != nil {
-			return res, errors.Wrapf(err, "Error when update user %s", u.Name)
-		}
-	}
-
-	return res, nil
-}
-
-// Delete permit to delete users
-func (r *SystemUserReconciler) Delete(ctx context.Context, resource client.Object, data map[string]interface{}) (res ctrl.Result, err error) {
-
-	var d any
-
-	d, err = helper.Get(data, "oldUsers")
-	if err != nil {
-		return res, err
-	}
-	oldUsers := d.([]elasticsearchapicrd.User)
-
-	for _, u := range oldUsers {
-		if err = r.Client.Delete(ctx, &u); err != nil {
-			return res, errors.Wrapf(err, "Error when delete user %s", u.Name)
-		}
-	}
+	data["expectedObjects"] = expectedUsers
 
 	return res, nil
 }
 
 // Diff permit to check if users are up to date
 func (r *SystemUserReconciler) Diff(ctx context.Context, resource client.Object, data map[string]interface{}) (diff controller.K8sDiff, res ctrl.Result, err error) {
-	o := resource.(*elasticsearchcrd.Elasticsearch)
-	var d any
-
-	d, err = helper.Get(data, "currentUsers")
-	if err != nil {
-		return diff, res, err
-	}
-	currentUsers := d.([]elasticsearchapicrd.User)
-
-	d, err = helper.Get(data, "expectedUsers")
-	if err != nil {
-		return diff, res, err
-	}
-	expectedUsers := d.([]elasticsearchapicrd.User)
-
-	diff = controller.K8sDiff{
-		NeedCreate: false,
-		NeedUpdate: false,
-		NeedDelete: false,
-	}
-
-	userToUpdate := make([]elasticsearchapicrd.User, 0)
-	userToCreate := make([]elasticsearchapicrd.User, 0)
-
-	for _, expectedUser := range expectedUsers {
-		isFound := false
-		for i, currentUser := range currentUsers {
-			// Need compare pdb
-			if currentUser.Name == expectedUser.Name {
-				isFound = true
-
-				patchResult, err := patch.DefaultPatchMaker.Calculate(&currentUser, &expectedUser, patch.CleanMetadata(), patch.IgnoreStatusFields())
-				if err != nil {
-					return diff, res, errors.Wrapf(err, "Error when diffing user %s", currentUser.Name)
-				}
-				if !patchResult.IsEmpty() {
-					updatedUser := patchResult.Patched.(*elasticsearchapicrd.User)
-					diff.NeedUpdate = true
-					diff.Diff.WriteString(fmt.Sprintf("diff %s: %s\n", updatedUser.Name, string(patchResult.Patch)))
-					userToUpdate = append(userToUpdate, *updatedUser)
-					r.Log.Debugf("Need update user %s", updatedUser.Name)
-				}
-
-				// Remove items found
-				currentUsers = helperdiff.DeleteItemFromSlice(currentUsers, i).([]elasticsearchapicrd.User)
-
-				break
-			}
-		}
-
-		if !isFound {
-			// Need create pdbs
-			diff.NeedCreate = true
-			diff.Diff.WriteString(fmt.Sprintf("User %s not yet exist\n", expectedUser.Name))
-
-			// Set owner
-			err = ctrl.SetControllerReference(o, &expectedUser, r.Scheme)
-			if err != nil {
-				return diff, res, errors.Wrapf(err, "Error when set owner reference")
-			}
-
-			if err := patch.DefaultAnnotator.SetLastAppliedAnnotation(&expectedUser); err != nil {
-				return diff, res, errors.Wrapf(err, "Error when set diff annotation on user %s", expectedUser.Name)
-			}
-
-			userToCreate = append(userToCreate, expectedUser)
-
-			r.Log.Debugf("Need create user %s", expectedUser.Name)
-		}
-	}
-
-	if len(currentUsers) > 0 {
-		diff.NeedDelete = true
-		for _, u := range currentUsers {
-			diff.Diff.WriteString(fmt.Sprintf("Need delete user %s\n", u.Name))
-		}
-	}
-
-	data["newUsers"] = userToCreate
-	data["users"] = userToUpdate
-	data["oldUsers"] = currentUsers
-
-	return diff, res, nil
+	return r.Reconciler.StdListDiff(ctx, resource, data)
 }
 
 // OnError permit to set status condition on the right state and record error

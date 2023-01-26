@@ -10,6 +10,7 @@ import (
 	"github.com/disaster37/operator-sdk-extra/pkg/controller"
 	"github.com/disaster37/operator-sdk-extra/pkg/helper"
 	"github.com/sirupsen/logrus"
+	helperdiff "github.com/webcenter-fr/elasticsearch-operator/pkg/helper"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/tools/record"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -90,9 +91,9 @@ func (r *Reconciler) Delete(ctx context.Context, resource client.Object, data ma
 	return res, nil
 }
 
-// StdDiff is the standard diff when we need to reconsil only one resource
+// StdDiff is the standard diff when we need to diff only one resource
 // Data map need to have key `currentObject` and `expectedObject`
-func (r *Reconciler) StdDiff(ctx context.Context, resource client.Object, data map[string]interface{}) (diff controller.K8sDiff, res ctrl.Result, err error) {
+func (r *Reconciler) StdDiff(ctx context.Context, resource client.Object, data map[string]interface{}, ignoreDiff ...patch.CalculateOption) (diff controller.K8sDiff, res ctrl.Result, err error) {
 	var d any
 
 	d, err = helper.Get(data, "currentObject")
@@ -112,6 +113,12 @@ func (r *Reconciler) StdDiff(ctx context.Context, resource client.Object, data m
 		NeedUpdate: false,
 		NeedDelete: false,
 	}
+
+	patchOptions := []patch.CalculateOption{
+		patch.CleanMetadata(),
+		patch.IgnoreStatusFields(),
+	}
+	patchOptions = append(patchOptions, ignoreDiff...)
 
 	toUpdate := make([]client.Object, 0)
 	toCreate := make([]client.Object, 0)
@@ -139,7 +146,7 @@ func (r *Reconciler) StdDiff(ctx context.Context, resource client.Object, data m
 
 		if expectedObject != nil && !reflect.ValueOf(expectedObject).IsNil() {
 			// Check if need to update object
-			patchResult, err := patch.DefaultPatchMaker.Calculate(currentObject, expectedObject, patch.CleanMetadata(), patch.IgnoreStatusFields())
+			patchResult, err := patch.DefaultPatchMaker.Calculate(currentObject, expectedObject, patchOptions...)
 			if err != nil {
 				return diff, res, errors.Wrapf(err, "Error when diffing %s", currentObject.GetName())
 			}
@@ -164,4 +171,130 @@ func (r *Reconciler) StdDiff(ctx context.Context, resource client.Object, data m
 	data["listToDelete"] = toDelete
 
 	return diff, res, nil
+}
+
+// StdListDiff is the standard diff when we need to diff list of resources
+// Data map need to have key `currentObjects` and `expectedObjects`
+func (r *Reconciler) StdListDiff(ctx context.Context, resource client.Object, data map[string]interface{}, ignoreDiff ...patch.CalculateOption) (diff controller.K8sDiff, res ctrl.Result, err error) {
+	var d any
+
+	d, err = helper.Get(data, "currentObjects")
+	if err != nil {
+		return diff, res, err
+	}
+	currentObjects := helperdiff.ToSliceOfObject(d)
+
+	d, err = helper.Get(data, "expectedObjects")
+	if err != nil {
+		return diff, res, err
+	}
+	expectedObjects := helperdiff.ToSliceOfObject(d)
+
+	tmpCurrentObjects := make([]client.Object, len(currentObjects))
+	copy(tmpCurrentObjects, currentObjects)
+
+	diff = controller.K8sDiff{
+		NeedCreate: false,
+		NeedUpdate: false,
+		NeedDelete: false,
+	}
+
+	patchOptions := []patch.CalculateOption{
+		patch.CleanMetadata(),
+		patch.IgnoreStatusFields(),
+	}
+	patchOptions = append(patchOptions, ignoreDiff...)
+
+	toUpdate := make([]client.Object, 0)
+	toCreate := make([]client.Object, 0)
+
+	for _, expectedObject := range expectedObjects {
+		isFound := false
+		for i, currentObject := range tmpCurrentObjects {
+			// Need compare same object
+			if currentObject.GetName() == expectedObject.GetName() {
+				isFound = true
+
+				// Copy TypeMeta to work with some ignore rules like IgnorePDBSelector()
+				mustInjectTypeMeta(currentObject, expectedObject)
+				patchResult, err := patch.DefaultPatchMaker.Calculate(currentObject, expectedObject, patchOptions...)
+				if err != nil {
+					return diff, res, errors.Wrapf(err, "Error when diffing %s", currentObject.GetName())
+				}
+				if !patchResult.IsEmpty() {
+					updatedObject := patchResult.Patched.(client.Object)
+					diff.NeedUpdate = true
+					diff.Diff.WriteString(fmt.Sprintf("diff %s: %s\n", updatedObject.GetName(), string(patchResult.Patch)))
+					toUpdate = append(toUpdate, updatedObject)
+					r.Log.Debugf("Need Update %s", updatedObject.GetName())
+				}
+
+				// Remove items found
+				tmpCurrentObjects = helperdiff.DeleteItemFromSlice(tmpCurrentObjects, i).([]client.Object)
+
+				break
+			}
+		}
+
+		if !isFound {
+			// Need create object
+			diff.NeedCreate = true
+			diff.Diff.WriteString(fmt.Sprintf("Create %s\n", expectedObject.GetName()))
+
+			// Set owner
+			err = ctrl.SetControllerReference(resource, expectedObject, r.Scheme)
+			if err != nil {
+				return diff, res, errors.Wrapf(err, "Error when set owner reference")
+			}
+
+			if err := patch.DefaultAnnotator.SetLastAppliedAnnotation(expectedObject); err != nil {
+				return diff, res, errors.Wrapf(err, "Error when set diff annotation on %s", expectedObject.GetName())
+			}
+
+			toCreate = append(toCreate, expectedObject)
+
+			r.Log.Debugf("Need create %s", expectedObject.GetName())
+		}
+	}
+
+	if len(tmpCurrentObjects) > 0 {
+		diff.NeedDelete = true
+		for _, object := range tmpCurrentObjects {
+			diff.Diff.WriteString(fmt.Sprintf("Delete %s\n", object.GetName()))
+		}
+	}
+
+	data["listToCreate"] = toCreate
+	data["listToUpdate"] = toUpdate
+	data["listToDelete"] = tmpCurrentObjects
+
+	return diff, res, nil
+}
+
+func mustInjectTypeMeta(src, dst client.Object) {
+	var (
+		rt reflect.Type
+	)
+
+	rt = reflect.TypeOf(src)
+	if rt.Kind() != reflect.Ptr {
+		panic("Resource must be pointer")
+	}
+	rt = reflect.TypeOf(dst)
+	if rt.Kind() != reflect.Ptr {
+		panic("Resource must be pointer")
+	}
+
+	rvSrc := reflect.ValueOf(src).Elem()
+	omSrc := rvSrc.FieldByName("TypeMeta")
+	if !omSrc.IsValid() {
+		panic("src must have field TypeMeta")
+	}
+	rvDst := reflect.ValueOf(dst).Elem()
+	omDst := rvDst.FieldByName("TypeMeta")
+	if !omDst.IsValid() {
+		panic("dst must have field TypeMeta")
+	}
+
+	omDst.Set(omSrc)
 }
