@@ -2,12 +2,10 @@ package kibana
 
 import (
 	"context"
-	"fmt"
 
-	"github.com/disaster37/k8s-objectmatcher/patch"
 	"github.com/disaster37/operator-sdk-extra/pkg/controller"
-	"github.com/disaster37/operator-sdk-extra/pkg/helper"
 	"github.com/pkg/errors"
+	"github.com/sirupsen/logrus"
 	kibanacrd "github.com/webcenter-fr/elasticsearch-operator/apis/kibana/v1alpha1"
 	"github.com/webcenter-fr/elasticsearch-operator/controllers/common"
 	corev1 "k8s.io/api/core/v1"
@@ -16,6 +14,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/client-go/tools/record"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
@@ -27,23 +26,20 @@ const (
 
 type ServiceReconciler struct {
 	common.Reconciler
-	client.Client
-	Scheme *runtime.Scheme
-	name   string
 }
 
-func NewServiceReconciler(client client.Client, scheme *runtime.Scheme, reconciler common.Reconciler) controller.K8sPhaseReconciler {
+func NewServiceReconciler(client client.Client, scheme *runtime.Scheme, recorder record.EventRecorder, log *logrus.Entry) controller.K8sPhaseReconciler {
 	return &ServiceReconciler{
-		Reconciler: reconciler,
-		Client:     client,
-		Scheme:     scheme,
-		name:       "service",
+		Reconciler: common.Reconciler{
+			Recorder: recorder,
+			Log: log.WithFields(logrus.Fields{
+				"phase": "service",
+			}),
+			Name:   "service",
+			Client: client,
+			Scheme: scheme,
+		},
 	}
-}
-
-// Name return the current phase
-func (r *ServiceReconciler) Name() string {
-	return r.name
 }
 
 // Configure permit to init condition
@@ -77,148 +73,21 @@ func (r *ServiceReconciler) Read(ctx context.Context, resource client.Object, da
 		service = nil
 	}
 
-	data["currentService"] = service
+	data["currentObject"] = service
 
 	// Generate expected service
 	expectedService, err := BuildService(o)
 	if err != nil {
 		return res, errors.Wrap(err, "Error when generate service")
 	}
-	data["expectedService"] = expectedService
-
-	return res, nil
-}
-
-// Create will create services
-func (r *ServiceReconciler) Create(ctx context.Context, resource client.Object, data map[string]interface{}) (res ctrl.Result, err error) {
-	var d any
-
-	d, err = helper.Get(data, "newServices")
-	if err != nil {
-		return res, err
-	}
-	expectedServices := d.([]corev1.Service)
-
-	for _, service := range expectedServices {
-		if err = r.Client.Create(ctx, &service); err != nil {
-			return res, errors.Wrapf(err, "Error when create service %s", service.Name)
-		}
-	}
-
-	return res, nil
-}
-
-// Update will update services
-func (r *ServiceReconciler) Update(ctx context.Context, resource client.Object, data map[string]interface{}) (res ctrl.Result, err error) {
-	var d any
-
-	d, err = helper.Get(data, "services")
-	if err != nil {
-		return res, err
-	}
-	expectedServices := d.([]corev1.Service)
-
-	for _, service := range expectedServices {
-		if err = r.Client.Update(ctx, &service); err != nil {
-			return res, errors.Wrapf(err, "Error when update service %s", service.Name)
-		}
-	}
-
-	return res, nil
-}
-
-// Delete permit to delete service
-func (r *ServiceReconciler) Delete(ctx context.Context, resource client.Object, data map[string]interface{}) (res ctrl.Result, err error) {
-
-	var d any
-
-	d, err = helper.Get(data, "oldServices")
-	if err != nil {
-		return res, err
-	}
-	oldServices := d.([]corev1.Service)
-
-	for _, service := range oldServices {
-		if err = r.Client.Delete(ctx, &service); err != nil {
-			return res, errors.Wrapf(err, "Error when delete service %s", service.Name)
-		}
-	}
+	data["expectedObject"] = expectedService
 
 	return res, nil
 }
 
 // Diff permit to check if services are up to date
 func (r *ServiceReconciler) Diff(ctx context.Context, resource client.Object, data map[string]interface{}) (diff controller.K8sDiff, res ctrl.Result, err error) {
-	o := resource.(*kibanacrd.Kibana)
-	var d any
-
-	d, err = helper.Get(data, "currentService")
-	if err != nil {
-		return diff, res, err
-	}
-	currentService := d.(*corev1.Service)
-
-	d, err = helper.Get(data, "expectedService")
-	if err != nil {
-		return diff, res, err
-	}
-	expectedService := d.(*corev1.Service)
-
-	diff = controller.K8sDiff{
-		NeedCreate: false,
-		NeedUpdate: false,
-		NeedDelete: false,
-	}
-
-	serviceToUpdate := make([]corev1.Service, 0)
-	serviceToCreate := make([]corev1.Service, 0)
-	serviceToDelete := make([]corev1.Service, 0)
-
-	// Service not yet created
-	if currentService == nil {
-		// Need create services
-		diff.NeedCreate = true
-		diff.Diff.WriteString(fmt.Sprintf("Service %s not yet exist\n", expectedService.Name))
-
-		// Set owner
-		err = ctrl.SetControllerReference(o, expectedService, r.Scheme)
-		if err != nil {
-			return diff, res, errors.Wrapf(err, "Error when set owner reference")
-		}
-
-		if err := patch.DefaultAnnotator.SetLastAppliedAnnotation(expectedService); err != nil {
-			return diff, res, errors.Wrapf(err, "Error when set diff annotation on service %s", expectedService.Name)
-		}
-
-		serviceToCreate = append(serviceToCreate, *expectedService)
-
-		r.Log.Debugf("Need create service %s", expectedService.Name)
-
-		data["newServices"] = serviceToCreate
-		data["services"] = serviceToUpdate
-		data["oldServices"] = serviceToDelete
-
-		return diff, res, nil
-	}
-
-	// Check if service is up to date
-	patchResult, err := patch.DefaultPatchMaker.Calculate(currentService, expectedService, patch.CleanMetadata(), patch.IgnoreStatusFields())
-	if err != nil {
-		return diff, res, errors.Wrapf(err, "Error when diffing service %s", currentService.Name)
-	}
-	if !patchResult.IsEmpty() {
-		updatedService := patchResult.Patched.(*corev1.Service)
-		diff.NeedUpdate = true
-		diff.Diff.WriteString(fmt.Sprintf("diff %s: %s\n", updatedService.Name, string(patchResult.Patch)))
-		serviceToUpdate = append(serviceToUpdate, *updatedService)
-		r.Log.Debugf("Need update service %s", updatedService.Name)
-	}
-
-	data["newServices"] = serviceToCreate
-	data["services"] = serviceToUpdate
-	data["oldServices"] = serviceToDelete
-
-	return diff, res, nil
+	return r.Reconciler.StdDiff(ctx, resource, data)
 }
 
 // OnError permit to set status condition on the right state and record error

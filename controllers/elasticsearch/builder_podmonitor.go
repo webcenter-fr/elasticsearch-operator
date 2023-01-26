@@ -23,7 +23,8 @@ func BuildPodMonitor(es *elasticsearchcrd.Elasticsearch) (podMonitor *monitoring
 		Spec: monitoringv1.PodMonitorSpec{
 			PodMetricsEndpoints: []monitoringv1.PodMetricsEndpoint{
 				{
-					Port: "exporter",
+					Port:     "exporter",
+					Interval: "10s",
 				},
 			},
 			Selector: metav1.LabelSelector{

@@ -2,13 +2,11 @@ package kibana
 
 import (
 	"context"
-	"fmt"
 	"time"
 
-	"github.com/disaster37/k8s-objectmatcher/patch"
 	"github.com/disaster37/operator-sdk-extra/pkg/controller"
-	"github.com/disaster37/operator-sdk-extra/pkg/helper"
 	"github.com/pkg/errors"
+	"github.com/sirupsen/logrus"
 	elasticsearchcrd "github.com/webcenter-fr/elasticsearch-operator/apis/elasticsearch/v1alpha1"
 	kibanacrd "github.com/webcenter-fr/elasticsearch-operator/apis/kibana/v1alpha1"
 	"github.com/webcenter-fr/elasticsearch-operator/controllers/common"
@@ -19,6 +17,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/client-go/tools/record"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
@@ -30,23 +29,20 @@ const (
 
 type DeploymentReconciler struct {
 	common.Reconciler
-	client.Client
-	Scheme *runtime.Scheme
-	name   string
 }
 
-func NewDeploymentReconciler(client client.Client, scheme *runtime.Scheme, reconciler common.Reconciler) controller.K8sPhaseReconciler {
+func NewDeploymentReconciler(client client.Client, scheme *runtime.Scheme, recorder record.EventRecorder, log *logrus.Entry) controller.K8sPhaseReconciler {
 	return &DeploymentReconciler{
-		Reconciler: reconciler,
-		Client:     client,
-		Scheme:     scheme,
-		name:       "deployment",
+		Reconciler: common.Reconciler{
+			Recorder: recorder,
+			Log: log.WithFields(logrus.Fields{
+				"phase": "deployment",
+			}),
+			Name:   "deployment",
+			Client: client,
+			Scheme: scheme,
+		},
 	}
-}
-
-// Name return the current phase
-func (r *DeploymentReconciler) Name() string {
-	return r.name
 }
 
 // Configure permit to init condition
@@ -83,7 +79,7 @@ func (r *DeploymentReconciler) Read(ctx context.Context, resource client.Object,
 		dpl = nil
 	}
 
-	data["currentDeployment"] = dpl
+	data["currentObject"] = dpl
 
 	// Read Elasticsearch
 	if o.Spec.ElasticsearchRef.IsManaged() {
@@ -147,142 +143,14 @@ func (r *DeploymentReconciler) Read(ctx context.Context, resource client.Object,
 	if err != nil {
 		return res, errors.Wrap(err, "Error when generate deployment")
 	}
-	data["expectedDeployment"] = expectedDeployment
-
-	return res, nil
-}
-
-// Create will create deployment
-func (r *DeploymentReconciler) Create(ctx context.Context, resource client.Object, data map[string]interface{}) (res ctrl.Result, err error) {
-	var d any
-
-	d, err = helper.Get(data, "newDeployments")
-	if err != nil {
-		return res, err
-	}
-	expectedDpls := d.([]appv1.Deployment)
-
-	for _, dpl := range expectedDpls {
-		if err = r.Client.Create(ctx, &dpl); err != nil {
-			return res, errors.Wrapf(err, "Error when create deployment %s", dpl.Name)
-		}
-	}
-
-	return res, nil
-}
-
-// Update will update deployment
-func (r *DeploymentReconciler) Update(ctx context.Context, resource client.Object, data map[string]interface{}) (res ctrl.Result, err error) {
-	var d any
-
-	d, err = helper.Get(data, "deployments")
-	if err != nil {
-		return res, err
-	}
-	expectedDpls := d.([]appv1.Deployment)
-
-	for _, dpl := range expectedDpls {
-		if err = r.Client.Update(ctx, &dpl); err != nil {
-			return res, errors.Wrapf(err, "Error when update deployment %s", dpl.Name)
-		}
-	}
-
-	return res, nil
-}
-
-// Delete permit to delete deployment
-func (r *DeploymentReconciler) Delete(ctx context.Context, resource client.Object, data map[string]interface{}) (res ctrl.Result, err error) {
-
-	var d any
-
-	d, err = helper.Get(data, "oldDeployments")
-	if err != nil {
-		return res, err
-	}
-	oldDpls := d.([]appv1.Deployment)
-
-	for _, dpl := range oldDpls {
-		if err = r.Client.Delete(ctx, &dpl); err != nil {
-			return res, errors.Wrapf(err, "Error when delete deployment %s", dpl.Name)
-		}
-	}
+	data["expectedObject"] = expectedDeployment
 
 	return res, nil
 }
 
 // Diff permit to check if deployment is up to date
 func (r *DeploymentReconciler) Diff(ctx context.Context, resource client.Object, data map[string]interface{}) (diff controller.K8sDiff, res ctrl.Result, err error) {
-	o := resource.(*kibanacrd.Kibana)
-	var d any
-
-	d, err = helper.Get(data, "currentDeployment")
-	if err != nil {
-		return diff, res, err
-	}
-	currentDeployment := d.(*appv1.Deployment)
-
-	d, err = helper.Get(data, "expectedDeployment")
-	if err != nil {
-		return diff, res, err
-	}
-	expectedDeployment := d.(*appv1.Deployment)
-
-	diff = controller.K8sDiff{
-		NeedCreate: false,
-		NeedUpdate: false,
-		NeedDelete: false,
-	}
-
-	dplToUpdate := make([]appv1.Deployment, 0)
-	dplToCreate := make([]appv1.Deployment, 0)
-	dplToDelete := make([]appv1.Deployment, 0)
-
-	// Deployment not yet exist
-	if currentDeployment == nil {
-		diff.NeedCreate = true
-		diff.Diff.WriteString(fmt.Sprintf("Deployment %s not yet exist\n", expectedDeployment.Name))
-
-		// Set owner
-		err = ctrl.SetControllerReference(o, expectedDeployment, r.Scheme)
-		if err != nil {
-			return diff, res, errors.Wrapf(err, "Error when set owner reference")
-		}
-
-		if err := patch.DefaultAnnotator.SetLastAppliedAnnotation(expectedDeployment); err != nil {
-			return diff, res, errors.Wrapf(err, "Error when set diff annotation on deployment %s", expectedDeployment.Name)
-		}
-
-		dplToCreate = append(dplToCreate, *expectedDeployment)
-
-		r.Log.Debugf("Need create deployment %s", expectedDeployment.Name)
-
-		data["newDeployments"] = dplToCreate
-		data["deployments"] = dplToUpdate
-		data["oldDeployment"] = dplToDelete
-
-		return diff, res, nil
-	}
-
-	// Check if deployment is up to date
-	patchResult, err := patch.DefaultPatchMaker.Calculate(currentDeployment, expectedDeployment, patch.CleanMetadata(), patch.IgnoreStatusFields())
-	if err != nil {
-		return diff, res, errors.Wrapf(err, "Error when diffing deployment %s", currentDeployment.Name)
-	}
-	if !patchResult.IsEmpty() {
-		updatedDpl := patchResult.Patched.(*appv1.Deployment)
-		diff.NeedUpdate = true
-		diff.Diff.WriteString(fmt.Sprintf("diff %s: %s\n", updatedDpl.Name, string(patchResult.Patch)))
-
-		dplToUpdate = append(dplToUpdate, *updatedDpl)
-		r.Log.Debugf("Need update deployment %s", updatedDpl.Name)
-	}
-
-	data["newDeployments"] = dplToCreate
-	data["deployments"] = dplToUpdate
-	data["oldDeployment"] = dplToDelete
-
-	return diff, res, nil
-
+	return r.Reconciler.StdDiff(ctx, resource, data)
 }
 
 // OnError permit to set status condition on the right state and record error

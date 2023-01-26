@@ -23,7 +23,6 @@ import (
 
 	"emperror.dev/errors"
 	"github.com/disaster37/operator-sdk-extra/pkg/controller"
-	"github.com/sirupsen/logrus"
 	kibanacrd "github.com/webcenter-fr/elasticsearch-operator/apis/kibana/v1alpha1"
 	"github.com/webcenter-fr/elasticsearch-operator/controllers/common"
 	elasticsearchcontrollers "github.com/webcenter-fr/elasticsearch-operator/controllers/elasticsearch"
@@ -95,68 +94,15 @@ func (r *KibanaReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 	kb := &kibanacrd.Kibana{}
 	data := map[string]any{}
 
-	tlsReconciler := NewTlsReconciler(r.Client, r.Scheme, common.Reconciler{
-		Recorder: r.GetRecorder(),
-		Log: r.GetLogger().WithFields(logrus.Fields{
-			"phase": "tls",
-		}),
-	})
-
-	caElasticsearchReconciler := NewCAElasticsearchReconciler(r.Client, r.Scheme, common.Reconciler{
-		Recorder: r.GetRecorder(),
-		Log: r.GetLogger().WithFields(logrus.Fields{
-			"phase": "caElasticsearch",
-		}),
-	})
-
-	credentialReconciler := NewCredentialReconciler(r.Client, r.Scheme, common.Reconciler{
-		Recorder: r.GetRecorder(),
-		Log: r.GetLogger().WithFields(logrus.Fields{
-			"phase": "credential",
-		}),
-	})
-
-	configMapReconciler := NewConfiMapReconciler(r.Client, r.Scheme, common.Reconciler{
-		Recorder: r.GetRecorder(),
-		Log: r.GetLogger().WithFields(logrus.Fields{
-			"phase": "configMap",
-		}),
-	})
-
-	serviceReconciler := NewServiceReconciler(r.Client, r.Scheme, common.Reconciler{
-		Recorder: r.GetRecorder(),
-		Log: r.GetLogger().WithFields(logrus.Fields{
-			"phase": "service",
-		}),
-	})
-
-	pdbReconciler := NewPdbReconciler(r.Client, r.Scheme, common.Reconciler{
-		Recorder: r.GetRecorder(),
-		Log: r.GetLogger().WithFields(logrus.Fields{
-			"phase": "pdb",
-		}),
-	})
-
-	deploymentReconciler := NewDeploymentReconciler(r.Client, r.Scheme, common.Reconciler{
-		Recorder: r.GetRecorder(),
-		Log: r.GetLogger().WithFields(logrus.Fields{
-			"phase": "deployment",
-		}),
-	})
-
-	ingressReconciler := NewIngressReconciler(r.Client, r.Scheme, common.Reconciler{
-		Recorder: r.GetRecorder(),
-		Log: r.GetLogger().WithFields(logrus.Fields{
-			"phase": "ingress",
-		}),
-	})
-
-	loadBalancerReconciler := NewLoadBalancerReconciler(r.Client, r.Scheme, common.Reconciler{
-		Recorder: r.GetRecorder(),
-		Log: r.GetLogger().WithFields(logrus.Fields{
-			"phase": "loadBalancer",
-		}),
-	})
+	tlsReconciler := NewTlsReconciler(r.Client, r.Scheme, r.GetRecorder(), r.GetLogger())
+	caElasticsearchReconciler := NewCAElasticsearchReconciler(r.Client, r.Scheme, r.GetRecorder(), r.GetLogger())
+	credentialReconciler := NewCredentialReconciler(r.Client, r.Scheme, r.GetRecorder(), r.GetLogger())
+	configMapReconciler := NewConfiMapReconciler(r.Client, r.Scheme, r.GetRecorder(), r.GetLogger())
+	serviceReconciler := NewServiceReconciler(r.Client, r.Scheme, r.GetRecorder(), r.GetLogger())
+	pdbReconciler := NewPdbReconciler(r.Client, r.Scheme, r.GetRecorder(), r.GetLogger())
+	deploymentReconciler := NewDeploymentReconciler(r.Client, r.Scheme, r.GetRecorder(), r.GetLogger())
+	ingressReconciler := NewIngressReconciler(r.Client, r.Scheme, r.GetRecorder(), r.GetLogger())
+	loadBalancerReconciler := NewLoadBalancerReconciler(r.Client, r.Scheme, r.GetRecorder(), r.GetLogger())
 
 	return reconciler.Reconcile(ctx, req, kb, data,
 		tlsReconciler,
@@ -180,7 +126,7 @@ func (h *KibanaReconciler) SetupWithManager(mgr ctrl.Manager) error {
 		Owns(&networkingv1.Ingress{}).
 		Owns(&corev1.Service{}).
 		Owns(&policyv1.PodDisruptionBudget{}).
-		Owns(&appv1.StatefulSet{}).
+		Owns(&appv1.Deployment{}).
 		Watches(&source.Kind{Type: &corev1.Secret{}}, handler.EnqueueRequestsFromMapFunc(watchSecret(h.Client))).
 		Complete(h)
 }

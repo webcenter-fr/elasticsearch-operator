@@ -93,7 +93,7 @@ func (r *Reconciler) Delete(ctx context.Context, resource client.Object, data ma
 
 // StdDiff is the standard diff when we need to diff only one resource
 // Data map need to have key `currentObject` and `expectedObject`
-func (r *Reconciler) StdDiff(ctx context.Context, resource client.Object, data map[string]interface{}) (diff controller.K8sDiff, res ctrl.Result, err error) {
+func (r *Reconciler) StdDiff(ctx context.Context, resource client.Object, data map[string]interface{}, ignoreDiff ...patch.CalculateOption) (diff controller.K8sDiff, res ctrl.Result, err error) {
 	var d any
 
 	d, err = helper.Get(data, "currentObject")
@@ -113,6 +113,12 @@ func (r *Reconciler) StdDiff(ctx context.Context, resource client.Object, data m
 		NeedUpdate: false,
 		NeedDelete: false,
 	}
+
+	patchOptions := []patch.CalculateOption{
+		patch.CleanMetadata(),
+		patch.IgnoreStatusFields(),
+	}
+	patchOptions = append(patchOptions, ignoreDiff...)
 
 	toUpdate := make([]client.Object, 0)
 	toCreate := make([]client.Object, 0)
@@ -140,7 +146,7 @@ func (r *Reconciler) StdDiff(ctx context.Context, resource client.Object, data m
 
 		if expectedObject != nil && !reflect.ValueOf(expectedObject).IsNil() {
 			// Check if need to update object
-			patchResult, err := patch.DefaultPatchMaker.Calculate(currentObject, expectedObject, patch.CleanMetadata(), patch.IgnoreStatusFields())
+			patchResult, err := patch.DefaultPatchMaker.Calculate(currentObject, expectedObject, patchOptions...)
 			if err != nil {
 				return diff, res, errors.Wrapf(err, "Error when diffing %s", currentObject.GetName())
 			}
@@ -193,14 +199,14 @@ func (r *Reconciler) StdListDiff(ctx context.Context, resource client.Object, da
 		NeedDelete: false,
 	}
 
-	toUpdate := make([]client.Object, 0)
-	toCreate := make([]client.Object, 0)
-
 	patchOptions := []patch.CalculateOption{
 		patch.CleanMetadata(),
 		patch.IgnoreStatusFields(),
 	}
 	patchOptions = append(patchOptions, ignoreDiff...)
+
+	toUpdate := make([]client.Object, 0)
+	toCreate := make([]client.Object, 0)
 
 	for _, expectedObject := range expectedObjects {
 		isFound := false

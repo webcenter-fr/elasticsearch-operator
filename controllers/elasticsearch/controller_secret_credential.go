@@ -63,23 +63,29 @@ func (r *CredentialReconciler) Configure(ctx context.Context, req ctrl.Request, 
 // Read existing secret
 func (r *CredentialReconciler) Read(ctx context.Context, resource client.Object, data map[string]any) (res ctrl.Result, err error) {
 	o := resource.(*elasticsearchcrd.Elasticsearch)
-	s := &corev1.Secret{}
+	currentCredential := &corev1.Secret{}
 
 	// Read current secret
-	if err = r.Client.Get(ctx, types.NamespacedName{Namespace: o.Namespace, Name: GetSecretNameForCredentials(o)}, s); err != nil {
+	if err = r.Client.Get(ctx, types.NamespacedName{Namespace: o.Namespace, Name: GetSecretNameForCredentials(o)}, currentCredential); err != nil {
 		if !k8serrors.IsNotFound(err) {
 			return res, errors.Wrapf(err, "Error when read secret %s", GetSecretNameForCredentials(o))
 		}
-		s = nil
+		currentCredential = nil
 	}
-	data["currentObject"] = s
+	data["currentObject"] = currentCredential
 
 	// Generate expected secret
-	expectedSecretCredential, err := BuildCredentialSecret(o)
+	expectedCredential, err := BuildCredentialSecret(o)
 	if err != nil {
 		return res, errors.Wrapf(err, "Error when generate secret %s", GetSecretNameForCredentials(o))
 	}
-	data["expectedObject"] = expectedSecretCredential
+
+	// Never update existing credentials
+	if currentCredential != nil {
+		expectedCredential.Data = currentCredential.Data
+	}
+
+	data["expectedObject"] = expectedCredential
 
 	return res, nil
 }
