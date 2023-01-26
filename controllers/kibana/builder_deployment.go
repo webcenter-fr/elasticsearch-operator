@@ -43,7 +43,7 @@ func BuildDeployment(kb *kibanacrd.Kibana, es *elasticsearchcrd.Elasticsearch, k
 
 	secretChecksumAnnotations := map[string]string{}
 	// Compute checksum annotation for keystore secrets
-	if kb.Spec.KeystoreSecretRef != nil && kb.Spec.KeystoreSecretRef.Name != "" && keystoreSecret != nil {
+	if keystoreSecret != nil {
 		//Convert secret contend to json string and them checksum it
 		j, err := json.Marshal(keystoreSecret.Data)
 		if err != nil {
@@ -55,8 +55,8 @@ func BuildDeployment(kb *kibanacrd.Kibana, es *elasticsearchcrd.Elasticsearch, k
 		}
 		secretChecksumAnnotations[fmt.Sprintf("%s/checksum-keystore", KibanaAnnotationKey)] = sum
 	}
-	// Compute checksum annotation for external API certs
-	if kb.IsTlsEnabled() && !kb.IsSelfManagedSecretForTls() && apiCrtSecret != nil {
+	// Compute checksum annotation for API certs
+	if apiCrtSecret != nil {
 		//Convert secret contend to json string and them checksum it
 		j, err := json.Marshal(apiCrtSecret.Data)
 		if err != nil {
@@ -68,8 +68,8 @@ func BuildDeployment(kb *kibanacrd.Kibana, es *elasticsearchcrd.Elasticsearch, k
 		}
 		secretChecksumAnnotations[fmt.Sprintf("%s/checksum-api-certs", KibanaAnnotationKey)] = sum
 	}
-	// Compute checksum annotation for external CA Elasticsearch secret
-	if !kb.Spec.ElasticsearchRef.IsManaged() && kb.Spec.Tls.ElasticsearchCaSecretRef != nil && esCASecret != nil {
+	// Compute checksum annotation for CA Elasticsearch secret
+	if esCASecret != nil {
 		//Convert secret contend to json string and them checksum it
 		j, err := json.Marshal(esCASecret.Data)
 		if err != nil {
