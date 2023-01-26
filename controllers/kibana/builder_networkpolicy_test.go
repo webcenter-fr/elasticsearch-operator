@@ -1,11 +1,11 @@
-package elasticsearch
+package kibana
 
 import (
 	"os"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
-	elasticsearchcrd "github.com/webcenter-fr/elasticsearch-operator/apis/elasticsearch/v1alpha1"
+	kibanacrd "github.com/webcenter-fr/elasticsearch-operator/apis/kibana/v1alpha1"
 	"github.com/webcenter-fr/elasticsearch-operator/pkg/test"
 	networkingv1 "k8s.io/api/networking/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -14,17 +14,17 @@ import (
 func TestBuildNetworkPolicy(t *testing.T) {
 	var (
 		err error
-		o   *elasticsearchcrd.Elasticsearch
+		o   *kibanacrd.Kibana
 		np  *networkingv1.NetworkPolicy
 	)
 
 	// When not in pod
-	o = &elasticsearchcrd.Elasticsearch{
+	o = &kibanacrd.Kibana{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      "test",
 			Namespace: "default",
+			Name:      "test",
 		},
-		Spec: elasticsearchcrd.ElasticsearchSpec{},
+		Spec: kibanacrd.KibanaSpec{},
 	}
 
 	np, err = BuildNetworkPolicy(o)
@@ -35,12 +35,12 @@ func TestBuildNetworkPolicy(t *testing.T) {
 	// When in pod
 	os.Setenv("POD_NAME", "test")
 	os.Setenv("POD_NAMESPACE", "test")
-	o = &elasticsearchcrd.Elasticsearch{
+	o = &kibanacrd.Kibana{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      "test",
 			Namespace: "default",
+			Name:      "test",
 		},
-		Spec: elasticsearchcrd.ElasticsearchSpec{},
+		Spec: kibanacrd.KibanaSpec{},
 	}
 
 	np, err = BuildNetworkPolicy(o)

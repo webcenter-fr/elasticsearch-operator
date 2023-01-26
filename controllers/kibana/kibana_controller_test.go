@@ -138,6 +138,7 @@ func doCreateKibanaStep() test.TestStep {
 				cm  *corev1.ConfigMap
 				pdb *policyv1.PodDisruptionBudget
 				dpl *appv1.Deployment
+				np  *networkingv1.NetworkPolicy
 			)
 
 			isTimeout, err := localtest.RunWithTimeout(func() error {
@@ -233,6 +234,14 @@ func doCreateKibanaStep() test.TestStep {
 			assert.NotEmpty(t, pdb.OwnerReferences)
 			assert.NotEmpty(t, pdb.Annotations[patch.LastAppliedConfig])
 
+			// Network policy exist
+			np = &networkingv1.NetworkPolicy{}
+			if err = c.Get(context.Background(), types.NamespacedName{Namespace: key.Namespace, Name: GetNetworkPolicyName(kb)}, np); err != nil {
+				t.Fatal(err)
+			}
+			assert.NotEmpty(t, np.OwnerReferences)
+			assert.NotEmpty(t, np.Annotations[patch.LastAppliedConfig])
+
 			// Deployment musts exist
 			dpl = &appv1.Deployment{}
 			if err = c.Get(context.Background(), types.NamespacedName{Namespace: key.Namespace, Name: GetDeploymentName(kb)}, dpl); err != nil {
@@ -282,6 +291,7 @@ func doUpdateKibanaStep() test.TestStep {
 				cm  *corev1.ConfigMap
 				pdb *policyv1.PodDisruptionBudget
 				dpl *appv1.Deployment
+				np  *networkingv1.NetworkPolicy
 			)
 
 			lastVersion := data["lastVersion"].(string)
@@ -396,6 +406,15 @@ func doUpdateKibanaStep() test.TestStep {
 			assert.NotEmpty(t, dpl.OwnerReferences)
 			assert.NotEmpty(t, dpl.Annotations[patch.LastAppliedConfig])
 			assert.Equal(t, "fu", dpl.Labels["test"])
+
+			// Network policy exist
+			np = &networkingv1.NetworkPolicy{}
+			if err = c.Get(context.Background(), types.NamespacedName{Namespace: key.Namespace, Name: GetNetworkPolicyName(kb)}, np); err != nil {
+				t.Fatal(err)
+			}
+			assert.NotEmpty(t, np.OwnerReferences)
+			assert.NotEmpty(t, np.Annotations[patch.LastAppliedConfig])
+			assert.Equal(t, "fu", np.Labels["test"])
 
 			return nil
 		},

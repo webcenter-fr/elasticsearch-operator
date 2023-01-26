@@ -127,3 +127,8 @@ func getAnnotations(kb *kibanacrd.Kibana, customAnnotation ...map[string]string)
 func GetSecretNameForCredentials(kb *kibanacrd.Kibana) (secretName string) {
 	return fmt.Sprintf("%s-credential-kb", kb.Name)
 }
+
+// GetNetworkPolicyName return the name for network policy
+func GetNetworkPolicyName(kb *kibanacrd.Kibana) string {
+	return fmt.Sprintf("%s-allow-api-kb", kb.Name)
+}
