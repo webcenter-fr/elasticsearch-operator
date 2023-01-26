@@ -24,6 +24,7 @@ spec:
       labels:
         control-plane: controller-manager
         elasticsearch-operator.k8s.webcenter.fr: "true"
+        kibana-operator.k8s.webcenter.fr: "true"
     spec:
       securityContext:
         runAsNonRoot: true
@@ -47,6 +48,11 @@ spec:
             fieldRef:
               apiVersion: v1
               fieldPath: metadata.name
+        - name: POD_NAMESPACE
+          valueFrom:
+            fieldRef:
+              apiVersion: v1
+              fieldPath: metadata.namespace
         securityContext:
           allowPrivilegeEscalation: false
           capabilities:

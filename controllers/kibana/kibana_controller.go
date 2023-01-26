@@ -103,6 +103,7 @@ func (r *KibanaReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 	deploymentReconciler := NewDeploymentReconciler(r.Client, r.Scheme, r.GetRecorder(), r.GetLogger())
 	ingressReconciler := NewIngressReconciler(r.Client, r.Scheme, r.GetRecorder(), r.GetLogger())
 	loadBalancerReconciler := NewLoadBalancerReconciler(r.Client, r.Scheme, r.GetRecorder(), r.GetLogger())
+	networkPolicyReconciler := NewNetworkPolicyReconciler(r.Client, r.Scheme, r.GetRecorder(), r.GetLogger())
 
 	return reconciler.Reconcile(ctx, req, kb, data,
 		tlsReconciler,
@@ -111,6 +112,7 @@ func (r *KibanaReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 		configMapReconciler,
 		serviceReconciler,
 		pdbReconciler,
+		networkPolicyReconciler,
 		deploymentReconciler,
 		ingressReconciler,
 		loadBalancerReconciler,
@@ -124,6 +126,7 @@ func (h *KibanaReconciler) SetupWithManager(mgr ctrl.Manager) error {
 		Owns(&corev1.ConfigMap{}).
 		Owns(&corev1.Secret{}).
 		Owns(&networkingv1.Ingress{}).
+		Owns(&networkingv1.NetworkPolicy{}).
 		Owns(&corev1.Service{}).
 		Owns(&policyv1.PodDisruptionBudget{}).
 		Owns(&appv1.Deployment{}).

@@ -240,3 +240,15 @@ func TestGetSecretNameForCredentials(t *testing.T) {
 	assert.Equal(t, "test-credential-kb", GetSecretNameForCredentials(o))
 
 }
+
+func TestGetNetworkPolicyName(t *testing.T) {
+	o := &kibanacrd.Kibana{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: "default",
+			Name:      "test",
+		},
+		Spec: kibanacrd.KibanaSpec{},
+	}
+
+	assert.Equal(t, "test-allow-api-kb", GetNetworkPolicyName(o))
+}

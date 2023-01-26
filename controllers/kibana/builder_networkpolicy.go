@@ -1,9 +1,9 @@
-package elasticsearch
+package kibana
 
 import (
 	"os"
 
-	elasticsearchcrd "github.com/webcenter-fr/elasticsearch-operator/apis/elasticsearch/v1alpha1"
+	kibanacrd "github.com/webcenter-fr/elasticsearch-operator/apis/kibana/v1alpha1"
 	v1 "k8s.io/api/core/v1"
 	networkingv1 "k8s.io/api/networking/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -11,15 +11,15 @@ import (
 )
 
 // BuildNetworkPolicy permit to generate Network policy object
-func BuildNetworkPolicy(es *elasticsearchcrd.Elasticsearch) (networkPolicy *networkingv1.NetworkPolicy, err error) {
+func BuildNetworkPolicy(kb *kibanacrd.Kibana) (networkPolicy *networkingv1.NetworkPolicy, err error) {
 
 	tcpProtocol := v1.ProtocolTCP
 	networkPolicy = &networkingv1.NetworkPolicy{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:        GetNetworkPolicyName(es),
-			Namespace:   es.Namespace,
-			Labels:      getLabels(es),
-			Annotations: getAnnotations(es),
+			Name:        GetNetworkPolicyName(kb),
+			Namespace:   kb.Namespace,
+			Labels:      getLabels(kb),
+			Annotations: getAnnotations(kb),
 		},
 		Spec: networkingv1.NetworkPolicySpec{
 			Ingress: []networkingv1.NetworkPolicyIngressRule{
@@ -32,7 +32,7 @@ func BuildNetworkPolicy(es *elasticsearchcrd.Elasticsearch) (networkPolicy *netw
 					Ports: []networkingv1.NetworkPolicyPort{
 						{
 							Port: &intstr.IntOrString{
-								IntVal: 9200,
+								IntVal: 5601,
 							},
 							Protocol: &tcpProtocol,
 						},
@@ -50,7 +50,7 @@ func BuildNetworkPolicy(es *elasticsearchcrd.Elasticsearch) (networkPolicy *netw
 	if found {
 		networkPolicy.Spec.Ingress[0].From[0].PodSelector = &metav1.LabelSelector{
 			MatchLabels: map[string]string{
-				"elasticsearch-operator.k8s.webcenter.fr": "true",
+				"kibana-operator.k8s.webcenter.fr": "true",
 			},
 		}
 	}
