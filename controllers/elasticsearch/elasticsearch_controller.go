@@ -242,9 +242,6 @@ func (h *ElasticsearchReconciler) OnError(ctx context.Context, r client.Object, 
 func (h *ElasticsearchReconciler) OnSuccess(ctx context.Context, r client.Object, data map[string]any) (res ctrl.Result, err error) {
 	o := r.(*elasticsearchcrd.Elasticsearch)
 
-	// Wait few time, to be sure Satefulset created
-	time.Sleep(1 * time.Second)
-
 	// Check all statefulsets are ready to change Phase status and set main condition to true
 	stsList := &appv1.StatefulSetList{}
 	labelSelectors, err := labels.Parse(fmt.Sprintf("cluster=%s,%s=true", o.Name, ElasticsearchAnnotationKey))
@@ -256,6 +253,9 @@ func (h *ElasticsearchReconciler) OnSuccess(ctx context.Context, r client.Object
 	}
 
 	isReady := true
+	if len(stsList.Items) == 0 {
+		isReady = false
+	}
 	for _, sts := range stsList.Items {
 		if sts.Status.ReadyReplicas != *sts.Spec.Replicas {
 			isReady = false
@@ -276,16 +276,22 @@ func (h *ElasticsearchReconciler) OnSuccess(ctx context.Context, r client.Object
 			o.Status.Phase = ElasticsearchPhaseRunning
 		}
 
-	} else if !condition.IsStatusConditionPresentAndEqual(o.Status.Conditions, ElasticsearchCondition, metav1.ConditionFalse) || (condition.FindStatusCondition(o.Status.Conditions, ElasticsearchCondition) != nil && condition.FindStatusCondition(o.Status.Conditions, ElasticsearchCondition).Reason != "NotReady") {
-		condition.SetStatusCondition(&o.Status.Conditions, metav1.Condition{
-			Type:   ElasticsearchCondition,
-			Status: metav1.ConditionFalse,
-			Reason: "NotReady",
-		})
+	} else {
+
+		if !condition.IsStatusConditionPresentAndEqual(o.Status.Conditions, ElasticsearchCondition, metav1.ConditionFalse) || (condition.FindStatusCondition(o.Status.Conditions, ElasticsearchCondition) != nil && condition.FindStatusCondition(o.Status.Conditions, ElasticsearchCondition).Reason != "NotReady") {
+			condition.SetStatusCondition(&o.Status.Conditions, metav1.Condition{
+				Type:   ElasticsearchCondition,
+				Status: metav1.ConditionFalse,
+				Reason: "NotReady",
+			})
+		}
 
 		if o.Status.Phase != ElasticsearchPhaseStarting {
 			o.Status.Phase = ElasticsearchPhaseStarting
 		}
+
+		// Requeued to check if status change
+		res.RequeueAfter = time.Second * 30
 	}
 
 	o.Status.CredentialsRef = corev1.LocalObjectReference{

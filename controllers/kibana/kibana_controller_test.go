@@ -267,6 +267,10 @@ func doCreateKibanaStep() test.TestStep {
 			assert.NotEmpty(t, pm.OwnerReferences)
 			assert.NotEmpty(t, pm.Annotations[patch.LastAppliedConfig])
 
+			// Status must be update
+			assert.NotEmpty(t, kb.Status.Phase)
+			assert.NotEmpty(t, kb.Status.Url)
+
 			return nil
 		},
 	}
@@ -441,6 +445,10 @@ func doUpdateKibanaStep() test.TestStep {
 			}
 			assert.NotEmpty(t, pm.OwnerReferences)
 			assert.NotEmpty(t, pm.Annotations[patch.LastAppliedConfig])
+
+			// Status must be update
+			assert.NotEmpty(t, kb.Status.Phase)
+			assert.NotEmpty(t, kb.Status.Url)
 
 			return nil
 		},

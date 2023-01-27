@@ -223,38 +223,87 @@ func (h *KibanaReconciler) OnSuccess(ctx context.Context, r client.Object, data 
 		if !k8serrors.IsNotFound(err) {
 			return res, errors.Wrapf(err, "Error when read Kibana deployment")
 		}
-		return ctrl.Result{RequeueAfter: time.Second * 30}, nil
-
 	}
 
-	if dpl.Status.ReadyReplicas == *dpl.Spec.Replicas {
+	if dpl != nil && dpl.Status.ReadyReplicas == *dpl.Spec.Replicas {
 		if !condition.IsStatusConditionPresentAndEqual(o.Status.Conditions, KibanaCondition, metav1.ConditionTrue) {
 			condition.SetStatusCondition(&o.Status.Conditions, metav1.Condition{
 				Type:   KibanaCondition,
 				Status: metav1.ConditionTrue,
 				Reason: "Ready",
 			})
+		}
 
+		if o.Status.Phase != KibanaPhaseRunning {
 			o.Status.Phase = KibanaPhaseRunning
 		}
 
-		return res, nil
+	} else {
+		if !condition.IsStatusConditionPresentAndEqual(o.Status.Conditions, KibanaCondition, metav1.ConditionFalse) || (condition.FindStatusCondition(o.Status.Conditions, KibanaCondition) != nil && condition.FindStatusCondition(o.Status.Conditions, KibanaCondition).Reason != "NotReady") {
+			condition.SetStatusCondition(&o.Status.Conditions, metav1.Condition{
+				Type:   KibanaCondition,
+				Status: metav1.ConditionFalse,
+				Reason: "NotReady",
+			})
+		}
+
+		if o.Status.Phase != KibanaPhaseStarting {
+			o.Status.Phase = KibanaPhaseStarting
+		}
+
+		// Requeued to check if status change
+		res.RequeueAfter = time.Second * 30
 	}
 
-	if !condition.IsStatusConditionPresentAndEqual(o.Status.Conditions, KibanaCondition, metav1.ConditionFalse) || (condition.FindStatusCondition(o.Status.Conditions, KibanaCondition) != nil && condition.FindStatusCondition(o.Status.Conditions, KibanaCondition).Reason != "NotReady") {
-		condition.SetStatusCondition(&o.Status.Conditions, metav1.Condition{
-			Type:   KibanaCondition,
-			Status: metav1.ConditionFalse,
-			Reason: "NotReady",
-		})
-
+	url, err := h.computeKibanaUrl(ctx, o)
+	if err != nil {
+		return res, err
 	}
+	o.Status.Url = url
 
-	o.Status.Phase = KibanaPhaseStarting
-
-	return ctrl.Result{RequeueAfter: time.Second * 30}, nil
+	return res, nil
 }
 
 func (h *KibanaReconciler) Name() string {
 	return "kibana"
+}
+
+// computeKibanaUrl permit to get the public Kibana url to put it on status
+func (h *KibanaReconciler) computeKibanaUrl(ctx context.Context, kb *kibanacrd.Kibana) (target string, err error) {
+	var (
+		scheme string
+		url    string
+	)
+
+	if kb.IsIngressEnabled() {
+		url = kb.Spec.Endpoint.Ingress.Host
+
+		if kb.Spec.Endpoint.Ingress.SecretRef != nil {
+			scheme = "https"
+		} else {
+			scheme = "http"
+		}
+	} else if kb.IsLoadBalancerEnabled() {
+		// Need to get lb service to get IP and port
+		service := &corev1.Service{}
+		if err = h.Client.Get(ctx, types.NamespacedName{Namespace: kb.Namespace, Name: GetLoadBalancerName(kb)}, service); err != nil {
+			return "", errors.Wrap(err, "Error when get Load balancer")
+		}
+
+		url = fmt.Sprintf("%s:9200", service.Spec.LoadBalancerIP)
+		if kb.IsTlsEnabled() {
+			scheme = "https"
+		} else {
+			scheme = "http"
+		}
+	} else {
+		url = fmt.Sprintf("%s.%s.svc:9200", GetServiceName(kb), kb.Namespace)
+		if kb.IsTlsEnabled() {
+			scheme = "https"
+		} else {
+			scheme = "http"
+		}
+	}
+
+	return fmt.Sprintf("%s://%s", scheme, url), nil
 }
