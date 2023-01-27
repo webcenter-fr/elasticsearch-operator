@@ -102,6 +102,7 @@ func BuildDeploymentExporter(es *elasticsearchcrd.Elasticsearch) (dpl *appv1.Dep
 			},
 		},
 		RunAsNonRoot: pointer.Bool(true),
+		RunAsUser:    pointer.Int64(1000),
 	})
 
 	// Compute liveness
