@@ -66,7 +66,9 @@ spec:
                         description: Annotations to set in ingress
                         type: object
                       enabled:
+                        default: false
                         description: Enabled permit to enabled / disabled ingress
+                          Default to false
                         type: boolean
                       host:
                         description: Host is the hostname to access on Elasticsearch
@@ -388,8 +390,9 @@ spec:
                     description: Load balancer permit to set load balancer settings
                     properties:
                       enabled:
+                        default: false
                         description: Enabled permit to enabled / disabled load balancer
-                          Cloud provider need to support it
+                          Cloud provider need to support it Default to false
                         type: boolean
                       targetNodeGroupName:
                         description: TargetNodeGroupName permit to define if specific
@@ -2026,6 +2029,7 @@ spec:
                     description: AntiAffinity permit to set anti affinity policy
                     properties:
                       topologyKey:
+                        default: topology.kubernetes.io/zone
                         description: TopologyKey is the topology key to use Default
                           to topology.kubernetes.io/zone
                         type: string
@@ -9917,6 +9921,7 @@ spec:
                       en graphana (via exporter)
                     properties:
                       enabled:
+                        default: false
                         description: Enabled permit to enable Prometheus monitoring
                           It will deploy exporter for Elasticsearch and add podMonitor
                           policy Default to false
@@ -9944,6 +9949,7 @@ spec:
                           x-kubernetes-map-type: atomic
                         type: array
                       version:
+                        default: latest
                         description: Version is the exporter version to use Default
                           is use the latest
                         type: string
@@ -9963,6 +9969,7 @@ spec:
                       description: AntiAffinity permit to set anti affinity policy
                       properties:
                         topologyKey:
+                          default: topology.kubernetes.io/zone
                           description: TopologyKey is the topology key to use Default
                             to topology.kubernetes.io/zone
                           type: string
@@ -19908,7 +19915,7 @@ spec:
                     waitClusterStatus:
                       default: green
                       description: WaitClusterStatus permit to wait the cluster state
-                        on readyness probe
+                        on readyness probe Default to green
                       type: string
                   type: object
                 type: array
@@ -19919,6 +19926,7 @@ spec:
                   type: string
                 type: array
               setVMMaxMapCount:
+                default: true
                 description: SetVMMaxMapCount permit to set the right value for VMMaxMapCount
                   on node It need to run pod as root with privileged option Default
                   is true
@@ -19938,14 +19946,18 @@ spec:
                     type: object
                     x-kubernetes-map-type: atomic
                   enabled:
-                    description: Enabled permit to enabled TLS on API
+                    default: true
+                    description: Enabled permit to enabled TLS on API Default true
                     type: boolean
                   keySize:
+                    default: 2048
                     description: KeySize is the key size when generate privates keys
+                      Default to 2048
                     type: integer
                   renewalDays:
+                    default: 30
                     description: RenewalDays is the number of days before certificate
-                      expire to become effective renewal
+                      expire to become effective renewal Default to 30
                     type: integer
                   selfSignedCertificate:
                     description: SelfSignedCertificate permit to set self signed certificate
@@ -19965,11 +19977,13 @@ spec:
                         type: array
                     type: object
                   validityDays:
+                    default: 365
                     description: ValidityDays is the number of days that certificates
-                      are valid
+                      are valid Default to 365
                     type: integer
                 type: object
               version:
+                default: latest
                 description: Version is the Elasticsearch version to use Default is
                   use the latest
                 type: string

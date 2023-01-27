@@ -39,6 +39,7 @@ type ElasticsearchSpec struct {
 	// Default is use the latest
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
 	// +optional
+	// +kubebuilder:default=latest
 	Version string `json:"version,omitempty"`
 
 	// SetVMMaxMapCount permit to set the right value for VMMaxMapCount on node
@@ -46,6 +47,7 @@ type ElasticsearchSpec struct {
 	// Default is true
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
 	// +optional
+	// +kubebuilder:default=true
 	SetVMMaxMapCount *bool `json:"setVMMaxMapCount,omitempty"`
 
 	// PluginsList is the list of additionnal plugin to install on each Elasticsearch node
@@ -104,12 +106,14 @@ type PrometheusSpec struct {
 	// Default to false
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
 	// +optional
+	// +kubebuilder:default=false
 	Enabled bool `json:"enabled,omitempty"`
 
 	// Version is the exporter version to use
 	// Default is use the latest
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
 	// +optional
+	// +kubebuilder:default=latest
 	Version string `json:"version,omitempty"`
 }
 
@@ -128,8 +132,10 @@ type EndpointSpec struct {
 type LoadBalancerSpec struct {
 	// Enabled permit to enabled / disabled load balancer
 	// Cloud provider need to support it
+	// Default to false
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
 	// +optional
+	// +kubebuilder:default=false
 	Enabled bool `json:"enabled,omitempty"`
 
 	// TargetNodeGroupName permit to define if specific node group is responsible to receive external access, like ingest nodes
@@ -141,8 +147,10 @@ type LoadBalancerSpec struct {
 type TlsSpec struct {
 
 	// Enabled permit to enabled TLS on API
+	// Default true
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
 	// +optional
+	// +kubebuilder:default=true
 	Enabled *bool `json:"enabled,omitempty"`
 
 	// SelfSignedCertificate permit to set self signed certificate settings
@@ -157,21 +165,24 @@ type TlsSpec struct {
 	CertificateSecretRef *corev1.LocalObjectReference `json:"certificateSecretRef,omitempty"`
 
 	// ValidityDays is the number of days that certificates are valid
+	// Default to 365
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
 	// +optional
-	// +kubebuilder:default: 365
+	// +kubebuilder:default=365
 	ValidityDays *int `json:"validityDays,omitempty"`
 
 	// RenewalDays is the number of days before certificate expire to become effective renewal
+	// Default to 30
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
 	// +optional
-	// +kubebuilder:default: 30
+	// +kubebuilder:default=30
 	RenewalDays *int `json:"renewalDays,omitempty"`
 
 	// KeySize is the key size when generate privates keys
+	// Default to 2048
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
 	// +optional
-	// +kubebuilder:default: 2048
+	// +kubebuilder:default=2048
 	KeySize *int `json:"keySize,omitempty"`
 }
 
@@ -191,8 +202,10 @@ type SelfSignedCertificateSpec struct {
 type IngressSpec struct {
 
 	// Enabled permit to enabled / disabled ingress
+	// Default to false
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
 	// +optional
+	// +kubebuilder:default=false
 	Enabled bool `json:"enabled,omitempty"`
 
 	// TargetNodeGroupName permit to define if specific node group is responsible to receive external access, like ingest nodes
@@ -375,9 +388,10 @@ type NodeGroupSpec struct {
 	PodDisruptionBudgetSpec *policyv1.PodDisruptionBudgetSpec `json:"podDisruptionBudget,omitempty"`
 
 	// WaitClusterStatus permit to wait the cluster state on readyness probe
+	// Default to green
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
 	// +optional
-	// +kubebuilder:default:=green
+	// +kubebuilder:default=green
 	WaitClusterStatus string `json:"waitClusterStatus,omitempty"`
 }
 
@@ -413,6 +427,7 @@ type AntiAffinitySpec struct {
 	// TopologyKey is the topology key to use
 	// Default to topology.kubernetes.io/zone
 	// +optional
+	// +kubebuilder:default=topology.kubernetes.io/zone
 	TopologyKey string `json:"topologyKey,omitempty"`
 }
 

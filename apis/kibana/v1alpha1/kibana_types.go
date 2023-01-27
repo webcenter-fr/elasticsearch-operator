@@ -43,7 +43,7 @@ type KibanaSpec struct {
 	// Default is use the latest
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
 	// +optional
-	// +kubebuilder:default: latest
+	// +kubebuilder:default=latest
 	Version string `json:"version,omitempty"`
 
 	// PluginsList is the list of additionnal plugin to install on each Kibana instance
@@ -101,6 +101,7 @@ type PrometheusSpec struct {
 	// Default to false
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
 	// +optional
+	// +kubebuilder:default=false
 	Enabled bool `json:"enabled,omitempty"`
 
 	// Url is the plugin URL where to download exporter
@@ -126,18 +127,20 @@ type EndpointSpec struct {
 type LoadBalancerSpec struct {
 	// Enabled permit to enabled / disabled load balancer
 	// Cloud provider need to support it
+	// Default to false
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
 	// +optional
-	// +kubebuilder:default: false
+	// +kubebuilder:default=false
 	Enabled bool `json:"enabled,omitempty"`
 }
 
 type IngressSpec struct {
 
 	// Enabled permit to enabled / disabled ingress
+	// Default to false
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
 	// +optional
-	// +kubebuilder:default: false
+	// +kubebuilder:default=false
 	Enabled bool `json:"enabled,omitempty"`
 
 	// Host is the hostname to access on Kibana
@@ -168,9 +171,10 @@ type IngressSpec struct {
 type TlsSpec struct {
 
 	// Enabled permit to enabled TLS on Kibana
+	// Default to false
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
 	// +optional
-	// +kubebuilder:default: true
+	// +kubebuilder:default=true
 	Enabled *bool `json:"enabled,omitempty"`
 
 	// SelfSignedCertificate permit to set self signed certificate settings
@@ -185,21 +189,24 @@ type TlsSpec struct {
 	CertificateSecretRef *corev1.LocalObjectReference `json:"certificateSecretRef,omitempty"`
 
 	// ValidityDays is the number of days that certificates are valid
+	// Default to 365
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
 	// +optional
-	// +kubebuilder:default: 365
+	// +kubebuilder:default=365
 	ValidityDays *int `json:"validityDays,omitempty"`
 
 	// RenewalDays is the number of days before certificate expire to become effective renewal
+	// Default to 30
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
 	// +optional
-	// +kubebuilder:default: 30
+	// +kubebuilder:default=30
 	RenewalDays *int `json:"renewalDays,omitempty"`
 
 	// KeySize is the key size when generate privates keys
+	// Default to 2048
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
 	// +optional
-	// +kubebuilder:default: 2048
+	// +kubebuilder:default=2048
 	KeySize *int `json:"keySize,omitempty"`
 
 	// ElasticsearchCaSecretRef is the secret that store your custom CA certificate to connect on Elasticsearch API.
@@ -225,7 +232,6 @@ type SelfSignedCertificateSpec struct {
 type DeploymentSpec struct {
 	// Replicas is the number of replicas
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
-	// +kubebuilder:default: 1
 	Replicas int32 `json:"replicas,omitempty"`
 
 	// AntiAffinity permit to set anti affinity policy
@@ -294,12 +300,12 @@ type AntiAffinitySpec struct {
 
 	// Type permit to set anti affinity as soft or hard
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
-	// +kubebuilder:default: soft
 	Type string `json:"type,omitempty"`
 
 	// TopologyKey is the topology key to use
 	// Default to topology.kubernetes.io/zone
 	// +optional
+	// +kubebuilder:default=topology.kubernetes.io/zone
 	TopologyKey string `json:"topologyKey,omitempty"`
 }
 
