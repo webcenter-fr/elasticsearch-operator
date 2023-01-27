@@ -26,7 +26,7 @@ func BuildNetworkPolicy(kb *kibanacrd.Kibana) (networkPolicy *networkingv1.Netwo
 				{
 					From: []networkingv1.NetworkPolicyPeer{
 						{
-							PodSelector: &metav1.LabelSelector{},
+							NamespaceSelector: &metav1.LabelSelector{},
 						},
 					},
 					Ports: []networkingv1.NetworkPolicyPort{
@@ -39,7 +39,6 @@ func BuildNetworkPolicy(kb *kibanacrd.Kibana) (networkPolicy *networkingv1.Netwo
 					},
 				},
 			},
-			PodSelector: metav1.LabelSelector{},
 			PolicyTypes: []networkingv1.PolicyType{
 				networkingv1.PolicyTypeIngress,
 			},

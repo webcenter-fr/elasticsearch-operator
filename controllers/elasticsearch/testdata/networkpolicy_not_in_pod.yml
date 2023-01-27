@@ -11,10 +11,9 @@ metadata:
 spec:
   ingress:
     - from:
-        - podSelector: {}
+        - namespaceSelector: {}
       ports:
         - port: 9200
           protocol: TCP
-  podSelector: {}
   policyTypes:
     - Ingress

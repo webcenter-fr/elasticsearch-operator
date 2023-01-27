@@ -26,7 +26,7 @@ func BuildNetworkPolicy(es *elasticsearchcrd.Elasticsearch) (networkPolicy *netw
 				{
 					From: []networkingv1.NetworkPolicyPeer{
 						{
-							PodSelector: &metav1.LabelSelector{},
+							NamespaceSelector: &metav1.LabelSelector{},
 						},
 					},
 					Ports: []networkingv1.NetworkPolicyPort{
@@ -39,7 +39,6 @@ func BuildNetworkPolicy(es *elasticsearchcrd.Elasticsearch) (networkPolicy *netw
 					},
 				},
 			},
-			PodSelector: metav1.LabelSelector{},
 			PolicyTypes: []networkingv1.PolicyType{
 				networkingv1.PolicyTypeIngress,
 			},
