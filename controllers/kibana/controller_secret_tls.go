@@ -27,8 +27,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-type tlsPhase string
-
 const (
 	TlsCondition            = "TlsReady"
 	TlsPhase                = "Tls"
