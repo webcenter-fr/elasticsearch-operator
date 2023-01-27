@@ -556,3 +556,15 @@ func TestGetExporterDeployementName(t *testing.T) {
 
 	assert.Equal(t, "test-exporter-es", GetExporterDeployementName(o))
 }
+
+func TestGetPodMonitorName(t *testing.T) {
+	o := &elasticsearchcrd.Elasticsearch{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: "default",
+			Name:      "test",
+		},
+		Spec: elasticsearchcrd.ElasticsearchSpec{},
+	}
+
+	assert.Equal(t, "test-es", GetPodMonitorName(o))
+}

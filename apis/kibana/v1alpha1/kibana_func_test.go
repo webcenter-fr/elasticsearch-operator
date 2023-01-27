@@ -145,3 +145,49 @@ func TestIsLoadBalancerEnabled(t *testing.T) {
 	o.Spec.Endpoint.LoadBalancer.Enabled = true
 	assert.True(t, o.IsLoadBalancerEnabled())
 }
+
+func TestIsPrometheusMonitoring(t *testing.T) {
+	var o *Kibana
+
+	// With default values
+	o = &Kibana{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: "default",
+			Name:      "test",
+		},
+		Spec: KibanaSpec{},
+	}
+	assert.False(t, o.IsPrometheusMonitoring())
+
+	// When enabled
+	o = &Kibana{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: "default",
+			Name:      "test",
+		},
+		Spec: KibanaSpec{
+			Monitoring: MonitoringSpec{
+				Prometheus: &PrometheusSpec{
+					Enabled: true,
+				},
+			},
+		},
+	}
+	assert.True(t, o.IsPrometheusMonitoring())
+
+	// When disabled
+	o = &Kibana{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: "default",
+			Name:      "test",
+		},
+		Spec: KibanaSpec{
+			Monitoring: MonitoringSpec{
+				Prometheus: &PrometheusSpec{
+					Enabled: false,
+				},
+			},
+		},
+	}
+	assert.False(t, o.IsPrometheusMonitoring())
+}

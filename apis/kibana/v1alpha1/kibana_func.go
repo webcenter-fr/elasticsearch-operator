@@ -31,3 +31,13 @@ func (h *Kibana) IsLoadBalancerEnabled() bool {
 
 	return false
 }
+
+// IsPrometheusMonitoring return true if Prometheus monitoring is enabled
+func (h *Kibana) IsPrometheusMonitoring() bool {
+
+	if h.Spec.Monitoring.Prometheus != nil && h.Spec.Monitoring.Prometheus.Enabled {
+		return true
+	}
+
+	return false
+}

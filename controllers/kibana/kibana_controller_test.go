@@ -8,6 +8,7 @@ import (
 
 	"github.com/disaster37/k8s-objectmatcher/patch"
 	"github.com/disaster37/operator-sdk-extra/pkg/test"
+	monitoringv1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1"
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
 	elasticsearchcrd "github.com/webcenter-fr/elasticsearch-operator/apis/elasticsearch/v1alpha1"
@@ -57,6 +58,7 @@ func doCreateKibanaStep() test.TestStep {
 					Namespace: key.Namespace,
 				},
 				Spec: elasticsearchcrd.ElasticsearchSpec{
+					Version: "8.6.0",
 					NodeGroups: []elasticsearchcrd.NodeGroupSpec{
 						{
 							Name:     "all",
@@ -100,6 +102,7 @@ func doCreateKibanaStep() test.TestStep {
 					Namespace: key.Namespace,
 				},
 				Spec: kibanacrd.KibanaSpec{
+					Version: "8.6.0",
 					Endpoint: kibanacrd.EndpointSpec{
 						Ingress: &kibanacrd.IngressSpec{
 							Enabled: true,
@@ -120,6 +123,11 @@ func doCreateKibanaStep() test.TestStep {
 					Deployment: kibanacrd.DeploymentSpec{
 						Replicas: 1,
 					},
+					Monitoring: kibanacrd.MonitoringSpec{
+						Prometheus: &kibanacrd.PrometheusSpec{
+							Enabled: true,
+						},
+					},
 				},
 			}
 
@@ -139,6 +147,7 @@ func doCreateKibanaStep() test.TestStep {
 				pdb *policyv1.PodDisruptionBudget
 				dpl *appv1.Deployment
 				np  *networkingv1.NetworkPolicy
+				pm  *monitoringv1.PodMonitor
 			)
 
 			isTimeout, err := localtest.RunWithTimeout(func() error {
@@ -250,6 +259,14 @@ func doCreateKibanaStep() test.TestStep {
 			assert.NotEmpty(t, dpl.OwnerReferences)
 			assert.NotEmpty(t, dpl.Annotations[patch.LastAppliedConfig])
 
+			// Pod monitor must exist
+			pm = &monitoringv1.PodMonitor{}
+			if err = c.Get(context.Background(), types.NamespacedName{Namespace: key.Namespace, Name: GetPodMonitorName(kb)}, pm); err != nil {
+				t.Fatal(err)
+			}
+			assert.NotEmpty(t, pm.OwnerReferences)
+			assert.NotEmpty(t, pm.Annotations[patch.LastAppliedConfig])
+
 			return nil
 		},
 	}
@@ -292,6 +309,7 @@ func doUpdateKibanaStep() test.TestStep {
 				pdb *policyv1.PodDisruptionBudget
 				dpl *appv1.Deployment
 				np  *networkingv1.NetworkPolicy
+				pm  *monitoringv1.PodMonitor
 			)
 
 			lastVersion := data["lastVersion"].(string)
@@ -415,6 +433,14 @@ func doUpdateKibanaStep() test.TestStep {
 			assert.NotEmpty(t, np.OwnerReferences)
 			assert.NotEmpty(t, np.Annotations[patch.LastAppliedConfig])
 			assert.Equal(t, "fu", np.Labels["test"])
+
+			// Pod monitor must exist
+			pm = &monitoringv1.PodMonitor{}
+			if err = c.Get(context.Background(), types.NamespacedName{Namespace: key.Namespace, Name: GetPodMonitorName(kb)}, pm); err != nil {
+				t.Fatal(err)
+			}
+			assert.NotEmpty(t, pm.OwnerReferences)
+			assert.NotEmpty(t, pm.Annotations[patch.LastAppliedConfig])
 
 			return nil
 		},

@@ -78,6 +78,37 @@ type KibanaSpec struct {
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
 	// +optional
 	Deployment DeploymentSpec `json:"deployment,omitempty"`
+
+	// Monitoring permit to monitor current cluster
+	// Default, it not monitor cluster
+	// +operator-sdk:csv:customresourcedefinitions:type=spec
+	// +optional
+	Monitoring MonitoringSpec `json:"monitoring,omitempty"`
+}
+
+type MonitoringSpec struct {
+
+	// Prometheus permit to monitor cluster with Prometheus en graphana (via exporter)
+	// +operator-sdk:csv:customresourcedefinitions:type=spec
+	// +optional
+	Prometheus *PrometheusSpec `json:"prometheus,omitempty"`
+}
+
+type PrometheusSpec struct {
+
+	// Enabled permit to enable Prometheus monitoring
+	// It will deploy exporter for Elasticsearch and add podMonitor policy
+	// Default to false
+	// +operator-sdk:csv:customresourcedefinitions:type=spec
+	// +optional
+	Enabled bool `json:"enabled,omitempty"`
+
+	// Url is the plugin URL where to download exporter
+	// Default is use project https://github.com/pjhampton/kibana-prometheus-exporter
+	// If version is set to latest, it use arbitrary: https://github.com/pjhampton/kibana-prometheus-exporter/releases/download/8.6.0/kibanaPrometheusExporter-8.6.0.zip
+	// +operator-sdk:csv:customresourcedefinitions:type=spec
+	// +optional
+	Url string `json:"url,omitempty"`
 }
 
 type EndpointSpec struct {

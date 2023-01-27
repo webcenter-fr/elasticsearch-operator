@@ -25,6 +25,11 @@ import (
 // BuildDeployment permit to generate deployment for Kibana
 func BuildDeployment(kb *kibanacrd.Kibana, es *elasticsearchcrd.Elasticsearch, keystoreSecret *corev1.Secret, apiCrtSecret *corev1.Secret, esCASecret *corev1.Secret) (dpl *appv1.Deployment, err error) {
 
+	// Inject plugin for exporter Prometheus if needed
+	if kb.IsPrometheusMonitoring() {
+		kb.Spec.PluginsList = append(kb.Spec.PluginsList, GetExporterUrl(kb))
+	}
+
 	// Generate confimaps to know what file to mount
 	// And to generate checksum
 	configMap, err := BuildConfigMap(kb, es)

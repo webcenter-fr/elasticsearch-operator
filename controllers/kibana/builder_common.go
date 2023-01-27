@@ -8,7 +8,8 @@ import (
 )
 
 const (
-	defaultImage = "docker.elastic.co/kibana/kibana"
+	defaultImage            = "docker.elastic.co/kibana/kibana"
+	defaultPrometheusPlugin = "https://github.com/pjhampton/kibana-prometheus-exporter/releases/download/%s/kibanaPrometheusExporter-%s.zip"
 )
 
 // GetConfigMapName permit to get the configMap name that store the config of Kibana
@@ -131,4 +132,22 @@ func GetSecretNameForCredentials(kb *kibanacrd.Kibana) (secretName string) {
 // GetNetworkPolicyName return the name for network policy
 func GetNetworkPolicyName(kb *kibanacrd.Kibana) string {
 	return fmt.Sprintf("%s-allow-api-kb", kb.Name)
+}
+
+// GetExporterUrl permit to get the URL to download Kibana plugin for prometheus exporter
+func GetExporterUrl(kb *kibanacrd.Kibana) string {
+	if kb.Spec.Monitoring.Prometheus != nil && kb.Spec.Monitoring.Prometheus.Url != "" {
+		return kb.Spec.Monitoring.Prometheus.Url
+	}
+
+	if kb.Spec.Version != "" && kb.Spec.Version != "latest" {
+		return fmt.Sprintf(defaultPrometheusPlugin, kb.Spec.Version, kb.Spec.Version)
+	}
+
+	return fmt.Sprintf(defaultPrometheusPlugin, "8.6.0", "8.6.0")
+}
+
+// GetPodMonitorName return the name for podMonitor
+func GetPodMonitorName(kb *kibanacrd.Kibana) string {
+	return fmt.Sprintf("%s-kb", kb.Name)
 }

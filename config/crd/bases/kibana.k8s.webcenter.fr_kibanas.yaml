@@ -8385,6 +8385,26 @@ spec:
                     type: string
                 type: object
                 x-kubernetes-map-type: atomic
+              monitoring:
+                description: Monitoring permit to monitor current cluster Default,
+                  it not monitor cluster
+                properties:
+                  prometheus:
+                    description: Prometheus permit to monitor cluster with Prometheus
+                      en graphana (via exporter)
+                    properties:
+                      enabled:
+                        description: Enabled permit to enable Prometheus monitoring
+                          It will deploy exporter for Elasticsearch and add podMonitor
+                          policy Default to false
+                        type: boolean
+                      url:
+                        description: 'Url is the plugin URL where to download exporter
+                          Default is use project https://github.com/pjhampton/kibana-prometheus-exporter
+                          If version is set to latest, it use arbitrary: https://github.com/pjhampton/kibana-prometheus-exporter/releases/download/8.6.0/kibanaPrometheusExporter-8.6.0.zip'
+                        type: string
+                    type: object
+                type: object
               pluginsList:
                 description: PluginsList is the list of additionnal plugin to install
                   on each Kibana instance Default is empty

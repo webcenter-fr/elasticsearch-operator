@@ -104,6 +104,7 @@ func (r *KibanaReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 	ingressReconciler := NewIngressReconciler(r.Client, r.Scheme, r.GetRecorder(), r.GetLogger())
 	loadBalancerReconciler := NewLoadBalancerReconciler(r.Client, r.Scheme, r.GetRecorder(), r.GetLogger())
 	networkPolicyReconciler := NewNetworkPolicyReconciler(r.Client, r.Scheme, r.GetRecorder(), r.GetLogger())
+	podMonitorReconciler := NewPodMonitorReconciler(r.Client, r.Scheme, r.GetRecorder(), r.GetLogger())
 
 	return reconciler.Reconcile(ctx, req, kb, data,
 		tlsReconciler,
@@ -116,6 +117,7 @@ func (r *KibanaReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 		deploymentReconciler,
 		ingressReconciler,
 		loadBalancerReconciler,
+		podMonitorReconciler,
 	)
 }
 

@@ -1,4 +1,4 @@
-package elasticsearch
+package kibana
 
 import (
 	"context"
@@ -7,7 +7,7 @@ import (
 	"github.com/pkg/errors"
 	monitoringv1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1"
 	"github.com/sirupsen/logrus"
-	elasticsearchcrd "github.com/webcenter-fr/elasticsearch-operator/apis/elasticsearch/v1alpha1"
+	kibanacrd "github.com/webcenter-fr/elasticsearch-operator/apis/kibana/v1alpha1"
 	"github.com/webcenter-fr/elasticsearch-operator/controllers/common"
 	corev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
@@ -45,7 +45,7 @@ func NewPodMonitorReconciler(client client.Client, scheme *runtime.Scheme, recor
 
 // Configure permit to init condition
 func (r *PodMonitorReconciler) Configure(ctx context.Context, req ctrl.Request, resource client.Object) (res ctrl.Result, err error) {
-	o := resource.(*elasticsearchcrd.Elasticsearch)
+	o := resource.(*kibanacrd.Kibana)
 
 	// Init condition status if not exist
 	if condition.FindStatusCondition(o.Status.Conditions, PodMonitorCondition) == nil {
@@ -63,7 +63,7 @@ func (r *PodMonitorReconciler) Configure(ctx context.Context, req ctrl.Request, 
 
 // Read existing podMonitor
 func (r *PodMonitorReconciler) Read(ctx context.Context, resource client.Object, data map[string]any) (res ctrl.Result, err error) {
-	o := resource.(*elasticsearchcrd.Elasticsearch)
+	o := resource.(*kibanacrd.Kibana)
 	pm := &monitoringv1.PodMonitor{}
 
 	// Read current podMonitor
@@ -92,7 +92,7 @@ func (r *PodMonitorReconciler) Diff(ctx context.Context, resource client.Object,
 
 // OnError permit to set status condition on the right state and record error
 func (r *PodMonitorReconciler) OnError(ctx context.Context, resource client.Object, data map[string]any, currentErr error) (res ctrl.Result, err error) {
-	o := resource.(*elasticsearchcrd.Elasticsearch)
+	o := resource.(*kibanacrd.Kibana)
 
 	r.Log.Error(currentErr)
 	r.Recorder.Event(resource, corev1.EventTypeWarning, "Failed", currentErr.Error())
@@ -110,7 +110,7 @@ func (r *PodMonitorReconciler) OnError(ctx context.Context, resource client.Obje
 
 // OnSuccess permit to set status condition on the right state is everithink is good
 func (r *PodMonitorReconciler) OnSuccess(ctx context.Context, resource client.Object, data map[string]any, diff controller.K8sDiff) (res ctrl.Result, err error) {
-	o := resource.(*elasticsearchcrd.Elasticsearch)
+	o := resource.(*kibanacrd.Kibana)
 
 	if diff.NeedCreate || diff.NeedUpdate || diff.NeedDelete {
 		r.Recorder.Eventf(resource, corev1.EventTypeNormal, "Completed", "PodMonitor successfully updated")
