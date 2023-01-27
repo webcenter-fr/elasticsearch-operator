@@ -10,7 +10,6 @@ import (
 	"github.com/webcenter-fr/elasticsearch-operator/pkg/test"
 	appv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
-	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -69,7 +68,7 @@ func TestBuildDeployment(t *testing.T) {
 					Addresses: []string{
 						"https://es1:9200",
 					},
-					SecretRef: &v1.LocalObjectReference{
+					SecretRef: &corev1.LocalObjectReference{
 						Name: "es-credential",
 					},
 				},
@@ -92,7 +91,7 @@ func TestBuildDeployment(t *testing.T) {
 				Replicas: 1,
 			},
 			Tls: kibanacrd.TlsSpec{
-				ElasticsearchCaSecretRef: &v1.LocalObjectReference{
+				ElasticsearchCaSecretRef: &corev1.LocalObjectReference{
 					Name: "custom-ca-es",
 				},
 			},
@@ -101,7 +100,7 @@ func TestBuildDeployment(t *testing.T) {
 					Addresses: []string{
 						"https://es1:9200",
 					},
-					SecretRef: &v1.LocalObjectReference{
+					SecretRef: &corev1.LocalObjectReference{
 						Name: "es-credential",
 					},
 				},
@@ -138,7 +137,7 @@ func TestBuildDeployment(t *testing.T) {
 				Replicas: 1,
 			},
 			Tls: kibanacrd.TlsSpec{
-				CertificateSecretRef: &v1.LocalObjectReference{
+				CertificateSecretRef: &corev1.LocalObjectReference{
 					Name: "api-certificates",
 				},
 			},
@@ -217,16 +216,16 @@ func TestBuildDeployment(t *testing.T) {
 					TopologyKey: "rack",
 					Type:        "hard",
 				},
-				Env: []v1.EnvVar{
+				Env: []corev1.EnvVar{
 					{
 						Name:  "env1",
 						Value: "value1",
 					},
 				},
-				EnvFrom: []v1.EnvFromSource{
+				EnvFrom: []corev1.EnvFromSource{
 					{
-						ConfigMapRef: &v1.ConfigMapEnvSource{
-							LocalObjectReference: v1.LocalObjectReference{
+						ConfigMapRef: &corev1.ConfigMapEnvSource{
+							LocalObjectReference: corev1.LocalObjectReference{
 								Name: "test",
 							},
 						},
@@ -234,11 +233,16 @@ func TestBuildDeployment(t *testing.T) {
 				},
 			},
 			Version: "8.5.1",
-			KeystoreSecretRef: &v1.LocalObjectReference{
+			KeystoreSecretRef: &corev1.LocalObjectReference{
 				Name: "keystore",
 			},
 			Config: map[string]string{
 				"log4j.yaml": "my log4j",
+			},
+			Monitoring: kibanacrd.MonitoringSpec{
+				Prometheus: &kibanacrd.PrometheusSpec{
+					Enabled: true,
+				},
 			},
 		},
 	}

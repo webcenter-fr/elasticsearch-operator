@@ -289,7 +289,7 @@ func doCreateElasticsearchStep() test.TestStep {
 
 			// Pod monitor must exist
 			pm = &monitoringv1.PodMonitor{}
-			if err = c.Get(context.Background(), types.NamespacedName{Namespace: key.Namespace, Name: GetExporterDeployementName(es)}, pm); err != nil {
+			if err = c.Get(context.Background(), types.NamespacedName{Namespace: key.Namespace, Name: GetPodMonitorName(es)}, pm); err != nil {
 				t.Fatal(err)
 			}
 			assert.NotEmpty(t, pm.OwnerReferences)
@@ -532,7 +532,7 @@ func doUpdateElasticsearchStep() test.TestStep {
 
 			// Pod monitor must exist
 			pm = &monitoringv1.PodMonitor{}
-			if err = c.Get(context.Background(), types.NamespacedName{Namespace: key.Namespace, Name: GetExporterDeployementName(es)}, pm); err != nil {
+			if err = c.Get(context.Background(), types.NamespacedName{Namespace: key.Namespace, Name: GetPodMonitorName(es)}, pm); err != nil {
 				t.Fatal(err)
 			}
 			assert.NotEmpty(t, pm.OwnerReferences)
@@ -764,7 +764,7 @@ func doUpdateElasticsearchIncreaseNodeGroupStep() test.TestStep {
 
 			// Pod monitor must exist
 			pm = &monitoringv1.PodMonitor{}
-			if err = c.Get(context.Background(), types.NamespacedName{Namespace: key.Namespace, Name: GetExporterDeployementName(es)}, pm); err != nil {
+			if err = c.Get(context.Background(), types.NamespacedName{Namespace: key.Namespace, Name: GetPodMonitorName(es)}, pm); err != nil {
 				t.Fatal(err)
 			}
 			assert.NotEmpty(t, pm.OwnerReferences)
@@ -1052,7 +1052,7 @@ func doUpdateElasticsearchDecreaseNodeGroupStep() test.TestStep {
 
 			// Pod monitor must exist
 			pm = &monitoringv1.PodMonitor{}
-			if err = c.Get(context.Background(), types.NamespacedName{Namespace: key.Namespace, Name: GetExporterDeployementName(es)}, pm); err != nil {
+			if err = c.Get(context.Background(), types.NamespacedName{Namespace: key.Namespace, Name: GetPodMonitorName(es)}, pm); err != nil {
 				t.Fatal(err)
 			}
 			assert.NotEmpty(t, pm.OwnerReferences)
@@ -1362,7 +1362,7 @@ func doUpdateElasticsearchAddLicenseStep() test.TestStep {
 
 			// Pod monitor must exist
 			pm = &monitoringv1.PodMonitor{}
-			if err = c.Get(context.Background(), types.NamespacedName{Namespace: key.Namespace, Name: GetExporterDeployementName(es)}, pm); err != nil {
+			if err = c.Get(context.Background(), types.NamespacedName{Namespace: key.Namespace, Name: GetPodMonitorName(es)}, pm); err != nil {
 				t.Fatal(err)
 			}
 			assert.NotEmpty(t, pm.OwnerReferences)

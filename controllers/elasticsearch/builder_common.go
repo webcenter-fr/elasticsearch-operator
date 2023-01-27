@@ -245,3 +245,8 @@ func GetExporterImage(es *elasticsearchcrd.Elasticsearch) string {
 func GetExporterDeployementName(es *elasticsearchcrd.Elasticsearch) string {
 	return fmt.Sprintf("%s-exporter-es", es.Name)
 }
+
+// GetPodMonitorName return the name for podMonitor
+func GetPodMonitorName(es *elasticsearchcrd.Elasticsearch) string {
+	return fmt.Sprintf("%s-es", es.Name)
+}

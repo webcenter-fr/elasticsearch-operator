@@ -143,6 +143,8 @@ spec:
         volumeMounts:
         - mountPath: /usr/share/kibana/config
           name: config
+        - mountPath: /usr/share/kibana/plugins
+          name: plugin
       initContainers:
       - command:
         - /bin/bash
@@ -185,6 +187,7 @@ spec:
             echo "Set right"
             chown -R kibana:kibana /mnt/config
 
+            ./bin/kibana-plugin install -b https://github.com/pjhampton/kibana-prometheus-exporter/releases/download/8.5.1/kibanaPrometheusExporter-8.5.1.zip
 
             if [ -d /mnt/plugins ]; then
               cp -a /usr/share/kibana/plugins/* /mnt/plugins/
@@ -227,6 +230,8 @@ spec:
             mountPath: /mnt/certs
           - name: ca-elasticsearch
             mountPath: /mnt/ca-elasticsearch
+          - name: plugin
+            mountPath: /mnt/plugins
           - name: kibana-config
             mountPath: /mnt/configmap/kibana.yml
             subPath: kibana.yml

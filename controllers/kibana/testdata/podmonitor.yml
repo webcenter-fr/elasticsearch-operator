@@ -1,0 +1,19 @@
+apiVersion: monitoring.coreos.com/v1
+kind: PodMonitor
+metadata:
+  name: test-kb
+  namespace: default
+  labels:
+    cluster: test
+    kibana.k8s.webcenter.fr: "true"
+  annotations:
+    kibana.k8s.webcenter.fr: "true"
+spec:
+  selector:
+    matchLabels:
+      cluster: test
+      kibana.k8s.webcenter.fr: "true"
+  podMetricsEndpoints:
+  - port: http
+    interval: 10s
+    path: _prometheus/metrics

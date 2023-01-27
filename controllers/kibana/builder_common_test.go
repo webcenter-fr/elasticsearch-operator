@@ -252,3 +252,61 @@ func TestGetNetworkPolicyName(t *testing.T) {
 
 	assert.Equal(t, "test-allow-api-kb", GetNetworkPolicyName(o))
 }
+
+func TestGetExporterUrl(t *testing.T) {
+	var o *kibanacrd.Kibana
+
+	// Default value
+	o = &kibanacrd.Kibana{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: "default",
+			Name:      "test",
+		},
+		Spec: kibanacrd.KibanaSpec{},
+	}
+
+	assert.Equal(t, "https://github.com/pjhampton/kibana-prometheus-exporter/releases/download/8.6.0/kibanaPrometheusExporter-8.6.0.zip", GetExporterUrl(o))
+
+	// When version is set
+	o = &kibanacrd.Kibana{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: "default",
+			Name:      "test",
+		},
+		Spec: kibanacrd.KibanaSpec{
+			Version: "8.0.0",
+		},
+	}
+
+	assert.Equal(t, "https://github.com/pjhampton/kibana-prometheus-exporter/releases/download/8.0.0/kibanaPrometheusExporter-8.0.0.zip", GetExporterUrl(o))
+
+	// When URL is set
+	o = &kibanacrd.Kibana{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: "default",
+			Name:      "test",
+		},
+		Spec: kibanacrd.KibanaSpec{
+			Version: "8.0.0",
+			Monitoring: kibanacrd.MonitoringSpec{
+				Prometheus: &kibanacrd.PrometheusSpec{
+					Url: "fake",
+				},
+			},
+		},
+	}
+
+	assert.Equal(t, "fake", GetExporterUrl(o))
+}
+
+func TestGetPodMonitorName(t *testing.T) {
+	o := &kibanacrd.Kibana{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: "default",
+			Name:      "test",
+		},
+		Spec: kibanacrd.KibanaSpec{},
+	}
+
+	assert.Equal(t, "test-kb", GetPodMonitorName(o))
+}
