@@ -253,6 +253,18 @@ func TestGetNetworkPolicyName(t *testing.T) {
 	assert.Equal(t, "test-allow-api-kb", GetNetworkPolicyName(o))
 }
 
+func TestGetNetworkPolicyElasticsearchName(t *testing.T) {
+	o := &kibanacrd.Kibana{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: "default",
+			Name:      "test",
+		},
+		Spec: kibanacrd.KibanaSpec{},
+	}
+
+	assert.Equal(t, "test-allow-es-kb", GetNetworkPolicyElasticsearchName(o))
+}
+
 func TestGetExporterUrl(t *testing.T) {
 	var o *kibanacrd.Kibana
 

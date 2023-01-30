@@ -2,6 +2,7 @@ package kibana
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/disaster37/operator-sdk-extra/pkg/controller"
 	"github.com/pkg/errors"
@@ -10,11 +11,10 @@ import (
 	"github.com/webcenter-fr/elasticsearch-operator/controllers/common"
 	corev1 "k8s.io/api/core/v1"
 	networkingv1 "k8s.io/api/networking/v1"
-	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	condition "k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/tools/record"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -64,30 +64,31 @@ func (r *NetworkPolicyReconciler) Configure(ctx context.Context, req ctrl.Reques
 // Read existing network policy
 func (r *NetworkPolicyReconciler) Read(ctx context.Context, resource client.Object, data map[string]any) (res ctrl.Result, err error) {
 	o := resource.(*kibanacrd.Kibana)
-	np := &networkingv1.NetworkPolicy{}
+	npList := &networkingv1.NetworkPolicyList{}
 
-	// Read current ingress
-	if err = r.Client.Get(ctx, types.NamespacedName{Namespace: o.Namespace, Name: GetNetworkPolicyName(o)}, np); err != nil {
-		if !k8serrors.IsNotFound(err) {
-			return res, errors.Wrapf(err, "Error when read network policy")
-		}
-		np = nil
+	// Read current network policies
+	labelSelectors, err := labels.Parse(fmt.Sprintf("cluster=%s,%s=true", o.Name, KibanaAnnotationKey))
+	if err != nil {
+		return res, errors.Wrap(err, "Error when generate label selector")
 	}
-	data["currentObject"] = np
+	if err = r.Client.List(ctx, npList, &client.ListOptions{Namespace: o.Namespace, LabelSelector: labelSelectors}); err != nil {
+		return res, errors.Wrapf(err, "Error when read network policies")
+	}
+	data["currentObjects"] = npList.Items
 
 	// Generate expected network policy
-	expectedNp, err := BuildNetworkPolicy(o)
+	expectedNps, err := BuildNetworkPolicies(o)
 	if err != nil {
-		return res, errors.Wrap(err, "Error when generate network policy")
+		return res, errors.Wrap(err, "Error when generate network policies")
 	}
-	data["expectedObject"] = expectedNp
+	data["expectedObjects"] = expectedNps
 
 	return res, nil
 }
 
 // Diff permit to check if network policy is up to date
 func (r *NetworkPolicyReconciler) Diff(ctx context.Context, resource client.Object, data map[string]interface{}) (diff controller.K8sDiff, res ctrl.Result, err error) {
-	return r.Reconciler.StdDiff(ctx, resource, data)
+	return r.Reconciler.StdListDiff(ctx, resource, data)
 }
 
 // OnError permit to set status condition on the right state and record error
