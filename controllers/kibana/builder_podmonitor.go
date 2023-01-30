@@ -3,6 +3,7 @@ package kibana
 import (
 	monitoringv1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1"
 	kibanacrd "github.com/webcenter-fr/elasticsearch-operator/apis/kibana/v1alpha1"
+	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -11,6 +12,10 @@ import (
 func BuildPodMonitor(kb *kibanacrd.Kibana) (podMonitor *monitoringv1.PodMonitor, err error) {
 	if !kb.IsPrometheusMonitoring() {
 		return nil, nil
+	}
+	scheme := "https"
+	if !kb.IsTlsEnabled() {
+		scheme = "http"
 	}
 
 	podMonitor = &monitoringv1.PodMonitor{
@@ -26,6 +31,26 @@ func BuildPodMonitor(kb *kibanacrd.Kibana) (podMonitor *monitoringv1.PodMonitor,
 					Port:     "http",
 					Interval: "10s",
 					Path:     "_prometheus/metrics",
+					BasicAuth: &monitoringv1.BasicAuth{
+						Username: corev1.SecretKeySelector{
+							LocalObjectReference: corev1.LocalObjectReference{
+								Name: GetSecretNameForCredentials(kb),
+							},
+							Key: "username",
+						},
+						Password: corev1.SecretKeySelector{
+							LocalObjectReference: corev1.LocalObjectReference{
+								Name: GetSecretNameForCredentials(kb),
+							},
+							Key: "kibana_system",
+						},
+					},
+					Scheme: scheme,
+					TLSConfig: &monitoringv1.PodMetricsEndpointTLSConfig{
+						SafeTLSConfig: monitoringv1.SafeTLSConfig{
+							InsecureSkipVerify: true,
+						},
+					},
 				},
 			},
 			Selector: metav1.LabelSelector{

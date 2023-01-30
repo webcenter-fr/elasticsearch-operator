@@ -17,3 +17,13 @@ spec:
   - port: http
     interval: 10s
     path: _prometheus/metrics
+    scheme: https
+    basicAuth:
+      password:
+        key: kibana_system
+        name: test-credential-kb
+      username:
+        key: username
+        name: test-credential-kb
+    tlsConfig:
+      insecureSkipVerify: true

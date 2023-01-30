@@ -95,7 +95,7 @@ func BuildDeployment(kb *kibanacrd.Kibana, es *elasticsearchcrd.Elasticsearch, k
 	}
 
 	// Initialise Kibana container from user provided
-	cb.WithContainer(kibanaContainer).
+	cb.WithContainer(kibanaContainer.DeepCopy()).
 		Container().Name = "kibana"
 
 	// Compute EnvFrom
@@ -151,6 +151,10 @@ func BuildDeployment(kb *kibanacrd.Kibana, es *elasticsearchcrd.Elasticsearch, k
 			{
 				Name:  "SERVER_HOST",
 				Value: "0.0.0.0",
+			},
+			{
+				Name:  "SERVER_NAME",
+				Value: kb.Name,
 			},
 			{
 				Name:  "PROBE_PATH",
@@ -388,10 +392,10 @@ fi
 set -euo pipefail
 
 kibana-keystore create
-for i in /mnt/keystoreSecrets/*/*; do
+for i in /mnt/keystoreSecrets/*; do
     key=$(basename $i)
     echo "Adding file $i to keystore key $key"
-    kibana-keystore add-file "$key" "$i"
+    kibana-keystore add -x "$key" < $i
 done
 
 
@@ -453,8 +457,21 @@ cp -a /usr/share/kibana/config/kibana.keystore /mnt/keystore/
 				Name:      "config",
 				MountPath: "/mnt/config",
 			},
+			{
+				Name:      "tls",
+				MountPath: "/mnt/certs",
+			},
+			{
+				Name:      "keystore",
+				MountPath: "/mnt/keystore",
+			},
 		},
 	})
+
+	// Inject env / envFrom to get proxy for exemple
+	ccb.WithEnv(kb.Spec.Deployment.Env, k8sbuilder.Merge)
+	ccb.WithEnvFrom(kb.Spec.Deployment.EnvFrom, k8sbuilder.Merge)
+
 	var command strings.Builder
 	command.WriteString(`#!/usr/bin/env bash
 set -euo pipefail
@@ -466,7 +483,7 @@ cp -a /usr/share/kibana/config/* /mnt/config/
 # Move configmaps
 if [ -d /mnt/configmap ]; then
   echo "Move custom configs"
-  cp -rf /mnt/configmap/* /mnt/config/
+  cp -f /mnt/configmap/* /mnt/config/
 fi
 
 # Move certificates
@@ -495,11 +512,12 @@ chown -R kibana:kibana /mnt/config
 
 `)
 	for _, plugin := range kb.Spec.PluginsList {
-		command.WriteString(fmt.Sprintf("./bin/kibana-plugin install -b %s\n", plugin))
+		command.WriteString(fmt.Sprintf("./bin/kibana-plugin install %s\n", plugin))
 	}
 	command.WriteString(`
 if [ -d /mnt/plugins ]; then
   cp -a /usr/share/kibana/plugins/* /mnt/plugins/
+  chown -R kibana:kibana /mnt/plugins
 fi
 `)
 	ccb.Container().Command = []string{

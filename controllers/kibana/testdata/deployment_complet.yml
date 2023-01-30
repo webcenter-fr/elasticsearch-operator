@@ -66,6 +66,8 @@ spec:
           value: '--param1'
         - name: SERVER_HOST
           value: 0.0.0.0
+        - name: SERVER_NAME
+          value: test
         - name: ELASTICSEARCH_HOSTS
           value: https://test-es.default.svc:9200
         - name: PROBE_PATH
@@ -160,7 +162,7 @@ spec:
             # Move configmaps
             if [ -d /mnt/configmap ]; then
               echo "Move custom configs"
-              cp -rf /mnt/configmap/* /mnt/config/
+              cp -f /mnt/configmap/* /mnt/config/
             fi
 
             # Move certificates
@@ -187,14 +189,18 @@ spec:
             echo "Set right"
             chown -R kibana:kibana /mnt/config
 
-            ./bin/kibana-plugin install -b https://github.com/pjhampton/kibana-prometheus-exporter/releases/download/8.5.1/kibanaPrometheusExporter-8.5.1.zip
+            ./bin/kibana-plugin install https://github.com/pjhampton/kibana-prometheus-exporter/releases/download/8.5.1/kibanaPrometheusExporter-8.5.1.zip
 
             if [ -d /mnt/plugins ]; then
               cp -a /usr/share/kibana/plugins/* /mnt/plugins/
+              chown -R kibana:kibana /mnt/plugins
             fi
 
         image: docker.elastic.co/kibana/kibana:8.5.1
         name: init-filesystem
+        envFrom:
+          - configMapRef:
+              name: test
         resources:
           limits:
             cpu: 300m
@@ -223,6 +229,8 @@ spec:
             fieldRef:
               apiVersion: v1
               fieldPath: metadata.namespace
+        - name: env1
+          value: value1
         volumeMounts:
           - name: config
             mountPath: /mnt/config
@@ -230,6 +238,8 @@ spec:
             mountPath: /mnt/certs
           - name: ca-elasticsearch
             mountPath: /mnt/ca-elasticsearch
+          - name: keystore
+            mountPath: /mnt/keystore
           - name: plugin
             mountPath: /mnt/plugins
           - name: kibana-config
@@ -248,10 +258,10 @@ spec:
             set -euo pipefail
 
             kibana-keystore create
-            for i in /mnt/keystoreSecrets/*/*; do
+            for i in /mnt/keystoreSecrets/*; do
                 key=$(basename $i)
                 echo "Adding file $i to keystore key $key"
-                kibana-keystore add-file "$key" "$i"
+                kibana-keystore add -x "$key" < $i
             done
 
 

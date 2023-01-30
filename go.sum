@@ -106,8 +106,8 @@ github.com/disaster37/goca v1.0.4-0.20221213082455-a233467aa7fe h1:odMnfLyJhsa80
 github.com/disaster37/goca v1.0.4-0.20221213082455-a233467aa7fe/go.mod h1:4I9l+qKbfjwGvwnNarDz4fXS9E2z+Gm0etjPGZWtby8=
 github.com/disaster37/k8s-objectmatcher v1.8.2-0.20230118153724-8144c44645a8 h1:vudWrT6zutoa5p22OqOS9VzvtPtPcov6UHOdlc9wFT0=
 github.com/disaster37/k8s-objectmatcher v1.8.2-0.20230118153724-8144c44645a8/go.mod h1:2nRtPBxwgkwCBjerqlRF4oV9pqAVC1bxtl6Y4/iAt3U=
-github.com/disaster37/k8sbuilder v0.0.0-20221212105448-99cdf3ba3e4a h1:lnWGfEQinyYZyTJyj/h/aR0F6kUAx8RIVLL76rEDgcg=
-github.com/disaster37/k8sbuilder v0.0.0-20221212105448-99cdf3ba3e4a/go.mod h1:2vdStC+YE7ds6QECx03TyRkdyxO35OYhO1I6PeVwu/o=
+github.com/disaster37/k8sbuilder v1.0.1 h1:Us3atidcWcIph4hphSYaJPLf5twxiMV3EC4iamSFMeE=
+github.com/disaster37/k8sbuilder v1.0.1/go.mod h1:2vdStC+YE7ds6QECx03TyRkdyxO35OYhO1I6PeVwu/o=
 github.com/disaster37/operator-sdk-extra v0.1.0 h1:dRLljINyT5gNETu4rRQcanjObIZqXQgGJiHe3wITq/4=
 github.com/disaster37/operator-sdk-extra v0.1.0/go.mod h1:c5LT8vnQ3VEkQzqDdkHMwMuS+QD+ym4c6+hcx9ng7f8=
 github.com/docopt/docopt-go v0.0.0-20180111231733-ee0de3bc6815/go.mod h1:WwZ+bS3ebgob9U8Nd0kOddGdZWjyMGR8Wziv+TBNwSE=

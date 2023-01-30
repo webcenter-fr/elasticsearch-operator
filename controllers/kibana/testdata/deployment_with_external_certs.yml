@@ -67,6 +67,8 @@ spec:
           value: ''
         - name: SERVER_HOST
           value: 0.0.0.0
+        - name: SERVER_NAME
+          value: test
         - name: ELASTICSEARCH_HOSTS
           value: https://test-es.default.svc:9200
         - name: PROBE_PATH
@@ -147,7 +149,7 @@ spec:
             # Move configmaps
             if [ -d /mnt/configmap ]; then
               echo "Move custom configs"
-              cp -rf /mnt/configmap/* /mnt/config/
+              cp -f /mnt/configmap/* /mnt/config/
             fi
 
             # Move certificates
@@ -177,6 +179,7 @@ spec:
 
             if [ -d /mnt/plugins ]; then
               cp -a /usr/share/kibana/plugins/* /mnt/plugins/
+              chown -R kibana:kibana /mnt/plugins
             fi
 
         image: docker.elastic.co/kibana/kibana:latest
@@ -209,6 +212,8 @@ spec:
             mountPath: /mnt/certs
           - name: ca-elasticsearch
             mountPath: /mnt/ca-elasticsearch
+          - name: keystore
+            mountPath: /mnt/keystore
           - name: kibana-config
             mountPath: /mnt/configmap/kibana.yml
             subPath: kibana.yml

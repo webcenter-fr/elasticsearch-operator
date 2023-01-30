@@ -48,5 +48,6 @@ func TestBuildCredentialSecret(t *testing.T) {
 	assert.Equal(t, labels, s.Labels)
 	assert.Equal(t, annotations, s.Annotations)
 	assert.Equal(t, []byte("password"), s.Data["kibana_system"])
+	assert.Equal(t, []byte("kibana_system"), s.Data["username"])
 
 }

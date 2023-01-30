@@ -259,7 +259,7 @@ type DeploymentSpec struct {
 	// +optional
 	Labels map[string]string `json:"labels,omitempty"`
 
-	// Annotations permit to set annotation on containers
+	// Annotations permit to set annotation on deployment
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
 	// +optional
 	Annotations map[string]string `json:"annotations,omitempty"`
@@ -278,7 +278,7 @@ type DeploymentSpec struct {
 	// It usefull to add some extra properties on pod spec
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
 	// +optional
-	PodTemplate *corev1.PodTemplateSpec `json:"podSpec,omitempty"`
+	PodTemplate *corev1.PodTemplateSpec `json:"podTemplate,omitempty"`
 
 	// PodDisruptionBudget is the pod disruption budget policy
 	// +operator-sdk:csv:customresourcedefinitions:type=spec

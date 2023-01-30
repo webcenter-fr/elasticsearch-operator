@@ -200,7 +200,7 @@ spec:
             # Move configmaps
             if [ -d /mnt/configmap ]; then
               echo "Move custom configs"
-              cp -rf /mnt/configmap/* /mnt/config/
+              cp -f /mnt/configmap/* /mnt/config/
             fi
 
             # Move certificates
@@ -227,6 +227,7 @@ spec:
 
             if [ -d /mnt/plugins ]; then
               cp -a /usr/share/elasticsearch/plugins/* /mnt/plugins/
+              chown -R elasticsearch:elasticsearch /mnt/plugins
             fi
 
         image: docker.elastic.co/elasticsearch/elasticsearch:latest

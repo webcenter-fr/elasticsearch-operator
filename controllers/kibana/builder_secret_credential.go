@@ -9,6 +9,7 @@ import (
 // BuildCredentialSecret permit to build credential secret from Elasticsearch credentials
 func BuildCredentialSecret(kb *kibanacrd.Kibana, secretCredentials *corev1.Secret) (s *corev1.Secret, err error) {
 
+	// username key is needed by podMonitor object
 	s = &corev1.Secret{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:        GetSecretNameForCredentials(kb),
@@ -19,6 +20,7 @@ func BuildCredentialSecret(kb *kibanacrd.Kibana, secretCredentials *corev1.Secre
 		Type: corev1.SecretTypeOpaque,
 		Data: map[string][]byte{
 			"kibana_system": secretCredentials.Data["kibana_system"],
+			"username":      []byte("kibana_system"),
 		},
 	}
 

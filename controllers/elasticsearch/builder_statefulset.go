@@ -114,8 +114,8 @@ func BuildStatefulsets(es *elasticsearchcrd.Elasticsearch, keystoreSecret *corev
 		}
 
 		// Initialise Elasticsearch container from user provided
-		cb.WithContainer(globalElasticsearchContainer).
-			WithContainer(localElasticsearchContainer, k8sbuilder.Merge).
+		cb.WithContainer(globalElasticsearchContainer.DeepCopy()).
+			WithContainer(localElasticsearchContainer.DeepCopy(), k8sbuilder.Merge).
 			Container().Name = "elasticsearch"
 
 		// Compute EnvFrom
@@ -582,6 +582,13 @@ cp -a /usr/share/elasticsearch/config/elasticsearch.keystore /mnt/keystore/
 			},
 		})
 		var command strings.Builder
+
+		// Inject env and envFrom get proxy conf for exemple
+		ccb.WithEnv(globalElasticsearchContainer.Env, k8sbuilder.Merge).
+			WithEnv(localElasticsearchContainer.Env, k8sbuilder.Merge)
+		ccb.WithEnvFrom(globalElasticsearchContainer.EnvFrom, k8sbuilder.Merge).
+			WithEnvFrom(localElasticsearchContainer.EnvFrom, k8sbuilder.Merge)
+
 		command.WriteString(`#!/usr/bin/env bash
 set -euo pipefail
 
@@ -592,7 +599,7 @@ cp -a /usr/share/elasticsearch/config/* /mnt/config/
 # Move configmaps
 if [ -d /mnt/configmap ]; then
   echo "Move custom configs"
-  cp -rf /mnt/configmap/* /mnt/config/
+  cp -f /mnt/configmap/* /mnt/config/
 fi
 
 # Move certificates
@@ -623,6 +630,7 @@ fi
 		command.WriteString(`
 if [ -d /mnt/plugins ]; then
   cp -a /usr/share/elasticsearch/plugins/* /mnt/plugins/
+  chown -R elasticsearch:elasticsearch /mnt/plugins
 fi
 `)
 		ccb.Container().Command = []string{
