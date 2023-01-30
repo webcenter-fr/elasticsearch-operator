@@ -134,6 +134,11 @@ func GetNetworkPolicyName(kb *kibanacrd.Kibana) string {
 	return fmt.Sprintf("%s-allow-api-kb", kb.Name)
 }
 
+// GetNetworkPolicyName return the name for network policy
+func GetNetworkPolicyElasticsearchName(kb *kibanacrd.Kibana) string {
+	return fmt.Sprintf("%s-allow-es-kb", kb.Name)
+}
+
 // GetExporterUrl permit to get the URL to download Kibana plugin for prometheus exporter
 func GetExporterUrl(kb *kibanacrd.Kibana) string {
 	if kb.Spec.Monitoring.Prometheus != nil && kb.Spec.Monitoring.Prometheus.Url != "" {
