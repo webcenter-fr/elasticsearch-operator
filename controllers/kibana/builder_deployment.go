@@ -545,7 +545,7 @@ fi
 		}, k8sbuilder.Merge)
 	}
 
-	if (kb.Spec.ElasticsearchRef.IsManaged() && es.IsTlsApiEnabled()) || (!kb.Spec.ElasticsearchRef.IsManaged() && kb.Spec.Tls.ElasticsearchCaSecretRef != nil) {
+	if (kb.Spec.ElasticsearchRef.IsManaged() && es.IsTlsApiEnabled()) || (kb.Spec.ElasticsearchRef.IsExternal() && kb.Spec.ElasticsearchRef.ElasticsearchCaSecretRef != nil) {
 		ccb.WithVolumeMount([]corev1.VolumeMount{
 			{
 				Name:      "ca-elasticsearch",
@@ -621,7 +621,7 @@ fi
 			},
 		}, k8sbuilder.Merge)
 	}
-	if kb.Spec.ElasticsearchRef.IsManaged() && es.IsTlsApiEnabled() {
+	if kb.Spec.ElasticsearchRef.IsManaged() && es.IsTlsApiEnabled() && es.IsSelfManagedSecretForTlsApi() {
 		ptb.WithVolumes([]corev1.Volume{
 			{
 				Name: "ca-elasticsearch",
@@ -632,13 +632,13 @@ fi
 				},
 			},
 		}, k8sbuilder.Merge)
-	} else if !kb.Spec.ElasticsearchRef.IsManaged() && kb.Spec.Tls.ElasticsearchCaSecretRef != nil {
+	} else if (kb.Spec.ElasticsearchRef.IsExternal() && kb.Spec.ElasticsearchRef.ElasticsearchCaSecretRef != nil) || (kb.Spec.ElasticsearchRef.IsManaged() && es.IsTlsApiEnabled() && kb.Spec.ElasticsearchRef.ElasticsearchCaSecretRef != nil) {
 		ptb.WithVolumes([]corev1.Volume{
 			{
 				Name: "ca-elasticsearch",
 				VolumeSource: corev1.VolumeSource{
 					Secret: &corev1.SecretVolumeSource{
-						SecretName: esCASecret.Name,
+						SecretName: kb.Spec.ElasticsearchRef.ElasticsearchCaSecretRef.Name,
 					},
 				},
 			},

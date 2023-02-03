@@ -28,9 +28,11 @@ import (
 	elasticsearchcrd "github.com/webcenter-fr/elasticsearch-operator/apis/elasticsearch/v1alpha1"
 	elasticsearchapicrd "github.com/webcenter-fr/elasticsearch-operator/apis/elasticsearchapi/v1alpha1"
 	kibanacrd "github.com/webcenter-fr/elasticsearch-operator/apis/kibana/v1alpha1"
+	logstashcrd "github.com/webcenter-fr/elasticsearch-operator/apis/logstash/v1alpha1"
 	elasticsearchcontrollers "github.com/webcenter-fr/elasticsearch-operator/controllers/elasticsearch"
 	elasticsearchapicontrollers "github.com/webcenter-fr/elasticsearch-operator/controllers/elasticsearchapi"
 	kibanacontrollers "github.com/webcenter-fr/elasticsearch-operator/controllers/kibana"
+	logstashcontrollers "github.com/webcenter-fr/elasticsearch-operator/controllers/logstash"
 	"github.com/webcenter-fr/elasticsearch-operator/pkg/helper"
 	"k8s.io/apimachinery/pkg/runtime"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
@@ -58,6 +60,7 @@ func init() {
 	utilruntime.Must(elasticsearchcrd.AddToScheme(scheme))
 	utilruntime.Must(kibanacrd.AddToScheme(scheme))
 	utilruntime.Must(elasticsearchapicrd.AddToScheme(scheme))
+	utilruntime.Must(logstashcrd.AddToScheme(scheme))
 	//+kubebuilder:scaffold:scheme
 }
 
@@ -197,10 +200,71 @@ func main() {
 		panic(err)
 	}
 
-	if err := mgr.GetFieldIndexer().IndexField(context.Background(), &kibanacrd.Kibana{}, "spec.elasticsearchRef.name", func(o client.Object) []string {
+	if err := mgr.GetFieldIndexer().IndexField(context.Background(), &kibanacrd.Kibana{}, "spec.elasticsearchRef.managed.name", func(o client.Object) []string {
 		p := o.(*kibanacrd.Kibana)
+		if p.Spec.ElasticsearchRef.IsManaged() {
+			return []string{p.Spec.ElasticsearchRef.ManagedElasticsearchRef.Name}
+		}
+		return []string{}
+	}); err != nil {
+		panic(err)
+	}
+
+	if err := mgr.GetFieldIndexer().IndexField(context.Background(), &kibanacrd.Kibana{}, "spec.elasticsearchRef.elasticsearchCASecretRef.name", func(o client.Object) []string {
+		p := o.(*kibanacrd.Kibana)
+		if p.Spec.ElasticsearchRef.ElasticsearchCaSecretRef != nil {
+			return []string{p.Spec.ElasticsearchRef.ElasticsearchCaSecretRef.Name}
+		}
+		return []string{}
+	}); err != nil {
+		panic(err)
+	}
+
+	if err := mgr.GetFieldIndexer().IndexField(context.Background(), &kibanacrd.Kibana{}, "spec.elasticsearchRef.external.secretRef.name", func(o client.Object) []string {
+		p := o.(*kibanacrd.Kibana)
+		if p.Spec.ElasticsearchRef.IsExternal() && p.Spec.ElasticsearchRef.ExternalElasticsearchRef.SecretRef != nil {
+			return []string{p.Spec.ElasticsearchRef.ExternalElasticsearchRef.SecretRef.Name}
+		}
+		return []string{}
+	}); err != nil {
+		panic(err)
+	}
+
+	// Add indexers on Logstash to track secret change
+	if err := mgr.GetFieldIndexer().IndexField(context.Background(), &logstashcrd.Logstash{}, "spec.keystoreSecretRef.name", func(o client.Object) []string {
+		p := o.(*logstashcrd.Logstash)
 		if p.Spec.KeystoreSecretRef != nil {
 			return []string{p.Spec.KeystoreSecretRef.Name}
+		}
+		return []string{}
+	}); err != nil {
+		panic(err)
+	}
+
+	if err := mgr.GetFieldIndexer().IndexField(context.Background(), &logstashcrd.Logstash{}, "spec.elasticsearchRef.managed.name", func(o client.Object) []string {
+		p := o.(*logstashcrd.Logstash)
+		if p.Spec.ElasticsearchRef.IsManaged() {
+			return []string{p.Spec.ElasticsearchRef.ManagedElasticsearchRef.Name}
+		}
+		return []string{}
+	}); err != nil {
+		panic(err)
+	}
+
+	if err := mgr.GetFieldIndexer().IndexField(context.Background(), &logstashcrd.Logstash{}, "spec.elasticsearchRef.elasticsearchCASecretRef.name", func(o client.Object) []string {
+		p := o.(*logstashcrd.Logstash)
+		if p.Spec.ElasticsearchRef.ElasticsearchCaSecretRef != nil {
+			return []string{p.Spec.ElasticsearchRef.ElasticsearchCaSecretRef.Name}
+		}
+		return []string{}
+	}); err != nil {
+		panic(err)
+	}
+
+	if err := mgr.GetFieldIndexer().IndexField(context.Background(), &logstashcrd.Logstash{}, "spec.elasticsearchRef.external.secretRef.name", func(o client.Object) []string {
+		p := o.(*logstashcrd.Logstash)
+		if p.Spec.ElasticsearchRef.IsExternal() && p.Spec.ElasticsearchRef.ExternalElasticsearchRef.SecretRef != nil {
+			return []string{p.Spec.ElasticsearchRef.ExternalElasticsearchRef.SecretRef.Name}
 		}
 		return []string{}
 	}); err != nil {
@@ -226,6 +290,17 @@ func main() {
 	kibanaController.SetReconciler(kibanaController)
 	if err = kibanaController.SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "Kibana")
+		os.Exit(1)
+	}
+
+	logstashController := logstashcontrollers.NewLogstashReconciler(mgr.GetClient(), mgr.GetScheme())
+	logstashController.SetLogger(log.WithFields(logrus.Fields{
+		"type": "LogstashController",
+	}))
+	logstashController.SetRecorder(mgr.GetEventRecorderFor("logstash-controller"))
+	logstashController.SetReconciler(logstashController)
+	if err = logstashController.SetupWithManager(mgr); err != nil {
+		setupLog.Error(err, "unable to create controller", "controller", "Logstash")
 		os.Exit(1)
 	}
 

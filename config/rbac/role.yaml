@@ -351,3 +351,29 @@ rules:
   - get
   - patch
   - update
+- apiGroups:
+  - logstash.k8s.webcenter.fr
+  resources:
+  - logstashes
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - logstash.k8s.webcenter.fr
+  resources:
+  - logstashes/finalizers
+  verbs:
+  - update
+- apiGroups:
+  - logstash.k8s.webcenter.fr
+  resources:
+  - logstashes/status
+  verbs:
+  - get
+  - patch
+  - update

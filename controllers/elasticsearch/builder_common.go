@@ -211,7 +211,6 @@ func GetLicenseName(es *elasticsearchcrd.Elasticsearch) string {
 
 // GetElasticsearchNameFromSecretApiTlsName return the Elasticsearch name from secret name that store TLS API
 func GetElasticsearchNameFromSecretApiTlsName(secretApiTlsName string) (elasticsearchName string) {
-	//r := regexp.MustCompile(`^(.+)-\d+$`)
 	r := regexp.MustCompile(`^(.+)-tls-api-es`)
 	res := r.FindStringSubmatch(secretApiTlsName)
 
@@ -249,4 +248,25 @@ func GetExporterDeployementName(es *elasticsearchcrd.Elasticsearch) string {
 // GetPodMonitorName return the name for podMonitor
 func GetPodMonitorName(es *elasticsearchcrd.Elasticsearch) string {
 	return fmt.Sprintf("%s-es", es.Name)
+}
+
+// GetPublicUrl permit to get the public URL to connect on Elasticsearch
+func GetPublicUrl(es *elasticsearchcrd.Elasticsearch, targetNodeGroup string, external bool) string {
+
+	scheme := "https"
+
+	if !external {
+		if !es.IsTlsApiEnabled() {
+			scheme = "http"
+		}
+
+		if targetNodeGroup == "" {
+			return fmt.Sprintf("%s://%s.%s.svc:9200", scheme, GetGlobalServiceName(es), es.Namespace)
+		} else {
+			return fmt.Sprintf("%s://%s.%s.svc:9200", scheme, GetNodeGroupServiceName(es, targetNodeGroup), es.Namespace)
+		}
+	}
+
+	return es.Status.Url
+
 }

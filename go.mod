@@ -20,6 +20,8 @@ require (
 	github.com/imdario/mergo v0.3.13
 	github.com/kr/pretty v0.2.0
 	github.com/olivere/elastic/v7 v7.0.32
+	github.com/onsi/ginkgo/v2 v2.1.6
+	github.com/onsi/gomega v1.20.1
 	github.com/pkg/errors v0.9.1
 	github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring v0.62.0
 	github.com/prometheus/client_golang v1.14.0

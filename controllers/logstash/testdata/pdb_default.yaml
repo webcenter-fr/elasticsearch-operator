@@ -1,0 +1,16 @@
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: test-ls
+  namespace: default
+  labels:
+    cluster: test
+    logstash.k8s.webcenter.fr: "true"
+  annotations:
+    logstash.k8s.webcenter.fr: "true"
+spec:
+  maxUnAvailable: 1
+  selector:
+    matchLabels:
+      cluster: test
+      logstash.k8s.webcenter.fr: "true"

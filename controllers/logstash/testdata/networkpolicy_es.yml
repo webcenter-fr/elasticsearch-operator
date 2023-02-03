@@ -1,0 +1,24 @@
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: test-allow-es-ls
+  namespace: default
+  labels:
+    cluster: test
+    logstash.k8s.webcenter.fr: "true"
+  annotations:
+    logstash.k8s.webcenter.fr: "true"
+spec:
+  egress:
+    - to:
+        - podSelector:
+            matchLabels:
+              cluster: test
+          namespaceSelector:
+            matchLabels:
+              name: elastic
+      ports:
+        - port: 9200
+          protocol: TCP
+  policyTypes:
+    - Egress
