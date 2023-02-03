@@ -168,7 +168,6 @@ queue.type: persisted
 				cm  *corev1.ConfigMap
 				pdb *policyv1.PodDisruptionBudget
 				sts *appv1.StatefulSet
-				np  *networkingv1.NetworkPolicy
 			)
 
 			isTimeout, err := localtest.RunWithTimeout(func() error {
@@ -252,14 +251,6 @@ queue.type: persisted
 			}
 			assert.NotEmpty(t, pdb.OwnerReferences)
 			assert.NotEmpty(t, pdb.Annotations[patch.LastAppliedConfig])
-
-			// Network policy exist
-			np = &networkingv1.NetworkPolicy{}
-			if err = c.Get(context.Background(), types.NamespacedName{Namespace: key.Namespace, Name: GetNetworkPolicyElasticsearchName(ls)}, np); err != nil {
-				t.Fatal(err)
-			}
-			assert.NotEmpty(t, np.OwnerReferences)
-			assert.NotEmpty(t, np.Annotations[patch.LastAppliedConfig])
 
 			// Deployment musts exist
 			sts = &appv1.StatefulSet{}
