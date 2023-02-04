@@ -38,8 +38,8 @@ func (t *LogstashControllerTestSuite) TestLogstashController() {
 	testCase := test.NewTestCase(t.T(), t.k8sClient, key, ls, 5*time.Second, data)
 	testCase.Steps = []test.TestStep{
 		doCreateLogstashStep(),
-		//doUpdateLogstashStep(),
-		//doDeleteLogstashStep(),
+		doUpdateLogstashStep(),
+		doDeleteLogstashStep(),
 	}
 
 	testCase.Run()
@@ -176,7 +176,7 @@ queue.type: persisted
 				}
 
 				// In envtest, no kubelet
-				// So the Kibana condition never set as true
+				// So the Logstash condition never set as true
 				if condition.FindStatusCondition(ls.Status.Conditions, LogstashCondition) != nil && condition.FindStatusCondition(ls.Status.Conditions, LogstashCondition).Reason != "Initialize" {
 					return nil
 				}
@@ -252,7 +252,7 @@ queue.type: persisted
 			assert.NotEmpty(t, pdb.OwnerReferences)
 			assert.NotEmpty(t, pdb.Annotations[patch.LastAppliedConfig])
 
-			// Deployment musts exist
+			// Statefulset musts exist
 			sts = &appv1.StatefulSet{}
 			if err = c.Get(context.Background(), types.NamespacedName{Namespace: key.Namespace, Name: GetStatefulsetName(ls)}, sts); err != nil {
 				t.Fatal(err)
@@ -268,26 +268,25 @@ queue.type: persisted
 	}
 }
 
-/*
 func doUpdateLogstashStep() test.TestStep {
 	return test.TestStep{
 		Name: "update",
 		Do: func(c client.Client, key types.NamespacedName, o client.Object, data map[string]any) (err error) {
-			logrus.Infof("=== Update Kibana cluster %s/%s ===", key.Namespace, key.Name)
+			logrus.Infof("=== Update Logstash cluster %s/%s ===", key.Namespace, key.Name)
 
 			if o == nil {
-				return errors.New("Kibana is null")
+				return errors.New("Logstash is null")
 			}
-			kb := o.(*kibanacrd.Kibana)
+			ls := o.(*logstashcrd.Logstash)
 
 			// Add labels must force to update all resources
-			kb.Labels = map[string]string{
+			ls.Labels = map[string]string{
 				"test": "fu",
 			}
 
-			data["lastVersion"] = kb.ResourceVersion
+			data["lastVersion"] = ls.ResourceVersion
 
-			if err = c.Update(context.Background(), kb); err != nil {
+			if err = c.Update(context.Background(), ls); err != nil {
 				return err
 			}
 
@@ -296,7 +295,7 @@ func doUpdateLogstashStep() test.TestStep {
 			return nil
 		},
 		Check: func(t *testing.T, c client.Client, key types.NamespacedName, o client.Object, data map[string]any) (err error) {
-			kb := &kibanacrd.Kibana{}
+			ls := &logstashcrd.Logstash{}
 
 			var (
 				s   *corev1.Secret
@@ -304,21 +303,19 @@ func doUpdateLogstashStep() test.TestStep {
 				i   *networkingv1.Ingress
 				cm  *corev1.ConfigMap
 				pdb *policyv1.PodDisruptionBudget
-				dpl *appv1.Deployment
-				np  *networkingv1.NetworkPolicy
-				pm  *monitoringv1.PodMonitor
+				sts *appv1.StatefulSet
 			)
 
 			lastVersion := data["lastVersion"].(string)
 
 			isTimeout, err := localtest.RunWithTimeout(func() error {
-				if err := c.Get(context.Background(), key, kb); err != nil {
+				if err := c.Get(context.Background(), key, ls); err != nil {
 					t.Fatal("Elasticsearch not found")
 				}
 
 				// In envtest, no kubelet
 				// So the Elasticsearch condition never set as true
-				if lastVersion != kb.ResourceVersion && (kb.Status.Phase == KibanaPhaseStarting) {
+				if lastVersion != ls.ResourceVersion && (ls.Status.Phase == LogstashPhaseStarting) {
 					return nil
 				}
 
@@ -326,31 +323,12 @@ func doUpdateLogstashStep() test.TestStep {
 
 			}, time.Second*30, time.Second*1)
 			if err != nil || isTimeout {
-				t.Fatalf("All Kibana step upgrading not finished: %s", err.Error())
+				t.Fatalf("All Logstash step upgrading not finished: %s", err.Error())
 			}
-
-			// Secrets for PKI and certificates must exist
-			s = &corev1.Secret{}
-			if err = c.Get(context.Background(), types.NamespacedName{Namespace: key.Namespace, Name: GetSecretNameForPki(kb)}, s); err != nil {
-				t.Fatal(err)
-			}
-			assert.NotEmpty(t, s.Data)
-			assert.NotEmpty(t, s.OwnerReferences)
-			assert.NotEmpty(t, s.Annotations[patch.LastAppliedConfig])
-			assert.Equal(t, "fu", s.Labels["test"])
-
-			s = &corev1.Secret{}
-			if err = c.Get(context.Background(), types.NamespacedName{Namespace: key.Namespace, Name: GetSecretNameForTls(kb)}, s); err != nil {
-				t.Fatal(err)
-			}
-			assert.NotEmpty(t, s.Data)
-			assert.NotEmpty(t, s.OwnerReferences)
-			assert.NotEmpty(t, s.Annotations[patch.LastAppliedConfig])
-			assert.Equal(t, "fu", s.Labels["test"])
 
 			// Secrets for CA Elasticsearch
 			s = &corev1.Secret{}
-			if err = c.Get(context.Background(), types.NamespacedName{Namespace: key.Namespace, Name: GetSecretNameForCAElasticsearch(kb)}, s); err != nil {
+			if err = c.Get(context.Background(), types.NamespacedName{Namespace: key.Namespace, Name: GetSecretNameForCAElasticsearch(ls)}, s); err != nil {
 				t.Fatal(err)
 			}
 			assert.NotEmpty(t, s.Data)
@@ -360,7 +338,7 @@ func doUpdateLogstashStep() test.TestStep {
 
 			// Secrets for credentials must exist
 			s = &corev1.Secret{}
-			if err = c.Get(context.Background(), types.NamespacedName{Namespace: key.Namespace, Name: GetSecretNameForCredentials(kb)}, s); err != nil {
+			if err = c.Get(context.Background(), types.NamespacedName{Namespace: key.Namespace, Name: GetSecretNameForCredentials(ls)}, s); err != nil {
 				t.Fatal(err)
 			}
 			assert.NotEmpty(t, s.Data)
@@ -368,18 +346,9 @@ func doUpdateLogstashStep() test.TestStep {
 			assert.NotEmpty(t, s.Annotations[patch.LastAppliedConfig])
 			assert.Equal(t, "fu", s.Labels["test"])
 
-			// Services must exists
+			// Services for ingress must exist
 			svc = &corev1.Service{}
-			if err = c.Get(context.Background(), types.NamespacedName{Namespace: key.Namespace, Name: GetServiceName(kb)}, svc); err != nil {
-				t.Fatal(err)
-			}
-			assert.NotEmpty(t, svc.OwnerReferences)
-			assert.NotEmpty(t, svc.Annotations[patch.LastAppliedConfig])
-			assert.Equal(t, "fu", svc.Labels["test"])
-
-			// Load balancer must exist
-			svc = &corev1.Service{}
-			if err = c.Get(context.Background(), types.NamespacedName{Namespace: key.Namespace, Name: GetLoadBalancerName(kb)}, svc); err != nil {
+			if err = c.Get(context.Background(), types.NamespacedName{Namespace: key.Namespace, Name: GetServiceName(ls, "filebeat") + "-0"}, svc); err != nil {
 				t.Fatal(err)
 			}
 			assert.NotEmpty(t, svc.OwnerReferences)
@@ -388,7 +357,7 @@ func doUpdateLogstashStep() test.TestStep {
 
 			// Ingress must exist
 			i = &networkingv1.Ingress{}
-			if err = c.Get(context.Background(), types.NamespacedName{Namespace: key.Namespace, Name: GetIngressName(kb)}, i); err != nil {
+			if err = c.Get(context.Background(), types.NamespacedName{Namespace: key.Namespace, Name: GetIngressName(ls, "filebeat") + "-0"}, i); err != nil {
 				t.Fatal(err)
 			}
 			assert.NotEmpty(t, i.OwnerReferences)
@@ -397,7 +366,23 @@ func doUpdateLogstashStep() test.TestStep {
 
 			// ConfigMaps must exist
 			cm = &corev1.ConfigMap{}
-			if err = c.Get(context.Background(), types.NamespacedName{Namespace: key.Namespace, Name: GetConfigMapName(kb)}, cm); err != nil {
+			if err = c.Get(context.Background(), types.NamespacedName{Namespace: key.Namespace, Name: GetConfigMapConfigName(ls)}, cm); err != nil {
+				t.Fatal(err)
+			}
+			assert.NotEmpty(t, cm.OwnerReferences)
+			assert.NotEmpty(t, cm.Annotations[patch.LastAppliedConfig])
+			assert.Equal(t, "fu", cm.Labels["test"])
+
+			cm = &corev1.ConfigMap{}
+			if err = c.Get(context.Background(), types.NamespacedName{Namespace: key.Namespace, Name: GetConfigMapPipelineName(ls)}, cm); err != nil {
+				t.Fatal(err)
+			}
+			assert.NotEmpty(t, cm.OwnerReferences)
+			assert.NotEmpty(t, cm.Annotations[patch.LastAppliedConfig])
+			assert.Equal(t, "fu", cm.Labels["test"])
+
+			cm = &corev1.ConfigMap{}
+			if err = c.Get(context.Background(), types.NamespacedName{Namespace: key.Namespace, Name: GetConfigMapPatternName(ls)}, cm); err != nil {
 				t.Fatal(err)
 			}
 			assert.NotEmpty(t, cm.OwnerReferences)
@@ -406,42 +391,24 @@ func doUpdateLogstashStep() test.TestStep {
 
 			// PDB must exist
 			pdb = &policyv1.PodDisruptionBudget{}
-			if err = c.Get(context.Background(), types.NamespacedName{Namespace: key.Namespace, Name: GetPDBName(kb)}, pdb); err != nil {
+			if err = c.Get(context.Background(), types.NamespacedName{Namespace: key.Namespace, Name: GetPDBName(ls)}, pdb); err != nil {
 				t.Fatal(err)
 			}
 			assert.NotEmpty(t, pdb.OwnerReferences)
 			assert.NotEmpty(t, pdb.Annotations[patch.LastAppliedConfig])
 			assert.Equal(t, "fu", pdb.Labels["test"])
 
-			// Deployment musts exist
-			dpl = &appv1.Deployment{}
-			if err = c.Get(context.Background(), types.NamespacedName{Namespace: key.Namespace, Name: GetDeploymentName(kb)}, dpl); err != nil {
+			// Statefulset musts exist
+			sts = &appv1.StatefulSet{}
+			if err = c.Get(context.Background(), types.NamespacedName{Namespace: key.Namespace, Name: GetStatefulsetName(ls)}, sts); err != nil {
 				t.Fatal(err)
 			}
-			assert.NotEmpty(t, dpl.OwnerReferences)
-			assert.NotEmpty(t, dpl.Annotations[patch.LastAppliedConfig])
-			assert.Equal(t, "fu", dpl.Labels["test"])
-
-			// Network policy exist
-			np = &networkingv1.NetworkPolicy{}
-			if err = c.Get(context.Background(), types.NamespacedName{Namespace: key.Namespace, Name: GetNetworkPolicyName(kb)}, np); err != nil {
-				t.Fatal(err)
-			}
-			assert.NotEmpty(t, np.OwnerReferences)
-			assert.NotEmpty(t, np.Annotations[patch.LastAppliedConfig])
-			assert.Equal(t, "fu", np.Labels["test"])
-
-			// Pod monitor must exist
-			pm = &monitoringv1.PodMonitor{}
-			if err = c.Get(context.Background(), types.NamespacedName{Namespace: key.Namespace, Name: GetPodMonitorName(kb)}, pm); err != nil {
-				t.Fatal(err)
-			}
-			assert.NotEmpty(t, pm.OwnerReferences)
-			assert.NotEmpty(t, pm.Annotations[patch.LastAppliedConfig])
+			assert.NotEmpty(t, sts.OwnerReferences)
+			assert.NotEmpty(t, sts.Annotations[patch.LastAppliedConfig])
+			assert.Equal(t, "fu", sts.Labels["test"])
 
 			// Status must be update
-			assert.NotEmpty(t, kb.Status.Phase)
-			assert.NotEmpty(t, kb.Status.Url)
+			assert.NotEmpty(t, ls.Status.Phase)
 
 			return nil
 		},
@@ -452,15 +419,15 @@ func doDeleteLogstashStep() test.TestStep {
 	return test.TestStep{
 		Name: "delete",
 		Do: func(c client.Client, key types.NamespacedName, o client.Object, data map[string]any) (err error) {
-			logrus.Infof("=== Delete Kibana cluster %s/%s ===", key.Namespace, key.Name)
+			logrus.Infof("=== Delete Logstash cluster %s/%s ===", key.Namespace, key.Name)
 
 			if o == nil {
-				return errors.New("Kibana is null")
+				return errors.New("Logstash is null")
 			}
-			kb := o.(*kibanacrd.Kibana)
+			ls := o.(*logstashcrd.Logstash)
 
 			wait := int64(0)
-			if err = c.Delete(context.Background(), kb, &client.DeleteOptions{GracePeriodSeconds: &wait}); err != nil {
+			if err = c.Delete(context.Background(), ls, &client.DeleteOptions{GracePeriodSeconds: &wait}); err != nil {
 				return err
 			}
 
@@ -475,4 +442,3 @@ func doDeleteLogstashStep() test.TestStep {
 		},
 	}
 }
-*/
