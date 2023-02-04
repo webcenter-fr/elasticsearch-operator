@@ -133,10 +133,30 @@ func (t *KibanaControllerTestSuite) SetupSuite() {
 		panic(err)
 	}
 
-	if err := k8sManager.GetFieldIndexer().IndexField(context.Background(), &kibanacrd.Kibana{}, "spec.elasticsearchRef.name", func(o client.Object) []string {
+	if err := k8sManager.GetFieldIndexer().IndexField(context.Background(), &kibanacrd.Kibana{}, "spec.elasticsearchRef.managed.name", func(o client.Object) []string {
 		p := o.(*kibanacrd.Kibana)
-		if p.Spec.KeystoreSecretRef != nil {
-			return []string{p.Spec.KeystoreSecretRef.Name}
+		if p.Spec.ElasticsearchRef.IsManaged() {
+			return []string{p.Spec.ElasticsearchRef.ManagedElasticsearchRef.Name}
+		}
+		return []string{}
+	}); err != nil {
+		panic(err)
+	}
+
+	if err := k8sManager.GetFieldIndexer().IndexField(context.Background(), &kibanacrd.Kibana{}, "spec.elasticsearchRef.elasticsearchCASecretRef.name", func(o client.Object) []string {
+		p := o.(*kibanacrd.Kibana)
+		if p.Spec.ElasticsearchRef.ElasticsearchCaSecretRef != nil {
+			return []string{p.Spec.ElasticsearchRef.ElasticsearchCaSecretRef.Name}
+		}
+		return []string{}
+	}); err != nil {
+		panic(err)
+	}
+
+	if err := k8sManager.GetFieldIndexer().IndexField(context.Background(), &kibanacrd.Kibana{}, "spec.elasticsearchRef.external.secretRef.name", func(o client.Object) []string {
+		p := o.(*kibanacrd.Kibana)
+		if p.Spec.ElasticsearchRef.IsExternal() && p.Spec.ElasticsearchRef.ExternalElasticsearchRef.SecretRef != nil {
+			return []string{p.Spec.ElasticsearchRef.ExternalElasticsearchRef.SecretRef.Name}
 		}
 		return []string{}
 	}); err != nil {

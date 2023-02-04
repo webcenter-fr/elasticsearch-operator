@@ -568,3 +568,73 @@ func TestGetPodMonitorName(t *testing.T) {
 
 	assert.Equal(t, "test-es", GetPodMonitorName(o))
 }
+
+func TestGetPublicUrl(t *testing.T) {
+	var o *elasticsearchcrd.Elasticsearch
+
+	// When ask public URL for internal application without target node group and API tls is enabled
+	o = &elasticsearchcrd.Elasticsearch{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: "default",
+			Name:      "test",
+		},
+		Spec: elasticsearchcrd.ElasticsearchSpec{},
+	}
+
+	assert.Equal(t, "https://test-es.default.svc:9200", GetPublicUrl(o, "", false))
+
+	// When ask public URL for internal application without target node group and API tls is disabled
+	o = &elasticsearchcrd.Elasticsearch{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: "default",
+			Name:      "test",
+		},
+		Spec: elasticsearchcrd.ElasticsearchSpec{
+			Tls: elasticsearchcrd.TlsSpec{
+				Enabled: pointer.Bool(false),
+			},
+		},
+	}
+
+	assert.Equal(t, "http://test-es.default.svc:9200", GetPublicUrl(o, "", false))
+
+	// When ask public URL for internal application with target node group and API tls is enabled
+	o = &elasticsearchcrd.Elasticsearch{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: "default",
+			Name:      "test",
+		},
+		Spec: elasticsearchcrd.ElasticsearchSpec{},
+	}
+
+	assert.Equal(t, "https://test-client-es.default.svc:9200", GetPublicUrl(o, "client", false))
+
+	// When ask public URL for internal application with target node group and API tls is disabled
+	o = &elasticsearchcrd.Elasticsearch{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: "default",
+			Name:      "test",
+		},
+		Spec: elasticsearchcrd.ElasticsearchSpec{
+			Tls: elasticsearchcrd.TlsSpec{
+				Enabled: pointer.Bool(false),
+			},
+		},
+	}
+
+	assert.Equal(t, "http://test-client-es.default.svc:9200", GetPublicUrl(o, "client", false))
+
+	// When external url
+	o = &elasticsearchcrd.Elasticsearch{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: "default",
+			Name:      "test",
+		},
+		Spec: elasticsearchcrd.ElasticsearchSpec{},
+		Status: elasticsearchcrd.ElasticsearchStatus{
+			Url: "https://fake",
+		},
+	}
+
+	assert.Equal(t, "https://fake", GetPublicUrl(o, "", true))
+}

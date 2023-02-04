@@ -7979,6 +7979,17 @@ spec:
                 description: ElasticsearchRef is the Elasticsearch ref to connect
                   on.
                 properties:
+                  elasticsearchCASecretRef:
+                    description: 'ElasticsearchCaSecretRef is the secret that store
+                      your custom CA certificate to connect on Elasticsearch API.
+                      It need to have the following keys: ca.crt'
+                    properties:
+                      name:
+                        description: 'Name of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                          TODO: Add other useful fields. apiVersion, kind, uid?'
+                        type: string
+                    type: object
+                    x-kubernetes-map-type: atomic
                   external:
                     description: ExternalElasticsearchRef is the external Elasticsearch
                       cluster not managed by operator
@@ -8395,13 +8406,13 @@ spec:
                 properties:
                   prometheus:
                     description: Prometheus permit to monitor cluster with Prometheus
-                      en graphana (via exporter)
+                      and graphana (via exporter)
                     properties:
                       enabled:
                         default: false
                         description: Enabled permit to enable Prometheus monitoring
-                          It will deploy exporter for Elasticsearch and add podMonitor
-                          policy Default to false
+                          It will deploy exporter for Kibana and add podMonitor policy
+                          Default to false
                         type: boolean
                       url:
                         description: 'Url is the plugin URL where to download exporter
@@ -8423,17 +8434,6 @@ spec:
                     description: 'CertificateSecretRef is the secret that store your
                       custom certificates. It need to have the following keys: tls.key,
                       tls.crt and optionally ca.crt'
-                    properties:
-                      name:
-                        description: 'Name of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
-                          TODO: Add other useful fields. apiVersion, kind, uid?'
-                        type: string
-                    type: object
-                    x-kubernetes-map-type: atomic
-                  elasticsearchCASecretRef:
-                    description: 'ElasticsearchCaSecretRef is the secret that store
-                      your custom CA certificate to connect on Elasticsearch API.
-                      It need to have the following keys: ca.crt'
                     properties:
                       name:
                         description: 'Name of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names

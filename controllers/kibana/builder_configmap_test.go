@@ -123,7 +123,10 @@ node.value2: test`,
 node.value2: test`,
 				"log4j.yml": "log.test: test\n",
 			},
-			Tls: kibanacrd.TlsSpec{
+			ElasticsearchRef: shared.ElasticsearchRef{
+				ExternalElasticsearchRef: &shared.ElasticsearchExternalRef{
+					Addresses: []string{"fake"},
+				},
 				ElasticsearchCaSecretRef: &v1.LocalObjectReference{
 					Name: "custom-ca-es",
 				},
@@ -134,5 +137,38 @@ node.value2: test`,
 	configMap, err = BuildConfigMap(o, nil)
 	assert.NoError(t, err)
 	test.EqualFromYamlFile(t, "testdata/configmap_external_es_custom_ca_es.yml", configMap, test.CleanApi)
+
+	// When managed elasticsearch with custom CA elasticsearch
+	o = &kibanacrd.Kibana{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: "default",
+			Name:      "test",
+			Labels: map[string]string{
+				"label1": "value1",
+			},
+			Annotations: map[string]string{
+				"anno1": "value1",
+			},
+		},
+		Spec: kibanacrd.KibanaSpec{
+			Config: map[string]string{
+				"kibana.yml": `node.value: test
+node.value2: test`,
+				"log4j.yml": "log.test: test\n",
+			},
+			ElasticsearchRef: shared.ElasticsearchRef{
+				ManagedElasticsearchRef: &shared.ElasticsearchManagedRef{
+					Name: "test",
+				},
+				ElasticsearchCaSecretRef: &v1.LocalObjectReference{
+					Name: "custom-ca-es",
+				},
+			},
+		},
+	}
+
+	configMap, err = BuildConfigMap(o, nil)
+	assert.NoError(t, err)
+	test.EqualFromYamlFile(t, "testdata/configmap_managed_es_custom_ca_es.yml", configMap, test.CleanApi)
 
 }

@@ -168,17 +168,36 @@ func watchSecret(c client.Client) handler.MapFunc {
 			reconcileRequests = append(reconcileRequests, reconcile.Request{NamespacedName: types.NamespacedName{Name: k.Name, Namespace: k.Namespace}})
 		}
 
-		// Elasticsearch API secret
+		// Elasticsearch API cert secret when managed
 		if elasticsearchcontrollers.GetElasticsearchNameFromSecretApiTlsName(a.GetName()) != "" {
 			listKibanas = &kibanacrd.KibanaList{}
-			fs = fields.ParseSelectorOrDie(fmt.Sprintf("spec.elasticsearchRef.name=%s", elasticsearchcontrollers.GetElasticsearchNameFromSecretApiTlsName(a.GetName())))
-			// Get all kibana linked with secret
+			fs = fields.ParseSelectorOrDie(fmt.Sprintf("spec.elasticsearchRef.managed.name=%s", elasticsearchcontrollers.GetElasticsearchNameFromSecretApiTlsName(a.GetName())))
 			if err := c.List(context.Background(), listKibanas, &client.ListOptions{Namespace: a.GetNamespace(), FieldSelector: fs}); err != nil {
 				panic(err)
 			}
 			for _, k := range listKibanas.Items {
 				reconcileRequests = append(reconcileRequests, reconcile.Request{NamespacedName: types.NamespacedName{Name: k.Name, Namespace: k.Namespace}})
 			}
+		}
+
+		// Elasticsearch API cert secret when external
+		listKibanas = &kibanacrd.KibanaList{}
+		fs = fields.ParseSelectorOrDie(fmt.Sprintf("spec.elasticsearchRef.elasticsearchCASecretRef.name=%s", a.GetName()))
+		if err := c.List(context.Background(), listKibanas, &client.ListOptions{Namespace: a.GetNamespace(), FieldSelector: fs}); err != nil {
+			panic(err)
+		}
+		for _, k := range listKibanas.Items {
+			reconcileRequests = append(reconcileRequests, reconcile.Request{NamespacedName: types.NamespacedName{Name: k.Name, Namespace: k.Namespace}})
+		}
+
+		// Elasticsearch credentials when external
+		listKibanas = &kibanacrd.KibanaList{}
+		fs = fields.ParseSelectorOrDie(fmt.Sprintf("spec.elasticsearchRef.external.secretRef.name=%s", a.GetName()))
+		if err := c.List(context.Background(), listKibanas, &client.ListOptions{Namespace: a.GetNamespace(), FieldSelector: fs}); err != nil {
+			panic(err)
+		}
+		for _, k := range listKibanas.Items {
+			reconcileRequests = append(reconcileRequests, reconcile.Request{NamespacedName: types.NamespacedName{Name: k.Name, Namespace: k.Namespace}})
 		}
 
 		return reconcileRequests

@@ -221,9 +221,20 @@ func generateNodeCertificate(o *elasticsearchcrd.Elasticsearch, nodeGroupName, n
 		Intermediate:       false,
 		DNSNames: []string{
 			fmt.Sprintf("%s.%s", nodeName, GetNodeGroupServiceNameHeadless(o, nodeGroupName)),
+			fmt.Sprintf("%s.%s.%s", nodeName, GetNodeGroupServiceNameHeadless(o, nodeGroupName), o.Namespace),
+			fmt.Sprintf("%s.%s.%s.svc", nodeName, GetNodeGroupServiceNameHeadless(o, nodeGroupName), o.Namespace),
 			GetNodeGroupServiceName(o, nodeGroupName),
+			fmt.Sprintf("%s.%s", GetNodeGroupServiceName(o, nodeGroupName), o.Namespace),
+			fmt.Sprintf("%s.%s.svc", GetNodeGroupServiceName(o, nodeGroupName), o.Namespace),
 			GetNodeGroupServiceNameHeadless(o, nodeGroupName),
+			fmt.Sprintf("%s.%s", GetNodeGroupServiceNameHeadless(o, nodeGroupName), o.Namespace),
+			fmt.Sprintf("%s.%s.svc", GetNodeGroupServiceNameHeadless(o, nodeGroupName), o.Namespace),
+			nodeName,
+			fmt.Sprintf("%s.%s", nodeName, o.Namespace),
 			fmt.Sprintf("%s.%s.svc", nodeName, o.Namespace),
+			GetGlobalServiceName(o),
+			fmt.Sprintf("%s.%s", GetGlobalServiceName(o), o.Namespace),
+			fmt.Sprintf("%s.%s.svc", GetGlobalServiceName(o), o.Namespace),
 		},
 		IPAddresses: []net.IP{
 			net.ParseIP("127.0.0.1"),
@@ -238,7 +249,11 @@ func generateNodeCertificate(o *elasticsearchcrd.Elasticsearch, nodeGroupName, n
 func generateApiCertificate(o *elasticsearchcrd.Elasticsearch, rootCA *goca.CA) (nodeCrt *goca.Certificate, err error) {
 
 	var ips []net.IP
-	dnsNames := []string{}
+	dnsNames := []string{
+		GetGlobalServiceName(o),
+		fmt.Sprintf("%s.%s", GetGlobalServiceName(o), o.Namespace),
+		fmt.Sprintf("%s.%s.svc", GetGlobalServiceName(o), o.Namespace),
+	}
 
 	var (
 		keySize      int
@@ -254,6 +269,14 @@ func generateApiCertificate(o *elasticsearchcrd.Elasticsearch, rootCA *goca.CA) 
 		keySize = *o.Spec.Tls.KeySize
 	} else {
 		keySize = certKeySize
+	}
+
+	for _, nodeGroup := range o.Spec.NodeGroups {
+		dnsNames = append(dnsNames,
+			GetNodeGroupServiceName(o, nodeGroup.Name),
+			fmt.Sprintf("%s.%s", GetNodeGroupServiceName(o, nodeGroup.Name), o.Namespace),
+			fmt.Sprintf("%s.%s.svc", GetNodeGroupServiceName(o, nodeGroup.Name), o.Namespace),
+		)
 	}
 
 	if o.Spec.Tls.SelfSignedCertificate != nil && len(o.Spec.Tls.SelfSignedCertificate.AltNames) > 0 {

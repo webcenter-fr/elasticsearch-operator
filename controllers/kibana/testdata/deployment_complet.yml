@@ -20,7 +20,7 @@ spec:
         cluster: test
         kibana.k8s.webcenter.fr: "true"
       annotations:
-        kibana.k8s.webcenter.fr/checksum-kibana.yml: "b73103aeb4b29fc37098851788c8256fc9b5bf794ab97e574bc212f3e2633f88"
+        kibana.k8s.webcenter.fr/checksum-kibana.yml: "28bc70743bff52b1b2f2b76cd6a178c34015cd110a34808abed971ca45405143"
         kibana.k8s.webcenter.fr/checksum-keystore: "e0254a8990817d8a00deb6123c4a2a7ea7ae48428a65d9514257b3baedc1fb6e"
         kibana.k8s.webcenter.fr/checksum-log4j.yaml: "949e3031476b60f9f8cea06e1d683f3fb6e689856bdc58590036fd018c40149c"
       name: test-kb

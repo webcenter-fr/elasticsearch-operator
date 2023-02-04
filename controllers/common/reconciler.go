@@ -145,6 +145,10 @@ func (r *Reconciler) StdDiff(ctx context.Context, resource client.Object, data m
 	} else {
 
 		if expectedObject != nil && !reflect.ValueOf(expectedObject).IsNil() {
+
+			// Copy TypeMeta to work with some ignore rules like IgnorePDBSelector()
+			mustInjectTypeMeta(currentObject, expectedObject)
+
 			// Check if need to update object
 			patchResult, err := patch.DefaultPatchMaker.Calculate(currentObject, expectedObject, patchOptions...)
 			if err != nil {

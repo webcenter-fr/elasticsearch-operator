@@ -88,7 +88,7 @@ type KibanaSpec struct {
 
 type MonitoringSpec struct {
 
-	// Prometheus permit to monitor cluster with Prometheus en graphana (via exporter)
+	// Prometheus permit to monitor cluster with Prometheus and graphana (via exporter)
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
 	// +optional
 	Prometheus *PrometheusSpec `json:"prometheus,omitempty"`
@@ -97,7 +97,7 @@ type MonitoringSpec struct {
 type PrometheusSpec struct {
 
 	// Enabled permit to enable Prometheus monitoring
-	// It will deploy exporter for Elasticsearch and add podMonitor policy
+	// It will deploy exporter for Kibana and add podMonitor policy
 	// Default to false
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
 	// +optional
@@ -208,12 +208,6 @@ type TlsSpec struct {
 	// +optional
 	// +kubebuilder:default=2048
 	KeySize *int `json:"keySize,omitempty"`
-
-	// ElasticsearchCaSecretRef is the secret that store your custom CA certificate to connect on Elasticsearch API.
-	// It need to have the following keys: ca.crt
-	// +operator-sdk:csv:customresourcedefinitions:type=spec
-	// +optional
-	ElasticsearchCaSecretRef *corev1.LocalObjectReference `json:"elasticsearchCASecretRef,omitempty"`
 }
 
 type SelfSignedCertificateSpec struct {

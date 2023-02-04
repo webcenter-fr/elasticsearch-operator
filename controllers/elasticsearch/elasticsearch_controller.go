@@ -333,7 +333,12 @@ func (h *ElasticsearchReconciler) computeElasticsearchUrl(ctx context.Context, e
 			return "", errors.Wrap(err, "Error when get Load balancer")
 		}
 
-		url = fmt.Sprintf("%s:9200", service.Spec.LoadBalancerIP)
+		if len(service.Status.LoadBalancer.Ingress) > 0 {
+			url = fmt.Sprintf("%s:9200", service.Status.LoadBalancer.Ingress[0].IP)
+		} else {
+			return "", nil
+		}
+
 		if es.IsTlsApiEnabled() {
 			scheme = "https"
 		} else {

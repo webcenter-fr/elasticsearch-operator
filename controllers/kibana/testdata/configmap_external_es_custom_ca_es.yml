@@ -17,7 +17,7 @@ data:
         ssl:
             certificateAuthorities:
                 - /usr/share/kibana/config/es-ca/ca.crt
-            verificationMode: certificate
+            verificationMode: full
     node:
         value: test
         value2: test

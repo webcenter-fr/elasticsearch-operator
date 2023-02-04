@@ -90,11 +90,6 @@ func TestBuildDeployment(t *testing.T) {
 			Deployment: kibanacrd.DeploymentSpec{
 				Replicas: 1,
 			},
-			Tls: kibanacrd.TlsSpec{
-				ElasticsearchCaSecretRef: &corev1.LocalObjectReference{
-					Name: "custom-ca-es",
-				},
-			},
 			ElasticsearchRef: shared.ElasticsearchRef{
 				ExternalElasticsearchRef: &shared.ElasticsearchExternalRef{
 					Addresses: []string{
@@ -103,6 +98,9 @@ func TestBuildDeployment(t *testing.T) {
 					SecretRef: &corev1.LocalObjectReference{
 						Name: "es-credential",
 					},
+				},
+				ElasticsearchCaSecretRef: &corev1.LocalObjectReference{
+					Name: "custom-ca-es",
 				},
 			},
 		},

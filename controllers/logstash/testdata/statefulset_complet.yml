@@ -1,0 +1,273 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: test-ls
+  namespace: default
+  labels:
+    cluster: test
+    logstash.k8s.webcenter.fr: "true"
+  annotations:
+    logstash.k8s.webcenter.fr: "true"
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      cluster: test
+      logstash.k8s.webcenter.fr: "true"
+  template:
+    metadata:
+      labels:
+        cluster: test
+        logstash.k8s.webcenter.fr: "true"
+      annotations:
+        logstash.k8s.webcenter.fr: "true"
+        logstash.k8s.webcenter.fr/configmap-test: "1dd74b8deb13203ff016c1b47d4d7cc2ad0c0400e9c2103369690038ce7a31ac"
+        logstash.k8s.webcenter.fr/configmap-test-config-ls:   "1dd74b8deb13203ff016c1b47d4d7cc2ad0c0400e9c2103369690038ce7a31ac"
+        logstash.k8s.webcenter.fr/configmap-test-pattern-ls:  "1dd74b8deb13203ff016c1b47d4d7cc2ad0c0400e9c2103369690038ce7a31ac"
+        logstash.k8s.webcenter.fr/configmap-test-pipeline-ls: "1dd74b8deb13203ff016c1b47d4d7cc2ad0c0400e9c2103369690038ce7a31ac"
+        logstash.k8s.webcenter.fr/extra-secret-keystore:      "e9b98d78f4b0fc3c077e9ba9d8a5bf2ab2a993c1590aa117e0f1d0c9a3b96694"
+      name: test-ls
+    spec:
+      affinity:
+        podAntiAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+          - labelSelector:
+              matchLabels:
+                cluster: test
+                logstash.k8s.webcenter.fr: "true"
+            topologyKey: rack
+      containers:
+      - env:
+        - name: POD_NAME
+          valueFrom:
+            fieldRef:
+              apiVersion: v1
+              fieldPath: metadata.name
+        - name: NODE_NAME
+          valueFrom:
+            fieldRef:
+              apiVersion: v1
+              fieldPath: spec.nodeName
+        - name: POD_IP
+          valueFrom:
+            fieldRef:
+              apiVersion: v1
+              fieldPath: status.podIP
+        - name: NAMESPACE
+          valueFrom:
+            fieldRef:
+              apiVersion: v1
+              fieldPath: metadata.namespace
+        - name: LS_JAVA_OPTS
+          value: '-Xms1G -Xmx1G'
+        - name: HTTP_HOST
+          value: 0.0.0.0
+        - name: ELASTICSEARCH_CA_PATH
+          value: /usr/share/logstash/config/es-ca/ca.crt
+        - name: ELASTICSEARCH_HOST
+          value: https://test-es.default.svc:9200
+        - name: env1
+          value: value1
+        envFrom:
+          - configMapRef:
+              name: test
+        image: docker.elastic.co/logstash/logstash:8.5.1
+        resources:
+          limits:
+            cpu: "4"
+            memory: 4Gi
+          requests:
+            cpu: "2"
+            memory: 2Gi
+        livenessProbe:
+          failureThreshold: 3
+          periodSeconds: 30
+          successThreshold: 1
+          tcpSocket:
+            port: 9600
+          timeoutSeconds: 5
+        name: logstash
+        ports:
+        - containerPort: 9600
+          name: http
+          protocol: TCP
+        readinessProbe:
+          failureThreshold: 3
+          periodSeconds: 10
+          successThreshold: 1
+          httpGet:
+            path: /
+            port: 9600
+          timeoutSeconds: 5
+        securityContext:
+          capabilities:
+            drop:
+            - ALL
+          runAsNonRoot: true
+          runAsUser: 1000
+        startupProbe:
+          failureThreshold: 30
+          initialDelaySeconds: 10
+          periodSeconds: 10
+          successThreshold: 1
+          tcpSocket:
+            port: 9600
+          timeoutSeconds: 5
+        volumeMounts:
+        - mountPath: /usr/share/logstash/config
+          name: config
+        - mountPath: /usr/share/logstash/pipeline
+          name: logstash-pipeline
+        - mountPath: /usr/share/logstash/patterns
+          name: logstash-pattern
+      initContainers:
+      - command:
+        - /bin/bash
+        - -c
+        - |
+            #!/usr/bin/env bash
+            set -euo pipefail
+            
+            # Move original config
+            echo "Move original logstash configs"
+            cp -a /usr/share/logstash/config/* /mnt/config/
+
+            # Move configmaps
+            if [ -d /mnt/configmap ]; then
+              echo "Move custom configs"
+              cp -f /mnt/configmap/* /mnt/config/
+            fi
+
+            # Move CA Elasticsearch
+            if [ -d /mnt/ca-elasticsearch ]; then
+              echo "Move CA certificate"
+              mkdir -p /mnt/config/es-ca
+              cp /mnt/ca-elasticsearch/* /mnt/config/es-ca/
+            fi
+
+            # Move keystore
+            if [ -f /mnt/keystore/logstash.keystore ]; then
+              echo "Move keystore"
+              cp /mnt/keystore/logstash.keystore /mnt/config
+            fi
+
+            # Set right
+            echo "Set right"
+            chown -R logstash:logstash /mnt/config
+            if [ -d /mnt/data ]; then
+              chown -v logstash:logstash /mnt/data
+            fi
+
+
+            if [ -d /mnt/plugins ]; then
+              cp -a /usr/share/logstash/plugins/* /mnt/plugins/
+              chown -R logstash:logstash /mnt/plugins
+            fi
+
+        image: docker.elastic.co/logstash/logstash:8.5.1
+        name: init-filesystem
+        resources:
+          limits:
+            cpu: 300m
+            memory: 500Mi
+          requests:
+            cpu: 100m
+            memory: 100Mi
+        env:
+        - name: POD_NAME
+          valueFrom:
+            fieldRef:
+              apiVersion: v1
+              fieldPath: metadata.name
+        - name: NODE_NAME
+          valueFrom:
+            fieldRef:
+              apiVersion: v1
+              fieldPath: spec.nodeName
+        - name: POD_IP
+          valueFrom:
+            fieldRef:
+              apiVersion: v1
+              fieldPath: status.podIP
+        - name: NAMESPACE
+          valueFrom:
+            fieldRef:
+              apiVersion: v1
+              fieldPath: metadata.namespace
+        - name: env1
+          value: value1
+        envFrom:
+          - configMapRef:
+              name: test
+        volumeMounts:
+          - name: config
+            mountPath: /mnt/config
+          - name: keystore
+            mountPath: /mnt/keystore
+          - name: ca-elasticsearch
+            mountPath: /mnt/ca-elasticsearch
+          - name: logstash-config
+            mountPath: /mnt/configmap
+        securityContext:
+          runAsUser: 0
+      - command:
+        - /bin/bash
+        - -c
+        - |
+            #!/usr/bin/env bash
+            set -euo pipefail
+
+            logstash-keystore create
+            for i in /mnt/keystoreSecrets/*; do
+                key=$(basename $i)
+                echo "Adding file $i to keystore key $key"
+                logstash-keystore add -x "$key" < $i
+            done
+
+            cp -a /usr/share/logstash/config/logstash.keystore /mnt/keystore/
+        image: docker.elastic.co/logstash/logstash:8.5.1
+        name: init-keystore
+        resources:
+          limits:
+            cpu: 300m
+            memory: 500Mi
+          requests:
+            cpu: 100m
+            memory: 100Mi
+        volumeMounts:
+          - name: keystore
+            mountPath: /mnt/keystore
+          - name: logstash-keystore
+            mountPath: /mnt/keystoreSecrets
+      securityContext:
+        fsGroup: 1000
+      terminationGracePeriodSeconds: 120
+      nodeSelector:
+        project: logstash
+      tolerations:
+        - effect: NoSchedule
+          key: project
+          operator: Equal
+          value: logstash
+      volumes:
+      - name: keystore
+        emptyDir: {}
+      - name: config
+        emptyDir: {}
+      - name: plugin
+        emptyDir: {}
+      - name: ca-elasticsearch
+        secret:
+          secretName: test-ca-es-ls
+      - name: logstash-config
+        configMap:
+          name: test-config-ls
+      - name: logstash-pipeline
+        configMap:
+          name: test-pipeline-ls
+      - name: logstash-pattern
+        configMap:
+          name: test-pattern-ls
+      - name: logstash-keystore
+        secret:
+          secretName: keystore
