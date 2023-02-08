@@ -256,10 +256,16 @@ func (h *ElasticsearchReconciler) OnSuccess(ctx context.Context, r client.Object
 	if len(stsList.Items) == 0 {
 		isReady = false
 	}
+loopStatefulset:
 	for _, sts := range stsList.Items {
-		if sts.Status.ReadyReplicas != *sts.Spec.Replicas {
-			isReady = false
-			break
+		for _, nodeGroup := range o.Spec.NodeGroups {
+			if sts.Name == GetNodeGroupName(o, nodeGroup.Name) {
+				if sts.Status.ReadyReplicas != nodeGroup.Replicas {
+					isReady = false
+					break loopStatefulset
+				}
+				break
+			}
 		}
 	}
 

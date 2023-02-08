@@ -214,7 +214,7 @@ func (h *FilebeatReconciler) OnSuccess(ctx context.Context, r client.Object, dat
 
 		isReady = false
 	} else {
-		if sts.Status.ReadyReplicas != *sts.Spec.Replicas {
+		if sts.Status.ReadyReplicas != o.Spec.Deployment.Replicas {
 			isReady = false
 		}
 	}
