@@ -206,8 +206,8 @@ func BuildStatefulset(fb *beatcrd.Filebeat, es *elasticsearchcrd.Elasticsearch, 
 				"ALL",
 			},
 		},
-		RunAsUser:    pointer.Int64(1000),
-		RunAsNonRoot: pointer.Bool(true),
+		RunAsUser:    pointer.Int64(0),
+		RunAsNonRoot: pointer.Bool(false),
 	}, k8sbuilder.OverwriteIfDefaultValue)
 
 	// Compute volume mount
@@ -525,7 +525,7 @@ chown -v filebeat:filebeat /mnt/data
 
 	// Compute Security context
 	ptb.WithSecurityContext(&corev1.PodSecurityContext{
-		FSGroup: pointer.Int64(1000),
+		FSGroup: pointer.Int64(0),
 	}, k8sbuilder.Merge)
 
 	// Compute pod template name
