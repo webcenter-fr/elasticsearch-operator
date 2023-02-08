@@ -245,7 +245,7 @@ func BuildDeployment(kb *kibanacrd.Kibana, es *elasticsearchcrd.Elasticsearch, k
 	cb.WithImage(GetContainerImage(kb), k8sbuilder.OverwriteIfDefaultValue)
 
 	// Compute image pull policy
-	cb.WithImagePullPolicy(kb.Spec.ImagePullPolicy, k8sbuilder.Merge)
+	cb.WithImagePullPolicy(kb.Spec.ImagePullPolicy, k8sbuilder.OverwriteIfDefaultValue)
 
 	// Compute security context
 	cb.WithSecurityContext(&corev1.SecurityContext{
@@ -345,7 +345,8 @@ fi
 		WithLabels(kb.Spec.Deployment.Labels, k8sbuilder.Merge)
 
 	// Compute annotations
-	ptb.WithAnnotations(configMapChecksumAnnotations, k8sbuilder.Merge).
+	ptb.WithAnnotations(getAnnotations(kb)).
+		WithAnnotations(configMapChecksumAnnotations, k8sbuilder.Merge).
 		WithAnnotations(secretChecksumAnnotations, k8sbuilder.Merge)
 
 	// Compute NodeSelector
