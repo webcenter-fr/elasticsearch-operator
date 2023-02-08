@@ -259,7 +259,7 @@ func (h *ElasticsearchReconciler) OnSuccess(ctx context.Context, r client.Object
 loopStatefulset:
 	for _, sts := range stsList.Items {
 		for _, nodeGroup := range o.Spec.NodeGroups {
-			if sts.Name == nodeGroup.Name {
+			if sts.Name == GetNodeGroupName(o, nodeGroup.Name) {
 				if sts.Status.ReadyReplicas != nodeGroup.Replicas {
 					isReady = false
 					break loopStatefulset
