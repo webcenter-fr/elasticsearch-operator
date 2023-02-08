@@ -1,0 +1,27 @@
+# permissions for end users to view filebeats.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  labels:
+    app.kubernetes.io/name: clusterrole
+    app.kubernetes.io/instance: filebeat-viewer-role
+    app.kubernetes.io/component: rbac
+    app.kubernetes.io/created-by: bootstrap
+    app.kubernetes.io/part-of: bootstrap
+    app.kubernetes.io/managed-by: kustomize
+  name: filebeat-viewer-role
+rules:
+- apiGroups:
+  - beat.k8s.webcenter.fr
+  resources:
+  - filebeats
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - beat.k8s.webcenter.fr
+  resources:
+  - filebeats/status
+  verbs:
+  - get

@@ -1,0 +1,21 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: test-headless-fb
+  namespace: default
+  labels:
+    cluster: test
+    filebeat.k8s.webcenter.fr: "true"
+  annotations:
+    filebeat.k8s.webcenter.fr: "true"
+spec:
+  type: ClusterIP
+  clusterIP: None
+  selector:
+    cluster: test
+    filebeat.k8s.webcenter.fr: "true"
+  ports:
+    - protocol: TCP
+      name: http
+      port: 5066
+      targetPort: http

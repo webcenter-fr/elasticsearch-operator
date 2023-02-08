@@ -6,7 +6,6 @@ import (
 	"github.com/stretchr/testify/assert"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/utils/pointer"
 )
 
 func TestIsPrometheusMonitoring(t *testing.T) {
@@ -53,61 +52,6 @@ func TestIsPrometheusMonitoring(t *testing.T) {
 		},
 	}
 	assert.False(t, o.IsPrometheusMonitoring())
-}
-
-func TestIsOneForEachLogstashInstance(t *testing.T) {
-	var o *Logstash
-
-	// When not set
-	o = &Logstash{
-		ObjectMeta: metav1.ObjectMeta{
-			Namespace: "default",
-			Name:      "test",
-		},
-		Spec: LogstashSpec{
-			Ingresses: []Ingress{
-				{
-					Name: "test",
-				},
-			},
-		},
-	}
-	assert.False(t, o.Spec.Ingresses[0].IsOneForEachLogstashInstance())
-
-	// When set to false
-	o = &Logstash{
-		ObjectMeta: metav1.ObjectMeta{
-			Namespace: "default",
-			Name:      "test",
-		},
-		Spec: LogstashSpec{
-			Ingresses: []Ingress{
-				{
-					Name:                       "test",
-					OneForEachLogstashInstance: pointer.Bool(false),
-				},
-			},
-		},
-	}
-	assert.False(t, o.Spec.Ingresses[0].IsOneForEachLogstashInstance())
-
-	// When set to true
-	o = &Logstash{
-		ObjectMeta: metav1.ObjectMeta{
-			Namespace: "default",
-			Name:      "test",
-		},
-		Spec: LogstashSpec{
-			Ingresses: []Ingress{
-				{
-					Name:                       "test",
-					OneForEachLogstashInstance: pointer.Bool(true),
-				},
-			},
-		},
-	}
-	assert.True(t, o.Spec.Ingresses[0].IsOneForEachLogstashInstance())
-
 }
 
 func TestIsPersistence(t *testing.T) {

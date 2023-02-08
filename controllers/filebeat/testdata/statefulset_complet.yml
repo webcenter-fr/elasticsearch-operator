@@ -1,0 +1,200 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: test-fb
+  namespace: default
+  labels:
+    cluster: test
+    filebeat.k8s.webcenter.fr: "true"
+  annotations:
+    filebeat.k8s.webcenter.fr: "true"
+spec:
+  replicas: 1
+  serviceName: test-headless-fb
+  selector:
+    matchLabels:
+      cluster: test
+      filebeat.k8s.webcenter.fr: "true"
+  template:
+    metadata:
+      labels:
+        cluster: test
+        filebeat.k8s.webcenter.fr: "true"
+      annotations:
+        filebeat.k8s.webcenter.fr: "true"
+        filebeat.k8s.webcenter.fr/configmap-test: "1dd74b8deb13203ff016c1b47d4d7cc2ad0c0400e9c2103369690038ce7a31ac"
+        filebeat.k8s.webcenter.fr/configmap-test-config-fb:   "1dd74b8deb13203ff016c1b47d4d7cc2ad0c0400e9c2103369690038ce7a31ac"
+        filebeat.k8s.webcenter.fr/configmap-test-module-fb: "1dd74b8deb13203ff016c1b47d4d7cc2ad0c0400e9c2103369690038ce7a31ac"
+        filebeat.k8s.webcenter.fr/secret-keystore:      "e9b98d78f4b0fc3c077e9ba9d8a5bf2ab2a993c1590aa117e0f1d0c9a3b96694"
+      name: test-fb
+    spec:
+      affinity:
+        podAntiAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+          - labelSelector:
+              matchLabels:
+                cluster: test
+                filebeat.k8s.webcenter.fr: "true"
+            topologyKey: rack
+      containers:
+      - env:
+        - name: POD_NAME
+          valueFrom:
+            fieldRef:
+              apiVersion: v1
+              fieldPath: metadata.name
+        - name: NODE_NAME
+          valueFrom:
+            fieldRef:
+              apiVersion: v1
+              fieldPath: spec.nodeName
+        - name: POD_IP
+          valueFrom:
+            fieldRef:
+              apiVersion: v1
+              fieldPath: status.podIP
+        - name: NAMESPACE
+          valueFrom:
+            fieldRef:
+              apiVersion: v1
+              fieldPath: metadata.namespace
+        - name: ELASTICSEARCH_CA_PATH
+          value: /usr/share/filebeat/config/es-ca/ca.crt
+        - name: ELASTICSEARCH_HOST
+          value: https://test-es.default.svc:9200
+        - name: env1
+          value: value1
+        envFrom:
+          - configMapRef:
+              name: test
+        image: docker.elastic.co/beats/filebeat:8.5.1
+        resources:
+          limits:
+            cpu: "4"
+            memory: 4Gi
+          requests:
+            cpu: "2"
+            memory: 2Gi
+        livenessProbe:
+          failureThreshold: 3
+          periodSeconds: 30
+          successThreshold: 1
+          tcpSocket:
+            port: 5066
+          timeoutSeconds: 5
+        name: filebeat
+        ports:
+        - containerPort: 5066
+          name: http
+          protocol: TCP
+        - containerPort: 1234
+          name: beat
+          protocol: TCP
+          hostPort: 1234
+        readinessProbe:
+          failureThreshold: 3
+          periodSeconds: 10
+          successThreshold: 1
+          httpGet:
+            path: /
+            port: 5066
+          timeoutSeconds: 5
+        securityContext:
+          capabilities:
+            drop:
+            - ALL
+          runAsNonRoot: false
+          runAsUser: 0
+        startupProbe:
+          failureThreshold: 30
+          initialDelaySeconds: 10
+          periodSeconds: 10
+          successThreshold: 1
+          tcpSocket:
+            port: 5066
+          timeoutSeconds: 5
+        volumeMounts:
+        - mountPath: /usr/share/filebeat/filebeat.yml
+          name: filebeat-config
+          subPath: filebeat.yml
+        - mountPath: /usr/share/filebeat/log4j.yaml
+          name: filebeat-config
+          subPath: log4j.yaml
+        - mountPath: /usr/share/filebeat/modules.d
+          name: filebeat-module
+        - mountPath: /usr/share/filebeat/es-ca
+          name: ca-elasticsearch
+      initContainers:
+      - command:
+        - /bin/bash
+        - -c
+        - |
+            #!/usr/bin/env bash
+            set -euo pipefail
+
+            # Set right
+            echo "Set right"
+            chown -v filebeat:filebeat /mnt/data
+            
+        image: docker.elastic.co/beats/filebeat:8.5.1
+        name: init-filesystem
+        resources:
+          limits:
+            cpu: 300m
+            memory: 500Mi
+          requests:
+            cpu: 100m
+            memory: 100Mi
+        env:
+        - name: POD_NAME
+          valueFrom:
+            fieldRef:
+              apiVersion: v1
+              fieldPath: metadata.name
+        - name: NODE_NAME
+          valueFrom:
+            fieldRef:
+              apiVersion: v1
+              fieldPath: spec.nodeName
+        - name: POD_IP
+          valueFrom:
+            fieldRef:
+              apiVersion: v1
+              fieldPath: status.podIP
+        - name: NAMESPACE
+          valueFrom:
+            fieldRef:
+              apiVersion: v1
+              fieldPath: metadata.namespace
+        - name: env1
+          value: value1
+        envFrom:
+          - configMapRef:
+              name: test
+        volumeMounts:
+          - name: filebeat-data
+            mountPath: /mnt/data
+        securityContext:
+          runAsUser: 0
+      securityContext:
+        fsGroup: 0
+      terminationGracePeriodSeconds: 120
+      nodeSelector:
+        project: filebeat
+      tolerations:
+        - effect: NoSchedule
+          key: project
+          operator: Equal
+          value: filebeat
+      volumes:
+      - name: ca-elasticsearch
+        secret:
+          secretName: test-ca-es-fb
+      - name: filebeat-config
+        configMap:
+          name: test-config-fb
+      - name: filebeat-module
+        configMap:
+          name: test-module-fb
+      - name: filebeat-data
+        emptyDir: {}

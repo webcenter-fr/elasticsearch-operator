@@ -11311,6 +11311,43 @@ spec:
                         - containers
                         type: object
                     type: object
+                  ports:
+                    description: Ports is the list of container port to affect on
+                      logstash container It can be usefull to expose beats input
+                    items:
+                      description: ContainerPort represents a network port in a single
+                        container.
+                      properties:
+                        containerPort:
+                          description: Number of port to expose on the pod's IP address.
+                            This must be a valid port number, 0 < x < 65536.
+                          format: int32
+                          type: integer
+                        hostIP:
+                          description: What host IP to bind the external port to.
+                          type: string
+                        hostPort:
+                          description: Number of port to expose on the host. If specified,
+                            this must be a valid port number, 0 < x < 65536. If HostNetwork
+                            is specified, this must match ContainerPort. Most containers
+                            do not need this.
+                          format: int32
+                          type: integer
+                        name:
+                          description: If specified, this must be an IANA_SVC_NAME
+                            and unique within the pod. Each named port in a pod must
+                            have a unique name. Name for the port that can be referred
+                            to by services.
+                          type: string
+                        protocol:
+                          default: TCP
+                          description: Protocol for port. Must be UDP, TCP, or SCTP.
+                            Defaults to "TCP".
+                          type: string
+                      required:
+                      - containerPort
+                      type: object
+                    type: array
                   replicas:
                     description: Replicas is the number of replicas
                     format: int32
@@ -11481,14 +11518,6 @@ spec:
                       description: ContainerPortProtocol is the protocol to set when
                         create service consumed by ingress
                       type: string
-                    isOneForEachLogstashInstance:
-                      description: 'IsOneForEachLogstashInstance if set to true will
-                        generate one ingress for each logstash pod It can be used
-                        when you should expose beat input and you should to lets filebeat
-                        handle the loab balancing on Logstash instance directly Default
-                        to false Note: you can use %d on host name to set instance
-                        id'
-                      type: boolean
                     labels:
                       additionalProperties:
                         type: string

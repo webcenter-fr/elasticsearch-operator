@@ -10,6 +10,7 @@ metadata:
     logstash.k8s.webcenter.fr: "true"
 spec:
   replicas: 1
+  serviceName: test-headless-ls
   selector:
     matchLabels:
       cluster: test
@@ -21,7 +22,7 @@ spec:
         logstash.k8s.webcenter.fr: "true"
       annotations:
         logstash.k8s.webcenter.fr: "true"
-        logstash.k8s.webcenter.fr/extra-secret-custom-ca-es: "b3e6a184c07701fea70b63c92a044c192bce5c2a071c86537ff3c703b9f1a04c"
+        logstash.k8s.webcenter.fr/secret-custom-ca-es: "b3e6a184c07701fea70b63c92a044c192bce5c2a071c86537ff3c703b9f1a04c"
       name: test-ls
     spec:
       affinity:

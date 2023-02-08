@@ -63,7 +63,7 @@ func NewLogstashReconciler(client client.Client, scheme *runtime.Scheme) *Logsta
 	r := &LogstashReconciler{
 		Client: client,
 		Scheme: scheme,
-		name:   "kibana",
+		name:   "logstash",
 	}
 
 	common.ControllerMetrics.WithLabelValues(r.name).Add(0)

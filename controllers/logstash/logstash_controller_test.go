@@ -23,7 +23,6 @@ import (
 	condition "k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
-	"k8s.io/utils/pointer"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -126,10 +125,9 @@ queue.type: persisted
 					},
 					Ingresses: []logstashcrd.Ingress{
 						{
-							Name:                       "filebeat",
-							ContainerPort:              5003,
-							ContainerPortProtocol:      corev1.ProtocolTCP,
-							OneForEachLogstashInstance: pointer.Bool(true),
+							Name:                  "filebeat",
+							ContainerPort:         5003,
+							ContainerPortProtocol: corev1.ProtocolTCP,
 							Spec: networkingv1.IngressSpec{
 								Rules: []networkingv1.IngressRule{
 									{
@@ -208,7 +206,15 @@ queue.type: persisted
 
 			// Services for ingress must exist
 			svc = &corev1.Service{}
-			if err = c.Get(context.Background(), types.NamespacedName{Namespace: key.Namespace, Name: GetServiceName(ls, "filebeat") + "-0"}, svc); err != nil {
+			if err = c.Get(context.Background(), types.NamespacedName{Namespace: key.Namespace, Name: GetServiceName(ls, "filebeat")}, svc); err != nil {
+				t.Fatal(err)
+			}
+			assert.NotEmpty(t, svc.OwnerReferences)
+			assert.NotEmpty(t, svc.Annotations[patch.LastAppliedConfig])
+
+			// Global service must exist
+			svc = &corev1.Service{}
+			if err = c.Get(context.Background(), types.NamespacedName{Namespace: key.Namespace, Name: GetGlobalServiceName(ls)}, svc); err != nil {
 				t.Fatal(err)
 			}
 			assert.NotEmpty(t, svc.OwnerReferences)
@@ -216,7 +222,7 @@ queue.type: persisted
 
 			// Ingress must exist
 			i = &networkingv1.Ingress{}
-			if err = c.Get(context.Background(), types.NamespacedName{Namespace: key.Namespace, Name: GetIngressName(ls, "filebeat") + "-0"}, i); err != nil {
+			if err = c.Get(context.Background(), types.NamespacedName{Namespace: key.Namespace, Name: GetIngressName(ls, "filebeat")}, i); err != nil {
 				t.Fatal(err)
 			}
 			assert.NotEmpty(t, i.OwnerReferences)
@@ -310,11 +316,11 @@ func doUpdateLogstashStep() test.TestStep {
 
 			isTimeout, err := localtest.RunWithTimeout(func() error {
 				if err := c.Get(context.Background(), key, ls); err != nil {
-					t.Fatal("Elasticsearch not found")
+					t.Fatal("Logstash not found")
 				}
 
 				// In envtest, no kubelet
-				// So the Elasticsearch condition never set as true
+				// So the Logstash condition never set as true
 				if lastVersion != ls.ResourceVersion && (ls.Status.Phase == LogstashPhaseStarting) {
 					return nil
 				}
@@ -348,7 +354,16 @@ func doUpdateLogstashStep() test.TestStep {
 
 			// Services for ingress must exist
 			svc = &corev1.Service{}
-			if err = c.Get(context.Background(), types.NamespacedName{Namespace: key.Namespace, Name: GetServiceName(ls, "filebeat") + "-0"}, svc); err != nil {
+			if err = c.Get(context.Background(), types.NamespacedName{Namespace: key.Namespace, Name: GetServiceName(ls, "filebeat")}, svc); err != nil {
+				t.Fatal(err)
+			}
+			assert.NotEmpty(t, svc.OwnerReferences)
+			assert.NotEmpty(t, svc.Annotations[patch.LastAppliedConfig])
+			assert.Equal(t, "fu", svc.Labels["test"])
+
+			// Global service must exist
+			svc = &corev1.Service{}
+			if err = c.Get(context.Background(), types.NamespacedName{Namespace: key.Namespace, Name: GetGlobalServiceName(ls)}, svc); err != nil {
 				t.Fatal(err)
 			}
 			assert.NotEmpty(t, svc.OwnerReferences)
@@ -357,7 +372,7 @@ func doUpdateLogstashStep() test.TestStep {
 
 			// Ingress must exist
 			i = &networkingv1.Ingress{}
-			if err = c.Get(context.Background(), types.NamespacedName{Namespace: key.Namespace, Name: GetIngressName(ls, "filebeat") + "-0"}, i); err != nil {
+			if err = c.Get(context.Background(), types.NamespacedName{Namespace: key.Namespace, Name: GetIngressName(ls, "filebeat")}, i); err != nil {
 				t.Fatal(err)
 			}
 			assert.NotEmpty(t, i.OwnerReferences)

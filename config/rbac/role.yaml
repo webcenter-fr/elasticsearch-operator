@@ -40,6 +40,32 @@ rules:
   - list
   - watch
 - apiGroups:
+  - beat.k8s.webcenter.fr
+  resources:
+  - filebeats
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - beat.k8s.webcenter.fr
+  resources:
+  - filebeats/finalizers
+  verbs:
+  - update
+- apiGroups:
+  - beat.k8s.webcenter.fr
+  resources:
+  - filebeats/status
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
   - elasticsearch.k8s.webcenter.fr
   resources:
   - elasticsearches

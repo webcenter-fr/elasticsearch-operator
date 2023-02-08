@@ -1,0 +1,23 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  annotations:
+    filebeat.k8s.webcenter.fr: "true"
+  labels:
+    cluster: test
+    filebeat.k8s.webcenter.fr: "true"
+  name: test-config-fb
+  namespace: default
+data:
+  filebeat.yml: |
+    http:
+        enabled: true
+        host: 0.0.0.0
+    output:
+        logstash:
+            hosts: ${LOGSTASH_HOST}
+            loadbalance: true
+            ssl:
+                certificate_authorities: ${LOGSTASH_CA_PATH}
+                enable: true
+    

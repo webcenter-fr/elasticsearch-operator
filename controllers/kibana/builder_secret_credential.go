@@ -9,6 +9,10 @@ import (
 // BuildCredentialSecret permit to build credential secret from Elasticsearch credentials
 func BuildCredentialSecret(kb *kibanacrd.Kibana, secretCredentials *corev1.Secret) (s *corev1.Secret, err error) {
 
+	if secretCredentials == nil {
+		return nil, nil
+	}
+
 	// username key is needed by podMonitor object
 	s = &corev1.Secret{
 		ObjectMeta: metav1.ObjectMeta{

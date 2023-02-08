@@ -9,6 +9,10 @@ import (
 // BuildCredentialSecret permit to build credential secret from Elasticsearch credentials
 func BuildCredentialSecret(ls *logstashcrd.Logstash, secretCredentials *corev1.Secret) (s *corev1.Secret, err error) {
 
+	if secretCredentials == nil {
+		return nil, nil
+	}
+
 	s = &corev1.Secret{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:        GetSecretNameForCredentials(ls),
