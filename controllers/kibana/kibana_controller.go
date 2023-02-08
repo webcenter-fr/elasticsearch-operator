@@ -233,18 +233,22 @@ func (h *KibanaReconciler) OnError(ctx context.Context, r client.Object, data ma
 func (h *KibanaReconciler) OnSuccess(ctx context.Context, r client.Object, data map[string]any) (res ctrl.Result, err error) {
 	o := r.(*kibanacrd.Kibana)
 
-	// Wait few time, to be sure Satefulset created
-	time.Sleep(1 * time.Second)
-
 	// Check adeployment is ready
+	isReady := true
 	dpl := &appv1.Deployment{}
 	if err = h.Client.Get(ctx, types.NamespacedName{Name: GetDeploymentName(o), Namespace: o.Namespace}, dpl); err != nil {
 		if !k8serrors.IsNotFound(err) {
 			return res, errors.Wrapf(err, "Error when read Kibana deployment")
 		}
+
+		isReady = false
+	} else {
+		if dpl.Status.ReadyReplicas != o.Spec.Deployment.Replicas {
+			isReady = false
+		}
 	}
 
-	if dpl != nil && dpl.Status.ReadyReplicas == *dpl.Spec.Replicas {
+	if isReady {
 		if !condition.IsStatusConditionPresentAndEqual(o.Status.Conditions, KibanaCondition, metav1.ConditionTrue) {
 			condition.SetStatusCondition(&o.Status.Conditions, metav1.Condition{
 				Type:   KibanaCondition,
