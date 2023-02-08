@@ -7,7 +7,11 @@ import (
 )
 
 // BuildCAElasticsearchSecret permit to build CA secret from Elasticsearch ApiPKI
-func BuildCAElasticsearchSecret(ls *logstashcrd.Logstash, secretCredentials *corev1.Secret) (s *corev1.Secret, err error) {
+func BuildCAElasticsearchSecret(ls *logstashcrd.Logstash, secretCaElasticsearch *corev1.Secret) (s *corev1.Secret, err error) {
+
+	if secretCaElasticsearch == nil {
+		return nil, nil
+	}
 
 	s = &corev1.Secret{
 		ObjectMeta: metav1.ObjectMeta{
@@ -18,7 +22,7 @@ func BuildCAElasticsearchSecret(ls *logstashcrd.Logstash, secretCredentials *cor
 		},
 		Type: corev1.SecretTypeOpaque,
 		Data: map[string][]byte{
-			"ca.crt": secretCredentials.Data["ca.crt"],
+			"ca.crt": secretCaElasticsearch.Data["ca.crt"],
 		},
 	}
 

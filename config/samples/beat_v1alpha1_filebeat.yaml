@@ -1,0 +1,12 @@
+apiVersion: beat.k8s.webcenter.fr/v1alpha1
+kind: Filebeat
+metadata:
+  labels:
+    app.kubernetes.io/name: filebeat
+    app.kubernetes.io/instance: filebeat-sample
+    app.kubernetes.io/part-of: bootstrap
+    app.kubernetes.io/managed-by: kustomize
+    app.kubernetes.io/created-by: bootstrap
+  name: filebeat-sample
+spec:
+  # TODO(user): Add fields here

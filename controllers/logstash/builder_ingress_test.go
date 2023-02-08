@@ -9,7 +9,6 @@ import (
 	v1 "k8s.io/api/core/v1"
 	networkingv1 "k8s.io/api/networking/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/utils/pointer"
 )
 
 func TestBuildIngresses(t *testing.T) {
@@ -106,7 +105,7 @@ func TestBuildIngresses(t *testing.T) {
 					Spec: networkingv1.IngressSpec{
 						Rules: []networkingv1.IngressRule{
 							{
-								Host: "test-%d.cluster.local",
+								Host: "test.cluster.local",
 								IngressRuleValue: networkingv1.IngressRuleValue{
 									HTTP: &networkingv1.HTTPIngressRuleValue{
 										Paths: []networkingv1.HTTPIngressPath{
@@ -126,9 +125,8 @@ func TestBuildIngresses(t *testing.T) {
 							},
 						},
 					},
-					ContainerPortProtocol:      v1.ProtocolTCP,
-					ContainerPort:              8080,
-					OneForEachLogstashInstance: pointer.Bool(true),
+					ContainerPortProtocol: v1.ProtocolTCP,
+					ContainerPort:         8080,
 				},
 			},
 		},
@@ -136,6 +134,6 @@ func TestBuildIngresses(t *testing.T) {
 	ingresses, err = BuildIngresses(o)
 
 	assert.NoError(t, err)
-	assert.Equal(t, 2, len(ingresses))
+	assert.Equal(t, 1, len(ingresses))
 	test.EqualFromYamlFile(t, "testdata/ingress_pod.yml", &ingresses[0], test.CleanApi)
 }

@@ -10,15 +10,6 @@ func (h *Logstash) IsPrometheusMonitoring() bool {
 	return false
 }
 
-// IsOneForEachLogstashInstance return true if need one ingress for each logstash instance
-func (h *Ingress) IsOneForEachLogstashInstance() bool {
-	if h.OneForEachLogstashInstance != nil && *h.OneForEachLogstashInstance {
-		return true
-	}
-
-	return false
-}
-
 // IsPersistence return true if persistence is enabled
 func (h *Logstash) IsPersistence() bool {
 	if h.Spec.Deployment.Persistence != nil && (h.Spec.Deployment.Persistence.Volume != nil || h.Spec.Deployment.Persistence.VolumeClaimSpec != nil) {

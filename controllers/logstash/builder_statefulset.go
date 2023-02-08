@@ -25,7 +25,6 @@ func BuildStatefulset(ls *logstashcrd.Logstash, es *elasticsearchcrd.Elasticsear
 	checksumAnnotations := map[string]string{}
 
 	// Generate confimaps to know what file to mount
-	// And to generate checksum
 	configMaps, err := BuildConfigMaps(ls)
 	if err != nil {
 		return nil, errors.Wrap(err, "Error when generate configMaps")
@@ -53,7 +52,7 @@ func BuildStatefulset(ls *logstashcrd.Logstash, es *elasticsearchcrd.Elasticsear
 		if err != nil {
 			return nil, errors.Wrapf(err, "Error when generate checksum for extra secret %s", s.Name)
 		}
-		checksumAnnotations[fmt.Sprintf("%s/extra-secret-%s", LogstashAnnotationKey, s.Name)] = sum
+		checksumAnnotations[fmt.Sprintf("%s/secret-%s", LogstashAnnotationKey, s.Name)] = sum
 	}
 
 	cb := k8sbuilder.NewContainerBuilder()
@@ -148,13 +147,14 @@ func BuildStatefulset(ls *logstashcrd.Logstash, es *elasticsearchcrd.Elasticsear
 	}
 
 	// Compute ports
-	cb.WithPort([]corev1.ContainerPort{
-		{
-			Name:          "http",
-			ContainerPort: 9600,
-			Protocol:      corev1.ProtocolTCP,
-		},
-	}, k8sbuilder.Merge)
+	cb.WithPort(ls.Spec.Deployment.Ports, k8sbuilder.Merge).
+		WithPort([]corev1.ContainerPort{
+			{
+				Name:          "http",
+				ContainerPort: 9600,
+				Protocol:      corev1.ProtocolTCP,
+			},
+		}, k8sbuilder.Merge)
 
 	// Compute resources
 	cb.WithResource(ls.Spec.Deployment.Resources, k8sbuilder.Merge)
@@ -644,6 +644,7 @@ fi
 					LogstashAnnotationKey: "true",
 				},
 			},
+			ServiceName: GetGlobalServiceName(ls),
 
 			Template: *ptb.PodTemplate(),
 		},

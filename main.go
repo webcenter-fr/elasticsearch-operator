@@ -25,15 +25,6 @@ import (
 	// to ensure that exec-entrypoint and run can make use of them.
 	monitoringv1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1"
 	"github.com/sirupsen/logrus"
-	elasticsearchcrd "github.com/webcenter-fr/elasticsearch-operator/apis/elasticsearch/v1alpha1"
-	elasticsearchapicrd "github.com/webcenter-fr/elasticsearch-operator/apis/elasticsearchapi/v1alpha1"
-	kibanacrd "github.com/webcenter-fr/elasticsearch-operator/apis/kibana/v1alpha1"
-	logstashcrd "github.com/webcenter-fr/elasticsearch-operator/apis/logstash/v1alpha1"
-	elasticsearchcontrollers "github.com/webcenter-fr/elasticsearch-operator/controllers/elasticsearch"
-	elasticsearchapicontrollers "github.com/webcenter-fr/elasticsearch-operator/controllers/elasticsearchapi"
-	kibanacontrollers "github.com/webcenter-fr/elasticsearch-operator/controllers/kibana"
-	logstashcontrollers "github.com/webcenter-fr/elasticsearch-operator/controllers/logstash"
-	"github.com/webcenter-fr/elasticsearch-operator/pkg/helper"
 	"k8s.io/apimachinery/pkg/runtime"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
@@ -43,6 +34,18 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/healthz"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
+
+	beatcrd "github.com/webcenter-fr/elasticsearch-operator/apis/beat/v1alpha1"
+	elasticsearchcrd "github.com/webcenter-fr/elasticsearch-operator/apis/elasticsearch/v1alpha1"
+	elasticsearchapicrd "github.com/webcenter-fr/elasticsearch-operator/apis/elasticsearchapi/v1alpha1"
+	kibanacrd "github.com/webcenter-fr/elasticsearch-operator/apis/kibana/v1alpha1"
+	logstashcrd "github.com/webcenter-fr/elasticsearch-operator/apis/logstash/v1alpha1"
+	elasticsearchcontrollers "github.com/webcenter-fr/elasticsearch-operator/controllers/elasticsearch"
+	elasticsearchapicontrollers "github.com/webcenter-fr/elasticsearch-operator/controllers/elasticsearchapi"
+	filebeatcontrollers "github.com/webcenter-fr/elasticsearch-operator/controllers/filebeat"
+	kibanacontrollers "github.com/webcenter-fr/elasticsearch-operator/controllers/kibana"
+	logstashcontrollers "github.com/webcenter-fr/elasticsearch-operator/controllers/logstash"
+	"github.com/webcenter-fr/elasticsearch-operator/pkg/helper"
 	//+kubebuilder:scaffold:imports
 )
 
@@ -61,6 +64,7 @@ func init() {
 	utilruntime.Must(kibanacrd.AddToScheme(scheme))
 	utilruntime.Must(elasticsearchapicrd.AddToScheme(scheme))
 	utilruntime.Must(logstashcrd.AddToScheme(scheme))
+	utilruntime.Must(beatcrd.AddToScheme(scheme))
 	//+kubebuilder:scaffold:scheme
 }
 
@@ -271,6 +275,37 @@ func main() {
 		panic(err)
 	}
 
+	// Add indexers on Filebeat to track secret change
+	if err := mgr.GetFieldIndexer().IndexField(context.Background(), &beatcrd.Filebeat{}, "spec.elasticsearchRef.managed.name", func(o client.Object) []string {
+		p := o.(*beatcrd.Filebeat)
+		if p.Spec.ElasticsearchRef.IsManaged() {
+			return []string{p.Spec.ElasticsearchRef.ManagedElasticsearchRef.Name}
+		}
+		return []string{}
+	}); err != nil {
+		panic(err)
+	}
+
+	if err := mgr.GetFieldIndexer().IndexField(context.Background(), &beatcrd.Filebeat{}, "spec.elasticsearchRef.elasticsearchCASecretRef.name", func(o client.Object) []string {
+		p := o.(*beatcrd.Filebeat)
+		if p.Spec.ElasticsearchRef.ElasticsearchCaSecretRef != nil {
+			return []string{p.Spec.ElasticsearchRef.ElasticsearchCaSecretRef.Name}
+		}
+		return []string{}
+	}); err != nil {
+		panic(err)
+	}
+
+	if err := mgr.GetFieldIndexer().IndexField(context.Background(), &beatcrd.Filebeat{}, "spec.elasticsearchRef.external.secretRef.name", func(o client.Object) []string {
+		p := o.(*beatcrd.Filebeat)
+		if p.Spec.ElasticsearchRef.IsExternal() && p.Spec.ElasticsearchRef.ExternalElasticsearchRef.SecretRef != nil {
+			return []string{p.Spec.ElasticsearchRef.ExternalElasticsearchRef.SecretRef.Name}
+		}
+		return []string{}
+	}); err != nil {
+		panic(err)
+	}
+
 	elasticsearchController := elasticsearchcontrollers.NewElasticsearchReconciler(mgr.GetClient(), mgr.GetScheme())
 	elasticsearchController.SetLogger(log.WithFields(logrus.Fields{
 		"type": "ElasticsearchController",
@@ -301,6 +336,17 @@ func main() {
 	logstashController.SetReconciler(logstashController)
 	if err = logstashController.SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "Logstash")
+		os.Exit(1)
+	}
+
+	filebeatController := filebeatcontrollers.NewFilebeatReconciler(mgr.GetClient(), mgr.GetScheme())
+	filebeatController.SetLogger(log.WithFields(logrus.Fields{
+		"type": "FilebeatController",
+	}))
+	filebeatController.SetRecorder(mgr.GetEventRecorderFor("filebeat-controller"))
+	filebeatController.SetReconciler(filebeatController)
+	if err = filebeatController.SetupWithManager(mgr); err != nil {
+		setupLog.Error(err, "unable to create controller", "controller", "Filebeat")
 		os.Exit(1)
 	}
 

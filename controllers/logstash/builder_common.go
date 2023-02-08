@@ -32,6 +32,11 @@ func GetServiceName(ls *logstashcrd.Logstash, serviceName string) string {
 	return fmt.Sprintf("%s-%s-ls", ls.Name, serviceName)
 }
 
+// GetGlobalServiceName pemrit to get the global service name
+func GetGlobalServiceName(ls *logstashcrd.Logstash) string {
+	return fmt.Sprintf("%s-headless-ls", ls.Name)
+}
+
 // GetSecretNameForCAElasticsearch permit to get the secret name that store all Elasticsearch CA
 // It return the secret name as string
 func GetSecretNameForCAElasticsearch(ls *logstashcrd.Logstash) (secretName string) {

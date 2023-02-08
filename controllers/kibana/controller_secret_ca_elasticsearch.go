@@ -73,11 +73,6 @@ func (r *CAElasticsearchReconciler) Read(ctx context.Context, resource client.Ob
 	var es *elasticsearchcrd.Elasticsearch
 	var expectedSecretCAElasticsearch *corev1.Secret
 
-	// Check if mirror CAApiPKI from Elasticsearch CRD
-	if !o.Spec.ElasticsearchRef.IsManaged() {
-		return res, nil
-	}
-
 	// Read current secret
 	if err = r.Client.Get(ctx, types.NamespacedName{Namespace: o.Namespace, Name: GetSecretNameForCAElasticsearch(o)}, s); err != nil {
 		if !k8serrors.IsNotFound(err) {
@@ -87,29 +82,28 @@ func (r *CAElasticsearchReconciler) Read(ctx context.Context, resource client.Ob
 	}
 	data["currentObject"] = s
 
-	// Read Elasticsearch
-	es, err = GetElasticsearchRef(ctx, r.Client, o)
-	if err != nil {
-		return res, errors.Wrap(err, "Error when read elasticsearchRef")
-	}
-	if es == nil {
-		r.Log.Warn("ElasticsearchRef not found, try latter")
-		return ctrl.Result{RequeueAfter: 30 * time.Second}, nil
-	}
-
-	// Check if mirror CAApiPKI from Elasticsearch CRD
-	if !es.IsTlsApiEnabled() {
-		data["expectedObject"] = expectedSecretCAElasticsearch
-		return res, nil
-	}
-
-	// Read secret that store Elasticsearch API certs
-	if err = r.Client.Get(ctx, types.NamespacedName{Namespace: es.Namespace, Name: elasticsearchcontrollers.GetSecretNameForTlsApi(es)}, sEs); err != nil {
-		if !k8serrors.IsNotFound(err) {
-			return res, errors.Wrapf(err, "Error when read secret %s", elasticsearchcontrollers.GetSecretNameForTlsApi(es))
+	if o.Spec.ElasticsearchRef.IsManaged() {
+		// Read Elasticsearch
+		es, err = GetElasticsearchRef(ctx, r.Client, o)
+		if err != nil {
+			return res, errors.Wrap(err, "Error when read elasticsearchRef")
 		}
-		r.Log.Warnf("Secret not found %s/%s, try latter", es.Namespace, elasticsearchcontrollers.GetSecretNameForTlsApi(es))
-		return ctrl.Result{RequeueAfter: 30 * time.Second}, nil
+		if es == nil {
+			r.Log.Warn("ElasticsearchRef not found, try latter")
+			return ctrl.Result{RequeueAfter: 30 * time.Second}, nil
+		}
+
+		// Check if mirror CAApiPKI from Elasticsearch CRD
+		if es.IsTlsApiEnabled() {
+			// Read secret that store Elasticsearch API certs
+			if err = r.Client.Get(ctx, types.NamespacedName{Namespace: es.Namespace, Name: elasticsearchcontrollers.GetSecretNameForTlsApi(es)}, sEs); err != nil {
+				if !k8serrors.IsNotFound(err) {
+					return res, errors.Wrapf(err, "Error when read secret %s", elasticsearchcontrollers.GetSecretNameForTlsApi(es))
+				}
+				r.Log.Warnf("Secret not found %s/%s, try latter", es.Namespace, elasticsearchcontrollers.GetSecretNameForTlsApi(es))
+				return ctrl.Result{RequeueAfter: 30 * time.Second}, nil
+			}
+		}
 	}
 
 	// Generate expected secret

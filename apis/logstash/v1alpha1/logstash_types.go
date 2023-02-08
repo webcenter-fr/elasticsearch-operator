@@ -129,14 +129,6 @@ type Ingress struct {
 	// ContainerPort is the port to set when create service consumed by ingress
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
 	ContainerPort int64 `json:"containerPort,omitempty"`
-
-	// IsOneForEachLogstashInstance if set to true will generate one ingress for each logstash pod
-	// It can be used when you should expose beat input and you should to lets filebeat handle the loab balancing on Logstash instance directly
-	// Default to false
-	// Note: you can use %d on host name to set instance id
-	// +operator-sdk:csv:customresourcedefinitions:type=spec
-	// +optional
-	OneForEachLogstashInstance *bool `json:"isOneForEachLogstashInstance,omitempty"`
 }
 
 type Service struct {
@@ -263,6 +255,12 @@ type DeploymentSpec struct {
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
 	// +optional
 	Persistence *PersistenceSpec `json:"persistence,omitempty"`
+
+	// Ports is the list of container port to affect on logstash container
+	// It can be usefull to expose beats input
+	// +operator-sdk:csv:customresourcedefinitions:type=spec
+	// +optional
+	Ports []corev1.ContainerPort `json:"ports,omitempty"`
 }
 
 type PersistenceSpec struct {

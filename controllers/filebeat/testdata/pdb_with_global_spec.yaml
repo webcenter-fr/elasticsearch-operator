@@ -1,0 +1,16 @@
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: test-fb
+  namespace: default
+  labels:
+    cluster: test
+    filebeat.k8s.webcenter.fr: "true"
+  annotations:
+    filebeat.k8s.webcenter.fr: "true"
+spec:
+  minAvailable: 0
+  selector:
+    matchLabels:
+      cluster: test
+      filebeat.k8s.webcenter.fr: "true"

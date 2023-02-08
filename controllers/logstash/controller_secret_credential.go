@@ -71,11 +71,6 @@ func (r *CredentialReconciler) Read(ctx context.Context, resource client.Object,
 
 	var es *elasticsearchcrd.Elasticsearch
 
-	// Check if mirror credentials from Elasticsearch CRD
-	if !o.Spec.ElasticsearchRef.IsManaged() {
-		return res, nil
-	}
-
 	// Read current secret
 	if err = r.Client.Get(ctx, types.NamespacedName{Namespace: o.Namespace, Name: GetSecretNameForCredentials(o)}, s); err != nil {
 		if !k8serrors.IsNotFound(err) {
@@ -85,23 +80,25 @@ func (r *CredentialReconciler) Read(ctx context.Context, resource client.Object,
 	}
 	data["currentObject"] = s
 
-	// Read Elasticsearch
-	es, err = GetElasticsearchRef(ctx, r.Client, o)
-	if err != nil {
-		return res, errors.Wrap(err, "Error when read elasticsearchRef")
-	}
-	if es == nil {
-		r.Log.Warn("ElasticsearchRef not found, try latter")
-		return ctrl.Result{RequeueAfter: 30 * time.Second}, nil
-	}
-
-	// Read secret that store Elasticsearch crdentials
-	if err = r.Client.Get(ctx, types.NamespacedName{Namespace: es.Namespace, Name: elasticsearchcontrollers.GetSecretNameForCredentials(es)}, sEs); err != nil {
-		if !k8serrors.IsNotFound(err) {
-			return res, errors.Wrapf(err, "Error when read secret %s", elasticsearchcontrollers.GetSecretNameForCredentials(es))
+	if o.Spec.ElasticsearchRef.IsManaged() {
+		// Read Elasticsearch
+		es, err = GetElasticsearchRef(ctx, r.Client, o)
+		if err != nil {
+			return res, errors.Wrap(err, "Error when read elasticsearchRef")
 		}
-		r.Log.Warnf("Secret not found %s/%s, try latter", es.Namespace, elasticsearchcontrollers.GetSecretNameForCredentials(es))
-		return ctrl.Result{RequeueAfter: 30 * time.Second}, nil
+		if es == nil {
+			r.Log.Warn("ElasticsearchRef not found, try latter")
+			return ctrl.Result{RequeueAfter: 30 * time.Second}, nil
+		}
+
+		// Read secret that store Elasticsearch crdentials
+		if err = r.Client.Get(ctx, types.NamespacedName{Namespace: es.Namespace, Name: elasticsearchcontrollers.GetSecretNameForCredentials(es)}, sEs); err != nil {
+			if !k8serrors.IsNotFound(err) {
+				return res, errors.Wrapf(err, "Error when read secret %s", elasticsearchcontrollers.GetSecretNameForCredentials(es))
+			}
+			r.Log.Warnf("Secret not found %s/%s, try latter", es.Namespace, elasticsearchcontrollers.GetSecretNameForCredentials(es))
+			return ctrl.Result{RequeueAfter: 30 * time.Second}, nil
+		}
 	}
 
 	// Generate expected secret

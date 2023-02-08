@@ -320,11 +320,11 @@ func doUpdateKibanaStep() test.TestStep {
 
 			isTimeout, err := localtest.RunWithTimeout(func() error {
 				if err := c.Get(context.Background(), key, kb); err != nil {
-					t.Fatal("Elasticsearch not found")
+					t.Fatal("Kibana not found")
 				}
 
 				// In envtest, no kubelet
-				// So the Elasticsearch condition never set as true
+				// So the Kibana condition never set as true
 				if lastVersion != kb.ResourceVersion && (kb.Status.Phase == KibanaPhaseStarting) {
 					return nil
 				}

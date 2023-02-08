@@ -125,4 +125,13 @@ resources:
   kind: Logstash
   path: github.com/webcenter-fr/elasticsearch-operator/apis/logstash/v1alpha1
   version: v1alpha1
+- api:
+    crdVersion: v1
+    namespaced: true
+  controller: true
+  domain: k8s.webcenter.fr
+  group: beat
+  kind: Filebeat
+  path: github.com/webcenter-fr/elasticsearch-operator/apis/beat/v1alpha1
+  version: v1alpha1
 version: "3"

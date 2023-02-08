@@ -99,6 +99,18 @@ func TestGetServiceName(t *testing.T) {
 	assert.Equal(t, "test-test-ls", GetServiceName(o, "test"))
 }
 
+func TestGetGlobalServiceName(t *testing.T) {
+	o := &logstashcrd.Logstash{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: "default",
+			Name:      "test",
+		},
+		Spec: logstashcrd.LogstashSpec{},
+	}
+
+	assert.Equal(t, "test-headless-ls", GetGlobalServiceName(o))
+}
+
 func TestGetIngressName(t *testing.T) {
 	o := &logstashcrd.Logstash{
 		ObjectMeta: metav1.ObjectMeta{

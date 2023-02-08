@@ -1,0 +1,20 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: test-my-service-fb
+  namespace: default
+  labels:
+    cluster: test
+    filebeat.k8s.webcenter.fr: "true"
+    label1: value1
+  annotations:
+    filebeat.k8s.webcenter.fr: "true"
+    anno1: value1
+spec:
+  type: ClusterIP
+  selector:
+    cluster: test
+    filebeat.k8s.webcenter.fr: "true"
+  ports:
+    - protocol: TCP
+      name: my-port

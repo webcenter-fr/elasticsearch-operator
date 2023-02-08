@@ -8,16 +8,16 @@ metadata:
   annotations:
     logstash.k8s.webcenter.fr: "true"
     anno1: value1
-  name: test-my-ingress-ls-0
+  name: test-my-ingress-ls
   namespace: default
 spec:
   rules:
-  - host: test-0.cluster.local
+  - host: test.cluster.local
     http:
       paths:
       - backend:
           service:
-            name: test-my-ingress-ls-0
+            name: test-my-ingress-ls
             port:
               number: 8080
         path: /

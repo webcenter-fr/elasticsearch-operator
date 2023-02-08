@@ -17,6 +17,19 @@ func TestBuildCredentialSecret(t *testing.T) {
 		esSecret *corev1.Secret
 	)
 
+	// When no Elasticsearch ref
+	o = &logstashcrd.Logstash{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: "default",
+			Name:      "test",
+		},
+		Spec: logstashcrd.LogstashSpec{},
+	}
+
+	s, err = BuildCredentialSecret(o, nil)
+	assert.NoError(t, err)
+	assert.Nil(t, s)
+
 	// With default values
 	o = &logstashcrd.Logstash{
 		ObjectMeta: metav1.ObjectMeta{
