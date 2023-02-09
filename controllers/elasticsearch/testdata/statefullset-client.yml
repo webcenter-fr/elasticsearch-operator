@@ -26,7 +26,7 @@ spec:
         elasticsearch.k8s.webcenter.fr: "true"
       annotations:
         elasticsearch.k8s.webcenter.fr: "true"
-        elasticsearch.k8s.webcenter.fr/configmap-test-client-config-es: 532a22910afc524f30e229743256a6eb3bc90b694edd35f3479854b559822d6d
+        elasticsearch.k8s.webcenter.fr/configmap-test-client-config-es: 2b7974f44eca1429b868c651dcd5921bbe87655a250b780c55a0a6538cb5e56a
         elasticsearch.k8s.webcenter.fr/secret-elasticsearch-security: 2c1eef3af7f9998f3e29ccd7a2927fdf62ca82080ea74b67e9454aae3c2adc98
       name: test-client-es
     spec:
@@ -45,7 +45,7 @@ spec:
           valueFrom:
             fieldRef:
               apiVersion: v1
-              fieldPath: status.podIP
+              fieldPath: metadata.name
         - name: node.attr.node_name
           valueFrom:
             fieldRef:

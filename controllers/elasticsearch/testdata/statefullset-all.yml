@@ -45,7 +45,7 @@ spec:
           valueFrom:
             fieldRef:
               apiVersion: v1
-              fieldPath: status.podIP
+              fieldPath: metadata.name
         - name: node.attr.node_name
           valueFrom:
             fieldRef:

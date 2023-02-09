@@ -180,7 +180,7 @@ func BuildStatefulsets(es *elasticsearchcrd.Elasticsearch, secretsChecksum []cor
 					ValueFrom: &corev1.EnvVarSource{
 						FieldRef: &corev1.ObjectFieldSelector{
 							APIVersion: "v1",
-							FieldPath:  "status.podIP",
+							FieldPath:  "metadata.name",
 						},
 					},
 				},

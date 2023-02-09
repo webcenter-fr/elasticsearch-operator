@@ -111,7 +111,7 @@ spec:
             
             # Set right
             echo "Set right"
-            chown -v filebeat:filebeat /mnt/data
+            chown -v root:root /mnt/data
 
         image: docker.elastic.co/beats/filebeat:latest
         name: init-filesystem

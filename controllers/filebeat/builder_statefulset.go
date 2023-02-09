@@ -413,7 +413,7 @@ set -euo pipefail
 
 # Set right
 echo "Set right"
-chown -v filebeat:filebeat /mnt/data
+chown -v root:root /mnt/data
 `)
 
 	ccb.Container().Command = []string{
