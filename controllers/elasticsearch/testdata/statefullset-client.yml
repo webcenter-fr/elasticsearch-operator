@@ -275,9 +275,7 @@ spec:
             # Set right
             echo "Set right"
             chown -R elasticsearch:elasticsearch /mnt/config
-            if [ -d /mnt/data ]; then
-              chown -v elasticsearch:elasticsearch /mnt/data
-            fi
+            chown -v elasticsearch:elasticsearch /mnt/data
 
             ./bin/elasticsearch-plugin install -b repository-s3
 

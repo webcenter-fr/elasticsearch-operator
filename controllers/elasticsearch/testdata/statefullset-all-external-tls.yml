@@ -177,6 +177,8 @@ spec:
         volumeMounts:
         - mountPath: /usr/share/elasticsearch/config
           name: config
+        - mountPath: /usr/share/elasticsearch/data
+          name: elasticsearch-data
       initContainers:
       - command:
         - sysctl
@@ -221,9 +223,7 @@ spec:
             # Set right
             echo "Set right"
             chown -R elasticsearch:elasticsearch /mnt/config
-            if [ -d /mnt/data ]; then
-              chown -v elasticsearch:elasticsearch /mnt/data
-            fi
+            chown -v elasticsearch:elasticsearch /mnt/data
 
 
             if [ -d /mnt/plugins ]; then
@@ -266,6 +266,8 @@ spec:
             subPath: elasticsearch.yml
           - name: keystore
             mountPath: /mnt/keystore
+          - mountPath: /mnt/data
+            name: elasticsearch-data
         securityContext:
           runAsUser: 0
       securityContext:
@@ -286,4 +288,6 @@ spec:
       - name: config
         emptyDir: {}
       - name: plugin
+        emptyDir: {}
+      - name: elasticsearch-data
         emptyDir: {}

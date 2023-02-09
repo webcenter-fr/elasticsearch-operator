@@ -121,6 +121,8 @@ spec:
           name: logstash-pipeline
         - mountPath: /usr/share/logstash/patterns
           name: logstash-pattern
+        - mountPath: /usr/share/logstash/data
+          name: logstash-data
       initContainers:
       - command:
         - /bin/bash
@@ -155,10 +157,7 @@ spec:
             # Set right
             echo "Set right"
             chown -R logstash:logstash /mnt/config
-            if [ -d /mnt/data ]; then
-              chown -v logstash:logstash /mnt/data
-            fi
-
+            chown -v logstash:logstash /mnt/data
 
             if [ -d /mnt/plugins ]; then
               cp -a /usr/share/logstash/plugins/* /mnt/plugins/
@@ -209,6 +208,8 @@ spec:
             mountPath: /mnt/ca-elasticsearch
           - name: logstash-config
             mountPath: /mnt/configmap
+          - mountPath: /mnt/data
+            name: logstash-data
         securityContext:
           runAsUser: 0
       - command:
@@ -272,3 +273,14 @@ spec:
       - name: logstash-keystore
         secret:
           secretName: keystore
+  volumeClaimTemplates:
+  - metadata:
+      creationTimestamp: null
+      name: logstash-data
+    spec:
+      accessModes:
+      - ReadWriteOnce
+      resources:
+        requests:
+          storage: 5Gi
+      storageClassName: local-path

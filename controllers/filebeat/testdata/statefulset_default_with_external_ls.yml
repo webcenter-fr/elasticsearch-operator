@@ -97,6 +97,8 @@ spec:
         - mountPath: /usr/share/filebeat/filebeat.yml
           name: filebeat-config
           subPath: filebeat.yml
+        - mountPath: /usr/share/filebeat/data
+          name: filebeat-data
       initContainers:
       - command:
         - /bin/bash

@@ -302,14 +302,14 @@ func BuildStatefulsets(es *elasticsearchcrd.Elasticsearch, secretsChecksum []cor
 					MountPath: "/usr/share/elasticsearch/config",
 				},
 			}, k8sbuilder.Merge)
-		if nodeGroup.IsPersistence() {
-			cb.WithVolumeMount([]corev1.VolumeMount{
-				{
-					Name:      "elasticsearch-data",
-					MountPath: "/usr/share/elasticsearch/data",
-				},
-			}, k8sbuilder.Merge)
-		}
+
+		cb.WithVolumeMount([]corev1.VolumeMount{
+			{
+				Name:      "elasticsearch-data",
+				MountPath: "/usr/share/elasticsearch/data",
+			},
+		}, k8sbuilder.Merge)
+
 		if len(es.Spec.PluginsList) > 0 {
 			cb.WithVolumeMount([]corev1.VolumeMount{
 				{
@@ -561,6 +561,10 @@ cp -a /usr/share/elasticsearch/config/elasticsearch.keystore /mnt/keystore/
 					Name:      "keystore",
 					MountPath: "/mnt/keystore",
 				},
+				{
+					Name:      "elasticsearch-data",
+					MountPath: "/mnt/data",
+				},
 			},
 		})
 		var command strings.Builder
@@ -601,9 +605,7 @@ fi
 # Set right
 echo "Set right"
 chown -R elasticsearch:elasticsearch /mnt/config
-if [ -d /mnt/data ]; then
-  chown -v elasticsearch:elasticsearch /mnt/data
-fi
+chown -v elasticsearch:elasticsearch /mnt/data
 
 `)
 		for _, plugin := range es.Spec.PluginsList {
@@ -621,14 +623,6 @@ fi
 			command.String(),
 		}
 
-		if nodeGroup.IsPersistence() {
-			ccb.WithVolumeMount([]corev1.VolumeMount{
-				{
-					Name:      "elasticsearch-data",
-					MountPath: "/mnt/data",
-				},
-			}, k8sbuilder.Merge)
-		}
 		// Compute mount config maps
 		for _, configMap := range configMaps {
 			if configMap.Name == GetNodeGroupConfigMapName(es, nodeGroup.Name) {
@@ -726,6 +720,15 @@ fi
 				{
 					Name:         "elasticsearch-data",
 					VolumeSource: *nodeGroup.Persistence.Volume,
+				},
+			}, k8sbuilder.Merge)
+		} else if !nodeGroup.IsPersistence() {
+			ptb.WithVolumes([]corev1.Volume{
+				{
+					Name: "elasticsearch-data",
+					VolumeSource: corev1.VolumeSource{
+						EmptyDir: &corev1.EmptyDirVolumeSource{},
+					},
 				},
 			}, k8sbuilder.Merge)
 		}
