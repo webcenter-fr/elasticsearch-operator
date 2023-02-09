@@ -26,7 +26,7 @@ spec:
         elasticsearch.k8s.webcenter.fr: "true"
       annotations:
         elasticsearch.k8s.webcenter.fr: "true"
-        elasticsearch.k8s.webcenter.fr/configmap-test-all-config-es: "73f015749fd9b23d6429cde8fdf7431467376852e9a97bf0642226ad37adba7a"
+        elasticsearch.k8s.webcenter.fr/configmap-test-all-config-es: "46faae4df93411c94a69d978555dc92653f253387659526e9eaf1ce2c2500e0b"
         elasticsearch.k8s.webcenter.fr/secret-api-certificates: "53b47b289c9912c920ad03f4c114537fe6f9480756f7034cf9fd19017aaad026"
         elasticsearch.k8s.webcenter.fr/secret-transport-certificates: 53b47b289c9912c920ad03f4c114537fe6f9480756f7034cf9fd19017aaad026
       name: test-all-es
@@ -48,7 +48,7 @@ spec:
           valueFrom:
             fieldRef:
               apiVersion: v1
-              fieldPath: status.podIP
+              fieldPath: metadata.name
         - name: node.attr.node_name
           valueFrom:
             fieldRef:

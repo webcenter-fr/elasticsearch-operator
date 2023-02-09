@@ -46,4 +46,4 @@ data:
                     certificate_authorities: /usr/share/elasticsearch/config/transport-cert/ca.crt
                     enabled: true
                     key: /usr/share/elasticsearch/config/transport-cert/${POD_NAME}.key
-                    verification_mode: certificate
+                    verification_mode: full

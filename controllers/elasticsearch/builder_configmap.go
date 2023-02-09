@@ -22,7 +22,7 @@ xpack.security.enabled: true
 xpack.security.authc.realms.file.file1.order: -100
 xpack.security.authc.realms.native.native1.order: -99
 xpack.security.transport.ssl.enabled: true
-xpack.security.transport.ssl.verification_mode: certificate
+xpack.security.transport.ssl.verification_mode: full
 xpack.security.transport.ssl.certificate: /usr/share/elasticsearch/config/transport-cert/${POD_NAME}.crt
 xpack.security.transport.ssl.key: /usr/share/elasticsearch/config/transport-cert/${POD_NAME}.key
 xpack.security.transport.ssl.certificate_authorities: /usr/share/elasticsearch/config/transport-cert/ca.crt
