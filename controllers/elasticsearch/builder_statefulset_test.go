@@ -16,12 +16,11 @@ import (
 func TestBuildStatefulset(t *testing.T) {
 
 	var (
-		o          *elasticsearchcrd.Elasticsearch
-		err        error
-		sts        []appv1.StatefulSet
-		sKeystore  *corev1.Secret
-		sApi       *corev1.Secret
-		sTransport *corev1.Secret
+		o               *elasticsearchcrd.Elasticsearch
+		err             error
+		sts             []appv1.StatefulSet
+		extraSecrets    []corev1.Secret
+		extraConfigMaps []corev1.ConfigMap
 	)
 
 	// With default values
@@ -45,7 +44,7 @@ func TestBuildStatefulset(t *testing.T) {
 		},
 	}
 
-	sts, err = BuildStatefulsets(o, nil, nil, nil)
+	sts, err = BuildStatefulsets(o, nil, nil)
 	assert.NoError(t, err)
 	test.EqualFromYamlFile(t, "testdata/statefullset-all.yml", &sts[0], test.CleanApi)
 
@@ -200,17 +199,24 @@ func TestBuildStatefulset(t *testing.T) {
 		},
 	}
 
-	sKeystore = &corev1.Secret{
-		ObjectMeta: metav1.ObjectMeta{
-			Namespace: "default",
-			Name:      "elasticsearch-security",
-		},
-		Data: map[string][]byte{
-			"key1": []byte("secret1"),
+	extraSecrets = []corev1.Secret{
+		{
+			ObjectMeta: metav1.ObjectMeta{
+				Namespace: "default",
+				Name:      "elasticsearch-security",
+			},
+			Data: map[string][]byte{
+				"key1": []byte("secret1"),
+			},
 		},
 	}
 
-	sts, err = BuildStatefulsets(o, sKeystore, nil, nil)
+	extraConfigMaps, err = BuildConfigMaps(o)
+	if err != nil {
+		t.Fatal(err.Error())
+	}
+
+	sts, err = BuildStatefulsets(o, extraSecrets, extraConfigMaps)
 	assert.NoError(t, err)
 	test.EqualFromYamlFile(t, "testdata/statefullset-master.yml", &sts[0], test.CleanApi)
 	test.EqualFromYamlFile(t, "testdata/statefullset-data.yml", &sts[1], test.CleanApi)
@@ -243,31 +249,37 @@ func TestBuildStatefulset(t *testing.T) {
 		},
 	}
 
-	sApi = &corev1.Secret{
-		ObjectMeta: metav1.ObjectMeta{
-			Namespace: "default",
-			Name:      "api-certificates",
+	extraSecrets = []corev1.Secret{
+		{
+			ObjectMeta: metav1.ObjectMeta{
+				Namespace: "default",
+				Name:      "api-certificates",
+			},
+			Data: map[string][]byte{
+				"tls.crt": []byte("secret1"),
+				"tls.key": []byte("secret2"),
+				"ca.crt":  []byte("secret3"),
+			},
 		},
-		Data: map[string][]byte{
-			"tls.crt": []byte("secret1"),
-			"tls.key": []byte("secret2"),
-			"ca.crt":  []byte("secret3"),
+		{
+			ObjectMeta: metav1.ObjectMeta{
+				Namespace: "default",
+				Name:      "transport-certificates",
+			},
+			Data: map[string][]byte{
+				"tls.crt": []byte("secret1"),
+				"tls.key": []byte("secret2"),
+				"ca.crt":  []byte("secret3"),
+			},
 		},
 	}
 
-	sTransport = &corev1.Secret{
-		ObjectMeta: metav1.ObjectMeta{
-			Namespace: "default",
-			Name:      "transport-certificates",
-		},
-		Data: map[string][]byte{
-			"tls.crt": []byte("secret1"),
-			"tls.key": []byte("secret2"),
-			"ca.crt":  []byte("secret3"),
-		},
+	extraConfigMaps, err = BuildConfigMaps(o)
+	if err != nil {
+		t.Fatal(err.Error())
 	}
 
-	sts, err = BuildStatefulsets(o, nil, sApi, sTransport)
+	sts, err = BuildStatefulsets(o, extraSecrets, extraConfigMaps)
 	assert.NoError(t, err)
 	test.EqualFromYamlFile(t, "testdata/statefullset-all-external-tls.yml", &sts[0], test.CleanApi)
 }

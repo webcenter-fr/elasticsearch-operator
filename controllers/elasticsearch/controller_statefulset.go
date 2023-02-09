@@ -84,9 +84,11 @@ func (r *StatefulsetReconciler) Configure(ctx context.Context, req ctrl.Request,
 func (r *StatefulsetReconciler) Read(ctx context.Context, resource client.Object, data map[string]any) (res ctrl.Result, err error) {
 	o := resource.(*elasticsearchcrd.Elasticsearch)
 	stsList := &appv1.StatefulSetList{}
-	secretKeystore := &corev1.Secret{}
-	secretApiCrt := &corev1.Secret{}
-	secretTransportCrt := &corev1.Secret{}
+	s := &corev1.Secret{}
+	cm := &corev1.ConfigMap{}
+	cmList := &corev1.ConfigMapList{}
+	configMapsChecksum := make([]corev1.ConfigMap, 0)
+	secretsChecksum := make([]corev1.Secret, 0)
 
 	// Read current satefulsets
 	labelSelectors, err := labels.Parse(fmt.Sprintf("cluster=%s,%s=true", o.Name, ElasticsearchAnnotationKey))
@@ -100,21 +102,21 @@ func (r *StatefulsetReconciler) Read(ctx context.Context, resource client.Object
 
 	// Read keystore secret if needed
 	if o.Spec.GlobalNodeGroup.KeystoreSecretRef != nil && o.Spec.GlobalNodeGroup.KeystoreSecretRef.Name != "" {
-		if err = r.Client.Get(ctx, types.NamespacedName{Namespace: o.Namespace, Name: o.Spec.GlobalNodeGroup.KeystoreSecretRef.Name}, secretKeystore); err != nil {
+		if err = r.Client.Get(ctx, types.NamespacedName{Namespace: o.Namespace, Name: o.Spec.GlobalNodeGroup.KeystoreSecretRef.Name}, s); err != nil {
 			if !k8serrors.IsNotFound(err) {
 				return res, errors.Wrapf(err, "Error when read secret %s", o.Spec.GlobalNodeGroup.KeystoreSecretRef.Name)
 			}
 			r.Log.Warnf("Secret %s not yet exist, try again later", o.Spec.GlobalNodeGroup.KeystoreSecretRef.Name)
 			return ctrl.Result{RequeueAfter: 30 * time.Second}, nil
 		}
-	} else {
-		secretKeystore = nil
+
+		secretsChecksum = append(secretsChecksum, *s)
 	}
 
 	// Read API certificate secret if needed
 	if o.IsTlsApiEnabled() {
 		if o.IsSelfManagedSecretForTlsApi() {
-			if err = r.Client.Get(ctx, types.NamespacedName{Namespace: o.Namespace, Name: GetSecretNameForTlsApi(o)}, secretApiCrt); err != nil {
+			if err = r.Client.Get(ctx, types.NamespacedName{Namespace: o.Namespace, Name: GetSecretNameForTlsApi(o)}, s); err != nil {
 				if !k8serrors.IsNotFound(err) {
 					return res, errors.Wrapf(err, "Error when read secret %s", GetSecretNameForTlsApi(o))
 				}
@@ -122,31 +124,140 @@ func (r *StatefulsetReconciler) Read(ctx context.Context, resource client.Object
 				return ctrl.Result{RequeueAfter: 30 * time.Second}, nil
 			}
 
+			secretsChecksum = append(secretsChecksum, *s)
 		} else {
-			if err = r.Client.Get(ctx, types.NamespacedName{Namespace: o.Namespace, Name: o.Spec.Tls.CertificateSecretRef.Name}, secretApiCrt); err != nil {
+			if err = r.Client.Get(ctx, types.NamespacedName{Namespace: o.Namespace, Name: o.Spec.Tls.CertificateSecretRef.Name}, s); err != nil {
 				if !k8serrors.IsNotFound(err) {
 					return res, errors.Wrapf(err, "Error when read secret %s", o.Spec.Tls.CertificateSecretRef.Name)
 				}
 				r.Log.Warnf("Secret %s not yet exist, try again later", o.Spec.Tls.CertificateSecretRef.Name)
 				return ctrl.Result{RequeueAfter: 30 * time.Second}, nil
 			}
-		}
 
-	} else {
-		secretApiCrt = nil
+			secretsChecksum = append(secretsChecksum, *s)
+		}
 	}
 
 	// Read transport certicate secret
-	if err = r.Client.Get(ctx, types.NamespacedName{Namespace: o.Namespace, Name: GetSecretNameForTlsTransport(o)}, secretTransportCrt); err != nil {
+	if err = r.Client.Get(ctx, types.NamespacedName{Namespace: o.Namespace, Name: GetSecretNameForTlsTransport(o)}, s); err != nil {
 		if !k8serrors.IsNotFound(err) {
 			return res, errors.Wrapf(err, "Error when read secret %s", GetSecretNameForTlsTransport(o))
 		}
 		r.Log.Warnf("Secret %s not yet exist, try again later", GetSecretNameForTlsTransport(o))
 		return ctrl.Result{RequeueAfter: 30 * time.Second}, nil
 	}
+	secretsChecksum = append(secretsChecksum, *s)
+
+	// Read configMaps to generate checksum
+	labelSelectors, err = labels.Parse(fmt.Sprintf("cluster=%s,%s=true", o.Name, ElasticsearchAnnotationKey))
+	if err != nil {
+		return res, errors.Wrap(err, "Error when generate label selector")
+	}
+	if err = r.Client.List(ctx, cmList, &client.ListOptions{Namespace: o.Namespace, LabelSelector: labelSelectors}); err != nil {
+		return res, errors.Wrapf(err, "Error when read configMap")
+	}
+	configMapsChecksum = append(configMapsChecksum, cmList.Items...)
+
+	// Read extra volumes to generate checksum if secret or configmap
+	for _, v := range o.Spec.GlobalNodeGroup.AdditionalVolumes {
+		if v.ConfigMap != nil {
+			if err = r.Client.Get(ctx, types.NamespacedName{Namespace: o.Namespace, Name: v.Name}, cm); err != nil {
+				if !k8serrors.IsNotFound(err) {
+					return res, errors.Wrapf(err, "Error when read configMap %s", v.Name)
+				}
+				r.Log.Warnf("ConfigMap %s not yet exist, try again later", v.Name)
+				return ctrl.Result{RequeueAfter: 30 * time.Second}, nil
+			}
+
+			configMapsChecksum = append(configMapsChecksum, *cm)
+			break
+		}
+
+		if v.Secret != nil {
+			if err = r.Client.Get(ctx, types.NamespacedName{Namespace: o.Namespace, Name: v.Name}, s); err != nil {
+				if !k8serrors.IsNotFound(err) {
+					return res, errors.Wrapf(err, "Error when read secret %s", v.Name)
+				}
+				r.Log.Warnf("Secret %s not yet exist, try again later", v.Name)
+				return ctrl.Result{RequeueAfter: 30 * time.Second}, nil
+			}
+
+			secretsChecksum = append(secretsChecksum, *s)
+			break
+		}
+	}
+
+	envList := make([]corev1.EnvVar, 0, len(o.Spec.GlobalNodeGroup.Env))
+	envFromList := make([]corev1.EnvFromSource, 0, len(o.Spec.GlobalNodeGroup.EnvFrom))
+
+	// Compute all env and envFrom
+	envList = append(envList, o.Spec.GlobalNodeGroup.Env...)
+	envFromList = append(envFromList, o.Spec.GlobalNodeGroup.EnvFrom...)
+	for _, nodeGroup := range o.Spec.NodeGroups {
+		envList = append(envList, nodeGroup.Env...)
+		envFromList = append(envFromList, nodeGroup.EnvFrom...)
+	}
+
+	// Read extra Env to generate checksum if secret or configmap
+	for _, env := range envList {
+		if env.ValueFrom != nil && env.ValueFrom.SecretKeyRef != nil {
+			if err = r.Client.Get(ctx, types.NamespacedName{Namespace: o.Namespace, Name: env.ValueFrom.SecretKeyRef.LocalObjectReference.Name}, s); err != nil {
+				if !k8serrors.IsNotFound(err) {
+					return res, errors.Wrapf(err, "Error when read secret %s", env.ValueFrom.SecretKeyRef.LocalObjectReference.Name)
+				}
+				r.Log.Warnf("Secret %s not yet exist, try again later", env.ValueFrom.SecretKeyRef.LocalObjectReference.Name)
+				return ctrl.Result{RequeueAfter: 30 * time.Second}, nil
+			}
+
+			secretsChecksum = append(secretsChecksum, *s)
+			break
+		}
+
+		if env.ValueFrom != nil && env.ValueFrom.ConfigMapKeyRef != nil {
+			if err = r.Client.Get(ctx, types.NamespacedName{Namespace: o.Namespace, Name: env.ValueFrom.ConfigMapKeyRef.LocalObjectReference.Name}, cm); err != nil {
+				if !k8serrors.IsNotFound(err) {
+					return res, errors.Wrapf(err, "Error when read configMap %s", env.ValueFrom.ConfigMapKeyRef.LocalObjectReference.Name)
+				}
+				r.Log.Warnf("ConfigMap %s not yet exist, try again later", env.ValueFrom.ConfigMapKeyRef.LocalObjectReference.Name)
+				return ctrl.Result{RequeueAfter: 30 * time.Second}, nil
+			}
+
+			configMapsChecksum = append(configMapsChecksum, *cm)
+			break
+		}
+	}
+
+	// Read extra Env from to generate checksum if secret or configmap
+	for _, ef := range envFromList {
+		if ef.SecretRef != nil {
+			if err = r.Client.Get(ctx, types.NamespacedName{Namespace: o.Namespace, Name: ef.SecretRef.LocalObjectReference.Name}, s); err != nil {
+				if !k8serrors.IsNotFound(err) {
+					return res, errors.Wrapf(err, "Error when read secret %s", ef.SecretRef.LocalObjectReference.Name)
+				}
+				r.Log.Warnf("Secret %s not yet exist, try again later", ef.SecretRef.LocalObjectReference.Name)
+				return ctrl.Result{RequeueAfter: 30 * time.Second}, nil
+			}
+
+			secretsChecksum = append(secretsChecksum, *s)
+			break
+		}
+
+		if ef.ConfigMapRef != nil {
+			if err = r.Client.Get(ctx, types.NamespacedName{Namespace: o.Namespace, Name: ef.ConfigMapRef.LocalObjectReference.Name}, cm); err != nil {
+				if !k8serrors.IsNotFound(err) {
+					return res, errors.Wrapf(err, "Error when read configMap %s", ef.ConfigMapRef.LocalObjectReference.Name)
+				}
+				r.Log.Warnf("ConfigMap %s not yet exist, try again later", ef.ConfigMapRef.LocalObjectReference.Name)
+				return ctrl.Result{RequeueAfter: 30 * time.Second}, nil
+			}
+
+			configMapsChecksum = append(configMapsChecksum, *cm)
+			break
+		}
+	}
 
 	// Generate expected statefulsets
-	expectedSts, err := BuildStatefulsets(o, secretKeystore, secretApiCrt, secretTransportCrt)
+	expectedSts, err := BuildStatefulsets(o, secretsChecksum, configMapsChecksum)
 	if err != nil {
 		return res, errors.Wrap(err, "Error when generate statefulsets")
 	}

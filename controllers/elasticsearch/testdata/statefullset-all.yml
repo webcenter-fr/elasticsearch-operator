@@ -25,7 +25,7 @@ spec:
         nodeGroup: all
         elasticsearch.k8s.webcenter.fr: "true"
       annotations:
-        elasticsearch.k8s.webcenter.fr/checksum-elasticsearch.yml: "2a0a8650b1d7a5f22e433877319457161489869868b894d448b2616477b521aa"
+        elasticsearch.k8s.webcenter.fr: "true"
       name: test-all-es
     spec:
       affinity:
