@@ -36,10 +36,12 @@ var (
 )
 
 // GenerateStatefullsets permit to generate statefullsets for each node groups
-func BuildStatefulsets(es *elasticsearchcrd.Elasticsearch, keystoreSecret *corev1.Secret, apiCrtSecret *corev1.Secret, transportCrtSecret *corev1.Secret) (statefullsets []appv1.StatefulSet, err error) {
+func BuildStatefulsets(es *elasticsearchcrd.Elasticsearch, secretsChecksum []corev1.Secret, configMapsChecksum []corev1.ConfigMap) (statefullsets []appv1.StatefulSet, err error) {
 	var (
 		sts *appv1.StatefulSet
 	)
+
+	checksumAnnotations := map[string]string{}
 
 	// Generate confimaps to know what file to mount
 	// And to generate checksum
@@ -47,60 +49,41 @@ func BuildStatefulsets(es *elasticsearchcrd.Elasticsearch, keystoreSecret *corev
 	if err != nil {
 		return nil, errors.Wrap(err, "Error when generate configMaps")
 	}
-	// Computes pods annotations to force reconcil
-	configMapChecksumAnnotations := map[string]string{}
-	for _, configMap := range configMaps {
-		for file, contend := range configMap.Data {
-			sum, err := checksum.SHA256sumReader(strings.NewReader(contend))
-			if err != nil {
-				return nil, errors.Wrapf(err, "Error when generate checksum for %s/%s", configMap.Name, file)
-			}
-			configMapChecksumAnnotations[fmt.Sprintf("%s/checksum-%s", ElasticsearchAnnotationKey, file)] = sum
-		}
-	}
 
-	secretChecksumAnnotations := map[string]string{}
-	// Compute checksum annotation for keystore secrets
-	if es.Spec.GlobalNodeGroup.KeystoreSecretRef != nil && es.Spec.GlobalNodeGroup.KeystoreSecretRef.Name != "" && keystoreSecret != nil {
-		//Convert secret contend to json string and them checksum it
-		j, err := json.Marshal(keystoreSecret.Data)
+	// checksum for secret
+	for _, s := range secretsChecksum {
+		j, err := json.Marshal(s.Data)
 		if err != nil {
-			return nil, errors.Wrapf(err, "Error when convert data of secret %s on json string", keystoreSecret.Name)
+			return nil, errors.Wrapf(err, "Error when convert data of secret %s on json string", s.Name)
 		}
 		sum, err := checksum.SHA256sumReader(bytes.NewReader(j))
 		if err != nil {
-			return nil, errors.Wrapf(err, "Error when generate checksum for keystore %s", keystoreSecret.Name)
+			return nil, errors.Wrapf(err, "Error when generate checksum for extra secret %s", s.Name)
 		}
-		secretChecksumAnnotations[fmt.Sprintf("%s/checksum-keystore", ElasticsearchAnnotationKey)] = sum
-	}
-	// Compute checksum annotation for API certs
-	if es.IsTlsApiEnabled() && apiCrtSecret != nil {
-		//Convert secret contend to json string and them checksum it
-		j, err := json.Marshal(apiCrtSecret.Data)
-		if err != nil {
-			return nil, errors.Wrapf(err, "Error when convert data of secret %s on json string", apiCrtSecret.Name)
-		}
-		sum, err := checksum.SHA256sumReader(bytes.NewReader(j))
-		if err != nil {
-			return nil, errors.Wrapf(err, "Error when generate checksum for API certificate %s", apiCrtSecret.Name)
-		}
-		secretChecksumAnnotations[fmt.Sprintf("%s/checksum-api-certs", ElasticsearchAnnotationKey)] = sum
-	}
-	// Compute checksum annotation for transport certs
-	if transportCrtSecret != nil {
-		//Convert secret contend to json string and them checksum it
-		j, err := json.Marshal(transportCrtSecret.Data)
-		if err != nil {
-			return nil, errors.Wrapf(err, "Error when convert data of secret %s on json string", transportCrtSecret.Name)
-		}
-		sum, err := checksum.SHA256sumReader(bytes.NewReader(j))
-		if err != nil {
-			return nil, errors.Wrapf(err, "Error when generate checksum for transport certificates %s", transportCrtSecret.Name)
-		}
-		secretChecksumAnnotations[fmt.Sprintf("%s/checksum-transport-certs", ElasticsearchAnnotationKey)] = sum
+		checksumAnnotations[fmt.Sprintf("%s/secret-%s", ElasticsearchAnnotationKey, s.Name)] = sum
 	}
 
 	for _, nodeGroup := range es.Spec.NodeGroups {
+		nodeGroupCheckSumAnnotations := map[string]string{}
+		for key, checksum := range checksumAnnotations {
+			nodeGroupCheckSumAnnotations[key] = checksum
+		}
+
+		// checksum for configmap
+		for _, cm := range configMapsChecksum {
+			// Keep only configMap for this nodeGroup or global configMap
+			if cm.Labels == nil || cm.Labels["nodeGroup"] == "" || cm.Labels["nodeGroup"] == nodeGroup.Name {
+				j, err := json.Marshal(cm.Data)
+				if err != nil {
+					return nil, errors.Wrapf(err, "Error when convert data of configMap %s on json string", cm.Name)
+				}
+				sum, err := checksum.SHA256sumReader(bytes.NewReader(j))
+				if err != nil {
+					return nil, errors.Wrapf(err, "Error when generate checksum for extra configMap %s", cm.Name)
+				}
+				nodeGroupCheckSumAnnotations[fmt.Sprintf("%s/configmap-%s", ElasticsearchAnnotationKey, cm.Name)] = sum
+			}
+		}
 
 		cb := k8sbuilder.NewContainerBuilder()
 		ptb := k8sbuilder.NewPodTemplateBuilder()
@@ -119,11 +102,11 @@ func BuildStatefulsets(es *elasticsearchcrd.Elasticsearch, keystoreSecret *corev
 			Container().Name = "elasticsearch"
 
 		// Compute EnvFrom
-		cb.WithEnvFrom(es.Spec.GlobalNodeGroup.EnvFrom).
+		cb.WithEnvFrom(es.Spec.GlobalNodeGroup.EnvFrom, k8sbuilder.Merge).
 			WithEnvFrom(nodeGroup.EnvFrom, k8sbuilder.Merge)
 
 		// Compute Env
-		cb.WithEnv(es.Spec.GlobalNodeGroup.Env).
+		cb.WithEnv(es.Spec.GlobalNodeGroup.Env, k8sbuilder.Merge).
 			WithEnv(nodeGroup.Env, k8sbuilder.Merge).
 			WithEnv([]corev1.EnvVar{
 				{
@@ -290,10 +273,7 @@ func BuildStatefulsets(es *elasticsearchcrd.Elasticsearch, keystoreSecret *corev
 		cb.WithImage(GetContainerImage(es), k8sbuilder.OverwriteIfDefaultValue)
 
 		// Compute image pull policy
-		cb.WithImagePullPolicy(es.Spec.ImagePullPolicy).
-			WithImagePullPolicy(globalElasticsearchContainer.ImagePullPolicy, k8sbuilder.Merge).
-			WithImagePullPolicy(localElasticsearchContainer.ImagePullPolicy, k8sbuilder.Merge)
-
+		cb.WithImagePullPolicy(es.Spec.ImagePullPolicy, k8sbuilder.OverwriteIfDefaultValue)
 		// Compute security context
 		cb.WithSecurityContext(&corev1.SecurityContext{
 			Capabilities: &corev1.Capabilities{
@@ -315,7 +295,7 @@ func BuildStatefulsets(es *elasticsearchcrd.Elasticsearch, keystoreSecret *corev
 				SubPath:   vol.SubPath,
 			})
 		}
-		cb.WithVolumeMount(additionalVolumeMounts).
+		cb.WithVolumeMount(additionalVolumeMounts, k8sbuilder.Merge).
 			WithVolumeMount([]corev1.VolumeMount{
 				{
 					Name:      "config",
@@ -431,8 +411,10 @@ fi
 			WithLabels(nodeGroup.Labels, k8sbuilder.Merge)
 
 		// Compute annotations
-		ptb.WithAnnotations(configMapChecksumAnnotations, k8sbuilder.Merge).
-			WithAnnotations(secretChecksumAnnotations, k8sbuilder.Merge)
+		ptb.WithAnnotations(getAnnotations(es)).
+			WithAnnotations(es.Spec.GlobalNodeGroup.Annotations, k8sbuilder.Merge).
+			WithAnnotations(nodeGroup.Annotations, k8sbuilder.Merge).
+			WithAnnotations(nodeGroupCheckSumAnnotations, k8sbuilder.Merge)
 
 		// Compute NodeSelector
 		ptb.WithNodeSelector(nodeGroup.NodeSelector, k8sbuilder.Merge)

@@ -25,9 +25,10 @@ spec:
         nodeGroup: all
         elasticsearch.k8s.webcenter.fr: "true"
       annotations:
-        elasticsearch.k8s.webcenter.fr/checksum-elasticsearch.yml: "2a0a8650b1d7a5f22e433877319457161489869868b894d448b2616477b521aa"
-        elasticsearch.k8s.webcenter.fr/checksum-api-certs: "53b47b289c9912c920ad03f4c114537fe6f9480756f7034cf9fd19017aaad026"
-        elasticsearch.k8s.webcenter.fr/checksum-transport-certs: "53b47b289c9912c920ad03f4c114537fe6f9480756f7034cf9fd19017aaad026"
+        elasticsearch.k8s.webcenter.fr: "true"
+        elasticsearch.k8s.webcenter.fr/configmap-test-all-config-es: "73f015749fd9b23d6429cde8fdf7431467376852e9a97bf0642226ad37adba7a"
+        elasticsearch.k8s.webcenter.fr/secret-api-certificates: "53b47b289c9912c920ad03f4c114537fe6f9480756f7034cf9fd19017aaad026"
+        elasticsearch.k8s.webcenter.fr/secret-transport-certificates: 53b47b289c9912c920ad03f4c114537fe6f9480756f7034cf9fd19017aaad026
       name: test-all-es
     spec:
       affinity:
