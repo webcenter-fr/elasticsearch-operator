@@ -213,15 +213,15 @@ func BuildStatefulset(ls *logstashcrd.Logstash, es *elasticsearchcrd.Elasticsear
 	// Mount configmap of type pipeline or pattern
 	for _, cm := range configMaps {
 		// Mount config in the right path
-		switch cm.Annotations[fmt.Sprintf("%s/config-type", LogstashAnnotationKey)] {
-		case "pipeline":
+		switch cm.Name {
+		case GetConfigMapPipelineName(ls):
 			cb.WithVolumeMount([]corev1.VolumeMount{
 				{
 					Name:      "logstash-pipeline",
 					MountPath: "/usr/share/logstash/pipeline",
 				},
 			}, k8sbuilder.Merge)
-		case "pattern":
+		case GetConfigMapPatternName(ls):
 			cb.WithVolumeMount([]corev1.VolumeMount{
 				{
 					Name:      "logstash-pattern",
@@ -465,7 +465,7 @@ fi
 	// Compute mount config maps
 	for _, configMap := range configMaps {
 
-		if configMap.Annotations[fmt.Sprintf("%s/config-type", LogstashAnnotationKey)] == "config" {
+		if configMap.Name == GetConfigMapConfigName(ls) {
 			ccb.WithVolumeMount([]corev1.VolumeMount{
 				{
 					Name:      "logstash-config",
@@ -550,8 +550,8 @@ fi
 
 	// Add configmap volumes
 	for _, cm := range configMaps {
-		switch cm.Annotations[fmt.Sprintf("%s/config-type", LogstashAnnotationKey)] {
-		case "config":
+		switch cm.Name {
+		case GetConfigMapConfigName(ls):
 			ptb.WithVolumes([]corev1.Volume{
 				{
 					Name: "logstash-config",
@@ -564,7 +564,7 @@ fi
 					},
 				},
 			}, k8sbuilder.Merge)
-		case "pipeline":
+		case GetConfigMapPipelineName(ls):
 			ptb.WithVolumes([]corev1.Volume{
 				{
 					Name: "logstash-pipeline",
@@ -577,7 +577,7 @@ fi
 					},
 				},
 			}, k8sbuilder.Merge)
-		case "pattern":
+		case GetConfigMapPatternName(ls):
 			ptb.WithVolumes([]corev1.Volume{
 				{
 					Name: "logstash-pattern",

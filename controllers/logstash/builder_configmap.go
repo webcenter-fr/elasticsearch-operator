@@ -1,8 +1,6 @@
 package logstash
 
 import (
-	"fmt"
-
 	"github.com/pkg/errors"
 	logstashcrd "github.com/webcenter-fr/elasticsearch-operator/apis/logstash/v1alpha1"
 	"github.com/webcenter-fr/elasticsearch-operator/pkg/helper"
@@ -32,12 +30,10 @@ func BuildConfigMaps(ls *logstashcrd.Logstash) (configMaps []corev1.ConfigMap, e
 
 		cm = &corev1.ConfigMap{
 			ObjectMeta: metav1.ObjectMeta{
-				Namespace: ls.Namespace,
-				Name:      GetConfigMapConfigName(ls),
-				Labels:    getLabels(ls),
-				Annotations: getAnnotations(ls, map[string]string{
-					fmt.Sprintf("%s/config-type", LogstashAnnotationKey): "config",
-				}),
+				Namespace:   ls.Namespace,
+				Name:        GetConfigMapConfigName(ls),
+				Labels:      getLabels(ls),
+				Annotations: getAnnotations(ls),
 			},
 			Data: expectedConfig,
 		}
@@ -49,12 +45,10 @@ func BuildConfigMaps(ls *logstashcrd.Logstash) (configMaps []corev1.ConfigMap, e
 	if len(ls.Spec.Pipeline) > 0 {
 		cm = &corev1.ConfigMap{
 			ObjectMeta: metav1.ObjectMeta{
-				Namespace: ls.Namespace,
-				Name:      GetConfigMapPipelineName(ls),
-				Labels:    getLabels(ls),
-				Annotations: getAnnotations(ls, map[string]string{
-					fmt.Sprintf("%s/config-type", LogstashAnnotationKey): "pipeline",
-				}),
+				Namespace:   ls.Namespace,
+				Name:        GetConfigMapPipelineName(ls),
+				Labels:      getLabels(ls),
+				Annotations: getAnnotations(ls),
 			},
 			Data: ls.Spec.Pipeline,
 		}
@@ -66,12 +60,10 @@ func BuildConfigMaps(ls *logstashcrd.Logstash) (configMaps []corev1.ConfigMap, e
 	if len(ls.Spec.Pattern) > 0 {
 		cm = &corev1.ConfigMap{
 			ObjectMeta: metav1.ObjectMeta{
-				Namespace: ls.Namespace,
-				Name:      GetConfigMapPatternName(ls),
-				Labels:    getLabels(ls),
-				Annotations: getAnnotations(ls, map[string]string{
-					fmt.Sprintf("%s/config-type", LogstashAnnotationKey): "pattern",
-				}),
+				Namespace:   ls.Namespace,
+				Name:        GetConfigMapPatternName(ls),
+				Labels:      getLabels(ls),
+				Annotations: getAnnotations(ls),
 			},
 			Data: ls.Spec.Pattern,
 		}
