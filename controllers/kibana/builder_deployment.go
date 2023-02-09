@@ -505,14 +505,15 @@ fi
 	}
 
 	// Compute mount config map
-	additionalVolumeMounts := make([]corev1.VolumeMount, 0, len(configMap.Data))
 	if configMap != nil {
-		additionalVolumeMounts = append(additionalVolumeMounts, corev1.VolumeMount{
-			Name:      "kibana-config",
-			MountPath: fmt.Sprintf("/mnt/configmap"),
-		})
+		ccb.WithVolumeMount([]corev1.VolumeMount{
+			{
+				Name:      "kibana-config",
+				MountPath: "/mnt/configmap",
+			},
+		}, k8sbuilder.Merge)
 	}
-	ccb.WithVolumeMount(additionalVolumeMounts, k8sbuilder.Merge)
+
 	if kb.IsTlsEnabled() {
 		ccb.WithVolumeMount([]corev1.VolumeMount{
 			{
