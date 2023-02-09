@@ -20,7 +20,7 @@ spec:
         cluster: test
         kibana.k8s.webcenter.fr: "true"
       annotations:
-        kibana.k8s.webcenter.fr/checksum-kibana.yml: "28bc70743bff52b1b2f2b76cd6a178c34015cd110a34808abed971ca45405143"
+        kibana.k8s.webcenter.fr: "true"
       name: test-kb
     spec:
       affinity:
@@ -214,8 +214,7 @@ spec:
           - name: ca-elasticsearch
             mountPath: /mnt/ca-elasticsearch
           - name: kibana-config
-            mountPath: /mnt/configmap/kibana.yml
-            subPath: kibana.yml
+            mountPath: /mnt/configmap
         securityContext:
           runAsUser: 0
       securityContext:

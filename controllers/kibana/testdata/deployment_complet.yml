@@ -20,9 +20,9 @@ spec:
         cluster: test
         kibana.k8s.webcenter.fr: "true"
       annotations:
-        kibana.k8s.webcenter.fr/checksum-kibana.yml: "28bc70743bff52b1b2f2b76cd6a178c34015cd110a34808abed971ca45405143"
-        kibana.k8s.webcenter.fr/checksum-keystore: "e0254a8990817d8a00deb6123c4a2a7ea7ae48428a65d9514257b3baedc1fb6e"
-        kibana.k8s.webcenter.fr/checksum-log4j.yaml: "949e3031476b60f9f8cea06e1d683f3fb6e689856bdc58590036fd018c40149c"
+        kibana.k8s.webcenter.fr: "true"
+        kibana.k8s.webcenter.fr/configmap-test-config-kb: "beb43112b4cb0584da28e9cc50081643029875b1e387d63ba5cfaedcb46e9788"
+        kibana.k8s.webcenter.fr/secret-keystore: "e0254a8990817d8a00deb6123c4a2a7ea7ae48428a65d9514257b3baedc1fb6e"
       name: test-kb
     spec:
       affinity:
@@ -243,11 +243,7 @@ spec:
           - name: plugin
             mountPath: /mnt/plugins
           - name: kibana-config
-            mountPath: /mnt/configmap/kibana.yml
-            subPath: kibana.yml
-          - name: kibana-config
-            mountPath: /mnt/configmap/log4j.yaml
-            subPath: log4j.yaml
+            mountPath: /mnt/configmap
         securityContext:
           runAsUser: 0
       - command:

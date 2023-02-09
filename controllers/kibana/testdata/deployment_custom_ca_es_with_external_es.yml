@@ -20,8 +20,8 @@ spec:
         cluster: test
         kibana.k8s.webcenter.fr: "true"
       annotations:
-        kibana.k8s.webcenter.fr/checksum-kibana.yml: "28bc70743bff52b1b2f2b76cd6a178c34015cd110a34808abed971ca45405143"
-        kibana.k8s.webcenter.fr/checksum-ca-elasticsearch: "b3e6a184c07701fea70b63c92a044c192bce5c2a071c86537ff3c703b9f1a04c"
+        kibana.k8s.webcenter.fr: "true"
+        kibana.k8s.webcenter.fr/secret-custom-ca-es: "b3e6a184c07701fea70b63c92a044c192bce5c2a071c86537ff3c703b9f1a04c"
       name: test-kb
     spec:
       affinity:
@@ -218,8 +218,7 @@ spec:
           - name: keystore
             mountPath: /mnt/keystore
           - name: kibana-config
-            mountPath: /mnt/configmap/kibana.yml
-            subPath: kibana.yml
+            mountPath: /mnt/configmap
         securityContext:
           runAsUser: 0
       securityContext:

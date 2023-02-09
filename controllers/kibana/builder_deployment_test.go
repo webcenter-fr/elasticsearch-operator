@@ -17,11 +17,12 @@ import (
 func TestBuildDeployment(t *testing.T) {
 
 	var (
-		o   *kibanacrd.Kibana
-		es  *elasticsearchcrd.Elasticsearch
-		err error
-		dpl *appv1.Deployment
-		s   *corev1.Secret
+		o               *kibanacrd.Kibana
+		es              *elasticsearchcrd.Elasticsearch
+		err             error
+		dpl             *appv1.Deployment
+		checksumSecrets []corev1.Secret
+		checksumCms     []corev1.ConfigMap
 	)
 
 	// With default values and elasticsearch managed by operator
@@ -49,7 +50,7 @@ func TestBuildDeployment(t *testing.T) {
 		Spec: elasticsearchcrd.ElasticsearchSpec{},
 	}
 
-	dpl, err = BuildDeployment(o, es, nil, nil, nil)
+	dpl, err = BuildDeployment(o, es, nil, nil)
 	assert.NoError(t, err)
 	test.EqualFromYamlFile(t, "testdata/deployment_default.yml", dpl, test.CleanApi)
 
@@ -76,7 +77,7 @@ func TestBuildDeployment(t *testing.T) {
 		},
 	}
 
-	dpl, err = BuildDeployment(o, nil, nil, nil, nil)
+	dpl, err = BuildDeployment(o, nil, nil, nil)
 	assert.NoError(t, err)
 	test.EqualFromYamlFile(t, "testdata/deployment_default_with_external_es.yml", dpl, test.CleanApi)
 
@@ -105,17 +106,19 @@ func TestBuildDeployment(t *testing.T) {
 			},
 		},
 	}
-	s = &corev1.Secret{
-		ObjectMeta: metav1.ObjectMeta{
-			Namespace: "default",
-			Name:      "custom-ca-es",
-		},
-		Data: map[string][]byte{
-			"ca.crt": []byte("secret3"),
+	checksumSecrets = []corev1.Secret{
+		{
+			ObjectMeta: metav1.ObjectMeta{
+				Namespace: "default",
+				Name:      "custom-ca-es",
+			},
+			Data: map[string][]byte{
+				"ca.crt": []byte("secret3"),
+			},
 		},
 	}
 
-	dpl, err = BuildDeployment(o, nil, nil, nil, s)
+	dpl, err = BuildDeployment(o, nil, checksumSecrets, nil)
 	assert.NoError(t, err)
 	test.EqualFromYamlFile(t, "testdata/deployment_custom_ca_es_with_external_es.yml", dpl, test.CleanApi)
 
@@ -148,19 +151,21 @@ func TestBuildDeployment(t *testing.T) {
 		},
 		Spec: elasticsearchcrd.ElasticsearchSpec{},
 	}
-	s = &corev1.Secret{
-		ObjectMeta: metav1.ObjectMeta{
-			Namespace: "default",
-			Name:      "api-certificates",
-		},
-		Data: map[string][]byte{
-			"tls.crt": []byte("secret1"),
-			"tls.key": []byte("secret2"),
-			"ca.crt":  []byte("secret3"),
+	checksumSecrets = []corev1.Secret{
+		{
+			ObjectMeta: metav1.ObjectMeta{
+				Namespace: "default",
+				Name:      "api-certificates",
+			},
+			Data: map[string][]byte{
+				"tls.crt": []byte("secret1"),
+				"tls.key": []byte("secret2"),
+				"ca.crt":  []byte("secret3"),
+			},
 		},
 	}
 
-	dpl, err = BuildDeployment(o, es, nil, s, nil)
+	dpl, err = BuildDeployment(o, es, checksumSecrets, nil)
 	assert.NoError(t, err)
 	test.EqualFromYamlFile(t, "testdata/deployment_with_external_certs.yml", dpl, test.CleanApi)
 
@@ -251,17 +256,25 @@ func TestBuildDeployment(t *testing.T) {
 		},
 		Spec: elasticsearchcrd.ElasticsearchSpec{},
 	}
-	s = &corev1.Secret{
-		ObjectMeta: metav1.ObjectMeta{
-			Namespace: "default",
-			Name:      "keystore",
-		},
-		Data: map[string][]byte{
-			"key1": []byte("value1"),
+	checksumSecrets = []corev1.Secret{
+		{
+			ObjectMeta: metav1.ObjectMeta{
+				Namespace: "default",
+				Name:      "keystore",
+			},
+			Data: map[string][]byte{
+				"key1": []byte("value1"),
+			},
 		},
 	}
 
-	dpl, err = BuildDeployment(o, es, s, nil, nil)
+	cm, err := BuildConfigMap(o, es)
+	if err != nil {
+		t.Fatal(err.Error())
+	}
+	checksumCms = append(checksumCms, *cm)
+
+	dpl, err = BuildDeployment(o, es, checksumSecrets, checksumCms)
 	assert.NoError(t, err)
 	test.EqualFromYamlFile(t, "testdata/deployment_complet.yml", dpl, test.CleanApi)
 }
