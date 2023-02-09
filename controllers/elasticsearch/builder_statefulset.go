@@ -302,7 +302,7 @@ func BuildStatefulsets(es *elasticsearchcrd.Elasticsearch, secretsChecksum []cor
 					MountPath: "/usr/share/elasticsearch/config",
 				},
 			}, k8sbuilder.Merge)
-		if nodeGroup.Persistence != nil && (nodeGroup.Persistence.Volume != nil || nodeGroup.Persistence.VolumeClaimSpec != nil) {
+		if nodeGroup.IsPersistence() {
 			cb.WithVolumeMount([]corev1.VolumeMount{
 				{
 					Name:      "elasticsearch-data",
@@ -621,7 +621,7 @@ fi
 			command.String(),
 		}
 
-		if nodeGroup.Persistence != nil && (nodeGroup.Persistence.Volume != nil || nodeGroup.Persistence.VolumeClaimSpec != nil) {
+		if nodeGroup.IsPersistence() {
 			ccb.WithVolumeMount([]corev1.VolumeMount{
 				{
 					Name:      "elasticsearch-data",
@@ -721,7 +721,7 @@ fi
 				},
 			}, k8sbuilder.Merge)
 		}
-		if nodeGroup.Persistence != nil && nodeGroup.Persistence.VolumeClaimSpec == nil && nodeGroup.Persistence.Volume != nil {
+		if nodeGroup.IsPersistence() && nodeGroup.Persistence.Volume != nil {
 			ptb.WithVolumes([]corev1.Volume{
 				{
 					Name:         "elasticsearch-data",
@@ -767,7 +767,7 @@ fi
 		}
 
 		// Compute persistence
-		if nodeGroup.Persistence != nil && nodeGroup.Persistence.VolumeClaimSpec != nil {
+		if nodeGroup.IsPersistence() && nodeGroup.Persistence.VolumeClaimSpec != nil {
 			sts.Spec.VolumeClaimTemplates = []corev1.PersistentVolumeClaim{
 				{
 					ObjectMeta: metav1.ObjectMeta{
