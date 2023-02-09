@@ -23,7 +23,9 @@ import (
 )
 
 // BuildDeployment permit to generate deployment for Kibana
-func BuildDeployment(kb *kibanacrd.Kibana, es *elasticsearchcrd.Elasticsearch, keystoreSecret *corev1.Secret, apiCrtSecret *corev1.Secret, esCASecret *corev1.Secret) (dpl *appv1.Deployment, err error) {
+func BuildDeployment(kb *kibanacrd.Kibana, es *elasticsearchcrd.Elasticsearch, secretsChecksum []corev1.Secret, configMapsChecksum []corev1.ConfigMap) (dpl *appv1.Deployment, err error) {
+
+	checksumAnnotations := map[string]string{}
 
 	// Inject plugin for exporter Prometheus if needed
 	if kb.IsPrometheusMonitoring() {
@@ -36,55 +38,30 @@ func BuildDeployment(kb *kibanacrd.Kibana, es *elasticsearchcrd.Elasticsearch, k
 	if err != nil {
 		return nil, errors.Wrap(err, "Error when generate configMap")
 	}
-	// Computes pods annotations to force reconcil
-	configMapChecksumAnnotations := map[string]string{}
-	for file, contend := range configMap.Data {
-		sum, err := checksum.SHA256sumReader(strings.NewReader(contend))
-		if err != nil {
-			return nil, errors.Wrapf(err, "Error when generate checksum for %s/%s", configMap.Name, file)
-		}
-		configMapChecksumAnnotations[fmt.Sprintf("%s/checksum-%s", KibanaAnnotationKey, file)] = sum
-	}
 
-	secretChecksumAnnotations := map[string]string{}
-	// Compute checksum annotation for keystore secrets
-	if keystoreSecret != nil {
-		//Convert secret contend to json string and them checksum it
-		j, err := json.Marshal(keystoreSecret.Data)
+	// checksum for configmap
+	for _, cm := range configMapsChecksum {
+		j, err := json.Marshal(cm.Data)
 		if err != nil {
-			return nil, errors.Wrapf(err, "Error when convert data of secret %s on json string", keystoreSecret.Name)
+			return nil, errors.Wrapf(err, "Error when convert data of configMap %s on json string", cm.Name)
 		}
 		sum, err := checksum.SHA256sumReader(bytes.NewReader(j))
 		if err != nil {
-			return nil, errors.Wrapf(err, "Error when generate checksum for keystore %s", keystoreSecret.Name)
+			return nil, errors.Wrapf(err, "Error when generate checksum for extra configMap %s", cm.Name)
 		}
-		secretChecksumAnnotations[fmt.Sprintf("%s/checksum-keystore", KibanaAnnotationKey)] = sum
+		checksumAnnotations[fmt.Sprintf("%s/configmap-%s", KibanaAnnotationKey, cm.Name)] = sum
 	}
-	// Compute checksum annotation for API certs
-	if apiCrtSecret != nil {
-		//Convert secret contend to json string and them checksum it
-		j, err := json.Marshal(apiCrtSecret.Data)
+	// checksum for secret
+	for _, s := range secretsChecksum {
+		j, err := json.Marshal(s.Data)
 		if err != nil {
-			return nil, errors.Wrapf(err, "Error when convert data of secret %s on json string", apiCrtSecret.Name)
+			return nil, errors.Wrapf(err, "Error when convert data of secret %s on json string", s.Name)
 		}
 		sum, err := checksum.SHA256sumReader(bytes.NewReader(j))
 		if err != nil {
-			return nil, errors.Wrapf(err, "Error when generate checksum for apiCrt %s", apiCrtSecret.Name)
+			return nil, errors.Wrapf(err, "Error when generate checksum for extra secret %s", s.Name)
 		}
-		secretChecksumAnnotations[fmt.Sprintf("%s/checksum-api-certs", KibanaAnnotationKey)] = sum
-	}
-	// Compute checksum annotation for CA Elasticsearch secret
-	if esCASecret != nil {
-		//Convert secret contend to json string and them checksum it
-		j, err := json.Marshal(esCASecret.Data)
-		if err != nil {
-			return nil, errors.Wrapf(err, "Error when convert data of secret %s on json string", esCASecret.Name)
-		}
-		sum, err := checksum.SHA256sumReader(bytes.NewReader(j))
-		if err != nil {
-			return nil, errors.Wrapf(err, "Error when generate checksum for CA Elasticsearch %s", esCASecret.Name)
-		}
-		secretChecksumAnnotations[fmt.Sprintf("%s/checksum-ca-elasticsearch", KibanaAnnotationKey)] = sum
+		checksumAnnotations[fmt.Sprintf("%s/secret-%s", KibanaAnnotationKey, s.Name)] = sum
 	}
 
 	cb := k8sbuilder.NewContainerBuilder()
@@ -346,8 +323,8 @@ fi
 
 	// Compute annotations
 	ptb.WithAnnotations(getAnnotations(kb)).
-		WithAnnotations(configMapChecksumAnnotations, k8sbuilder.Merge).
-		WithAnnotations(secretChecksumAnnotations, k8sbuilder.Merge)
+		WithAnnotations(kb.Spec.Deployment.Annotations, k8sbuilder.Merge).
+		WithAnnotations(checksumAnnotations, k8sbuilder.Merge)
 
 	// Compute NodeSelector
 	ptb.WithNodeSelector(kb.Spec.Deployment.NodeSelector, k8sbuilder.Merge)
@@ -529,11 +506,10 @@ fi
 
 	// Compute mount config map
 	additionalVolumeMounts := make([]corev1.VolumeMount, 0, len(configMap.Data))
-	for key := range configMap.Data {
+	if configMap != nil {
 		additionalVolumeMounts = append(additionalVolumeMounts, corev1.VolumeMount{
 			Name:      "kibana-config",
-			MountPath: fmt.Sprintf("/mnt/configmap/%s", key),
-			SubPath:   key,
+			MountPath: fmt.Sprintf("/mnt/configmap"),
 		})
 	}
 	ccb.WithVolumeMount(additionalVolumeMounts, k8sbuilder.Merge)
