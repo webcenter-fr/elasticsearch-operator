@@ -98,6 +98,8 @@ func TestIsPersistence(t *testing.T) {
 		},
 	}
 
+	assert.True(t, o.IsPersistence())
+
 	// When volume is set
 	o = &Logstash{
 		ObjectMeta: metav1.ObjectMeta{

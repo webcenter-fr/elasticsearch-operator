@@ -5,6 +5,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	corev1 "k8s.io/api/core/v1"
+	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/utils/pointer"
 )
@@ -228,4 +229,38 @@ func TestIsPrometheusMonitoring(t *testing.T) {
 		},
 	}
 	assert.False(t, o.IsPrometheusMonitoring())
+}
+
+func TestIsPersistence(t *testing.T) {
+	var o *NodeGroupSpec
+
+	// With default value
+	o = &NodeGroupSpec{}
+	assert.False(t, o.IsPersistence())
+
+	// When persistence is not enabled
+	o = &NodeGroupSpec{
+		Persistence: &PersistenceSpec{},
+	}
+
+	assert.False(t, o.IsPersistence())
+
+	// When claim PVC is set
+	o = &NodeGroupSpec{
+		Persistence: &PersistenceSpec{
+			VolumeClaimSpec: &v1.PersistentVolumeClaimSpec{},
+		},
+	}
+
+	assert.True(t, o.IsPersistence())
+
+	// When volume is set
+	o = &NodeGroupSpec{
+		Persistence: &PersistenceSpec{
+			Volume: &v1.VolumeSource{},
+		},
+	}
+
+	assert.True(t, o.IsPersistence())
+
 }
