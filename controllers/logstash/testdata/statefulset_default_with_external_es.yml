@@ -100,6 +100,8 @@ spec:
         volumeMounts:
         - mountPath: /usr/share/logstash/config
           name: config
+        - mountPath: /usr/share/logstash/data
+          name: logstash-data
       initContainers:
       - command:
         - /bin/bash
@@ -134,10 +136,7 @@ spec:
             # Set right
             echo "Set right"
             chown -R logstash:logstash /mnt/config
-            if [ -d /mnt/data ]; then
-              chown -v logstash:logstash /mnt/data
-            fi
-
+            chown -v logstash:logstash /mnt/data
 
             if [ -d /mnt/plugins ]; then
               cp -a /usr/share/logstash/plugins/* /mnt/plugins/
@@ -172,6 +171,8 @@ spec:
             mountPath: /mnt/config
           - name: keystore
             mountPath: /mnt/keystore
+          - mountPath: /mnt/data
+            name: logstash-data
         securityContext:
           runAsUser: 0
       securityContext:
@@ -183,4 +184,6 @@ spec:
       - name: config
         emptyDir: {}
       - name: plugin
+        emptyDir: {}
+      - name: logstash-data
         emptyDir: {}

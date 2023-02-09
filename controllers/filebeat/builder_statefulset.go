@@ -222,14 +222,12 @@ func BuildStatefulset(fb *beatcrd.Filebeat, es *elasticsearchcrd.Elasticsearch, 
 	}
 	cb.WithVolumeMount(additionalVolumeMounts, k8sbuilder.Merge)
 
-	if fb.IsPersistence() {
-		cb.WithVolumeMount([]corev1.VolumeMount{
-			{
-				Name:      "filebeat-data",
-				MountPath: "/usr/share/filebeat/data",
-			},
-		}, k8sbuilder.Merge)
-	}
+	cb.WithVolumeMount([]corev1.VolumeMount{
+		{
+			Name:      "filebeat-data",
+			MountPath: "/usr/share/filebeat/data",
+		},
+	}, k8sbuilder.Merge)
 
 	// Mount configmap of type module
 	for _, cm := range configMaps {

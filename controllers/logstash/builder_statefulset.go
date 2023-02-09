@@ -193,14 +193,12 @@ func BuildStatefulset(ls *logstashcrd.Logstash, es *elasticsearchcrd.Elasticsear
 				MountPath: "/usr/share/logstash/config",
 			},
 		}, k8sbuilder.Merge)
-	if ls.IsPersistence() {
-		cb.WithVolumeMount([]corev1.VolumeMount{
-			{
-				Name:      "logstash-data",
-				MountPath: "/usr/share/logstash/data",
-			},
-		}, k8sbuilder.Merge)
-	}
+	cb.WithVolumeMount([]corev1.VolumeMount{
+		{
+			Name:      "logstash-data",
+			MountPath: "/usr/share/logstash/data",
+		},
+	}, k8sbuilder.Merge)
 	if len(ls.Spec.PluginsList) > 0 {
 		cb.WithVolumeMount([]corev1.VolumeMount{
 			{
@@ -396,6 +394,10 @@ cp -a /usr/share/logstash/config/logstash.keystore /mnt/keystore/
 				Name:      "keystore",
 				MountPath: "/mnt/keystore",
 			},
+			{
+				Name:      "logstash-data",
+				MountPath: "/mnt/data",
+			},
 		},
 	})
 
@@ -433,10 +435,7 @@ fi
 # Set right
 echo "Set right"
 chown -R logstash:logstash /mnt/config
-if [ -d /mnt/data ]; then
-  chown -v logstash:logstash /mnt/data
-fi
-
+chown -v logstash:logstash /mnt/data
 `)
 	for _, plugin := range ls.Spec.PluginsList {
 		command.WriteString(fmt.Sprintf("./bin/logstash-plugin install %s\n", plugin))
@@ -451,15 +450,6 @@ fi
 		"/bin/bash",
 		"-c",
 		command.String(),
-	}
-
-	if ls.IsPersistence() {
-		ccb.WithVolumeMount([]corev1.VolumeMount{
-			{
-				Name:      "logstash-data",
-				MountPath: "/mnt/data",
-			},
-		}, k8sbuilder.Merge)
 	}
 
 	// Compute mount config maps
@@ -544,6 +534,15 @@ fi
 			{
 				Name:         "logstash-data",
 				VolumeSource: *ls.Spec.Deployment.Persistence.Volume,
+			},
+		}, k8sbuilder.Merge)
+	} else if !ls.IsPersistence() {
+		ptb.WithVolumes([]corev1.Volume{
+			{
+				Name: "logstash-data",
+				VolumeSource: corev1.VolumeSource{
+					EmptyDir: &corev1.EmptyDirVolumeSource{},
+				},
 			},
 		}, k8sbuilder.Merge)
 	}

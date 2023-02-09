@@ -102,6 +102,8 @@ spec:
           subPath: filebeat.yml
         - mountPath: /usr/share/filebeat/ls-ca
           name: ca-logstash
+        - mountPath: /usr/share/filebeat/data
+          name: filebeat-data
       initContainers:
       - command:
         - /bin/bash

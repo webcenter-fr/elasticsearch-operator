@@ -124,6 +124,8 @@ spec:
           name: filebeat-module
         - mountPath: /usr/share/filebeat/es-ca
           name: ca-elasticsearch
+        - mountPath: /usr/share/filebeat/data
+          name: filebeat-data
       initContainers:
       - command:
         - /bin/bash
@@ -196,5 +198,14 @@ spec:
       - name: filebeat-module
         configMap:
           name: test-module-fb
-      - name: filebeat-data
-        emptyDir: {}
+  volumeClaimTemplates:
+  - metadata:
+      creationTimestamp: null
+      name: filebeat-data
+    spec:
+      accessModes:
+      - ReadWriteOnce
+      resources:
+        requests:
+          storage: 5Gi
+      storageClassName: local-path

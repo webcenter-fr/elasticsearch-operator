@@ -12,6 +12,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/utils/pointer"
 )
 
 func TestBuildStatefulset(t *testing.T) {
@@ -183,6 +184,19 @@ func TestBuildStatefulset(t *testing.T) {
 						ConfigMapRef: &corev1.ConfigMapEnvSource{
 							LocalObjectReference: corev1.LocalObjectReference{
 								Name: "test",
+							},
+						},
+					},
+				},
+				Persistence: &logstashcrd.PersistenceSpec{
+					VolumeClaimSpec: &corev1.PersistentVolumeClaimSpec{
+						StorageClassName: pointer.String("local-path"),
+						AccessModes: []corev1.PersistentVolumeAccessMode{
+							corev1.ReadWriteOnce,
+						},
+						Resources: corev1.ResourceRequirements{
+							Requests: corev1.ResourceList{
+								corev1.ResourceStorage: resource.MustParse("5Gi"),
 							},
 						},
 					},
