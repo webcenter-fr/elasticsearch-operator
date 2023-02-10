@@ -24,8 +24,9 @@ import (
 	"github.com/disaster37/operator-sdk-extra/pkg/controller"
 	"github.com/pkg/errors"
 	beatcrd "github.com/webcenter-fr/elasticsearch-operator/apis/beat/v1alpha1"
+	elasticsearchcrd "github.com/webcenter-fr/elasticsearch-operator/apis/elasticsearch/v1alpha1"
+	logstashcrd "github.com/webcenter-fr/elasticsearch-operator/apis/logstash/v1alpha1"
 	"github.com/webcenter-fr/elasticsearch-operator/controllers/common"
-	elasticsearchcontrollers "github.com/webcenter-fr/elasticsearch-operator/controllers/elasticsearch"
 	appv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	networkingv1 "k8s.io/api/networking/v1"
@@ -127,7 +128,105 @@ func (h *FilebeatReconciler) SetupWithManager(mgr ctrl.Manager) error {
 		Owns(&policyv1.PodDisruptionBudget{}).
 		Owns(&appv1.StatefulSet{}).
 		Watches(&source.Kind{Type: &corev1.Secret{}}, handler.EnqueueRequestsFromMapFunc(watchSecret(h.Client))).
+		Watches(&source.Kind{Type: &corev1.ConfigMap{}}, handler.EnqueueRequestsFromMapFunc(watchConfigMap(h.Client))).
+		Watches(&source.Kind{Type: &elasticsearchcrd.Elasticsearch{}}, handler.EnqueueRequestsFromMapFunc(watchElasticsearch(h.Client))).
+		Watches(&source.Kind{Type: &logstashcrd.Logstash{}}, handler.EnqueueRequestsFromMapFunc(watchLogstash(h.Client))).
 		Complete(h)
+}
+
+// watchLogstash permit to update if LogstashRef change
+func watchLogstash(c client.Client) handler.MapFunc {
+	return func(a client.Object) []reconcile.Request {
+		var (
+			listFilebeats *beatcrd.FilebeatList
+			fs            fields.Selector
+		)
+
+		reconcileRequests := make([]reconcile.Request, 0)
+
+		// ElasticsearchRef
+		listFilebeats = &beatcrd.FilebeatList{}
+		fs = fields.ParseSelectorOrDie(fmt.Sprintf("spec.logstashRef.managed.name=%s", a.GetName()))
+		if err := c.List(context.Background(), listFilebeats, &client.ListOptions{Namespace: a.GetNamespace(), FieldSelector: fs}); err != nil {
+			panic(err)
+		}
+		for _, k := range listFilebeats.Items {
+			reconcileRequests = append(reconcileRequests, reconcile.Request{NamespacedName: types.NamespacedName{Name: k.Name, Namespace: k.Namespace}})
+		}
+
+		return reconcileRequests
+
+	}
+}
+
+// watchElasticsearch permit to update if ElasticsearchRef change
+func watchElasticsearch(c client.Client) handler.MapFunc {
+	return func(a client.Object) []reconcile.Request {
+		var (
+			listFilebeats *beatcrd.FilebeatList
+			fs            fields.Selector
+		)
+
+		reconcileRequests := make([]reconcile.Request, 0)
+
+		// ElasticsearchRef
+		listFilebeats = &beatcrd.FilebeatList{}
+		fs = fields.ParseSelectorOrDie(fmt.Sprintf("spec.elasticsearchRef.managed.name=%s", a.GetName()))
+		if err := c.List(context.Background(), listFilebeats, &client.ListOptions{Namespace: a.GetNamespace(), FieldSelector: fs}); err != nil {
+			panic(err)
+		}
+		for _, k := range listFilebeats.Items {
+			reconcileRequests = append(reconcileRequests, reconcile.Request{NamespacedName: types.NamespacedName{Name: k.Name, Namespace: k.Namespace}})
+		}
+
+		return reconcileRequests
+
+	}
+}
+
+// watchConfigMap permit to update if configMapRef change
+func watchConfigMap(c client.Client) handler.MapFunc {
+	return func(a client.Object) []reconcile.Request {
+		var (
+			listFilebeats *beatcrd.FilebeatList
+			fs            fields.Selector
+		)
+
+		reconcileRequests := make([]reconcile.Request, 0)
+
+		// Additional volumes secrets
+		listFilebeats = &beatcrd.FilebeatList{}
+		fs = fields.ParseSelectorOrDie(fmt.Sprintf("spec.deployment.additionalVolumes.name=%s", a.GetName()))
+		if err := c.List(context.Background(), listFilebeats, &client.ListOptions{Namespace: a.GetNamespace(), FieldSelector: fs}); err != nil {
+			panic(err)
+		}
+		for _, k := range listFilebeats.Items {
+			reconcileRequests = append(reconcileRequests, reconcile.Request{NamespacedName: types.NamespacedName{Name: k.Name, Namespace: k.Namespace}})
+		}
+
+		// Env of type secrets
+		listFilebeats = &beatcrd.FilebeatList{}
+		fs = fields.ParseSelectorOrDie(fmt.Sprintf("spec.deployment.env.name=%s", a.GetName()))
+		if err := c.List(context.Background(), listFilebeats, &client.ListOptions{Namespace: a.GetNamespace(), FieldSelector: fs}); err != nil {
+			panic(err)
+		}
+		for _, k := range listFilebeats.Items {
+			reconcileRequests = append(reconcileRequests, reconcile.Request{NamespacedName: types.NamespacedName{Name: k.Name, Namespace: k.Namespace}})
+		}
+
+		// EnvFrom of type secrets
+		listFilebeats = &beatcrd.FilebeatList{}
+		fs = fields.ParseSelectorOrDie(fmt.Sprintf("spec.deployment.envFrom.name=%s", a.GetName()))
+		if err := c.List(context.Background(), listFilebeats, &client.ListOptions{Namespace: a.GetNamespace(), FieldSelector: fs}); err != nil {
+			panic(err)
+		}
+		for _, k := range listFilebeats.Items {
+			reconcileRequests = append(reconcileRequests, reconcile.Request{NamespacedName: types.NamespacedName{Name: k.Name, Namespace: k.Namespace}})
+		}
+
+		return reconcileRequests
+
+	}
 }
 
 // watchSecret permit to update Filebeat if secretRef change
@@ -139,18 +238,6 @@ func watchSecret(c client.Client) handler.MapFunc {
 		)
 
 		reconcileRequests := make([]reconcile.Request, 0)
-
-		// Elasticsearch API cert secret when managed
-		if elasticsearchcontrollers.GetElasticsearchNameFromSecretApiTlsName(a.GetName()) != "" {
-			listFilebeats = &beatcrd.FilebeatList{}
-			fs = fields.ParseSelectorOrDie(fmt.Sprintf("spec.elasticsearchRef.managed.name=%s", elasticsearchcontrollers.GetElasticsearchNameFromSecretApiTlsName(a.GetName())))
-			if err := c.List(context.Background(), listFilebeats, &client.ListOptions{Namespace: a.GetNamespace(), FieldSelector: fs}); err != nil {
-				panic(err)
-			}
-			for _, k := range listFilebeats.Items {
-				reconcileRequests = append(reconcileRequests, reconcile.Request{NamespacedName: types.NamespacedName{Name: k.Name, Namespace: k.Namespace}})
-			}
-		}
 
 		// Elasticsearch API cert secret when external
 		listFilebeats = &beatcrd.FilebeatList{}
@@ -165,6 +252,46 @@ func watchSecret(c client.Client) handler.MapFunc {
 		// Elasticsearch credentials when external
 		listFilebeats = &beatcrd.FilebeatList{}
 		fs = fields.ParseSelectorOrDie(fmt.Sprintf("spec.elasticsearchRef.external.secretRef.name=%s", a.GetName()))
+		if err := c.List(context.Background(), listFilebeats, &client.ListOptions{Namespace: a.GetNamespace(), FieldSelector: fs}); err != nil {
+			panic(err)
+		}
+		for _, k := range listFilebeats.Items {
+			reconcileRequests = append(reconcileRequests, reconcile.Request{NamespacedName: types.NamespacedName{Name: k.Name, Namespace: k.Namespace}})
+		}
+
+		// Logstash cert secret
+		listFilebeats = &beatcrd.FilebeatList{}
+		fs = fields.ParseSelectorOrDie(fmt.Sprintf("spec.logstashRef.logstashCASecretRef.name=%s", a.GetName()))
+		if err := c.List(context.Background(), listFilebeats, &client.ListOptions{Namespace: a.GetNamespace(), FieldSelector: fs}); err != nil {
+			panic(err)
+		}
+		for _, k := range listFilebeats.Items {
+			reconcileRequests = append(reconcileRequests, reconcile.Request{NamespacedName: types.NamespacedName{Name: k.Name, Namespace: k.Namespace}})
+		}
+
+		// Additional volumes secrets
+		listFilebeats = &beatcrd.FilebeatList{}
+		fs = fields.ParseSelectorOrDie(fmt.Sprintf("spec.deployment.additionalVolumes.name=%s", a.GetName()))
+		if err := c.List(context.Background(), listFilebeats, &client.ListOptions{Namespace: a.GetNamespace(), FieldSelector: fs}); err != nil {
+			panic(err)
+		}
+		for _, k := range listFilebeats.Items {
+			reconcileRequests = append(reconcileRequests, reconcile.Request{NamespacedName: types.NamespacedName{Name: k.Name, Namespace: k.Namespace}})
+		}
+
+		// Env of type secrets
+		listFilebeats = &beatcrd.FilebeatList{}
+		fs = fields.ParseSelectorOrDie(fmt.Sprintf("spec.deployment.env.name=%s", a.GetName()))
+		if err := c.List(context.Background(), listFilebeats, &client.ListOptions{Namespace: a.GetNamespace(), FieldSelector: fs}); err != nil {
+			panic(err)
+		}
+		for _, k := range listFilebeats.Items {
+			reconcileRequests = append(reconcileRequests, reconcile.Request{NamespacedName: types.NamespacedName{Name: k.Name, Namespace: k.Namespace}})
+		}
+
+		// EnvFrom of type secrets
+		listFilebeats = &beatcrd.FilebeatList{}
+		fs = fields.ParseSelectorOrDie(fmt.Sprintf("spec.deployment.envFrom.name=%s", a.GetName()))
 		if err := c.List(context.Background(), listFilebeats, &client.ListOptions{Namespace: a.GetNamespace(), FieldSelector: fs}); err != nil {
 			panic(err)
 		}
