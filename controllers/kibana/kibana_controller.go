@@ -36,6 +36,7 @@ import (
 	"k8s.io/apimachinery/pkg/fields"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/utils/pointer"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/handler"
@@ -207,7 +208,7 @@ func watchSecret(c client.Client) handler.MapFunc {
 func (h *KibanaReconciler) Configure(ctx context.Context, req ctrl.Request, resource client.Object) (res ctrl.Result, err error) {
 	o := resource.(*kibanacrd.Kibana)
 
-	o.Status.IsError = false
+	o.Status.IsError = pointer.Bool(false)
 
 	// Init condition status if not exist
 	if condition.FindStatusCondition(o.Status.Conditions, KibanaCondition) == nil {
@@ -231,7 +232,7 @@ func (h *KibanaReconciler) Delete(ctx context.Context, r client.Object, data map
 func (h *KibanaReconciler) OnError(ctx context.Context, r client.Object, data map[string]any, currentErr error) (res ctrl.Result, err error) {
 	o := r.(*kibanacrd.Kibana)
 
-	o.Status.IsError = true
+	o.Status.IsError = pointer.Bool(true)
 
 	common.TotalErrors.Inc()
 	return res, currentErr

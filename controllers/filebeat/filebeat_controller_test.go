@@ -258,6 +258,7 @@ queue.type: persisted
 
 			// Status must be update
 			assert.NotEmpty(t, fb.Status.Phase)
+			assert.False(t, *fb.Status.IsError)
 
 			return nil
 		},
@@ -406,6 +407,7 @@ func doUpdateFilebeatStep() test.TestStep {
 
 			// Status must be update
 			assert.NotEmpty(t, fb.Status.Phase)
+			assert.False(t, *fb.Status.IsError)
 
 			return nil
 		},

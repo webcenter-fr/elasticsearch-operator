@@ -346,7 +346,7 @@ type FilebeatStatus struct {
 
 	// IsError is true if controller is stuck on Error
 	// +operator-sdk:csv:customresourcedefinitions:type=status
-	IsError bool `json:"isOnError"`
+	IsError *bool `json:"isOnError,omitempty"`
 
 	// List of conditions
 	// +operator-sdk:csv:customresourcedefinitions:type=status

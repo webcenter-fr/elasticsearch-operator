@@ -12317,7 +12317,6 @@ spec:
                 type: string
             required:
             - conditions
-            - isOnError
             - phase
             type: object
         type: object

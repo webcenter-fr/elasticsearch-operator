@@ -268,6 +268,7 @@ queue.type: persisted
 
 			// Status must be update
 			assert.NotEmpty(t, ls.Status.Phase)
+			assert.False(t, *ls.Status.IsError)
 
 			return nil
 		},
@@ -424,6 +425,7 @@ func doUpdateLogstashStep() test.TestStep {
 
 			// Status must be update
 			assert.NotEmpty(t, ls.Status.Phase)
+			assert.False(t, *ls.Status.IsError)
 
 			return nil
 		},

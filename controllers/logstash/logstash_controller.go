@@ -36,6 +36,7 @@ import (
 	"k8s.io/apimachinery/pkg/fields"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/utils/pointer"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/handler"
@@ -188,7 +189,7 @@ func watchSecret(c client.Client) handler.MapFunc {
 func (h *LogstashReconciler) Configure(ctx context.Context, req ctrl.Request, resource client.Object) (res ctrl.Result, err error) {
 	o := resource.(*logstashcrd.Logstash)
 
-	o.Status.IsError = false
+	o.Status.IsError = pointer.Bool(false)
 
 	// Init condition status if not exist
 	if condition.FindStatusCondition(o.Status.Conditions, LogstashCondition) == nil {
@@ -212,7 +213,7 @@ func (h *LogstashReconciler) Delete(ctx context.Context, r client.Object, data m
 func (h *LogstashReconciler) OnError(ctx context.Context, r client.Object, data map[string]any, currentErr error) (res ctrl.Result, err error) {
 	o := r.(*logstashcrd.Logstash)
 
-	o.Status.IsError = true
+	o.Status.IsError = pointer.Bool(true)
 
 	common.TotalErrors.Inc()
 	return res, currentErr

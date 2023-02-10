@@ -442,7 +442,7 @@ type ElasticsearchStatus struct {
 
 	// IsError is true if controller is stuck on Error
 	// +operator-sdk:csv:customresourcedefinitions:type=status
-	IsError bool `json:"isOnError"`
+	IsError *bool `json:"isOnError,omitempty"`
 
 	// Url is the Elasticsearch endpoint
 	// +operator-sdk:csv:customresourcedefinitions:type=status

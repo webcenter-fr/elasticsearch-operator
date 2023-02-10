@@ -270,6 +270,7 @@ func doCreateKibanaStep() test.TestStep {
 			// Status must be update
 			assert.NotEmpty(t, kb.Status.Phase)
 			assert.NotEmpty(t, kb.Status.Url)
+			assert.False(t, *kb.Status.IsError)
 
 			return nil
 		},
@@ -449,6 +450,7 @@ func doUpdateKibanaStep() test.TestStep {
 			// Status must be update
 			assert.NotEmpty(t, kb.Status.Phase)
 			assert.NotEmpty(t, kb.Status.Url)
+			assert.False(t, *kb.Status.IsError)
 
 			return nil
 		},

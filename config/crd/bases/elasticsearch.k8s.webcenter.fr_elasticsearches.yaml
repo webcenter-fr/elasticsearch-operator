@@ -20090,7 +20090,6 @@ spec:
             - conditions
             - credentialsRef
             - health
-            - isOnError
             - phase
             - url
             type: object

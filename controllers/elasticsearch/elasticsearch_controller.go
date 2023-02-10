@@ -44,6 +44,7 @@ import (
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/utils/pointer"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/handler"
@@ -191,7 +192,7 @@ func watchSecret(c client.Client) handler.MapFunc {
 func (h *ElasticsearchReconciler) Configure(ctx context.Context, req ctrl.Request, resource client.Object) (res ctrl.Result, err error) {
 	o := resource.(*elasticsearchcrd.Elasticsearch)
 
-	o.Status.IsError = false
+	o.Status.IsError = pointer.Bool(false)
 
 	// Init condition status if not exist
 	if condition.FindStatusCondition(o.Status.Conditions, ElasticsearchCondition) == nil {
@@ -240,7 +241,7 @@ func (h *ElasticsearchReconciler) Delete(ctx context.Context, r client.Object, d
 func (h *ElasticsearchReconciler) OnError(ctx context.Context, r client.Object, data map[string]any, currentErr error) (res ctrl.Result, err error) {
 	o := r.(*elasticsearchcrd.Elasticsearch)
 
-	o.Status.IsError = true
+	o.Status.IsError = pointer.Bool(true)
 
 	common.TotalErrors.Inc()
 	return res, currentErr
