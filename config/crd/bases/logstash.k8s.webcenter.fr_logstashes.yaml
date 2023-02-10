@@ -20,6 +20,10 @@ spec:
       jsonPath: .status.phase
       name: Phase
       type: string
+    - description: Is on error
+      jsonPath: .status.isOnError
+      name: Error
+      type: boolean
     - jsonPath: .metadata.creationTimestamp
       name: Age
       type: date
@@ -12305,11 +12309,15 @@ spec:
                   - type
                   type: object
                 type: array
+              isOnError:
+                description: IsError is true if controller is stuck on Error
+                type: boolean
               phase:
                 description: Phase is the current deployment phase
                 type: string
             required:
             - conditions
+            - isOnError
             - phase
             type: object
         type: object

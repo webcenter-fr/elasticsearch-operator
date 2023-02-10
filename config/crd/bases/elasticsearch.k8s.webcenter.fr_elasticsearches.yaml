@@ -26,6 +26,10 @@ spec:
       jsonPath: .status.phase
       name: Phase
       type: string
+    - description: Is on error
+      jsonPath: .status.isOnError
+      name: Error
+      type: boolean
     - description: Cluster health
       jsonPath: .status.health
       name: Health
@@ -20073,6 +20077,9 @@ spec:
               health:
                 description: Health is the cluster health
                 type: string
+              isOnError:
+                description: IsError is true if controller is stuck on Error
+                type: boolean
               phase:
                 description: Phase is the current cluster deployment phase
                 type: string
@@ -20083,6 +20090,7 @@ spec:
             - conditions
             - credentialsRef
             - health
+            - isOnError
             - phase
             - url
             type: object

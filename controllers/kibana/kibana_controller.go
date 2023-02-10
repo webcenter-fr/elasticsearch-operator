@@ -207,6 +207,8 @@ func watchSecret(c client.Client) handler.MapFunc {
 func (h *KibanaReconciler) Configure(ctx context.Context, req ctrl.Request, resource client.Object) (res ctrl.Result, err error) {
 	o := resource.(*kibanacrd.Kibana)
 
+	o.Status.IsError = false
+
 	// Init condition status if not exist
 	if condition.FindStatusCondition(o.Status.Conditions, KibanaCondition) == nil {
 		condition.SetStatusCondition(&o.Status.Conditions, metav1.Condition{
@@ -227,6 +229,10 @@ func (h *KibanaReconciler) Delete(ctx context.Context, r client.Object, data map
 	return
 }
 func (h *KibanaReconciler) OnError(ctx context.Context, r client.Object, data map[string]any, currentErr error) (res ctrl.Result, err error) {
+	o := r.(*kibanacrd.Kibana)
+
+	o.Status.IsError = true
+
 	common.TotalErrors.Inc()
 	return res, currentErr
 }

@@ -55,9 +55,9 @@ func (r *ConfigMapReconciler) Configure(ctx context.Context, req ctrl.Request, r
 			Status: metav1.ConditionFalse,
 			Reason: "Initialize",
 		})
-
-		o.Status.Phase = ConfigmapPhase
 	}
+
+	o.Status.Phase = ConfigmapPhase
 
 	return res, nil
 }

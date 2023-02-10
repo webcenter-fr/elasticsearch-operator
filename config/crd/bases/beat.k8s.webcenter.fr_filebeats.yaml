@@ -15,7 +15,19 @@ spec:
     singular: filebeat
   scope: Namespaced
   versions:
-  - name: v1alpha1
+  - additionalPrinterColumns:
+    - description: Deployment status
+      jsonPath: .status.phase
+      name: Phase
+      type: string
+    - description: Is on error
+      jsonPath: .status.isOnError
+      name: Error
+      type: boolean
+    - jsonPath: .metadata.creationTimestamp
+      name: Age
+      type: date
+    name: v1alpha1
     schema:
       openAPIV3Schema:
         description: Filebeat is the Schema for the filebeats API
@@ -12322,11 +12334,15 @@ spec:
                   - type
                   type: object
                 type: array
+              isOnError:
+                description: IsError is true if controller is stuck on Error
+                type: boolean
               phase:
                 description: Phase is the current deployment phase
                 type: string
             required:
             - conditions
+            - isOnError
             - phase
             type: object
         type: object

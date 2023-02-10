@@ -53,9 +53,9 @@ func (r *ServiceReconciler) Configure(ctx context.Context, req ctrl.Request, res
 			Status: metav1.ConditionFalse,
 			Reason: "Initialize",
 		})
-
-		o.Status.Phase = ServicePhase
 	}
+
+	o.Status.Phase = ServicePhase
 
 	return res, nil
 }

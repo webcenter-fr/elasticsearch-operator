@@ -191,6 +191,8 @@ func watchSecret(c client.Client) handler.MapFunc {
 func (h *ElasticsearchReconciler) Configure(ctx context.Context, req ctrl.Request, resource client.Object) (res ctrl.Result, err error) {
 	o := resource.(*elasticsearchcrd.Elasticsearch)
 
+	o.Status.IsError = false
+
 	// Init condition status if not exist
 	if condition.FindStatusCondition(o.Status.Conditions, ElasticsearchCondition) == nil {
 		condition.SetStatusCondition(&o.Status.Conditions, metav1.Condition{
@@ -236,6 +238,10 @@ func (h *ElasticsearchReconciler) Delete(ctx context.Context, r client.Object, d
 	return
 }
 func (h *ElasticsearchReconciler) OnError(ctx context.Context, r client.Object, data map[string]any, currentErr error) (res ctrl.Result, err error) {
+	o := r.(*elasticsearchcrd.Elasticsearch)
+
+	o.Status.IsError = true
+
 	common.TotalErrors.Inc()
 	return res, currentErr
 }

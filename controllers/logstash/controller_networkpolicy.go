@@ -54,9 +54,9 @@ func (r *NetworkPolicyReconciler) Configure(ctx context.Context, req ctrl.Reques
 			Status: metav1.ConditionFalse,
 			Reason: "Initialize",
 		})
-
-		o.Status.Phase = NetworkPolicyPhase
 	}
+
+	o.Status.Phase = NetworkPolicyPhase
 
 	return res, nil
 }

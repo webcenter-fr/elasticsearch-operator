@@ -55,9 +55,9 @@ func (r *LicenseReconciler) Configure(ctx context.Context, req ctrl.Request, res
 			Status: metav1.ConditionFalse,
 			Reason: "Initialize",
 		})
-
-		o.Status.Phase = LicensePhase
 	}
+
+	o.Status.Phase = LicensePhase
 
 	return res, nil
 }

@@ -54,9 +54,9 @@ func (r *ExporterReconciler) Configure(ctx context.Context, req ctrl.Request, re
 			Status: metav1.ConditionFalse,
 			Reason: "Initialize",
 		})
-
-		o.Status.Phase = ExporterPhase
 	}
+
+	o.Status.Phase = ExporterPhase
 
 	return res, nil
 }

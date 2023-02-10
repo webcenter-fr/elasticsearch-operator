@@ -440,6 +440,10 @@ type ElasticsearchStatus struct {
 	// +operator-sdk:csv:customresourcedefinitions:type=status
 	Phase string `json:"phase"`
 
+	// IsError is true if controller is stuck on Error
+	// +operator-sdk:csv:customresourcedefinitions:type=status
+	IsError bool `json:"isOnError"`
+
 	// Url is the Elasticsearch endpoint
 	// +operator-sdk:csv:customresourcedefinitions:type=status
 	Url string `json:"url"`
@@ -466,6 +470,7 @@ type ElasticsearchStatus struct {
 // +kubebuilder:printcolumn:name="URL",type="string",JSONPath=".status.url"
 // +kubebuilder:printcolumn:name="CredentialsRef",type="string",JSONPath=".status.credentialsRef.name"
 // +kubebuilder:printcolumn:name="Phase",type="string",JSONPath=".status.phase",description="Cluster deployment status"
+// +kubebuilder:printcolumn:name="Error",type="boolean",JSONPath=".status.isOnError",description="Is on error"
 // +kubebuilder:printcolumn:name="Health",type="string",JSONPath=".status.health",description="Cluster health"
 // +kubebuilder:printcolumn:name="Age",type="date",JSONPath=".metadata.creationTimestamp"
 type Elasticsearch struct {

@@ -60,9 +60,9 @@ func (r *StatefulsetReconciler) Configure(ctx context.Context, req ctrl.Request,
 			Status: metav1.ConditionFalse,
 			Reason: "Initialize",
 		})
-
-		o.Status.Phase = StatefulsetPhase
 	}
+
+	o.Status.Phase = StatefulsetPhase
 
 	return res, nil
 }

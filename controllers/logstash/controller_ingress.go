@@ -54,9 +54,9 @@ func (r *IngressReconciler) Configure(ctx context.Context, req ctrl.Request, res
 			Status: metav1.ConditionFalse,
 			Reason: "Initialize",
 		})
-
-		o.Status.Phase = IngressPhase
 	}
+
+	o.Status.Phase = IngressPhase
 
 	return res, nil
 }
