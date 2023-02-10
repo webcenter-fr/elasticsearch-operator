@@ -17,7 +17,6 @@ limitations under the License.
 package logstash
 
 import (
-	"context"
 	"path/filepath"
 	"testing"
 	"time"
@@ -25,8 +24,10 @@ import (
 	monitoringv1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1"
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/suite"
+	beatcrd "github.com/webcenter-fr/elasticsearch-operator/apis/beat/v1alpha1"
 	elasticsearchcrd "github.com/webcenter-fr/elasticsearch-operator/apis/elasticsearch/v1alpha1"
 	elasticsearchapicrd "github.com/webcenter-fr/elasticsearch-operator/apis/elasticsearchapi/v1alpha1"
+	kibanacrd "github.com/webcenter-fr/elasticsearch-operator/apis/kibana/v1alpha1"
 	logstashcrd "github.com/webcenter-fr/elasticsearch-operator/apis/logstash/v1alpha1"
 	elasticsearchcontrollers "github.com/webcenter-fr/elasticsearch-operator/controllers/elasticsearch"
 	"k8s.io/client-go/kubernetes/scheme"
@@ -88,7 +89,15 @@ func (t *LogstashControllerTestSuite) SetupSuite() {
 	if err != nil {
 		panic(err)
 	}
+	err = kibanacrd.AddToScheme(scheme.Scheme)
+	if err != nil {
+		panic(err)
+	}
 	err = logstashcrd.AddToScheme(scheme.Scheme)
+	if err != nil {
+		panic(err)
+	}
+	err = beatcrd.AddToScheme(scheme.Scheme)
 	if err != nil {
 		panic(err)
 	}
@@ -108,67 +117,10 @@ func (t *LogstashControllerTestSuite) SetupSuite() {
 	t.k8sClient = k8sClient
 
 	// Add indexers on Elasticsearch to track secret change
-	if err := k8sManager.GetFieldIndexer().IndexField(context.Background(), &elasticsearchcrd.Elasticsearch{}, "spec.tls.certificateSecretRef.name", func(o client.Object) []string {
-		p := o.(*elasticsearchcrd.Elasticsearch)
-		if p.IsTlsApiEnabled() && !p.IsSelfManagedSecretForTlsApi() {
-			return []string{p.Spec.Tls.CertificateSecretRef.Name}
-		}
-		return []string{}
-	}); err != nil {
-		panic(err)
-	}
+	elasticsearchcontrollers.MustSetUpIndex(k8sManager)
 
-	if err := k8sManager.GetFieldIndexer().IndexField(context.Background(), &elasticsearchcrd.Elasticsearch{}, "spec.globalNodeGroup.keystoreSecretRef.name", func(o client.Object) []string {
-		p := o.(*elasticsearchcrd.Elasticsearch)
-		if p.Spec.GlobalNodeGroup.KeystoreSecretRef != nil {
-			return []string{p.Spec.GlobalNodeGroup.KeystoreSecretRef.Name}
-		}
-		return []string{}
-	}); err != nil {
-		panic(err)
-	}
-
-	// Add indexers on Kibana to track secret change
 	// Add indexers on Logstash to track secret change
-	if err := k8sManager.GetFieldIndexer().IndexField(context.Background(), &logstashcrd.Logstash{}, "spec.keystoreSecretRef.name", func(o client.Object) []string {
-		p := o.(*logstashcrd.Logstash)
-		if p.Spec.KeystoreSecretRef != nil {
-			return []string{p.Spec.KeystoreSecretRef.Name}
-		}
-		return []string{}
-	}); err != nil {
-		panic(err)
-	}
-
-	if err := k8sManager.GetFieldIndexer().IndexField(context.Background(), &logstashcrd.Logstash{}, "spec.elasticsearchRef.managed.name", func(o client.Object) []string {
-		p := o.(*logstashcrd.Logstash)
-		if p.Spec.ElasticsearchRef.IsManaged() {
-			return []string{p.Spec.ElasticsearchRef.ManagedElasticsearchRef.Name}
-		}
-		return []string{}
-	}); err != nil {
-		panic(err)
-	}
-
-	if err := k8sManager.GetFieldIndexer().IndexField(context.Background(), &logstashcrd.Logstash{}, "spec.elasticsearchRef.elasticsearchCASecretRef.name", func(o client.Object) []string {
-		p := o.(*logstashcrd.Logstash)
-		if p.Spec.ElasticsearchRef.ElasticsearchCaSecretRef != nil {
-			return []string{p.Spec.ElasticsearchRef.ElasticsearchCaSecretRef.Name}
-		}
-		return []string{}
-	}); err != nil {
-		panic(err)
-	}
-
-	if err := k8sManager.GetFieldIndexer().IndexField(context.Background(), &logstashcrd.Logstash{}, "spec.elasticsearchRef.external.secretRef.name", func(o client.Object) []string {
-		p := o.(*logstashcrd.Logstash)
-		if p.Spec.ElasticsearchRef.IsExternal() && p.Spec.ElasticsearchRef.ExternalElasticsearchRef.SecretRef != nil {
-			return []string{p.Spec.ElasticsearchRef.ExternalElasticsearchRef.SecretRef.Name}
-		}
-		return []string{}
-	}); err != nil {
-		panic(err)
-	}
+	MustSetUpIndex(k8sManager)
 
 	// Init controllers
 

@@ -15,6 +15,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 	elasticsearchcrd "github.com/webcenter-fr/elasticsearch-operator/apis/elasticsearch/v1alpha1"
+	elasticsearchapicrd "github.com/webcenter-fr/elasticsearch-operator/apis/elasticsearchapi/v1alpha1"
 	"github.com/webcenter-fr/elasticsearch-operator/apis/shared"
 	elasticsearchcontrollers "github.com/webcenter-fr/elasticsearch-operator/controllers/elasticsearch"
 	core "k8s.io/api/core/v1"
@@ -23,6 +24,7 @@ import (
 	"k8s.io/client-go/tools/record"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/manager"
 )
 
 type Reconciler struct {
@@ -42,6 +44,28 @@ func (r *Reconciler) SetRecorder(recorder record.EventRecorder) {
 
 func (r *Reconciler) SetReconciler(reconciler controller.Reconciler) {
 	r.reconciler = reconciler
+}
+
+func MustSetUpIndex(k8sManager manager.Manager) {
+	if err := k8sManager.GetFieldIndexer().IndexField(context.Background(), &elasticsearchapicrd.License{}, "spec.secretRef.name", func(o client.Object) []string {
+		p := o.(*elasticsearchapicrd.License)
+		if p.Spec.SecretRef != nil {
+			return []string{p.Spec.SecretRef.Name}
+		}
+		return []string{}
+	}); err != nil {
+		panic(err)
+	}
+
+	if err := k8sManager.GetFieldIndexer().IndexField(context.Background(), &elasticsearchapicrd.User{}, "spec.secretRef.name", func(o client.Object) []string {
+		p := o.(*elasticsearchapicrd.User)
+		if p.Spec.SecretRef != nil {
+			return []string{p.Spec.SecretRef.Name}
+		}
+		return []string{}
+	}); err != nil {
+		panic(err)
+	}
 }
 
 func GetElasticsearchHandler(ctx context.Context, o shared.ElasticsearchRef, client client.Client, req ctrl.Request, log *logrus.Entry) (esHandler eshandler.ElasticsearchHandler, err error) {

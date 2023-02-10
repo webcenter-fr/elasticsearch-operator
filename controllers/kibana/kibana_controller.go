@@ -23,9 +23,9 @@ import (
 
 	"emperror.dev/errors"
 	"github.com/disaster37/operator-sdk-extra/pkg/controller"
+	elasticsearchcrd "github.com/webcenter-fr/elasticsearch-operator/apis/elasticsearch/v1alpha1"
 	kibanacrd "github.com/webcenter-fr/elasticsearch-operator/apis/kibana/v1alpha1"
 	"github.com/webcenter-fr/elasticsearch-operator/controllers/common"
-	elasticsearchcontrollers "github.com/webcenter-fr/elasticsearch-operator/controllers/elasticsearch"
 	appv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	networkingv1 "k8s.io/api/networking/v1"
@@ -134,7 +134,69 @@ func (h *KibanaReconciler) SetupWithManager(mgr ctrl.Manager) error {
 		Owns(&policyv1.PodDisruptionBudget{}).
 		Owns(&appv1.Deployment{}).
 		Watches(&source.Kind{Type: &corev1.Secret{}}, handler.EnqueueRequestsFromMapFunc(watchSecret(h.Client))).
+		Watches(&source.Kind{Type: &corev1.ConfigMap{}}, handler.EnqueueRequestsFromMapFunc(watchConfigMap(h.Client))).
+		Watches(&source.Kind{Type: &elasticsearchcrd.Elasticsearch{}}, handler.EnqueueRequestsFromMapFunc(watchElasticsearch(h.Client))).
 		Complete(h)
+}
+
+// watchElasticsearch permit to update if ElasticsearchRef change
+func watchElasticsearch(c client.Client) handler.MapFunc {
+	return func(a client.Object) []reconcile.Request {
+		var (
+			listKibanas *kibanacrd.KibanaList
+			fs          fields.Selector
+		)
+
+		reconcileRequests := make([]reconcile.Request, 0)
+
+		// ElasticsearchRef
+		listKibanas = &kibanacrd.KibanaList{}
+		fs = fields.ParseSelectorOrDie(fmt.Sprintf("spec.elasticsearchRef.managed.name=%s", a.GetName()))
+		if err := c.List(context.Background(), listKibanas, &client.ListOptions{Namespace: a.GetNamespace(), FieldSelector: fs}); err != nil {
+			panic(err)
+		}
+		for _, k := range listKibanas.Items {
+			reconcileRequests = append(reconcileRequests, reconcile.Request{NamespacedName: types.NamespacedName{Name: k.Name, Namespace: k.Namespace}})
+		}
+
+		return reconcileRequests
+
+	}
+}
+
+// watchConfigMap permit to update if configMapRef change
+func watchConfigMap(c client.Client) handler.MapFunc {
+	return func(a client.Object) []reconcile.Request {
+		var (
+			listKibanas *kibanacrd.KibanaList
+			fs          fields.Selector
+		)
+
+		reconcileRequests := make([]reconcile.Request, 0)
+
+		// Env of type configMap
+		listKibanas = &kibanacrd.KibanaList{}
+		fs = fields.ParseSelectorOrDie(fmt.Sprintf("spec.deployment.env.name=%s", a.GetName()))
+		if err := c.List(context.Background(), listKibanas, &client.ListOptions{Namespace: a.GetNamespace(), FieldSelector: fs}); err != nil {
+			panic(err)
+		}
+		for _, k := range listKibanas.Items {
+			reconcileRequests = append(reconcileRequests, reconcile.Request{NamespacedName: types.NamespacedName{Name: k.Name, Namespace: k.Namespace}})
+		}
+
+		// EnvFrom of type configMap
+		listKibanas = &kibanacrd.KibanaList{}
+		fs = fields.ParseSelectorOrDie(fmt.Sprintf("spec.deployment.envFrom.name=%s", a.GetName()))
+		if err := c.List(context.Background(), listKibanas, &client.ListOptions{Namespace: a.GetNamespace(), FieldSelector: fs}); err != nil {
+			panic(err)
+		}
+		for _, k := range listKibanas.Items {
+			reconcileRequests = append(reconcileRequests, reconcile.Request{NamespacedName: types.NamespacedName{Name: k.Name, Namespace: k.Namespace}})
+		}
+
+		return reconcileRequests
+
+	}
 }
 
 // watchSecret permit to update Kibana if secretRef change
@@ -169,18 +231,6 @@ func watchSecret(c client.Client) handler.MapFunc {
 			reconcileRequests = append(reconcileRequests, reconcile.Request{NamespacedName: types.NamespacedName{Name: k.Name, Namespace: k.Namespace}})
 		}
 
-		// Elasticsearch API cert secret when managed
-		if elasticsearchcontrollers.GetElasticsearchNameFromSecretApiTlsName(a.GetName()) != "" {
-			listKibanas = &kibanacrd.KibanaList{}
-			fs = fields.ParseSelectorOrDie(fmt.Sprintf("spec.elasticsearchRef.managed.name=%s", elasticsearchcontrollers.GetElasticsearchNameFromSecretApiTlsName(a.GetName())))
-			if err := c.List(context.Background(), listKibanas, &client.ListOptions{Namespace: a.GetNamespace(), FieldSelector: fs}); err != nil {
-				panic(err)
-			}
-			for _, k := range listKibanas.Items {
-				reconcileRequests = append(reconcileRequests, reconcile.Request{NamespacedName: types.NamespacedName{Name: k.Name, Namespace: k.Namespace}})
-			}
-		}
-
 		// Elasticsearch API cert secret when external
 		listKibanas = &kibanacrd.KibanaList{}
 		fs = fields.ParseSelectorOrDie(fmt.Sprintf("spec.elasticsearchRef.elasticsearchCASecretRef.name=%s", a.GetName()))
@@ -194,6 +244,26 @@ func watchSecret(c client.Client) handler.MapFunc {
 		// Elasticsearch credentials when external
 		listKibanas = &kibanacrd.KibanaList{}
 		fs = fields.ParseSelectorOrDie(fmt.Sprintf("spec.elasticsearchRef.external.secretRef.name=%s", a.GetName()))
+		if err := c.List(context.Background(), listKibanas, &client.ListOptions{Namespace: a.GetNamespace(), FieldSelector: fs}); err != nil {
+			panic(err)
+		}
+		for _, k := range listKibanas.Items {
+			reconcileRequests = append(reconcileRequests, reconcile.Request{NamespacedName: types.NamespacedName{Name: k.Name, Namespace: k.Namespace}})
+		}
+
+		// Env of type secrets
+		listKibanas = &kibanacrd.KibanaList{}
+		fs = fields.ParseSelectorOrDie(fmt.Sprintf("spec.deployment.env.name=%s", a.GetName()))
+		if err := c.List(context.Background(), listKibanas, &client.ListOptions{Namespace: a.GetNamespace(), FieldSelector: fs}); err != nil {
+			panic(err)
+		}
+		for _, k := range listKibanas.Items {
+			reconcileRequests = append(reconcileRequests, reconcile.Request{NamespacedName: types.NamespacedName{Name: k.Name, Namespace: k.Namespace}})
+		}
+
+		// EnvFrom of type secrets
+		listKibanas = &kibanacrd.KibanaList{}
+		fs = fields.ParseSelectorOrDie(fmt.Sprintf("spec.deployment.envFrom.name=%s", a.GetName()))
 		if err := c.List(context.Background(), listKibanas, &client.ListOptions{Namespace: a.GetNamespace(), FieldSelector: fs}); err != nil {
 			panic(err)
 		}

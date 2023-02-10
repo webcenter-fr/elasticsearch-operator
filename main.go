@@ -17,7 +17,6 @@ limitations under the License.
 package main
 
 import (
-	"context"
 	"flag"
 	"os"
 
@@ -31,7 +30,6 @@ import (
 	_ "k8s.io/client-go/plugin/pkg/client/auth"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/cache"
-	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/healthz"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 
@@ -141,171 +139,22 @@ func main() {
 		os.Exit(1)
 	}
 
-	// Add indexers on License to track secret change
-	if err := mgr.GetFieldIndexer().IndexField(context.Background(), &elasticsearchapicrd.License{}, "spec.secretRef.name", func(o client.Object) []string {
-		p := o.(*elasticsearchapicrd.License)
-		if p.Spec.SecretRef != nil {
-			return []string{p.Spec.SecretRef.Name}
-		}
-		return []string{}
-	}); err != nil {
-		panic(err)
-	}
-
-	if err := mgr.GetFieldIndexer().IndexField(context.Background(), &elasticsearchapicrd.User{}, "spec.secretRef.name", func(o client.Object) []string {
-		p := o.(*elasticsearchapicrd.User)
-		if p.Spec.SecretRef != nil {
-			return []string{p.Spec.SecretRef.Name}
-		}
-		return []string{}
-	}); err != nil {
-		panic(err)
-	}
+	// Add indexers on ElasticsearchAPI to track change
+	elasticsearchapicontrollers.MustSetUpIndex(mgr)
 
 	// Add indexers on Elasticsearch to track secret change
-	if err := mgr.GetFieldIndexer().IndexField(context.Background(), &elasticsearchcrd.Elasticsearch{}, "spec.tls.certificateSecretRef.name", func(o client.Object) []string {
-		p := o.(*elasticsearchcrd.Elasticsearch)
-		if p.IsTlsApiEnabled() && !p.IsSelfManagedSecretForTlsApi() {
-			return []string{p.Spec.Tls.CertificateSecretRef.Name}
-		}
-		return []string{}
-	}); err != nil {
-		panic(err)
-	}
-
-	if err := mgr.GetFieldIndexer().IndexField(context.Background(), &elasticsearchcrd.Elasticsearch{}, "spec.globalNodeGroup.keystoreSecretRef.name", func(o client.Object) []string {
-		p := o.(*elasticsearchcrd.Elasticsearch)
-		if p.Spec.GlobalNodeGroup.KeystoreSecretRef != nil {
-			return []string{p.Spec.GlobalNodeGroup.KeystoreSecretRef.Name}
-		}
-		return []string{}
-	}); err != nil {
-		panic(err)
-	}
+	elasticsearchcontrollers.MustSetUpIndex(mgr)
 
 	// Add indexers on Kibana to track secret change
-	if err := mgr.GetFieldIndexer().IndexField(context.Background(), &kibanacrd.Kibana{}, "spec.tls.certificateSecretRef.name", func(o client.Object) []string {
-		p := o.(*kibanacrd.Kibana)
-		if p.IsTlsEnabled() && !p.IsSelfManagedSecretForTls() {
-			return []string{p.Spec.Tls.CertificateSecretRef.Name}
-		}
-		return []string{}
-	}); err != nil {
-		panic(err)
-	}
-
-	if err := mgr.GetFieldIndexer().IndexField(context.Background(), &kibanacrd.Kibana{}, "spec.keystoreSecretRef.name", func(o client.Object) []string {
-		p := o.(*kibanacrd.Kibana)
-		if p.Spec.KeystoreSecretRef != nil {
-			return []string{p.Spec.KeystoreSecretRef.Name}
-		}
-		return []string{}
-	}); err != nil {
-		panic(err)
-	}
-
-	if err := mgr.GetFieldIndexer().IndexField(context.Background(), &kibanacrd.Kibana{}, "spec.elasticsearchRef.managed.name", func(o client.Object) []string {
-		p := o.(*kibanacrd.Kibana)
-		if p.Spec.ElasticsearchRef.IsManaged() {
-			return []string{p.Spec.ElasticsearchRef.ManagedElasticsearchRef.Name}
-		}
-		return []string{}
-	}); err != nil {
-		panic(err)
-	}
-
-	if err := mgr.GetFieldIndexer().IndexField(context.Background(), &kibanacrd.Kibana{}, "spec.elasticsearchRef.elasticsearchCASecretRef.name", func(o client.Object) []string {
-		p := o.(*kibanacrd.Kibana)
-		if p.Spec.ElasticsearchRef.ElasticsearchCaSecretRef != nil {
-			return []string{p.Spec.ElasticsearchRef.ElasticsearchCaSecretRef.Name}
-		}
-		return []string{}
-	}); err != nil {
-		panic(err)
-	}
-
-	if err := mgr.GetFieldIndexer().IndexField(context.Background(), &kibanacrd.Kibana{}, "spec.elasticsearchRef.external.secretRef.name", func(o client.Object) []string {
-		p := o.(*kibanacrd.Kibana)
-		if p.Spec.ElasticsearchRef.IsExternal() && p.Spec.ElasticsearchRef.ExternalElasticsearchRef.SecretRef != nil {
-			return []string{p.Spec.ElasticsearchRef.ExternalElasticsearchRef.SecretRef.Name}
-		}
-		return []string{}
-	}); err != nil {
-		panic(err)
-	}
+	kibanacontrollers.MustSetUpIndex(mgr)
 
 	// Add indexers on Logstash to track secret change
-	if err := mgr.GetFieldIndexer().IndexField(context.Background(), &logstashcrd.Logstash{}, "spec.keystoreSecretRef.name", func(o client.Object) []string {
-		p := o.(*logstashcrd.Logstash)
-		if p.Spec.KeystoreSecretRef != nil {
-			return []string{p.Spec.KeystoreSecretRef.Name}
-		}
-		return []string{}
-	}); err != nil {
-		panic(err)
-	}
-
-	if err := mgr.GetFieldIndexer().IndexField(context.Background(), &logstashcrd.Logstash{}, "spec.elasticsearchRef.managed.name", func(o client.Object) []string {
-		p := o.(*logstashcrd.Logstash)
-		if p.Spec.ElasticsearchRef.IsManaged() {
-			return []string{p.Spec.ElasticsearchRef.ManagedElasticsearchRef.Name}
-		}
-		return []string{}
-	}); err != nil {
-		panic(err)
-	}
-
-	if err := mgr.GetFieldIndexer().IndexField(context.Background(), &logstashcrd.Logstash{}, "spec.elasticsearchRef.elasticsearchCASecretRef.name", func(o client.Object) []string {
-		p := o.(*logstashcrd.Logstash)
-		if p.Spec.ElasticsearchRef.ElasticsearchCaSecretRef != nil {
-			return []string{p.Spec.ElasticsearchRef.ElasticsearchCaSecretRef.Name}
-		}
-		return []string{}
-	}); err != nil {
-		panic(err)
-	}
-
-	if err := mgr.GetFieldIndexer().IndexField(context.Background(), &logstashcrd.Logstash{}, "spec.elasticsearchRef.external.secretRef.name", func(o client.Object) []string {
-		p := o.(*logstashcrd.Logstash)
-		if p.Spec.ElasticsearchRef.IsExternal() && p.Spec.ElasticsearchRef.ExternalElasticsearchRef.SecretRef != nil {
-			return []string{p.Spec.ElasticsearchRef.ExternalElasticsearchRef.SecretRef.Name}
-		}
-		return []string{}
-	}); err != nil {
-		panic(err)
-	}
+	logstashcontrollers.MustSetUpIndex(mgr)
 
 	// Add indexers on Filebeat to track secret change
-	if err := mgr.GetFieldIndexer().IndexField(context.Background(), &beatcrd.Filebeat{}, "spec.elasticsearchRef.managed.name", func(o client.Object) []string {
-		p := o.(*beatcrd.Filebeat)
-		if p.Spec.ElasticsearchRef.IsManaged() {
-			return []string{p.Spec.ElasticsearchRef.ManagedElasticsearchRef.Name}
-		}
-		return []string{}
-	}); err != nil {
-		panic(err)
-	}
+	filebeatcontrollers.MustSetUpIndex(mgr)
 
-	if err := mgr.GetFieldIndexer().IndexField(context.Background(), &beatcrd.Filebeat{}, "spec.elasticsearchRef.elasticsearchCASecretRef.name", func(o client.Object) []string {
-		p := o.(*beatcrd.Filebeat)
-		if p.Spec.ElasticsearchRef.ElasticsearchCaSecretRef != nil {
-			return []string{p.Spec.ElasticsearchRef.ElasticsearchCaSecretRef.Name}
-		}
-		return []string{}
-	}); err != nil {
-		panic(err)
-	}
-
-	if err := mgr.GetFieldIndexer().IndexField(context.Background(), &beatcrd.Filebeat{}, "spec.elasticsearchRef.external.secretRef.name", func(o client.Object) []string {
-		p := o.(*beatcrd.Filebeat)
-		if p.Spec.ElasticsearchRef.IsExternal() && p.Spec.ElasticsearchRef.ExternalElasticsearchRef.SecretRef != nil {
-			return []string{p.Spec.ElasticsearchRef.ExternalElasticsearchRef.SecretRef.Name}
-		}
-		return []string{}
-	}); err != nil {
-		panic(err)
-	}
-
+	// Init controllers
 	elasticsearchController := elasticsearchcontrollers.NewElasticsearchReconciler(mgr.GetClient(), mgr.GetScheme())
 	elasticsearchController.SetLogger(log.WithFields(logrus.Fields{
 		"type": "ElasticsearchController",

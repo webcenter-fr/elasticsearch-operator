@@ -150,7 +150,56 @@ func (h *ElasticsearchReconciler) SetupWithManager(mgr ctrl.Manager) error {
 		Owns(&elasticsearchapicrd.User{}).
 		Owns(&elasticsearchapicrd.License{}).
 		Watches(&source.Kind{Type: &corev1.Secret{}}, handler.EnqueueRequestsFromMapFunc(watchSecret(h.Client))).
+		Watches(&source.Kind{Type: &corev1.ConfigMap{}}, handler.EnqueueRequestsFromMapFunc(watchConfigMap(h.Client))).
 		Complete(h)
+}
+
+// watchConfigMap permit to update if configMapRef change
+func watchConfigMap(c client.Client) handler.MapFunc {
+	return func(a client.Object) []reconcile.Request {
+		var (
+			listElasticsearch *elasticsearchcrd.ElasticsearchList
+			fs                fields.Selector
+		)
+
+		reconcileRequests := make([]reconcile.Request, 0)
+
+		// Additional volumes configMap
+		listElasticsearch = &elasticsearchcrd.ElasticsearchList{}
+		fs = fields.ParseSelectorOrDie(fmt.Sprintf("spec.globalNodeGroup.additionalVolumes.name=%s", a.GetName()))
+		// Get all elasticsearch linked with secret
+		if err := c.List(context.Background(), listElasticsearch, &client.ListOptions{Namespace: a.GetNamespace(), FieldSelector: fs}); err != nil {
+			panic(err)
+		}
+		for _, e := range listElasticsearch.Items {
+			reconcileRequests = append(reconcileRequests, reconcile.Request{NamespacedName: types.NamespacedName{Name: e.Name, Namespace: e.Namespace}})
+		}
+
+		// Env of type configMap
+		listElasticsearch = &elasticsearchcrd.ElasticsearchList{}
+		fs = fields.ParseSelectorOrDie(fmt.Sprintf("spec.statefulset.env.name=%s", a.GetName()))
+		// Get all elasticsearch linked with secret
+		if err := c.List(context.Background(), listElasticsearch, &client.ListOptions{Namespace: a.GetNamespace(), FieldSelector: fs}); err != nil {
+			panic(err)
+		}
+		for _, e := range listElasticsearch.Items {
+			reconcileRequests = append(reconcileRequests, reconcile.Request{NamespacedName: types.NamespacedName{Name: e.Name, Namespace: e.Namespace}})
+		}
+
+		// EnvFrom of type configMap
+		listElasticsearch = &elasticsearchcrd.ElasticsearchList{}
+		fs = fields.ParseSelectorOrDie(fmt.Sprintf("spec.statefulset.envFrom.name=%s", a.GetName()))
+		// Get all elasticsearch linked with secret
+		if err := c.List(context.Background(), listElasticsearch, &client.ListOptions{Namespace: a.GetNamespace(), FieldSelector: fs}); err != nil {
+			panic(err)
+		}
+		for _, e := range listElasticsearch.Items {
+			reconcileRequests = append(reconcileRequests, reconcile.Request{NamespacedName: types.NamespacedName{Name: e.Name, Namespace: e.Namespace}})
+		}
+
+		return reconcileRequests
+
+	}
 }
 
 // watchSecret permit to update elasticsearch if secretRef change
@@ -162,6 +211,17 @@ func watchSecret(c client.Client) handler.MapFunc {
 		)
 
 		reconcileRequests := make([]reconcile.Request, 0)
+
+		// License secret
+		listElasticsearch = &elasticsearchcrd.ElasticsearchList{}
+		fs = fields.ParseSelectorOrDie(fmt.Sprintf("spec.licenseSecretRef.name=%s", a.GetName()))
+		// Get all elasticsearch linked with secret
+		if err := c.List(context.Background(), listElasticsearch, &client.ListOptions{Namespace: a.GetNamespace(), FieldSelector: fs}); err != nil {
+			panic(err)
+		}
+		for _, e := range listElasticsearch.Items {
+			reconcileRequests = append(reconcileRequests, reconcile.Request{NamespacedName: types.NamespacedName{Name: e.Name, Namespace: e.Namespace}})
+		}
 
 		// Keystore secret
 		listElasticsearch = &elasticsearchcrd.ElasticsearchList{}
@@ -177,6 +237,39 @@ func watchSecret(c client.Client) handler.MapFunc {
 		// TLS secret
 		listElasticsearch = &elasticsearchcrd.ElasticsearchList{}
 		fs = fields.ParseSelectorOrDie(fmt.Sprintf("spec.tls.certificateSecretRef.name=%s", a.GetName()))
+		// Get all elasticsearch linked with secret
+		if err := c.List(context.Background(), listElasticsearch, &client.ListOptions{Namespace: a.GetNamespace(), FieldSelector: fs}); err != nil {
+			panic(err)
+		}
+		for _, e := range listElasticsearch.Items {
+			reconcileRequests = append(reconcileRequests, reconcile.Request{NamespacedName: types.NamespacedName{Name: e.Name, Namespace: e.Namespace}})
+		}
+
+		// Additional volumes secrets
+		listElasticsearch = &elasticsearchcrd.ElasticsearchList{}
+		fs = fields.ParseSelectorOrDie(fmt.Sprintf("spec.globalNodeGroup.additionalVolumes.name=%s", a.GetName()))
+		// Get all elasticsearch linked with secret
+		if err := c.List(context.Background(), listElasticsearch, &client.ListOptions{Namespace: a.GetNamespace(), FieldSelector: fs}); err != nil {
+			panic(err)
+		}
+		for _, e := range listElasticsearch.Items {
+			reconcileRequests = append(reconcileRequests, reconcile.Request{NamespacedName: types.NamespacedName{Name: e.Name, Namespace: e.Namespace}})
+		}
+
+		// Env of type secrets
+		listElasticsearch = &elasticsearchcrd.ElasticsearchList{}
+		fs = fields.ParseSelectorOrDie(fmt.Sprintf("spec.statefulset.env.name=%s", a.GetName()))
+		// Get all elasticsearch linked with secret
+		if err := c.List(context.Background(), listElasticsearch, &client.ListOptions{Namespace: a.GetNamespace(), FieldSelector: fs}); err != nil {
+			panic(err)
+		}
+		for _, e := range listElasticsearch.Items {
+			reconcileRequests = append(reconcileRequests, reconcile.Request{NamespacedName: types.NamespacedName{Name: e.Name, Namespace: e.Namespace}})
+		}
+
+		// EnvFrom of type secrets
+		listElasticsearch = &elasticsearchcrd.ElasticsearchList{}
+		fs = fields.ParseSelectorOrDie(fmt.Sprintf("spec.statefulset.envFrom.name=%s", a.GetName()))
 		// Get all elasticsearch linked with secret
 		if err := c.List(context.Background(), listElasticsearch, &client.ListOptions{Namespace: a.GetNamespace(), FieldSelector: fs}); err != nil {
 			panic(err)

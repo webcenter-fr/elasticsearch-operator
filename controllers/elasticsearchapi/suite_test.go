@@ -1,7 +1,6 @@
 package elasticsearchapi
 
 import (
-	"context"
 	"path/filepath"
 	"testing"
 	"time"
@@ -94,26 +93,8 @@ func (t *ElasticsearchapiControllerTestSuite) SetupSuite() {
 	k8sClient := k8sManager.GetClient()
 	t.k8sClient = k8sClient
 
-	// Add indexers on License to track secret change
-	if err := k8sManager.GetFieldIndexer().IndexField(context.Background(), &elasticsearchapicrd.License{}, "spec.secretRef.name", func(o client.Object) []string {
-		p := o.(*elasticsearchapicrd.License)
-		if p.Spec.SecretRef != nil {
-			return []string{p.Spec.SecretRef.Name}
-		}
-		return []string{}
-	}); err != nil {
-		panic(err)
-	}
-
-	if err := k8sManager.GetFieldIndexer().IndexField(context.Background(), &elasticsearchapicrd.User{}, "spec.secretRef.name", func(o client.Object) []string {
-		p := o.(*elasticsearchapicrd.User)
-		if p.Spec.SecretRef != nil {
-			return []string{p.Spec.SecretRef.Name}
-		}
-		return []string{}
-	}); err != nil {
-		panic(err)
-	}
+	// Add indexers
+	MustSetUpIndex(k8sManager)
 
 	// Init controllers
 	userReconciler := NewUserReconciler(k8sClient, scheme.Scheme)
