@@ -188,6 +188,8 @@ func watchSecret(c client.Client) handler.MapFunc {
 func (h *LogstashReconciler) Configure(ctx context.Context, req ctrl.Request, resource client.Object) (res ctrl.Result, err error) {
 	o := resource.(*logstashcrd.Logstash)
 
+	o.Status.IsError = false
+
 	// Init condition status if not exist
 	if condition.FindStatusCondition(o.Status.Conditions, LogstashCondition) == nil {
 		condition.SetStatusCondition(&o.Status.Conditions, metav1.Condition{
@@ -208,6 +210,10 @@ func (h *LogstashReconciler) Delete(ctx context.Context, r client.Object, data m
 	return
 }
 func (h *LogstashReconciler) OnError(ctx context.Context, r client.Object, data map[string]any, currentErr error) (res ctrl.Result, err error) {
+	o := r.(*logstashcrd.Logstash)
+
+	o.Status.IsError = true
+
 	common.TotalErrors.Inc()
 	return res, currentErr
 }

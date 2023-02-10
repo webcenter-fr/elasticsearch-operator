@@ -53,9 +53,9 @@ func (r *LoadBalancerReconciler) Configure(ctx context.Context, req ctrl.Request
 			Status: metav1.ConditionFalse,
 			Reason: "Initialize",
 		})
-
-		o.Status.Phase = LoadBalancerPhase
 	}
+
+	o.Status.Phase = LoadBalancerPhase
 
 	return res, nil
 }

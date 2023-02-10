@@ -56,9 +56,9 @@ func (r *CredentialReconciler) Configure(ctx context.Context, req ctrl.Request, 
 			Status: metav1.ConditionFalse,
 			Reason: "Initialize",
 		})
-
-		o.Status.Phase = CredentialPhase
 	}
+
+	o.Status.Phase = CredentialPhase
 
 	return res, nil
 }

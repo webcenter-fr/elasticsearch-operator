@@ -82,8 +82,6 @@ func (r *TlsReconciler) Configure(ctx context.Context, req ctrl.Request, resourc
 			Status: metav1.ConditionFalse,
 			Reason: "Initialize",
 		})
-
-		o.Status.Phase = TlsPhase
 	}
 	if condition.FindStatusCondition(o.Status.Conditions, TlsConditionGeneratePki) == nil {
 		condition.SetStatusCondition(&o.Status.Conditions, metav1.Condition{
@@ -116,6 +114,8 @@ func (r *TlsReconciler) Configure(ctx context.Context, req ctrl.Request, resourc
 			Reason: "Initialize",
 		})
 	}
+
+	o.Status.Phase = TlsPhase
 
 	return res, nil
 }

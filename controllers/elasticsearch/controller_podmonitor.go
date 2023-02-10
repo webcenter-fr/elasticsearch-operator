@@ -54,9 +54,9 @@ func (r *PodMonitorReconciler) Configure(ctx context.Context, req ctrl.Request, 
 			Status: metav1.ConditionFalse,
 			Reason: "Initialize",
 		})
-
-		o.Status.Phase = PodMonitorPhase
 	}
+
+	o.Status.Phase = PodMonitorPhase
 
 	return res, nil
 }

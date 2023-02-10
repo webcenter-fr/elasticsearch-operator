@@ -108,8 +108,8 @@ github.com/disaster37/k8s-objectmatcher v1.8.2-0.20230118153724-8144c44645a8 h1:
 github.com/disaster37/k8s-objectmatcher v1.8.2-0.20230118153724-8144c44645a8/go.mod h1:2nRtPBxwgkwCBjerqlRF4oV9pqAVC1bxtl6Y4/iAt3U=
 github.com/disaster37/k8sbuilder v1.0.1 h1:Us3atidcWcIph4hphSYaJPLf5twxiMV3EC4iamSFMeE=
 github.com/disaster37/k8sbuilder v1.0.1/go.mod h1:2vdStC+YE7ds6QECx03TyRkdyxO35OYhO1I6PeVwu/o=
-github.com/disaster37/operator-sdk-extra v0.1.0 h1:dRLljINyT5gNETu4rRQcanjObIZqXQgGJiHe3wITq/4=
-github.com/disaster37/operator-sdk-extra v0.1.0/go.mod h1:c5LT8vnQ3VEkQzqDdkHMwMuS+QD+ym4c6+hcx9ng7f8=
+github.com/disaster37/operator-sdk-extra v0.1.1 h1:Jgs2sfsv09yHzTd8vK4kv6j0l+p/jwEQJ8z+0ANUHNY=
+github.com/disaster37/operator-sdk-extra v0.1.1/go.mod h1:c5LT8vnQ3VEkQzqDdkHMwMuS+QD+ym4c6+hcx9ng7f8=
 github.com/docopt/docopt-go v0.0.0-20180111231733-ee0de3bc6815/go.mod h1:WwZ+bS3ebgob9U8Nd0kOddGdZWjyMGR8Wziv+TBNwSE=
 github.com/elastic/elastic-transport-go/v8 v8.0.0-20211216131617-bbee439d559c/go.mod h1:87Tcz8IVNe6rVSLdBux1o/PEItLtyabHU3naC7IoqKI=
 github.com/elastic/elastic-transport-go/v8 v8.1.0 h1:NeqEz1ty4RQz+TVbUrpSU7pZ48XkzGWQj02k5koahIE=
@@ -313,9 +313,7 @@ github.com/olivere/elastic/v7 v7.0.32 h1:R7CXvbu8Eq+WlsLgxmKVKPox0oOwAE/2T9Si5Bn
 github.com/olivere/elastic/v7 v7.0.32/go.mod h1:c7PVmLe3Fxq77PIfY/bZmxY/TAamBhCzZ8xDOE09a9k=
 github.com/onsi/ginkgo v1.16.5 h1:8xi0RTUf59SOSfEtZMvwTvXYMzG4gV23XVHOZiXNtnE=
 github.com/onsi/ginkgo/v2 v2.1.6 h1:Fx2POJZfKRQcM1pH49qSZiYeu319wji004qX+GDovrU=
-github.com/onsi/ginkgo/v2 v2.1.6/go.mod h1:MEH45j8TBi6u9BMogfbp0stKC5cdGjumZj5Y7AG4VIk=
 github.com/onsi/gomega v1.20.1 h1:PA/3qinGoukvymdIDV8pii6tiZgC8kbmJO6Z5+b002Q=
-github.com/onsi/gomega v1.20.1/go.mod h1:DtrZpjmvpn2mPm4YWQa0/ALMDj9v4YxLgojwPeREyVo=
 github.com/pkg/errors v0.8.0/go.mod h1:bwawxfHBFNV+L2hUp1rHADufV3IMtnDRdf1r5NINEl0=
 github.com/pkg/errors v0.8.1/go.mod h1:bwawxfHBFNV+L2hUp1rHADufV3IMtnDRdf1r5NINEl0=
 github.com/pkg/errors v0.9.1 h1:FEBLx1zS214owpjy7qsBeixbURkuhQAwrK5UwLGTwt4=

@@ -308,6 +308,10 @@ type LogstashStatus struct {
 	// +operator-sdk:csv:customresourcedefinitions:type=status
 	Phase string `json:"phase"`
 
+	// IsError is true if controller is stuck on Error
+	// +operator-sdk:csv:customresourcedefinitions:type=status
+	IsError bool `json:"isOnError"`
+
 	// List of conditions
 	// +operator-sdk:csv:customresourcedefinitions:type=status
 	Conditions []metav1.Condition `json:"conditions"`
@@ -319,6 +323,7 @@ type LogstashStatus struct {
 // Logstash is the Schema for the logstashes API
 // +operator-sdk:csv:customresourcedefinitions:resources={{None,None,None}}
 // +kubebuilder:printcolumn:name="Phase",type="string",JSONPath=".status.phase",description="Deployment status"
+// +kubebuilder:printcolumn:name="Error",type="boolean",JSONPath=".status.isOnError",description="Is on error"
 // +kubebuilder:printcolumn:name="Age",type="date",JSONPath=".metadata.creationTimestamp"
 type Logstash struct {
 	metav1.TypeMeta   `json:",inline"`

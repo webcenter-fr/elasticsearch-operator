@@ -300,6 +300,7 @@ func doCreateElasticsearchStep() test.TestStep {
 			assert.NotEmpty(t, es.Status.Phase)
 			assert.NotEmpty(t, es.Status.Url)
 			assert.NotNil(t, es.Status.CredentialsRef)
+			assert.False(t, es.Status.IsError)
 
 			return nil
 		},
@@ -544,6 +545,7 @@ func doUpdateElasticsearchStep() test.TestStep {
 			assert.NotEmpty(t, es.Status.Phase)
 			assert.NotEmpty(t, es.Status.Url)
 			assert.NotNil(t, es.Status.CredentialsRef)
+			assert.False(t, es.Status.IsError)
 
 			return nil
 		},
@@ -775,6 +777,7 @@ func doUpdateElasticsearchIncreaseNodeGroupStep() test.TestStep {
 			assert.NotEmpty(t, es.Status.Phase)
 			assert.NotEmpty(t, es.Status.Url)
 			assert.NotNil(t, es.Status.CredentialsRef)
+			assert.False(t, es.Status.IsError)
 
 			return nil
 		},
@@ -1063,6 +1066,7 @@ func doUpdateElasticsearchDecreaseNodeGroupStep() test.TestStep {
 			assert.NotEmpty(t, es.Status.Phase)
 			assert.NotEmpty(t, es.Status.Url)
 			assert.NotNil(t, es.Status.CredentialsRef)
+			assert.False(t, es.Status.IsError)
 
 			return nil
 		},
@@ -1373,6 +1377,7 @@ func doUpdateElasticsearchAddLicenseStep() test.TestStep {
 			assert.NotEmpty(t, es.Status.Phase)
 			assert.NotEmpty(t, es.Status.Url)
 			assert.NotNil(t, es.Status.CredentialsRef)
+			assert.False(t, es.Status.IsError)
 
 			return nil
 		},

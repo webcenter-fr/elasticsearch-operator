@@ -55,9 +55,9 @@ func (r *SystemUserReconciler) Configure(ctx context.Context, req ctrl.Request, 
 			Status: metav1.ConditionFalse,
 			Reason: "Initialize",
 		})
-
-		o.Status.Phase = SystemUserPhase
 	}
+
+	o.Status.Phase = SystemUserPhase
 
 	return res, nil
 }

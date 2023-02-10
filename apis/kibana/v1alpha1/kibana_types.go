@@ -312,6 +312,10 @@ type KibanaStatus struct {
 	// +operator-sdk:csv:customresourcedefinitions:type=status
 	Phase string `json:"phase"`
 
+	// IsError is true if controller is stuck on Error
+	// +operator-sdk:csv:customresourcedefinitions:type=status
+	IsError bool `json:"isOnError"`
+
 	// Url is the Kibana endpoint
 	// +operator-sdk:csv:customresourcedefinitions:type=status
 	Url string `json:"url"`
@@ -328,6 +332,7 @@ type KibanaStatus struct {
 // +operator-sdk:csv:customresourcedefinitions:resources={{None,None,None}}
 // +kubebuilder:printcolumn:name="URL",type="string",JSONPath=".status.url"
 // +kubebuilder:printcolumn:name="Phase",type="string",JSONPath=".status.phase",description="Deployment status"
+// +kubebuilder:printcolumn:name="Error",type="boolean",JSONPath=".status.isOnError",description="Is on error"
 // +kubebuilder:printcolumn:name="Age",type="date",JSONPath=".metadata.creationTimestamp"
 type Kibana struct {
 	metav1.TypeMeta   `json:",inline"`

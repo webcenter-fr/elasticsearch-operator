@@ -56,9 +56,9 @@ func (r *CAElasticsearchReconciler) Configure(ctx context.Context, req ctrl.Requ
 			Status: metav1.ConditionFalse,
 			Reason: "Initialize",
 		})
-
-		o.Status.Phase = CAElasticsearchPhase
 	}
+
+	o.Status.Phase = CAElasticsearchPhase
 
 	return res, nil
 }

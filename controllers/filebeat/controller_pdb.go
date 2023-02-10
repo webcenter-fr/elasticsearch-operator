@@ -55,9 +55,9 @@ func (r *PdbReconciler) Configure(ctx context.Context, req ctrl.Request, resourc
 			Status: metav1.ConditionFalse,
 			Reason: "Initialize",
 		})
-
-		o.Status.Phase = PdbPhase
 	}
+
+	o.Status.Phase = PdbPhase
 
 	return res, nil
 }

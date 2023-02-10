@@ -58,9 +58,9 @@ func (r *DeploymentReconciler) Configure(ctx context.Context, req ctrl.Request, 
 			Status: metav1.ConditionFalse,
 			Reason: "Initialize",
 		})
-
-		o.Status.Phase = DeploymentPhase
 	}
+
+	o.Status.Phase = DeploymentPhase
 
 	return res, nil
 }
