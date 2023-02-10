@@ -17,7 +17,6 @@ limitations under the License.
 package main
 
 import (
-	"context"
 	"flag"
 	"os"
 
@@ -31,7 +30,6 @@ import (
 	_ "k8s.io/client-go/plugin/pkg/client/auth"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/cache"
-	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/healthz"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 
@@ -141,27 +139,6 @@ func main() {
 		os.Exit(1)
 	}
 
-	// Add indexers on License to track secret change
-	if err := mgr.GetFieldIndexer().IndexField(context.Background(), &elasticsearchapicrd.License{}, "spec.secretRef.name", func(o client.Object) []string {
-		p := o.(*elasticsearchapicrd.License)
-		if p.Spec.SecretRef != nil {
-			return []string{p.Spec.SecretRef.Name}
-		}
-		return []string{}
-	}); err != nil {
-		panic(err)
-	}
-
-	if err := mgr.GetFieldIndexer().IndexField(context.Background(), &elasticsearchapicrd.User{}, "spec.secretRef.name", func(o client.Object) []string {
-		p := o.(*elasticsearchapicrd.User)
-		if p.Spec.SecretRef != nil {
-			return []string{p.Spec.SecretRef.Name}
-		}
-		return []string{}
-	}); err != nil {
-		panic(err)
-	}
-
 	// Add indexers on ElasticsearchAPI to track change
 	elasticsearchapicontrollers.MustSetUpIndex(mgr)
 
@@ -177,16 +154,7 @@ func main() {
 	// Add indexers on Filebeat to track secret change
 	filebeatcontrollers.MustSetUpIndex(mgr)
 
-	if err := mgr.GetFieldIndexer().IndexField(context.Background(), &beatcrd.Filebeat{}, "spec.elasticsearchRef.external.secretRef.name", func(o client.Object) []string {
-		p := o.(*beatcrd.Filebeat)
-		if p.Spec.ElasticsearchRef.IsExternal() && p.Spec.ElasticsearchRef.ExternalElasticsearchRef.SecretRef != nil {
-			return []string{p.Spec.ElasticsearchRef.ExternalElasticsearchRef.SecretRef.Name}
-		}
-		return []string{}
-	}); err != nil {
-		panic(err)
-	}
-
+	// Init controllers
 	elasticsearchController := elasticsearchcontrollers.NewElasticsearchReconciler(mgr.GetClient(), mgr.GetScheme())
 	elasticsearchController.SetLogger(log.WithFields(logrus.Fields{
 		"type": "ElasticsearchController",
