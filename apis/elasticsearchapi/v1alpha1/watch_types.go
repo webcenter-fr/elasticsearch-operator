@@ -106,7 +106,7 @@ type WatchStatus struct {
 
 // Watch is the Schema for the watches API
 // +operator-sdk:csv:customresourcedefinitions:resources={{None,None,None}}
-// +kubebuilder:printcolumn:name="Health",type="boolean",JSONPath=".status.health"
+// +kubebuilder:printcolumn:name="Sync",type="boolean",JSONPath=".status.sync"
 // +kubebuilder:printcolumn:name="Age",type="date",JSONPath=".metadata.creationTimestamp"
 type Watch struct {
 	metav1.TypeMeta   `json:",inline"`

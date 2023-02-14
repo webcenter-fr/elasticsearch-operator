@@ -118,7 +118,7 @@ type UserStatus struct {
 
 // User is the Schema for the users API
 // +operator-sdk:csv:customresourcedefinitions:resources={{None,None,None}}
-// +kubebuilder:printcolumn:name="Health",type="boolean",JSONPath=".status.health"
+// +kubebuilder:printcolumn:name="Sync",type="boolean",JSONPath=".status.sync"
 // +kubebuilder:printcolumn:name="Age",type="date",JSONPath=".metadata.creationTimestamp"
 type User struct {
 	metav1.TypeMeta   `json:",inline"`

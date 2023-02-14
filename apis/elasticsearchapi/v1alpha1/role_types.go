@@ -143,7 +143,7 @@ type RoleStatus struct {
 
 // Role is the Schema for the roles API
 // +operator-sdk:csv:customresourcedefinitions:resources={{None,None,None}}
-// +kubebuilder:printcolumn:name="Health",type="boolean",JSONPath=".status.health"
+// +kubebuilder:printcolumn:name="Sync",type="boolean",JSONPath=".status.sync"
 // +kubebuilder:printcolumn:name="Age",type="date",JSONPath=".metadata.creationTimestamp"
 type Role struct {
 	metav1.TypeMeta   `json:",inline"`

@@ -16,8 +16,8 @@ spec:
   scope: Namespaced
   versions:
   - additionalPrinterColumns:
-    - jsonPath: .status.health
-      name: Health
+    - jsonPath: .status.sync
+      name: Sync
       type: boolean
     - jsonPath: .metadata.creationTimestamp
       name: Age
