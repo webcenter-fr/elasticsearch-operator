@@ -23,6 +23,7 @@ import (
 	"github.com/pkg/errors"
 	elasticsearchapicrd "github.com/webcenter-fr/elasticsearch-operator/apis/elasticsearchapi/v1alpha1"
 	"github.com/webcenter-fr/elasticsearch-operator/controllers/common"
+	localhelper "github.com/webcenter-fr/elasticsearch-operator/pkg/helper"
 	core "k8s.io/api/core/v1"
 	condition "k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -136,8 +137,14 @@ func (r *RoleReconciler) Read(ctx context.Context, resource client.Object, data 
 	if err != nil {
 		return res, errors.Wrap(err, "Unable to get role from Elasticsearch")
 	}
+	data["current"] = currentRole
 
-	data["role"] = currentRole
+	// Generate expected
+	expectedRole, err := BuildRole(role)
+	if err != nil {
+		return res, errors.Wrap(err, "Unable to generate role")
+	}
+	data["expected"] = expectedRole
 
 	return res, nil
 }
@@ -187,18 +194,26 @@ func (r *RoleReconciler) Delete(ctx context.Context, resource client.Object, dat
 func (r *RoleReconciler) Diff(resource client.Object, data map[string]interface{}, meta interface{}) (diff controller.Diff, err error) {
 	esHandler := meta.(eshandler.ElasticsearchHandler)
 	role := resource.(*elasticsearchapicrd.Role)
-
-	var currentRole *eshandler.XPackSecurityRole
 	var d any
 
-	d, err = helper.Get(data, "role")
+	d, err = helper.Get(data, "current")
 	if err != nil {
 		return diff, err
 	}
-	currentRole = d.(*eshandler.XPackSecurityRole)
-	expectedRole, err := BuildRole(role)
+	currentRole := d.(*eshandler.XPackSecurityRole)
+
+	d, err = helper.Get(data, "expected")
 	if err != nil {
 		return diff, err
+	}
+	expectedRole := d.(*eshandler.XPackSecurityRole)
+
+	var originalRole *eshandler.XPackSecurityRole
+	if role.Status.OriginalObject != "" {
+		originalRole = &eshandler.XPackSecurityRole{}
+		if err = localhelper.UnZipBase64Decode(role.Status.OriginalObject, originalRole); err != nil {
+			return diff, err
+		}
 	}
 
 	diff = controller.Diff{
@@ -209,17 +224,26 @@ func (r *RoleReconciler) Diff(resource client.Object, data map[string]interface{
 	if currentRole == nil {
 		diff.NeedCreate = true
 		diff.Diff = "Elasticsearch role not exist"
+
+		if err = localhelper.SetLastOriginal(role, expectedRole); err != nil {
+			return diff, err
+		}
+
 		return diff, nil
 	}
 
-	diffStr, err := esHandler.RoleDiff(currentRole, expectedRole)
+	differ, err := esHandler.RoleDiff(currentRole, expectedRole, originalRole)
 	if err != nil {
 		return diff, err
 	}
 
-	if diffStr != "" {
+	if !differ.IsEmpty() {
 		diff.NeedUpdate = true
-		diff.Diff = diffStr
+		diff.Diff = string(differ.Patch)
+
+		if err = localhelper.SetLastOriginal(role, expectedRole); err != nil {
+			return diff, err
+		}
 		return diff, nil
 	}
 
@@ -240,14 +264,14 @@ func (r *RoleReconciler) OnError(ctx context.Context, resource client.Object, da
 		Message: err.Error(),
 	})
 
-	role.Status.Health = false
+	role.Status.Sync = false
 }
 
 // OnSuccess permit to set status condition on the right state is everithink is good
 func (r *RoleReconciler) OnSuccess(ctx context.Context, resource client.Object, data map[string]any, meta any, diff controller.Diff) (err error) {
 	role := resource.(*elasticsearchapicrd.Role)
 
-	role.Status.Health = true
+	role.Status.Sync = true
 
 	if diff.NeedCreate {
 		condition.SetStatusCondition(&role.Status.Conditions, metav1.Condition{

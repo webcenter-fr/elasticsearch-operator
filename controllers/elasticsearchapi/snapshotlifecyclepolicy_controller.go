@@ -23,6 +23,7 @@ import (
 	"github.com/pkg/errors"
 	elasticsearchapicrd "github.com/webcenter-fr/elasticsearch-operator/apis/elasticsearchapi/v1alpha1"
 	"github.com/webcenter-fr/elasticsearch-operator/controllers/common"
+	localhelper "github.com/webcenter-fr/elasticsearch-operator/pkg/helper"
 	core "k8s.io/api/core/v1"
 	condition "k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -136,8 +137,14 @@ func (r *SnapshotLifecyclePolicyReconciler) Read(ctx context.Context, resource c
 	if err != nil {
 		return res, errors.Wrap(err, "Unable to get SLM policy from Elasticsearch")
 	}
+	data["current"] = slmPolicy
 
-	data["policy"] = slmPolicy
+	// Generate expected
+	expectedPolicy, err := BuildSnapshotLifecyclePolicy(slm)
+	if err != nil {
+		return res, errors.Wrap(err, "Unable to build SLM policy")
+	}
+	data["expected"] = expectedPolicy
 
 	return res, nil
 }
@@ -198,14 +205,27 @@ func (r *SnapshotLifecyclePolicyReconciler) Delete(ctx context.Context, resource
 func (r *SnapshotLifecyclePolicyReconciler) Diff(resource client.Object, data map[string]interface{}, meta interface{}) (diff controller.Diff, err error) {
 	esHandler := meta.(eshandler.ElasticsearchHandler)
 	slm := resource.(*elasticsearchapicrd.SnapshotLifecyclePolicy)
-	var currentPolicy *eshandler.SnapshotLifecyclePolicySpec
 	var d any
 
-	d, err = helper.Get(data, "policy")
+	d, err = helper.Get(data, "current")
 	if err != nil {
 		return diff, err
 	}
-	currentPolicy = d.(*eshandler.SnapshotLifecyclePolicySpec)
+	currentPolicy := d.(*eshandler.SnapshotLifecyclePolicySpec)
+
+	d, err = helper.Get(data, "expected")
+	if err != nil {
+		return diff, err
+	}
+	expectedPolicy := d.(*eshandler.SnapshotLifecyclePolicySpec)
+
+	var originalPolicy *eshandler.SnapshotLifecyclePolicySpec
+	if slm.Status.OriginalObject != "" {
+		originalPolicy = &eshandler.SnapshotLifecyclePolicySpec{}
+		if err = localhelper.UnZipBase64Decode(slm.Status.OriginalObject, originalPolicy); err != nil {
+			return diff, err
+		}
+	}
 
 	diff = controller.Diff{
 		NeedCreate: false,
@@ -215,22 +235,27 @@ func (r *SnapshotLifecyclePolicyReconciler) Diff(resource client.Object, data ma
 	if currentPolicy == nil {
 		diff.NeedCreate = true
 		diff.Diff = "SLM policy not exist"
+
+		if err = localhelper.SetLastOriginal(slm, expectedPolicy); err != nil {
+			return diff, err
+		}
+
 		return diff, nil
 	}
 
-	expectedPolicy, err := BuildSnapshotLifecyclePolicy(slm)
-	if err != nil {
-		return diff, errors.Wrap(err, "Error when build SnapshotLifecyclePolicy")
-	}
-
-	diffStr, err := esHandler.SLMDiff(currentPolicy, expectedPolicy)
+	differ, err := esHandler.SLMDiff(currentPolicy, expectedPolicy, originalPolicy)
 	if err != nil {
 		return diff, err
 	}
 
-	if diffStr != "" {
+	if !differ.IsEmpty() {
 		diff.NeedUpdate = true
-		diff.Diff = diffStr
+		diff.Diff = string(differ.Patch)
+
+		if err = localhelper.SetLastOriginal(slm, expectedPolicy); err != nil {
+			return diff, err
+		}
+
 		return diff, nil
 	}
 
@@ -251,14 +276,14 @@ func (r *SnapshotLifecyclePolicyReconciler) OnError(ctx context.Context, resourc
 		Message: err.Error(),
 	})
 
-	slm.Status.Health = false
+	slm.Status.Sync = false
 }
 
 // OnSuccess permit to set status condition on the right state is everithink is good
 func (r *SnapshotLifecyclePolicyReconciler) OnSuccess(ctx context.Context, resource client.Object, data map[string]any, meta any, diff controller.Diff) (err error) {
 	slm := resource.(*elasticsearchapicrd.SnapshotLifecyclePolicy)
 
-	slm.Status.Health = true
+	slm.Status.Sync = true
 
 	if diff.NeedCreate {
 		condition.SetStatusCondition(&slm.Status.Conditions, metav1.Condition{

@@ -24,6 +24,7 @@ import (
 	"github.com/pkg/errors"
 	elasticsearchapicrd "github.com/webcenter-fr/elasticsearch-operator/apis/elasticsearchapi/v1alpha1"
 	"github.com/webcenter-fr/elasticsearch-operator/controllers/common"
+	localhelper "github.com/webcenter-fr/elasticsearch-operator/pkg/helper"
 	core "k8s.io/api/core/v1"
 	condition "k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -137,8 +138,14 @@ func (r *ComponentTemplateReconciler) Read(ctx context.Context, resource client.
 	if err != nil {
 		return res, errors.Wrap(err, "Unable to get component template from Elasticsearch")
 	}
+	data["current"] = currentComponent
 
-	data["component"] = currentComponent
+	// Generate expected component
+	expectedComponent, err := BuildComponentTemplate(ct)
+	if err != nil {
+		return res, errors.Wrap(err, "Error when generate expected component")
+	}
+	data["expected"] = expectedComponent
 
 	return res, nil
 }
@@ -189,18 +196,26 @@ func (r *ComponentTemplateReconciler) Delete(ctx context.Context, resource clien
 func (r *ComponentTemplateReconciler) Diff(resource client.Object, data map[string]interface{}, meta interface{}) (diff controller.Diff, err error) {
 	esHandler := meta.(eshandler.ElasticsearchHandler)
 	ct := resource.(*elasticsearchapicrd.ComponentTemplate)
-
-	var currentComponent *olivere.IndicesGetComponentTemplate
 	var d any
 
-	d, err = helper.Get(data, "component")
+	d, err = helper.Get(data, "current")
 	if err != nil {
 		return diff, err
 	}
-	currentComponent = d.(*olivere.IndicesGetComponentTemplate)
-	expectedComponent, err := BuildComponentTemplate(ct)
+	currentComponent := d.(*olivere.IndicesGetComponentTemplate)
+
+	d, err = helper.Get(data, "expected")
 	if err != nil {
 		return diff, err
+	}
+	expectedComponent := d.(*olivere.IndicesGetComponentTemplate)
+
+	var originalComponent *olivere.IndicesGetComponentTemplate
+	if ct.Status.OriginalObject != "" {
+		originalComponent = &olivere.IndicesGetComponentTemplate{}
+		if err = localhelper.UnZipBase64Decode(ct.Status.OriginalObject, originalComponent); err != nil {
+			return diff, err
+		}
 	}
 
 	diff = controller.Diff{
@@ -211,17 +226,27 @@ func (r *ComponentTemplateReconciler) Diff(resource client.Object, data map[stri
 	if currentComponent == nil {
 		diff.NeedCreate = true
 		diff.Diff = "Component template not exist"
+
+		if err = localhelper.SetLastOriginal(ct, expectedComponent); err != nil {
+			return diff, err
+		}
+
 		return diff, nil
 	}
 
-	diffStr, err := esHandler.ComponentTemplateDiff(currentComponent, expectedComponent)
+	differ, err := esHandler.ComponentTemplateDiff(currentComponent, expectedComponent, originalComponent)
 	if err != nil {
 		return diff, err
 	}
 
-	if diffStr != "" {
+	if !differ.IsEmpty() {
 		diff.NeedUpdate = true
-		diff.Diff = diffStr
+		diff.Diff = string(differ.Patch)
+
+		if err = localhelper.SetLastOriginal(ct, expectedComponent); err != nil {
+			return diff, err
+		}
+
 		return diff, nil
 	}
 
@@ -242,14 +267,14 @@ func (r *ComponentTemplateReconciler) OnError(ctx context.Context, resource clie
 		Message: err.Error(),
 	})
 
-	ct.Status.Health = false
+	ct.Status.Sync = false
 }
 
 // OnSuccess permit to set status condition on the right state is everithink is good
 func (r *ComponentTemplateReconciler) OnSuccess(ctx context.Context, resource client.Object, data map[string]any, meta any, diff controller.Diff) (err error) {
 	ct := resource.(*elasticsearchapicrd.ComponentTemplate)
 
-	ct.Status.Health = true
+	ct.Status.Sync = true
 
 	if diff.NeedCreate {
 		condition.SetStatusCondition(&ct.Status.Conditions, metav1.Condition{

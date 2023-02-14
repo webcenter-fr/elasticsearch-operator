@@ -16,8 +16,8 @@ spec:
   scope: Namespaced
   versions:
   - additionalPrinterColumns:
-    - jsonPath: .status.health
-      name: Health
+    - jsonPath: .status.sync
+      name: Sync
       type: boolean
     - jsonPath: .metadata.creationTimestamp
       name: Age
@@ -241,12 +241,16 @@ spec:
                   - type
                   type: object
                 type: array
-              health:
-                description: Health
+              originalObject:
+                description: OriginalObject is the original object used on 3 way diff
+                  merge
+                type: string
+              sync:
+                description: Sync
                 type: boolean
             required:
             - conditions
-            - health
+            - sync
             type: object
         type: object
     served: true

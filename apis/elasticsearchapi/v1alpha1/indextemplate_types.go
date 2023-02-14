@@ -105,7 +105,11 @@ type IndexTemplateStatus struct {
 
 	// Health
 	// +operator-sdk:csv:customresourcedefinitions:type=status
-	Health bool `json:"health"`
+	Sync bool `json:"sync"`
+
+	// OriginalObject is the original object used on 3 way diff merge
+	// +operator-sdk:csv:customresourcedefinitions:type=status
+	OriginalObject string `json:"originalObject,omitempty"`
 }
 
 //+kubebuilder:object:root=true
@@ -113,7 +117,7 @@ type IndexTemplateStatus struct {
 
 // IndexTemplate is the Schema for the indextemplates API
 // +operator-sdk:csv:customresourcedefinitions:resources={{None,None,None}}
-// +kubebuilder:printcolumn:name="Health",type="boolean",JSONPath=".status.health"
+// +kubebuilder:printcolumn:name="Sync",type="boolean",JSONPath=".status.sync"
 // +kubebuilder:printcolumn:name="Age",type="date",JSONPath=".metadata.creationTimestamp"
 type IndexTemplate struct {
 	metav1.TypeMeta   `json:",inline"`

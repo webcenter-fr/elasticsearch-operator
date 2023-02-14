@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/disaster37/es-handler/v8/mocks"
+	"github.com/disaster37/es-handler/v8/patch"
 	"github.com/disaster37/operator-sdk-extra/pkg/test"
 	"github.com/golang/mock/gomock"
 	olivere "github.com/olivere/elastic/v7"
@@ -133,23 +134,27 @@ func doMockWatcher(mockES *mocks.MockElasticsearchHandler) func(stepName *string
 			return nil, nil
 		})
 
-		mockES.EXPECT().WatchDiff(gomock.Any(), gomock.Any()).AnyTimes().DoAndReturn(func(actual, expected *olivere.XPackWatch) (string, error) {
+		mockES.EXPECT().WatchDiff(gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes().DoAndReturn(func(actual, expected, original *olivere.XPackWatch) (*patch.PatchResult, error) {
 			switch *stepName {
 			case "create":
 				if !isCreated {
-					return "fake change", nil
+					return &patch.PatchResult{
+						Patch: []byte("fake change"),
+					}, nil
 				} else {
-					return "", nil
+					return &patch.PatchResult{}, nil
 				}
 			case "update":
 				if !isUpdated {
-					return "fake change", nil
+					return &patch.PatchResult{
+						Patch: []byte("fake change"),
+					}, nil
 				} else {
-					return "", nil
+					return &patch.PatchResult{}, nil
 				}
 			}
 
-			return "", nil
+			return nil, nil
 		})
 
 		mockES.EXPECT().WatchUpdate(gomock.Any(), gomock.Any()).AnyTimes().DoAndReturn(func(name string, policy *olivere.XPackWatch) error {
@@ -246,7 +251,7 @@ func doCreateWatcherStep() test.TestStep {
 				t.Fatalf("Failed to get Watch: %s", err.Error())
 			}
 			assert.True(t, condition.IsStatusConditionPresentAndEqual(watch.Status.Conditions, WatchCondition, metav1.ConditionTrue))
-			assert.True(t, watch.Status.Health)
+			assert.True(t, watch.Status.Sync)
 
 			return nil
 		},
@@ -297,7 +302,7 @@ func doUpdateWatcherStep() test.TestStep {
 				t.Fatalf("Failed to get Watch: %s", err.Error())
 			}
 			assert.True(t, condition.IsStatusConditionPresentAndEqual(watch.Status.Conditions, WatchCondition, metav1.ConditionTrue))
-			assert.True(t, watch.Status.Health)
+			assert.True(t, watch.Status.Sync)
 
 			return nil
 		},

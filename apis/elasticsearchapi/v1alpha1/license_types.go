@@ -63,9 +63,9 @@ type LicenseStatus struct {
 	// +operator-sdk:csv:customresourcedefinitions:type=status
 	Conditions []metav1.Condition `json:"conditions"`
 
-	// Health
+	// Sync
 	// +operator-sdk:csv:customresourcedefinitions:type=status
-	Health bool `json:"health"`
+	Sync bool `json:"sync"`
 }
 
 //+kubebuilder:object:root=true
@@ -73,7 +73,7 @@ type LicenseStatus struct {
 
 // License is the Schema for the licenses API
 // +operator-sdk:csv:customresourcedefinitions:resources={{None,None,None}}
-// +kubebuilder:printcolumn:name="Health",type="boolean",JSONPath=".status.health"
+// +kubebuilder:printcolumn:name="Sync",type="boolean",JSONPath=".status.sync"
 // +kubebuilder:printcolumn:name="Type",type="string",JSONPath=".status.licenseType"
 // +kubebuilder:printcolumn:name="expireAt",type="string",JSONPath=".status.expireAt"
 // +kubebuilder:printcolumn:name="Age",type="date",JSONPath=".metadata.creationTimestamp"

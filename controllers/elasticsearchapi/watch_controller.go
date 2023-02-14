@@ -24,6 +24,7 @@ import (
 	"github.com/pkg/errors"
 	elasticsearchapicrd "github.com/webcenter-fr/elasticsearch-operator/apis/elasticsearchapi/v1alpha1"
 	"github.com/webcenter-fr/elasticsearch-operator/controllers/common"
+	localhelper "github.com/webcenter-fr/elasticsearch-operator/pkg/helper"
 	core "k8s.io/api/core/v1"
 	condition "k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -137,8 +138,14 @@ func (r *WatchReconciler) Read(ctx context.Context, resource client.Object, data
 	if err != nil {
 		return res, errors.Wrap(err, "Unable to get watch from Elasticsearch")
 	}
+	data["current"] = currentWatch
 
-	data["watch"] = currentWatch
+	// Generate expected
+	expectedWatch, err := BuildWatch(watch)
+	if err != nil {
+		return res, errors.Wrap(err, "Unable to generate watch")
+	}
+	data["expected"] = expectedWatch
 
 	return res, nil
 }
@@ -187,18 +194,26 @@ func (r *WatchReconciler) Delete(ctx context.Context, resource client.Object, da
 func (r *WatchReconciler) Diff(resource client.Object, data map[string]interface{}, meta interface{}) (diff controller.Diff, err error) {
 	esHandler := meta.(eshandler.ElasticsearchHandler)
 	watch := resource.(*elasticsearchapicrd.Watch)
-
-	var currentWatch *olivere.XPackWatch
 	var d any
 
-	d, err = helper.Get(data, "watch")
+	d, err = helper.Get(data, "current")
 	if err != nil {
 		return diff, err
 	}
-	currentWatch = d.(*olivere.XPackWatch)
-	expectedWatch, err := BuildWatch(watch)
+	currentWatch := d.(*olivere.XPackWatch)
+
+	d, err = helper.Get(data, "expected")
 	if err != nil {
 		return diff, err
+	}
+	expectedWatch := d.(*olivere.XPackWatch)
+
+	var originalWatch *olivere.XPackWatch
+	if watch.Status.OriginalObject != "" {
+		originalWatch = &olivere.XPackWatch{}
+		if err = localhelper.UnZipBase64Decode(watch.Status.OriginalObject, originalWatch); err != nil {
+			return diff, err
+		}
 	}
 
 	diff = controller.Diff{
@@ -209,17 +224,27 @@ func (r *WatchReconciler) Diff(resource client.Object, data map[string]interface
 	if currentWatch == nil {
 		diff.NeedCreate = true
 		diff.Diff = "Watch not exist"
+
+		if err = localhelper.SetLastOriginal(watch, expectedWatch); err != nil {
+			return diff, err
+		}
+
 		return diff, nil
 	}
 
-	diffStr, err := esHandler.WatchDiff(currentWatch, expectedWatch)
+	differ, err := esHandler.WatchDiff(currentWatch, expectedWatch, originalWatch)
 	if err != nil {
 		return diff, err
 	}
 
-	if diffStr != "" {
+	if !differ.IsEmpty() {
 		diff.NeedUpdate = true
-		diff.Diff = diffStr
+		diff.Diff = string(differ.Patch)
+
+		if err = localhelper.SetLastOriginal(watch, expectedWatch); err != nil {
+			return diff, err
+		}
+
 		return diff, nil
 	}
 
@@ -240,14 +265,14 @@ func (r *WatchReconciler) OnError(ctx context.Context, resource client.Object, d
 		Message: err.Error(),
 	})
 
-	watch.Status.Health = false
+	watch.Status.Sync = false
 }
 
 // OnSuccess permit to set status condition on the right state is everithink is good
 func (r *WatchReconciler) OnSuccess(ctx context.Context, resource client.Object, data map[string]any, meta any, diff controller.Diff) (err error) {
 	watch := resource.(*elasticsearchapicrd.Watch)
 
-	watch.Status.Health = true
+	watch.Status.Sync = true
 
 	if diff.NeedCreate {
 		condition.SetStatusCondition(&watch.Status.Conditions, metav1.Condition{

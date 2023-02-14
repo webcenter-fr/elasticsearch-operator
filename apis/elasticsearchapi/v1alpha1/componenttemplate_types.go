@@ -65,9 +65,13 @@ type ComponentTemplateStatus struct {
 	// +operator-sdk:csv:customresourcedefinitions:type=status
 	Conditions []metav1.Condition `json:"conditions"`
 
-	// Health
+	// Sync
 	// +operator-sdk:csv:customresourcedefinitions:type=status
-	Health bool `json:"health"`
+	Sync bool `json:"sync"`
+
+	// OriginalObject is the original object used on 3 way diff merge
+	// +operator-sdk:csv:customresourcedefinitions:type=status
+	OriginalObject string `json:"originalObject,omitempty"`
 }
 
 //+kubebuilder:object:root=true
@@ -75,7 +79,7 @@ type ComponentTemplateStatus struct {
 
 // ComponentTemplate is the Schema for the componenttemplates API
 // +operator-sdk:csv:customresourcedefinitions:resources={{None,None,None}}
-// +kubebuilder:printcolumn:name="Health",type="boolean",JSONPath=".status.health"
+// +kubebuilder:printcolumn:name="Sync",type="boolean",JSONPath=".status.sync"
 // +kubebuilder:printcolumn:name="Age",type="date",JSONPath=".metadata.creationTimestamp"
 type ComponentTemplate struct {
 	metav1.TypeMeta   `json:",inline"`

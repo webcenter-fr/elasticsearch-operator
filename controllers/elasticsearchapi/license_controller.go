@@ -344,14 +344,14 @@ func (r *LicenseReconciler) OnError(ctx context.Context, resource client.Object,
 		Message: err.Error(),
 	})
 
-	license.Status.Health = false
+	license.Status.Sync = false
 }
 
 // OnSuccess permit to set status condition on the right state is everithink is good
 func (r *LicenseReconciler) OnSuccess(ctx context.Context, resource client.Object, data map[string]any, meta any, diff controller.Diff) (err error) {
 	license := resource.(*elasticsearchapicrd.License)
 
-	license.Status.Health = true
+	license.Status.Sync = true
 
 	if diff.NeedCreate {
 		condition.SetStatusCondition(&license.Status.Conditions, metav1.Condition{

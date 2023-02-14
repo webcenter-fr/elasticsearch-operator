@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/disaster37/es-handler/v8/mocks"
+	"github.com/disaster37/es-handler/v8/patch"
 	"github.com/disaster37/operator-sdk-extra/pkg/test"
 	"github.com/golang/mock/gomock"
 	olivere "github.com/olivere/elastic/v7"
@@ -77,23 +78,27 @@ func doMockIndexTemplate(mockES *mocks.MockElasticsearchHandler) func(stepName *
 			return nil, nil
 		})
 
-		mockES.EXPECT().IndexTemplateDiff(gomock.Any(), gomock.Any()).AnyTimes().DoAndReturn(func(actual, expected *olivere.IndicesGetIndexTemplate) (string, error) {
+		mockES.EXPECT().IndexTemplateDiff(gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes().DoAndReturn(func(actual, expected, original *olivere.IndicesGetIndexTemplate) (*patch.PatchResult, error) {
 			switch *stepName {
 			case "create":
 				if !isCreated {
-					return "fake change", nil
+					return &patch.PatchResult{
+						Patch: []byte("fake change"),
+					}, nil
 				} else {
-					return "", nil
+					return &patch.PatchResult{}, nil
 				}
 			case "update":
 				if !isUpdated {
-					return "fake change", nil
+					return &patch.PatchResult{
+						Patch: []byte("fake change"),
+					}, nil
 				} else {
-					return "", nil
+					return &patch.PatchResult{}, nil
 				}
 			}
 
-			return "", nil
+			return nil, nil
 		})
 
 		mockES.EXPECT().IndexTemplateUpdate(gomock.Any(), gomock.Any()).AnyTimes().DoAndReturn(func(name string, policy *olivere.IndicesGetIndexTemplate) error {
@@ -166,7 +171,7 @@ func doCreateIndexTemplateStep() test.TestStep {
 				t.Fatalf("Failed to get index template: %s", err.Error())
 			}
 			assert.True(t, condition.IsStatusConditionPresentAndEqual(template.Status.Conditions, IndexTemplateCondition, metav1.ConditionTrue))
-			assert.True(t, template.Status.Health)
+			assert.True(t, template.Status.Sync)
 
 			return nil
 		},
@@ -211,7 +216,7 @@ func doUpdateIndexTemplateStep() test.TestStep {
 				t.Fatalf("Failed to get index template: %s", err.Error())
 			}
 			assert.True(t, condition.IsStatusConditionPresentAndEqual(template.Status.Conditions, IndexTemplateCondition, metav1.ConditionTrue))
-			assert.True(t, template.Status.Health)
+			assert.True(t, template.Status.Sync)
 
 			return nil
 		},

@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/disaster37/es-handler/v8/mocks"
+	"github.com/disaster37/es-handler/v8/patch"
 	"github.com/disaster37/operator-sdk-extra/pkg/test"
 	"github.com/golang/mock/gomock"
 	olivere "github.com/olivere/elastic/v7"
@@ -84,23 +85,27 @@ func doMockSnapshotRepository(mockES *mocks.MockElasticsearchHandler) func(stepN
 			return nil, nil
 		})
 
-		mockES.EXPECT().SnapshotRepositoryDiff(gomock.Any(), gomock.Any()).AnyTimes().DoAndReturn(func(actual, expected *olivere.SnapshotRepositoryMetaData) (string, error) {
+		mockES.EXPECT().SnapshotRepositoryDiff(gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes().DoAndReturn(func(actual, expected, original *olivere.SnapshotRepositoryMetaData) (*patch.PatchResult, error) {
 			switch *stepName {
 			case "create":
 				if !isCreated {
-					return "fake change", nil
+					return &patch.PatchResult{
+						Patch: []byte("fake change"),
+					}, nil
 				} else {
-					return "", nil
+					return &patch.PatchResult{}, nil
 				}
 			case "update":
 				if !isUpdated {
-					return "fake change", nil
+					return &patch.PatchResult{
+						Patch: []byte("fake change"),
+					}, nil
 				} else {
-					return "", nil
+					return &patch.PatchResult{}, nil
 				}
 			}
 
-			return "", nil
+			return nil, nil
 		})
 
 		mockES.EXPECT().SnapshotRepositoryUpdate(gomock.Any(), gomock.Any()).AnyTimes().DoAndReturn(func(name string, policy *olivere.SnapshotRepositoryMetaData) error {
@@ -178,7 +183,7 @@ func doCreateSnapshotRepositoryStep() test.TestStep {
 				t.Fatalf("Failed to get Snapshot repository: %s", err.Error())
 			}
 			assert.True(t, condition.IsStatusConditionPresentAndEqual(repo.Status.Conditions, SnapshotRepositoryCondition, metav1.ConditionTrue))
-			assert.True(t, repo.Status.Health)
+			assert.True(t, repo.Status.Sync)
 
 			return nil
 		},
@@ -227,7 +232,7 @@ func doUpdateSnapshotRepositoryStep() test.TestStep {
 				t.Fatalf("Failed to get Snapshot repository: %s", err.Error())
 			}
 			assert.True(t, condition.IsStatusConditionPresentAndEqual(repo.Status.Conditions, SnapshotRepositoryCondition, metav1.ConditionTrue))
-			assert.True(t, repo.Status.Health)
+			assert.True(t, repo.Status.Sync)
 
 			return nil
 		},

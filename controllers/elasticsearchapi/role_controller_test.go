@@ -7,6 +7,7 @@ import (
 
 	eshandler "github.com/disaster37/es-handler/v8"
 	"github.com/disaster37/es-handler/v8/mocks"
+	"github.com/disaster37/es-handler/v8/patch"
 	"github.com/disaster37/operator-sdk-extra/pkg/test"
 	"github.com/golang/mock/gomock"
 	"github.com/pkg/errors"
@@ -76,23 +77,27 @@ func doMockRole(mockES *mocks.MockElasticsearchHandler) func(stepName *string, d
 			return nil, nil
 		})
 
-		mockES.EXPECT().RoleDiff(gomock.Any(), gomock.Any()).AnyTimes().DoAndReturn(func(actual, expected *eshandler.XPackSecurityRole) (string, error) {
+		mockES.EXPECT().RoleDiff(gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes().DoAndReturn(func(actual, expected, original *eshandler.XPackSecurityRole) (*patch.PatchResult, error) {
 			switch *stepName {
 			case "create":
 				if !isCreated {
-					return "fake change", nil
+					return &patch.PatchResult{
+						Patch: []byte("fake change"),
+					}, nil
 				} else {
-					return "", nil
+					return &patch.PatchResult{}, nil
 				}
 			case "update":
 				if !isUpdated {
-					return "fake change", nil
+					return &patch.PatchResult{
+						Patch: []byte("fake change"),
+					}, nil
 				} else {
-					return "", nil
+					return &patch.PatchResult{}, nil
 				}
 			}
 
-			return "", nil
+			return nil, nil
 		})
 
 		mockES.EXPECT().RoleUpdate(gomock.Any(), gomock.Any()).AnyTimes().DoAndReturn(func(name string, policy *eshandler.XPackSecurityRole) error {
@@ -165,7 +170,7 @@ func doCreateRoleStep() test.TestStep {
 				t.Fatalf("Failed to get elasticsearch role: %s", err.Error())
 			}
 			assert.True(t, condition.IsStatusConditionPresentAndEqual(role.Status.Conditions, RoleCondition, metav1.ConditionTrue))
-			assert.True(t, role.Status.Health)
+			assert.True(t, role.Status.Sync)
 
 			return nil
 		},
@@ -210,7 +215,7 @@ func doUpdateRoleStep() test.TestStep {
 				t.Fatalf("Failed to get elasticsearch role: %s", err.Error())
 			}
 			assert.True(t, condition.IsStatusConditionPresentAndEqual(role.Status.Conditions, RoleCondition, metav1.ConditionTrue))
-			assert.True(t, role.Status.Health)
+			assert.True(t, role.Status.Sync)
 
 			return nil
 		},

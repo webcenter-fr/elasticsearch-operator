@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/disaster37/es-handler/v8/mocks"
+	"github.com/disaster37/es-handler/v8/patch"
 	"github.com/disaster37/operator-sdk-extra/pkg/test"
 	"github.com/golang/mock/gomock"
 	olivere "github.com/olivere/elastic/v7"
@@ -82,23 +83,27 @@ func doMockComponentTemplate(mockES *mocks.MockElasticsearchHandler) func(stepNa
 			return nil, nil
 		})
 
-		mockES.EXPECT().ComponentTemplateDiff(gomock.Any(), gomock.Any()).AnyTimes().DoAndReturn(func(actual, expected *olivere.IndicesGetComponentTemplate) (string, error) {
+		mockES.EXPECT().ComponentTemplateDiff(gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes().DoAndReturn(func(actual, expected, original *olivere.IndicesGetComponentTemplate) (*patch.PatchResult, error) {
 			switch *stepName {
 			case "create":
 				if !isCreated {
-					return "fake change", nil
+					return &patch.PatchResult{
+						Patch: []byte("fake change"),
+					}, nil
 				} else {
-					return "", nil
+					return &patch.PatchResult{}, nil
 				}
 			case "update":
 				if !isUpdated {
-					return "fake change", nil
+					return &patch.PatchResult{
+						Patch: []byte("fake change"),
+					}, nil
 				} else {
-					return "", nil
+					return &patch.PatchResult{}, nil
 				}
 			}
 
-			return "", nil
+			return nil, nil
 
 		})
 
@@ -177,7 +182,7 @@ func doCreateComponentTemplateStep() test.TestStep {
 				t.Fatalf("Failed to get component template: %s", err.Error())
 			}
 			assert.True(t, condition.IsStatusConditionPresentAndEqual(ct.Status.Conditions, ComponentTemplateCondition, metav1.ConditionTrue))
-			assert.True(t, ct.Status.Health)
+			assert.True(t, ct.Status.Sync)
 
 			return nil
 		},
@@ -224,7 +229,7 @@ func doUpdateComponentTemplateStep() test.TestStep {
 				t.Fatalf("Failed to get component template: %s", err.Error())
 			}
 			assert.True(t, condition.IsStatusConditionPresentAndEqual(ct.Status.Conditions, ComponentTemplateCondition, metav1.ConditionTrue))
-			assert.True(t, ct.Status.Health)
+			assert.True(t, ct.Status.Sync)
 
 			return nil
 		},
