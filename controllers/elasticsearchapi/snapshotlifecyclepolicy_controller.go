@@ -107,7 +107,7 @@ func (r *SnapshotLifecyclePolicyReconciler) Configure(ctx context.Context, req c
 	}
 
 	// Get elasticsearch handler / client
-	meta, err = GetElasticsearchHandler(ctx, slm.Spec.ElasticsearchRef, r.Client, req, r.log)
+	meta, err = GetElasticsearchHandler(ctx, slm, slm.Spec.ElasticsearchRef, r.Client, r.log)
 	if err != nil {
 		r.recorder.Eventf(resource, core.EventTypeWarning, "Failed", "Unable to init elasticsearch handler: %s", err.Error())
 		return nil, err

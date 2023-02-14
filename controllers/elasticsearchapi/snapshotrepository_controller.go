@@ -109,7 +109,7 @@ func (r *SnapshotRepositoryReconciler) Configure(ctx context.Context, req ctrl.R
 	}
 
 	// Get elasticsearch handler / client
-	meta, err = GetElasticsearchHandler(ctx, sr.Spec.ElasticsearchRef, r.Client, req, r.log)
+	meta, err = GetElasticsearchHandler(ctx, sr, sr.Spec.ElasticsearchRef, r.Client, r.log)
 	if err != nil {
 		r.recorder.Eventf(resource, core.EventTypeWarning, "Failed", "Unable to init elasticsearch handler: %s", err.Error())
 		return nil, err

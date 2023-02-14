@@ -21,8 +21,8 @@ import (
 	"fmt"
 	"time"
 
-	"emperror.dev/errors"
 	"github.com/disaster37/operator-sdk-extra/pkg/controller"
+	"github.com/pkg/errors"
 	elasticsearchcrd "github.com/webcenter-fr/elasticsearch-operator/apis/elasticsearch/v1alpha1"
 	kibanacrd "github.com/webcenter-fr/elasticsearch-operator/apis/kibana/v1alpha1"
 	"github.com/webcenter-fr/elasticsearch-operator/controllers/common"

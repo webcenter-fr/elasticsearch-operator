@@ -3,7 +3,6 @@ module github.com/webcenter-fr/elasticsearch-operator
 go 1.19
 
 require (
-	emperror.dev/errors v0.8.1
 	github.com/codingsince1985/checksum v1.2.5
 	github.com/davecgh/go-spew v1.1.1
 	github.com/disaster37/es-handler/v8 v8.1.0
@@ -18,6 +17,7 @@ require (
 	github.com/golang/mock v1.6.0
 	github.com/google/go-cmp v0.5.9
 	github.com/imdario/mergo v0.3.13
+	github.com/json-iterator/go v1.1.12
 	github.com/kr/pretty v0.2.0
 	github.com/olivere/elastic/v7 v7.0.32
 	github.com/pkg/errors v0.9.1
@@ -41,6 +41,7 @@ require (
 
 require (
 	cloud.google.com/go v0.97.0 // indirect
+	emperror.dev/errors v0.8.1 // indirect
 	github.com/Azure/go-autorest v14.2.0+incompatible // indirect
 	github.com/Azure/go-autorest/autorest v0.11.27 // indirect
 	github.com/Azure/go-autorest/autorest/adal v0.9.20 // indirect
@@ -67,7 +68,6 @@ require (
 	github.com/google/gofuzz v1.2.0 // indirect
 	github.com/google/uuid v1.1.2 // indirect
 	github.com/josharian/intern v1.0.0 // indirect
-	github.com/json-iterator/go v1.1.12 // indirect
 	github.com/kr/text v0.2.0 // indirect
 	github.com/mailru/easyjson v0.7.7 // indirect
 	github.com/matttproud/golang_protobuf_extensions v1.0.2-0.20181231171920-c182affec369 // indirect

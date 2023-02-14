@@ -82,7 +82,7 @@ func (r *CredentialReconciler) Read(ctx context.Context, resource client.Object,
 
 	if o.Spec.ElasticsearchRef.IsManaged() {
 		// Read Elasticsearch
-		es, err = GetElasticsearchRef(ctx, r.Client, o)
+		es, err = common.GetElasticsearchFromRef(ctx, r.Client, o, o.Spec.ElasticsearchRef)
 		if err != nil {
 			return res, errors.Wrap(err, "Error when read elasticsearchRef")
 		}

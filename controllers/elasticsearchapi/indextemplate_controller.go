@@ -108,7 +108,7 @@ func (r *IndexTemplateReconciler) Configure(ctx context.Context, req ctrl.Reques
 	}
 
 	// Get elasticsearch handler / client
-	meta, err = GetElasticsearchHandler(ctx, it.Spec.ElasticsearchRef, r.Client, req, r.log)
+	meta, err = GetElasticsearchHandler(ctx, it, it.Spec.ElasticsearchRef, r.Client, r.log)
 	if err != nil {
 		r.recorder.Eventf(resource, core.EventTypeWarning, "Failed", "Unable to init elasticsearch handler: %s", err.Error())
 		return nil, err
