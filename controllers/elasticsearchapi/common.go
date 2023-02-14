@@ -14,15 +14,14 @@ import (
 	elastic "github.com/elastic/go-elasticsearch/v8"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
-	elasticsearchcrd "github.com/webcenter-fr/elasticsearch-operator/apis/elasticsearch/v1alpha1"
 	elasticsearchapicrd "github.com/webcenter-fr/elasticsearch-operator/apis/elasticsearchapi/v1alpha1"
 	"github.com/webcenter-fr/elasticsearch-operator/apis/shared"
+	"github.com/webcenter-fr/elasticsearch-operator/controllers/common"
 	elasticsearchcontrollers "github.com/webcenter-fr/elasticsearch-operator/controllers/elasticsearch"
 	core "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/tools/record"
-	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 )
@@ -68,7 +67,7 @@ func MustSetUpIndex(k8sManager manager.Manager) {
 	}
 }
 
-func GetElasticsearchHandler(ctx context.Context, o shared.ElasticsearchRef, client client.Client, req ctrl.Request, log *logrus.Entry) (esHandler eshandler.ElasticsearchHandler, err error) {
+func GetElasticsearchHandler(ctx context.Context, o client.Object, esRef shared.ElasticsearchRef, client client.Client, log *logrus.Entry) (esHandler eshandler.ElasticsearchHandler, err error) {
 
 	// Retrieve secret or elasticsearch resource that store the connexion credentials
 	var secretNS types.NamespacedName
@@ -76,29 +75,21 @@ func GetElasticsearchHandler(ctx context.Context, o shared.ElasticsearchRef, cli
 	isManaged := false
 	hosts := []string{}
 	selfSignedCertificate := false
-	if o.IsManaged() {
+	if esRef.IsManaged() {
 		isManaged = true
-		namespace := req.Namespace
-		if o.ManagedElasticsearchRef.Namespace != "" {
-			namespace = o.ManagedElasticsearchRef.Namespace
-		}
-		// From Elasticsearch resource
-		es := &elasticsearchcrd.Elasticsearch{}
-		if err = client.Get(context.Background(), types.NamespacedName{Namespace: namespace, Name: o.ManagedElasticsearchRef.Name}, es); err != nil {
-			if k8serrors.IsNotFound(err) {
-				log.Warnf("Elasticsearch %s not yet exist, try later", o.ManagedElasticsearchRef.Name)
-				return nil, nil
-			}
-			log.Errorf("Error when get resource: %s", err.Error())
-			return nil, err
+
+		// Get Elasticsearch
+		es, err := common.GetElasticsearchFromRef(ctx, client, o, esRef)
+		if err != nil {
+			return nil, errors.Wrap(err, "Error when get Elasticsearch object from ref")
 		}
 
 		// Get secret that store credential
 		secretName = elasticsearchcontrollers.GetSecretNameForCredentials(es)
 
 		serviceName := elasticsearchcontrollers.GetGlobalServiceName(es)
-		if o.ManagedElasticsearchRef.TargetNodeGroup != "" {
-			serviceName = elasticsearchcontrollers.GetNodeGroupServiceName(es, o.ManagedElasticsearchRef.TargetNodeGroup)
+		if esRef.ManagedElasticsearchRef.TargetNodeGroup != "" {
+			serviceName = elasticsearchcontrollers.GetNodeGroupServiceName(es, esRef.ManagedElasticsearchRef.TargetNodeGroup)
 		}
 
 		if !es.IsTlsApiEnabled() {
@@ -113,12 +104,12 @@ func GetElasticsearchHandler(ctx context.Context, o shared.ElasticsearchRef, cli
 			Name:      secretName,
 		}
 
-	} else if o.IsExternal() {
-		secretName = o.ExternalElasticsearchRef.SecretRef.Name
-		hosts = o.ExternalElasticsearchRef.Addresses
+	} else if esRef.IsExternal() {
+		secretName = esRef.ExternalElasticsearchRef.SecretRef.Name
+		hosts = esRef.ExternalElasticsearchRef.Addresses
 
 		secretNS = types.NamespacedName{
-			Namespace: req.Namespace,
+			Namespace: o.GetNamespace(),
 			Name:      secretName,
 		}
 	} else {

@@ -5,10 +5,10 @@ import (
 	"fmt"
 	"reflect"
 
-	"emperror.dev/errors"
 	"github.com/disaster37/k8s-objectmatcher/patch"
 	"github.com/disaster37/operator-sdk-extra/pkg/controller"
 	"github.com/disaster37/operator-sdk-extra/pkg/helper"
+	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 	helperdiff "github.com/webcenter-fr/elasticsearch-operator/pkg/helper"
 	"k8s.io/apimachinery/pkg/runtime"

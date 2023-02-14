@@ -93,7 +93,7 @@ func (r *StatefulsetReconciler) Read(ctx context.Context, resource client.Object
 
 	// Read Elasticsearch
 	if o.Spec.ElasticsearchRef.IsManaged() {
-		es, err = GetElasticsearchRef(ctx, r.Client, o)
+		es, err = common.GetElasticsearchFromRef(ctx, r.Client, o, o.Spec.ElasticsearchRef)
 		if err != nil {
 			return res, errors.Wrap(err, "Error when read ElasticsearchRef")
 		}
