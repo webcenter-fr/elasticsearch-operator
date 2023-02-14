@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/disaster37/es-handler/v8/mocks"
+	"github.com/disaster37/es-handler/v8/patch"
 	"github.com/disaster37/operator-sdk-extra/pkg/test"
 	"github.com/golang/mock/gomock"
 	olivere "github.com/olivere/elastic/v7"
@@ -88,23 +89,27 @@ func doMockRoleMapping(mockES *mocks.MockElasticsearchHandler) func(stepName *st
 			return nil, nil
 		})
 
-		mockES.EXPECT().RoleMappingDiff(gomock.Any(), gomock.Any()).AnyTimes().DoAndReturn(func(actual, expected *olivere.XPackSecurityRoleMapping) (string, error) {
+		mockES.EXPECT().RoleMappingDiff(gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes().DoAndReturn(func(actual, expected, original *olivere.XPackSecurityRoleMapping) (*patch.PatchResult, error) {
 			switch *stepName {
 			case "create":
 				if !isCreated {
-					return "fake change", nil
+					return &patch.PatchResult{
+						Patch: []byte("fake change"),
+					}, nil
 				} else {
-					return "", nil
+					return &patch.PatchResult{}, nil
 				}
 			case "update":
 				if !isUpdated {
-					return "fake change", nil
+					return &patch.PatchResult{
+						Patch: []byte("fake change"),
+					}, nil
 				} else {
-					return "", nil
+					return &patch.PatchResult{}, nil
 				}
 			}
 
-			return "", nil
+			return nil, nil
 		})
 
 		mockES.EXPECT().RoleMappingUpdate(gomock.Any(), gomock.Any()).AnyTimes().DoAndReturn(func(name string, policy *olivere.XPackSecurityRoleMapping) error {
@@ -181,7 +186,7 @@ func doCreateRoleMappingStep() test.TestStep {
 				t.Fatalf("Failed to get role mapping: %s", err.Error())
 			}
 			assert.True(t, condition.IsStatusConditionPresentAndEqual(rm.Status.Conditions, RoleMappingCondition, metav1.ConditionTrue))
-			assert.True(t, rm.Status.Health)
+			assert.True(t, rm.Status.Sync)
 
 			return nil
 		},
@@ -226,7 +231,7 @@ func doUpdateRoleMappingStep() test.TestStep {
 				t.Fatalf("Failed to get role mapping: %s", err.Error())
 			}
 			assert.True(t, condition.IsStatusConditionPresentAndEqual(rm.Status.Conditions, RoleMappingCondition, metav1.ConditionTrue))
-			assert.True(t, rm.Status.Health)
+			assert.True(t, rm.Status.Sync)
 
 			return nil
 		},

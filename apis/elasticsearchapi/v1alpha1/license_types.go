@@ -63,9 +63,9 @@ type LicenseStatus struct {
 	// +operator-sdk:csv:customresourcedefinitions:type=status
 	Conditions []metav1.Condition `json:"conditions"`
 
-	// Health
+	// Sync
 	// +operator-sdk:csv:customresourcedefinitions:type=status
-	Health bool `json:"health"`
+	Sync bool `json:"sync"`
 }
 
 //+kubebuilder:object:root=true

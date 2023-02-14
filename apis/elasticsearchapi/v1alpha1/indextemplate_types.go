@@ -105,7 +105,11 @@ type IndexTemplateStatus struct {
 
 	// Health
 	// +operator-sdk:csv:customresourcedefinitions:type=status
-	Health bool `json:"health"`
+	Sync bool `json:"sync"`
+
+	// OriginalObject is the original object used on 3 way diff merge
+	// +operator-sdk:csv:customresourcedefinitions:type=status
+	OriginalObject string `json:"originalObject,omitempty"`
 }
 
 //+kubebuilder:object:root=true

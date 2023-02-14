@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/disaster37/es-handler/v8/mocks"
+	"github.com/disaster37/es-handler/v8/patch"
 	"github.com/disaster37/operator-sdk-extra/pkg/test"
 	"github.com/golang/mock/gomock"
 	olivere "github.com/olivere/elastic/v7"
@@ -87,29 +88,35 @@ func doMockUser(mockES *mocks.MockElasticsearchHandler) func(stepName *string, d
 			return nil, nil
 		})
 
-		mockES.EXPECT().UserDiff(gomock.Any(), gomock.Any()).AnyTimes().DoAndReturn(func(actual, expected *olivere.XPackSecurityPutUserRequest) (string, error) {
+		mockES.EXPECT().UserDiff(gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes().DoAndReturn(func(actual, expected, original *olivere.XPackSecurityPutUserRequest) (*patch.PatchResult, error) {
 			switch *stepName {
 			case "create":
 				if !isCreated {
-					return "fake change", nil
+					return &patch.PatchResult{
+						Patch: []byte("fake change"),
+					}, nil
 				} else {
-					return "", nil
+					return &patch.PatchResult{}, nil
 				}
 			case "update":
 				if !isUpdated {
-					return "fake change", nil
+					return &patch.PatchResult{
+						Patch: []byte("fake change"),
+					}, nil
 				} else {
-					return "", nil
+					return &patch.PatchResult{}, nil
 				}
 			case "update_password_hash":
 				if !isUpdatedPasswordHash {
-					return "fake change", nil
+					return &patch.PatchResult{
+						Patch: []byte("fake change"),
+					}, nil
 				} else {
-					return "", nil
+					return &patch.PatchResult{}, nil
 				}
 			}
 
-			return "", nil
+			return nil, nil
 		})
 
 		mockES.EXPECT().UserUpdate(gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes().DoAndReturn(func(name string, policy *olivere.XPackSecurityPutUserRequest, isProtected ...bool) error {
@@ -192,7 +199,7 @@ func doCreateUserStep() test.TestStep {
 				t.Fatalf("Failed to get user: %s", err.Error())
 			}
 			assert.True(t, condition.IsStatusConditionPresentAndEqual(user.Status.Conditions, UserCondition, metav1.ConditionTrue))
-			assert.True(t, user.Status.Health)
+			assert.True(t, user.Status.Sync)
 
 			return nil
 		},
@@ -237,7 +244,7 @@ func doUpdateUserStep() test.TestStep {
 				t.Fatalf("Failed to get User: %s", err.Error())
 			}
 			assert.True(t, condition.IsStatusConditionPresentAndEqual(user.Status.Conditions, UserCondition, metav1.ConditionTrue))
-			assert.True(t, user.Status.Health)
+			assert.True(t, user.Status.Sync)
 
 			return nil
 		},

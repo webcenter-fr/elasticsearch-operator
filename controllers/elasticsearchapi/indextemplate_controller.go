@@ -24,6 +24,7 @@ import (
 	"github.com/pkg/errors"
 	elasticsearchapicrd "github.com/webcenter-fr/elasticsearch-operator/apis/elasticsearchapi/v1alpha1"
 	"github.com/webcenter-fr/elasticsearch-operator/controllers/common"
+	localhelper "github.com/webcenter-fr/elasticsearch-operator/pkg/helper"
 	core "k8s.io/api/core/v1"
 	condition "k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -137,8 +138,14 @@ func (r *IndexTemplateReconciler) Read(ctx context.Context, resource client.Obje
 	if err != nil {
 		return res, errors.Wrap(err, "Unable to get index template from Elasticsearch")
 	}
+	data["current"] = currentTemplate
 
-	data["template"] = currentTemplate
+	// Generate expected
+	expectedTemplate, err := BuildIndexTemplate(it)
+	if err != nil {
+		return res, errors.Wrap(err, "Unable to generate index template")
+	}
+	data["expected"] = expectedTemplate
 
 	return res, nil
 }
@@ -188,18 +195,26 @@ func (r *IndexTemplateReconciler) Delete(ctx context.Context, resource client.Ob
 func (r *IndexTemplateReconciler) Diff(resource client.Object, data map[string]interface{}, meta interface{}) (diff controller.Diff, err error) {
 	esHandler := meta.(eshandler.ElasticsearchHandler)
 	it := resource.(*elasticsearchapicrd.IndexTemplate)
-
-	var currentTemplate *olivere.IndicesGetIndexTemplate
 	var d any
 
-	d, err = helper.Get(data, "template")
+	d, err = helper.Get(data, "current")
 	if err != nil {
 		return diff, err
 	}
-	currentTemplate = d.(*olivere.IndicesGetIndexTemplate)
-	expectedTemplate, err := BuildIndexTemplate(it)
+	currentTemplate := d.(*olivere.IndicesGetIndexTemplate)
+
+	d, err = helper.Get(data, "expected")
 	if err != nil {
 		return diff, err
+	}
+	expectedTemplate := d.(*olivere.IndicesGetIndexTemplate)
+
+	var originalTemplate *olivere.IndicesGetIndexTemplate
+	if it.Status.OriginalObject != "" {
+		originalTemplate = &olivere.IndicesGetIndexTemplate{}
+		if err = localhelper.UnZipBase64Decode(it.Status.OriginalObject, originalTemplate); err != nil {
+			return diff, err
+		}
 	}
 
 	diff = controller.Diff{
@@ -210,17 +225,26 @@ func (r *IndexTemplateReconciler) Diff(resource client.Object, data map[string]i
 	if currentTemplate == nil {
 		diff.NeedCreate = true
 		diff.Diff = "Index template not exist"
+
+		if err = localhelper.SetLastOriginal(it, expectedTemplate); err != nil {
+			return diff, err
+		}
+
 		return diff, nil
 	}
 
-	diffStr, err := esHandler.IndexTemplateDiff(currentTemplate, expectedTemplate)
+	differ, err := esHandler.IndexTemplateDiff(currentTemplate, expectedTemplate, originalTemplate)
 	if err != nil {
 		return diff, err
 	}
 
-	if diffStr != "" {
+	if !differ.IsEmpty() {
 		diff.NeedUpdate = true
-		diff.Diff = diffStr
+		diff.Diff = string(differ.Patch)
+
+		if err = localhelper.SetLastOriginal(it, expectedTemplate); err != nil {
+			return diff, err
+		}
 		return diff, nil
 	}
 
@@ -241,14 +265,14 @@ func (r *IndexTemplateReconciler) OnError(ctx context.Context, resource client.O
 		Message: err.Error(),
 	})
 
-	it.Status.Health = false
+	it.Status.Sync = false
 }
 
 // OnSuccess permit to set status condition on the right state is everithink is good
 func (r *IndexTemplateReconciler) OnSuccess(ctx context.Context, resource client.Object, data map[string]any, meta any, diff controller.Diff) (err error) {
 	it := resource.(*elasticsearchapicrd.IndexTemplate)
 
-	it.Status.Health = true
+	it.Status.Sync = true
 
 	if diff.NeedCreate {
 		condition.SetStatusCondition(&it.Status.Conditions, metav1.Condition{

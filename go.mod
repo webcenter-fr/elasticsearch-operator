@@ -6,7 +6,7 @@ require (
 	emperror.dev/errors v0.8.1
 	github.com/codingsince1985/checksum v1.2.5
 	github.com/davecgh/go-spew v1.1.1
-	github.com/disaster37/es-handler/v8 v8.0.5
+	github.com/disaster37/es-handler/v8 v8.1.0
 	github.com/disaster37/goca v1.0.4-0.20221213082455-a233467aa7fe
 	github.com/disaster37/k8s-objectmatcher v1.8.2-0.20230118153724-8144c44645a8
 	github.com/disaster37/k8sbuilder v1.0.1
@@ -31,7 +31,7 @@ require (
 	golang.org/x/crypto v0.0.0-20221005025214-4161e89ecf1b
 	gopkg.in/yaml.v3 v3.0.1
 	k8s.io/api v0.25.5
-	k8s.io/apimachinery v0.25.5
+	k8s.io/apimachinery v0.26.1
 	k8s.io/client-go v0.25.5
 	k8s.io/kubectl v0.25.5
 	k8s.io/utils v0.0.0-20221108210102-8e77b1f39fe2
@@ -97,7 +97,7 @@ require (
 	k8s.io/apiextensions-apiserver v0.25.4 // indirect
 	k8s.io/component-base v0.25.5 // indirect
 	k8s.io/klog/v2 v2.80.1 // indirect
-	k8s.io/kube-openapi v0.0.0-20220803162953-67bda5d908f1 // indirect
+	k8s.io/kube-openapi v0.0.0-20221012153701-172d655c2280 // indirect
 	sigs.k8s.io/json v0.0.0-20220713155537-f223a00ba0e2 // indirect
 	sigs.k8s.io/structured-merge-diff/v4 v4.2.3 // indirect
 	software.sslmate.com/src/go-pkcs12 v0.2.0 // indirect

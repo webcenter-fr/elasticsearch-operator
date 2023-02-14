@@ -25,6 +25,7 @@ import (
 	"github.com/pkg/errors"
 	elasticsearchapicrd "github.com/webcenter-fr/elasticsearch-operator/apis/elasticsearchapi/v1alpha1"
 	"github.com/webcenter-fr/elasticsearch-operator/controllers/common"
+	localhelper "github.com/webcenter-fr/elasticsearch-operator/pkg/helper"
 	core "k8s.io/api/core/v1"
 	condition "k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -139,7 +140,14 @@ func (r *IndexLifecyclePolicyReconciler) Read(ctx context.Context, resource clie
 		return res, errors.Wrap(err, "Unable to get ILM policy from Elasticsearch")
 	}
 
-	data["policy"] = ilmPolicy
+	data["current"] = ilmPolicy
+
+	// Generate expected
+	expectedPolicy := &olivere.XPackIlmGetLifecycleResponse{}
+	if err = json.Unmarshal([]byte(ilm.Spec.Policy), expectedPolicy); err != nil {
+		return res, errors.Wrap(err, "Unable to convert expected policy to object")
+	}
+	data["expected"] = expectedPolicy
 
 	return res, nil
 }
@@ -189,17 +197,26 @@ func (r *IndexLifecyclePolicyReconciler) Delete(ctx context.Context, resource cl
 func (r *IndexLifecyclePolicyReconciler) Diff(resource client.Object, data map[string]interface{}, meta interface{}) (diff controller.Diff, err error) {
 	esHandler := meta.(eshandler.ElasticsearchHandler)
 	ilm := resource.(*elasticsearchapicrd.IndexLifecyclePolicy)
-	expectedPolicy := &olivere.XPackIlmGetLifecycleResponse{}
-	var currentPolicy *olivere.XPackIlmGetLifecycleResponse
 	var d any
 
-	d, err = helper.Get(data, "policy")
+	d, err = helper.Get(data, "current")
 	if err != nil {
 		return diff, err
 	}
-	currentPolicy = d.(*olivere.XPackIlmGetLifecycleResponse)
-	if err = json.Unmarshal([]byte(ilm.Spec.Policy), expectedPolicy); err != nil {
+	currentPolicy := d.(*olivere.XPackIlmGetLifecycleResponse)
+
+	d, err = helper.Get(data, "expected")
+	if err != nil {
 		return diff, err
+	}
+	expectedPolicy := d.(*olivere.XPackIlmGetLifecycleResponse)
+
+	var originalPolicy *olivere.XPackIlmGetLifecycleResponse
+	if ilm.Status.OriginalObject != "" {
+		originalPolicy = &olivere.XPackIlmGetLifecycleResponse{}
+		if err = localhelper.UnZipBase64Decode(ilm.Status.OriginalObject, originalPolicy); err != nil {
+			return diff, err
+		}
 	}
 
 	diff = controller.Diff{
@@ -210,17 +227,25 @@ func (r *IndexLifecyclePolicyReconciler) Diff(resource client.Object, data map[s
 	if currentPolicy == nil {
 		diff.NeedCreate = true
 		diff.Diff = "ILM policy not exist"
+
+		if err = localhelper.SetLastOriginal(ilm, expectedPolicy); err != nil {
+			return diff, err
+		}
 		return diff, nil
 	}
 
-	diffStr, err := esHandler.ILMDiff(currentPolicy, expectedPolicy)
+	differ, err := esHandler.ILMDiff(currentPolicy, expectedPolicy, originalPolicy)
 	if err != nil {
 		return diff, err
 	}
 
-	if diffStr != "" {
+	if !differ.IsEmpty() {
 		diff.NeedUpdate = true
-		diff.Diff = diffStr
+		diff.Diff = string(differ.Patch)
+
+		if err = localhelper.SetLastOriginal(ilm, expectedPolicy); err != nil {
+			return diff, err
+		}
 		return diff, nil
 	}
 
@@ -241,14 +266,14 @@ func (r *IndexLifecyclePolicyReconciler) OnError(ctx context.Context, resource c
 		Message: err.Error(),
 	})
 
-	ilm.Status.Health = false
+	ilm.Status.Sync = false
 }
 
 // OnSuccess permit to set status condition on the right state is everithink is good
 func (r *IndexLifecyclePolicyReconciler) OnSuccess(ctx context.Context, resource client.Object, data map[string]any, meta any, diff controller.Diff) (err error) {
 	ilm := resource.(*elasticsearchapicrd.IndexLifecyclePolicy)
 
-	ilm.Status.Health = true
+	ilm.Status.Sync = true
 
 	if diff.NeedCreate {
 		condition.SetStatusCondition(&ilm.Status.Conditions, metav1.Condition{

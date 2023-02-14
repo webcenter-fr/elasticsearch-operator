@@ -192,8 +192,15 @@ func (r *UserReconciler) Read(ctx context.Context, resource client.Object, data 
 		}
 		data["password"] = string(passwordB)
 	}
+	data["current"] = currentUser
 
-	data["user"] = currentUser
+	// Generate expected
+	expectedUser, err := BuildUser(o)
+	if err != nil {
+		return res, errors.Wrap(err, "Unable to generate user")
+	}
+	data["expected"] = expectedUser
+
 	return res, nil
 }
 
@@ -309,25 +316,38 @@ func (r *UserReconciler) Diff(resource client.Object, data map[string]interface{
 	esHandler := meta.(eshandler.ElasticsearchHandler)
 	user := resource.(*elasticsearchapicrd.User)
 	var (
-		currentUserTmp *olivere.XPackSecurityUser
-		currentUser    *olivere.XPackSecurityPutUserRequest
-		d              any
+		d           any
+		currentUser *olivere.XPackSecurityPutUserRequest
 	)
 
-	expectedUser, err := BuildUser(user)
+	d, err = helper.Get(data, "current")
 	if err != nil {
 		return diff, err
 	}
+	currentUserTmp := d.(*olivere.XPackSecurityUser)
 
-	d, err = helper.Get(data, "user")
+	d, err = helper.Get(data, "expected")
 	if err != nil {
 		return diff, err
 	}
-	currentUserTmp = d.(*olivere.XPackSecurityUser)
+	expectedUser := d.(*olivere.XPackSecurityPutUserRequest)
+
+	var originalUser *olivere.XPackSecurityPutUserRequest
+	if user.Status.OriginalObject != "" {
+		originalUser = &olivere.XPackSecurityPutUserRequest{}
+		if err = localhelper.UnZipBase64Decode(user.Status.OriginalObject, originalUser); err != nil {
+			return diff, err
+		}
+	}
 
 	if currentUserTmp == nil {
 		diff.NeedCreate = true
 		diff.Diff = "user not exist"
+
+		if err = localhelper.SetLastOriginal(user, expectedUser); err != nil {
+			return diff, err
+		}
+
 		return diff, nil
 	}
 
@@ -363,14 +383,19 @@ func (r *UserReconciler) Diff(resource client.Object, data map[string]interface{
 		}
 	}
 
-	diffStr, err := esHandler.UserDiff(currentUser, expectedUser)
+	differ, err := esHandler.UserDiff(currentUser, expectedUser, originalUser)
 	if err != nil {
 		return diff, err
 	}
 
-	if diffStr != "" {
+	if !differ.IsEmpty() {
 		diff.NeedUpdate = true
-		diff.Diff = diffStr
+		diff.Diff = string(differ.Patch)
+
+		if err = localhelper.SetLastOriginal(user, expectedUser); err != nil {
+			return diff, err
+		}
+
 		return diff, nil
 	}
 
@@ -390,14 +415,14 @@ func (r *UserReconciler) OnError(ctx context.Context, resource client.Object, da
 		Message: err.Error(),
 	})
 
-	user.Status.Health = false
+	user.Status.Sync = false
 }
 
 // OnSuccess permit to set status condition on the right state is everithink is good
 func (r *UserReconciler) OnSuccess(ctx context.Context, resource client.Object, data map[string]any, meta any, diff controller.Diff) (err error) {
 	user := resource.(*elasticsearchapicrd.User)
 
-	user.Status.Health = true
+	user.Status.Sync = true
 
 	if diff.NeedCreate {
 		condition.SetStatusCondition(&user.Status.Conditions, metav1.Condition{

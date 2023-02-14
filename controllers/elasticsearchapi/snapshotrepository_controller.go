@@ -25,6 +25,7 @@ import (
 	"github.com/pkg/errors"
 	elasticsearchapicrd "github.com/webcenter-fr/elasticsearch-operator/apis/elasticsearchapi/v1alpha1"
 	"github.com/webcenter-fr/elasticsearch-operator/controllers/common"
+	localhelper "github.com/webcenter-fr/elasticsearch-operator/pkg/helper"
 	core "k8s.io/api/core/v1"
 	condition "k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -138,8 +139,18 @@ func (r *SnapshotRepositoryReconciler) Read(ctx context.Context, resource client
 	if err != nil {
 		return res, errors.Wrap(err, "Unable to get snapshot repository from Elasticsearch")
 	}
+	data["current"] = currentRepository
 
-	data["repository"] = currentRepository
+	// Generate expected
+	settings := map[string]any{}
+	if err = json.Unmarshal([]byte(sr.Spec.Settings), &settings); err != nil {
+		return res, errors.Wrap(err, "Unable to generate snapshot repository")
+	}
+	expectedRepository := &olivere.SnapshotRepositoryMetaData{
+		Type:     sr.Spec.Type,
+		Settings: settings,
+	}
+	data["expected"] = expectedRepository
 
 	return res, nil
 }
@@ -195,24 +206,27 @@ func (r *SnapshotRepositoryReconciler) Delete(ctx context.Context, resource clie
 func (r *SnapshotRepositoryReconciler) Diff(resource client.Object, data map[string]interface{}, meta interface{}) (diff controller.Diff, err error) {
 	esHandler := meta.(eshandler.ElasticsearchHandler)
 	sr := resource.(*elasticsearchapicrd.SnapshotRepository)
-
-	var currentSR *olivere.SnapshotRepositoryMetaData
 	var d any
 
-	settings := map[string]any{}
-	if err = json.Unmarshal([]byte(sr.Spec.Settings), &settings); err != nil {
-		return diff, errors.Wrap(err, "Error when decode repository setting")
-	}
-	expectedSR := &olivere.SnapshotRepositoryMetaData{
-		Type:     sr.Spec.Type,
-		Settings: settings,
-	}
-
-	d, err = helper.Get(data, "repository")
+	d, err = helper.Get(data, "current")
 	if err != nil {
 		return diff, err
 	}
-	currentSR = d.(*olivere.SnapshotRepositoryMetaData)
+	currentSR := d.(*olivere.SnapshotRepositoryMetaData)
+
+	d, err = helper.Get(data, "expected")
+	if err != nil {
+		return diff, err
+	}
+	expectedSR := d.(*olivere.SnapshotRepositoryMetaData)
+
+	var originalSR *olivere.SnapshotRepositoryMetaData
+	if sr.Status.OriginalObject != "" {
+		originalSR = &olivere.SnapshotRepositoryMetaData{}
+		if err = localhelper.UnZipBase64Decode(sr.Status.OriginalObject, originalSR); err != nil {
+			return diff, err
+		}
+	}
 
 	diff = controller.Diff{
 		NeedCreate: false,
@@ -222,17 +236,27 @@ func (r *SnapshotRepositoryReconciler) Diff(resource client.Object, data map[str
 	if currentSR == nil {
 		diff.NeedCreate = true
 		diff.Diff = "Snapshot repository not exist"
+
+		if err = localhelper.SetLastOriginal(sr, expectedSR); err != nil {
+			return diff, err
+		}
+
 		return diff, nil
 	}
 
-	diffStr, err := esHandler.SnapshotRepositoryDiff(currentSR, expectedSR)
+	differ, err := esHandler.SnapshotRepositoryDiff(currentSR, expectedSR, originalSR)
 	if err != nil {
 		return diff, err
 	}
 
-	if diffStr != "" {
+	if !differ.IsEmpty() {
 		diff.NeedUpdate = true
-		diff.Diff = diffStr
+		diff.Diff = string(differ.Patch)
+
+		if err = localhelper.SetLastOriginal(sr, expectedSR); err != nil {
+			return diff, err
+		}
+
 		return diff, nil
 	}
 	return
@@ -252,14 +276,14 @@ func (r *SnapshotRepositoryReconciler) OnError(ctx context.Context, resource cli
 		Message: err.Error(),
 	})
 
-	sr.Status.Health = false
+	sr.Status.Sync = false
 }
 
 // OnSuccess permit to set status condition on the right state is everithink is good
 func (r *SnapshotRepositoryReconciler) OnSuccess(ctx context.Context, resource client.Object, data map[string]any, meta any, diff controller.Diff) (err error) {
 	sr := resource.(*elasticsearchapicrd.SnapshotRepository)
 
-	sr.Status.Health = true
+	sr.Status.Sync = true
 
 	if diff.NeedCreate {
 		condition.SetStatusCondition(&sr.Status.Conditions, metav1.Condition{
