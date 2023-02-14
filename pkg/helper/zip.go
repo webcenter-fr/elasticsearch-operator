@@ -4,7 +4,7 @@ import (
 	"archive/zip"
 	"bytes"
 	"encoding/base64"
-	"io/ioutil"
+	"io"
 
 	json "github.com/json-iterator/go"
 	"github.com/pkg/errors"
@@ -78,5 +78,5 @@ func readZipFile(zf *zip.File) ([]byte, error) {
 		return nil, err
 	}
 	defer f.Close()
-	return ioutil.ReadAll(f)
+	return io.ReadAll(f)
 }
