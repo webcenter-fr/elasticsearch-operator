@@ -61,24 +61,24 @@ func doCreateElasticsearchStep() test.TestStep {
 					Namespace: key.Namespace,
 				},
 				Spec: elasticsearchcrd.ElasticsearchSpec{
-					Endpoint: elasticsearchcrd.EndpointSpec{
-						Ingress: &elasticsearchcrd.IngressSpec{
+					Endpoint: elasticsearchcrd.ElasticsearchEndpointSpec{
+						Ingress: &elasticsearchcrd.ElasticsearchIngressSpec{
 							Enabled: true,
 							Host:    "test.cluster.local",
 							SecretRef: &corev1.LocalObjectReference{
 								Name: "test-tls",
 							},
 						},
-						LoadBalancer: &elasticsearchcrd.LoadBalancerSpec{
+						LoadBalancer: &elasticsearchcrd.ElasticsearchLoadBalancerSpec{
 							Enabled: true,
 						},
 					},
-					Monitoring: elasticsearchcrd.MonitoringSpec{
-						Prometheus: &elasticsearchcrd.PrometheusSpec{
+					Monitoring: elasticsearchcrd.ElasticsearchMonitoringSpec{
+						Prometheus: &elasticsearchcrd.ElasticsearchPrometheusSpec{
 							Enabled: true,
 						},
 					},
-					NodeGroups: []elasticsearchcrd.NodeGroupSpec{
+					NodeGroups: []elasticsearchcrd.ElasticsearchNodeGroupSpec{
 						{
 							Name:     "single",
 							Replicas: 1,
@@ -564,7 +564,7 @@ func doUpdateElasticsearchIncreaseNodeGroupStep() test.TestStep {
 			es := o.(*elasticsearchcrd.Elasticsearch)
 
 			// Add labels must force to update all resources
-			es.Spec.NodeGroups = append(es.Spec.NodeGroups, elasticsearchcrd.NodeGroupSpec{
+			es.Spec.NodeGroups = append(es.Spec.NodeGroups, elasticsearchcrd.ElasticsearchNodeGroupSpec{
 				Name:     "data",
 				Replicas: 1,
 				Roles: []string{
@@ -799,7 +799,7 @@ func doUpdateElasticsearchDecreaseNodeGroupStep() test.TestStep {
 			data["oldES"] = es.DeepCopy()
 
 			// Add labels must force to update all resources
-			es.Spec.NodeGroups = []elasticsearchcrd.NodeGroupSpec{
+			es.Spec.NodeGroups = []elasticsearchcrd.ElasticsearchNodeGroupSpec{
 				es.Spec.NodeGroups[0],
 			}
 

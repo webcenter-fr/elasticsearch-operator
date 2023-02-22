@@ -318,11 +318,18 @@ fi
 	ptb.WithPodTemplateSpec(kb.Spec.Deployment.PodTemplate)
 
 	// Compute labels
-	ptb.WithLabels(getLabels(kb)).
+	// Do not set global labels here to avoid reconcile pod just because global label change
+	ptb.WithLabels(map[string]string{
+		"cluster":                  kb.Name,
+		KibanaAnnotationKey: "true",
+	}).
 		WithLabels(kb.Spec.Deployment.Labels, k8sbuilder.Merge)
 
 	// Compute annotations
-	ptb.WithAnnotations(getAnnotations(kb)).
+	// Do not set global annotation here to avoid reconcile pod just because global annotation change
+	ptb.WithAnnotations(map[string]string{
+		KibanaAnnotationKey: "true",
+	}).
 		WithAnnotations(kb.Spec.Deployment.Annotations, k8sbuilder.Merge).
 		WithAnnotations(checksumAnnotations, k8sbuilder.Merge)
 
@@ -695,14 +702,14 @@ func computeElasticsearchHosts(kb *kibanacrd.Kibana, es *elasticsearchcrd.Elasti
 // computeAntiAffinity permit to get  anti affinity spec
 // Default to soft anti affinity
 func computeAntiAffinity(kb *kibanacrd.Kibana) (antiAffinity *corev1.PodAntiAffinity, err error) {
-	var expectedAntiAffinity *kibanacrd.AntiAffinitySpec
+	var expectedAntiAffinity *kibanacrd.KibanaAntiAffinitySpec
 
 	antiAffinity = &corev1.PodAntiAffinity{}
 	topologyKey := "kubernetes.io/hostname"
 
 	// Check if need to merge anti affinity spec
 	if kb.Spec.Deployment.AntiAffinity != nil {
-		expectedAntiAffinity = &kibanacrd.AntiAffinitySpec{}
+		expectedAntiAffinity = &kibanacrd.KibanaAntiAffinitySpec{}
 		if err = helper.Merge(expectedAntiAffinity, kb.Spec.Deployment.AntiAffinity); err != nil {
 			return nil, errors.Wrap(err, "Error when merge global anti affinity")
 		}

@@ -40,7 +40,7 @@ func TestBuildPodDisruptionBudget(t *testing.T) {
 			Name:      "test",
 		},
 		Spec: kibanacrd.KibanaSpec{
-			Deployment: kibanacrd.DeploymentSpec{
+			Deployment: kibanacrd.KibanaDeploymentSpec{
 				PodDisruptionBudgetSpec: &policyv1.PodDisruptionBudgetSpec{
 					MinAvailable:   &minUnavailable,
 					MaxUnavailable: nil,

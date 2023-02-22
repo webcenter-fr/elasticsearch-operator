@@ -9,4 +9,12 @@ metadata:
     app.kubernetes.io/created-by: bootstrap
   name: componenttemplate-sample
 spec:
-  # TODO(user): Add fields here
+  elasticsearchRef:
+    managed:
+      name: elasticsearch-sample
+  name: custom-log
+  settings: |
+    {
+        "index.number_of_shards": 3,
+        "index.number_of_replicas": 1
+    }

@@ -277,8 +277,8 @@ func TestGetExporterUrl(t *testing.T) {
 		},
 		Spec: logstashcrd.LogstashSpec{
 			Version: "8.0.0",
-			Monitoring: logstashcrd.MonitoringSpec{
-				Prometheus: &logstashcrd.PrometheusSpec{
+			Monitoring: logstashcrd.LogstashMonitoringSpec{
+				Prometheus: &logstashcrd.LogstashPrometheusSpec{
 					Url: "fake",
 				},
 			},

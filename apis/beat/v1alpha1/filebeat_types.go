@@ -45,7 +45,7 @@ type FilebeatSpec struct {
 	// It will generate Logstash output base on it
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
 	// +optional
-	LogstashRef LogstashRef `json:"logstashRef,omitempty"`
+	LogstashRef FilebeatLogstashRef `json:"logstashRef,omitempty"`
 
 	// Version is the Filebeat version to use
 	// Default is use the latest
@@ -69,36 +69,36 @@ type FilebeatSpec struct {
 	// Deployment permit to set the deployment settings
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
 	// +optional
-	Deployment DeploymentSpec `json:"deployment,omitempty"`
+	Deployment FilebeatDeploymentSpec `json:"deployment,omitempty"`
 
 	// Monitoring permit to monitor current cluster
 	// Default, it not monitor cluster
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
 	// +optional
-	Monitoring MonitoringSpec `json:"monitoring,omitempty"`
+	Monitoring FilebeatMonitoringSpec `json:"monitoring,omitempty"`
 
 	// Ingresses permit to declare some ingresses
 	// The name is decorated with cluster name and so on
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
 	// +optional
-	Ingresses []Ingress `json:"ingresses,omitempty"`
+	Ingresses []FilebeatIngress `json:"ingresses,omitempty"`
 
 	// Services permit to declare some services
 	// The name is decorated with cluster name and so on
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
 	// +optional
-	Services []Service `json:"services,omitempty"`
+	Services []FilebeatService `json:"services,omitempty"`
 }
 
-type LogstashRef struct {
+type FilebeatLogstashRef struct {
 
 	// ManagedLogstashRef is the managed Logstash instance by operator
-	ManagedLogstashRef *LogstashManagedRef `json:"managed,omitempty"`
+	ManagedLogstashRef *FilebeatLogstashManagedRef `json:"managed,omitempty"`
 
 	// ExternalLogstahsRef is the external Logstash instance not managed by operator
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
 	// +optional
-	ExternalLogstashRef *LogstashExternalRef `json:"external,omitempty"`
+	ExternalLogstashRef *FilebeatLogstashExternalRef `json:"external,omitempty"`
 
 	// LogstashCaSecretRef is the secret that store your custom CA certificate to connect on Logstash via beat protocole.
 	// It need to have the following keys: ca.crt
@@ -107,7 +107,7 @@ type LogstashRef struct {
 	LogstashCaSecretRef *corev1.LocalObjectReference `json:"logstashCASecretRef,omitempty"`
 }
 
-type LogstashManagedRef struct {
+type FilebeatLogstashManagedRef struct {
 
 	// Name is the Logstash cluster deployed by operator
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
@@ -129,14 +129,14 @@ type LogstashManagedRef struct {
 	Port int64 `json:"port,omitempty"`
 }
 
-type LogstashExternalRef struct {
+type FilebeatLogstashExternalRef struct {
 
 	// Addresses is the list of Logstash addresses
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
 	Addresses []string `json:"addresses,omitempty"`
 }
 
-type Ingress struct {
+type FilebeatIngress struct {
 
 	// Name is the ingress name
 	// The name is decorated with cluster name and so on
@@ -166,7 +166,7 @@ type Ingress struct {
 	ContainerPort int64 `json:"containerPort,omitempty"`
 }
 
-type Service struct {
+type FilebeatService struct {
 
 	// Name is the service name
 	// The name is decorated with cluster name and so on
@@ -188,15 +188,15 @@ type Service struct {
 	Annotations map[string]string `json:"annotations,omitempty"`
 }
 
-type MonitoringSpec struct {
+type FilebeatMonitoringSpec struct {
 
 	// Prometheus permit to monitor cluster with Prometheus and graphana (via exporter)
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
 	// +optional
-	Prometheus *PrometheusSpec `json:"prometheus,omitempty"`
+	Prometheus *FilebeatPrometheusSpec `json:"prometheus,omitempty"`
 }
 
-type PrometheusSpec struct {
+type FilebeatPrometheusSpec struct {
 
 	// Enabled permit to enable Prometheus monitoring
 	// It will deploy exporter for filebeat and add podMonitor policy
@@ -214,7 +214,7 @@ type PrometheusSpec struct {
 	Url string `json:"url,omitempty"`
 }
 
-type DeploymentSpec struct {
+type FilebeatDeploymentSpec struct {
 	// Replicas is the number of replicas
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
 	Replicas int32 `json:"replicas,omitempty"`
@@ -222,7 +222,7 @@ type DeploymentSpec struct {
 	// AntiAffinity permit to set anti affinity policy
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
 	// +optional
-	AntiAffinity *AntiAffinitySpec `json:"antiAffinity,omitempty"`
+	AntiAffinity *FilebeatAntiAffinitySpec `json:"antiAffinity,omitempty"`
 
 	// Resources permit to set ressources on container
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
@@ -284,13 +284,13 @@ type DeploymentSpec struct {
 	// Default is empty
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
 	// +optional
-	AdditionalVolumes []VolumeSpec `json:"additionalVolumes,omitempty"`
+	AdditionalVolumes []FilebeatVolumeSpec `json:"additionalVolumes,omitempty"`
 
 	// Persistence is the spec to persist data
 	// Default is emptyDir
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
 	// +optional
-	Persistence *PersistenceSpec `json:"persistence,omitempty"`
+	Persistence *FilebeatPersistenceSpec `json:"persistence,omitempty"`
 
 	// Ports is the list of container port to affect on filebeat container
 	// It can be usefull to expose syslog input
@@ -299,7 +299,7 @@ type DeploymentSpec struct {
 	Ports []corev1.ContainerPort `json:"ports,omitempty"`
 }
 
-type PersistenceSpec struct {
+type FilebeatPersistenceSpec struct {
 	// VolumeClaim is the persistent volume claim spec use by statefullset
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
 	// +optional
@@ -311,7 +311,7 @@ type PersistenceSpec struct {
 	Volume *corev1.VolumeSource `json:"volume,omitempty"`
 }
 
-type VolumeSpec struct {
+type FilebeatVolumeSpec struct {
 
 	// Name is the volume name
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
@@ -322,7 +322,7 @@ type VolumeSpec struct {
 	corev1.VolumeSource `json:",inline"`
 }
 
-type AntiAffinitySpec struct {
+type FilebeatAntiAffinitySpec struct {
 
 	// Type permit to set anti affinity as soft or hard
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
@@ -357,7 +357,7 @@ type FilebeatStatus struct {
 //+kubebuilder:subresource:status
 
 // Filebeat is the Schema for the filebeats API
-// +operator-sdk:csv:customresourcedefinitions:resources={{None,None,None}}
+// +operator-sdk:csv:customresourcedefinitions:resources={{Ingress,networking.k8s.io/v1},{ConfigMap,v1},{Service,v1},{Secret,v1},{StatefulSet,apps/v1},{NetworkPolicy,networking.k8s.io/v1},{PodDisruptionBudget,policy/v1}}
 // +kubebuilder:printcolumn:name="Phase",type="string",JSONPath=".status.phase",description="Deployment status"
 // +kubebuilder:printcolumn:name="Error",type="boolean",JSONPath=".status.isOnError",description="Is on error"
 // +kubebuilder:printcolumn:name="Age",type="date",JSONPath=".metadata.creationTimestamp"

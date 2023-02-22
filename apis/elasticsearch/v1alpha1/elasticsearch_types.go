@@ -59,24 +59,24 @@ type ElasticsearchSpec struct {
 	// GlobalNodeGroup permit to set some default parameters for each node groups
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
 	// +optional
-	GlobalNodeGroup GlobalNodeGroupSpec `json:"globalNodeGroup,omitempty"`
+	GlobalNodeGroup ElasticsearchGlobalNodeGroupSpec `json:"globalNodeGroup,omitempty"`
 
 	// NodeGroups permit to groups node per use case
 	// For exemple master, data and ingest
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
 	// +optional
-	NodeGroups []NodeGroupSpec `json:"nodeGroups,omitempty"`
+	NodeGroups []ElasticsearchNodeGroupSpec `json:"nodeGroups,omitempty"`
 
 	// Endpoint permit to set endpoints to access on Elasticsearch from external kubernetes
 	// You can set ingress and / or load balancer
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
 	// +optional
-	Endpoint EndpointSpec `json:"endpoint,omitempty"`
+	Endpoint ElasticsearchEndpointSpec `json:"endpoint,omitempty"`
 
 	// Tls permit to set the TLS setting for API access
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
 	// +optional
-	Tls TlsSpec `json:"tls,omitempty"`
+	Tls ElasticsearchTlsSpec `json:"tls,omitempty"`
 
 	// LicenseSecretRef permit to set secret that contain Elasticsearch license on key `license`
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
@@ -87,18 +87,18 @@ type ElasticsearchSpec struct {
 	// Default, it not monitor cluster
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
 	// +optional
-	Monitoring MonitoringSpec `json:"monitoring,omitempty"`
+	Monitoring ElasticsearchMonitoringSpec `json:"monitoring,omitempty"`
 }
 
-type MonitoringSpec struct {
+type ElasticsearchMonitoringSpec struct {
 
 	// Prometheus permit to monitor cluster with Prometheus en graphana (via exporter)
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
 	// +optional
-	Prometheus *PrometheusSpec `json:"prometheus,omitempty"`
+	Prometheus *ElasticsearchPrometheusSpec `json:"prometheus,omitempty"`
 }
 
-type PrometheusSpec struct {
+type ElasticsearchPrometheusSpec struct {
 	shared.ImageSpec `json:",inline"`
 
 	// Enabled permit to enable Prometheus monitoring
@@ -117,19 +117,19 @@ type PrometheusSpec struct {
 	Version string `json:"version,omitempty"`
 }
 
-type EndpointSpec struct {
+type ElasticsearchEndpointSpec struct {
 	// Ingress permit to set ingress settings
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
 	// +optional
-	Ingress *IngressSpec `json:"ingress,omitempty"`
+	Ingress *ElasticsearchIngressSpec `json:"ingress,omitempty"`
 
 	// Load balancer permit to set load balancer settings
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
 	// +optional
-	LoadBalancer *LoadBalancerSpec `json:"loadBalancer,omitempty"`
+	LoadBalancer *ElasticsearchLoadBalancerSpec `json:"loadBalancer,omitempty"`
 }
 
-type LoadBalancerSpec struct {
+type ElasticsearchLoadBalancerSpec struct {
 	// Enabled permit to enabled / disabled load balancer
 	// Cloud provider need to support it
 	// Default to false
@@ -144,7 +144,7 @@ type LoadBalancerSpec struct {
 	TargetNodeGroupName string `json:"targetNodeGroupName,omitempty"`
 }
 
-type TlsSpec struct {
+type ElasticsearchTlsSpec struct {
 
 	// Enabled permit to enabled TLS on API
 	// Default true
@@ -156,7 +156,7 @@ type TlsSpec struct {
 	// SelfSignedCertificate permit to set self signed certificate settings
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
 	// +optional
-	SelfSignedCertificate *SelfSignedCertificateSpec `json:"selfSignedCertificate,omitempty"`
+	SelfSignedCertificate *ElasticsearchSelfSignedCertificateSpec `json:"selfSignedCertificate,omitempty"`
 
 	// CertificateSecretRef is the secret that store your custom certificates.
 	// It need to have the following keys: tls.key, tls.crt and optionally ca.crt
@@ -186,7 +186,7 @@ type TlsSpec struct {
 	KeySize *int `json:"keySize,omitempty"`
 }
 
-type SelfSignedCertificateSpec struct {
+type ElasticsearchSelfSignedCertificateSpec struct {
 
 	// AltIps permit to set subject alt names of type ip when generate certificate
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
@@ -199,7 +199,7 @@ type SelfSignedCertificateSpec struct {
 	AltNames []string `json:"altNames:,omitempty"`
 }
 
-type IngressSpec struct {
+type ElasticsearchIngressSpec struct {
 
 	// Enabled permit to enabled / disabled ingress
 	// Default to false
@@ -238,18 +238,18 @@ type IngressSpec struct {
 	IngressSpec *networkingv1.IngressSpec `json:"ingressSpec,omitempty"`
 }
 
-type GlobalNodeGroupSpec struct {
+type ElasticsearchGlobalNodeGroupSpec struct {
 
 	// AdditionalVolumes permit to use additionnal volumes
 	// Default is empty
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
 	// +optional
-	AdditionalVolumes []VolumeSpec `json:"additionalVolumes,omitempty"`
+	AdditionalVolumes []ElasticsearchVolumeSpec `json:"additionalVolumes,omitempty"`
 
 	// AntiAffinity permit to set anti affinity policy
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
 	// +optional
-	AntiAffinity *AntiAffinitySpec `json:"antiAffinity,omitempty"`
+	AntiAffinity *ElasticsearchAntiAffinitySpec `json:"antiAffinity,omitempty"`
 
 	// PodDisruptionBudget is the pod disruption budget policy
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
@@ -306,7 +306,7 @@ type GlobalNodeGroupSpec struct {
 	EnvFrom []corev1.EnvFromSource `json:"envFrom,omitempty"`
 }
 
-type NodeGroupSpec struct {
+type ElasticsearchNodeGroupSpec struct {
 
 	// Name is the the node group name
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
@@ -323,12 +323,12 @@ type NodeGroupSpec struct {
 	// Persistence is the spec to persist data
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
 	// +optional
-	Persistence *PersistenceSpec `json:"persistence,omitempty"`
+	Persistence *ElasticsearchPersistenceSpec `json:"persistence,omitempty"`
 
 	// AntiAffinity permit to set anti affinity policy
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
 	// +optional
-	AntiAffinity *AntiAffinitySpec `json:"antiAffinity,omitempty"`
+	AntiAffinity *ElasticsearchAntiAffinitySpec `json:"antiAffinity,omitempty"`
 
 	// Resources permit to set ressources on Elasticsearch container
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
@@ -395,7 +395,7 @@ type NodeGroupSpec struct {
 	WaitClusterStatus string `json:"waitClusterStatus,omitempty"`
 }
 
-type PersistenceSpec struct {
+type ElasticsearchPersistenceSpec struct {
 	// VolumeClaim is the persistent volume claim spec use by statefullset
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
 	// +optional
@@ -407,7 +407,7 @@ type PersistenceSpec struct {
 	Volume *corev1.VolumeSource `json:"volume,omitempty"`
 }
 
-type VolumeSpec struct {
+type ElasticsearchVolumeSpec struct {
 
 	// Name is the volume name
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
@@ -418,7 +418,7 @@ type VolumeSpec struct {
 	corev1.VolumeSource `json:",inline"`
 }
 
-type AntiAffinitySpec struct {
+type ElasticsearchAntiAffinitySpec struct {
 
 	// Type permit to set anti affinity as soft or hard
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
@@ -466,7 +466,7 @@ type ElasticsearchStatus struct {
 //+kubebuilder:storageversion
 
 // Elasticsearch is the Schema for the elasticsearchs API
-// +operator-sdk:csv:customresourcedefinitions:resources={{None,None,None}}
+// +operator-sdk:csv:customresourcedefinitions:resources={{Ingress,networking.k8s.io/v1},{ConfigMap,v1},{Service,v1},{Secret,v1},{Deployment,apps/v1},{StatefulSet,apps/v1},{License,elasticsearchapi.k8s.webcenter.fr/v1alpha1},{NetworkPolicy,networking.k8s.io/v1},{PodDisruptionBudget,policy/v1},{PodMonitor,monitoring.coreos.com/v1},{User,elasticsearchapi.k8s.webcenter.fr/v1alpha1}}
 // +kubebuilder:printcolumn:name="URL",type="string",JSONPath=".status.url"
 // +kubebuilder:printcolumn:name="CredentialsRef",type="string",JSONPath=".status.credentialsRef.name"
 // +kubebuilder:printcolumn:name="Phase",type="string",JSONPath=".status.phase",description="Cluster deployment status"

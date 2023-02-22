@@ -80,28 +80,28 @@ type LogstashSpec struct {
 	// Deployment permit to set the deployment settings
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
 	// +optional
-	Deployment DeploymentSpec `json:"deployment,omitempty"`
+	Deployment LogstashDeploymentSpec `json:"deployment,omitempty"`
 
 	// Monitoring permit to monitor current cluster
 	// Default, it not monitor cluster
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
 	// +optional
-	Monitoring MonitoringSpec `json:"monitoring,omitempty"`
+	Monitoring LogstashMonitoringSpec `json:"monitoring,omitempty"`
 
 	// Ingresses permit to declare some ingresses
 	// The name is decorated with cluster name and so on
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
 	// +optional
-	Ingresses []Ingress `json:"ingresses,omitempty"`
+	Ingresses []LogstashIngress `json:"ingresses,omitempty"`
 
 	// Services permit to declare some services
 	// The name is decorated with cluster name and so on
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
 	// +optional
-	Services []Service `json:"services,omitempty"`
+	Services []LogstashService `json:"services,omitempty"`
 }
 
-type Ingress struct {
+type LogstashIngress struct {
 
 	// Name is the ingress name
 	// The name is decorated with cluster name and so on
@@ -131,7 +131,7 @@ type Ingress struct {
 	ContainerPort int64 `json:"containerPort,omitempty"`
 }
 
-type Service struct {
+type LogstashService struct {
 
 	// Name is the service name
 	// The name is decorated with cluster name and so on
@@ -153,15 +153,15 @@ type Service struct {
 	Annotations map[string]string `json:"annotations,omitempty"`
 }
 
-type MonitoringSpec struct {
+type LogstashMonitoringSpec struct {
 
 	// Prometheus permit to monitor cluster with Prometheus and graphana (via exporter)
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
 	// +optional
-	Prometheus *PrometheusSpec `json:"prometheus,omitempty"`
+	Prometheus *LogstashPrometheusSpec `json:"prometheus,omitempty"`
 }
 
-type PrometheusSpec struct {
+type LogstashPrometheusSpec struct {
 
 	// Enabled permit to enable Prometheus monitoring
 	// It will deploy exporter for Logstash and add podMonitor policy
@@ -179,7 +179,7 @@ type PrometheusSpec struct {
 	Url string `json:"url,omitempty"`
 }
 
-type DeploymentSpec struct {
+type LogstashDeploymentSpec struct {
 	// Replicas is the number of replicas
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
 	Replicas int32 `json:"replicas,omitempty"`
@@ -187,7 +187,7 @@ type DeploymentSpec struct {
 	// AntiAffinity permit to set anti affinity policy
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
 	// +optional
-	AntiAffinity *AntiAffinitySpec `json:"antiAffinity,omitempty"`
+	AntiAffinity *LogstashAntiAffinitySpec `json:"antiAffinity,omitempty"`
 
 	// Resources permit to set ressources on Logstash container
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
@@ -249,12 +249,12 @@ type DeploymentSpec struct {
 	// Default is empty
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
 	// +optional
-	AdditionalVolumes []VolumeSpec `json:"additionalVolumes,omitempty"`
+	AdditionalVolumes []LogstashVolumeSpec `json:"additionalVolumes,omitempty"`
 
 	// Persistence is the spec to persist data
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
 	// +optional
-	Persistence *PersistenceSpec `json:"persistence,omitempty"`
+	Persistence *LogstashPersistenceSpec `json:"persistence,omitempty"`
 
 	// Ports is the list of container port to affect on logstash container
 	// It can be usefull to expose beats input
@@ -263,7 +263,7 @@ type DeploymentSpec struct {
 	Ports []corev1.ContainerPort `json:"ports,omitempty"`
 }
 
-type PersistenceSpec struct {
+type LogstashPersistenceSpec struct {
 	// VolumeClaim is the persistent volume claim spec use by statefullset
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
 	// +optional
@@ -275,7 +275,7 @@ type PersistenceSpec struct {
 	Volume *corev1.VolumeSource `json:"volume,omitempty"`
 }
 
-type VolumeSpec struct {
+type LogstashVolumeSpec struct {
 
 	// Name is the volume name
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
@@ -286,7 +286,7 @@ type VolumeSpec struct {
 	corev1.VolumeSource `json:",inline"`
 }
 
-type AntiAffinitySpec struct {
+type LogstashAntiAffinitySpec struct {
 
 	// Type permit to set anti affinity as soft or hard
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
@@ -321,7 +321,7 @@ type LogstashStatus struct {
 //+kubebuilder:subresource:status
 
 // Logstash is the Schema for the logstashes API
-// +operator-sdk:csv:customresourcedefinitions:resources={{None,None,None}}
+// +operator-sdk:csv:customresourcedefinitions:resources={{Ingress,networking.k8s.io/v1},{ConfigMap,v1},{Service,v1},{Secret,v1},{StatefulSet,apps/v1},{NetworkPolicy,networking.k8s.io/v1},{PodDisruptionBudget,policy/v1}}
 // +kubebuilder:printcolumn:name="Phase",type="string",JSONPath=".status.phase",description="Deployment status"
 // +kubebuilder:printcolumn:name="Error",type="boolean",JSONPath=".status.isOnError",description="Is on error"
 // +kubebuilder:printcolumn:name="Age",type="date",JSONPath=".metadata.creationTimestamp"

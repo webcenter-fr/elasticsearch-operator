@@ -16,9 +16,13 @@ spec:
               kibana-operator.k8s.webcenter.fr: "true"
           namespaceSelector:
             matchLabels:
-              name: test
+              kubernetes.io/metadata.name: test
       ports:
         - port: 5601
           protocol: TCP
   policyTypes:
     - Ingress
+  podSelector:
+    matchLabels:
+      cluster: test
+      kibana.k8s.webcenter.fr: true

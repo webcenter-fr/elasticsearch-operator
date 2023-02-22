@@ -42,6 +42,12 @@ func BuildNetworkPolicy(es *elasticsearchcrd.Elasticsearch) (networkPolicy *netw
 			PolicyTypes: []networkingv1.PolicyType{
 				networkingv1.PolicyTypeIngress,
 			},
+			PodSelector: metav1.LabelSelector{
+				MatchLabels: map[string]string{
+					"cluster":                  es.Name,
+					ElasticsearchAnnotationKey: "true",
+				},
+			},
 		},
 	}
 
@@ -58,7 +64,7 @@ func BuildNetworkPolicy(es *elasticsearchcrd.Elasticsearch) (networkPolicy *netw
 	if found {
 		networkPolicy.Spec.Ingress[0].From[0].NamespaceSelector = &metav1.LabelSelector{
 			MatchLabels: map[string]string{
-				"name": namespace,
+				"kubernetes.io/metadata.name": namespace,
 			},
 		}
 	}

@@ -9,4 +9,18 @@ metadata:
     app.kubernetes.io/created-by: bootstrap
   name: role-sample
 spec:
-  # TODO(user): Add fields here
+  elasticsearchRef:
+    managed:
+      name: elasticsearch-sample
+  cluster:
+    - 'monitor'
+    - 'read_ilm'
+    - 'read_slm'
+    - 'cluster:admin/slm/status'
+    - 'cluster:admin/snapshot/get'
+  indices:
+    - names: 
+        - '*'
+      privileges:
+        - 'view_index_metadata'
+        - 'monitor'

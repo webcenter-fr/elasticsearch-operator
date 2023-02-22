@@ -40,7 +40,7 @@ func TestBuildPodDisruptionBudget(t *testing.T) {
 			Name:      "test",
 		},
 		Spec: logstashcrd.LogstashSpec{
-			Deployment: logstashcrd.DeploymentSpec{
+			Deployment: logstashcrd.LogstashDeploymentSpec{
 				PodDisruptionBudgetSpec: &policyv1.PodDisruptionBudgetSpec{
 					MinAvailable:   &minUnavailable,
 					MaxUnavailable: nil,

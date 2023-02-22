@@ -42,7 +42,7 @@ func TestBuildServicees(t *testing.T) {
 			Name:      "test",
 		},
 		Spec: beatcrd.FilebeatSpec{
-			Services: []beatcrd.Service{
+			Services: []beatcrd.FilebeatService{
 				{
 					Name: "my-service",
 					Labels: map[string]string{
@@ -80,7 +80,7 @@ func TestBuildServicees(t *testing.T) {
 			Name:      "test",
 		},
 		Spec: beatcrd.FilebeatSpec{
-			Ingresses: []beatcrd.Ingress{
+			Ingresses: []beatcrd.FilebeatIngress{
 				{
 					Name: "my-ingress",
 					Labels: map[string]string{

@@ -28,8 +28,8 @@ func TestIsPrometheusMonitoring(t *testing.T) {
 			Name:      "test",
 		},
 		Spec: LogstashSpec{
-			Monitoring: MonitoringSpec{
-				Prometheus: &PrometheusSpec{
+			Monitoring: LogstashMonitoringSpec{
+				Prometheus: &LogstashPrometheusSpec{
 					Enabled: true,
 				},
 			},
@@ -44,8 +44,8 @@ func TestIsPrometheusMonitoring(t *testing.T) {
 			Name:      "test",
 		},
 		Spec: LogstashSpec{
-			Monitoring: MonitoringSpec{
-				Prometheus: &PrometheusSpec{
+			Monitoring: LogstashMonitoringSpec{
+				Prometheus: &LogstashPrometheusSpec{
 					Enabled: false,
 				},
 			},
@@ -75,8 +75,8 @@ func TestIsPersistence(t *testing.T) {
 			Name:      "test",
 		},
 		Spec: LogstashSpec{
-			Deployment: DeploymentSpec{
-				Persistence: &PersistenceSpec{},
+			Deployment: LogstashDeploymentSpec{
+				Persistence: &LogstashPersistenceSpec{},
 			},
 		},
 	}
@@ -90,8 +90,8 @@ func TestIsPersistence(t *testing.T) {
 			Name:      "test",
 		},
 		Spec: LogstashSpec{
-			Deployment: DeploymentSpec{
-				Persistence: &PersistenceSpec{
+			Deployment: LogstashDeploymentSpec{
+				Persistence: &LogstashPersistenceSpec{
 					VolumeClaimSpec: &v1.PersistentVolumeClaimSpec{},
 				},
 			},
@@ -107,8 +107,8 @@ func TestIsPersistence(t *testing.T) {
 			Name:      "test",
 		},
 		Spec: LogstashSpec{
-			Deployment: DeploymentSpec{
-				Persistence: &PersistenceSpec{
+			Deployment: LogstashDeploymentSpec{
+				Persistence: &LogstashPersistenceSpec{
 					Volume: &v1.VolumeSource{},
 				},
 			},

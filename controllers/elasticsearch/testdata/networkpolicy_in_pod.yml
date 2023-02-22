@@ -16,9 +16,13 @@ spec:
               elasticsearch-operator.k8s.webcenter.fr: "true"
           namespaceSelector:
             matchLabels:
-              name: test
+              kubernetes.io/metadata.name: test
       ports:
         - port: 9200
           protocol: TCP
   policyTypes:
     - Ingress
+  podSelector:
+    matchLabels:
+      cluster: test
+      elasticsearch.k8s.webcenter.fr: "true"

@@ -9,4 +9,86 @@ metadata:
     app.kubernetes.io/created-by: bootstrap
   name: filebeat-sample
 spec:
-  # TODO(user): Add fields here
+  version: 8.6.0
+  imagePullPolicy: Always
+  logstashRef:
+    managed:
+      name: logmanagement-dev
+      port: 5003
+  config:
+    filebeat.yml: |
+      filebeat:
+        shutdown_timeout: 5s
+      
+      # Logstash settings
+      output.logstash:
+        timeout: 15
+        ssl:
+          enable: false
+      logging:
+        to_stderr: true
+        level: info
+      
+      # Inputs
+      filebeat.inputs:
+        # syslog
+        - type: syslog
+          format: auto
+          protocol.tcp:
+            host: "0.0.0.0:5142"
+          fields_under_root: true
+          fields:
+            event.dataset: "syslog"
+            event.module: "syslog"
+            service.type: "syslog"
+          tags: ["syslog"]
+  services:
+    - name: syslog
+      spec:
+        type: NodePort
+        ports:
+          - name: syslog
+            protocol: TCP
+            port: 5142
+            targetPort: 5142
+            nodePort: 30004
+  deployment:
+    replicas: 1
+    initContainerResources:
+      limits:
+        cpu: "500m"
+        memory: "256Mi"
+      requests:
+        cpu: "25m"
+        memory: "64Mi"
+    resources:
+      requests:
+        cpu: "100m"
+        memory: "256Mi"
+      limits:
+        cpu: "500m"
+        memory: "512Mi"
+    persistence:
+      volumeClaim:
+        accessModes: [ "ReadWriteOnce" ]
+        storageClassName: "local-path"
+        resources:
+          requests:
+            storage: 5Gi
+    podTemplate:
+      metadata:
+        annotations:
+          co.elastic.logs.logstash/multiline.pattern: '^\{'
+          co.elastic.logs.logstash/multiline.negate: 'true'
+          co.elastic.logs.logstash/multiline.match: 'after'
+          co.elastic.logs.logstash/multiline.timeout: '5s'
+          co.elastic.logs.logstash/processors.0.decode_json_fields: '{"fields": ["message"], "target": "hm.logstash", "add_error_key": true, "max_depth": 10}'
+          co.elastic.logs.logstash/processors.2.add_fields: '{"target": "", "fields": {"event": {"dataset": "logstash"}, "service": {"type": "logstash"}}}'
+          build_id: ''
+      spec:
+        containers: []
+    additionalVolumes:
+      - name: logstash-certificates
+        mountPath: /usr/share/filebeat/certs
+        secret:
+          secretName: logstash-certificates

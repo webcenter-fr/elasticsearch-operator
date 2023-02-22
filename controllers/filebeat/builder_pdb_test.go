@@ -40,7 +40,7 @@ func TestBuildPodDisruptionBudget(t *testing.T) {
 			Name:      "test",
 		},
 		Spec: beatcrd.FilebeatSpec{
-			Deployment: beatcrd.DeploymentSpec{
+			Deployment: beatcrd.FilebeatDeploymentSpec{
 				PodDisruptionBudgetSpec: &policyv1.PodDisruptionBudgetSpec{
 					MinAvailable:   &minUnavailable,
 					MaxUnavailable: nil,

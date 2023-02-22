@@ -42,8 +42,8 @@ func TestBuildConfigMaps(t *testing.T) {
 			Name:      "test",
 		},
 		Spec: beatcrd.FilebeatSpec{
-			LogstashRef: beatcrd.LogstashRef{
-				ManagedLogstashRef: &beatcrd.LogstashManagedRef{
+			LogstashRef: beatcrd.FilebeatLogstashRef{
+				ManagedLogstashRef: &beatcrd.FilebeatLogstashManagedRef{
 					Name: "test",
 				},
 				LogstashCaSecretRef: &corev1.LocalObjectReference{

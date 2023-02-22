@@ -27,14 +27,14 @@ func TestBuildConfigMaps(t *testing.T) {
 			},
 		},
 		Spec: elasticsearchcrd.ElasticsearchSpec{
-			GlobalNodeGroup: elasticsearchcrd.GlobalNodeGroupSpec{
+			GlobalNodeGroup: elasticsearchcrd.ElasticsearchGlobalNodeGroupSpec{
 				Config: map[string]string{
 					"elasticsearch.yml": `node.value: test
 node.value2: test`,
 					"log4j.yml": "log.test: test\n",
 				},
 			},
-			NodeGroups: []elasticsearchcrd.NodeGroupSpec{
+			NodeGroups: []elasticsearchcrd.ElasticsearchNodeGroupSpec{
 				{
 					Name: "master",
 					Config: map[string]string{
@@ -68,17 +68,17 @@ node:
 			},
 		},
 		Spec: elasticsearchcrd.ElasticsearchSpec{
-			Tls: elasticsearchcrd.TlsSpec{
+			Tls: elasticsearchcrd.ElasticsearchTlsSpec{
 				Enabled: pointer.Bool(false),
 			},
-			GlobalNodeGroup: elasticsearchcrd.GlobalNodeGroupSpec{
+			GlobalNodeGroup: elasticsearchcrd.ElasticsearchGlobalNodeGroupSpec{
 				Config: map[string]string{
 					"elasticsearch.yml": `node.value: test
 node.value2: test`,
 					"log4j.yml": "log.test: test\n",
 				},
 			},
-			NodeGroups: []elasticsearchcrd.NodeGroupSpec{
+			NodeGroups: []elasticsearchcrd.ElasticsearchNodeGroupSpec{
 				{
 					Name: "master",
 					Config: map[string]string{

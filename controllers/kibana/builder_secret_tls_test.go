@@ -58,7 +58,7 @@ func TestBuildPkiSecret(t *testing.T) {
 			Name:      "test",
 		},
 		Spec: kibanacrd.KibanaSpec{
-			Tls: kibanacrd.TlsSpec{
+			Tls: kibanacrd.KibanaTlsSpec{
 				Enabled: pointer.Bool(true),
 			},
 		},
@@ -86,7 +86,7 @@ func TestBuildPkiSecret(t *testing.T) {
 			Name:      "test",
 		},
 		Spec: kibanacrd.KibanaSpec{
-			Tls: kibanacrd.TlsSpec{
+			Tls: kibanacrd.KibanaTlsSpec{
 				Enabled: pointer.Bool(false),
 			},
 		},
@@ -104,7 +104,7 @@ func TestBuildPkiSecret(t *testing.T) {
 			Name:      "test",
 		},
 		Spec: kibanacrd.KibanaSpec{
-			Tls: kibanacrd.TlsSpec{
+			Tls: kibanacrd.KibanaTlsSpec{
 				Enabled: pointer.Bool(true),
 				CertificateSecretRef: &corev1.LocalObjectReference{
 					Name: "test",
@@ -152,7 +152,7 @@ func TestBuildTlsSecret(t *testing.T) {
 			Name:      "test",
 		},
 		Spec: kibanacrd.KibanaSpec{
-			Tls: kibanacrd.TlsSpec{
+			Tls: kibanacrd.KibanaTlsSpec{
 				Enabled: pointer.Bool(false),
 			},
 		},
@@ -169,7 +169,7 @@ func TestBuildTlsSecret(t *testing.T) {
 			Name:      "test",
 		},
 		Spec: kibanacrd.KibanaSpec{
-			Tls: kibanacrd.TlsSpec{
+			Tls: kibanacrd.KibanaTlsSpec{
 				Enabled: pointer.Bool(true),
 				CertificateSecretRef: &corev1.LocalObjectReference{
 					Name: "test",
@@ -189,7 +189,7 @@ func TestBuildTlsSecret(t *testing.T) {
 			Name:      "test",
 		},
 		Spec: kibanacrd.KibanaSpec{
-			Tls: kibanacrd.TlsSpec{
+			Tls: kibanacrd.KibanaTlsSpec{
 				Enabled: pointer.Bool(true),
 			},
 		},

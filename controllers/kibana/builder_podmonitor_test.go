@@ -36,8 +36,8 @@ func TestBuildPodMonitor(t *testing.T) {
 			Name:      "test",
 		},
 		Spec: kibanacrd.KibanaSpec{
-			Monitoring: kibanacrd.MonitoringSpec{
-				Prometheus: &kibanacrd.PrometheusSpec{
+			Monitoring: kibanacrd.KibanaMonitoringSpec{
+				Prometheus: &kibanacrd.KibanaPrometheusSpec{
 					Enabled: false,
 				},
 			},
@@ -54,8 +54,8 @@ func TestBuildPodMonitor(t *testing.T) {
 			Name:      "test",
 		},
 		Spec: kibanacrd.KibanaSpec{
-			Monitoring: kibanacrd.MonitoringSpec{
-				Prometheus: &kibanacrd.PrometheusSpec{
+			Monitoring: kibanacrd.KibanaMonitoringSpec{
+				Prometheus: &kibanacrd.KibanaPrometheusSpec{
 					Enabled: true,
 				},
 			},

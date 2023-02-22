@@ -4,6 +4,7 @@ import (
 	"os"
 
 	kibanacrd "github.com/webcenter-fr/elasticsearch-operator/apis/kibana/v1alpha1"
+	elasticsearchcontrollers "github.com/webcenter-fr/elasticsearch-operator/controllers/elasticsearch"
 	v1 "k8s.io/api/core/v1"
 	networkingv1 "k8s.io/api/networking/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -45,6 +46,12 @@ func BuildNetworkPolicies(kb *kibanacrd.Kibana) (networkPolicies []networkingv1.
 			PolicyTypes: []networkingv1.PolicyType{
 				networkingv1.PolicyTypeIngress,
 			},
+			PodSelector: metav1.LabelSelector{
+				MatchLabels: map[string]string{
+					"cluster": kb.Name,
+					KibanaAnnotationKey: "true",
+				},
+			},
 		},
 	}
 
@@ -61,7 +68,7 @@ func BuildNetworkPolicies(kb *kibanacrd.Kibana) (networkPolicies []networkingv1.
 	if found {
 		networkPolicy.Spec.Ingress[0].From[0].NamespaceSelector = &metav1.LabelSelector{
 			MatchLabels: map[string]string{
-				"name": namespace,
+				"kubernetes.io/metadata.name": namespace,
 			},
 		}
 	}
@@ -85,12 +92,13 @@ func BuildNetworkPolicies(kb *kibanacrd.Kibana) (networkPolicies []networkingv1.
 							{
 								NamespaceSelector: &metav1.LabelSelector{
 									MatchLabels: map[string]string{
-										"name": kb.Spec.ElasticsearchRef.ManagedElasticsearchRef.Namespace,
+										"kubernetes.io/metadata.name": kb.Spec.ElasticsearchRef.ManagedElasticsearchRef.Namespace,
 									},
 								},
 								PodSelector: &metav1.LabelSelector{
 									MatchLabels: map[string]string{
 										"cluster": kb.Spec.ElasticsearchRef.ManagedElasticsearchRef.Name,
+										elasticsearchcontrollers.ElasticsearchAnnotationKey: "true",
 									},
 								},
 							},
@@ -107,6 +115,12 @@ func BuildNetworkPolicies(kb *kibanacrd.Kibana) (networkPolicies []networkingv1.
 				},
 				PolicyTypes: []networkingv1.PolicyType{
 					networkingv1.PolicyTypeEgress,
+				},
+				PodSelector: metav1.LabelSelector{
+					MatchLabels: map[string]string{
+						"cluster": kb.Name,
+						KibanaAnnotationKey: "true",
+					},
 				},
 			},
 		}

@@ -9,4 +9,8 @@ metadata:
     app.kubernetes.io/created-by: bootstrap
   name: license-sample
 spec:
-  # TODO(user): Add fields here
+  elasticsearchRef:
+    managed:
+      name: elasticsearch-sample
+  secretRef:
+    name: license

@@ -52,7 +52,7 @@ func (h *Elasticsearch) IsPrometheusMonitoring() bool {
 }
 
 // IsPersistence return true if persistence is enabled
-func (h NodeGroupSpec) IsPersistence() bool {
+func (h ElasticsearchNodeGroupSpec) IsPersistence() bool {
 	if h.Persistence != nil && (h.Persistence.Volume != nil || h.Persistence.VolumeClaimSpec != nil) {
 		return true
 	}

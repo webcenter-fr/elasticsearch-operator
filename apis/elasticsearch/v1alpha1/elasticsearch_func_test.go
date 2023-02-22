@@ -30,7 +30,7 @@ func TestIsSelfManagedSecretForTlsApi(t *testing.T) {
 			Name:      "test",
 		},
 		Spec: ElasticsearchSpec{
-			Tls: TlsSpec{
+			Tls: ElasticsearchTlsSpec{
 				Enabled: pointer.Bool(true),
 			},
 		},
@@ -44,7 +44,7 @@ func TestIsSelfManagedSecretForTlsApi(t *testing.T) {
 			Name:      "test",
 		},
 		Spec: ElasticsearchSpec{
-			Tls: TlsSpec{
+			Tls: ElasticsearchTlsSpec{
 				Enabled: pointer.Bool(true),
 				CertificateSecretRef: &corev1.LocalObjectReference{
 					Name: "my-secret",
@@ -69,8 +69,8 @@ func TestIsIngressEnabled(t *testing.T) {
 	assert.False(t, o.IsIngressEnabled())
 
 	// When Ingress is specified but disabled
-	o.Spec.Endpoint = EndpointSpec{
-		Ingress: &IngressSpec{
+	o.Spec.Endpoint = ElasticsearchEndpointSpec{
+		Ingress: &ElasticsearchIngressSpec{
 			Enabled: false,
 		},
 	}
@@ -93,8 +93,8 @@ func TestIsLoadBalancerEnabled(t *testing.T) {
 	assert.False(t, o.IsLoadBalancerEnabled())
 
 	// When Load balancer is specified but disabled
-	o.Spec.Endpoint = EndpointSpec{
-		LoadBalancer: &LoadBalancerSpec{
+	o.Spec.Endpoint = ElasticsearchEndpointSpec{
+		LoadBalancer: &ElasticsearchLoadBalancerSpec{
 			Enabled: false,
 		},
 	}
@@ -125,7 +125,7 @@ func TestIsTlsApiEnabled(t *testing.T) {
 			Name:      "test",
 		},
 		Spec: ElasticsearchSpec{
-			Tls: TlsSpec{
+			Tls: ElasticsearchTlsSpec{
 				Enabled: pointer.Bool(true),
 			},
 		},
@@ -139,7 +139,7 @@ func TestIsTlsApiEnabled(t *testing.T) {
 			Name:      "test",
 		},
 		Spec: ElasticsearchSpec{
-			Tls: TlsSpec{
+			Tls: ElasticsearchTlsSpec{
 				Enabled: pointer.Bool(false),
 			},
 		},
@@ -205,8 +205,8 @@ func TestIsPrometheusMonitoring(t *testing.T) {
 			Name:      "test",
 		},
 		Spec: ElasticsearchSpec{
-			Monitoring: MonitoringSpec{
-				Prometheus: &PrometheusSpec{
+			Monitoring: ElasticsearchMonitoringSpec{
+				Prometheus: &ElasticsearchPrometheusSpec{
 					Enabled: true,
 				},
 			},
@@ -221,8 +221,8 @@ func TestIsPrometheusMonitoring(t *testing.T) {
 			Name:      "test",
 		},
 		Spec: ElasticsearchSpec{
-			Monitoring: MonitoringSpec{
-				Prometheus: &PrometheusSpec{
+			Monitoring: ElasticsearchMonitoringSpec{
+				Prometheus: &ElasticsearchPrometheusSpec{
 					Enabled: false,
 				},
 			},
@@ -232,22 +232,22 @@ func TestIsPrometheusMonitoring(t *testing.T) {
 }
 
 func TestIsPersistence(t *testing.T) {
-	var o *NodeGroupSpec
+	var o *ElasticsearchNodeGroupSpec
 
 	// With default value
-	o = &NodeGroupSpec{}
+	o = &ElasticsearchNodeGroupSpec{}
 	assert.False(t, o.IsPersistence())
 
 	// When persistence is not enabled
-	o = &NodeGroupSpec{
-		Persistence: &PersistenceSpec{},
+	o = &ElasticsearchNodeGroupSpec{
+		Persistence: &ElasticsearchPersistenceSpec{},
 	}
 
 	assert.False(t, o.IsPersistence())
 
 	// When claim PVC is set
-	o = &NodeGroupSpec{
-		Persistence: &PersistenceSpec{
+	o = &ElasticsearchNodeGroupSpec{
+		Persistence: &ElasticsearchPersistenceSpec{
 			VolumeClaimSpec: &v1.PersistentVolumeClaimSpec{},
 		},
 	}
@@ -255,8 +255,8 @@ func TestIsPersistence(t *testing.T) {
 	assert.True(t, o.IsPersistence())
 
 	// When volume is set
-	o = &NodeGroupSpec{
-		Persistence: &PersistenceSpec{
+	o = &ElasticsearchNodeGroupSpec{
+		Persistence: &ElasticsearchPersistenceSpec{
 			Volume: &v1.VolumeSource{},
 		},
 	}

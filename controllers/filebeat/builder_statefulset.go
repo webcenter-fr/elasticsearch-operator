@@ -318,11 +318,18 @@ func BuildStatefulset(fb *beatcrd.Filebeat, es *elasticsearchcrd.Elasticsearch, 
 	ptb.WithPodTemplateSpec(fb.Spec.Deployment.PodTemplate)
 
 	// Compute labels
-	ptb.WithLabels(getLabels(fb)).
+	// Do not set global labels here to avoid reconcile pod just because global label change
+	ptb.WithLabels(map[string]string{
+		"cluster":             fb.Name,
+		FilebeatAnnotationKey: "true",
+	}).
 		WithLabels(fb.Spec.Deployment.Labels, k8sbuilder.Merge)
 
 	// Compute annotations
-	ptb.WithAnnotations(getAnnotations(fb)).
+	// Do not set global annotation here to avoid reconcile pod just because global annotation change
+	ptb.WithAnnotations(map[string]string{
+		FilebeatAnnotationKey: "true",
+	}).
 		WithAnnotations(fb.Spec.Deployment.Annotations, k8sbuilder.Merge).
 		WithAnnotations(checksumAnnotations, k8sbuilder.Merge)
 

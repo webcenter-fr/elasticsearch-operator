@@ -1,0 +1,29 @@
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: test-allow-ls-fb
+  namespace: default
+  labels:
+    cluster: test
+    filebeat.k8s.webcenter.fr: "true"
+  annotations:
+    filebeat.k8s.webcenter.fr: "true"
+spec:
+  egress:
+    - to:
+        - podSelector:
+            matchLabels:
+              cluster: test
+              logstash.k8s.webcenter.fr: true
+          namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: logstash
+      ports:
+        - port: 1234
+          protocol: TCP
+  policyTypes:
+    - Egress
+  podSelector:
+    matchLabels:
+      cluster: test
+      filebeat.k8s.webcenter.fr: true

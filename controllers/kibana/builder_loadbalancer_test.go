@@ -38,8 +38,8 @@ func TestBuildLoadbalancer(t *testing.T) {
 			Name:      "test",
 		},
 		Spec: kibanacrd.KibanaSpec{
-			Endpoint: kibanacrd.EndpointSpec{
-				LoadBalancer: &kibanacrd.LoadBalancerSpec{
+			Endpoint: kibanacrd.KibanaEndpointSpec{
+				LoadBalancer: &kibanacrd.KibanaLoadBalancerSpec{
 					Enabled: false,
 				},
 			},
@@ -57,8 +57,8 @@ func TestBuildLoadbalancer(t *testing.T) {
 			Name:      "test",
 		},
 		Spec: kibanacrd.KibanaSpec{
-			Endpoint: kibanacrd.EndpointSpec{
-				LoadBalancer: &kibanacrd.LoadBalancerSpec{
+			Endpoint: kibanacrd.KibanaEndpointSpec{
+				LoadBalancer: &kibanacrd.KibanaLoadBalancerSpec{
 					Enabled: true,
 				},
 			},

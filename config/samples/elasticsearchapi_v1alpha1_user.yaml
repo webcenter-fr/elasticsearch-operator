@@ -10,8 +10,12 @@ metadata:
   name: user-sample
 spec:
   elasticsearchRef:
-    name: sample
-  username: test
-  enabled: false
-  passwordHash: 'sdsdfdfd'
+    managed:
+      name: elasticsearch-sample
+  enabled: true
+  isProtected: true
+  secretRef:
+    key: kibana_system
+    name: credential
+  username: kibana_system
 

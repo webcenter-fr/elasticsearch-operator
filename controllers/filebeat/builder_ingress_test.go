@@ -39,7 +39,7 @@ func TestBuildIngresses(t *testing.T) {
 			Name:      "test",
 		},
 		Spec: beatcrd.FilebeatSpec{
-			Ingresses: []beatcrd.Ingress{
+			Ingresses: []beatcrd.FilebeatIngress{
 				{
 					Name: "my-ingress",
 					Labels: map[string]string{

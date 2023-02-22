@@ -274,11 +274,18 @@ func BuildStatefulset(ls *logstashcrd.Logstash, es *elasticsearchcrd.Elasticsear
 	ptb.WithPodTemplateSpec(ls.Spec.Deployment.PodTemplate)
 
 	// Compute labels
-	ptb.WithLabels(getLabels(ls)).
+	// Do not set global labels here to avoid reconcile pod just because global label change
+	ptb.WithLabels(map[string]string{
+		"cluster":                  ls.Name,
+		LogstashAnnotationKey: "true",
+	}).
 		WithLabels(ls.Spec.Deployment.Labels, k8sbuilder.Merge)
 
 	// Compute annotations
-	ptb.WithAnnotations(getAnnotations(ls)).
+	// Do not set global annotation here to avoid reconcile pod just because global annotation change
+	ptb.WithAnnotations(map[string]string{
+		LogstashAnnotationKey: "true",
+	}).
 		WithAnnotations(ls.Spec.Deployment.Annotations, k8sbuilder.Merge).
 		WithAnnotations(checksumAnnotations, k8sbuilder.Merge)
 

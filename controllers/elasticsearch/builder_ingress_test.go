@@ -38,8 +38,8 @@ func TestBuildIngress(t *testing.T) {
 			Name:      "test",
 		},
 		Spec: elasticsearchcrd.ElasticsearchSpec{
-			Endpoint: elasticsearchcrd.EndpointSpec{
-				Ingress: &elasticsearchcrd.IngressSpec{
+			Endpoint: elasticsearchcrd.ElasticsearchEndpointSpec{
+				Ingress: &elasticsearchcrd.ElasticsearchIngressSpec{
 					Enabled: false,
 				},
 			},
@@ -56,14 +56,14 @@ func TestBuildIngress(t *testing.T) {
 			Name:      "test",
 		},
 		Spec: elasticsearchcrd.ElasticsearchSpec{
-			Endpoint: elasticsearchcrd.EndpointSpec{
-				Ingress: &elasticsearchcrd.IngressSpec{
+			Endpoint: elasticsearchcrd.ElasticsearchEndpointSpec{
+				Ingress: &elasticsearchcrd.ElasticsearchIngressSpec{
 					Enabled:             true,
 					TargetNodeGroupName: "master",
 					Host:                "my-test.cluster.local",
 				},
 			},
-			NodeGroups: []elasticsearchcrd.NodeGroupSpec{
+			NodeGroups: []elasticsearchcrd.ElasticsearchNodeGroupSpec{
 				{
 					Name:     "master",
 					Replicas: 3,
@@ -87,13 +87,13 @@ func TestBuildIngress(t *testing.T) {
 			Name:      "test",
 		},
 		Spec: elasticsearchcrd.ElasticsearchSpec{
-			Endpoint: elasticsearchcrd.EndpointSpec{
-				Ingress: &elasticsearchcrd.IngressSpec{
+			Endpoint: elasticsearchcrd.ElasticsearchEndpointSpec{
+				Ingress: &elasticsearchcrd.ElasticsearchIngressSpec{
 					Enabled: true,
 					Host:    "my-test.cluster.local",
 				},
 			},
-			NodeGroups: []elasticsearchcrd.NodeGroupSpec{
+			NodeGroups: []elasticsearchcrd.ElasticsearchNodeGroupSpec{
 				{
 					Name:     "master",
 					Replicas: 3,
@@ -123,8 +123,8 @@ func TestBuildIngress(t *testing.T) {
 			},
 		},
 		Spec: elasticsearchcrd.ElasticsearchSpec{
-			Endpoint: elasticsearchcrd.EndpointSpec{
-				Ingress: &elasticsearchcrd.IngressSpec{
+			Endpoint: elasticsearchcrd.ElasticsearchEndpointSpec{
+				Ingress: &elasticsearchcrd.ElasticsearchIngressSpec{
 					Enabled:             true,
 					TargetNodeGroupName: "master",
 					Host:                "my-test.cluster.local",
@@ -142,7 +142,7 @@ func TestBuildIngress(t *testing.T) {
 					},
 				},
 			},
-			NodeGroups: []elasticsearchcrd.NodeGroupSpec{
+			NodeGroups: []elasticsearchcrd.ElasticsearchNodeGroupSpec{
 				{
 					Name:     "master",
 					Replicas: 3,
@@ -167,14 +167,14 @@ func TestBuildIngress(t *testing.T) {
 			Name:      "test",
 		},
 		Spec: elasticsearchcrd.ElasticsearchSpec{
-			Endpoint: elasticsearchcrd.EndpointSpec{
-				Ingress: &elasticsearchcrd.IngressSpec{
+			Endpoint: elasticsearchcrd.ElasticsearchEndpointSpec{
+				Ingress: &elasticsearchcrd.ElasticsearchIngressSpec{
 					Enabled:             true,
 					TargetNodeGroupName: "master",
 					Host:                "my-test.cluster.local",
 				},
 			},
-			NodeGroups: []elasticsearchcrd.NodeGroupSpec{
+			NodeGroups: []elasticsearchcrd.ElasticsearchNodeGroupSpec{
 				{
 					Name:     "data",
 					Replicas: 1,
