@@ -63,6 +63,12 @@ func BuildStatefulsets(es *elasticsearchcrd.Elasticsearch, secretsChecksum []cor
 		checksumAnnotations[fmt.Sprintf("%s/secret-%s", ElasticsearchAnnotationKey, s.Name)] = sum
 	}
 
+	// Compute cluster name
+	clusterName := es.Name
+	if es.Spec.ClusterName != "" {
+		clusterName = es.Spec.ClusterName
+	}
+
 	for _, nodeGroup := range es.Spec.NodeGroups {
 		nodeGroupCheckSumAnnotations := map[string]string{}
 		for key, checksum := range checksumAnnotations {
@@ -169,7 +175,7 @@ func BuildStatefulsets(es *elasticsearchcrd.Elasticsearch, secretsChecksum []cor
 				},
 				{
 					Name:  "cluster.name",
-					Value: es.Name,
+					Value: clusterName,
 				},
 				{
 					Name:  "network.host",
