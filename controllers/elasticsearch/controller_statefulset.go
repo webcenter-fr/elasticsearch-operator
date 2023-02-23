@@ -4,10 +4,8 @@ import (
 	"context"
 	"fmt"
 	"os"
-	"strings"
 	"time"
 
-	"github.com/codingsince1985/checksum"
 	"github.com/disaster37/k8s-objectmatcher/patch"
 	"github.com/disaster37/operator-sdk-extra/pkg/controller"
 	"github.com/disaster37/operator-sdk-extra/pkg/helper"
@@ -16,6 +14,7 @@ import (
 	elasticsearchcrd "github.com/webcenter-fr/elasticsearch-operator/apis/elasticsearch/v1alpha1"
 	"github.com/webcenter-fr/elasticsearch-operator/controllers/common"
 	helperdiff "github.com/webcenter-fr/elasticsearch-operator/pkg/helper"
+	localhelper "github.com/webcenter-fr/elasticsearch-operator/pkg/helper"
 	appv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
@@ -25,7 +24,6 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/tools/record"
-	podutil "k8s.io/kubectl/pkg/util/podutils"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
@@ -317,15 +315,6 @@ func (r *StatefulsetReconciler) Diff(ctx context.Context, resource client.Object
 					updatedSts := patchResult.Patched.(*appv1.StatefulSet)
 					diff.NeedUpdate = true
 					diff.Diff.WriteString(fmt.Sprintf("diff %s: %s\n", updatedSts.Name, string(patchResult.Patch)))
-
-					// Add annotations to wait reconcile
-					updatedSts.Annotations[fmt.Sprintf("%s/upgrade", ElasticsearchAnnotationKey)] = "true"
-					sum, err := checksum.SHA256sumReader(strings.NewReader(updatedSts.ResourceVersion))
-					if err != nil {
-						return diff, res, errors.Wrapf(err, "Error when generate checksum to track statefulset %s upgrade", updatedSts.Name)
-					}
-					updatedSts.Spec.Template.Annotations[fmt.Sprintf("%s/upgrade-checksum", ElasticsearchAnnotationKey)] = sum
-
 					stsToExpectedUpdated = append(stsToExpectedUpdated, updatedSts)
 					r.Log.Debugf("Need update statefulset %s", updatedSts.Name)
 
@@ -340,7 +329,7 @@ func (r *StatefulsetReconciler) Diff(ctx context.Context, resource client.Object
 		}
 
 		if !isFound {
-			// Need create services
+			// Need create statefulset
 			diff.NeedCreate = true
 			diff.Diff.WriteString(fmt.Sprintf("Statefulset %s not yet exist\n", expectedSts.Name))
 
@@ -371,10 +360,14 @@ func (r *StatefulsetReconciler) Diff(ctx context.Context, resource client.Object
 	if condition.IsStatusConditionPresentAndEqual(o.Status.Conditions, StatefulsetConditionUpgrade, metav1.ConditionTrue) && condition.IsStatusConditionPresentAndEqual(o.Status.Conditions, StatefulsetCondition, metav1.ConditionFalse) {
 		r.Log.Debugf("Detect phase: %s", phaseStsUpgrade)
 
-		podList := &corev1.PodList{}
 	loopStatefullset:
 		for _, sts := range currentStatefulsets {
-			if sts.Annotations[fmt.Sprintf("%s/upgrade", ElasticsearchAnnotationKey)] == "true" {
+
+			// Not found a way to detect that we are on envtest, so without kubelet. We use env TEST to to that.
+			// It avoid to stuck test on this phase
+			if localhelper.IsOnStatefulSetUpgradeState(&sts) && os.Getenv("TEST") != "true" {
+
+				data["phase"] = phaseStsUpgrade
 
 				// Check if current statefullset need to be upgraded
 				for _, stsNeedUpgraded := range stsToExpectedUpdated {
@@ -383,46 +376,14 @@ func (r *StatefulsetReconciler) Diff(ctx context.Context, resource client.Object
 						stsToExpectedUpdated = []client.Object{
 							stsNeedUpgraded,
 						}
-						data["phase"] = phaseStsUpgrade
 						break loopStatefullset
 					}
 				}
 
-				// Check the pod state
-				labelSelectors := labels.SelectorFromSet(sts.Spec.Template.Labels)
-				if err = r.Client.List(ctx, podList, &client.ListOptions{Namespace: o.Namespace, LabelSelector: labelSelectors}); err != nil {
-					return diff, res, errors.Wrapf(err, "Error when read Elasticsearch pods")
-				}
-
-				isFinished := true
-				annotation := fmt.Sprintf("%s/upgrade-checksum", ElasticsearchAnnotationKey)
-				stsChecksum := sts.Spec.Template.Annotations[annotation]
-				for _, p := range podList.Items {
-					// The pod must have upgrade checksum annotation and need to be ready
-					if p.Annotations[annotation] == "" || p.Annotations[annotation] != stsChecksum || !podutil.IsPodReady(&p) {
-						isFinished = false
-					}
-				}
-				if !isFinished || (len(podList.Items) != int(*sts.Spec.Replicas) && os.Getenv("TEST") != "true") {
-					// Not found a way to detect that we are on envtest, so without kubelet. We use env TEST to to that.
-					// All Sts not yet finished upgrade
-					r.Log.Info("Phase statefulset upgrade: wait pod to be ready")
-					data["phase"] = phaseStsUpgrade
-				} else {
-					r.Log.Infof("Statefulset %s successfully finished upgrade", sts.Name)
-
-					// Clean annotations
-					// This annotation not restart pods
-					sts.Annotations[fmt.Sprintf("%s/upgrade", ElasticsearchAnnotationKey)] = "false"
-					stsToUpdate = append(stsToUpdate, &sts)
-					diff.NeedUpdate = true
-					data["phase"] = phaseStsUpgradeFinished
-				}
-
+				r.Log.Infof("Phase statefulset upgrade: wait pod %d (upgraded) / %d (ready) on %s", (sts.Status.Replicas - sts.Status.UpdatedReplicas), (sts.Status.Replicas - sts.Status.ReadyReplicas), sts.Name)
 				stsToExpectedUpdated = make([]client.Object, 0)
 
 				break
-
 			}
 		}
 	}

@@ -48,7 +48,7 @@ func BuildNetworkPolicies(kb *kibanacrd.Kibana) (networkPolicies []networkingv1.
 			},
 			PodSelector: metav1.LabelSelector{
 				MatchLabels: map[string]string{
-					"cluster": kb.Name,
+					"cluster":           kb.Name,
 					KibanaAnnotationKey: "true",
 				},
 			},
@@ -118,7 +118,7 @@ func BuildNetworkPolicies(kb *kibanacrd.Kibana) (networkPolicies []networkingv1.
 				},
 				PodSelector: metav1.LabelSelector{
 					MatchLabels: map[string]string{
-						"cluster": kb.Name,
+						"cluster":           kb.Name,
 						KibanaAnnotationKey: "true",
 					},
 				},

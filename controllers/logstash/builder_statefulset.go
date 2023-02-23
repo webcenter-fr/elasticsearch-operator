@@ -276,7 +276,7 @@ func BuildStatefulset(ls *logstashcrd.Logstash, es *elasticsearchcrd.Elasticsear
 	// Compute labels
 	// Do not set global labels here to avoid reconcile pod just because global label change
 	ptb.WithLabels(map[string]string{
-		"cluster":                  ls.Name,
+		"cluster":             ls.Name,
 		LogstashAnnotationKey: "true",
 	}).
 		WithLabels(ls.Spec.Deployment.Labels, k8sbuilder.Merge)
