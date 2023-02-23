@@ -57,6 +57,10 @@ spec:
           spec:
             description: ElasticsearchSpec defines the desired state of Elasticsearch
             properties:
+              clusterName:
+                description: ClusterName is the Elasticsearch cluster name Default
+                  is use the custom ressource name
+                type: string
               endpoint:
                 description: Endpoint permit to set endpoints to access on Elasticsearch
                   from external kubernetes You can set ingress and / or load balancer

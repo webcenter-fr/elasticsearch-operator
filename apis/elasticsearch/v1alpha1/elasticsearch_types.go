@@ -42,6 +42,12 @@ type ElasticsearchSpec struct {
 	// +kubebuilder:default=latest
 	Version string `json:"version,omitempty"`
 
+	// ClusterName is the Elasticsearch cluster name
+	// Default is use the custom ressource name
+	// +operator-sdk:csv:customresourcedefinitions:type=spec
+	// +optional
+	ClusterName string `json:"clusterName,omitempty"`
+
 	// SetVMMaxMapCount permit to set the right value for VMMaxMapCount on node
 	// It need to run pod as root with privileged option
 	// Default is true
