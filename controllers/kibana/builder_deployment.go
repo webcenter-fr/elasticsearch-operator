@@ -320,7 +320,7 @@ fi
 	// Compute labels
 	// Do not set global labels here to avoid reconcile pod just because global label change
 	ptb.WithLabels(map[string]string{
-		"cluster":                  kb.Name,
+		"cluster":           kb.Name,
 		KibanaAnnotationKey: "true",
 	}).
 		WithLabels(kb.Spec.Deployment.Labels, k8sbuilder.Merge)

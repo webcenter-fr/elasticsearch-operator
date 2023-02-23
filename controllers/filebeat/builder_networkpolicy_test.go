@@ -62,9 +62,9 @@ func TestBuildNetworkPolicies(t *testing.T) {
 		Spec: beatcrd.FilebeatSpec{
 			LogstashRef: beatcrd.FilebeatLogstashRef{
 				ManagedLogstashRef: &beatcrd.FilebeatLogstashManagedRef{
-					Name: "test",
+					Name:      "test",
 					Namespace: "logstash",
-					Port: 1234,
+					Port:      1234,
 				},
 			},
 		},
