@@ -149,11 +149,10 @@ func BuildDeploymentExporter(es *elasticsearchcrd.Elasticsearch) (dpl *appv1.Dep
 	})
 
 	// Compute labels
-	ptb.WithLabels(es.Labels).
-		WithLabels(map[string]string{
-			"exporter":      "true",
-			"elasticsearch": "true",
-		}, k8sbuilder.Merge)
+	ptb.WithLabels(map[string]string{
+		"exporter":      "true",
+		"elasticsearch": "true",
+	}, k8sbuilder.Merge)
 
 	// Compute containers
 	ptb.WithContainers([]corev1.Container{*cb.Container()}, k8sbuilder.Merge)

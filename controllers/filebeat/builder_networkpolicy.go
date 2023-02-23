@@ -2,6 +2,8 @@ package filebeat
 
 import (
 	beatcrd "github.com/webcenter-fr/elasticsearch-operator/apis/beat/v1alpha1"
+	elasticsearchcontrollers "github.com/webcenter-fr/elasticsearch-operator/controllers/elasticsearch"
+	logstashcontrollers "github.com/webcenter-fr/elasticsearch-operator/controllers/logstash"
 	v1 "k8s.io/api/core/v1"
 	networkingv1 "k8s.io/api/networking/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -32,12 +34,13 @@ func BuildNetworkPolicies(fb *beatcrd.Filebeat) (networkPolicies []networkingv1.
 							{
 								NamespaceSelector: &metav1.LabelSelector{
 									MatchLabels: map[string]string{
-										"name": fb.Spec.ElasticsearchRef.ManagedElasticsearchRef.Namespace,
+										"kubernetes.io/metadata.name": fb.Spec.ElasticsearchRef.ManagedElasticsearchRef.Namespace,
 									},
 								},
 								PodSelector: &metav1.LabelSelector{
 									MatchLabels: map[string]string{
 										"cluster": fb.Spec.ElasticsearchRef.ManagedElasticsearchRef.Name,
+										elasticsearchcontrollers.ElasticsearchAnnotationKey: "true",
 									},
 								},
 							},
@@ -54,6 +57,12 @@ func BuildNetworkPolicies(fb *beatcrd.Filebeat) (networkPolicies []networkingv1.
 				},
 				PolicyTypes: []networkingv1.PolicyType{
 					networkingv1.PolicyTypeEgress,
+				},
+				PodSelector: metav1.LabelSelector{
+					MatchLabels: map[string]string{
+						"cluster":             fb.Name,
+						FilebeatAnnotationKey: "true",
+					},
 				},
 			},
 		}
@@ -78,12 +87,13 @@ func BuildNetworkPolicies(fb *beatcrd.Filebeat) (networkPolicies []networkingv1.
 							{
 								NamespaceSelector: &metav1.LabelSelector{
 									MatchLabels: map[string]string{
-										"name": fb.Spec.LogstashRef.ManagedLogstashRef.Namespace,
+										"kubernetes.io/metadata.name": fb.Spec.LogstashRef.ManagedLogstashRef.Namespace,
 									},
 								},
 								PodSelector: &metav1.LabelSelector{
 									MatchLabels: map[string]string{
 										"cluster": fb.Spec.LogstashRef.ManagedLogstashRef.Name,
+										logstashcontrollers.LogstashAnnotationKey: "true",
 									},
 								},
 							},
@@ -100,6 +110,12 @@ func BuildNetworkPolicies(fb *beatcrd.Filebeat) (networkPolicies []networkingv1.
 				},
 				PolicyTypes: []networkingv1.PolicyType{
 					networkingv1.PolicyTypeEgress,
+				},
+				PodSelector: metav1.LabelSelector{
+					MatchLabels: map[string]string{
+						"cluster":             fb.Name,
+						FilebeatAnnotationKey: "true",
+					},
 				},
 			},
 		}

@@ -39,7 +39,7 @@ func TestBuildPodDisruptionBudget(t *testing.T) {
 			Name:      "test",
 		},
 		Spec: elasticsearchcrd.ElasticsearchSpec{
-			NodeGroups: []elasticsearchcrd.NodeGroupSpec{
+			NodeGroups: []elasticsearchcrd.ElasticsearchNodeGroupSpec{
 				{
 					Name:     "master",
 					Replicas: 1,
@@ -61,13 +61,13 @@ func TestBuildPodDisruptionBudget(t *testing.T) {
 			Name:      "test",
 		},
 		Spec: elasticsearchcrd.ElasticsearchSpec{
-			NodeGroups: []elasticsearchcrd.NodeGroupSpec{
+			NodeGroups: []elasticsearchcrd.ElasticsearchNodeGroupSpec{
 				{
 					Name:     "master",
 					Replicas: 1,
 				},
 			},
-			GlobalNodeGroup: elasticsearchcrd.GlobalNodeGroupSpec{
+			GlobalNodeGroup: elasticsearchcrd.ElasticsearchGlobalNodeGroupSpec{
 				PodDisruptionBudgetSpec: &policyv1.PodDisruptionBudgetSpec{
 					MinAvailable:   &minUnavailable,
 					MaxUnavailable: nil,
@@ -89,7 +89,7 @@ func TestBuildPodDisruptionBudget(t *testing.T) {
 			Name:      "test",
 		},
 		Spec: elasticsearchcrd.ElasticsearchSpec{
-			NodeGroups: []elasticsearchcrd.NodeGroupSpec{
+			NodeGroups: []elasticsearchcrd.ElasticsearchNodeGroupSpec{
 				{
 					Name:     "master",
 					Replicas: 1,
@@ -99,7 +99,7 @@ func TestBuildPodDisruptionBudget(t *testing.T) {
 					},
 				},
 			},
-			GlobalNodeGroup: elasticsearchcrd.GlobalNodeGroupSpec{
+			GlobalNodeGroup: elasticsearchcrd.ElasticsearchGlobalNodeGroupSpec{
 				PodDisruptionBudgetSpec: &policyv1.PodDisruptionBudgetSpec{
 					MinAvailable:   &minUnavailable,
 					MaxUnavailable: nil,

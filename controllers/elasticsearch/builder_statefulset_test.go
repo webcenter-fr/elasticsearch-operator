@@ -30,7 +30,7 @@ func TestBuildStatefulset(t *testing.T) {
 			Name:      "test",
 		},
 		Spec: elasticsearchcrd.ElasticsearchSpec{
-			NodeGroups: []elasticsearchcrd.NodeGroupSpec{
+			NodeGroups: []elasticsearchcrd.ElasticsearchNodeGroupSpec{
 				{
 					Name:     "all",
 					Replicas: 1,
@@ -60,8 +60,8 @@ func TestBuildStatefulset(t *testing.T) {
 				"repository-s3",
 			},
 			SetVMMaxMapCount: pointer.Bool(true),
-			GlobalNodeGroup: elasticsearchcrd.GlobalNodeGroupSpec{
-				AdditionalVolumes: []elasticsearchcrd.VolumeSpec{
+			GlobalNodeGroup: elasticsearchcrd.ElasticsearchGlobalNodeGroupSpec{
+				AdditionalVolumes: []elasticsearchcrd.ElasticsearchVolumeSpec{
 					{
 						Name: "snapshot",
 						VolumeMount: corev1.VolumeMount{
@@ -88,7 +88,7 @@ func TestBuildStatefulset(t *testing.T) {
 				KeystoreSecretRef: &corev1.LocalObjectReference{
 					Name: "elasticsearch-security",
 				},
-				AntiAffinity: &elasticsearchcrd.AntiAffinitySpec{
+				AntiAffinity: &elasticsearchcrd.ElasticsearchAntiAffinitySpec{
 					TopologyKey: "rack",
 					Type:        "hard",
 				},
@@ -96,14 +96,14 @@ func TestBuildStatefulset(t *testing.T) {
 					"log4j.yaml": "my log4j",
 				},
 			},
-			NodeGroups: []elasticsearchcrd.NodeGroupSpec{
+			NodeGroups: []elasticsearchcrd.ElasticsearchNodeGroupSpec{
 				{
 					Name:     "master",
 					Replicas: 3,
 					Roles: []string{
 						"master",
 					},
-					Persistence: &elasticsearchcrd.PersistenceSpec{
+					Persistence: &elasticsearchcrd.ElasticsearchPersistenceSpec{
 						VolumeClaimSpec: &corev1.PersistentVolumeClaimSpec{
 							StorageClassName: pointer.String("local-path"),
 							AccessModes: []corev1.PersistentVolumeAccessMode{
@@ -134,7 +134,7 @@ func TestBuildStatefulset(t *testing.T) {
 					Roles: []string{
 						"data",
 					},
-					Persistence: &elasticsearchcrd.PersistenceSpec{
+					Persistence: &elasticsearchcrd.ElasticsearchPersistenceSpec{
 						Volume: &corev1.VolumeSource{
 							HostPath: &corev1.HostPathVolumeSource{
 								Path: "/data/elasticsearch",
@@ -170,7 +170,7 @@ func TestBuildStatefulset(t *testing.T) {
 					Roles: []string{
 						"ingest",
 					},
-					Persistence: &elasticsearchcrd.PersistenceSpec{
+					Persistence: &elasticsearchcrd.ElasticsearchPersistenceSpec{
 						VolumeClaimSpec: &corev1.PersistentVolumeClaimSpec{
 							StorageClassName: pointer.String("local-path"),
 							AccessModes: []corev1.PersistentVolumeAccessMode{
@@ -229,13 +229,13 @@ func TestBuildStatefulset(t *testing.T) {
 			Name:      "test",
 		},
 		Spec: elasticsearchcrd.ElasticsearchSpec{
-			Tls: elasticsearchcrd.TlsSpec{
+			Tls: elasticsearchcrd.ElasticsearchTlsSpec{
 				Enabled: pointer.Bool(true),
 				CertificateSecretRef: &corev1.LocalObjectReference{
 					Name: "api-certificates",
 				},
 			},
-			NodeGroups: []elasticsearchcrd.NodeGroupSpec{
+			NodeGroups: []elasticsearchcrd.ElasticsearchNodeGroupSpec{
 				{
 					Name:     "all",
 					Replicas: 1,
@@ -295,7 +295,7 @@ func TestComputeJavaOpts(t *testing.T) {
 			Name:      "test",
 		},
 		Spec: elasticsearchcrd.ElasticsearchSpec{
-			NodeGroups: []elasticsearchcrd.NodeGroupSpec{
+			NodeGroups: []elasticsearchcrd.ElasticsearchNodeGroupSpec{
 				{
 					Name:     "master",
 					Replicas: 1,
@@ -313,10 +313,10 @@ func TestComputeJavaOpts(t *testing.T) {
 			Name:      "test",
 		},
 		Spec: elasticsearchcrd.ElasticsearchSpec{
-			GlobalNodeGroup: elasticsearchcrd.GlobalNodeGroupSpec{
+			GlobalNodeGroup: elasticsearchcrd.ElasticsearchGlobalNodeGroupSpec{
 				Jvm: "-param1=1",
 			},
-			NodeGroups: []elasticsearchcrd.NodeGroupSpec{
+			NodeGroups: []elasticsearchcrd.ElasticsearchNodeGroupSpec{
 				{
 					Name:     "master",
 					Replicas: 1,
@@ -334,10 +334,10 @@ func TestComputeJavaOpts(t *testing.T) {
 			Name:      "test",
 		},
 		Spec: elasticsearchcrd.ElasticsearchSpec{
-			GlobalNodeGroup: elasticsearchcrd.GlobalNodeGroupSpec{
+			GlobalNodeGroup: elasticsearchcrd.ElasticsearchGlobalNodeGroupSpec{
 				Jvm: "-param1=1",
 			},
-			NodeGroups: []elasticsearchcrd.NodeGroupSpec{
+			NodeGroups: []elasticsearchcrd.ElasticsearchNodeGroupSpec{
 				{
 					Name:     "master",
 					Replicas: 1,
@@ -362,7 +362,7 @@ func TestComputeInitialMasterNodes(t *testing.T) {
 			Name:      "test",
 		},
 		Spec: elasticsearchcrd.ElasticsearchSpec{
-			NodeGroups: []elasticsearchcrd.NodeGroupSpec{
+			NodeGroups: []elasticsearchcrd.ElasticsearchNodeGroupSpec{
 				{
 					Name:     "master",
 					Replicas: 3,
@@ -385,7 +385,7 @@ func TestComputeInitialMasterNodes(t *testing.T) {
 			Name:      "test",
 		},
 		Spec: elasticsearchcrd.ElasticsearchSpec{
-			NodeGroups: []elasticsearchcrd.NodeGroupSpec{
+			NodeGroups: []elasticsearchcrd.ElasticsearchNodeGroupSpec{
 				{
 					Name:     "all",
 					Replicas: 3,
@@ -421,7 +421,7 @@ func TestComputeDiscoverySeedHosts(t *testing.T) {
 			Name:      "test",
 		},
 		Spec: elasticsearchcrd.ElasticsearchSpec{
-			NodeGroups: []elasticsearchcrd.NodeGroupSpec{
+			NodeGroups: []elasticsearchcrd.ElasticsearchNodeGroupSpec{
 				{
 					Name:     "master",
 					Replicas: 3,
@@ -444,7 +444,7 @@ func TestComputeDiscoverySeedHosts(t *testing.T) {
 			Name:      "test",
 		},
 		Spec: elasticsearchcrd.ElasticsearchSpec{
-			NodeGroups: []elasticsearchcrd.NodeGroupSpec{
+			NodeGroups: []elasticsearchcrd.ElasticsearchNodeGroupSpec{
 				{
 					Name:     "all",
 					Replicas: 3,
@@ -502,7 +502,7 @@ func TestComputeAntiAffinity(t *testing.T) {
 			Name:      "test",
 		},
 		Spec: elasticsearchcrd.ElasticsearchSpec{
-			NodeGroups: []elasticsearchcrd.NodeGroupSpec{
+			NodeGroups: []elasticsearchcrd.ElasticsearchNodeGroupSpec{
 				{
 					Name:     "master",
 					Replicas: 1,
@@ -540,13 +540,13 @@ func TestComputeAntiAffinity(t *testing.T) {
 			Name:      "test",
 		},
 		Spec: elasticsearchcrd.ElasticsearchSpec{
-			GlobalNodeGroup: elasticsearchcrd.GlobalNodeGroupSpec{
-				AntiAffinity: &elasticsearchcrd.AntiAffinitySpec{
+			GlobalNodeGroup: elasticsearchcrd.ElasticsearchGlobalNodeGroupSpec{
+				AntiAffinity: &elasticsearchcrd.ElasticsearchAntiAffinitySpec{
 					Type:        "hard",
 					TopologyKey: "topology.kubernetes.io/zone",
 				},
 			},
-			NodeGroups: []elasticsearchcrd.NodeGroupSpec{
+			NodeGroups: []elasticsearchcrd.ElasticsearchNodeGroupSpec{
 				{
 					Name:     "master",
 					Replicas: 1,
@@ -581,17 +581,17 @@ func TestComputeAntiAffinity(t *testing.T) {
 			Name:      "test",
 		},
 		Spec: elasticsearchcrd.ElasticsearchSpec{
-			GlobalNodeGroup: elasticsearchcrd.GlobalNodeGroupSpec{
-				AntiAffinity: &elasticsearchcrd.AntiAffinitySpec{
+			GlobalNodeGroup: elasticsearchcrd.ElasticsearchGlobalNodeGroupSpec{
+				AntiAffinity: &elasticsearchcrd.ElasticsearchAntiAffinitySpec{
 					Type:        "soft",
 					TopologyKey: "topology.kubernetes.io/zone",
 				},
 			},
-			NodeGroups: []elasticsearchcrd.NodeGroupSpec{
+			NodeGroups: []elasticsearchcrd.ElasticsearchNodeGroupSpec{
 				{
 					Name:     "master",
 					Replicas: 1,
-					AntiAffinity: &elasticsearchcrd.AntiAffinitySpec{
+					AntiAffinity: &elasticsearchcrd.ElasticsearchAntiAffinitySpec{
 						Type: "hard",
 					},
 				},
@@ -632,7 +632,7 @@ func TestComputeEnvFroms(t *testing.T) {
 			Name:      "test",
 		},
 		Spec: elasticsearchcrd.ElasticsearchSpec{
-			NodeGroups: []elasticsearchcrd.NodeGroupSpec{
+			NodeGroups: []elasticsearchcrd.ElasticsearchNodeGroupSpec{
 				{
 					Name:     "master",
 					Replicas: 1,
@@ -650,7 +650,7 @@ func TestComputeEnvFroms(t *testing.T) {
 			Name:      "test",
 		},
 		Spec: elasticsearchcrd.ElasticsearchSpec{
-			GlobalNodeGroup: elasticsearchcrd.GlobalNodeGroupSpec{
+			GlobalNodeGroup: elasticsearchcrd.ElasticsearchGlobalNodeGroupSpec{
 				EnvFrom: []corev1.EnvFromSource{
 					{
 						ConfigMapRef: &corev1.ConfigMapEnvSource{
@@ -661,7 +661,7 @@ func TestComputeEnvFroms(t *testing.T) {
 					},
 				},
 			},
-			NodeGroups: []elasticsearchcrd.NodeGroupSpec{
+			NodeGroups: []elasticsearchcrd.ElasticsearchNodeGroupSpec{
 				{
 					Name:     "master",
 					Replicas: 1,
@@ -689,7 +689,7 @@ func TestComputeEnvFroms(t *testing.T) {
 			Name:      "test",
 		},
 		Spec: elasticsearchcrd.ElasticsearchSpec{
-			GlobalNodeGroup: elasticsearchcrd.GlobalNodeGroupSpec{
+			GlobalNodeGroup: elasticsearchcrd.ElasticsearchGlobalNodeGroupSpec{
 				EnvFrom: []corev1.EnvFromSource{
 					{
 						ConfigMapRef: &corev1.ConfigMapEnvSource{
@@ -707,7 +707,7 @@ func TestComputeEnvFroms(t *testing.T) {
 					},
 				},
 			},
-			NodeGroups: []elasticsearchcrd.NodeGroupSpec{
+			NodeGroups: []elasticsearchcrd.ElasticsearchNodeGroupSpec{
 				{
 					Name:     "master",
 					Replicas: 1,

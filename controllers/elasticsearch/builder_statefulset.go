@@ -404,14 +404,20 @@ fi
 			WithPodTemplateSpec(nodeGroup.PodTemplate, k8sbuilder.Merge)
 
 		// Compute labels
-		ptb.WithLabels(getLabels(es, map[string]string{
-			"nodeGroup": nodeGroup.Name,
-		})).
+		// Do not set global labels here to avoid reconcile pod just because global label change
+		ptb.WithLabels(map[string]string{
+			"cluster":                  es.Name,
+			"nodeGroup":                nodeGroup.Name,
+			ElasticsearchAnnotationKey: "true",
+		}).
 			WithLabels(es.Spec.GlobalNodeGroup.Labels, k8sbuilder.Merge).
 			WithLabels(nodeGroup.Labels, k8sbuilder.Merge)
 
 		// Compute annotations
-		ptb.WithAnnotations(getAnnotations(es)).
+		// Do not set global annotation here to avoid reconcile pod just because global annotation change
+		ptb.WithAnnotations(map[string]string{
+			ElasticsearchAnnotationKey: "true",
+		}).
 			WithAnnotations(es.Spec.GlobalNodeGroup.Annotations, k8sbuilder.Merge).
 			WithAnnotations(nodeGroup.Annotations, k8sbuilder.Merge).
 			WithAnnotations(nodeGroupCheckSumAnnotations, k8sbuilder.Merge)
@@ -804,7 +810,7 @@ func getElasticsearchContainer(podTemplate *corev1.PodTemplateSpec) (container *
 
 // computeEnvFroms permit to compute the envFrom list
 // It just append all, without to keep unique object
-func computeEnvFroms(es *elasticsearchcrd.Elasticsearch, nodeGroup *elasticsearchcrd.NodeGroupSpec) (envFroms []corev1.EnvFromSource) {
+func computeEnvFroms(es *elasticsearchcrd.Elasticsearch, nodeGroup *elasticsearchcrd.ElasticsearchNodeGroupSpec) (envFroms []corev1.EnvFromSource) {
 
 	secrets := make([]any, 0)
 	configMaps := make([]any, 0)
@@ -843,15 +849,15 @@ func computeEnvFroms(es *elasticsearchcrd.Elasticsearch, nodeGroup *elasticsearc
 
 // computeAntiAffinity permit to get  anti affinity spec
 // Default to soft anti affinity
-func computeAntiAffinity(es *elasticsearchcrd.Elasticsearch, nodeGroup *elasticsearchcrd.NodeGroupSpec) (antiAffinity *corev1.PodAntiAffinity, err error) {
-	var expectedAntiAffinity *elasticsearchcrd.AntiAffinitySpec
+func computeAntiAffinity(es *elasticsearchcrd.Elasticsearch, nodeGroup *elasticsearchcrd.ElasticsearchNodeGroupSpec) (antiAffinity *corev1.PodAntiAffinity, err error) {
+	var expectedAntiAffinity *elasticsearchcrd.ElasticsearchAntiAffinitySpec
 
 	antiAffinity = &corev1.PodAntiAffinity{}
 	topologyKey := "kubernetes.io/hostname"
 
 	// Check if need to merge anti affinity spec
 	if nodeGroup.AntiAffinity != nil || es.Spec.GlobalNodeGroup.AntiAffinity != nil {
-		expectedAntiAffinity = &elasticsearchcrd.AntiAffinitySpec{}
+		expectedAntiAffinity = &elasticsearchcrd.ElasticsearchAntiAffinitySpec{}
 		if err = helper.Merge(expectedAntiAffinity, nodeGroup.AntiAffinity, funk.Get(es.Spec.GlobalNodeGroup, "AntiAffinity")); err != nil {
 			return nil, errors.Wrapf(err, "Error when merge global anti affinity  with node group %s", nodeGroup.Name)
 		}
@@ -912,7 +918,7 @@ func computeRoles(roles []string) string {
 }
 
 // getJavaOpts permit to get computed JAVA_OPTS
-func computeJavaOpts(es *elasticsearchcrd.Elasticsearch, nodeGroup *elasticsearchcrd.NodeGroupSpec) string {
+func computeJavaOpts(es *elasticsearchcrd.Elasticsearch, nodeGroup *elasticsearchcrd.ElasticsearchNodeGroupSpec) string {
 	javaOpts := []string{}
 
 	if es.Spec.GlobalNodeGroup.Jvm != "" {

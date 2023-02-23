@@ -18,7 +18,7 @@ func TestGetNodeGroupName(t *testing.T) {
 			Name:      "test",
 		},
 		Spec: elasticsearchcrd.ElasticsearchSpec{
-			NodeGroups: []elasticsearchcrd.NodeGroupSpec{
+			NodeGroups: []elasticsearchcrd.ElasticsearchNodeGroupSpec{
 				{
 					Name:     "master",
 					Replicas: 3,
@@ -41,7 +41,7 @@ func TestGetNodeNames(t *testing.T) {
 			Name:      "test",
 		},
 		Spec: elasticsearchcrd.ElasticsearchSpec{
-			NodeGroups: []elasticsearchcrd.NodeGroupSpec{
+			NodeGroups: []elasticsearchcrd.ElasticsearchNodeGroupSpec{
 				{
 					Name:     "master",
 					Replicas: 3,
@@ -71,7 +71,7 @@ func TestGetNodeGroupNodeNames(t *testing.T) {
 			Name:      "test",
 		},
 		Spec: elasticsearchcrd.ElasticsearchSpec{
-			NodeGroups: []elasticsearchcrd.NodeGroupSpec{
+			NodeGroups: []elasticsearchcrd.ElasticsearchNodeGroupSpec{
 				{
 					Name:     "master",
 					Replicas: 3,
@@ -100,7 +100,7 @@ func TestGetSecretNameForTlsTransport(t *testing.T) {
 			Name:      "test",
 		},
 		Spec: elasticsearchcrd.ElasticsearchSpec{
-			NodeGroups: []elasticsearchcrd.NodeGroupSpec{
+			NodeGroups: []elasticsearchcrd.ElasticsearchNodeGroupSpec{
 				{
 					Name:     "master",
 					Replicas: 3,
@@ -123,7 +123,7 @@ func TestGetSecretNameForPkiTransport(t *testing.T) {
 			Name:      "test",
 		},
 		Spec: elasticsearchcrd.ElasticsearchSpec{
-			NodeGroups: []elasticsearchcrd.NodeGroupSpec{
+			NodeGroups: []elasticsearchcrd.ElasticsearchNodeGroupSpec{
 				{
 					Name:     "master",
 					Replicas: 3,
@@ -152,7 +152,7 @@ func TestGetSecretNameForTlsApi(t *testing.T) {
 	assert.Equal(t, "test-tls-api-es", GetSecretNameForTlsApi(o))
 
 	// When specify TLS secret
-	o.Spec.Tls = elasticsearchcrd.TlsSpec{
+	o.Spec.Tls = elasticsearchcrd.ElasticsearchTlsSpec{
 		CertificateSecretRef: &v1.LocalObjectReference{
 			Name: "my-secret",
 		},
@@ -168,7 +168,7 @@ func TestGetSecretNameForPkiApi(t *testing.T) {
 			Name:      "test",
 		},
 		Spec: elasticsearchcrd.ElasticsearchSpec{
-			NodeGroups: []elasticsearchcrd.NodeGroupSpec{
+			NodeGroups: []elasticsearchcrd.ElasticsearchNodeGroupSpec{
 				{
 					Name:     "master",
 					Replicas: 3,
@@ -205,7 +205,7 @@ func TestGetNodeGroupConfigMapName(t *testing.T) {
 			Name:      "test",
 		},
 		Spec: elasticsearchcrd.ElasticsearchSpec{
-			NodeGroups: []elasticsearchcrd.NodeGroupSpec{
+			NodeGroups: []elasticsearchcrd.ElasticsearchNodeGroupSpec{
 				{
 					Name:     "master",
 					Replicas: 3,
@@ -264,7 +264,7 @@ func TestGetNodeGroupServiceName(t *testing.T) {
 			Name:      "test",
 		},
 		Spec: elasticsearchcrd.ElasticsearchSpec{
-			NodeGroups: []elasticsearchcrd.NodeGroupSpec{
+			NodeGroups: []elasticsearchcrd.ElasticsearchNodeGroupSpec{
 				{
 					Name:     "master",
 					Replicas: 3,
@@ -287,7 +287,7 @@ func TestGetNodeGroupServiceNameHeadless(t *testing.T) {
 			Name:      "test",
 		},
 		Spec: elasticsearchcrd.ElasticsearchSpec{
-			NodeGroups: []elasticsearchcrd.NodeGroupSpec{
+			NodeGroups: []elasticsearchcrd.ElasticsearchNodeGroupSpec{
 				{
 					Name:     "master",
 					Replicas: 3,
@@ -310,7 +310,7 @@ func TestGetNodeGroupPDBName(t *testing.T) {
 			Name:      "test",
 		},
 		Spec: elasticsearchcrd.ElasticsearchSpec{
-			NodeGroups: []elasticsearchcrd.NodeGroupSpec{
+			NodeGroups: []elasticsearchcrd.ElasticsearchNodeGroupSpec{
 				{
 					Name:     "master",
 					Replicas: 3,
@@ -362,7 +362,7 @@ func TestIsMasterRole(t *testing.T) {
 			Name:      "test",
 		},
 		Spec: elasticsearchcrd.ElasticsearchSpec{
-			NodeGroups: []elasticsearchcrd.NodeGroupSpec{
+			NodeGroups: []elasticsearchcrd.ElasticsearchNodeGroupSpec{
 				{
 					Name:     "master",
 					Replicas: 1,
@@ -383,7 +383,7 @@ func TestIsMasterRole(t *testing.T) {
 			Name:      "test",
 		},
 		Spec: elasticsearchcrd.ElasticsearchSpec{
-			NodeGroups: []elasticsearchcrd.NodeGroupSpec{
+			NodeGroups: []elasticsearchcrd.ElasticsearchNodeGroupSpec{
 				{
 					Name:     "master",
 					Replicas: 1,
@@ -406,7 +406,7 @@ func TestIsMasterRole(t *testing.T) {
 			Name:      "test",
 		},
 		Spec: elasticsearchcrd.ElasticsearchSpec{
-			NodeGroups: []elasticsearchcrd.NodeGroupSpec{
+			NodeGroups: []elasticsearchcrd.ElasticsearchNodeGroupSpec{
 				{
 					Name:     "master",
 					Replicas: 1,
@@ -532,8 +532,8 @@ func TestGetExporterImage(t *testing.T) {
 			Name:      "test",
 		},
 		Spec: elasticsearchcrd.ElasticsearchSpec{
-			Monitoring: elasticsearchcrd.MonitoringSpec{
-				Prometheus: &elasticsearchcrd.PrometheusSpec{
+			Monitoring: elasticsearchcrd.ElasticsearchMonitoringSpec{
+				Prometheus: &elasticsearchcrd.ElasticsearchPrometheusSpec{
 					ImageSpec: shared.ImageSpec{
 						Image: "toto",
 					},
@@ -590,7 +590,7 @@ func TestGetPublicUrl(t *testing.T) {
 			Name:      "test",
 		},
 		Spec: elasticsearchcrd.ElasticsearchSpec{
-			Tls: elasticsearchcrd.TlsSpec{
+			Tls: elasticsearchcrd.ElasticsearchTlsSpec{
 				Enabled: pointer.Bool(false),
 			},
 		},
@@ -616,7 +616,7 @@ func TestGetPublicUrl(t *testing.T) {
 			Name:      "test",
 		},
 		Spec: elasticsearchcrd.ElasticsearchSpec{
-			Tls: elasticsearchcrd.TlsSpec{
+			Tls: elasticsearchcrd.ElasticsearchTlsSpec{
 				Enabled: pointer.Bool(false),
 			},
 		},

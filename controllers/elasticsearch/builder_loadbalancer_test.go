@@ -38,8 +38,8 @@ func TestBuildLoadbalancer(t *testing.T) {
 			Name:      "test",
 		},
 		Spec: elasticsearchcrd.ElasticsearchSpec{
-			Endpoint: elasticsearchcrd.EndpointSpec{
-				LoadBalancer: &elasticsearchcrd.LoadBalancerSpec{
+			Endpoint: elasticsearchcrd.ElasticsearchEndpointSpec{
+				LoadBalancer: &elasticsearchcrd.ElasticsearchLoadBalancerSpec{
 					Enabled: false,
 				},
 			},
@@ -57,7 +57,7 @@ func TestBuildLoadbalancer(t *testing.T) {
 			Name:      "test",
 		},
 		Spec: elasticsearchcrd.ElasticsearchSpec{
-			NodeGroups: []elasticsearchcrd.NodeGroupSpec{
+			NodeGroups: []elasticsearchcrd.ElasticsearchNodeGroupSpec{
 				{
 					Name:     "master",
 					Replicas: 3,
@@ -67,8 +67,8 @@ func TestBuildLoadbalancer(t *testing.T) {
 					Replicas: 1,
 				},
 			},
-			Endpoint: elasticsearchcrd.EndpointSpec{
-				LoadBalancer: &elasticsearchcrd.LoadBalancerSpec{
+			Endpoint: elasticsearchcrd.ElasticsearchEndpointSpec{
+				LoadBalancer: &elasticsearchcrd.ElasticsearchLoadBalancerSpec{
 					Enabled:             true,
 					TargetNodeGroupName: "master",
 				},
@@ -87,7 +87,7 @@ func TestBuildLoadbalancer(t *testing.T) {
 			Name:      "test",
 		},
 		Spec: elasticsearchcrd.ElasticsearchSpec{
-			NodeGroups: []elasticsearchcrd.NodeGroupSpec{
+			NodeGroups: []elasticsearchcrd.ElasticsearchNodeGroupSpec{
 				{
 					Name:     "master",
 					Replicas: 3,
@@ -97,8 +97,8 @@ func TestBuildLoadbalancer(t *testing.T) {
 					Replicas: 1,
 				},
 			},
-			Endpoint: elasticsearchcrd.EndpointSpec{
-				LoadBalancer: &elasticsearchcrd.LoadBalancerSpec{
+			Endpoint: elasticsearchcrd.ElasticsearchEndpointSpec{
+				LoadBalancer: &elasticsearchcrd.ElasticsearchLoadBalancerSpec{
 					Enabled: true,
 				},
 			},
@@ -116,14 +116,14 @@ func TestBuildLoadbalancer(t *testing.T) {
 			Name:      "test",
 		},
 		Spec: elasticsearchcrd.ElasticsearchSpec{
-			NodeGroups: []elasticsearchcrd.NodeGroupSpec{
+			NodeGroups: []elasticsearchcrd.ElasticsearchNodeGroupSpec{
 				{
 					Name:     "data",
 					Replicas: 1,
 				},
 			},
-			Endpoint: elasticsearchcrd.EndpointSpec{
-				LoadBalancer: &elasticsearchcrd.LoadBalancerSpec{
+			Endpoint: elasticsearchcrd.ElasticsearchEndpointSpec{
+				LoadBalancer: &elasticsearchcrd.ElasticsearchLoadBalancerSpec{
 					Enabled:             true,
 					TargetNodeGroupName: "master",
 				},

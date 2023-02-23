@@ -40,7 +40,7 @@ func TestBuildStatefulset(t *testing.T) {
 					Name: "test",
 				},
 			},
-			Deployment: beatcrd.DeploymentSpec{
+			Deployment: beatcrd.FilebeatDeploymentSpec{
 				Replicas: 1,
 			},
 		},
@@ -64,7 +64,7 @@ func TestBuildStatefulset(t *testing.T) {
 			Name:      "test",
 		},
 		Spec: beatcrd.FilebeatSpec{
-			Deployment: beatcrd.DeploymentSpec{
+			Deployment: beatcrd.FilebeatDeploymentSpec{
 				Replicas: 1,
 			},
 			ElasticsearchRef: shared.ElasticsearchRef{
@@ -91,7 +91,7 @@ func TestBuildStatefulset(t *testing.T) {
 			Name:      "test",
 		},
 		Spec: beatcrd.FilebeatSpec{
-			Deployment: beatcrd.DeploymentSpec{
+			Deployment: beatcrd.FilebeatDeploymentSpec{
 				Replicas: 1,
 			},
 			ElasticsearchRef: shared.ElasticsearchRef{
@@ -132,8 +132,8 @@ func TestBuildStatefulset(t *testing.T) {
 			Name:      "test",
 		},
 		Spec: beatcrd.FilebeatSpec{
-			LogstashRef: beatcrd.LogstashRef{
-				ManagedLogstashRef: &beatcrd.LogstashManagedRef{
+			LogstashRef: beatcrd.FilebeatLogstashRef{
+				ManagedLogstashRef: &beatcrd.FilebeatLogstashManagedRef{
 					Name:          "test",
 					TargetService: "beat",
 					Port:          5002,
@@ -142,7 +142,7 @@ func TestBuildStatefulset(t *testing.T) {
 					Name: "custom-ca-ls",
 				},
 			},
-			Deployment: beatcrd.DeploymentSpec{
+			Deployment: beatcrd.FilebeatDeploymentSpec{
 				Replicas: 1,
 			},
 		},
@@ -166,11 +166,11 @@ func TestBuildStatefulset(t *testing.T) {
 			Name:      "test",
 		},
 		Spec: beatcrd.FilebeatSpec{
-			Deployment: beatcrd.DeploymentSpec{
+			Deployment: beatcrd.FilebeatDeploymentSpec{
 				Replicas: 1,
 			},
-			LogstashRef: beatcrd.LogstashRef{
-				ExternalLogstashRef: &beatcrd.LogstashExternalRef{
+			LogstashRef: beatcrd.FilebeatLogstashRef{
+				ExternalLogstashRef: &beatcrd.FilebeatLogstashExternalRef{
 					Addresses: []string{
 						"beat.logstash.svc:5002",
 					},
@@ -190,11 +190,11 @@ func TestBuildStatefulset(t *testing.T) {
 			Name:      "test",
 		},
 		Spec: beatcrd.FilebeatSpec{
-			Deployment: beatcrd.DeploymentSpec{
+			Deployment: beatcrd.FilebeatDeploymentSpec{
 				Replicas: 1,
 			},
-			LogstashRef: beatcrd.LogstashRef{
-				ExternalLogstashRef: &beatcrd.LogstashExternalRef{
+			LogstashRef: beatcrd.FilebeatLogstashRef{
+				ExternalLogstashRef: &beatcrd.FilebeatLogstashExternalRef{
 					Addresses: []string{
 						"beat.logstash.svc:5002",
 					},
@@ -233,7 +233,7 @@ func TestBuildStatefulset(t *testing.T) {
 					Name: "test",
 				},
 			},
-			Deployment: beatcrd.DeploymentSpec{
+			Deployment: beatcrd.FilebeatDeploymentSpec{
 				Replicas: 1,
 				Resources: &corev1.ResourceRequirements{
 					Requests: corev1.ResourceList{
@@ -267,7 +267,7 @@ func TestBuildStatefulset(t *testing.T) {
 						Effect:   corev1.TaintEffectNoSchedule,
 					},
 				},
-				AntiAffinity: &beatcrd.AntiAffinitySpec{
+				AntiAffinity: &beatcrd.FilebeatAntiAffinitySpec{
 					TopologyKey: "rack",
 					Type:        "hard",
 				},
@@ -294,7 +294,7 @@ func TestBuildStatefulset(t *testing.T) {
 						HostPort:      1234,
 					},
 				},
-				Persistence: &beatcrd.PersistenceSpec{
+				Persistence: &beatcrd.FilebeatPersistenceSpec{
 					VolumeClaimSpec: &corev1.PersistentVolumeClaimSpec{
 						StorageClassName: pointer.String("local-path"),
 						AccessModes: []corev1.PersistentVolumeAccessMode{

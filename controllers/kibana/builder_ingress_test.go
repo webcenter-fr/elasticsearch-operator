@@ -38,8 +38,8 @@ func TestBuildIngress(t *testing.T) {
 			Name:      "test",
 		},
 		Spec: kibanacrd.KibanaSpec{
-			Endpoint: kibanacrd.EndpointSpec{
-				Ingress: &kibanacrd.IngressSpec{
+			Endpoint: kibanacrd.KibanaEndpointSpec{
+				Ingress: &kibanacrd.KibanaIngressSpec{
 					Enabled: false,
 				},
 			},
@@ -56,8 +56,8 @@ func TestBuildIngress(t *testing.T) {
 			Name:      "test",
 		},
 		Spec: kibanacrd.KibanaSpec{
-			Endpoint: kibanacrd.EndpointSpec{
-				Ingress: &kibanacrd.IngressSpec{
+			Endpoint: kibanacrd.KibanaEndpointSpec{
+				Ingress: &kibanacrd.KibanaIngressSpec{
 					Enabled: true,
 					Host:    "my-test.cluster.local",
 				},
@@ -82,8 +82,8 @@ func TestBuildIngress(t *testing.T) {
 			},
 		},
 		Spec: kibanacrd.KibanaSpec{
-			Endpoint: kibanacrd.EndpointSpec{
-				Ingress: &kibanacrd.IngressSpec{
+			Endpoint: kibanacrd.KibanaEndpointSpec{
+				Ingress: &kibanacrd.KibanaIngressSpec{
 					Enabled: true,
 					Host:    "my-test.cluster.local",
 					SecretRef: &v1.LocalObjectReference{

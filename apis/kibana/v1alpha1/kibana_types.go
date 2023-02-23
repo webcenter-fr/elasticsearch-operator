@@ -56,7 +56,7 @@ type KibanaSpec struct {
 	// You can set ingress and / or load balancer
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
 	// +optional
-	Endpoint EndpointSpec `json:"endpoint,omitempty"`
+	Endpoint KibanaEndpointSpec `json:"endpoint,omitempty"`
 
 	// Config is the Kibana config
 	// The key is the file stored on kibana/config
@@ -72,29 +72,29 @@ type KibanaSpec struct {
 	// Tls permit to set the TLS setting for Kibana access
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
 	// +optional
-	Tls TlsSpec `json:"tls,omitempty"`
+	Tls KibanaTlsSpec `json:"tls,omitempty"`
 
 	// Deployment permit to set the deployment settings
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
 	// +optional
-	Deployment DeploymentSpec `json:"deployment,omitempty"`
+	Deployment KibanaDeploymentSpec `json:"deployment,omitempty"`
 
 	// Monitoring permit to monitor current cluster
 	// Default, it not monitor cluster
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
 	// +optional
-	Monitoring MonitoringSpec `json:"monitoring,omitempty"`
+	Monitoring KibanaMonitoringSpec `json:"monitoring,omitempty"`
 }
 
-type MonitoringSpec struct {
+type KibanaMonitoringSpec struct {
 
 	// Prometheus permit to monitor cluster with Prometheus and graphana (via exporter)
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
 	// +optional
-	Prometheus *PrometheusSpec `json:"prometheus,omitempty"`
+	Prometheus *KibanaPrometheusSpec `json:"prometheus,omitempty"`
 }
 
-type PrometheusSpec struct {
+type KibanaPrometheusSpec struct {
 
 	// Enabled permit to enable Prometheus monitoring
 	// It will deploy exporter for Kibana and add podMonitor policy
@@ -112,19 +112,19 @@ type PrometheusSpec struct {
 	Url string `json:"url,omitempty"`
 }
 
-type EndpointSpec struct {
+type KibanaEndpointSpec struct {
 	// Ingress permit to set ingress settings
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
 	// +optional
-	Ingress *IngressSpec `json:"ingress,omitempty"`
+	Ingress *KibanaIngressSpec `json:"ingress,omitempty"`
 
 	// Load balancer permit to set load balancer settings
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
 	// +optional
-	LoadBalancer *LoadBalancerSpec `json:"loadBalancer,omitempty"`
+	LoadBalancer *KibanaLoadBalancerSpec `json:"loadBalancer,omitempty"`
 }
 
-type LoadBalancerSpec struct {
+type KibanaLoadBalancerSpec struct {
 	// Enabled permit to enabled / disabled load balancer
 	// Cloud provider need to support it
 	// Default to false
@@ -134,7 +134,7 @@ type LoadBalancerSpec struct {
 	Enabled bool `json:"enabled,omitempty"`
 }
 
-type IngressSpec struct {
+type KibanaIngressSpec struct {
 
 	// Enabled permit to enabled / disabled ingress
 	// Default to false
@@ -168,7 +168,7 @@ type IngressSpec struct {
 	IngressSpec *networkingv1.IngressSpec `json:"ingressSpec,omitempty"`
 }
 
-type TlsSpec struct {
+type KibanaTlsSpec struct {
 
 	// Enabled permit to enabled TLS on Kibana
 	// Default to false
@@ -180,7 +180,7 @@ type TlsSpec struct {
 	// SelfSignedCertificate permit to set self signed certificate settings
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
 	// +optional
-	SelfSignedCertificate *SelfSignedCertificateSpec `json:"selfSignedCertificate,omitempty"`
+	SelfSignedCertificate *KibanaSelfSignedCertificateSpec `json:"selfSignedCertificate,omitempty"`
 
 	// CertificateSecretRef is the secret that store your custom certificates.
 	// It need to have the following keys: tls.key, tls.crt and optionally ca.crt
@@ -210,7 +210,7 @@ type TlsSpec struct {
 	KeySize *int `json:"keySize,omitempty"`
 }
 
-type SelfSignedCertificateSpec struct {
+type KibanaSelfSignedCertificateSpec struct {
 
 	// AltIps permit to set subject alt names of type ip when generate certificate
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
@@ -223,7 +223,7 @@ type SelfSignedCertificateSpec struct {
 	AltNames []string `json:"altNames:,omitempty"`
 }
 
-type DeploymentSpec struct {
+type KibanaDeploymentSpec struct {
 	// Replicas is the number of replicas
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
 	Replicas int32 `json:"replicas,omitempty"`
@@ -231,7 +231,7 @@ type DeploymentSpec struct {
 	// AntiAffinity permit to set anti affinity policy
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
 	// +optional
-	AntiAffinity *AntiAffinitySpec `json:"antiAffinity,omitempty"`
+	AntiAffinity *KibanaAntiAffinitySpec `json:"antiAffinity,omitempty"`
 
 	// Resources permit to set ressources on Kibana container
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
@@ -290,7 +290,7 @@ type DeploymentSpec struct {
 	InitContainerResources *corev1.ResourceRequirements `json:"initContainerResources,omitempty"`
 }
 
-type AntiAffinitySpec struct {
+type KibanaAntiAffinitySpec struct {
 
 	// Type permit to set anti affinity as soft or hard
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
@@ -329,7 +329,7 @@ type KibanaStatus struct {
 //+kubebuilder:subresource:status
 
 // Kibana is the Schema for the kibanas API
-// +operator-sdk:csv:customresourcedefinitions:resources={{None,None,None}}
+// +operator-sdk:csv:customresourcedefinitions:resources={{Ingress,networking.k8s.io/v1},{ConfigMap,v1},{Service,v1},{Secret,v1},{Deployment,apps/v1},{NetworkPolicy,networking.k8s.io/v1},{PodDisruptionBudget,policy/v1},{PodMonitor,monitoring.coreos.com/v1}}
 // +kubebuilder:printcolumn:name="URL",type="string",JSONPath=".status.url"
 // +kubebuilder:printcolumn:name="Phase",type="string",JSONPath=".status.phase",description="Deployment status"
 // +kubebuilder:printcolumn:name="Error",type="boolean",JSONPath=".status.isOnError",description="Is on error"

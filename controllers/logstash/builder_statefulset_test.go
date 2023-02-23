@@ -38,7 +38,7 @@ func TestBuildStatefulset(t *testing.T) {
 					Name: "test",
 				},
 			},
-			Deployment: logstashcrd.DeploymentSpec{
+			Deployment: logstashcrd.LogstashDeploymentSpec{
 				Replicas: 1,
 			},
 		},
@@ -62,7 +62,7 @@ func TestBuildStatefulset(t *testing.T) {
 			Name:      "test",
 		},
 		Spec: logstashcrd.LogstashSpec{
-			Deployment: logstashcrd.DeploymentSpec{
+			Deployment: logstashcrd.LogstashDeploymentSpec{
 				Replicas: 1,
 			},
 			ElasticsearchRef: shared.ElasticsearchRef{
@@ -89,7 +89,7 @@ func TestBuildStatefulset(t *testing.T) {
 			Name:      "test",
 		},
 		Spec: logstashcrd.LogstashSpec{
-			Deployment: logstashcrd.DeploymentSpec{
+			Deployment: logstashcrd.LogstashDeploymentSpec{
 				Replicas: 1,
 			},
 			ElasticsearchRef: shared.ElasticsearchRef{
@@ -135,7 +135,7 @@ func TestBuildStatefulset(t *testing.T) {
 					Name: "test",
 				},
 			},
-			Deployment: logstashcrd.DeploymentSpec{
+			Deployment: logstashcrd.LogstashDeploymentSpec{
 				Replicas: 1,
 				Resources: &corev1.ResourceRequirements{
 					Requests: corev1.ResourceList{
@@ -169,7 +169,7 @@ func TestBuildStatefulset(t *testing.T) {
 						Effect:   corev1.TaintEffectNoSchedule,
 					},
 				},
-				AntiAffinity: &logstashcrd.AntiAffinitySpec{
+				AntiAffinity: &logstashcrd.LogstashAntiAffinitySpec{
 					TopologyKey: "rack",
 					Type:        "hard",
 				},
@@ -188,7 +188,7 @@ func TestBuildStatefulset(t *testing.T) {
 						},
 					},
 				},
-				Persistence: &logstashcrd.PersistenceSpec{
+				Persistence: &logstashcrd.LogstashPersistenceSpec{
 					VolumeClaimSpec: &corev1.PersistentVolumeClaimSpec{
 						StorageClassName: pointer.String("local-path"),
 						AccessModes: []corev1.PersistentVolumeAccessMode{

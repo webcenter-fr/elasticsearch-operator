@@ -23,7 +23,7 @@ func TestGetSecretNameForTls(t *testing.T) {
 	assert.Equal(t, "test-tls-kb", GetSecretNameForTls(o))
 
 	// When specify TLS secret
-	o.Spec.Tls = kibanacrd.TlsSpec{
+	o.Spec.Tls = kibanacrd.KibanaTlsSpec{
 		CertificateSecretRef: &v1.LocalObjectReference{
 			Name: "my-secret",
 		},
@@ -300,8 +300,8 @@ func TestGetExporterUrl(t *testing.T) {
 		},
 		Spec: kibanacrd.KibanaSpec{
 			Version: "8.0.0",
-			Monitoring: kibanacrd.MonitoringSpec{
-				Prometheus: &kibanacrd.PrometheusSpec{
+			Monitoring: kibanacrd.KibanaMonitoringSpec{
+				Prometheus: &kibanacrd.KibanaPrometheusSpec{
 					Url: "fake",
 				},
 			},

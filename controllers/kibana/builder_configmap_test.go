@@ -51,7 +51,7 @@ node.value2: test`,
 			Name:      "test",
 		},
 		Spec: elasticsearchcrd.ElasticsearchSpec{
-			Tls: elasticsearchcrd.TlsSpec{
+			Tls: elasticsearchcrd.ElasticsearchTlsSpec{
 				Enabled: pointer.Bool(true),
 			},
 		},
@@ -79,7 +79,7 @@ node.value2: test`,
 					Name: "test",
 				},
 			},
-			Tls: kibanacrd.TlsSpec{
+			Tls: kibanacrd.KibanaTlsSpec{
 				Enabled: pointer.Bool(false),
 			},
 			Config: map[string]string{
@@ -95,7 +95,7 @@ node.value2: test`,
 			Name:      "test",
 		},
 		Spec: elasticsearchcrd.ElasticsearchSpec{
-			Tls: elasticsearchcrd.TlsSpec{
+			Tls: elasticsearchcrd.ElasticsearchTlsSpec{
 				Enabled: pointer.Bool(false),
 			},
 		},

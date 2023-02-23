@@ -37,7 +37,7 @@ func TestBuildDeployment(t *testing.T) {
 					Name: "test",
 				},
 			},
-			Deployment: kibanacrd.DeploymentSpec{
+			Deployment: kibanacrd.KibanaDeploymentSpec{
 				Replicas: 1,
 			},
 		},
@@ -61,7 +61,7 @@ func TestBuildDeployment(t *testing.T) {
 			Name:      "test",
 		},
 		Spec: kibanacrd.KibanaSpec{
-			Deployment: kibanacrd.DeploymentSpec{
+			Deployment: kibanacrd.KibanaDeploymentSpec{
 				Replicas: 1,
 			},
 			ElasticsearchRef: shared.ElasticsearchRef{
@@ -88,7 +88,7 @@ func TestBuildDeployment(t *testing.T) {
 			Name:      "test",
 		},
 		Spec: kibanacrd.KibanaSpec{
-			Deployment: kibanacrd.DeploymentSpec{
+			Deployment: kibanacrd.KibanaDeploymentSpec{
 				Replicas: 1,
 			},
 			ElasticsearchRef: shared.ElasticsearchRef{
@@ -134,10 +134,10 @@ func TestBuildDeployment(t *testing.T) {
 					Name: "test",
 				},
 			},
-			Deployment: kibanacrd.DeploymentSpec{
+			Deployment: kibanacrd.KibanaDeploymentSpec{
 				Replicas: 1,
 			},
-			Tls: kibanacrd.TlsSpec{
+			Tls: kibanacrd.KibanaTlsSpec{
 				CertificateSecretRef: &corev1.LocalObjectReference{
 					Name: "api-certificates",
 				},
@@ -181,7 +181,7 @@ func TestBuildDeployment(t *testing.T) {
 					Name: "test",
 				},
 			},
-			Deployment: kibanacrd.DeploymentSpec{
+			Deployment: kibanacrd.KibanaDeploymentSpec{
 				Replicas: 1,
 				Resources: &corev1.ResourceRequirements{
 					Requests: corev1.ResourceList{
@@ -215,7 +215,7 @@ func TestBuildDeployment(t *testing.T) {
 						Effect:   corev1.TaintEffectNoSchedule,
 					},
 				},
-				AntiAffinity: &kibanacrd.AntiAffinitySpec{
+				AntiAffinity: &kibanacrd.KibanaAntiAffinitySpec{
 					TopologyKey: "rack",
 					Type:        "hard",
 				},
@@ -242,8 +242,8 @@ func TestBuildDeployment(t *testing.T) {
 			Config: map[string]string{
 				"log4j.yaml": "my log4j",
 			},
-			Monitoring: kibanacrd.MonitoringSpec{
-				Prometheus: &kibanacrd.PrometheusSpec{
+			Monitoring: kibanacrd.KibanaMonitoringSpec{
+				Prometheus: &kibanacrd.KibanaPrometheusSpec{
 					Enabled: true,
 				},
 			},

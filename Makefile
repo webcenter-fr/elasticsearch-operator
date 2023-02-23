@@ -3,7 +3,8 @@
 # To re-generate a bundle for another specific version without changing the standard setup, you can:
 # - use the VERSION as arg of the bundle target (e.g make bundle VERSION=0.0.2)
 # - use environment variables to overwrite this value (e.g export VERSION=0.0.2)
-VERSION ?= 0.0.1
+VERSION ?= 0.0.5
+PREVIOUS_VERSION ?= 0.0.4
 
 # CHANNELS define the bundle channels used in the bundle.
 # Add a new line here if you would like to change its default config. (E.g CHANNELS = "candidate,fast,stable")
@@ -87,7 +88,7 @@ help: ## Display this help.
 
 .PHONY: manifests
 manifests: controller-gen ## Generate WebhookConfiguration, ClusterRole and CustomResourceDefinition objects.
-	$(CONTROLLER_GEN) rbac:roleName=manager-role crd:generateEmbeddedObjectMeta=true webhook paths="./..." output:crd:artifacts:config=config/crd/bases 
+	$(CONTROLLER_GEN) rbac:roleName=elastic-operator crd:generateEmbeddedObjectMeta=true webhook paths="./..." output:crd:artifacts:config=config/crd/bases 
 
 .PHONY: generate
 generate: controller-gen ## Generate code containing DeepCopy, DeepCopyInto, and DeepCopyObject method implementations.
@@ -113,7 +114,7 @@ test-acc:
 generate-json-schema:
 	curl -L https://raw.githubusercontent.com/yannh/kubeconform/master/scripts/openapi2jsonschema.py -o bin/openapi2jsonschema.py
 	mkdir -p json-schema
-	docker run --rm -ti -v $(PWD):/src -w /src/json-schema -e http_proxy=$(http_proxy) -e https_proxy=$(https_proxy)  -e FILENAME_FORMAT='{kind}-{group}-{version}' python sh -c "pip install pyyaml && python3 ../bin/openapi2jsonschema.py ../config/crd/bases/*.yaml"
+	docker run --rm -ti -v $(PWD):/src -w /src/json-schema -e http_proxy=$(HTTP_PROXY) -e https_proxy=$(HTTPS_PROXY)  -e FILENAME_FORMAT='{kind}-{group}-{version}' python sh -c "pip install pyyaml && python3 ../bin/openapi2jsonschema.py ../config/crd/bases/*.yaml"
 
 ##@ Build
 
@@ -143,7 +144,7 @@ docker-push: ## Push docker image with the manager.
 
 .PHONY:docker-buildx
 docker-buildx: ## Build docker image with the manager.
-	docker buildx build -t ${IMG} . --push --build-arg http_proxy="$(http_proxy)" --build-arg https_proxy="$(https_proxy)"
+	docker buildx build -t ${IMG} . --push --build-arg http_proxy="$(HTTP_PROXY)" --build-arg https_proxy="$(HTTPS_PROXY)" --build-arg commit="$(shell git rev-parse --short HEAD)" --build-arg version="$(shell git symbolic-ref -q --short HEAD || git describe --tags --exact-match)"
 
 ##@ Deployment
 
@@ -203,6 +204,9 @@ $(ENVTEST): $(LOCALBIN)
 
 .PHONY: bundle
 bundle: manifests kustomize ## Generate bundle manifests and metadata, then validate generated files.
+	yq -yi '.spec.version="$(VERSION)"' config/manifests/bases/elasticsearch-operator.clusterserviceversion.yaml
+	yq -yi '.spec.replaces="elasticsearch-operator.v$(PREVIOUS_VERSION)"' config/manifests/bases/elasticsearch-operator.clusterserviceversion.yaml
+	yq -yi '.metadata.name="elasticsearch-operator.v$(VERSION)"' config/manifests/bases/elasticsearch-operator.clusterserviceversion.yaml
 	operator-sdk generate kustomize manifests -q
 	cd config/manager && $(KUSTOMIZE) edit set image controller=$(IMG)
 	$(KUSTOMIZE) build config/manifests | operator-sdk generate bundle $(BUNDLE_GEN_FLAGS)
@@ -218,7 +222,7 @@ bundle-push: ## Push the bundle image.
 
 .PHONY: bundle-buildx
 bundle-buildx: bundle ## Build the bundle image.
-	docker buildx build -f bundle.Dockerfile -t $(BUNDLE_IMG) . --push --build-arg http_proxy="$(http_proxy)" --build-arg https_proxy="$(https_proxy)"
+	docker buildx build -f bundle.Dockerfile -t $(BUNDLE_IMG) . --push --build-arg http_proxy="$(HTTP_PROXY)" --build-arg https_proxy="$(HTTPS_PROXY)"
 
 .PHONY: opm
 OPM = ./bin/opm
@@ -229,7 +233,7 @@ ifeq (,$(shell which opm 2>/dev/null))
 	set -e ;\
 	mkdir -p $(dir $(OPM)) ;\
 	OS=$(shell go env GOOS) && ARCH=$(shell go env GOARCH) && \
-	curl -sSLo $(OPM) https://github.com/operator-framework/operator-registry/releases/download/v1.23.0/$${OS}-$${ARCH}-opm ;\
+	curl -sSLo $(OPM) https://github.com/operator-framework/operator-registry/releases/download/v1.26.3/$${OS}-$${ARCH}-opm ;\
 	chmod +x $(OPM) ;\
 	}
 else
@@ -245,6 +249,7 @@ BUNDLE_IMGS ?= $(BUNDLE_IMG)
 CATALOG_IMG ?= $(IMAGE_TAG_BASE)-catalog:v$(VERSION)
 
 # Set CATALOG_BASE_IMG to an existing catalog image tag to add $BUNDLE_IMGS to that image.
+CATALOG_BASE_IMG ?= $(IMAGE_TAG_BASE)-catalog:v$(PREVIOUS_VERSION)
 ifneq ($(origin CATALOG_BASE_IMG), undefined)
 FROM_INDEX_OPT := --from-index $(CATALOG_BASE_IMG)
 endif
@@ -271,3 +276,6 @@ k8s: ## Start and config k8s cluster to test OLM deployement
 clean-k8s:
 	kind delete cluster
 	docker rm centreon --force
+
+.PHONY: release
+release: generate manifests docker-buildx bundle bundle-buildx catalog-build catalog-push

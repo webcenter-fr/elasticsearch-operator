@@ -58,7 +58,7 @@ func doCreateFilebeatStep() test.TestStep {
 				},
 				Spec: elasticsearchcrd.ElasticsearchSpec{
 					Version: "8.6.0",
-					NodeGroups: []elasticsearchcrd.NodeGroupSpec{
+					NodeGroups: []elasticsearchcrd.ElasticsearchNodeGroupSpec{
 						{
 							Name:     "all",
 							Replicas: 1,
@@ -108,7 +108,7 @@ func doCreateFilebeatStep() test.TestStep {
 							Name: es.Name,
 						},
 					},
-					Deployment: beatcrd.DeploymentSpec{
+					Deployment: beatcrd.FilebeatDeploymentSpec{
 						Replicas: 1,
 					},
 					Config: map[string]string{
@@ -120,7 +120,7 @@ queue.type: persisted
 					Module: map[string]string{
 						"test.conf": "test",
 					},
-					Ingresses: []beatcrd.Ingress{
+					Ingresses: []beatcrd.FilebeatIngress{
 						{
 							Name:                  "syslog",
 							ContainerPort:         601,

@@ -9,4 +9,11 @@ metadata:
     app.kubernetes.io/created-by: bootstrap
   name: snapshotrepository-sample
 spec:
-  # TODO(user): Add fields here
+  elasticsearchRef:
+    managed:
+      name: elasticsearch-sample
+  type: 'fs'
+  settings: |
+    {
+      "location": "/mnt/snapshot"
+    }

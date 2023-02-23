@@ -75,7 +75,16 @@ func NewKibanaReconciler(client client.Client, scheme *runtime.Scheme) *KibanaRe
 //+kubebuilder:rbac:groups=kibana.k8s.webcenter.fr,resources=kibanas,verbs=get;list;watch;create;update;patch;delete
 //+kubebuilder:rbac:groups=kibana.k8s.webcenter.fr,resources=kibanas/status,verbs=get;update;patch
 //+kubebuilder:rbac:groups=kibana.k8s.webcenter.fr,resources=kibanas/finalizers,verbs=update
+//+kubebuilder:rbac:groups="",resources=events,verbs=patch;get;create
+//+kubebuilder:rbac:groups="",resources=pods,verbs=get;list;watch;create;update;patch;delete
 //+kubebuilder:rbac:groups="",resources=configmaps,verbs=get;list;watch;create;update;patch;delete
+//+kubebuilder:rbac:groups="",resources=secrets,verbs=get;list;watch;create;update;patch;delete
+//+kubebuilder:rbac:groups="apps",resources=deployments,verbs=get;list;watch;create;update;patch;delete
+//+kubebuilder:rbac:groups="networking.k8s.io",resources=ingresses,verbs=get;list;watch;create;update;patch;delete
+//+kubebuilder:rbac:groups="",resources=services,verbs=get;list;watch;create;update;patch;delete
+//+kubebuilder:rbac:groups="networking.k8s.io",resources=networkpolicies,verbs=get;list;watch;create;update;patch;delete
+//+kubebuilder:rbac:groups="policy",resources=poddisruptionbudgets,verbs=get;list;watch;create;update;patch;delete
+//+kubebuilder:rbac:groups="monitoring.coreos.com",resources=podmonitors,verbs=get;list;watch;create;update;patch;delete
 
 // Reconcile is part of the main kubernetes reconciliation loop which aims to
 // move the current state of the cluster closer to the desired state.

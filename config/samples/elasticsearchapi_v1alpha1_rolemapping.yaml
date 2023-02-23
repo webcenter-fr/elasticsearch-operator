@@ -9,4 +9,15 @@ metadata:
     app.kubernetes.io/created-by: bootstrap
   name: rolemapping-sample
 spec:
-  # TODO(user): Add fields here
+  elasticsearchRef:
+    managed:
+      name: elasticsearch-sample
+  enabled: true
+  roles:
+    - "monitor"
+  rules: |
+    {
+        "field": {
+          "dn": "CN=nagios,OU=Services,DC=CLUSTER,DC=LOCAL"
+        }
+    }

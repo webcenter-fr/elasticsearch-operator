@@ -58,7 +58,7 @@ func doCreateLogstashStep() test.TestStep {
 				},
 				Spec: elasticsearchcrd.ElasticsearchSpec{
 					Version: "8.6.0",
-					NodeGroups: []elasticsearchcrd.NodeGroupSpec{
+					NodeGroups: []elasticsearchcrd.ElasticsearchNodeGroupSpec{
 						{
 							Name:     "all",
 							Replicas: 1,
@@ -108,7 +108,7 @@ func doCreateLogstashStep() test.TestStep {
 							Name: es.Name,
 						},
 					},
-					Deployment: logstashcrd.DeploymentSpec{
+					Deployment: logstashcrd.LogstashDeploymentSpec{
 						Replicas: 1,
 					},
 					Config: map[string]string{
@@ -123,7 +123,7 @@ queue.type: persisted
 					Pattern: map[string]string{
 						"pattern.conf": "test",
 					},
-					Ingresses: []logstashcrd.Ingress{
+					Ingresses: []logstashcrd.LogstashIngress{
 						{
 							Name:                  "filebeat",
 							ContainerPort:         5003,

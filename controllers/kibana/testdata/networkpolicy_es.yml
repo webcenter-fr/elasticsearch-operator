@@ -14,11 +14,16 @@ spec:
         - podSelector:
             matchLabels:
               cluster: test
+              elasticsearch.k8s.webcenter.fr: true
           namespaceSelector:
             matchLabels:
-              name: elastic
+              kubernetes.io/metadata.name: elastic
       ports:
         - port: 9200
           protocol: TCP
   policyTypes:
     - Egress
+  podSelector:
+    matchLabels:
+      cluster: test
+      kibana.k8s.webcenter.fr: true

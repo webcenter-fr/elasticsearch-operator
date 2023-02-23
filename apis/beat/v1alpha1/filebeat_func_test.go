@@ -28,8 +28,8 @@ func TestIsPrometheusMonitoring(t *testing.T) {
 			Name:      "test",
 		},
 		Spec: FilebeatSpec{
-			Monitoring: MonitoringSpec{
-				Prometheus: &PrometheusSpec{
+			Monitoring: FilebeatMonitoringSpec{
+				Prometheus: &FilebeatPrometheusSpec{
 					Enabled: true,
 				},
 			},
@@ -44,8 +44,8 @@ func TestIsPrometheusMonitoring(t *testing.T) {
 			Name:      "test",
 		},
 		Spec: FilebeatSpec{
-			Monitoring: MonitoringSpec{
-				Prometheus: &PrometheusSpec{
+			Monitoring: FilebeatMonitoringSpec{
+				Prometheus: &FilebeatPrometheusSpec{
 					Enabled: false,
 				},
 			},
@@ -75,8 +75,8 @@ func TestIsPersistence(t *testing.T) {
 			Name:      "test",
 		},
 		Spec: FilebeatSpec{
-			Deployment: DeploymentSpec{
-				Persistence: &PersistenceSpec{},
+			Deployment: FilebeatDeploymentSpec{
+				Persistence: &FilebeatPersistenceSpec{},
 			},
 		},
 	}
@@ -90,8 +90,8 @@ func TestIsPersistence(t *testing.T) {
 			Name:      "test",
 		},
 		Spec: FilebeatSpec{
-			Deployment: DeploymentSpec{
-				Persistence: &PersistenceSpec{
+			Deployment: FilebeatDeploymentSpec{
+				Persistence: &FilebeatPersistenceSpec{
 					VolumeClaimSpec: &v1.PersistentVolumeClaimSpec{},
 				},
 			},
@@ -107,8 +107,8 @@ func TestIsPersistence(t *testing.T) {
 			Name:      "test",
 		},
 		Spec: FilebeatSpec{
-			Deployment: DeploymentSpec{
-				Persistence: &PersistenceSpec{
+			Deployment: FilebeatDeploymentSpec{
+				Persistence: &FilebeatPersistenceSpec{
 					Volume: &v1.VolumeSource{},
 				},
 			},
@@ -120,11 +120,11 @@ func TestIsPersistence(t *testing.T) {
 }
 
 func TestIsManaged(t *testing.T) {
-	var o LogstashRef
+	var o FilebeatLogstashRef
 
 	// When managed
-	o = LogstashRef{
-		ManagedLogstashRef: &LogstashManagedRef{
+	o = FilebeatLogstashRef{
+		ManagedLogstashRef: &FilebeatLogstashManagedRef{
 			Name:          "test",
 			TargetService: "beat",
 		},
@@ -132,22 +132,22 @@ func TestIsManaged(t *testing.T) {
 	assert.True(t, o.IsManaged())
 
 	// When not managed
-	o = LogstashRef{
-		ManagedLogstashRef: &LogstashManagedRef{},
+	o = FilebeatLogstashRef{
+		ManagedLogstashRef: &FilebeatLogstashManagedRef{},
 	}
 	assert.False(t, o.IsManaged())
 
-	o = LogstashRef{}
+	o = FilebeatLogstashRef{}
 	assert.False(t, o.IsManaged())
 
 }
 
 func TestIsExternal(t *testing.T) {
-	var o LogstashRef
+	var o FilebeatLogstashRef
 
 	// When external
-	o = LogstashRef{
-		ExternalLogstashRef: &LogstashExternalRef{
+	o = FilebeatLogstashRef{
+		ExternalLogstashRef: &FilebeatLogstashExternalRef{
 			Addresses: []string{
 				"test",
 			},
@@ -156,12 +156,12 @@ func TestIsExternal(t *testing.T) {
 	assert.True(t, o.IsExternal())
 
 	// When not managed
-	o = LogstashRef{
-		ExternalLogstashRef: &LogstashExternalRef{},
+	o = FilebeatLogstashRef{
+		ExternalLogstashRef: &FilebeatLogstashExternalRef{},
 	}
 	assert.False(t, o.IsExternal())
 
-	o = LogstashRef{}
+	o = FilebeatLogstashRef{}
 	assert.False(t, o.IsExternal())
 
 }

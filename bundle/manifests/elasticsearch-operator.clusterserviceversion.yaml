@@ -1,0 +1,2925 @@
+apiVersion: operators.coreos.com/v1alpha1
+kind: ClusterServiceVersion
+metadata:
+  annotations:
+    alm-examples: |-
+      [
+        {
+          "apiVersion": "elasticsearchapi.k8s.webcenter.fr/v1alpha1",
+          "kind": "Role",
+          "metadata": {
+            "labels": {
+              "app.kubernetes.io/created-by": "bootstrap",
+              "app.kubernetes.io/instance": "role-sample",
+              "app.kubernetes.io/managed-by": "kustomize",
+              "app.kubernetes.io/name": "role",
+              "app.kubernetes.io/part-of": "bootstrap"
+            },
+            "name": "role-sample"
+          },
+          "spec": {
+            "cluster": [
+              "monitor",
+              "read_ilm",
+              "read_slm",
+              "cluster:admin/slm/status",
+              "cluster:admin/snapshot/get"
+            ],
+            "elasticsearchRef": {
+              "managed": {
+                "name": "elasticsearch-sample"
+              }
+            },
+            "indices": [
+              {
+                "names": [
+                  "*"
+                ],
+                "privileges": [
+                  "view_index_metadata",
+                  "monitor"
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "apiVersion": "beat.k8s.webcenter.fr/v1alpha1",
+          "kind": "Filebeat",
+          "metadata": {
+            "labels": {
+              "app.kubernetes.io/created-by": "bootstrap",
+              "app.kubernetes.io/instance": "filebeat-sample",
+              "app.kubernetes.io/managed-by": "kustomize",
+              "app.kubernetes.io/name": "filebeat",
+              "app.kubernetes.io/part-of": "bootstrap"
+            },
+            "name": "filebeat-sample"
+          },
+          "spec": {
+            "config": {
+              "filebeat.yml": "filebeat:\n  shutdown_timeout: 5s\n\n# Logstash settings\noutput.logstash:\n  timeout: 15\n  ssl:\n    enable: false\nlogging:\n  to_stderr: true\n  level: info\n\n# Inputs\nfilebeat.inputs:\n  # syslog\n  - type: syslog\n    format: auto\n    protocol.tcp:\n      host: \"0.0.0.0:5142\"\n    fields_under_root: true\n    fields:\n      event.dataset: \"syslog\"\n      event.module: \"syslog\"\n      service.type: \"syslog\"\n    tags: [\"syslog\"]\n"
+            },
+            "deployment": {
+              "additionalVolumes": [
+                {
+                  "mountPath": "/usr/share/filebeat/certs",
+                  "name": "logstash-certificates",
+                  "secret": {
+                    "secretName": "logstash-certificates"
+                  }
+                }
+              ],
+              "initContainerResources": {
+                "limits": {
+                  "cpu": "500m",
+                  "memory": "256Mi"
+                },
+                "requests": {
+                  "cpu": "25m",
+                  "memory": "64Mi"
+                }
+              },
+              "persistence": {
+                "volumeClaim": {
+                  "accessModes": [
+                    "ReadWriteOnce"
+                  ],
+                  "resources": {
+                    "requests": {
+                      "storage": "5Gi"
+                    }
+                  },
+                  "storageClassName": "local-path"
+                }
+              },
+              "podTemplate": {
+                "metadata": {
+                  "annotations": {
+                    "build_id": "",
+                    "co.elastic.logs.logstash/multiline.match": "after",
+                    "co.elastic.logs.logstash/multiline.negate": "true",
+                    "co.elastic.logs.logstash/multiline.pattern": "^\\{",
+                    "co.elastic.logs.logstash/multiline.timeout": "5s",
+                    "co.elastic.logs.logstash/processors.0.decode_json_fields": "{\"fields\": [\"message\"], \"target\": \"hm.logstash\", \"add_error_key\": true, \"max_depth\": 10}",
+                    "co.elastic.logs.logstash/processors.2.add_fields": "{\"target\": \"\", \"fields\": {\"event\": {\"dataset\": \"logstash\"}, \"service\": {\"type\": \"logstash\"}}}"
+                  }
+                },
+                "spec": {
+                  "containers": []
+                }
+              },
+              "replicas": 1,
+              "resources": {
+                "limits": {
+                  "cpu": "500m",
+                  "memory": "512Mi"
+                },
+                "requests": {
+                  "cpu": "100m",
+                  "memory": "256Mi"
+                }
+              }
+            },
+            "imagePullPolicy": "Always",
+            "logstashRef": {
+              "managed": {
+                "name": "logmanagement-dev",
+                "port": 5003
+              }
+            },
+            "services": [
+              {
+                "name": "syslog",
+                "spec": {
+                  "ports": [
+                    {
+                      "name": "syslog",
+                      "nodePort": 30004,
+                      "port": 5142,
+                      "protocol": "TCP",
+                      "targetPort": 5142
+                    }
+                  ],
+                  "type": "NodePort"
+                }
+              }
+            ],
+            "version": "8.6.0"
+          }
+        },
+        {
+          "apiVersion": "elasticsearch.k8s.webcenter.fr/v1alpha1",
+          "kind": "Elasticsearch",
+          "metadata": {
+            "labels": {
+              "env": "test"
+            },
+            "name": "sample"
+          },
+          "spec": {
+            "endpoint": {
+              "ingress": {
+                "annotations": {
+                  "nginx.ingress.kubernetes.io/proxy-body-size": "512M",
+                  "nginx.ingress.kubernetes.io/proxy-connect-timeout": "600",
+                  "nginx.ingress.kubernetes.io/proxy-read-timeout": "600",
+                  "nginx.ingress.kubernetes.io/proxy-send-timeout": "600",
+                  "nginx.ingress.kubernetes.io/ssl-redirect": "true"
+                },
+                "enabled": true,
+                "host": "elasticsearch.cluster.local",
+                "secretRef": {
+                  "name": "es-tls"
+                }
+              }
+            },
+            "globalNodeGroup": {
+              "additionalVolumes": [
+                {
+                  "mountPath": "/mnt/snapshot",
+                  "name": "snapshot",
+                  "persistentVolumeClaim": {
+                    "claimName": "pvc-elasticsearch-snapshot"
+                  }
+                }
+              ],
+              "antiAffinity": {
+                "topologyKey": "topology.kubernetes.io/zone",
+                "type": "hard"
+              },
+              "config": {
+                "elasticsearch.yml": "action.destructive_requires_name: true\ncluster.routing.allocation.disk.watermark.flood_stage: 1gb\ncluster.routing.allocation.disk.watermark.high: 1gb\ncluster.routing.allocation.disk.watermark.low: 2gb\n\ngateway.expected_data_nodes: 1\ngateway.recover_after_data_nodes: 1\ngateway.recover_after_time: 5m\nhttp.cors.allow-credentials: true\nhttp.cors.allow-headers: X-Requested-With,X-Auth-Token,Content-Type, Content-Length, Authorization\nhttp.cors.allow-origin: /.*/\nhttp.cors.enabled: true\nhttp.max_content_length: 500mb\n\n# Rack awarness\nnode.attr.rack: \"${NODE_RACK}\"\ncluster.routing.allocation.awareness.attributes: rack\npath.repo:\n  - /mnt/snapshot\n\nxpack.security.audit.enabled: true\nxpack.security.audit.logfile.events.exclude:\n  - access_granted\nxpack.security.authc:\n  anonymous:\n    authz_exception: false\n    roles: monitoring\n    username: anonymous_user\n"
+              },
+              "env": [
+                {
+                  "name": "NODE_RACK",
+                  "valueFrom": {
+                    "fieldRef": {
+                      "fieldPath": "spec.nodeName"
+                    }
+                  }
+                }
+              ],
+              "envFrom": [
+                {
+                  "secretRef": {
+                    "name": "es-env"
+                  }
+                }
+              ],
+              "initContainerResources": {
+                "limits": {
+                  "cpu": "500m",
+                  "memory": "256Mi"
+                },
+                "requests": {
+                  "cpu": "25m",
+                  "memory": "64Mi"
+                }
+              },
+              "keystoreSecretRef": {
+                "name": "es-keystore"
+              },
+              "podTemplate": {
+                "metadata": {
+                  "annotations": {
+                    "co.elastic.logs.elasticsearch/multiline.match": "after",
+                    "co.elastic.logs.elasticsearch/multiline.negate": "true",
+                    "co.elastic.logs.elasticsearch/multiline.pattern": "^\\{",
+                    "co.elastic.logs.elasticsearch/multiline.timeout": "5s",
+                    "co.elastic.logs.elasticsearch/processors.0.decode_json_fields": "{\"fields\": [\"message\"], \"target\": \"hm.elasticsearch\", \"add_error_key\": true, \"max_depth\": 10}",
+                    "co.elastic.logs.elasticsearch/processors.2.add_fields": "{\"target\": \"\", \"fields\": {\"event\": {\"dataset\": \"elasticsearch\"}, \"service\": {\"type\": \"elasticsearch\"}}}"
+                  }
+                },
+                "spec": {
+                  "containers": []
+                }
+              }
+            },
+            "licenseSecretRef": {
+              "name": "es-license"
+            },
+            "monitoring": {
+              "prometheus": {
+                "enabled": true
+              }
+            },
+            "nodeGroups": [
+              {
+                "name": "all",
+                "persistence": {
+                  "volumeClaim": {
+                    "accessModes": [
+                      "ReadWriteOnce"
+                    ],
+                    "resources": {
+                      "requests": {
+                        "storage": "20Gi"
+                      }
+                    },
+                    "storageClassName": "local-path"
+                  }
+                },
+                "replicas": 1,
+                "resources": {
+                  "limits": {
+                    "cpu": "1000m",
+                    "memory": "2Gi"
+                  },
+                  "requests": {
+                    "cpu": "250m",
+                    "memory": "2Gi"
+                  }
+                },
+                "roles": [
+                  "master",
+                  "data_hot",
+                  "data_content",
+                  "ingest"
+                ]
+              }
+            ],
+            "setVMMaxMapCount": true,
+            "tls": {
+              "enabled": true,
+              "keySize": 2048,
+              "renewalDays": 60,
+              "validityDays": 360
+            },
+            "version": "8.6.0"
+          }
+        },
+        {
+          "apiVersion": "elasticsearchapi.k8s.webcenter.fr/v1alpha1",
+          "kind": "ComponentTemplate",
+          "metadata": {
+            "labels": {
+              "app.kubernetes.io/created-by": "bootstrap",
+              "app.kubernetes.io/instance": "componenttemplate-sample",
+              "app.kubernetes.io/managed-by": "kustomize",
+              "app.kubernetes.io/name": "componenttemplate",
+              "app.kubernetes.io/part-of": "bootstrap"
+            },
+            "name": "componenttemplate-sample"
+          },
+          "spec": {
+            "elasticsearchRef": {
+              "managed": {
+                "name": "elasticsearch-sample"
+              }
+            },
+            "name": "custom-log",
+            "settings": "{\n    \"index.number_of_shards\": 3,\n    \"index.number_of_replicas\": 1\n}\n"
+          }
+        },
+        {
+          "apiVersion": "elasticsearchapi.k8s.webcenter.fr/v1alpha1",
+          "kind": "IndexLifecyclePolicy",
+          "metadata": {
+            "labels": {
+              "app.kubernetes.io/created-by": "bootstrap",
+              "app.kubernetes.io/instance": "indexlifecyclepolicy-sample",
+              "app.kubernetes.io/managed-by": "kustomize",
+              "app.kubernetes.io/name": "indexlifecyclepolicy",
+              "app.kubernetes.io/part-of": "bootstrap"
+            },
+            "name": "indexlifecyclepolicy-sample"
+          },
+          "spec": {
+            "elasticsearchRef": {
+              "managed": {
+                "name": "elasticsearch-sample"
+              }
+            },
+            "policy": "{\n    \"policy\": {\n        \"phases\": {\n            \"delete\": {\n                \"min_age\": \"7d\",\n                \"actions\": {\n                    \"delete\": {}\n                }\n            }\n        }\n    }\n}\n"
+          }
+        },
+        {
+          "apiVersion": "elasticsearchapi.k8s.webcenter.fr/v1alpha1",
+          "kind": "IndexTemplate",
+          "metadata": {
+            "labels": {
+              "app.kubernetes.io/created-by": "bootstrap",
+              "app.kubernetes.io/instance": "indextemplate-sample",
+              "app.kubernetes.io/managed-by": "kustomize",
+              "app.kubernetes.io/name": "indextemplate",
+              "app.kubernetes.io/part-of": "bootstrap"
+            },
+            "name": "indextemplate-sample"
+          },
+          "spec": {
+            "composedOf": [
+              "ecs_agent",
+              "ecs-base"
+            ],
+            "elasticsearchRef": {
+              "managed": {
+                "name": "elasticsearch-sample"
+              }
+            },
+            "indexPatterns": [
+              "ecs-*"
+            ],
+            "name": "custom-template",
+            "priority": 100
+          }
+        },
+        {
+          "apiVersion": "elasticsearchapi.k8s.webcenter.fr/v1alpha1",
+          "kind": "License",
+          "metadata": {
+            "labels": {
+              "app.kubernetes.io/created-by": "bootstrap",
+              "app.kubernetes.io/instance": "license-sample",
+              "app.kubernetes.io/managed-by": "kustomize",
+              "app.kubernetes.io/name": "license",
+              "app.kubernetes.io/part-of": "bootstrap"
+            },
+            "name": "license-sample"
+          },
+          "spec": {
+            "elasticsearchRef": {
+              "managed": {
+                "name": "elasticsearch-sample"
+              }
+            },
+            "secretRef": {
+              "name": "license"
+            }
+          }
+        },
+        {
+          "apiVersion": "elasticsearchapi.k8s.webcenter.fr/v1alpha1",
+          "kind": "RoleMapping",
+          "metadata": {
+            "labels": {
+              "app.kubernetes.io/created-by": "bootstrap",
+              "app.kubernetes.io/instance": "rolemapping-sample",
+              "app.kubernetes.io/managed-by": "kustomize",
+              "app.kubernetes.io/name": "rolemapping",
+              "app.kubernetes.io/part-of": "bootstrap"
+            },
+            "name": "rolemapping-sample"
+          },
+          "spec": {
+            "elasticsearchRef": {
+              "managed": {
+                "name": "elasticsearch-sample"
+              }
+            },
+            "enabled": true,
+            "roles": [
+              "monitor"
+            ],
+            "rules": "{\n    \"field\": {\n      \"dn\": \"CN=nagios,OU=Services,DC=CLUSTER,DC=LOCAL\"\n    }\n}\n"
+          }
+        },
+        {
+          "apiVersion": "elasticsearchapi.k8s.webcenter.fr/v1alpha1",
+          "kind": "SnapshotLifecyclePolicy",
+          "metadata": {
+            "labels": {
+              "app.kubernetes.io/created-by": "bootstrap",
+              "app.kubernetes.io/instance": "snapshotlifecyclepolicy-sample",
+              "app.kubernetes.io/managed-by": "kustomize",
+              "app.kubernetes.io/name": "snapshotlifecyclepolicy",
+              "app.kubernetes.io/part-of": "bootstrap"
+            },
+            "name": "snapshotlifecyclepolicy-sample"
+          },
+          "spec": {
+            "config": {
+              "ignoreUnavailable": false,
+              "includeGlobalState": false,
+              "indices": [
+                ".kibana_*"
+              ]
+            },
+            "elasticsearchRef": {
+              "managed": {
+                "name": "elasticsearch-sample"
+              }
+            },
+            "name": "\u003cdaily-snap-{now/d}\u003e",
+            "repository": "snapshot",
+            "retention": {
+              "expireAfter": "7d",
+              "maxCount": 10,
+              "minCount": 5
+            },
+            "schedule": "0 30 1 * * ?"
+          }
+        },
+        {
+          "apiVersion": "elasticsearchapi.k8s.webcenter.fr/v1alpha1",
+          "kind": "SnapshotRepository",
+          "metadata": {
+            "labels": {
+              "app.kubernetes.io/created-by": "bootstrap",
+              "app.kubernetes.io/instance": "snapshotrepository-sample",
+              "app.kubernetes.io/managed-by": "kustomize",
+              "app.kubernetes.io/name": "snapshotrepository",
+              "app.kubernetes.io/part-of": "bootstrap"
+            },
+            "name": "snapshotrepository-sample"
+          },
+          "spec": {
+            "elasticsearchRef": {
+              "managed": {
+                "name": "elasticsearch-sample"
+              }
+            },
+            "settings": "{\n  \"location\": \"/mnt/snapshot\"\n}\n",
+            "type": "fs"
+          }
+        },
+        {
+          "apiVersion": "elasticsearchapi.k8s.webcenter.fr/v1alpha1",
+          "kind": "User",
+          "metadata": {
+            "labels": {
+              "app.kubernetes.io/created-by": "bootstrap",
+              "app.kubernetes.io/instance": "user-sample",
+              "app.kubernetes.io/managed-by": "kustomize",
+              "app.kubernetes.io/name": "user",
+              "app.kubernetes.io/part-of": "bootstrap"
+            },
+            "name": "user-sample"
+          },
+          "spec": {
+            "elasticsearchRef": {
+              "managed": {
+                "name": "elasticsearch-sample"
+              }
+            },
+            "enabled": true,
+            "isProtected": true,
+            "secretRef": {
+              "key": "kibana_system",
+              "name": "credential"
+            },
+            "username": "kibana_system"
+          }
+        },
+        {
+          "apiVersion": "elasticsearchapi.k8s.webcenter.fr/v1alpha1",
+          "kind": "Watch",
+          "metadata": {
+            "labels": {
+              "app.kubernetes.io/created-by": "bootstrap",
+              "app.kubernetes.io/instance": "watch-sample",
+              "app.kubernetes.io/managed-by": "kustomize",
+              "app.kubernetes.io/name": "watch",
+              "app.kubernetes.io/part-of": "bootstrap"
+            },
+            "name": "watch-sample"
+          },
+          "spec": {
+            "actions": "{\n  \"email_admin\" : {\n    \"email\" : {\n      \"to\" : \"admin@domain.host.com\",\n      \"subject\" : \"404 recently encountered\"\n    }\n  }\n}\n",
+            "condition": "{\n  \"compare\" : { \"ctx.payload.hits.total\" : { \"gt\" : 0 }}\n}\n",
+            "elasticsearchRef": {
+              "managed": {
+                "name": "elasticsearch-sample"
+              }
+            },
+            "input": "{\n  \"search\" : {\n    \"request\" : {\n      \"indices\" : [\n        \"logstash*\"\n      ],\n      \"body\" : {\n        \"query\" : {\n          \"bool\" : {\n            \"must\" : {\n              \"match\": {\n                \"response\": 404\n              }\n            },\n            \"filter\" : {\n              \"range\": {\n                \"@timestamp\": {\n                  \"from\": \"{{ctx.trigger.scheduled_time}}||-5m\",\n                  \"to\": \"{{ctx.trigger.triggered_time}}\"\n                }\n              }\n            }\n          }\n        }\n      }\n    }\n  }\n}\n",
+            "name": "custom-watch",
+            "trigger": "{\n  \"schedule\" : { \"cron\" : \"0 0/1 * * * ?\" }\n}\n"
+          }
+        },
+        {
+          "apiVersion": "kibana.k8s.webcenter.fr/v1alpha1",
+          "kind": "Kibana",
+          "metadata": {
+            "labels": {
+              "env": "test"
+            },
+            "name": "sample"
+          },
+          "spec": {
+            "config": {
+              "kibana.yml": "elasticsearch.requestTimeout: 300000\nunifiedSearch.autocomplete.valueSuggestions.timeout: 3000\nxpack.reporting.roles.enabled: false\n"
+            },
+            "deployment": {
+              "initContainerResources": {
+                "limits": {
+                  "cpu": "500m",
+                  "memory": "256Mi"
+                },
+                "requests": {
+                  "cpu": "25m",
+                  "memory": "64Mi"
+                }
+              },
+              "node": "--max-old-space-size=2048",
+              "podTemplate": {
+                "metadata": {
+                  "annotations": {
+                    "co.elastic.logs.kibana/multiline.match": "after",
+                    "co.elastic.logs.kibana/multiline.negate": "true",
+                    "co.elastic.logs.kibana/multiline.pattern": "^\\{",
+                    "co.elastic.logs.kibana/multiline.timeout": "5s",
+                    "co.elastic.logs.kibana/processors.0.decode_json_fields": "{\"fields\": [\"message\"], \"target\": \"hm.kibana\", \"add_error_key\": true, \"max_depth\": 10}",
+                    "co.elastic.logs.kibana/processors.2.add_fields": "{\"target\": \"\", \"fields\": {\"event\": {\"dataset\": \"kibana\"}, \"service\": {\"type\": \"kibana\"}}}"
+                  }
+                },
+                "spec": {
+                  "containers": []
+                }
+              },
+              "replicas": 1,
+              "resources": {
+                "limits": {
+                  "cpu": "1",
+                  "memory": "1Gi"
+                },
+                "requests": {
+                  "cpu": "250m",
+                  "memory": "512Mi"
+                }
+              }
+            },
+            "elasticsearchRef": {
+              "managed": {
+                "name": "elasticsearch-sample"
+              }
+            },
+            "endpoint": {
+              "ingress": {
+                "annotations": {
+                  "nginx.ingress.kubernetes.io/proxy-body-size": "4G",
+                  "nginx.ingress.kubernetes.io/proxy-connect-timeout": "600",
+                  "nginx.ingress.kubernetes.io/proxy-read-timeout": "600",
+                  "nginx.ingress.kubernetes.io/proxy-send-timeout": "600",
+                  "nginx.ingress.kubernetes.io/ssl-redirect": "true"
+                },
+                "enabled": true,
+                "host": "kibana.cluster.local",
+                "secretRef": {
+                  "name": "kb-tls"
+                }
+              }
+            },
+            "keystoreSecretRef": {
+              "name": "kb-keystore"
+            },
+            "monitoring": {
+              "prometheus": {
+                "enabled": true
+              }
+            },
+            "tls": {
+              "enabled": true,
+              "keySize": 2048,
+              "renewalDays": 60,
+              "validityDays": 360
+            },
+            "version": "8.6.0"
+          }
+        },
+        {
+          "apiVersion": "logstash.k8s.webcenter.fr/v1alpha1",
+          "kind": "Logstash",
+          "metadata": {
+            "labels": {
+              "app.kubernetes.io/created-by": "bootstrap",
+              "app.kubernetes.io/instance": "logstash-sample",
+              "app.kubernetes.io/managed-by": "kustomize",
+              "app.kubernetes.io/name": "logstash",
+              "app.kubernetes.io/part-of": "bootstrap"
+            },
+            "name": "logstash-sample"
+          },
+          "spec": {
+            "config": {
+              "logstash.yml": "pipeline.workers: 2\nqueue.type: persisted\nqueue.max_bytes: 5gb\nxpack.monitoring.enabled: false\nlog.format: json\ndead_letter_queue.enable: true\n",
+              "pipelines.yml": "- pipeline.id: \"logs\"\n  path.config: \"/usr/share/logstash/pipeline/logs/src/*.conf\"\n  pipeline.ecs_compatibility: v1\n"
+            },
+            "deployment": {
+              "additionalVolumes": [
+                {
+                  "mountPath": "/usr/share/logstash/certs",
+                  "name": "logstash-certificates",
+                  "secret": {
+                    "secretName": "logstash-certificates"
+                  }
+                }
+              ],
+              "envFrom": [
+                {
+                  "secretRef": {
+                    "name": "logstash-credentials"
+                  }
+                }
+              ],
+              "initContainerResources": {
+                "limits": {
+                  "cpu": "500m",
+                  "memory": "256Mi"
+                },
+                "requests": {
+                  "cpu": "25m",
+                  "memory": "64Mi"
+                }
+              },
+              "jvm": "-Xmx1g -Xms1g",
+              "persistence": {
+                "volumeClaim": {
+                  "accessModes": [
+                    "ReadWriteOnce"
+                  ],
+                  "resources": {
+                    "requests": {
+                      "storage": "5Gi"
+                    }
+                  },
+                  "storageClassName": "local-path"
+                }
+              },
+              "podTemplate": {
+                "metadata": {
+                  "annotations": {
+                    "build_id": "",
+                    "co.elastic.logs.logstash/multiline.match": "after",
+                    "co.elastic.logs.logstash/multiline.negate": "true",
+                    "co.elastic.logs.logstash/multiline.pattern": "^\\{",
+                    "co.elastic.logs.logstash/multiline.timeout": "5s",
+                    "co.elastic.logs.logstash/processors.0.decode_json_fields": "{\"fields\": [\"message\"], \"target\": \"hm.logstash\", \"add_error_key\": true, \"max_depth\": 10}",
+                    "co.elastic.logs.logstash/processors.2.add_fields": "{\"target\": \"\", \"fields\": {\"event\": {\"dataset\": \"logstash\"}, \"service\": {\"type\": \"logstash\"}}}"
+                  }
+                },
+                "spec": {
+                  "containers": []
+                }
+              },
+              "replicas": 1,
+              "resources": {
+                "limits": {
+                  "cpu": "1000m",
+                  "memory": "1300Mi"
+                },
+                "requests": {
+                  "cpu": "250m",
+                  "memory": "1Gi"
+                }
+              }
+            },
+            "elasticsearchRef": {
+              "managed": {
+                "name": "elasticsearch-sample"
+              }
+            },
+            "services": [
+              {
+                "name": "beat",
+                "spec": {
+                  "ports": [
+                    {
+                      "name": "beats",
+                      "nodePort": 30002,
+                      "port": 5003,
+                      "protocol": "TCP",
+                      "targetPort": 5003
+                    }
+                  ],
+                  "type": "NodePort"
+                }
+              }
+            ],
+            "version": "8.6.0"
+          }
+        }
+      ]
+    capabilities: Basic Install
+    createdAt: "2023-02-22T15:52:58Z"
+    operators.operatorframework.io/builder: operator-sdk-v1.26.1
+    operators.operatorframework.io/project_layout: go.kubebuilder.io/v3
+  name: elasticsearch-operator.v0.0.5
+  namespace: placeholder
+spec:
+  apiservicedefinitions: {}
+  customresourcedefinitions:
+    owned:
+    - description: ComponentTemplate is the Schema for the componenttemplates API
+      displayName: Component Template
+      kind: ComponentTemplate
+      name: componenttemplates.elasticsearchapi.k8s.webcenter.fr
+      resources:
+      - kind: None
+        name: None
+        version: None
+      specDescriptors:
+      - description: Aliases is the component aliases
+        displayName: Aliases
+        path: aliases
+      - description: ElasticsearchRef is the Elasticsearch ref to connect on.
+        displayName: Elasticsearch Ref
+        path: elasticsearchRef
+      - description: 'ElasticsearchCaSecretRef is the secret that store your custom
+          CA certificate to connect on Elasticsearch API. It need to have the following
+          keys: ca.crt'
+        displayName: Elasticsearch Ca Secret Ref
+        path: elasticsearchRef.elasticsearchCASecretRef
+      - description: ExternalElasticsearchRef is the external Elasticsearch cluster
+          not managed by operator
+        displayName: External Elasticsearch Ref
+        path: elasticsearchRef.external
+      - description: Mappings is the component mapping
+        displayName: Mappings
+        path: mappings
+      - description: Name is the custom component template name If empty, it use the
+          ressource name
+        displayName: Name
+        path: name
+      - description: Settings is the component setting
+        displayName: Settings
+        path: settings
+      statusDescriptors:
+      - description: List of conditions
+        displayName: Conditions
+        path: conditions
+      - description: OriginalObject is the original object used on 3 way diff merge
+        displayName: Original Object
+        path: originalObject
+      - description: Sync
+        displayName: Sync
+        path: sync
+      version: v1alpha1
+    - description: Elasticsearch is the Schema for the elasticsearchs API
+      displayName: Elasticsearch
+      kind: Elasticsearch
+      name: elasticsearches.elasticsearch.k8s.webcenter.fr
+      resources:
+      - kind: ConfigMap
+        name: ""
+        version: v1
+      - kind: Deployment
+        name: ""
+        version: apps/v1
+      - kind: Ingress
+        name: ""
+        version: networking.k8s.io/v1
+      - kind: License
+        name: ""
+        version: elasticsearchapi.k8s.webcenter.fr/v1alpha1
+      - kind: NetworkPolicy
+        name: ""
+        version: networking.k8s.io/v1
+      - kind: PodDisruptionBudget
+        name: ""
+        version: policy/v1
+      - kind: PodMonitor
+        name: ""
+        version: monitoring.coreos.com/v1
+      - kind: Secret
+        name: ""
+        version: v1
+      - kind: Service
+        name: ""
+        version: v1
+      - kind: StatefulSet
+        name: ""
+        version: apps/v1
+      - kind: User
+        name: ""
+        version: elasticsearchapi.k8s.webcenter.fr/v1alpha1
+      specDescriptors:
+      - description: Endpoint permit to set endpoints to access on Elasticsearch from
+          external kubernetes You can set ingress and / or load balancer
+        displayName: Endpoint
+        path: endpoint
+      - description: Ingress permit to set ingress settings
+        displayName: Ingress
+        path: endpoint.ingress
+      - description: Annotations to set in ingress
+        displayName: Annotations
+        path: endpoint.ingress.annotations
+      - description: Enabled permit to enabled / disabled ingress Default to false
+        displayName: Enabled
+        path: endpoint.ingress.enabled
+      - description: Host is the hostname to access on Elasticsearch
+        displayName: Host
+        path: endpoint.ingress.host
+      - description: IngressSpec it merge with expected ingress spec
+        displayName: Ingress Spec
+        path: endpoint.ingress.ingressSpec
+      - description: Labels to set in ingress
+        displayName: Labels
+        path: endpoint.ingress.labels
+      - description: SecretRef is the secret ref that store certificates
+        displayName: Secret Ref
+        path: endpoint.ingress.secretRef
+      - description: TargetNodeGroupName permit to define if specific node group is
+          responsible to receive external access, like ingest nodes
+        displayName: Target Node Group Name
+        path: endpoint.ingress.targetNodeGroupName
+      - description: Load balancer permit to set load balancer settings
+        displayName: Load Balancer
+        path: endpoint.loadBalancer
+      - description: Enabled permit to enabled / disabled load balancer Cloud provider
+          need to support it Default to false
+        displayName: Enabled
+        path: endpoint.loadBalancer.enabled
+      - description: TargetNodeGroupName permit to define if specific node group is
+          responsible to receive external access, like ingest nodes
+        displayName: Target Node Group Name
+        path: endpoint.loadBalancer.targetNodeGroupName
+      - description: GlobalNodeGroup permit to set some default parameters for each
+          node groups
+        displayName: Global Node Group
+        path: globalNodeGroup
+      - description: AdditionalVolumes permit to use additionnal volumes Default is
+          empty
+        displayName: Additional Volumes
+        path: globalNodeGroup.additionalVolumes
+      - description: Name is the volume name
+        displayName: Name
+        path: globalNodeGroup.additionalVolumes[0].name
+      - description: Annotations permit to set annotation on containers
+        displayName: Annotations
+        path: globalNodeGroup.annotations
+      - description: AntiAffinity permit to set anti affinity policy
+        displayName: Anti Affinity
+        path: globalNodeGroup.antiAffinity
+      - description: Type permit to set anti affinity as soft or hard
+        displayName: Type
+        path: globalNodeGroup.antiAffinity.type
+      - description: Config is the Elasticsearch config dedicated for this node groups
+          like roles The key is the file stored on elasticsearch/config
+        displayName: Config
+        path: globalNodeGroup.config
+      - description: Env permit to set some environment variable on containers
+        displayName: Env
+        path: globalNodeGroup.env
+      - description: EnvFrom permit to set some environment variable from config map
+          or secret
+        displayName: Env From
+        path: globalNodeGroup.envFrom
+      - description: InitContainerResources permit to set resources on init containers
+        displayName: Init Container Resources
+        path: globalNodeGroup.initContainerResources
+      - description: Jvm permit to set extra option on JVM like memory or proxy to
+          download plugins Becarefull with memory, not forget to set the right ressource
+          on pod
+        displayName: Jvm
+        path: globalNodeGroup.jvm
+      - description: KeystoreSecretRef is the secret that store the security settings
+        displayName: Keystore Secret Ref
+        path: globalNodeGroup.keystoreSecretRef
+      - description: Labels permit to set labels on containers
+        displayName: Labels
+        path: globalNodeGroup.labels
+      - description: PodDisruptionBudget is the pod disruption budget policy
+        displayName: Pod Disruption Budget Spec
+        path: globalNodeGroup.podDisruptionBudget
+      - description: PodTemplate is merged with expected pod It usefull to add some
+          extra properties on pod spec
+        displayName: Pod Template
+        path: globalNodeGroup.podTemplate
+      - description: Image is the image to use when deploy Elasticsearch It can be
+          usefull to use internal registry or mirror
+        displayName: Image
+        path: image
+      - description: ImagePullPolicy is the image pull policy to use
+        displayName: Image Pull Policy
+        path: imagePullPolicy
+      - description: ImagePullSecrets is the image pull secrets to use
+        displayName: Image Pull Secrets
+        path: imagePullSecrets
+      - description: LicenseSecretRef permit to set secret that contain Elasticsearch
+          license on key `license`
+        displayName: License Secret Ref
+        path: licenseSecretRef
+      - description: Monitoring permit to monitor current cluster Default, it not
+          monitor cluster
+        displayName: Monitoring
+        path: monitoring
+      - description: Prometheus permit to monitor cluster with Prometheus en graphana
+          (via exporter)
+        displayName: Prometheus
+        path: monitoring.prometheus
+      - description: Enabled permit to enable Prometheus monitoring It will deploy
+          exporter for Elasticsearch and add podMonitor policy Default to false
+        displayName: Enabled
+        path: monitoring.prometheus.enabled
+      - description: Image is the image to use when deploy Elasticsearch It can be
+          usefull to use internal registry or mirror
+        displayName: Image
+        path: monitoring.prometheus.image
+      - description: ImagePullPolicy is the image pull policy to use
+        displayName: Image Pull Policy
+        path: monitoring.prometheus.imagePullPolicy
+      - description: ImagePullSecrets is the image pull secrets to use
+        displayName: Image Pull Secrets
+        path: monitoring.prometheus.imagePullSecrets
+      - description: Version is the exporter version to use Default is use the latest
+        displayName: Version
+        path: monitoring.prometheus.version
+      - description: NodeGroups permit to groups node per use case For exemple master,
+          data and ingest
+        displayName: Node Groups
+        path: nodeGroups
+      - description: Annotations permit to set annotation on containers
+        displayName: Annotations
+        path: nodeGroups[0].annotations
+      - description: AntiAffinity permit to set anti affinity policy
+        displayName: Anti Affinity
+        path: nodeGroups[0].antiAffinity
+      - description: Type permit to set anti affinity as soft or hard
+        displayName: Type
+        path: nodeGroups[0].antiAffinity.type
+      - description: Config is the Elasticsearch config dedicated for this node groups
+          The key is the file stored on elasticsearch/config
+        displayName: Config
+        path: nodeGroups[0].config
+      - description: Env permit to set some environment variable on containers
+        displayName: Env
+        path: nodeGroups[0].env
+      - description: EnvFrom permit to set some environment variable from config map
+          or secret
+        displayName: Env From
+        path: nodeGroups[0].envFrom
+      - description: Jvm permit to set extra option on JVM like Xmx, Xms
+        displayName: Jvm
+        path: nodeGroups[0].jvm
+      - description: Labels permit to set labels on containers
+        displayName: Labels
+        path: nodeGroups[0].labels
+      - description: Name is the the node group name
+        displayName: Name
+        path: nodeGroups[0].name
+      - description: NodeSelector permit to set node selector on pod
+        displayName: Node Selector
+        path: nodeGroups[0].nodeSelector
+      - description: Persistence is the spec to persist data
+        displayName: Persistence
+        path: nodeGroups[0].persistence
+      - description: VolumeClaim is the persistent volume claim spec use by statefullset
+        displayName: Volume Claim Spec
+        path: nodeGroups[0].persistence.volumeClaim
+      - description: PodDisruptionBudget is the pod disruption budget policy
+        displayName: Pod Disruption Budget Spec
+        path: nodeGroups[0].podDisruptionBudget
+      - description: PodTemplate is merged with expected pod It usefull to add some
+          extra properties on pod spec
+        displayName: Pod Template
+        path: nodeGroups[0].podTemplate
+      - description: Replicas is the number of replicas
+        displayName: Replicas
+        path: nodeGroups[0].replicas
+      - description: Resources permit to set ressources on Elasticsearch container
+        displayName: Resources
+        path: nodeGroups[0].resources
+      - description: Roles is the list of Elasticsearch roles
+        displayName: Roles
+        path: nodeGroups[0].roles
+      - description: Tolerations permit to set toleration on pod
+        displayName: Tolerations
+        path: nodeGroups[0].tolerations
+      - description: WaitClusterStatus permit to wait the cluster state on readyness
+          probe Default to green
+        displayName: Wait Cluster Status
+        path: nodeGroups[0].waitClusterStatus
+      - description: PluginsList is the list of additionnal plugin to install on each
+          Elasticsearch node Default is empty
+        displayName: Plugins List
+        path: pluginsList
+      - description: SetVMMaxMapCount permit to set the right value for VMMaxMapCount
+          on node It need to run pod as root with privileged option Default is true
+        displayName: Set VMMax Map Count
+        path: setVMMaxMapCount
+      - description: Tls permit to set the TLS setting for API access
+        displayName: Tls
+        path: tls
+      - description: 'CertificateSecretRef is the secret that store your custom certificates.
+          It need to have the following keys: tls.key, tls.crt and optionally ca.crt'
+        displayName: Certificate Secret Ref
+        path: tls.certificateSecretRef
+      - description: Enabled permit to enabled TLS on API Default true
+        displayName: Enabled
+        path: tls.enabled
+      - description: KeySize is the key size when generate privates keys Default to
+          2048
+        displayName: Key Size
+        path: tls.keySize
+      - description: RenewalDays is the number of days before certificate expire to
+          become effective renewal Default to 30
+        displayName: Renewal Days
+        path: tls.renewalDays
+      - description: SelfSignedCertificate permit to set self signed certificate settings
+        displayName: Self Signed Certificate
+        path: tls.selfSignedCertificate
+      - description: AltIps permit to set subject alt names of type ip when generate
+          certificate
+        displayName: Alt Ips
+        path: 'tls.selfSignedCertificate.altIPs:'
+      - description: AltNames permit to set subject alt names of type dns when generate
+          certificate
+        displayName: Alt Names
+        path: 'tls.selfSignedCertificate.altNames:'
+      - description: ValidityDays is the number of days that certificates are valid
+          Default to 365
+        displayName: Validity Days
+        path: tls.validityDays
+      - description: Version is the Elasticsearch version to use Default is use the
+          latest
+        displayName: Version
+        path: version
+      statusDescriptors:
+      - description: List of conditions
+        displayName: Conditions
+        path: conditions
+      - description: CredentialsRef is the secret that store the credentials to access
+          on Elasticsearch
+        displayName: Credentials Ref
+        path: credentialsRef
+      - description: Health is the cluster health
+        displayName: Health
+        path: health
+      - description: IsError is true if controller is stuck on Error
+        displayName: Is Error
+        path: isOnError
+      - description: Phase is the current cluster deployment phase
+        displayName: Phase
+        path: phase
+      - description: Url is the Elasticsearch endpoint
+        displayName: Url
+        path: url
+      version: v1alpha1
+    - description: Filebeat is the Schema for the filebeats API
+      displayName: Filebeat
+      kind: Filebeat
+      name: filebeats.beat.k8s.webcenter.fr
+      resources:
+      - kind: ConfigMap
+        name: ""
+        version: v1
+      - kind: Ingress
+        name: ""
+        version: networking.k8s.io/v1
+      - kind: NetworkPolicy
+        name: ""
+        version: networking.k8s.io/v1
+      - kind: PodDisruptionBudget
+        name: ""
+        version: policy/v1
+      - kind: Secret
+        name: ""
+        version: v1
+      - kind: Service
+        name: ""
+        version: v1
+      - kind: StatefulSet
+        name: ""
+        version: apps/v1
+      specDescriptors:
+      - description: Config is the Filebeat config The key is the file stored on filebeat
+        displayName: Config
+        path: config
+      - description: Deployment permit to set the deployment settings
+        displayName: Deployment
+        path: deployment
+      - description: AdditionalVolumes permit to use additionnal volumes Default is
+          empty
+        displayName: Additional Volumes
+        path: deployment.additionalVolumes
+      - description: Name is the volume name
+        displayName: Name
+        path: deployment.additionalVolumes[0].name
+      - description: Annotations permit to set annotation on deployment
+        displayName: Annotations
+        path: deployment.annotations
+      - description: AntiAffinity permit to set anti affinity policy
+        displayName: Anti Affinity
+        path: deployment.antiAffinity
+      - description: Type permit to set anti affinity as soft or hard
+        displayName: Type
+        path: deployment.antiAffinity.type
+      - description: Env permit to set some environment variable on containers
+        displayName: Env
+        path: deployment.env
+      - description: EnvFrom permit to set some environment variable from config map
+          or secret
+        displayName: Env From
+        path: deployment.envFrom
+      - description: InitContainerResources permit to set resources on init containers
+        displayName: Init Container Resources
+        path: deployment.initContainerResources
+      - description: Node permit to set extra option on Node process
+        displayName: Jvm
+        path: deployment.jvm
+      - description: Labels permit to set labels on containers
+        displayName: Labels
+        path: deployment.labels
+      - description: NodeSelector permit to set node selector on pod
+        displayName: Node Selector
+        path: deployment.nodeSelector
+      - description: Persistence is the spec to persist data Default is emptyDir
+        displayName: Persistence
+        path: deployment.persistence
+      - description: VolumeClaim is the persistent volume claim spec use by statefullset
+        displayName: Volume Claim Spec
+        path: deployment.persistence.volumeClaim
+      - description: PodDisruptionBudget is the pod disruption budget policy
+        displayName: Pod Disruption Budget Spec
+        path: deployment.podDisruptionBudget
+      - description: PodSpec is merged with expected pod It usefull to add some extra
+          properties on pod spec
+        displayName: Pod Template
+        path: deployment.podTemplate
+      - description: Ports is the list of container port to affect on filebeat container
+          It can be usefull to expose syslog input
+        displayName: Ports
+        path: deployment.ports
+      - description: Replicas is the number of replicas
+        displayName: Replicas
+        path: deployment.replicas
+      - description: Resources permit to set ressources on container
+        displayName: Resources
+        path: deployment.resources
+      - description: Tolerations permit to set toleration on pod
+        displayName: Tolerations
+        path: deployment.tolerations
+      - description: ElasticsearchRef is the Elasticsearch ref to connect on. It will
+          generate Elasticsearch output bas eon it
+        displayName: Elasticsearch Ref
+        path: elasticsearchRef
+      - description: 'ElasticsearchCaSecretRef is the secret that store your custom
+          CA certificate to connect on Elasticsearch API. It need to have the following
+          keys: ca.crt'
+        displayName: Elasticsearch Ca Secret Ref
+        path: elasticsearchRef.elasticsearchCASecretRef
+      - description: ExternalElasticsearchRef is the external Elasticsearch cluster
+          not managed by operator
+        displayName: External Elasticsearch Ref
+        path: elasticsearchRef.external
+      - description: Image is the image to use when deploy Elasticsearch It can be
+          usefull to use internal registry or mirror
+        displayName: Image
+        path: image
+      - description: ImagePullPolicy is the image pull policy to use
+        displayName: Image Pull Policy
+        path: imagePullPolicy
+      - description: ImagePullSecrets is the image pull secrets to use
+        displayName: Image Pull Secrets
+        path: imagePullSecrets
+      - description: Ingresses permit to declare some ingresses The name is decorated
+          with cluster name and so on
+        displayName: Ingresses
+        path: ingresses
+      - description: Annotations is the extra annotations for ingress
+        displayName: Annotations
+        path: ingresses[0].annotations
+      - description: ContainerPort is the port to set when create service consumed
+          by ingress
+        displayName: Container Port
+        path: ingresses[0].containerPort
+      - description: ContainerPortProtocol is the protocol to set when create service
+          consumed by ingress
+        displayName: Container Port Protocol
+        path: ingresses[0].containerProtocol
+      - description: Labels is the extra labels for ingress
+        displayName: Labels
+        path: ingresses[0].labels
+      - description: Name is the ingress name The name is decorated with cluster name
+          and so on
+        displayName: Name
+        path: ingresses[0].name
+      - description: Spec is the ingress spec
+        displayName: Spec
+        path: ingresses[0].spec
+      - description: LogstashRef is the Logstash ref to connect on. It will generate
+          Logstash output base on it
+        displayName: Logstash Ref
+        path: logstashRef
+      - description: ExternalLogstahsRef is the external Logstash instance not managed
+          by operator
+        displayName: External Logstash Ref
+        path: logstashRef.external
+      - description: Addresses is the list of Logstash addresses
+        displayName: Addresses
+        path: logstashRef.external.addresses
+      - description: 'LogstashCaSecretRef is the secret that store your custom CA
+          certificate to connect on Logstash via beat protocole. It need to have the
+          following keys: ca.crt'
+        displayName: Logstash Ca Secret Ref
+        path: logstashRef.logstashCASecretRef
+      - description: Name is the Logstash cluster deployed by operator
+        displayName: Name
+        path: logstashRef.managed.name
+      - description: Namespace is the namespace where Logstash is deployed by operator
+          No need to set if is deployed on the same namespace
+        displayName: Namespace
+        path: logstashRef.managed.namespace
+      - description: Port is the port number to connect on service
+        displayName: Port
+        path: logstashRef.managed.port
+      - description: TargetService is the target service that expose the beat protocole
+        displayName: Target Service
+        path: logstashRef.managed.targetService
+      - description: Module is the module specification The key is the file stored
+          on filebeat/modules.d
+        displayName: Module
+        path: module
+      - description: Monitoring permit to monitor current cluster Default, it not
+          monitor cluster
+        displayName: Monitoring
+        path: monitoring
+      - description: Prometheus permit to monitor cluster with Prometheus and graphana
+          (via exporter)
+        displayName: Prometheus
+        path: monitoring.prometheus
+      - description: Enabled permit to enable Prometheus monitoring It will deploy
+          exporter for filebeat and add podMonitor policy Default to false
+        displayName: Enabled
+        path: monitoring.prometheus.enabled
+      - description: 'Url is the plugin URL where to download exporter Default is
+          use project https://github.com/pjhampton/kibana-prometheus-exporter If version
+          is set to latest, it use arbitrary: https://github.com/pjhampton/kibana-prometheus-exporter/releases/download/8.6.0/kibanaPrometheusExporter-8.6.0.zip'
+        displayName: Url
+        path: monitoring.prometheus.url
+      - description: Services permit to declare some services The name is decorated
+          with cluster name and so on
+        displayName: Services
+        path: services
+      - description: Annotations is the extra annotations for ingress
+        displayName: Annotations
+        path: services[0].annotations
+      - description: Labels is the extra labels for ingress
+        displayName: Labels
+        path: services[0].labels
+      - description: Name is the service name The name is decorated with cluster name
+          and so on
+        displayName: Name
+        path: services[0].name
+      - description: Spec is the service spec
+        displayName: Spec
+        path: services[0].spec
+      - description: Version is the Filebeat version to use Default is use the latest
+        displayName: Version
+        path: version
+      statusDescriptors:
+      - description: List of conditions
+        displayName: Conditions
+        path: conditions
+      - description: IsError is true if controller is stuck on Error
+        displayName: Is Error
+        path: isOnError
+      - description: Phase is the current deployment phase
+        displayName: Phase
+        path: phase
+      version: v1alpha1
+    - description: IndexLifecyclePolicy is the Schema for the indexlifecyclepolicies
+        API
+      displayName: Index Lifecycle Policy
+      kind: IndexLifecyclePolicy
+      name: indexlifecyclepolicies.elasticsearchapi.k8s.webcenter.fr
+      resources:
+      - kind: None
+        name: None
+        version: None
+      specDescriptors:
+      - description: ElasticsearchRef is the Elasticsearch ref to connect on.
+        displayName: Elasticsearch Ref
+        path: elasticsearchRef
+      - description: 'ElasticsearchCaSecretRef is the secret that store your custom
+          CA certificate to connect on Elasticsearch API. It need to have the following
+          keys: ca.crt'
+        displayName: Elasticsearch Ca Secret Ref
+        path: elasticsearchRef.elasticsearchCASecretRef
+      - description: ExternalElasticsearchRef is the external Elasticsearch cluster
+          not managed by operator
+        displayName: External Elasticsearch Ref
+        path: elasticsearchRef.external
+      - description: Name is the custom index lifecycle policy name If empty, it use
+          the ressource name
+        displayName: Name
+        path: name
+      - description: Policy is the raw policy on JSON
+        displayName: Policy
+        path: policy
+      statusDescriptors:
+      - description: List of conditions
+        displayName: Conditions
+        path: conditions
+      - description: OriginalObject is the original object used on 3 way diff merge
+        displayName: Original Object
+        path: originalObject
+      - description: Sync
+        displayName: Sync
+        path: sync
+      version: v1alpha1
+    - description: IndexTemplate is the Schema for the indextemplates API
+      displayName: Index Template
+      kind: IndexTemplate
+      name: indextemplates.elasticsearchapi.k8s.webcenter.fr
+      resources:
+      - kind: None
+        name: None
+        version: None
+      specDescriptors:
+      - description: AllowAutoCreate permit to allow auto create index
+        displayName: Allow Auto Create
+        path: allowAutoCreate
+      - description: ComposedOf is the list of component templates
+        displayName: Composed Of
+        path: composedOf
+      - description: ElasticsearchRef is the Elasticsearch ref to connect on.
+        displayName: Elasticsearch Ref
+        path: elasticsearchRef
+      - description: 'ElasticsearchCaSecretRef is the secret that store your custom
+          CA certificate to connect on Elasticsearch API. It need to have the following
+          keys: ca.crt'
+        displayName: Elasticsearch Ca Secret Ref
+        path: elasticsearchRef.elasticsearchCASecretRef
+      - description: ExternalElasticsearchRef is the external Elasticsearch cluster
+          not managed by operator
+        displayName: External Elasticsearch Ref
+        path: elasticsearchRef.external
+      - description: IndexPatterns is the list of index to apply this template
+        displayName: Index Patterns
+        path: indexPatterns
+      - description: Meta is extended info as JSON string
+        displayName: Meta
+        path: meta
+      - description: Name is the custom index template name If empty, it use the ressource
+          name
+        displayName: Name
+        path: name
+      - description: Priority is the priority to apply this template
+        displayName: Priority
+        path: priority
+      - description: Template is the template specification
+        displayName: Template
+        path: template
+      - description: Aliases is the template alias as JSON string
+        displayName: Aliases
+        path: template.aliases
+      - description: Mappings is the template mapping as JSON string
+        displayName: Mappings
+        path: template.mappings
+      - description: Settings is the template setting as JSON string
+        displayName: Settings
+        path: template.settings
+      - description: The version
+        displayName: Version
+        path: version
+      statusDescriptors:
+      - description: List of conditions
+        displayName: Conditions
+        path: conditions
+      - description: OriginalObject is the original object used on 3 way diff merge
+        displayName: Original Object
+        path: originalObject
+      - description: Health
+        displayName: Sync
+        path: sync
+      version: v1alpha1
+    - description: Kibana is the Schema for the kibanas API
+      displayName: Kibana
+      kind: Kibana
+      name: kibanas.kibana.k8s.webcenter.fr
+      resources:
+      - kind: ConfigMap
+        name: ""
+        version: v1
+      - kind: Deployment
+        name: ""
+        version: apps/v1
+      - kind: Ingress
+        name: ""
+        version: networking.k8s.io/v1
+      - kind: NetworkPolicy
+        name: ""
+        version: networking.k8s.io/v1
+      - kind: PodDisruptionBudget
+        name: ""
+        version: policy/v1
+      - kind: PodMonitor
+        name: ""
+        version: monitoring.coreos.com/v1
+      - kind: Secret
+        name: ""
+        version: v1
+      - kind: Service
+        name: ""
+        version: v1
+      specDescriptors:
+      - description: Config is the Kibana config The key is the file stored on kibana/config
+        displayName: Config
+        path: config
+      - description: Deployment permit to set the deployment settings
+        displayName: Deployment
+        path: deployment
+      - description: Annotations permit to set annotation on deployment
+        displayName: Annotations
+        path: deployment.annotations
+      - description: AntiAffinity permit to set anti affinity policy
+        displayName: Anti Affinity
+        path: deployment.antiAffinity
+      - description: Type permit to set anti affinity as soft or hard
+        displayName: Type
+        path: deployment.antiAffinity.type
+      - description: Env permit to set some environment variable on containers
+        displayName: Env
+        path: deployment.env
+      - description: EnvFrom permit to set some environment variable from config map
+          or secret
+        displayName: Env From
+        path: deployment.envFrom
+      - description: InitContainerResources permit to set resources on init containers
+        displayName: Init Container Resources
+        path: deployment.initContainerResources
+      - description: Labels permit to set labels on containers
+        displayName: Labels
+        path: deployment.labels
+      - description: Node permit to set extra option on Node process
+        displayName: Node
+        path: deployment.node
+      - description: NodeSelector permit to set node selector on pod
+        displayName: Node Selector
+        path: deployment.nodeSelector
+      - description: PodDisruptionBudget is the pod disruption budget policy
+        displayName: Pod Disruption Budget Spec
+        path: deployment.podDisruptionBudget
+      - description: PodSpec is merged with expected pod It usefull to add some extra
+          properties on pod spec
+        displayName: Pod Template
+        path: deployment.podTemplate
+      - description: Replicas is the number of replicas
+        displayName: Replicas
+        path: deployment.replicas
+      - description: Resources permit to set ressources on Kibana container
+        displayName: Resources
+        path: deployment.resources
+      - description: Tolerations permit to set toleration on pod
+        displayName: Tolerations
+        path: deployment.tolerations
+      - description: ElasticsearchRef is the Elasticsearch ref to connect on.
+        displayName: Elasticsearch Ref
+        path: elasticsearchRef
+      - description: 'ElasticsearchCaSecretRef is the secret that store your custom
+          CA certificate to connect on Elasticsearch API. It need to have the following
+          keys: ca.crt'
+        displayName: Elasticsearch Ca Secret Ref
+        path: elasticsearchRef.elasticsearchCASecretRef
+      - description: ExternalElasticsearchRef is the external Elasticsearch cluster
+          not managed by operator
+        displayName: External Elasticsearch Ref
+        path: elasticsearchRef.external
+      - description: Endpoint permit to set endpoints to access on Kibana from external
+          kubernetes You can set ingress and / or load balancer
+        displayName: Endpoint
+        path: endpoint
+      - description: Ingress permit to set ingress settings
+        displayName: Ingress
+        path: endpoint.ingress
+      - description: Annotations to set in ingress
+        displayName: Annotations
+        path: endpoint.ingress.annotations
+      - description: Enabled permit to enabled / disabled ingress Default to false
+        displayName: Enabled
+        path: endpoint.ingress.enabled
+      - description: Host is the hostname to access on Kibana
+        displayName: Host
+        path: endpoint.ingress.host
+      - description: IngressSpec it merge with expected ingress spec
+        displayName: Ingress Spec
+        path: endpoint.ingress.ingressSpec
+      - description: Labels to set in ingress
+        displayName: Labels
+        path: endpoint.ingress.labels
+      - description: SecretRef is the secret ref that store certificates
+        displayName: Secret Ref
+        path: endpoint.ingress.secretRef
+      - description: Load balancer permit to set load balancer settings
+        displayName: Load Balancer
+        path: endpoint.loadBalancer
+      - description: Enabled permit to enabled / disabled load balancer Cloud provider
+          need to support it Default to false
+        displayName: Enabled
+        path: endpoint.loadBalancer.enabled
+      - description: Image is the image to use when deploy Elasticsearch It can be
+          usefull to use internal registry or mirror
+        displayName: Image
+        path: image
+      - description: ImagePullPolicy is the image pull policy to use
+        displayName: Image Pull Policy
+        path: imagePullPolicy
+      - description: ImagePullSecrets is the image pull secrets to use
+        displayName: Image Pull Secrets
+        path: imagePullSecrets
+      - description: KeystoreSecretRef is the secret that store the security settings
+        displayName: Keystore Secret Ref
+        path: keystoreSecretRef
+      - description: Monitoring permit to monitor current cluster Default, it not
+          monitor cluster
+        displayName: Monitoring
+        path: monitoring
+      - description: Prometheus permit to monitor cluster with Prometheus and graphana
+          (via exporter)
+        displayName: Prometheus
+        path: monitoring.prometheus
+      - description: Enabled permit to enable Prometheus monitoring It will deploy
+          exporter for Kibana and add podMonitor policy Default to false
+        displayName: Enabled
+        path: monitoring.prometheus.enabled
+      - description: 'Url is the plugin URL where to download exporter Default is
+          use project https://github.com/pjhampton/kibana-prometheus-exporter If version
+          is set to latest, it use arbitrary: https://github.com/pjhampton/kibana-prometheus-exporter/releases/download/8.6.0/kibanaPrometheusExporter-8.6.0.zip'
+        displayName: Url
+        path: monitoring.prometheus.url
+      - description: PluginsList is the list of additionnal plugin to install on each
+          Kibana instance Default is empty
+        displayName: Plugins List
+        path: pluginsList
+      - description: Tls permit to set the TLS setting for Kibana access
+        displayName: Tls
+        path: tls
+      - description: 'CertificateSecretRef is the secret that store your custom certificates.
+          It need to have the following keys: tls.key, tls.crt and optionally ca.crt'
+        displayName: Certificate Secret Ref
+        path: tls.certificateSecretRef
+      - description: Enabled permit to enabled TLS on Kibana Default to false
+        displayName: Enabled
+        path: tls.enabled
+      - description: KeySize is the key size when generate privates keys Default to
+          2048
+        displayName: Key Size
+        path: tls.keySize
+      - description: RenewalDays is the number of days before certificate expire to
+          become effective renewal Default to 30
+        displayName: Renewal Days
+        path: tls.renewalDays
+      - description: SelfSignedCertificate permit to set self signed certificate settings
+        displayName: Self Signed Certificate
+        path: tls.selfSignedCertificate
+      - description: AltIps permit to set subject alt names of type ip when generate
+          certificate
+        displayName: Alt Ips
+        path: 'tls.selfSignedCertificate.altIPs:'
+      - description: AltNames permit to set subject alt names of type dns when generate
+          certificate
+        displayName: Alt Names
+        path: 'tls.selfSignedCertificate.altNames:'
+      - description: ValidityDays is the number of days that certificates are valid
+          Default to 365
+        displayName: Validity Days
+        path: tls.validityDays
+      - description: Version is the Kibana version to use Default is use the latest
+        displayName: Version
+        path: version
+      statusDescriptors:
+      - description: List of conditions
+        displayName: Conditions
+        path: conditions
+      - description: IsError is true if controller is stuck on Error
+        displayName: Is Error
+        path: isOnError
+      - description: Phase is the current deployment phase
+        displayName: Phase
+        path: phase
+      - description: Url is the Kibana endpoint
+        displayName: Url
+        path: url
+      version: v1alpha1
+    - description: License is the Schema for the licenses API
+      displayName: License
+      kind: License
+      name: licenses.elasticsearchapi.k8s.webcenter.fr
+      resources:
+      - kind: None
+        name: None
+        version: None
+      specDescriptors:
+      - description: ElasticsearchRef is the Elasticsearch ref to connect on.
+        displayName: Elasticsearch Ref
+        path: elasticsearchRef
+      - description: 'ElasticsearchCaSecretRef is the secret that store your custom
+          CA certificate to connect on Elasticsearch API. It need to have the following
+          keys: ca.crt'
+        displayName: Elasticsearch Ca Secret Ref
+        path: elasticsearchRef.elasticsearchCASecretRef
+      - description: ExternalElasticsearchRef is the external Elasticsearch cluster
+          not managed by operator
+        displayName: External Elasticsearch Ref
+        path: elasticsearchRef.external
+      - description: Basic permit to enable basic license Default to true if secretRef
+          not set
+        displayName: Basic
+        path: isBasic
+      - description: SecretName is the secret that contain the license
+        displayName: Secret Ref
+        path: secretRef
+      statusDescriptors:
+      - description: List of conditions
+        displayName: Conditions
+        path: conditions
+      - description: ExpireAt is the expiration date
+        displayName: Expire At
+        path: expireAt
+      - description: LicenseChecksum is the checksum of the current license
+        displayName: License Checksum
+        path: licenseChecksum
+      - description: LicenseType is the license type
+        displayName: License Type
+        path: licenseType
+      - description: Sync
+        displayName: Sync
+        path: sync
+      version: v1alpha1
+    - description: Logstash is the Schema for the logstashes API
+      displayName: Logstash
+      kind: Logstash
+      name: logstashes.logstash.k8s.webcenter.fr
+      resources:
+      - kind: ConfigMap
+        name: ""
+        version: v1
+      - kind: Ingress
+        name: ""
+        version: networking.k8s.io/v1
+      - kind: NetworkPolicy
+        name: ""
+        version: networking.k8s.io/v1
+      - kind: PodDisruptionBudget
+        name: ""
+        version: policy/v1
+      - kind: Secret
+        name: ""
+        version: v1
+      - kind: Service
+        name: ""
+        version: v1
+      - kind: StatefulSet
+        name: ""
+        version: apps/v1
+      specDescriptors:
+      - description: Config is the Logstash config The key is the file stored on logstash/config
+        displayName: Config
+        path: config
+      - description: Deployment permit to set the deployment settings
+        displayName: Deployment
+        path: deployment
+      - description: AdditionalVolumes permit to use additionnal volumes Default is
+          empty
+        displayName: Additional Volumes
+        path: deployment.additionalVolumes
+      - description: Name is the volume name
+        displayName: Name
+        path: deployment.additionalVolumes[0].name
+      - description: Annotations permit to set annotation on deployment
+        displayName: Annotations
+        path: deployment.annotations
+      - description: AntiAffinity permit to set anti affinity policy
+        displayName: Anti Affinity
+        path: deployment.antiAffinity
+      - description: Type permit to set anti affinity as soft or hard
+        displayName: Type
+        path: deployment.antiAffinity.type
+      - description: Env permit to set some environment variable on containers
+        displayName: Env
+        path: deployment.env
+      - description: EnvFrom permit to set some environment variable from config map
+          or secret
+        displayName: Env From
+        path: deployment.envFrom
+      - description: InitContainerResources permit to set resources on init containers
+        displayName: Init Container Resources
+        path: deployment.initContainerResources
+      - description: Node permit to set extra option on Node process
+        displayName: Jvm
+        path: deployment.jvm
+      - description: Labels permit to set labels on containers
+        displayName: Labels
+        path: deployment.labels
+      - description: NodeSelector permit to set node selector on pod
+        displayName: Node Selector
+        path: deployment.nodeSelector
+      - description: Persistence is the spec to persist data
+        displayName: Persistence
+        path: deployment.persistence
+      - description: VolumeClaim is the persistent volume claim spec use by statefullset
+        displayName: Volume Claim Spec
+        path: deployment.persistence.volumeClaim
+      - description: PodDisruptionBudget is the pod disruption budget policy
+        displayName: Pod Disruption Budget Spec
+        path: deployment.podDisruptionBudget
+      - description: PodSpec is merged with expected pod It usefull to add some extra
+          properties on pod spec
+        displayName: Pod Template
+        path: deployment.podTemplate
+      - description: Ports is the list of container port to affect on logstash container
+          It can be usefull to expose beats input
+        displayName: Ports
+        path: deployment.ports
+      - description: Replicas is the number of replicas
+        displayName: Replicas
+        path: deployment.replicas
+      - description: Resources permit to set ressources on Logstash container
+        displayName: Resources
+        path: deployment.resources
+      - description: Tolerations permit to set toleration on pod
+        displayName: Tolerations
+        path: deployment.tolerations
+      - description: ElasticsearchRef is the Elasticsearch ref to connect on. It will
+          expose CA certificate and Elasticsearch URL as encironment variable to use
+          it in logstash setting
+        displayName: Elasticsearch Ref
+        path: elasticsearchRef
+      - description: 'ElasticsearchCaSecretRef is the secret that store your custom
+          CA certificate to connect on Elasticsearch API. It need to have the following
+          keys: ca.crt'
+        displayName: Elasticsearch Ca Secret Ref
+        path: elasticsearchRef.elasticsearchCASecretRef
+      - description: ExternalElasticsearchRef is the external Elasticsearch cluster
+          not managed by operator
+        displayName: External Elasticsearch Ref
+        path: elasticsearchRef.external
+      - description: Image is the image to use when deploy Elasticsearch It can be
+          usefull to use internal registry or mirror
+        displayName: Image
+        path: image
+      - description: ImagePullPolicy is the image pull policy to use
+        displayName: Image Pull Policy
+        path: imagePullPolicy
+      - description: ImagePullSecrets is the image pull secrets to use
+        displayName: Image Pull Secrets
+        path: imagePullSecrets
+      - description: Ingresses permit to declare some ingresses The name is decorated
+          with cluster name and so on
+        displayName: Ingresses
+        path: ingresses
+      - description: Annotations is the extra annotations for ingress
+        displayName: Annotations
+        path: ingresses[0].annotations
+      - description: ContainerPort is the port to set when create service consumed
+          by ingress
+        displayName: Container Port
+        path: ingresses[0].containerPort
+      - description: ContainerPortProtocol is the protocol to set when create service
+          consumed by ingress
+        displayName: Container Port Protocol
+        path: ingresses[0].containerProtocol
+      - description: Labels is the extra labels for ingress
+        displayName: Labels
+        path: ingresses[0].labels
+      - description: Name is the ingress name The name is decorated with cluster name
+          and so on
+        displayName: Name
+        path: ingresses[0].name
+      - description: Spec is the ingress spec
+        displayName: Spec
+        path: ingresses[0].spec
+      - description: KeystoreSecretRef is the secret that store the security settings
+        displayName: Keystore Secret Ref
+        path: keystoreSecretRef
+      - description: Monitoring permit to monitor current cluster Default, it not
+          monitor cluster
+        displayName: Monitoring
+        path: monitoring
+      - description: Prometheus permit to monitor cluster with Prometheus and graphana
+          (via exporter)
+        displayName: Prometheus
+        path: monitoring.prometheus
+      - description: Enabled permit to enable Prometheus monitoring It will deploy
+          exporter for Logstash and add podMonitor policy Default to false
+        displayName: Enabled
+        path: monitoring.prometheus.enabled
+      - description: 'Url is the plugin URL where to download exporter Default is
+          use project https://github.com/pjhampton/kibana-prometheus-exporter If version
+          is set to latest, it use arbitrary: https://github.com/pjhampton/kibana-prometheus-exporter/releases/download/8.6.0/kibanaPrometheusExporter-8.6.0.zip'
+        displayName: Url
+        path: monitoring.prometheus.url
+      - description: Patterns is the patterns specification used by grok The key is
+          the file stored on logstash/patterns
+        displayName: Pattern
+        path: pattern
+      - description: Pipeline is the pipeline specification The key is the file stored
+          on logstash/pipelines
+        displayName: Pipeline
+        path: pipeline
+      - description: PluginsList is the list of additionnal plugin to install on each
+          logstash instance Default is empty
+        displayName: Plugins List
+        path: pluginsList
+      - description: Services permit to declare some services The name is decorated
+          with cluster name and so on
+        displayName: Services
+        path: services
+      - description: Annotations is the extra annotations for ingress
+        displayName: Annotations
+        path: services[0].annotations
+      - description: Labels is the extra labels for ingress
+        displayName: Labels
+        path: services[0].labels
+      - description: Name is the service name The name is decorated with cluster name
+          and so on
+        displayName: Name
+        path: services[0].name
+      - description: Spec is the service spec
+        displayName: Spec
+        path: services[0].spec
+      - description: Version is the logstash version to use Default is use the latest
+        displayName: Version
+        path: version
+      statusDescriptors:
+      - description: List of conditions
+        displayName: Conditions
+        path: conditions
+      - description: IsError is true if controller is stuck on Error
+        displayName: Is Error
+        path: isOnError
+      - description: Phase is the current deployment phase
+        displayName: Phase
+        path: phase
+      version: v1alpha1
+    - description: RoleMapping is the Schema for the rolemappings API
+      displayName: Role Mapping
+      kind: RoleMapping
+      name: rolemappings.elasticsearchapi.k8s.webcenter.fr
+      resources:
+      - kind: None
+        name: None
+        version: None
+      specDescriptors:
+      - description: ElasticsearchRef is the Elasticsearch ref to connect on.
+        displayName: Elasticsearch Ref
+        path: elasticsearchRef
+      - description: 'ElasticsearchCaSecretRef is the secret that store your custom
+          CA certificate to connect on Elasticsearch API. It need to have the following
+          keys: ca.crt'
+        displayName: Elasticsearch Ca Secret Ref
+        path: elasticsearchRef.elasticsearchCASecretRef
+      - description: ExternalElasticsearchRef is the external Elasticsearch cluster
+          not managed by operator
+        displayName: External Elasticsearch Ref
+        path: elasticsearchRef.external
+      - description: Enabled permit to enable or disable the role mapping Default
+          to true
+        displayName: Enabled
+        path: enabled
+      - description: Metadata is the meta data JSON string
+        displayName: Metadata
+        path: metadata
+      - description: Name is the custom role mapping name If empty, it use the ressource
+          name
+        displayName: Name
+        path: name
+      - description: Roles is the list of role to map
+        displayName: Roles
+        path: roles
+      - description: Rules is the mapping rules JSON string
+        displayName: Rules
+        path: rules
+      statusDescriptors:
+      - description: List of conditions
+        displayName: Conditions
+        path: conditions
+      - description: OriginalObject is the original object used on 3 way diff merge
+        displayName: Original Object
+        path: originalObject
+      - description: Sync
+        displayName: Sync
+        path: sync
+      version: v1alpha1
+    - description: Role is the Schema for the roles API
+      displayName: Role
+      kind: Role
+      name: roles.elasticsearchapi.k8s.webcenter.fr
+      resources:
+      - kind: None
+        name: None
+        version: None
+      specDescriptors:
+      - description: Applications is the list of application privilege
+        displayName: Applications
+        path: applications
+      - description: Application
+        displayName: Application
+        path: applications[0].application
+      - description: Privileges
+        displayName: Privileges
+        path: applications[0].privileges
+      - description: Resources
+        displayName: Resources
+        path: applications[0].resources
+      - description: Cluster is a list of cluster privileges
+        displayName: Cluster
+        path: cluster
+      - description: ElasticsearchRef is the Elasticsearch ref to connect on.
+        displayName: Elasticsearch Ref
+        path: elasticsearchRef
+      - description: 'ElasticsearchCaSecretRef is the secret that store your custom
+          CA certificate to connect on Elasticsearch API. It need to have the following
+          keys: ca.crt'
+        displayName: Elasticsearch Ca Secret Ref
+        path: elasticsearchRef.elasticsearchCASecretRef
+      - description: ExternalElasticsearchRef is the external Elasticsearch cluster
+          not managed by operator
+        displayName: External Elasticsearch Ref
+        path: elasticsearchRef.external
+      - description: Global  defining global privileges JSON string
+        displayName: Global
+        path: global
+      - description: Indices is the list of indices permissions
+        displayName: Indices
+        path: indices
+      - description: FieldSecurity JSON string
+        displayName: Field Security
+        path: indices[0].fieldSecurity
+      - description: Names
+        displayName: Names
+        path: indices[0].names
+      - description: Privileges
+        displayName: Privileges
+        path: indices[0].privileges
+      - description: Query
+        displayName: Query
+        path: indices[0].query
+      - description: Metadata is optional meta-data JSON string
+        displayName: Metadata
+        path: metadata
+      - description: Name is the custom role name If empty, it use the ressource name
+        displayName: Name
+        path: name
+      - description: RunAs is the list of users that the owners of this role can impersonate
+        displayName: Run As
+        path: runAs
+      - description: TransientMetadata JSON string
+        displayName: Transient Metadata
+        path: transientMetadata
+      statusDescriptors:
+      - description: List of conditions
+        displayName: Conditions
+        path: conditions
+      - description: OriginalObject is the original object used on 3 way diff merge
+        displayName: Original Object
+        path: originalObject
+      - description: Sync
+        displayName: Sync
+        path: sync
+      version: v1alpha1
+    - description: SnapshotLifecyclePolicy is the Schema for the snapshotlifecyclepolicies
+        API
+      displayName: Snapshot Lifecycle Policy
+      kind: SnapshotLifecyclePolicy
+      name: snapshotlifecyclepolicies.elasticsearchapi.k8s.webcenter.fr
+      resources:
+      - kind: None
+        name: None
+        version: None
+      specDescriptors:
+      - description: Config is the config backup
+        displayName: Config
+        path: config
+      - description: ExpendWildcards
+        displayName: Expend Wildcards
+        path: config.expandWildcards
+      - description: FeatureStates
+        displayName: Feature States
+        path: config.featureStates
+      - description: IgnoreUnavailable
+        displayName: Ignore Unavailable
+        path: config.ignoreUnavailable
+      - description: IncludeGlobalState
+        displayName: Include Global State
+        path: config.includeGlobalState
+      - description: Indices
+        displayName: Indices
+        path: config.indices
+      - description: Metadata
+        displayName: Metadata
+        path: config.metadata
+      - description: Partial
+        displayName: Partial
+        path: config.partial
+      - description: ElasticsearchRef is the Elasticsearch ref to connect on.
+        displayName: Elasticsearch Ref
+        path: elasticsearchRef
+      - description: 'ElasticsearchCaSecretRef is the secret that store your custom
+          CA certificate to connect on Elasticsearch API. It need to have the following
+          keys: ca.crt'
+        displayName: Elasticsearch Ca Secret Ref
+        path: elasticsearchRef.elasticsearchCASecretRef
+      - description: ExternalElasticsearchRef is the external Elasticsearch cluster
+          not managed by operator
+        displayName: External Elasticsearch Ref
+        path: elasticsearchRef.external
+      - description: Name is the template name to generte final name
+        displayName: Name
+        path: name
+      - description: Repository is the target repository to store backup
+        displayName: Repository
+        path: repository
+      - description: Retention is the retention policy
+        displayName: Retention
+        path: retention
+      - description: ExpireAfter
+        displayName: Expire After
+        path: retention.expireAfter
+      - description: MaxCount
+        displayName: Max Count
+        path: retention.maxCount
+      - description: MinCount
+        displayName: Min Count
+        path: retention.minCount
+      - description: Schedule is schedule policy
+        displayName: Schedule
+        path: schedule
+      - description: SnapshotLifecyclePolicyName is the custom snapshot lifecycle
+          policy name If empty, it use the ressource name
+        displayName: Snapshot Lifecycle Policy Name
+        path: snapshotLifecyclePolicyName
+      statusDescriptors:
+      - description: List of conditions
+        displayName: Conditions
+        path: conditions
+      - description: OriginalObject is the original object used on 3 way diff merge
+        displayName: Original Object
+        path: originalObject
+      - description: Sync
+        displayName: Sync
+        path: sync
+      version: v1alpha1
+    - description: SnapshotRepository is the Schema for the snapshotrepositories API
+      displayName: Snapshot Repository
+      kind: SnapshotRepository
+      name: snapshotrepositories.elasticsearchapi.k8s.webcenter.fr
+      resources:
+      - kind: None
+        name: None
+        version: None
+      specDescriptors:
+      - description: ElasticsearchRef is the Elasticsearch ref to connect on.
+        displayName: Elasticsearch Ref
+        path: elasticsearchRef
+      - description: 'ElasticsearchCaSecretRef is the secret that store your custom
+          CA certificate to connect on Elasticsearch API. It need to have the following
+          keys: ca.crt'
+        displayName: Elasticsearch Ca Secret Ref
+        path: elasticsearchRef.elasticsearchCASecretRef
+      - description: ExternalElasticsearchRef is the external Elasticsearch cluster
+          not managed by operator
+        displayName: External Elasticsearch Ref
+        path: elasticsearchRef.external
+      - description: Name is the custom snapshot repository name If empty, it use
+          the ressource name
+        displayName: Name
+        path: name
+      - description: The config of snapshot repository
+        displayName: Settings
+        path: settings
+      - description: Type the Snapshot repository type
+        displayName: Type
+        path: type
+      statusDescriptors:
+      - description: List of conditions
+        displayName: Conditions
+        path: conditions
+      - description: OriginalObject is the original object used on 3 way diff merge
+        displayName: Original Object
+        path: originalObject
+      - description: Sync
+        displayName: Sync
+        path: sync
+      version: v1alpha1
+    - description: User is the Schema for the users API
+      displayName: User
+      kind: User
+      name: users.elasticsearchapi.k8s.webcenter.fr
+      resources:
+      - kind: None
+        name: None
+        version: None
+      specDescriptors:
+      - description: ElasticsearchRef is the Elasticsearch ref to connect on.
+        displayName: Elasticsearch Ref
+        path: elasticsearchRef
+      - description: 'ElasticsearchCaSecretRef is the secret that store your custom
+          CA certificate to connect on Elasticsearch API. It need to have the following
+          keys: ca.crt'
+        displayName: Elasticsearch Ca Secret Ref
+        path: elasticsearchRef.elasticsearchCASecretRef
+      - description: ExternalElasticsearchRef is the external Elasticsearch cluster
+          not managed by operator
+        displayName: External Elasticsearch Ref
+        path: elasticsearchRef.external
+      - description: Email is the email user
+        displayName: Email
+        path: email
+      - description: Enabled permit to enable user Default to true
+        displayName: Enabled
+        path: enabled
+      - description: FullName is the full name
+        displayName: Full Name
+        path: fullName
+      - description: IsProtected must be set when you manage protected account like
+          kibana_system Default to false
+        displayName: Is Protected
+        path: isProtected
+      - description: Metadata is the meta data Is JSON string
+        displayName: Metadata
+        path: metadata
+      - description: PasswordHash is the password as hash
+        displayName: Password Hash
+        path: passwordHash
+      - description: Roles is the list of roles
+        displayName: Roles
+        path: roles
+      - description: CredentialSecretRef permit to set password. Or you can use password
+          hash
+        displayName: Secret Ref
+        path: secretRef
+      - description: key is the key name on secret to read the effective password
+        displayName: Key
+        path: secretRef.key
+      - description: Name is the secret name
+        displayName: Name
+        path: secretRef.name
+      - description: Username is the user name If empty, it use the ressource name
+        displayName: Username
+        path: username
+      statusDescriptors:
+      - description: List of conditions
+        displayName: Conditions
+        path: conditions
+      - description: OriginalObject is the original object used on 3 way diff merge
+        displayName: Original Object
+        path: originalObject
+      - description: PasswordHash is the current password hash
+        displayName: Password Hash
+        path: passwordHash
+      - description: Sync
+        displayName: Sync
+        path: sync
+      version: v1alpha1
+    - description: Watch is the Schema for the watches API
+      displayName: Watch
+      kind: Watch
+      name: watches.elasticsearchapi.k8s.webcenter.fr
+      resources:
+      - kind: None
+        name: None
+        version: None
+      specDescriptors:
+      - description: Actions JSON string
+        displayName: Actions
+        path: actions
+      - description: Condition JSON string
+        displayName: Condition
+        path: condition
+      - description: ElasticsearchRef is the Elasticsearch ref to connect on.
+        displayName: Elasticsearch Ref
+        path: elasticsearchRef
+      - description: 'ElasticsearchCaSecretRef is the secret that store your custom
+          CA certificate to connect on Elasticsearch API. It need to have the following
+          keys: ca.crt'
+        displayName: Elasticsearch Ca Secret Ref
+        path: elasticsearchRef.elasticsearchCASecretRef
+      - description: ExternalElasticsearchRef is the external Elasticsearch cluster
+          not managed by operator
+        displayName: External Elasticsearch Ref
+        path: elasticsearchRef.external
+      - description: Input JSON string
+        displayName: Input
+        path: input
+      - description: Metadata JSON string
+        displayName: Metadata
+        path: metadata
+      - description: Name is the custom watch name If empty, it use the ressource
+          name
+        displayName: Name
+        path: name
+      - description: ThrottlePeriod
+        displayName: Throttle Period
+        path: throttle_period
+      - description: ThrottlePeriodInMillis
+        displayName: Throttle Period In Millis
+        path: throttle_period_in_millis
+      - description: Transform JSON string
+        displayName: Transform
+        path: transform
+      - description: Trigger JSON string
+        displayName: Trigger
+        path: trigger
+      statusDescriptors:
+      - description: List of conditions
+        displayName: Conditions
+        path: conditions
+      - description: OriginalObject is the original object used on 3 way diff merge
+        displayName: Original Object
+        path: originalObject
+      - description: Sync
+        displayName: Sync
+        path: sync
+      version: v1alpha1
+  description: Deploy ELK stack and more
+  displayName: elasticsearch-operator
+  icon:
+  - base64data: PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0idXRmLTgiPz4NCjwhLS0gVXBsb2FkZWQgdG86IFNWRyBSZXBvLCB3d3cuc3ZncmVwby5jb20sIEdlbmVyYXRvcjogU1ZHIFJlcG8gTWl4ZXIgVG9vbHMgLS0+DQo8c3ZnIHdpZHRoPSI4MDBweCIgaGVpZ2h0PSI4MDBweCIgdmlld0JveD0iMCAwIDEwMjQgMTAyNCIgY2xhc3M9Imljb24iICB2ZXJzaW9uPSIxLjEiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PHBhdGggZD0iTTgyNiA2ODEuOWMyIDEuNCA0Ni43IDMyLjggMTUuOCAxMTBsLTAuMi0wLjJjLTEuMiA0LjctNS4zIDguMS0xMC4yIDguMS01LjkgMC0xMC41LTQuOC0xMC41LTEwLjcgMC0yIDAuNi0zLjYgMS41LTUuMWgtMC4zYzI0LjQtNjAuNi02LjgtODMuOC04LjEtODQuN2wwLjItMC4yYy0zLjMtMS44LTUuNy01LjEtNS43LTkuMiAwLTUuOSA0LjgtMTAuNyAxMC43LTEwLjcgMi42IDAgNSAxLjEgNi45IDIuN3oiIGZpbGw9IiNFRjQ2NjgiIC8+PHBhdGggZD0iTTgxMi43IDM0OC4ydjEyMy42YzAgMTIuMy05LjkgMjIuMy0yMi4zIDIyLjNINTI2VjMyNi45YzUuMy0wLjIgMTAuMi0wLjUgMTUtMC45aDI0OS40YzEyLjQgMCAyMi4zIDEwLjEgMjIuMyAyMi4yeiIgZmlsbD0iI0ZGRjBDMiIgLz48cGF0aCBkPSJNNzYzLjggNTIwLjR2ODAuOGMtNS42LTAuOC0xMS4xLTEuMi0xNi43LTEuMi03Ny43IDAtMTQwLjkgNjMuMi0xNDAuOSAxNDAuOSAwIDQ4LjggMjUgOTEuNyA2Mi42IDExNi45SDUyNlY1MjAuNGgyMzcuOHoiIGZpbGw9IiNGRkUwODUiIC8+PHBhdGggZD0iTTY2NC45IDE3OS4yYzAuMyAwLjMgMjUuOSAzOC44IDcuOCA3MC42LTExLjkgMjAuOC00NSA0My41LTEyOSA0OS44SDQ1OWMyOS41LTUxLjYgOTEuOC0xNDEuNSAxNDguNy0xNDcuOSAyMS4xLTIuNCA0MC4xIDYuOSA1Ny4yIDI3LjV6TTQzNi4yIDMyNmMyMCAxLjIgMzkuMSAxLjggNTcgMS44IDIuMyAwIDQuMi0wLjIgNi41LTAuMnY1MzAuMmgtOTIuM1YzMjdjNy43LTAuMiAxNS4yLTAuNSAyMy4yLTEuMWg1LjZ6TTI1OC45IDE1MS43YzU2LjcgNi41IDExOS4yIDk2LjMgMTQ4LjcgMTQ3LjloLTg1LjVjLTgzLjUtNi4zLTExNi4zLTI5LTEyOC4yLTQ5LjgtMTcuOC0zMS41IDcuMi02OS43IDcuMS02OS43IDE3LjktMjEuNSAzNi43LTMwLjggNTcuOS0yOC40eiIgZmlsbD0iI0Y1OUE5QiIgLz48cGF0aCBkPSJNMzgxLjEgNTIwLjR2MzM3LjRIMTU2Yy0xMC41IDAtMTkuMS04LjEtMTkuMS0xOC4yVjUyMC40aDI0NC4yeiIgZmlsbD0iI0ZGRTA4NSIgLz48cGF0aCBkPSJNMzgxLjEgMzI3LjZWNDk0SDEwMy42Yy0xMi4zIDAtMjIuMy05LjktMjIuMy0yMi4zVjM0OC4yYzAtMTIuMiA5LjktMjIuMyAyMi4zLTIyLjNoMjIyYzE1IDEuMSAzMC43IDEuOCA0Ny45IDEuOCAyLjUgMC4xIDUuMS0wLjEgNy42LTAuMXoiIGZpbGw9IiNGRkYwQzIiIC8+PHBhdGggZD0iTTQ5OS43IDg1Ny44VjMyNy42Yy0yLjMgMC00LjIgMC4yLTYuNSAwLjItMTcuOSAwLTM3LTAuNi01Ny0xLjhoLTUuNmMtOCAwLjYtMTUuNSAwLjktMjMuMiAxLjF2NTMwLjhoOTIuM3ogbTE3My4xLTYwOGMxOC4xLTMxLjgtNy41LTcwLjMtNy44LTcwLjYtMTcuMi0yMC42LTM2LjEtMjkuOS01Ny4yLTI3LjUtNTYuOSA2LjUtMTE5LjIgOTYuMy0xNDguNyAxNDcuOWg4NC43Yzg0LTYuMyAxMTcuMS0yOSAxMjktNDkuOHogbTkxIDM1MS40di04MC44SDUyNnYzMzcuNGgxNDIuOGMtMzcuNi0yNS4zLTYyLjYtNjguMi02Mi42LTExNi45IDAtNzcuNyA2My4yLTE0MC45IDE0MC45LTE0MC45IDUuNiAwIDExLjIgMC41IDE2LjcgMS4yeiBtNDguOS0xMjkuNFYzNDguMmMwLTEyLjItOS45LTIyLjMtMjIuMy0yMi4zSDU0MS4xYy00LjggMC41LTkuOCAwLjgtMTUgMC45VjQ5NGgyNjQuNGMxMi4zIDAuMSAyMi4yLTkuOSAyMi4yLTIyLjJ6IG01NC4xIDI2OS4xYzAtNjUuOS01My43LTExOS42LTExOS42LTExOS42UzYyNy41IDY3NSA2MjcuNSA3NDAuOXM1My43IDExOS42IDExOS42IDExOS42IDExOS43LTUzLjcgMTE5LjctMTE5LjZ6TTM4MS4xIDUyMC40SDEzNi45djMxOS4yYzAgMTAuMSA4LjYgMTguMiAxOS4xIDE4LjJoMjI1LjFWNTIwLjR6TTI2MS44IDEyNS41Yzc3LjEgOC43IDE0OC4xIDEyNCAxNzEuNiAxNjYuMSAyMy41LTQyLjEgOTQuNy0xNTcuNCAxNzEuNi0xNjYuMSAzMC4xLTMuMyA1Ny41IDkuMyA4MS4xIDM3LjggMi4xIDMuMiAzNS44IDUzLjMgOS44IDk5LjMtOC40IDE1LTIyLjYgMjcuMi00MS40IDM3aDEzNmMyNi44IDAgNDguNiAyMS44IDQ4LjYgNDguNnYxMjMuNmMwIDI2LjgtMjEuOCA0OC42LTQ4LjYgNDguNmgtNC4xdjg1LjNjNTguNSAxNy4yIDEwMS40IDcxLjIgMTAxLjQgMTM1LjEgMCAzNC0xMi4yIDY1LjMtMzIuNCA4OS43bDg3LjQgODkuOCAwLjIgMC4yYzEuNyAxLjggMi45IDQuNCAyLjkgNy4yIDAgNS43LTQuNyAxMC40LTEwLjQgMTAuNC0zIDAtNS42LTEuMi03LjUtM2wtMC4yIDAuMi04Ny4xLTg5LjVjLTI1IDIyLjMtNTcuNiAzNS44LTkzLjYgMzUuOC0zLjMgMC02LjYtMC4yLTkuOC0wLjVIMTU2Yy0yMyAwLTQxLjctMTguNy00MS43LTQxLjVWNTIwLjRoLTEwLjdjLTI2LjggMC00OC42LTIxLjgtNDguNi00OC42VjM0OC4yYzAtMjYuOCAyMS44LTQ4LjYgNDguNi00OC42aDEwOC43Yy0xOC44LTkuOC0zMi44LTIyLTQxLjQtMzctMjYtNDYuMSA3LjctOTYuMiA5LjItOTguMyAyNC4yLTI5LjUgNTEuNC00Mi4yIDgxLjctMzguOHogbTExOS4zIDIwMi4xYy0yLjYgMC01LjEgMC4yLTcuNyAwLjItMTcuMiAwLTMyLjgtMC44LTQ3LjktMS44aC0yMjJjLTEyLjMgMC0yMi4zIDEwLjEtMjIuMyAyMi4zdjEyMy42YzAgMTIuMyA5LjkgMjIuMyAyMi4zIDIyLjNIMzgxVjMyNy42eiBtLTU5LTI4aDg1LjVjLTI5LjUtNTEuNi05Mi0xNDEuNS0xNDguNy0xNDcuOS0yMS4yLTIuNC00MCA2LjktNTcuOSAyOC40IDAuMiAwLTI0LjggMzguMi03LjEgNjkuNyAxMS45IDIwLjggNDQuNyA0My41IDEyOC4yIDQ5Ljh6IiBmaWxsPSIjRUY0NjY4IiAvPjwvc3ZnPg==
+    mediatype: image/png
+  install:
+    spec:
+      clusterPermissions:
+      - rules:
+        - apiGroups:
+          - ""
+          resources:
+          - configmaps
+          verbs:
+          - create
+          - delete
+          - get
+          - list
+          - patch
+          - update
+          - watch
+        - apiGroups:
+          - ""
+          resources:
+          - events
+          verbs:
+          - create
+          - get
+          - patch
+        - apiGroups:
+          - ""
+          resources:
+          - pods
+          verbs:
+          - create
+          - delete
+          - get
+          - list
+          - patch
+          - update
+          - watch
+        - apiGroups:
+          - ""
+          resources:
+          - secrets
+          verbs:
+          - create
+          - delete
+          - get
+          - list
+          - patch
+          - update
+          - watch
+        - apiGroups:
+          - ""
+          resources:
+          - services
+          verbs:
+          - create
+          - delete
+          - get
+          - list
+          - patch
+          - update
+          - watch
+        - apiGroups:
+          - apps
+          resources:
+          - deployments
+          verbs:
+          - create
+          - delete
+          - get
+          - list
+          - patch
+          - update
+          - watch
+        - apiGroups:
+          - apps
+          resources:
+          - statefulsets
+          verbs:
+          - create
+          - delete
+          - get
+          - list
+          - patch
+          - update
+          - watch
+        - apiGroups:
+          - beat.k8s.webcenter.fr
+          resources:
+          - filebeats
+          verbs:
+          - create
+          - delete
+          - get
+          - list
+          - patch
+          - update
+          - watch
+        - apiGroups:
+          - beat.k8s.webcenter.fr
+          resources:
+          - filebeats/finalizers
+          verbs:
+          - update
+        - apiGroups:
+          - beat.k8s.webcenter.fr
+          resources:
+          - filebeats/status
+          verbs:
+          - get
+          - patch
+          - update
+        - apiGroups:
+          - elasticsearch.k8s.webcenter.fr
+          resources:
+          - elasticsearches
+          verbs:
+          - create
+          - delete
+          - get
+          - list
+          - patch
+          - update
+          - watch
+        - apiGroups:
+          - elasticsearch.k8s.webcenter.fr
+          resources:
+          - elasticsearches/finalizers
+          verbs:
+          - update
+        - apiGroups:
+          - elasticsearch.k8s.webcenter.fr
+          resources:
+          - elasticsearches/status
+          verbs:
+          - get
+          - patch
+          - update
+        - apiGroups:
+          - elasticsearchapi.k8s.webcenter.fr
+          resources:
+          - componenttemplates
+          verbs:
+          - create
+          - delete
+          - get
+          - list
+          - patch
+          - update
+          - watch
+        - apiGroups:
+          - elasticsearchapi.k8s.webcenter.fr
+          resources:
+          - componenttemplates/finalizers
+          verbs:
+          - update
+        - apiGroups:
+          - elasticsearchapi.k8s.webcenter.fr
+          resources:
+          - componenttemplates/status
+          verbs:
+          - get
+          - patch
+          - update
+        - apiGroups:
+          - elasticsearchapi.k8s.webcenter.fr
+          resources:
+          - indexlifecyclepolicies
+          verbs:
+          - create
+          - delete
+          - get
+          - list
+          - patch
+          - update
+          - watch
+        - apiGroups:
+          - elasticsearchapi.k8s.webcenter.fr
+          resources:
+          - indexlifecyclepolicies/finalizers
+          verbs:
+          - update
+        - apiGroups:
+          - elasticsearchapi.k8s.webcenter.fr
+          resources:
+          - indexlifecyclepolicies/status
+          verbs:
+          - get
+          - patch
+          - update
+        - apiGroups:
+          - elasticsearchapi.k8s.webcenter.fr
+          resources:
+          - indextemplates
+          verbs:
+          - create
+          - delete
+          - get
+          - list
+          - patch
+          - update
+          - watch
+        - apiGroups:
+          - elasticsearchapi.k8s.webcenter.fr
+          resources:
+          - indextemplates/finalizers
+          verbs:
+          - update
+        - apiGroups:
+          - elasticsearchapi.k8s.webcenter.fr
+          resources:
+          - indextemplates/status
+          verbs:
+          - get
+          - patch
+          - update
+        - apiGroups:
+          - elasticsearchapi.k8s.webcenter.fr
+          resources:
+          - licenses
+          verbs:
+          - create
+          - delete
+          - get
+          - list
+          - patch
+          - update
+          - watch
+        - apiGroups:
+          - elasticsearchapi.k8s.webcenter.fr
+          resources:
+          - licenses/finalizers
+          verbs:
+          - update
+        - apiGroups:
+          - elasticsearchapi.k8s.webcenter.fr
+          resources:
+          - licenses/status
+          verbs:
+          - get
+          - patch
+          - update
+        - apiGroups:
+          - elasticsearchapi.k8s.webcenter.fr
+          resources:
+          - rolemappings
+          verbs:
+          - create
+          - delete
+          - get
+          - list
+          - patch
+          - update
+          - watch
+        - apiGroups:
+          - elasticsearchapi.k8s.webcenter.fr
+          resources:
+          - rolemappings/finalizers
+          verbs:
+          - update
+        - apiGroups:
+          - elasticsearchapi.k8s.webcenter.fr
+          resources:
+          - rolemappings/status
+          verbs:
+          - get
+          - patch
+          - update
+        - apiGroups:
+          - elasticsearchapi.k8s.webcenter.fr
+          resources:
+          - roles
+          verbs:
+          - create
+          - delete
+          - get
+          - list
+          - patch
+          - update
+          - watch
+        - apiGroups:
+          - elasticsearchapi.k8s.webcenter.fr
+          resources:
+          - roles/finalizers
+          verbs:
+          - update
+        - apiGroups:
+          - elasticsearchapi.k8s.webcenter.fr
+          resources:
+          - roles/status
+          verbs:
+          - get
+          - patch
+          - update
+        - apiGroups:
+          - elasticsearchapi.k8s.webcenter.fr
+          resources:
+          - snapshotlifecyclepolicies
+          verbs:
+          - create
+          - delete
+          - get
+          - list
+          - patch
+          - update
+          - watch
+        - apiGroups:
+          - elasticsearchapi.k8s.webcenter.fr
+          resources:
+          - snapshotlifecyclepolicies/finalizers
+          verbs:
+          - update
+        - apiGroups:
+          - elasticsearchapi.k8s.webcenter.fr
+          resources:
+          - snapshotlifecyclepolicies/status
+          verbs:
+          - get
+          - patch
+          - update
+        - apiGroups:
+          - elasticsearchapi.k8s.webcenter.fr
+          resources:
+          - snapshotrepositories
+          verbs:
+          - create
+          - delete
+          - get
+          - list
+          - patch
+          - update
+          - watch
+        - apiGroups:
+          - elasticsearchapi.k8s.webcenter.fr
+          resources:
+          - snapshotrepositories/finalizers
+          verbs:
+          - update
+        - apiGroups:
+          - elasticsearchapi.k8s.webcenter.fr
+          resources:
+          - snapshotrepositories/status
+          verbs:
+          - get
+          - patch
+          - update
+        - apiGroups:
+          - elasticsearchapi.k8s.webcenter.fr
+          resources:
+          - users
+          verbs:
+          - create
+          - delete
+          - get
+          - list
+          - patch
+          - update
+          - watch
+        - apiGroups:
+          - elasticsearchapi.k8s.webcenter.fr
+          resources:
+          - users/finalizers
+          verbs:
+          - update
+        - apiGroups:
+          - elasticsearchapi.k8s.webcenter.fr
+          resources:
+          - users/status
+          verbs:
+          - get
+          - patch
+          - update
+        - apiGroups:
+          - elasticsearchapi.k8s.webcenter.fr
+          resources:
+          - watches
+          verbs:
+          - create
+          - delete
+          - get
+          - list
+          - patch
+          - update
+          - watch
+        - apiGroups:
+          - elasticsearchapi.k8s.webcenter.fr
+          resources:
+          - watches/finalizers
+          verbs:
+          - update
+        - apiGroups:
+          - elasticsearchapi.k8s.webcenter.fr
+          resources:
+          - watches/status
+          verbs:
+          - get
+          - patch
+          - update
+        - apiGroups:
+          - kibana.k8s.webcenter.fr
+          resources:
+          - kibanas
+          verbs:
+          - create
+          - delete
+          - get
+          - list
+          - patch
+          - update
+          - watch
+        - apiGroups:
+          - kibana.k8s.webcenter.fr
+          resources:
+          - kibanas/finalizers
+          verbs:
+          - update
+        - apiGroups:
+          - kibana.k8s.webcenter.fr
+          resources:
+          - kibanas/status
+          verbs:
+          - get
+          - patch
+          - update
+        - apiGroups:
+          - logstash.k8s.webcenter.fr
+          resources:
+          - logstashes
+          verbs:
+          - create
+          - delete
+          - get
+          - list
+          - patch
+          - update
+          - watch
+        - apiGroups:
+          - logstash.k8s.webcenter.fr
+          resources:
+          - logstashes/finalizers
+          verbs:
+          - update
+        - apiGroups:
+          - logstash.k8s.webcenter.fr
+          resources:
+          - logstashes/status
+          verbs:
+          - get
+          - patch
+          - update
+        - apiGroups:
+          - monitoring.coreos.com
+          resources:
+          - podmonitors
+          verbs:
+          - create
+          - delete
+          - get
+          - list
+          - patch
+          - update
+          - watch
+        - apiGroups:
+          - networking.k8s.io
+          resources:
+          - ingresses
+          verbs:
+          - create
+          - delete
+          - get
+          - list
+          - patch
+          - update
+          - watch
+        - apiGroups:
+          - networking.k8s.io
+          resources:
+          - networkpolicies
+          verbs:
+          - create
+          - delete
+          - get
+          - list
+          - patch
+          - update
+          - watch
+        - apiGroups:
+          - policy
+          resources:
+          - poddisruptionbudgets
+          verbs:
+          - create
+          - delete
+          - get
+          - list
+          - patch
+          - update
+          - watch
+        - apiGroups:
+          - authentication.k8s.io
+          resources:
+          - tokenreviews
+          verbs:
+          - create
+        - apiGroups:
+          - authorization.k8s.io
+          resources:
+          - subjectaccessreviews
+          verbs:
+          - create
+        serviceAccountName: elastic-operator-elastic-operator
+      deployments:
+      - label:
+          control-plane: elastic-operator
+        name: elastic-operator-elastic-operator
+        spec:
+          replicas: 1
+          selector:
+            matchLabels:
+              control-plane: elastic-operator
+          strategy: {}
+          template:
+            metadata:
+              annotations:
+                kubectl.kubernetes.io/default-container: manager
+              labels:
+                control-plane: elastic-operator
+                elasticsearch-operator.k8s.webcenter.fr: "true"
+                kibana-operator.k8s.webcenter.fr: "true"
+            spec:
+              containers:
+              - args:
+                - --secure-listen-address=0.0.0.0:8443
+                - --upstream=http://127.0.0.1:8080/
+                - --logtostderr=true
+                - --v=0
+                image: gcr.io/kubebuilder/kube-rbac-proxy:v0.13.0
+                name: kube-rbac-proxy
+                ports:
+                - containerPort: 8443
+                  name: https
+                  protocol: TCP
+                resources:
+                  limits:
+                    cpu: 500m
+                    memory: 128Mi
+                  requests:
+                    cpu: 5m
+                    memory: 64Mi
+                securityContext:
+                  allowPrivilegeEscalation: false
+                  capabilities:
+                    drop:
+                    - ALL
+              - args:
+                - --health-probe-bind-address=:8081
+                - --metrics-bind-address=127.0.0.1:8080
+                - --leader-elect
+                command:
+                - /manager
+                env:
+                - name: POD_NAME
+                  valueFrom:
+                    fieldRef:
+                      apiVersion: v1
+                      fieldPath: metadata.name
+                - name: POD_NAMESPACE
+                  valueFrom:
+                    fieldRef:
+                      apiVersion: v1
+                      fieldPath: metadata.namespace
+                - name: LOG_LEVEL
+                  value: DEBUG
+                image: quay.io/webcenter/elasticsearch-operator:0.0.5
+                livenessProbe:
+                  httpGet:
+                    path: /healthz
+                    port: 8081
+                  initialDelaySeconds: 15
+                  periodSeconds: 20
+                name: manager
+                readinessProbe:
+                  httpGet:
+                    path: /readyz
+                    port: 8081
+                  initialDelaySeconds: 5
+                  periodSeconds: 10
+                resources:
+                  limits:
+                    cpu: 500m
+                    memory: 128Mi
+                  requests:
+                    cpu: 10m
+                    memory: 64Mi
+                securityContext:
+                  allowPrivilegeEscalation: false
+                  capabilities:
+                    drop:
+                    - ALL
+              securityContext:
+                runAsNonRoot: true
+              serviceAccountName: elastic-operator-elastic-operator
+              terminationGracePeriodSeconds: 10
+      permissions:
+      - rules:
+        - apiGroups:
+          - ""
+          resources:
+          - configmaps
+          verbs:
+          - get
+          - list
+          - watch
+          - create
+          - update
+          - patch
+          - delete
+        - apiGroups:
+          - coordination.k8s.io
+          resources:
+          - leases
+          verbs:
+          - get
+          - list
+          - watch
+          - create
+          - update
+          - patch
+          - delete
+        - apiGroups:
+          - ""
+          resources:
+          - events
+          verbs:
+          - create
+          - patch
+        serviceAccountName: elastic-operator-elastic-operator
+    strategy: deployment
+  installModes:
+  - supported: false
+    type: OwnNamespace
+  - supported: false
+    type: SingleNamespace
+  - supported: false
+    type: MultiNamespace
+  - supported: true
+    type: AllNamespaces
+  keywords:
+  - elasticsearch
+  - kibana
+  - logstash
+  - filebeat
+  links:
+  - name: Elasticsearch Operator
+    url: https://github.com/webcenter-fr/elasticsearch-operator
+  maintainers:
+  - email: linuxworkgroup@hotmail.com
+    name: disaster37
+  maturity: alpha
+  minKubeVersion: v1.18.0
+  provider:
+    name: webcenter.fr
+    url: https://github.com/webcenter-fr/elasticsearch-operator
+  replaces: elasticsearch-operator.v0.0.4
+  version: 0.0.5

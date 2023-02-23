@@ -34,7 +34,7 @@ func TestBuildTransportPkiSecret(t *testing.T) {
 			Name:      "test",
 		},
 		Spec: elasticsearchcrd.ElasticsearchSpec{
-			NodeGroups: []elasticsearchcrd.NodeGroupSpec{
+			NodeGroups: []elasticsearchcrd.ElasticsearchNodeGroupSpec{
 				{
 					Name:     "master",
 					Replicas: 3,
@@ -82,10 +82,10 @@ func TestBuildApiPkiSecret(t *testing.T) {
 			Name:      "test",
 		},
 		Spec: elasticsearchcrd.ElasticsearchSpec{
-			Tls: elasticsearchcrd.TlsSpec{
+			Tls: elasticsearchcrd.ElasticsearchTlsSpec{
 				Enabled: pointer.Bool(false),
 			},
-			NodeGroups: []elasticsearchcrd.NodeGroupSpec{
+			NodeGroups: []elasticsearchcrd.ElasticsearchNodeGroupSpec{
 				{
 					Name:     "master",
 					Replicas: 3,
@@ -106,13 +106,13 @@ func TestBuildApiPkiSecret(t *testing.T) {
 			Name:      "test",
 		},
 		Spec: elasticsearchcrd.ElasticsearchSpec{
-			Tls: elasticsearchcrd.TlsSpec{
+			Tls: elasticsearchcrd.ElasticsearchTlsSpec{
 				Enabled: pointer.Bool(true),
 				CertificateSecretRef: &corev1.LocalObjectReference{
 					Name: "test",
 				},
 			},
-			NodeGroups: []elasticsearchcrd.NodeGroupSpec{
+			NodeGroups: []elasticsearchcrd.ElasticsearchNodeGroupSpec{
 				{
 					Name:     "master",
 					Replicas: 3,
@@ -133,10 +133,10 @@ func TestBuildApiPkiSecret(t *testing.T) {
 			Name:      "test",
 		},
 		Spec: elasticsearchcrd.ElasticsearchSpec{
-			Tls: elasticsearchcrd.TlsSpec{
+			Tls: elasticsearchcrd.ElasticsearchTlsSpec{
 				Enabled: pointer.Bool(true),
 			},
-			NodeGroups: []elasticsearchcrd.NodeGroupSpec{
+			NodeGroups: []elasticsearchcrd.ElasticsearchNodeGroupSpec{
 				{
 					Name:     "master",
 					Replicas: 3,
@@ -194,7 +194,7 @@ func TestBuildTransportSecret(t *testing.T) {
 			Name:      "test",
 		},
 		Spec: elasticsearchcrd.ElasticsearchSpec{
-			NodeGroups: []elasticsearchcrd.NodeGroupSpec{
+			NodeGroups: []elasticsearchcrd.ElasticsearchNodeGroupSpec{
 				{
 					Name:     "master",
 					Replicas: 3,
@@ -252,10 +252,10 @@ func TestBuildApiSecret(t *testing.T) {
 			Name:      "test",
 		},
 		Spec: elasticsearchcrd.ElasticsearchSpec{
-			Tls: elasticsearchcrd.TlsSpec{
+			Tls: elasticsearchcrd.ElasticsearchTlsSpec{
 				Enabled: pointer.Bool(false),
 			},
-			NodeGroups: []elasticsearchcrd.NodeGroupSpec{
+			NodeGroups: []elasticsearchcrd.ElasticsearchNodeGroupSpec{
 				{
 					Name:     "master",
 					Replicas: 3,
@@ -275,13 +275,13 @@ func TestBuildApiSecret(t *testing.T) {
 			Name:      "test",
 		},
 		Spec: elasticsearchcrd.ElasticsearchSpec{
-			Tls: elasticsearchcrd.TlsSpec{
+			Tls: elasticsearchcrd.ElasticsearchTlsSpec{
 				Enabled: pointer.Bool(true),
 				CertificateSecretRef: &corev1.LocalObjectReference{
 					Name: "test",
 				},
 			},
-			NodeGroups: []elasticsearchcrd.NodeGroupSpec{
+			NodeGroups: []elasticsearchcrd.ElasticsearchNodeGroupSpec{
 				{
 					Name:     "master",
 					Replicas: 3,
@@ -301,10 +301,10 @@ func TestBuildApiSecret(t *testing.T) {
 			Name:      "test",
 		},
 		Spec: elasticsearchcrd.ElasticsearchSpec{
-			Tls: elasticsearchcrd.TlsSpec{
+			Tls: elasticsearchcrd.ElasticsearchTlsSpec{
 				Enabled: pointer.Bool(true),
 			},
-			NodeGroups: []elasticsearchcrd.NodeGroupSpec{
+			NodeGroups: []elasticsearchcrd.ElasticsearchNodeGroupSpec{
 				{
 					Name:     "master",
 					Replicas: 3,

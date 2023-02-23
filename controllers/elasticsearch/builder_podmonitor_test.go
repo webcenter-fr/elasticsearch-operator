@@ -36,8 +36,8 @@ func TestBuildPodMonitor(t *testing.T) {
 			Name:      "test",
 		},
 		Spec: elasticsearchcrd.ElasticsearchSpec{
-			Monitoring: elasticsearchcrd.MonitoringSpec{
-				Prometheus: &elasticsearchcrd.PrometheusSpec{
+			Monitoring: elasticsearchcrd.ElasticsearchMonitoringSpec{
+				Prometheus: &elasticsearchcrd.ElasticsearchPrometheusSpec{
 					Enabled: false,
 				},
 			},
@@ -54,8 +54,8 @@ func TestBuildPodMonitor(t *testing.T) {
 			Name:      "test",
 		},
 		Spec: elasticsearchcrd.ElasticsearchSpec{
-			Monitoring: elasticsearchcrd.MonitoringSpec{
-				Prometheus: &elasticsearchcrd.PrometheusSpec{
+			Monitoring: elasticsearchcrd.ElasticsearchMonitoringSpec{
+				Prometheus: &elasticsearchcrd.ElasticsearchPrometheusSpec{
 					Enabled: true,
 				},
 			},

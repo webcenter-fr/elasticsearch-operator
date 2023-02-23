@@ -39,7 +39,7 @@ func TestBuildIngresses(t *testing.T) {
 			Name:      "test",
 		},
 		Spec: logstashcrd.LogstashSpec{
-			Ingresses: []logstashcrd.Ingress{
+			Ingresses: []logstashcrd.LogstashIngress{
 				{
 					Name: "my-ingress",
 					Labels: map[string]string{
@@ -90,10 +90,10 @@ func TestBuildIngresses(t *testing.T) {
 			Name:      "test",
 		},
 		Spec: logstashcrd.LogstashSpec{
-			Deployment: logstashcrd.DeploymentSpec{
+			Deployment: logstashcrd.LogstashDeploymentSpec{
 				Replicas: 2,
 			},
-			Ingresses: []logstashcrd.Ingress{
+			Ingresses: []logstashcrd.LogstashIngress{
 				{
 					Name: "my-ingress",
 					Labels: map[string]string{

@@ -52,4 +52,26 @@ func TestBuildNetworkPolicies(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equal(t, 1, len(np))
 	test.EqualFromYamlFile(t, "testdata/networkpolicy_es.yml", &np[0], test.CleanApi)
+
+	// When Logstash is managed
+	o = &beatcrd.Filebeat{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: "default",
+			Name:      "test",
+		},
+		Spec: beatcrd.FilebeatSpec{
+			LogstashRef: beatcrd.FilebeatLogstashRef{
+				ManagedLogstashRef: &beatcrd.FilebeatLogstashManagedRef{
+					Name: "test",
+					Namespace: "logstash",
+					Port: 1234,
+				},
+			},
+		},
+	}
+	np, err = BuildNetworkPolicies(o)
+
+	assert.NoError(t, err)
+	assert.Equal(t, 1, len(np))
+	test.EqualFromYamlFile(t, "testdata/networkpolicy_ls.yml", &np[0], test.CleanApi)
 }

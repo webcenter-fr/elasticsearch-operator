@@ -2,6 +2,7 @@ package logstash
 
 import (
 	logstashcrd "github.com/webcenter-fr/elasticsearch-operator/apis/logstash/v1alpha1"
+	elasticsearchcontrollers "github.com/webcenter-fr/elasticsearch-operator/controllers/elasticsearch"
 	v1 "k8s.io/api/core/v1"
 	networkingv1 "k8s.io/api/networking/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -32,12 +33,13 @@ func BuildNetworkPolicies(ls *logstashcrd.Logstash) (networkPolicies []networkin
 							{
 								NamespaceSelector: &metav1.LabelSelector{
 									MatchLabels: map[string]string{
-										"name": ls.Spec.ElasticsearchRef.ManagedElasticsearchRef.Namespace,
+										"kubernetes.io/metadata.name": ls.Spec.ElasticsearchRef.ManagedElasticsearchRef.Namespace,
 									},
 								},
 								PodSelector: &metav1.LabelSelector{
 									MatchLabels: map[string]string{
 										"cluster": ls.Spec.ElasticsearchRef.ManagedElasticsearchRef.Name,
+										elasticsearchcontrollers.ElasticsearchAnnotationKey: "true",
 									},
 								},
 							},
@@ -54,6 +56,12 @@ func BuildNetworkPolicies(ls *logstashcrd.Logstash) (networkPolicies []networkin
 				},
 				PolicyTypes: []networkingv1.PolicyType{
 					networkingv1.PolicyTypeEgress,
+				},
+				PodSelector: metav1.LabelSelector{
+					MatchLabels: map[string]string{
+						"cluster":             ls.Name,
+						LogstashAnnotationKey: "true",
+					},
 				},
 			},
 		}

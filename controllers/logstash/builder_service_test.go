@@ -43,7 +43,7 @@ func TestBuildServicees(t *testing.T) {
 			Name:      "test",
 		},
 		Spec: logstashcrd.LogstashSpec{
-			Services: []logstashcrd.Service{
+			Services: []logstashcrd.LogstashService{
 				{
 					Name: "my-service",
 					Labels: map[string]string{
@@ -81,7 +81,7 @@ func TestBuildServicees(t *testing.T) {
 			Name:      "test",
 		},
 		Spec: logstashcrd.LogstashSpec{
-			Ingresses: []logstashcrd.Ingress{
+			Ingresses: []logstashcrd.LogstashIngress{
 				{
 					Name: "my-ingress",
 					Labels: map[string]string{

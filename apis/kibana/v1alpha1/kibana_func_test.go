@@ -29,7 +29,7 @@ func TestIsSelfManagedSecretForTls(t *testing.T) {
 			Name:      "test",
 		},
 		Spec: KibanaSpec{
-			Tls: TlsSpec{
+			Tls: KibanaTlsSpec{
 				Enabled: pointer.Bool(true),
 			},
 		},
@@ -43,7 +43,7 @@ func TestIsSelfManagedSecretForTls(t *testing.T) {
 			Name:      "test",
 		},
 		Spec: KibanaSpec{
-			Tls: TlsSpec{
+			Tls: KibanaTlsSpec{
 				Enabled: pointer.Bool(true),
 				CertificateSecretRef: &corev1.LocalObjectReference{
 					Name: "my-secret",
@@ -75,7 +75,7 @@ func TestIsTlsEnabled(t *testing.T) {
 			Name:      "test",
 		},
 		Spec: KibanaSpec{
-			Tls: TlsSpec{
+			Tls: KibanaTlsSpec{
 				Enabled: pointer.Bool(true),
 			},
 		},
@@ -89,7 +89,7 @@ func TestIsTlsEnabled(t *testing.T) {
 			Name:      "test",
 		},
 		Spec: KibanaSpec{
-			Tls: TlsSpec{
+			Tls: KibanaTlsSpec{
 				Enabled: pointer.Bool(false),
 			},
 		},
@@ -110,8 +110,8 @@ func TestIsIngressEnabled(t *testing.T) {
 	assert.False(t, o.IsIngressEnabled())
 
 	// When Ingress is specified but disabled
-	o.Spec.Endpoint = EndpointSpec{
-		Ingress: &IngressSpec{
+	o.Spec.Endpoint = KibanaEndpointSpec{
+		Ingress: &KibanaIngressSpec{
 			Enabled: false,
 		},
 	}
@@ -134,8 +134,8 @@ func TestIsLoadBalancerEnabled(t *testing.T) {
 	assert.False(t, o.IsLoadBalancerEnabled())
 
 	// When Load balancer is specified but disabled
-	o.Spec.Endpoint = EndpointSpec{
-		LoadBalancer: &LoadBalancerSpec{
+	o.Spec.Endpoint = KibanaEndpointSpec{
+		LoadBalancer: &KibanaLoadBalancerSpec{
 			Enabled: false,
 		},
 	}
@@ -166,8 +166,8 @@ func TestIsPrometheusMonitoring(t *testing.T) {
 			Name:      "test",
 		},
 		Spec: KibanaSpec{
-			Monitoring: MonitoringSpec{
-				Prometheus: &PrometheusSpec{
+			Monitoring: KibanaMonitoringSpec{
+				Prometheus: &KibanaPrometheusSpec{
 					Enabled: true,
 				},
 			},
@@ -182,8 +182,8 @@ func TestIsPrometheusMonitoring(t *testing.T) {
 			Name:      "test",
 		},
 		Spec: KibanaSpec{
-			Monitoring: MonitoringSpec{
-				Prometheus: &PrometheusSpec{
+			Monitoring: KibanaMonitoringSpec{
+				Prometheus: &KibanaPrometheusSpec{
 					Enabled: false,
 				},
 			},

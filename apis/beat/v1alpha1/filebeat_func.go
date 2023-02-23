@@ -20,11 +20,11 @@ func (h *Filebeat) IsPersistence() bool {
 }
 
 // IsManaged permit to know if Logstash is managed by operator
-func (h LogstashRef) IsManaged() bool {
+func (h FilebeatLogstashRef) IsManaged() bool {
 	return h.ManagedLogstashRef != nil && h.ManagedLogstashRef.Name != ""
 }
 
 // IsExternal permit to know if Logstash is external (not managed by operator)
-func (h LogstashRef) IsExternal() bool {
+func (h FilebeatLogstashRef) IsExternal() bool {
 	return h.ExternalLogstashRef != nil && len(h.ExternalLogstashRef.Addresses) > 0
 }
