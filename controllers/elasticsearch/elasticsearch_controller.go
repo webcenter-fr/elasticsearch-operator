@@ -307,6 +307,14 @@ func (h *ElasticsearchReconciler) Configure(ctx context.Context, req ctrl.Reques
 		})
 	}
 
+	if condition.FindStatusCondition(o.Status.Conditions, common.ReadyCondition) == nil {
+		condition.SetStatusCondition(&o.Status.Conditions, metav1.Condition{
+			Type:   common.ReadyCondition,
+			Status: metav1.ConditionFalse,
+			Reason: "Initialize",
+		})
+	}
+
 	// Get Elasticsearch health
 	// Not blocking way, cluster can be unreachable
 	esHandler, err := h.getElasticsearchHandler(ctx, o, h.GetLogger())
@@ -346,6 +354,19 @@ func (h *ElasticsearchReconciler) OnError(ctx context.Context, r client.Object, 
 	o := r.(*elasticsearchcrd.Elasticsearch)
 
 	o.Status.IsError = pointer.Bool(true)
+
+	condition.SetStatusCondition(&o.Status.Conditions, metav1.Condition{
+		Type:    ElasticsearchCondition,
+		Status:  metav1.ConditionFalse,
+		Reason:  "Failed",
+		Message: err.Error(),
+	})
+
+	condition.SetStatusCondition(&o.Status.Conditions, metav1.Condition{
+		Type:   common.ReadyCondition,
+		Status: metav1.ConditionFalse,
+		Reason: "Error",
+	})
 
 	common.TotalErrors.Inc()
 	return res, currentErr
@@ -393,13 +414,29 @@ loopStatefulset:
 			o.Status.Phase = ElasticsearchPhaseRunning
 		}
 
+		if condition.IsStatusConditionPresentAndEqual(o.Status.Conditions, common.ReadyCondition, metav1.ConditionFalse) {
+			condition.SetStatusCondition(&o.Status.Conditions, metav1.Condition{
+				Type:   common.ReadyCondition,
+				Reason: "Available",
+				Status: metav1.ConditionTrue,
+			})
+		}
+
 	} else {
 
-		if !condition.IsStatusConditionPresentAndEqual(o.Status.Conditions, ElasticsearchCondition, metav1.ConditionFalse) || (condition.FindStatusCondition(o.Status.Conditions, ElasticsearchCondition) != nil && condition.FindStatusCondition(o.Status.Conditions, ElasticsearchCondition).Reason != "NotReady") {
+		if condition.IsStatusConditionPresentAndEqual(o.Status.Conditions, ElasticsearchCondition, metav1.ConditionTrue) || (condition.FindStatusCondition(o.Status.Conditions, ElasticsearchCondition).Reason != "NotReady") {
 			condition.SetStatusCondition(&o.Status.Conditions, metav1.Condition{
 				Type:   ElasticsearchCondition,
 				Status: metav1.ConditionFalse,
 				Reason: "NotReady",
+			})
+		}
+
+		if condition.IsStatusConditionPresentAndEqual(o.Status.Conditions, common.ReadyCondition, metav1.ConditionTrue) || (condition.FindStatusCondition(o.Status.Conditions, common.ReadyCondition).Reason != "NotReady") {
+			condition.SetStatusCondition(&o.Status.Conditions, metav1.Condition{
+				Type:   common.ReadyCondition,
+				Reason: "NotReady",
+				Status: metav1.ConditionFalse,
 			})
 		}
 

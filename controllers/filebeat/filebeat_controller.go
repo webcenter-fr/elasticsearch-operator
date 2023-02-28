@@ -326,6 +326,14 @@ func (h *FilebeatReconciler) Configure(ctx context.Context, req ctrl.Request, re
 		})
 	}
 
+	if condition.FindStatusCondition(o.Status.Conditions, common.ReadyCondition) == nil {
+		condition.SetStatusCondition(&o.Status.Conditions, metav1.Condition{
+			Type:   common.ReadyCondition,
+			Status: metav1.ConditionFalse,
+			Reason: "Initialize",
+		})
+	}
+
 	return res, nil
 }
 func (h *FilebeatReconciler) Read(ctx context.Context, r client.Object, data map[string]any) (res ctrl.Result, err error) {
@@ -340,6 +348,19 @@ func (h *FilebeatReconciler) OnError(ctx context.Context, r client.Object, data 
 	o := r.(*beatcrd.Filebeat)
 
 	o.Status.IsError = pointer.Bool(true)
+
+	condition.SetStatusCondition(&o.Status.Conditions, metav1.Condition{
+		Type:    FilebeatCondition,
+		Status:  metav1.ConditionFalse,
+		Reason:  "Failed",
+		Message: err.Error(),
+	})
+
+	condition.SetStatusCondition(&o.Status.Conditions, metav1.Condition{
+		Type:   common.ReadyCondition,
+		Status: metav1.ConditionFalse,
+		Reason: "Error",
+	})
 
 	common.TotalErrors.Inc()
 	return res, currentErr
@@ -375,8 +396,16 @@ func (h *FilebeatReconciler) OnSuccess(ctx context.Context, r client.Object, dat
 			o.Status.Phase = FilebeatPhaseRunning
 		}
 
+		if condition.IsStatusConditionPresentAndEqual(o.Status.Conditions, common.ReadyCondition, metav1.ConditionFalse) {
+			condition.SetStatusCondition(&o.Status.Conditions, metav1.Condition{
+				Type:   common.ReadyCondition,
+				Reason: "Available",
+				Status: metav1.ConditionTrue,
+			})
+		}
+
 	} else {
-		if !condition.IsStatusConditionPresentAndEqual(o.Status.Conditions, FilebeatCondition, metav1.ConditionFalse) || (condition.FindStatusCondition(o.Status.Conditions, FilebeatCondition) != nil && condition.FindStatusCondition(o.Status.Conditions, FilebeatCondition).Reason != "NotReady") {
+		if condition.IsStatusConditionPresentAndEqual(o.Status.Conditions, FilebeatCondition, metav1.ConditionTrue) || (condition.FindStatusCondition(o.Status.Conditions, FilebeatCondition).Reason != "NotReady") {
 			condition.SetStatusCondition(&o.Status.Conditions, metav1.Condition{
 				Type:   FilebeatCondition,
 				Status: metav1.ConditionFalse,
@@ -386,6 +415,14 @@ func (h *FilebeatReconciler) OnSuccess(ctx context.Context, r client.Object, dat
 
 		if o.Status.Phase != FilebeatPhaseStarting {
 			o.Status.Phase = FilebeatPhaseStarting
+		}
+
+		if condition.IsStatusConditionPresentAndEqual(o.Status.Conditions, common.ReadyCondition, metav1.ConditionTrue) || (condition.FindStatusCondition(o.Status.Conditions, common.ReadyCondition).Reason != "NotReady") {
+			condition.SetStatusCondition(&o.Status.Conditions, metav1.Condition{
+				Type:   common.ReadyCondition,
+				Reason: "NotReady",
+				Status: metav1.ConditionFalse,
+			})
 		}
 
 		// Requeued to check if status change

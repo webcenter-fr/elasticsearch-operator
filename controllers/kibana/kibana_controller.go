@@ -298,6 +298,14 @@ func (h *KibanaReconciler) Configure(ctx context.Context, req ctrl.Request, reso
 		})
 	}
 
+	if condition.FindStatusCondition(o.Status.Conditions, common.ReadyCondition) == nil {
+		condition.SetStatusCondition(&o.Status.Conditions, metav1.Condition{
+			Type:   common.ReadyCondition,
+			Status: metav1.ConditionFalse,
+			Reason: "Initialize",
+		})
+	}
+
 	return res, nil
 }
 func (h *KibanaReconciler) Read(ctx context.Context, r client.Object, data map[string]any) (res ctrl.Result, err error) {
@@ -312,6 +320,19 @@ func (h *KibanaReconciler) OnError(ctx context.Context, r client.Object, data ma
 	o := r.(*kibanacrd.Kibana)
 
 	o.Status.IsError = pointer.Bool(true)
+
+	condition.SetStatusCondition(&o.Status.Conditions, metav1.Condition{
+		Type:    KibanaCondition,
+		Status:  metav1.ConditionFalse,
+		Reason:  "Failed",
+		Message: err.Error(),
+	})
+
+	condition.SetStatusCondition(&o.Status.Conditions, metav1.Condition{
+		Type:   common.ReadyCondition,
+		Status: metav1.ConditionFalse,
+		Reason: "Error",
+	})
 
 	common.TotalErrors.Inc()
 	return res, currentErr
@@ -347,8 +368,16 @@ func (h *KibanaReconciler) OnSuccess(ctx context.Context, r client.Object, data 
 			o.Status.Phase = KibanaPhaseRunning
 		}
 
+		if condition.IsStatusConditionPresentAndEqual(o.Status.Conditions, common.ReadyCondition, metav1.ConditionFalse) {
+			condition.SetStatusCondition(&o.Status.Conditions, metav1.Condition{
+				Type:   common.ReadyCondition,
+				Reason: "Available",
+				Status: metav1.ConditionTrue,
+			})
+		}
+
 	} else {
-		if !condition.IsStatusConditionPresentAndEqual(o.Status.Conditions, KibanaCondition, metav1.ConditionFalse) || (condition.FindStatusCondition(o.Status.Conditions, KibanaCondition) != nil && condition.FindStatusCondition(o.Status.Conditions, KibanaCondition).Reason != "NotReady") {
+		if condition.IsStatusConditionPresentAndEqual(o.Status.Conditions, KibanaCondition, metav1.ConditionTrue) || (condition.FindStatusCondition(o.Status.Conditions, KibanaCondition).Reason != "NotReady") {
 			condition.SetStatusCondition(&o.Status.Conditions, metav1.Condition{
 				Type:   KibanaCondition,
 				Status: metav1.ConditionFalse,
@@ -358,6 +387,14 @@ func (h *KibanaReconciler) OnSuccess(ctx context.Context, r client.Object, data 
 
 		if o.Status.Phase != KibanaPhaseStarting {
 			o.Status.Phase = KibanaPhaseStarting
+		}
+
+		if condition.IsStatusConditionPresentAndEqual(o.Status.Conditions, common.ReadyCondition, metav1.ConditionTrue) || (condition.FindStatusCondition(o.Status.Conditions, common.ReadyCondition).Reason != "NotReady") {
+			condition.SetStatusCondition(&o.Status.Conditions, metav1.Condition{
+				Type:   common.ReadyCondition,
+				Reason: "NotReady",
+				Status: metav1.ConditionFalse,
+			})
 		}
 
 		// Requeued to check if status change

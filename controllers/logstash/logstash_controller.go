@@ -299,6 +299,14 @@ func (h *LogstashReconciler) Configure(ctx context.Context, req ctrl.Request, re
 		})
 	}
 
+	if condition.FindStatusCondition(o.Status.Conditions, common.ReadyCondition) == nil {
+		condition.SetStatusCondition(&o.Status.Conditions, metav1.Condition{
+			Type:   common.ReadyCondition,
+			Status: metav1.ConditionFalse,
+			Reason: "Initialize",
+		})
+	}
+
 	return res, nil
 }
 func (h *LogstashReconciler) Read(ctx context.Context, r client.Object, data map[string]any) (res ctrl.Result, err error) {
@@ -313,6 +321,19 @@ func (h *LogstashReconciler) OnError(ctx context.Context, r client.Object, data 
 	o := r.(*logstashcrd.Logstash)
 
 	o.Status.IsError = pointer.Bool(true)
+
+	condition.SetStatusCondition(&o.Status.Conditions, metav1.Condition{
+		Type:    LogstashCondition,
+		Status:  metav1.ConditionFalse,
+		Reason:  "Failed",
+		Message: err.Error(),
+	})
+
+	condition.SetStatusCondition(&o.Status.Conditions, metav1.Condition{
+		Type:   common.ReadyCondition,
+		Status: metav1.ConditionFalse,
+		Reason: "Error",
+	})
 
 	common.TotalErrors.Inc()
 	return res, currentErr
@@ -348,8 +369,16 @@ func (h *LogstashReconciler) OnSuccess(ctx context.Context, r client.Object, dat
 			o.Status.Phase = LogstashPhaseRunning
 		}
 
+		if condition.IsStatusConditionPresentAndEqual(o.Status.Conditions, common.ReadyCondition, metav1.ConditionFalse) {
+			condition.SetStatusCondition(&o.Status.Conditions, metav1.Condition{
+				Type:   common.ReadyCondition,
+				Reason: "Available",
+				Status: metav1.ConditionTrue,
+			})
+		}
+
 	} else {
-		if !condition.IsStatusConditionPresentAndEqual(o.Status.Conditions, LogstashCondition, metav1.ConditionFalse) || (condition.FindStatusCondition(o.Status.Conditions, LogstashCondition) != nil && condition.FindStatusCondition(o.Status.Conditions, LogstashCondition).Reason != "NotReady") {
+		if condition.IsStatusConditionPresentAndEqual(o.Status.Conditions, LogstashCondition, metav1.ConditionTrue) || (condition.FindStatusCondition(o.Status.Conditions, LogstashCondition).Reason != "NotReady") {
 			condition.SetStatusCondition(&o.Status.Conditions, metav1.Condition{
 				Type:   LogstashCondition,
 				Status: metav1.ConditionFalse,
@@ -359,6 +388,14 @@ func (h *LogstashReconciler) OnSuccess(ctx context.Context, r client.Object, dat
 
 		if o.Status.Phase != LogstashPhaseStarting {
 			o.Status.Phase = LogstashPhaseStarting
+		}
+
+		if condition.IsStatusConditionPresentAndEqual(o.Status.Conditions, common.ReadyCondition, metav1.ConditionTrue) || (condition.FindStatusCondition(o.Status.Conditions, common.ReadyCondition).Reason != "NotReady") {
+			condition.SetStatusCondition(&o.Status.Conditions, metav1.Condition{
+				Type:   common.ReadyCondition,
+				Reason: "NotReady",
+				Status: metav1.ConditionFalse,
+			})
 		}
 
 		// Requeued to check if status change
