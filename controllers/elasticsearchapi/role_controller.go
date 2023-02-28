@@ -106,6 +106,14 @@ func (r *RoleReconciler) Configure(ctx context.Context, req ctrl.Request, resour
 		})
 	}
 
+	if condition.FindStatusCondition(role.Status.Conditions, common.ReadyCondition) == nil {
+		condition.SetStatusCondition(&role.Status.Conditions, metav1.Condition{
+			Type:   common.ReadyCondition,
+			Status: metav1.ConditionFalse,
+			Reason: "Initialize",
+		})
+	}
+
 	// Get elasticsearch handler / client
 	meta, err = GetElasticsearchHandler(ctx, role, role.Spec.ElasticsearchRef, r.Client, r.log)
 	if err != nil {
@@ -264,6 +272,12 @@ func (r *RoleReconciler) OnError(ctx context.Context, resource client.Object, da
 		Message: err.Error(),
 	})
 
+	condition.SetStatusCondition(&role.Status.Conditions, metav1.Condition{
+		Type:   common.ReadyCondition,
+		Status: metav1.ConditionFalse,
+		Reason: "Error",
+	})
+
 	role.Status.Sync = false
 }
 
@@ -272,6 +286,14 @@ func (r *RoleReconciler) OnSuccess(ctx context.Context, resource client.Object, 
 	role := resource.(*elasticsearchapicrd.Role)
 
 	role.Status.Sync = true
+
+	if condition.IsStatusConditionPresentAndEqual(role.Status.Conditions, common.ReadyCondition, metav1.ConditionFalse) {
+		condition.SetStatusCondition(&role.Status.Conditions, metav1.Condition{
+			Type:   common.ReadyCondition,
+			Reason: "Available",
+			Status: metav1.ConditionTrue,
+		})
+	}
 
 	if diff.NeedCreate {
 		condition.SetStatusCondition(&role.Status.Conditions, metav1.Condition{

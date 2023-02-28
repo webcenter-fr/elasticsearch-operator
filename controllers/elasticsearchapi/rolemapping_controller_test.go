@@ -15,6 +15,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	elasticsearchapicrd "github.com/webcenter-fr/elasticsearch-operator/apis/elasticsearchapi/v1alpha1"
 	"github.com/webcenter-fr/elasticsearch-operator/apis/shared"
+	"github.com/webcenter-fr/elasticsearch-operator/controllers/common"
 	localhelper "github.com/webcenter-fr/elasticsearch-operator/pkg/helper"
 	localtest "github.com/webcenter-fr/elasticsearch-operator/pkg/test"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
@@ -186,6 +187,7 @@ func doCreateRoleMappingStep() test.TestStep {
 				t.Fatalf("Failed to get role mapping: %s", err.Error())
 			}
 			assert.True(t, condition.IsStatusConditionPresentAndEqual(rm.Status.Conditions, RoleMappingCondition, metav1.ConditionTrue))
+			assert.True(t, condition.IsStatusConditionPresentAndEqual(rm.Status.Conditions, common.ReadyCondition, metav1.ConditionTrue))
 			assert.True(t, rm.Status.Sync)
 
 			return nil
@@ -231,6 +233,7 @@ func doUpdateRoleMappingStep() test.TestStep {
 				t.Fatalf("Failed to get role mapping: %s", err.Error())
 			}
 			assert.True(t, condition.IsStatusConditionPresentAndEqual(rm.Status.Conditions, RoleMappingCondition, metav1.ConditionTrue))
+			assert.True(t, condition.IsStatusConditionPresentAndEqual(rm.Status.Conditions, common.ReadyCondition, metav1.ConditionTrue))
 			assert.True(t, rm.Status.Sync)
 
 			return nil

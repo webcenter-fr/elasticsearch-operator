@@ -106,6 +106,14 @@ func (r *SnapshotLifecyclePolicyReconciler) Configure(ctx context.Context, req c
 		})
 	}
 
+	if condition.FindStatusCondition(slm.Status.Conditions, common.ReadyCondition) == nil {
+		condition.SetStatusCondition(&slm.Status.Conditions, metav1.Condition{
+			Type:   common.ReadyCondition,
+			Status: metav1.ConditionFalse,
+			Reason: "Initialize",
+		})
+	}
+
 	// Get elasticsearch handler / client
 	meta, err = GetElasticsearchHandler(ctx, slm, slm.Spec.ElasticsearchRef, r.Client, r.log)
 	if err != nil {
@@ -276,6 +284,12 @@ func (r *SnapshotLifecyclePolicyReconciler) OnError(ctx context.Context, resourc
 		Message: err.Error(),
 	})
 
+	condition.SetStatusCondition(&slm.Status.Conditions, metav1.Condition{
+		Type:   common.ReadyCondition,
+		Status: metav1.ConditionFalse,
+		Reason: "Error",
+	})
+
 	slm.Status.Sync = false
 }
 
@@ -284,6 +298,14 @@ func (r *SnapshotLifecyclePolicyReconciler) OnSuccess(ctx context.Context, resou
 	slm := resource.(*elasticsearchapicrd.SnapshotLifecyclePolicy)
 
 	slm.Status.Sync = true
+
+	if condition.IsStatusConditionPresentAndEqual(slm.Status.Conditions, common.ReadyCondition, metav1.ConditionFalse) {
+		condition.SetStatusCondition(&slm.Status.Conditions, metav1.Condition{
+			Type:   common.ReadyCondition,
+			Reason: "Available",
+			Status: metav1.ConditionTrue,
+		})
+	}
 
 	if diff.NeedCreate {
 		condition.SetStatusCondition(&slm.Status.Conditions, metav1.Condition{

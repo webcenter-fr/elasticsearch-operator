@@ -83,6 +83,9 @@ func GetElasticsearchHandler(ctx context.Context, o client.Object, esRef shared.
 		if err != nil {
 			return nil, errors.Wrap(err, "Error when get Elasticsearch object from ref")
 		}
+		if es == nil {
+			return nil, errors.Errorf("Elasticsearch %s/%s not found", esRef.ManagedElasticsearchRef.Namespace, esRef.ManagedElasticsearchRef.Name)
+		}
 
 		// Get secret that store credential
 		secretName = elasticsearchcontrollers.GetSecretNameForCredentials(es)

@@ -140,6 +140,14 @@ func (r *LicenseReconciler) Configure(ctx context.Context, req ctrl.Request, res
 		})
 	}
 
+	if condition.FindStatusCondition(license.Status.Conditions, common.ReadyCondition) == nil {
+		condition.SetStatusCondition(&license.Status.Conditions, metav1.Condition{
+			Type:   common.ReadyCondition,
+			Status: metav1.ConditionFalse,
+			Reason: "Initialize",
+		})
+	}
+
 	// Get elasticsearch handler / client
 	meta, err = GetElasticsearchHandler(ctx, license, license.Spec.ElasticsearchRef, r.Client, r.log)
 	if err != nil {
@@ -344,6 +352,12 @@ func (r *LicenseReconciler) OnError(ctx context.Context, resource client.Object,
 		Message: err.Error(),
 	})
 
+	condition.SetStatusCondition(&license.Status.Conditions, metav1.Condition{
+		Type:   common.ReadyCondition,
+		Status: metav1.ConditionFalse,
+		Reason: "Error",
+	})
+
 	license.Status.Sync = false
 }
 
@@ -352,6 +366,14 @@ func (r *LicenseReconciler) OnSuccess(ctx context.Context, resource client.Objec
 	license := resource.(*elasticsearchapicrd.License)
 
 	license.Status.Sync = true
+
+	if condition.IsStatusConditionPresentAndEqual(license.Status.Conditions, common.ReadyCondition, metav1.ConditionFalse) {
+		condition.SetStatusCondition(&license.Status.Conditions, metav1.Condition{
+			Type:   common.ReadyCondition,
+			Reason: "Available",
+			Status: metav1.ConditionTrue,
+		})
+	}
 
 	if diff.NeedCreate {
 		condition.SetStatusCondition(&license.Status.Conditions, metav1.Condition{

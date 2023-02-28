@@ -14,6 +14,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	elasticsearchapicrd "github.com/webcenter-fr/elasticsearch-operator/apis/elasticsearchapi/v1alpha1"
 	"github.com/webcenter-fr/elasticsearch-operator/apis/shared"
+	"github.com/webcenter-fr/elasticsearch-operator/controllers/common"
 	localhelper "github.com/webcenter-fr/elasticsearch-operator/pkg/helper"
 	localtest "github.com/webcenter-fr/elasticsearch-operator/pkg/test"
 	core "k8s.io/api/core/v1"
@@ -200,6 +201,7 @@ func doEnableBasicLicenseStep() test.TestStep {
 			assert.Empty(t, license.Status.LicenseChecksum)
 			assert.Equal(t, "basic", license.Status.LicenseType)
 			assert.True(t, condition.IsStatusConditionPresentAndEqual(license.Status.Conditions, LicenseCondition, metav1.ConditionTrue))
+			assert.True(t, condition.IsStatusConditionPresentAndEqual(license.Status.Conditions, common.ReadyCondition, metav1.ConditionTrue))
 			assert.True(t, license.Status.Sync)
 
 			return nil
@@ -326,6 +328,7 @@ func doUpdateToEnterpriseLicenseStep() test.TestStep {
 			assert.NotEmpty(t, license.Status.LicenseChecksum)
 			assert.Equal(t, "gold", license.Status.LicenseType)
 			assert.True(t, condition.IsStatusConditionPresentAndEqual(license.Status.Conditions, LicenseCondition, metav1.ConditionTrue))
+			assert.True(t, condition.IsStatusConditionPresentAndEqual(license.Status.Conditions, common.ReadyCondition, metav1.ConditionTrue))
 			assert.True(t, license.Status.Sync)
 
 			return nil
@@ -395,6 +398,7 @@ func doUpdateEnterpriseLicenseStep() test.TestStep {
 			assert.NotEqual(t, data["licenseChecksum"], license.Status.LicenseChecksum)
 			assert.Equal(t, "gold", license.Status.LicenseType)
 			assert.True(t, condition.IsStatusConditionPresentAndEqual(license.Status.Conditions, LicenseCondition, metav1.ConditionTrue))
+			assert.True(t, condition.IsStatusConditionPresentAndEqual(license.Status.Conditions, common.ReadyCondition, metav1.ConditionTrue))
 			assert.True(t, license.Status.Sync)
 
 			return nil

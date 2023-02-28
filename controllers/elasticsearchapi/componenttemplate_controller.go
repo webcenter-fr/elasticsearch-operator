@@ -107,6 +107,14 @@ func (r *ComponentTemplateReconciler) Configure(ctx context.Context, req ctrl.Re
 		})
 	}
 
+	if condition.FindStatusCondition(ct.Status.Conditions, common.ReadyCondition) == nil {
+		condition.SetStatusCondition(&ct.Status.Conditions, metav1.Condition{
+			Type:   common.ReadyCondition,
+			Status: metav1.ConditionFalse,
+			Reason: "Initialize",
+		})
+	}
+
 	// Get elasticsearch handler / client
 	meta, err = GetElasticsearchHandler(ctx, ct, ct.Spec.ElasticsearchRef, r.Client, r.log)
 	if err != nil {
@@ -267,6 +275,12 @@ func (r *ComponentTemplateReconciler) OnError(ctx context.Context, resource clie
 		Message: err.Error(),
 	})
 
+	condition.SetStatusCondition(&ct.Status.Conditions, metav1.Condition{
+		Type:   common.ReadyCondition,
+		Status: metav1.ConditionFalse,
+		Reason: "Error",
+	})
+
 	ct.Status.Sync = false
 }
 
@@ -275,6 +289,14 @@ func (r *ComponentTemplateReconciler) OnSuccess(ctx context.Context, resource cl
 	ct := resource.(*elasticsearchapicrd.ComponentTemplate)
 
 	ct.Status.Sync = true
+
+	if condition.IsStatusConditionPresentAndEqual(ct.Status.Conditions, common.ReadyCondition, metav1.ConditionFalse) {
+		condition.SetStatusCondition(&ct.Status.Conditions, metav1.Condition{
+			Type:   common.ReadyCondition,
+			Reason: "Available",
+			Status: metav1.ConditionTrue,
+		})
+	}
 
 	if diff.NeedCreate {
 		condition.SetStatusCondition(&ct.Status.Conditions, metav1.Condition{

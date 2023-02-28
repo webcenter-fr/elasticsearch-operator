@@ -15,6 +15,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	elasticsearchapicrd "github.com/webcenter-fr/elasticsearch-operator/apis/elasticsearchapi/v1alpha1"
 	"github.com/webcenter-fr/elasticsearch-operator/apis/shared"
+	"github.com/webcenter-fr/elasticsearch-operator/controllers/common"
 	localhelper "github.com/webcenter-fr/elasticsearch-operator/pkg/helper"
 	localtest "github.com/webcenter-fr/elasticsearch-operator/pkg/test"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
@@ -199,6 +200,7 @@ func doCreateUserStep() test.TestStep {
 				t.Fatalf("Failed to get user: %s", err.Error())
 			}
 			assert.True(t, condition.IsStatusConditionPresentAndEqual(user.Status.Conditions, UserCondition, metav1.ConditionTrue))
+			assert.True(t, condition.IsStatusConditionPresentAndEqual(user.Status.Conditions, common.ReadyCondition, metav1.ConditionTrue))
 			assert.True(t, user.Status.Sync)
 
 			return nil
@@ -244,6 +246,7 @@ func doUpdateUserStep() test.TestStep {
 				t.Fatalf("Failed to get User: %s", err.Error())
 			}
 			assert.True(t, condition.IsStatusConditionPresentAndEqual(user.Status.Conditions, UserCondition, metav1.ConditionTrue))
+			assert.True(t, condition.IsStatusConditionPresentAndEqual(user.Status.Conditions, common.ReadyCondition, metav1.ConditionTrue))
 			assert.True(t, user.Status.Sync)
 
 			return nil
@@ -289,6 +292,8 @@ func doUpdateUserPasswordHashStep() test.TestStep {
 				t.Fatalf("Failed to get User: %s", err.Error())
 			}
 			assert.True(t, condition.IsStatusConditionPresentAndEqual(user.Status.Conditions, UserCondition, metav1.ConditionTrue))
+			assert.True(t, condition.IsStatusConditionPresentAndEqual(user.Status.Conditions, common.ReadyCondition, metav1.ConditionTrue))
+			assert.True(t, user.Status.Sync)
 
 			return nil
 		},

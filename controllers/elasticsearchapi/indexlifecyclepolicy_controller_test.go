@@ -16,6 +16,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	elasticsearchapicrd "github.com/webcenter-fr/elasticsearch-operator/apis/elasticsearchapi/v1alpha1"
 	"github.com/webcenter-fr/elasticsearch-operator/apis/shared"
+	"github.com/webcenter-fr/elasticsearch-operator/controllers/common"
 	localhelper "github.com/webcenter-fr/elasticsearch-operator/pkg/helper"
 	localtest "github.com/webcenter-fr/elasticsearch-operator/pkg/test"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
@@ -267,6 +268,7 @@ func doCreateILMStep() test.TestStep {
 				t.Fatalf("Failed to get ILM: %s", err.Error())
 			}
 			assert.True(t, condition.IsStatusConditionPresentAndEqual(ilm.Status.Conditions, IndexLifecyclePolicyCondition, metav1.ConditionTrue))
+			assert.True(t, condition.IsStatusConditionPresentAndEqual(ilm.Status.Conditions, common.ReadyCondition, metav1.ConditionTrue))
 			assert.True(t, ilm.Status.Sync)
 
 			return nil
@@ -334,6 +336,7 @@ func doUpdateILMStep() test.TestStep {
 				return errors.Wrapf(err, "Failed to get ILM")
 			}
 			assert.True(t, condition.IsStatusConditionPresentAndEqual(ilm.Status.Conditions, IndexLifecyclePolicyCondition, metav1.ConditionTrue))
+			assert.True(t, condition.IsStatusConditionPresentAndEqual(ilm.Status.Conditions, common.ReadyCondition, metav1.ConditionTrue))
 			assert.True(t, ilm.Status.Sync)
 
 			return nil

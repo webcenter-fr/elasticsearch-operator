@@ -108,6 +108,14 @@ func (r *IndexLifecyclePolicyReconciler) Configure(ctx context.Context, req ctrl
 		})
 	}
 
+	if condition.FindStatusCondition(ilm.Status.Conditions, common.ReadyCondition) == nil {
+		condition.SetStatusCondition(&ilm.Status.Conditions, metav1.Condition{
+			Type:   common.ReadyCondition,
+			Status: metav1.ConditionFalse,
+			Reason: "Initialize",
+		})
+	}
+
 	// Get elasticsearch handler / client
 	meta, err = GetElasticsearchHandler(ctx, ilm, ilm.Spec.ElasticsearchRef, r.Client, r.log)
 	if err != nil {
@@ -266,6 +274,12 @@ func (r *IndexLifecyclePolicyReconciler) OnError(ctx context.Context, resource c
 		Message: err.Error(),
 	})
 
+	condition.SetStatusCondition(&ilm.Status.Conditions, metav1.Condition{
+		Type:   common.ReadyCondition,
+		Status: metav1.ConditionFalse,
+		Reason: "Error",
+	})
+
 	ilm.Status.Sync = false
 }
 
@@ -274,6 +288,14 @@ func (r *IndexLifecyclePolicyReconciler) OnSuccess(ctx context.Context, resource
 	ilm := resource.(*elasticsearchapicrd.IndexLifecyclePolicy)
 
 	ilm.Status.Sync = true
+
+	if condition.IsStatusConditionPresentAndEqual(ilm.Status.Conditions, common.ReadyCondition, metav1.ConditionFalse) {
+		condition.SetStatusCondition(&ilm.Status.Conditions, metav1.Condition{
+			Type:   common.ReadyCondition,
+			Reason: "Available",
+			Status: metav1.ConditionTrue,
+		})
+	}
 
 	if diff.NeedCreate {
 		condition.SetStatusCondition(&ilm.Status.Conditions, metav1.Condition{

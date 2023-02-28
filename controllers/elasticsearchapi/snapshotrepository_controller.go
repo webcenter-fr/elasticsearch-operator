@@ -108,6 +108,14 @@ func (r *SnapshotRepositoryReconciler) Configure(ctx context.Context, req ctrl.R
 		})
 	}
 
+	if condition.FindStatusCondition(sr.Status.Conditions, common.ReadyCondition) == nil {
+		condition.SetStatusCondition(&sr.Status.Conditions, metav1.Condition{
+			Type:   common.ReadyCondition,
+			Status: metav1.ConditionFalse,
+			Reason: "Initialize",
+		})
+	}
+
 	// Get elasticsearch handler / client
 	meta, err = GetElasticsearchHandler(ctx, sr, sr.Spec.ElasticsearchRef, r.Client, r.log)
 	if err != nil {
@@ -276,6 +284,12 @@ func (r *SnapshotRepositoryReconciler) OnError(ctx context.Context, resource cli
 		Message: err.Error(),
 	})
 
+	condition.SetStatusCondition(&sr.Status.Conditions, metav1.Condition{
+		Type:   common.ReadyCondition,
+		Status: metav1.ConditionFalse,
+		Reason: "Error",
+	})
+
 	sr.Status.Sync = false
 }
 
@@ -284,6 +298,14 @@ func (r *SnapshotRepositoryReconciler) OnSuccess(ctx context.Context, resource c
 	sr := resource.(*elasticsearchapicrd.SnapshotRepository)
 
 	sr.Status.Sync = true
+
+	if condition.IsStatusConditionPresentAndEqual(sr.Status.Conditions, common.ReadyCondition, metav1.ConditionFalse) {
+		condition.SetStatusCondition(&sr.Status.Conditions, metav1.Condition{
+			Type:   common.ReadyCondition,
+			Reason: "Available",
+			Status: metav1.ConditionTrue,
+		})
+	}
 
 	if diff.NeedCreate {
 		condition.SetStatusCondition(&sr.Status.Conditions, metav1.Condition{

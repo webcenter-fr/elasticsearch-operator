@@ -107,6 +107,14 @@ func (r *WatchReconciler) Configure(ctx context.Context, req ctrl.Request, resou
 		})
 	}
 
+	if condition.FindStatusCondition(watch.Status.Conditions, common.ReadyCondition) == nil {
+		condition.SetStatusCondition(&watch.Status.Conditions, metav1.Condition{
+			Type:   common.ReadyCondition,
+			Status: metav1.ConditionFalse,
+			Reason: "Initialize",
+		})
+	}
+
 	// Get elasticsearch handler / client
 	meta, err = GetElasticsearchHandler(ctx, watch, watch.Spec.ElasticsearchRef, r.Client, r.log)
 	if err != nil {
@@ -265,6 +273,12 @@ func (r *WatchReconciler) OnError(ctx context.Context, resource client.Object, d
 		Message: err.Error(),
 	})
 
+	condition.SetStatusCondition(&watch.Status.Conditions, metav1.Condition{
+		Type:   common.ReadyCondition,
+		Status: metav1.ConditionFalse,
+		Reason: "Error",
+	})
+
 	watch.Status.Sync = false
 }
 
@@ -273,6 +287,14 @@ func (r *WatchReconciler) OnSuccess(ctx context.Context, resource client.Object,
 	watch := resource.(*elasticsearchapicrd.Watch)
 
 	watch.Status.Sync = true
+
+	if condition.IsStatusConditionPresentAndEqual(watch.Status.Conditions, common.ReadyCondition, metav1.ConditionFalse) {
+		condition.SetStatusCondition(&watch.Status.Conditions, metav1.Condition{
+			Type:   common.ReadyCondition,
+			Reason: "Available",
+			Status: metav1.ConditionTrue,
+		})
+	}
 
 	if diff.NeedCreate {
 		condition.SetStatusCondition(&watch.Status.Conditions, metav1.Condition{

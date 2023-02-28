@@ -300,7 +300,7 @@ func (r *StatefulsetReconciler) Diff(ctx context.Context, resource client.Object
 
 	// First, we check if some statefullset need to be upgraded
 	// Then we only update Statefullset curretly being upgraded or wait is finished
-	for _, expectedSts := range expectedStatefulsets {
+	for indexExpectedSts, expectedSts := range expectedStatefulsets {
 		isFound := false
 		for i, currentSts := range copyCurrentStatefulsets {
 			// Need compare statefulset
@@ -329,29 +329,30 @@ func (r *StatefulsetReconciler) Diff(ctx context.Context, resource client.Object
 		}
 
 		if !isFound {
+			sts := &expectedStatefulsets[indexExpectedSts]
 			// Need create statefulset
 			diff.NeedCreate = true
-			diff.Diff.WriteString(fmt.Sprintf("Statefulset %s not yet exist\n", expectedSts.Name))
+			diff.Diff.WriteString(fmt.Sprintf("Statefulset %s not yet exist\n", sts.Name))
 
 			// Set owner
-			err = ctrl.SetControllerReference(o, &expectedSts, r.Scheme)
+			err = ctrl.SetControllerReference(o, sts, r.Scheme)
 			if err != nil {
 				return diff, res, errors.Wrapf(err, "Error when set owner reference")
 			}
 
-			if err := patch.DefaultAnnotator.SetLastAppliedAnnotation(&expectedSts); err != nil {
-				return diff, res, errors.Wrapf(err, "Error when set diff annotation on statefulset %s", expectedSts.Name)
+			if err := patch.DefaultAnnotator.SetLastAppliedAnnotation(sts); err != nil {
+				return diff, res, errors.Wrapf(err, "Error when set diff annotation on statefulset %s", sts.Name)
 			}
 
-			stsToCreate = append(stsToCreate, &expectedSts)
+			stsToCreate = append(stsToCreate, sts)
 
-			r.Log.Debugf("Need create statefulset %s", expectedSts.Name)
+			r.Log.Debugf("Need create statefulset %s", sts.Name)
 		}
 	}
 
 	if len(copyCurrentStatefulsets) > 0 {
 		diff.NeedDelete = true
-		for _, sts := range currentStatefulsets {
+		for _, sts := range copyCurrentStatefulsets {
 			diff.Diff.WriteString(fmt.Sprintf("Need delete statefulset %s\n", sts.Name))
 		}
 	}
@@ -397,7 +398,7 @@ func (r *StatefulsetReconciler) Diff(ctx context.Context, resource client.Object
 
 	data["listToCreate"] = stsToCreate
 	data["listToUpdate"] = stsToUpdate
-	data["listToDelete"] = helperdiff.ToSliceOfObject(currentStatefulsets)
+	data["listToDelete"] = helperdiff.ToSliceOfObject(copyCurrentStatefulsets)
 
 	return diff, res, nil
 }

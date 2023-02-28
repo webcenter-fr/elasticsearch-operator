@@ -732,10 +732,10 @@ metadata:
         }
       ]
     capabilities: Basic Install
-    createdAt: "2023-02-22T15:52:58Z"
+    createdAt: "2023-02-28T07:58:33Z"
     operators.operatorframework.io/builder: operator-sdk-v1.26.1
     operators.operatorframework.io/project_layout: go.kubebuilder.io/v3
-  name: elasticsearch-operator.v0.0.5
+  name: elasticsearch-operator.v0.0.7
   namespace: placeholder
 spec:
   apiservicedefinitions: {}
@@ -825,6 +825,10 @@ spec:
         name: ""
         version: elasticsearchapi.k8s.webcenter.fr/v1alpha1
       specDescriptors:
+      - description: ClusterName is the Elasticsearch cluster name Default is use
+          the custom ressource name
+        displayName: Cluster Name
+        path: clusterName
       - description: Endpoint permit to set endpoints to access on Elasticsearch from
           external kubernetes You can set ingress and / or load balancer
         displayName: Endpoint
@@ -2831,7 +2835,7 @@ spec:
                       fieldPath: metadata.namespace
                 - name: LOG_LEVEL
                   value: DEBUG
-                image: quay.io/webcenter/elasticsearch-operator:0.0.5
+                image: quay.io/webcenter/elasticsearch-operator:0.0.7
                 livenessProbe:
                   httpGet:
                     path: /healthz
@@ -2921,5 +2925,5 @@ spec:
   provider:
     name: webcenter.fr
     url: https://github.com/webcenter-fr/elasticsearch-operator
-  replaces: elasticsearch-operator.v0.0.4
-  version: 0.0.5
+  replaces: elasticsearch-operator.v0.0.6
+  version: 0.0.7
