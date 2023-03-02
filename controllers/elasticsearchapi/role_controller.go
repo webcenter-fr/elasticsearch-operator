@@ -116,12 +116,12 @@ func (r *RoleReconciler) Configure(ctx context.Context, req ctrl.Request, resour
 
 	// Get elasticsearch handler / client
 	meta, err = GetElasticsearchHandler(ctx, role, role.Spec.ElasticsearchRef, r.Client, r.log)
-	if err != nil {
+	if err != nil && role.DeletionTimestamp.IsZero() {
 		r.recorder.Eventf(resource, core.EventTypeWarning, "Failed", "Unable to init elasticsearch handler: %s", err.Error())
 		return nil, err
 	}
 
-	return meta, err
+	return meta, nil
 }
 
 // Read permit to get current role

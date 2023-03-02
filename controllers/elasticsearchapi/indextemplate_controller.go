@@ -117,12 +117,12 @@ func (r *IndexTemplateReconciler) Configure(ctx context.Context, req ctrl.Reques
 
 	// Get elasticsearch handler / client
 	meta, err = GetElasticsearchHandler(ctx, it, it.Spec.ElasticsearchRef, r.Client, r.log)
-	if err != nil {
+	if err != nil && it.DeletionTimestamp.IsZero() {
 		r.recorder.Eventf(resource, core.EventTypeWarning, "Failed", "Unable to init elasticsearch handler: %s", err.Error())
 		return nil, err
 	}
 
-	return meta, err
+	return meta, nil
 }
 
 // Read permit to get current index template

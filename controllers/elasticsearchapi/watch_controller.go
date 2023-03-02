@@ -117,12 +117,12 @@ func (r *WatchReconciler) Configure(ctx context.Context, req ctrl.Request, resou
 
 	// Get elasticsearch handler / client
 	meta, err = GetElasticsearchHandler(ctx, watch, watch.Spec.ElasticsearchRef, r.Client, r.log)
-	if err != nil {
+	if err != nil && watch.DeletionTimestamp.IsZero() {
 		r.recorder.Eventf(resource, core.EventTypeWarning, "Failed", "Unable to init elasticsearch handler: %s", err.Error())
 		return nil, err
 	}
 
-	return meta, err
+	return meta, nil
 }
 
 // Read permit to get current watch

@@ -117,12 +117,12 @@ func (r *ComponentTemplateReconciler) Configure(ctx context.Context, req ctrl.Re
 
 	// Get elasticsearch handler / client
 	meta, err = GetElasticsearchHandler(ctx, ct, ct.Spec.ElasticsearchRef, r.Client, r.log)
-	if err != nil {
+	if err != nil && ct.DeletionTimestamp.IsZero() {
 		r.recorder.Eventf(resource, core.EventTypeWarning, "Failed", "Unable to init elasticsearch handler: %s", err.Error())
 		return nil, err
 	}
 
-	return meta, err
+	return meta, nil
 }
 
 // Read permit to get current component template
