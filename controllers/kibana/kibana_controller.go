@@ -325,7 +325,7 @@ func (h *KibanaReconciler) OnError(ctx context.Context, r client.Object, data ma
 		Type:    KibanaCondition,
 		Status:  metav1.ConditionFalse,
 		Reason:  "Failed",
-		Message: err.Error(),
+		Message: currentErr.Error(),
 	})
 
 	condition.SetStatusCondition(&o.Status.Conditions, metav1.Condition{

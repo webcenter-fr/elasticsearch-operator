@@ -353,7 +353,7 @@ func (h *FilebeatReconciler) OnError(ctx context.Context, r client.Object, data 
 		Type:    FilebeatCondition,
 		Status:  metav1.ConditionFalse,
 		Reason:  "Failed",
-		Message: err.Error(),
+		Message: currentErr.Error(),
 	})
 
 	condition.SetStatusCondition(&o.Status.Conditions, metav1.Condition{
