@@ -43,8 +43,8 @@ func BuildServices(fb *beatcrd.Filebeat) (services []corev1.Service, err error) 
 
 		services = append(services, *service)
 
-		isPortAlreadyUsed = false
 		for _, port := range service.Spec.Ports {
+			isPortAlreadyUsed = false
 			for _, portUsed := range computedPort {
 				if port.Protocol == portUsed.Protocol && (port.Name == portUsed.Name || port.Port == portUsed.Port) {
 					isPortAlreadyUsed = true
@@ -96,7 +96,7 @@ func BuildServices(fb *beatcrd.Filebeat) (services []corev1.Service, err error) 
 
 		isPortAlreadyUsed = false
 		for _, portUsed := range computedPort {
-			if i.ContainerPortProtocol == portUsed.Protocol && int32(i.ContainerPort) == portUsed.Port {
+			if i.ContainerPortProtocol == portUsed.Protocol && (int32(i.ContainerPort) == portUsed.Port || i.Name == portUsed.Name) {
 				isPortAlreadyUsed = true
 				break
 			}
@@ -116,7 +116,7 @@ func BuildServices(fb *beatcrd.Filebeat) (services []corev1.Service, err error) 
 	for _, port := range fb.Spec.Deployment.Ports {
 		isPortAlreadyUsed = false
 		for _, portUsed := range computedPort {
-			if port.Protocol == portUsed.Protocol && port.ContainerPort == portUsed.Port {
+			if port.Protocol == portUsed.Protocol && (port.ContainerPort == portUsed.Port || port.Name == portUsed.Name) {
 				isPortAlreadyUsed = true
 				break
 			}

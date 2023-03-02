@@ -43,8 +43,8 @@ func BuildServices(ls *logstashcrd.Logstash) (services []corev1.Service, err err
 
 		services = append(services, *service)
 
-		isPortAlreadyUsed = false
 		for _, port := range service.Spec.Ports {
+			isPortAlreadyUsed = false
 			for _, portUsed := range computedPort {
 				if port.Protocol == portUsed.Protocol && (port.Name == portUsed.Name || port.Port == portUsed.Port) {
 					isPortAlreadyUsed = true
@@ -95,7 +95,7 @@ func BuildServices(ls *logstashcrd.Logstash) (services []corev1.Service, err err
 
 		isPortAlreadyUsed = false
 		for _, portUsed := range computedPort {
-			if i.ContainerPortProtocol == portUsed.Protocol && int32(i.ContainerPort) == portUsed.Port {
+			if i.ContainerPortProtocol == portUsed.Protocol && (int32(i.ContainerPort) == portUsed.Port || i.Name == portUsed.Name) {
 				isPortAlreadyUsed = true
 				break
 			}
@@ -115,7 +115,7 @@ func BuildServices(ls *logstashcrd.Logstash) (services []corev1.Service, err err
 	for _, port := range ls.Spec.Deployment.Ports {
 		isPortAlreadyUsed = false
 		for _, portUsed := range computedPort {
-			if port.Protocol == portUsed.Protocol && port.ContainerPort == portUsed.Port {
+			if port.Protocol == portUsed.Protocol && (port.ContainerPort == portUsed.Port || port.Name == portUsed.Name) {
 				isPortAlreadyUsed = true
 				break
 			}
