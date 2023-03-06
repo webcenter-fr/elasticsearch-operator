@@ -358,15 +358,16 @@ func (r *StatefulsetReconciler) Diff(ctx context.Context, resource client.Object
 	}
 
 	// Check if on current upgrade phase, to only upgrade the statefullset currently being upgraded
+	// Or statefullset with current replica to 0 (maybee stop all pod)
 	if condition.IsStatusConditionPresentAndEqual(o.Status.Conditions, StatefulsetConditionUpgrade, metav1.ConditionTrue) && condition.IsStatusConditionPresentAndEqual(o.Status.Conditions, StatefulsetCondition, metav1.ConditionFalse) {
 		r.Log.Debugf("Detect phase: %s", phaseStsUpgrade)
 
-	loopStatefullset:
+		// Upgrade only one active statefulset or current upgrade
 		for _, sts := range currentStatefulsets {
 
 			// Not found a way to detect that we are on envtest, so without kubelet. We use env TEST to to that.
 			// It avoid to stuck test on this phase
-			if localhelper.IsOnStatefulSetUpgradeState(&sts) && os.Getenv("TEST") != "true" {
+			if localhelper.IsOnStatefulSetUpgradeState(&sts) && os.Getenv("TEST") != "true" && *sts.Spec.Replicas > 0 {
 
 				data["phase"] = phaseStsUpgrade
 
@@ -374,24 +375,32 @@ func (r *StatefulsetReconciler) Diff(ctx context.Context, resource client.Object
 				for _, stsNeedUpgraded := range stsToExpectedUpdated {
 					if stsNeedUpgraded.GetName() == sts.Name {
 						r.Log.Infof("Detect we need to upgrade Statefullset %s that being already on upgrade state", sts.Name)
-						stsToExpectedUpdated = []client.Object{
-							stsNeedUpgraded,
-						}
-						break loopStatefullset
+						stsToUpdate = append(stsToUpdate, stsNeedUpgraded)
+						break
 					}
 				}
 
 				r.Log.Infof("Phase statefulset upgrade: wait pod %d (upgraded) / %d (ready) on %s", (sts.Status.Replicas - sts.Status.UpdatedReplicas), (sts.Status.Replicas - sts.Status.ReadyReplicas), sts.Name)
-				stsToExpectedUpdated = make([]client.Object, 0)
-
-				break
 			}
 		}
-	}
 
-	// Keep only one statefullset to upgrade
-	if len(stsToExpectedUpdated) > 0 {
-		stsToUpdate = append(stsToUpdate, stsToExpectedUpdated[0])
+		// Allow upgrade no active statefulset
+		for _, sts := range currentStatefulsets {
+
+			// Not found a way to detect that we are on envtest, so without kubelet. We use env TEST to to that.
+			// It avoid to stuck test on this phase
+			if *sts.Spec.Replicas == 0 && os.Getenv("TEST") != "true" {
+				// Check if current statefullset need to be upgraded
+				for _, stsNeedUpgraded := range stsToExpectedUpdated {
+					if stsNeedUpgraded.GetName() == sts.Name {
+						data["phase"] = phaseStsUpgrade
+						r.Log.Infof("Detect we need to upgrade Statefullset %s that not yet active (replica 0)", sts.Name)
+						stsToUpdate = append(stsToUpdate, stsNeedUpgraded)
+						break
+					}
+				}
+			}
+		}
 	}
 
 	r.Log.Debugf("Phase after diff: %s", data["phase"])

@@ -732,10 +732,10 @@ metadata:
         }
       ]
     capabilities: Basic Install
-    createdAt: "2023-03-02T13:06:48Z"
+    createdAt: "2023-03-06T14:27:01Z"
     operators.operatorframework.io/builder: operator-sdk-v1.26.1
     operators.operatorframework.io/project_layout: go.kubebuilder.io/v3
-  name: elasticsearch-operator.v0.0.10
+  name: elasticsearch-operator.v0.0.14
   namespace: placeholder
 spec:
   apiservicedefinitions: {}
@@ -2835,7 +2835,7 @@ spec:
                       fieldPath: metadata.namespace
                 - name: LOG_LEVEL
                   value: DEBUG
-                image: quay.io/webcenter/elasticsearch-operator:0.0.10
+                image: quay.io/webcenter/elasticsearch-operator:0.0.14
                 livenessProbe:
                   httpGet:
                     path: /healthz
@@ -2851,11 +2851,11 @@ spec:
                   periodSeconds: 10
                 resources:
                   limits:
-                    cpu: 500m
-                    memory: 128Mi
+                    cpu: 700m
+                    memory: 1Gi
                   requests:
-                    cpu: 10m
-                    memory: 64Mi
+                    cpu: 100m
+                    memory: 256Mi
                 securityContext:
                   allowPrivilegeEscalation: false
                   capabilities:
@@ -2925,5 +2925,5 @@ spec:
   provider:
     name: webcenter.fr
     url: https://github.com/webcenter-fr/elasticsearch-operator
-  replaces: elasticsearch-operator.v0.0.9
-  version: 0.0.10
+  replaces: elasticsearch-operator.v0.0.13
+  version: 0.0.14
