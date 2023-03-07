@@ -37,7 +37,7 @@ type KibanaSpec struct {
 
 	// ElasticsearchRef is the Elasticsearch ref to connect on.
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
-	ElasticsearchRef shared.ElasticsearchRef `json:"elasticsearchRef,omitempty"`
+	ElasticsearchRef shared.ElasticsearchRef `json:"elasticsearchRef"`
 
 	// Version is the Kibana version to use
 	// Default is use the latest
@@ -145,7 +145,7 @@ type KibanaIngressSpec struct {
 
 	// Host is the hostname to access on Kibana
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
-	Host string `json:"host,omitempty"`
+	Host string `json:"host"`
 
 	// SecretRef is the secret ref that store certificates
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
@@ -226,7 +226,7 @@ type KibanaSelfSignedCertificateSpec struct {
 type KibanaDeploymentSpec struct {
 	// Replicas is the number of replicas
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
-	Replicas int32 `json:"replicas,omitempty"`
+	Replicas int32 `json:"replicas"`
 
 	// AntiAffinity permit to set anti affinity policy
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
@@ -294,10 +294,11 @@ type KibanaAntiAffinitySpec struct {
 
 	// Type permit to set anti affinity as soft or hard
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
-	Type string `json:"type,omitempty"`
+	Type string `json:"type"`
 
 	// TopologyKey is the topology key to use
 	// Default to topology.kubernetes.io/zone
+	// +operator-sdk:csv:customresourcedefinitions:type=spec
 	// +optional
 	// +kubebuilder:default=topology.kubernetes.io/zone
 	TopologyKey string `json:"topologyKey,omitempty"`
@@ -314,7 +315,7 @@ type KibanaStatus struct {
 
 	// IsError is true if controller is stuck on Error
 	// +operator-sdk:csv:customresourcedefinitions:type=status
-	IsError *bool `json:"isOnError,omitempty"`
+	IsError *bool `json:"isOnError"`
 
 	// Url is the Kibana endpoint
 	// +operator-sdk:csv:customresourcedefinitions:type=status

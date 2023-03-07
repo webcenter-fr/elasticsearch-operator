@@ -32,7 +32,7 @@ type RoleSpec struct {
 
 	// ElasticsearchRef is the Elasticsearch ref to connect on.
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
-	ElasticsearchRef shared.ElasticsearchRef `json:"elasticsearchRef,omitempty"`
+	ElasticsearchRef shared.ElasticsearchRef `json:"elasticsearchRef"`
 
 	// Name is the custom role name
 	// If empty, it use the ressource name
@@ -84,7 +84,7 @@ type RoleSpecApplicationPrivileges struct {
 
 	// Application
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
-	Application string `json:"application,omitempty"`
+	Application string `json:"application"`
 
 	// Privileges
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
@@ -102,11 +102,11 @@ type RoleSpecIndicesPermissions struct {
 
 	// Names
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
-	Names []string `json:"names,omitempty"`
+	Names []string `json:"names"`
 
 	// Privileges
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
-	Privileges []string `json:"privileges,omitempty"`
+	Privileges []string `json:"privileges"`
 
 	// FieldSecurity
 	// JSON string
@@ -135,7 +135,7 @@ type RoleStatus struct {
 
 	// OriginalObject is the original object used on 3 way diff merge
 	// +operator-sdk:csv:customresourcedefinitions:type=status
-	OriginalObject string `json:"originalObject,omitempty"`
+	OriginalObject string `json:"originalObject"`
 }
 
 //+kubebuilder:object:root=true

@@ -30,7 +30,7 @@ type LicenseSpec struct {
 
 	// ElasticsearchRef is the Elasticsearch ref to connect on.
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
-	ElasticsearchRef shared.ElasticsearchRef `json:"elasticsearchRef,omitempty"`
+	ElasticsearchRef shared.ElasticsearchRef `json:"elasticsearchRef"`
 
 	// SecretName is the secret that contain the license
 	// +operator-sdk:csv:customresourcedefinitions:type=spec

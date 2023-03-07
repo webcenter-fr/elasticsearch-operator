@@ -32,7 +32,7 @@ type RoleMappingSpec struct {
 
 	// ElasticsearchRef is the Elasticsearch ref to connect on.
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
-	ElasticsearchRef shared.ElasticsearchRef `json:"elasticsearchRef,omitempty"`
+	ElasticsearchRef shared.ElasticsearchRef `json:"elasticsearchRef"`
 
 	// Name is the custom role mapping name
 	// If empty, it use the ressource name
@@ -43,16 +43,17 @@ type RoleMappingSpec struct {
 	// Enabled permit to enable or disable the role mapping
 	// Default to true
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
+	// +optional
 	Enabled bool `json:"enabled,omitempty"`
 
 	// Roles is the list of role to map
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
-	Roles []string `json:"roles,omitempty"`
+	Roles []string `json:"roles"`
 
 	// Rules is the mapping rules
 	// JSON string
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
-	Rules string `json:"rules,omitempty"`
+	Rules string `json:"rules"`
 
 	// Metadata is the meta data
 	// JSON string
@@ -76,7 +77,7 @@ type RoleMappingStatus struct {
 
 	// OriginalObject is the original object used on 3 way diff merge
 	// +operator-sdk:csv:customresourcedefinitions:type=status
-	OriginalObject string `json:"originalObject,omitempty"`
+	OriginalObject string `json:"originalObject"`
 }
 
 //+kubebuilder:object:root=true

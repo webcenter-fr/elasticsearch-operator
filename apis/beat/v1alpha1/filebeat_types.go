@@ -93,6 +93,8 @@ type FilebeatSpec struct {
 type FilebeatLogstashRef struct {
 
 	// ManagedLogstashRef is the managed Logstash instance by operator
+	// +operator-sdk:csv:customresourcedefinitions:type=spec
+	// +optional
 	ManagedLogstashRef *FilebeatLogstashManagedRef `json:"managed,omitempty"`
 
 	// ExternalLogstahsRef is the external Logstash instance not managed by operator
@@ -111,7 +113,7 @@ type FilebeatLogstashManagedRef struct {
 
 	// Name is the Logstash cluster deployed by operator
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
-	Name string `json:"name,omitempty"`
+	Name string `json:"name"`
 
 	// Namespace is the namespace where Logstash is deployed by operator
 	// No need to set if is deployed on the same namespace
@@ -126,14 +128,14 @@ type FilebeatLogstashManagedRef struct {
 
 	// Port is the port number to connect on service
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
-	Port int64 `json:"port,omitempty"`
+	Port int64 `json:"port"`
 }
 
 type FilebeatLogstashExternalRef struct {
 
 	// Addresses is the list of Logstash addresses
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
-	Addresses []string `json:"addresses,omitempty"`
+	Addresses []string `json:"addresses"`
 }
 
 type FilebeatIngress struct {
@@ -141,11 +143,11 @@ type FilebeatIngress struct {
 	// Name is the ingress name
 	// The name is decorated with cluster name and so on
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
-	Name string `json:"name,omitempty"`
+	Name string `json:"name"`
 
 	// Spec is the ingress spec
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
-	Spec networkingv1.IngressSpec `json:"spec,omitempty"`
+	Spec networkingv1.IngressSpec `json:"spec"`
 
 	// Labels is the extra labels for ingress
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
@@ -159,11 +161,11 @@ type FilebeatIngress struct {
 
 	// ContainerPortProtocol is the protocol to set when create service consumed by ingress
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
-	ContainerPortProtocol corev1.Protocol `json:"containerProtocol,omitempty"`
+	ContainerPortProtocol corev1.Protocol `json:"containerProtocol"`
 
 	// ContainerPort is the port to set when create service consumed by ingress
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
-	ContainerPort int64 `json:"containerPort,omitempty"`
+	ContainerPort int64 `json:"containerPort"`
 }
 
 type FilebeatService struct {
@@ -171,11 +173,11 @@ type FilebeatService struct {
 	// Name is the service name
 	// The name is decorated with cluster name and so on
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
-	Name string `json:"name,omitempty"`
+	Name string `json:"name"`
 
 	// Spec is the service spec
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
-	Spec corev1.ServiceSpec `json:"spec,omitempty"`
+	Spec corev1.ServiceSpec `json:"spec"`
 
 	// Labels is the extra labels for ingress
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
@@ -217,7 +219,7 @@ type FilebeatPrometheusSpec struct {
 type FilebeatDeploymentSpec struct {
 	// Replicas is the number of replicas
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
-	Replicas int32 `json:"replicas,omitempty"`
+	Replicas int32 `json:"replicas"`
 
 	// AntiAffinity permit to set anti affinity policy
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
@@ -307,6 +309,7 @@ type FilebeatPersistenceSpec struct {
 
 	// Volume is the volume source to use instead volumeClaim
 	// It usefull if you should to use hostPath
+	// +operator-sdk:csv:customresourcedefinitions:type=spec
 	// +optional
 	Volume *corev1.VolumeSource `json:"volume,omitempty"`
 }
@@ -315,7 +318,7 @@ type FilebeatVolumeSpec struct {
 
 	// Name is the volume name
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
-	Name string `json:"name,omitempty"`
+	Name string `json:"name"`
 
 	corev1.VolumeMount `json:",inline"`
 
@@ -326,10 +329,11 @@ type FilebeatAntiAffinitySpec struct {
 
 	// Type permit to set anti affinity as soft or hard
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
-	Type string `json:"type,omitempty"`
+	Type string `json:"type"`
 
 	// TopologyKey is the topology key to use
 	// Default to topology.kubernetes.io/zone
+	// +operator-sdk:csv:customresourcedefinitions:type=spec
 	// +optional
 	// +kubebuilder:default=topology.kubernetes.io/zone
 	TopologyKey string `json:"topologyKey,omitempty"`
@@ -346,7 +350,7 @@ type FilebeatStatus struct {
 
 	// IsError is true if controller is stuck on Error
 	// +operator-sdk:csv:customresourcedefinitions:type=status
-	IsError *bool `json:"isOnError,omitempty"`
+	IsError *bool `json:"isOnError"`
 
 	// List of conditions
 	// +operator-sdk:csv:customresourcedefinitions:type=status

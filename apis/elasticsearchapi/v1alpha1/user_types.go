@@ -29,7 +29,7 @@ type UserSpec struct {
 
 	// ElasticsearchRef is the Elasticsearch ref to connect on.
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
-	ElasticsearchRef shared.ElasticsearchRef `json:"elasticsearchRef,omitempty"`
+	ElasticsearchRef shared.ElasticsearchRef `json:"elasticsearchRef"`
 
 	// Enabled permit to enable user
 	// Default to true
@@ -71,6 +71,7 @@ type UserSpec struct {
 
 	// Roles is the list of roles
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
+	// +optional
 	Roles []string `json:"roles,omitempty"`
 
 	// IsProtected must be set when you manage protected account like kibana_system
@@ -110,7 +111,7 @@ type UserStatus struct {
 
 	// OriginalObject is the original object used on 3 way diff merge
 	// +operator-sdk:csv:customresourcedefinitions:type=status
-	OriginalObject string `json:"originalObject,omitempty"`
+	OriginalObject string `json:"originalObject"`
 }
 
 //+kubebuilder:object:root=true

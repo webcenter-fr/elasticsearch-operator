@@ -221,7 +221,7 @@ type ElasticsearchIngressSpec struct {
 
 	// Host is the hostname to access on Elasticsearch
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
-	Host string `json:"host,omitempty"`
+	Host string `json:"host"`
 
 	// SecretRef is the secret ref that store certificates
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
@@ -316,15 +316,15 @@ type ElasticsearchNodeGroupSpec struct {
 
 	// Name is the the node group name
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
-	Name string `json:"name,omitempty"`
+	Name string `json:"name"`
 
 	// Replicas is the number of replicas
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
-	Replicas int32 `json:"replicas,omitempty"`
+	Replicas int32 `json:"replicas"`
 
 	// Roles is the list of Elasticsearch roles
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
-	Roles []string `json:"roles,omitempty"`
+	Roles []string `json:"roles"`
 
 	// Persistence is the spec to persist data
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
@@ -409,6 +409,7 @@ type ElasticsearchPersistenceSpec struct {
 
 	// Volume is the volume source to use instead volumeClaim
 	// It usefull if you should to use hostPath
+	// +operator-sdk:csv:customresourcedefinitions:type=spec
 	// +optional
 	Volume *corev1.VolumeSource `json:"volume,omitempty"`
 }
@@ -417,7 +418,7 @@ type ElasticsearchVolumeSpec struct {
 
 	// Name is the volume name
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
-	Name string `json:"name,omitempty"`
+	Name string `json:"name"`
 
 	corev1.VolumeMount `json:",inline"`
 
@@ -428,10 +429,11 @@ type ElasticsearchAntiAffinitySpec struct {
 
 	// Type permit to set anti affinity as soft or hard
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
-	Type string `json:"type,omitempty"`
+	Type string `json:"type"`
 
 	// TopologyKey is the topology key to use
 	// Default to topology.kubernetes.io/zone
+	// +operator-sdk:csv:customresourcedefinitions:type=spec
 	// +optional
 	// +kubebuilder:default=topology.kubernetes.io/zone
 	TopologyKey string `json:"topologyKey,omitempty"`
@@ -448,7 +450,7 @@ type ElasticsearchStatus struct {
 
 	// IsError is true if controller is stuck on Error
 	// +operator-sdk:csv:customresourcedefinitions:type=status
-	IsError *bool `json:"isOnError,omitempty"`
+	IsError *bool `json:"isOnError"`
 
 	// Url is the Elasticsearch endpoint
 	// +operator-sdk:csv:customresourcedefinitions:type=status

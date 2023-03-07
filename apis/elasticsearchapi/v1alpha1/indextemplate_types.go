@@ -32,7 +32,7 @@ type IndexTemplateSpec struct {
 
 	// ElasticsearchRef is the Elasticsearch ref to connect on.
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
-	ElasticsearchRef shared.ElasticsearchRef `json:"elasticsearchRef,omitempty"`
+	ElasticsearchRef shared.ElasticsearchRef `json:"elasticsearchRef"`
 
 	// Name is the custom index template name
 	// If empty, it use the ressource name
@@ -42,7 +42,7 @@ type IndexTemplateSpec struct {
 
 	// IndexPatterns is the list of index to apply this template
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
-	IndexPatterns []string `json:"indexPatterns,omitempty"`
+	IndexPatterns []string `json:"indexPatterns"`
 
 	//ComposedOf is the list of component templates
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
@@ -109,7 +109,7 @@ type IndexTemplateStatus struct {
 
 	// OriginalObject is the original object used on 3 way diff merge
 	// +operator-sdk:csv:customresourcedefinitions:type=status
-	OriginalObject string `json:"originalObject,omitempty"`
+	OriginalObject string `json:"originalObject"`
 }
 
 //+kubebuilder:object:root=true

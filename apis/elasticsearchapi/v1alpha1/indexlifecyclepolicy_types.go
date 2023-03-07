@@ -32,7 +32,7 @@ type IndexLifecyclePolicySpec struct {
 
 	// ElasticsearchRef is the Elasticsearch ref to connect on.
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
-	ElasticsearchRef shared.ElasticsearchRef `json:"elasticsearchRef,omitempty"`
+	ElasticsearchRef shared.ElasticsearchRef `json:"elasticsearchRef"`
 
 	// Name is the custom index lifecycle policy name
 	// If empty, it use the ressource name
@@ -42,7 +42,7 @@ type IndexLifecyclePolicySpec struct {
 
 	// Policy is the raw policy on JSON
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
-	Policy string `json:"policy,omitempty"`
+	Policy string `json:"policy"`
 }
 
 // IndexLifecyclePolicyStatus defines the observed state of IndexLifecyclePolicy
@@ -60,7 +60,7 @@ type IndexLifecyclePolicyStatus struct {
 
 	// OriginalObject is the original object used on 3 way diff merge
 	// +operator-sdk:csv:customresourcedefinitions:type=status
-	OriginalObject string `json:"originalObject,omitempty"`
+	OriginalObject string `json:"originalObject"`
 }
 
 //+kubebuilder:object:root=true

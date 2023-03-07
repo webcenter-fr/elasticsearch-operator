@@ -75,6 +75,8 @@ spec:
                       type:
                         description: Type permit to set anti affinity as soft or hard
                         type: string
+                    required:
+                    - type
                     type: object
                   env:
                     description: Env permit to set some environment variable on containers
@@ -7978,6 +7980,8 @@ spec:
                           type: string
                       type: object
                     type: array
+                required:
+                - replicas
                 type: object
               elasticsearchRef:
                 description: ElasticsearchRef is the Elasticsearch ref to connect
@@ -8015,6 +8019,9 @@ spec:
                             type: string
                         type: object
                         x-kubernetes-map-type: atomic
+                    required:
+                    - addresses
+                    - secretRef
                     type: object
                   managed:
                     description: ManagedElasticsearchRef is the managed Elasticsearch
@@ -8034,6 +8041,8 @@ spec:
                           group to use as service to connect on Elasticsearch Default,
                           it use the global service
                         type: string
+                    required:
+                    - name
                     type: object
                 type: object
               endpoint:
@@ -8363,6 +8372,8 @@ spec:
                             type: string
                         type: object
                         x-kubernetes-map-type: atomic
+                    required:
+                    - host
                     type: object
                   loadBalancer:
                     description: Load balancer permit to set load balancer settings
@@ -8488,6 +8499,8 @@ spec:
                 description: Version is the Kibana version to use Default is use the
                   latest
                 type: string
+            required:
+            - elasticsearchRef
             type: object
           status:
             description: KibanaStatus defines the observed state of Kibana
@@ -8572,6 +8585,7 @@ spec:
                 type: string
             required:
             - conditions
+            - isOnError
             - phase
             - url
             type: object

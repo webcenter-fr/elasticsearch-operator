@@ -32,7 +32,7 @@ type WatchSpec struct {
 
 	// ElasticsearchRef is the Elasticsearch ref to connect on.
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
-	ElasticsearchRef shared.ElasticsearchRef `json:"elasticsearchRef,omitempty"`
+	ElasticsearchRef shared.ElasticsearchRef `json:"elasticsearchRef"`
 
 	// Name is the custom watch name
 	// If empty, it use the ressource name
@@ -43,17 +43,17 @@ type WatchSpec struct {
 	// Trigger
 	// JSON string
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
-	Trigger string `json:"trigger,omitempty"`
+	Trigger string `json:"trigger"`
 
 	// Input
 	// JSON string
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
-	Input string `json:"input,omitempty"`
+	Input string `json:"input"`
 
 	// Condition
 	// JSON string
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
-	Condition string `json:"condition,omitempty"`
+	Condition string `json:"condition"`
 
 	// Transform
 	// JSON string
@@ -98,7 +98,7 @@ type WatchStatus struct {
 
 	// OriginalObject is the original object used on 3 way diff merge
 	// +operator-sdk:csv:customresourcedefinitions:type=status
-	OriginalObject string `json:"originalObject,omitempty"`
+	OriginalObject string `json:"originalObject"`
 }
 
 //+kubebuilder:object:root=true

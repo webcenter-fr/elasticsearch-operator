@@ -32,7 +32,7 @@ type SnapshotLifecyclePolicySpec struct {
 
 	// ElasticsearchRef is the Elasticsearch ref to connect on.
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
-	ElasticsearchRef shared.ElasticsearchRef `json:"elasticsearchRef,omitempty"`
+	ElasticsearchRef shared.ElasticsearchRef `json:"elasticsearchRef"`
 
 	// SnapshotLifecyclePolicyName is the custom snapshot lifecycle policy name
 	// If empty, it use the ressource name
@@ -42,19 +42,19 @@ type SnapshotLifecyclePolicySpec struct {
 
 	// Schedule is schedule policy
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
-	Schedule string `json:"schedule,omitempty"`
+	Schedule string `json:"schedule"`
 
 	// Name is the template name to generte final name
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
-	Name string `json:"name,omitempty"`
+	Name string `json:"name"`
 
 	// Repository is the target repository to store backup
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
-	Repository string `json:"repository,omitempty"`
+	Repository string `json:"repository"`
 
 	// Config is the config backup
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
-	Config SLMConfig `json:"config,omitempty"`
+	Config SLMConfig `json:"config"`
 
 	//Retention is the retention policy
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
@@ -134,7 +134,7 @@ type SnapshotLifecyclePolicyStatus struct {
 
 	// OriginalObject is the original object used on 3 way diff merge
 	// +operator-sdk:csv:customresourcedefinitions:type=status
-	OriginalObject string `json:"originalObject,omitempty"`
+	OriginalObject string `json:"originalObject"`
 }
 
 //+kubebuilder:object:root=true
