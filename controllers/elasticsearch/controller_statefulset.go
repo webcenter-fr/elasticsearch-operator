@@ -37,6 +37,7 @@ const (
 )
 
 var (
+	phaseStsUpgradeStarted  statefulsetPhase = "statefulsetUpgradeStarted"
 	phaseStsUpgrade         statefulsetPhase = "statefulsetUpgrade"
 	phaseStsUpgradeFinished statefulsetPhase = "statefulsetUpgradeFinished"
 	phaseStsNormal          statefulsetPhase = "statefulsetNormal"
@@ -291,7 +292,7 @@ func (r *StatefulsetReconciler) Diff(ctx context.Context, resource client.Object
 	}
 
 	stsToUpdate := make([]client.Object, 0)
-	stsToExpectedUpdated := make([]client.Object, 0)
+	stsToExpectedUpdated := make([]*appv1.StatefulSet, 0)
 	stsToCreate := make([]client.Object, 0)
 	data["phase"] = phaseStsNormal
 
@@ -317,8 +318,6 @@ func (r *StatefulsetReconciler) Diff(ctx context.Context, resource client.Object
 					diff.Diff.WriteString(fmt.Sprintf("diff %s: %s\n", updatedSts.Name, string(patchResult.Patch)))
 					stsToExpectedUpdated = append(stsToExpectedUpdated, updatedSts)
 					r.Log.Debugf("Need update statefulset %s", updatedSts.Name)
-
-					data["phase"] = phaseStsUpgrade
 				}
 
 				// Remove items found
@@ -360,6 +359,7 @@ func (r *StatefulsetReconciler) Diff(ctx context.Context, resource client.Object
 	// Check if on current upgrade phase, to only upgrade the statefullset currently being upgraded
 	// Or statefullset with current replica to 0 (maybee stop all pod)
 	if condition.IsStatusConditionPresentAndEqual(o.Status.Conditions, StatefulsetConditionUpgrade, metav1.ConditionTrue) && condition.IsStatusConditionPresentAndEqual(o.Status.Conditions, StatefulsetCondition, metav1.ConditionFalse) {
+		// Already on upgrade phase
 		r.Log.Debugf("Detect phase: %s", phaseStsUpgrade)
 
 		// Upgrade only one active statefulset or current upgrade
@@ -367,7 +367,7 @@ func (r *StatefulsetReconciler) Diff(ctx context.Context, resource client.Object
 
 			// Not found a way to detect that we are on envtest, so without kubelet. We use env TEST to to that.
 			// It avoid to stuck test on this phase
-			if localhelper.IsOnStatefulSetUpgradeState(&sts) && os.Getenv("TEST") != "true" && *sts.Spec.Replicas > 0 {
+			if localhelper.IsOnStatefulSetUpgradeState(&sts) && *sts.Spec.Replicas > 0 && os.Getenv("TEST") != "true" {
 
 				data["phase"] = phaseStsUpgrade
 
@@ -399,6 +399,24 @@ func (r *StatefulsetReconciler) Diff(ctx context.Context, resource client.Object
 						break
 					}
 				}
+			}
+		}
+
+		// Update phase if needed
+		if data["phase"] != phaseStsUpgrade {
+			data["phase"] = phaseStsUpgradeFinished
+		}
+	} else if condition.IsStatusConditionPresentAndEqual(o.Status.Conditions, StatefulsetConditionUpgrade, metav1.ConditionFalse) && condition.IsStatusConditionPresentAndEqual(o.Status.Conditions, StatefulsetCondition, metav1.ConditionTrue) {
+		// Start upgrade phase
+		activeStateFulsetAlreadyUpgraded := false
+
+		for _, sts := range stsToExpectedUpdated {
+			if *sts.Spec.Replicas == 0 {
+				stsToUpdate = append(stsToUpdate, sts)
+			} else if !activeStateFulsetAlreadyUpgraded {
+				data["phase"] = phaseStsUpgradeStarted
+				activeStateFulsetAlreadyUpgraded = true
+				stsToUpdate = append(stsToUpdate, sts)
 			}
 		}
 	}
@@ -446,7 +464,7 @@ func (r *StatefulsetReconciler) OnSuccess(ctx context.Context, resource client.O
 	r.Log.Debugf("Phase on success: %s", phase)
 
 	switch phase {
-	case phaseStsUpgrade:
+	case phaseStsUpgradeStarted:
 		condition.SetStatusCondition(&o.Status.Conditions, metav1.Condition{
 			Type:    StatefulsetCondition,
 			Reason:  "Success",
@@ -463,6 +481,9 @@ func (r *StatefulsetReconciler) OnSuccess(ctx context.Context, resource client.O
 
 		r.Recorder.Eventf(resource, corev1.EventTypeNormal, "Completed", "Statefulsets are being upgraded")
 
+		return ctrl.Result{RequeueAfter: time.Second * 30}, nil
+
+	case phaseStsUpgrade:
 		return ctrl.Result{RequeueAfter: time.Second * 30}, nil
 
 	case phaseStsUpgradeFinished:

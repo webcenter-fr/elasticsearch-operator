@@ -34,3 +34,31 @@ func TestGetComponentTemplateName(t *testing.T) {
 
 	assert.Equal(t, "test", o.GetComponentTemplateName())
 }
+
+func TestIsRawTemplate(t *testing.T) {
+	var o *ComponentTemplate
+
+	// When raw template is set
+	o = &ComponentTemplate{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: "default",
+			Name:      "test",
+		},
+		Spec: ComponentTemplateSpec{
+			Template: "test",
+		},
+	}
+
+	assert.True(t, o.IsRawTemplate())
+
+	// When raw template is not set
+	o = &ComponentTemplate{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: "default",
+			Name:      "test",
+		},
+		Spec: ComponentTemplateSpec{},
+	}
+
+	assert.False(t, o.IsRawTemplate())
+}

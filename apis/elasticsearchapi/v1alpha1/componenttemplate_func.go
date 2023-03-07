@@ -9,3 +9,8 @@ func (o *ComponentTemplate) GetComponentTemplateName() string {
 
 	return o.Spec.Name
 }
+
+// IsRawTemplate return true if raw template is set
+func (o *ComponentTemplate) IsRawTemplate() bool {
+	return o.Spec.Template != ""
+}

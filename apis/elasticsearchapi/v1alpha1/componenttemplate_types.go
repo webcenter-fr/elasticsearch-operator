@@ -54,6 +54,10 @@ type ComponentTemplateSpec struct {
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
 	// +optional
 	Aliases string `json:"aliases,omitempty"`
+
+	// Template is the raw template
+	// You can use it instead to set settings, mappings or aliases
+	Template string `json:"rawTemplate,omitempty"`
 }
 
 // ComponentTemplateStatus defines the observed state of ComponentTemplate

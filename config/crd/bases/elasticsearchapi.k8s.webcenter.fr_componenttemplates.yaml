@@ -109,6 +109,10 @@ spec:
                 description: Name is the custom component template name If empty,
                   it use the ressource name
                 type: string
+              rawTemplate:
+                description: Template is the raw template You can use it instead to
+                  set settings, mappings or aliases
+                type: string
               settings:
                 description: Settings is the component setting
                 type: string
