@@ -85,6 +85,9 @@ spec:
                             type: string
                         type: object
                         x-kubernetes-map-type: atomic
+                    required:
+                    - addresses
+                    - secretRef
                     type: object
                   managed:
                     description: ManagedElasticsearchRef is the managed Elasticsearch
@@ -104,6 +107,8 @@ spec:
                           group to use as service to connect on Elasticsearch Default,
                           it use the global service
                         type: string
+                    required:
+                    - name
                     type: object
                 type: object
               indexPatterns:
@@ -137,6 +142,9 @@ spec:
               version:
                 description: The version
                 type: integer
+            required:
+            - elasticsearchRef
+            - indexPatterns
             type: object
           status:
             description: IndexTemplateStatus defines the observed state of IndexTemplate
@@ -219,6 +227,7 @@ spec:
                 type: boolean
             required:
             - conditions
+            - originalObject
             - sync
             type: object
         type: object

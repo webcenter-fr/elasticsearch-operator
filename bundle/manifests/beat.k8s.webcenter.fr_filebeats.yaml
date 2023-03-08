@@ -1686,6 +1686,8 @@ spec:
                       type:
                         description: Type permit to set anti affinity as soft or hard
                         type: string
+                    required:
+                    - type
                     type: object
                   env:
                     description: Env permit to set some environment variable on containers
@@ -11423,6 +11425,8 @@ spec:
                           type: string
                       type: object
                     type: array
+                required:
+                - replicas
                 type: object
               elasticsearchRef:
                 description: ElasticsearchRef is the Elasticsearch ref to connect
@@ -11460,6 +11464,9 @@ spec:
                             type: string
                         type: object
                         x-kubernetes-map-type: atomic
+                    required:
+                    - addresses
+                    - secretRef
                     type: object
                   managed:
                     description: ManagedElasticsearchRef is the managed Elasticsearch
@@ -11479,6 +11486,8 @@ spec:
                           group to use as service to connect on Elasticsearch Default,
                           it use the global service
                         type: string
+                    required:
+                    - name
                     type: object
                 type: object
               image:
@@ -11817,6 +11826,11 @@ spec:
                           type: array
                           x-kubernetes-list-type: atomic
                       type: object
+                  required:
+                  - containerPort
+                  - containerProtocol
+                  - name
+                  - spec
                   type: object
                 type: array
               logstashRef:
@@ -11832,6 +11846,8 @@ spec:
                         items:
                           type: string
                         type: array
+                    required:
+                    - addresses
                     type: object
                   logstashCASecretRef:
                     description: 'LogstashCaSecretRef is the secret that store your
@@ -11864,6 +11880,9 @@ spec:
                         description: TargetService is the target service that expose
                           the beat protocole
                         type: string
+                    required:
+                    - name
+                    - port
                     type: object
                 type: object
               module:
@@ -12253,6 +12272,9 @@ spec:
                             https://kubernetes.io/docs/concepts/services-networking/service/#publishing-services-service-types'
                           type: string
                       type: object
+                  required:
+                  - name
+                  - spec
                   type: object
                 type: array
               version:
@@ -12341,6 +12363,7 @@ spec:
                 type: string
             required:
             - conditions
+            - isOnError
             - phase
             type: object
         type: object

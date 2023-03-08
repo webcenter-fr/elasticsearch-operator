@@ -77,6 +77,9 @@ spec:
                             type: string
                         type: object
                         x-kubernetes-map-type: atomic
+                    required:
+                    - addresses
+                    - secretRef
                     type: object
                   managed:
                     description: ManagedElasticsearchRef is the managed Elasticsearch
@@ -96,6 +99,8 @@ spec:
                           group to use as service to connect on Elasticsearch Default,
                           it use the global service
                         type: string
+                    required:
+                    - name
                     type: object
                 type: object
               email:
@@ -141,6 +146,8 @@ spec:
                 description: Username is the user name If empty, it use the ressource
                   name
                 type: string
+            required:
+            - elasticsearchRef
             type: object
           status:
             description: UserStatus defines the observed state of User
@@ -226,6 +233,7 @@ spec:
                 type: boolean
             required:
             - conditions
+            - originalObject
             - passwordHash
             - sync
             type: object

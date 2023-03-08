@@ -110,6 +110,9 @@ spec:
                             type: string
                         type: object
                         x-kubernetes-map-type: atomic
+                    required:
+                    - addresses
+                    - secretRef
                     type: object
                   managed:
                     description: ManagedElasticsearchRef is the managed Elasticsearch
@@ -129,6 +132,8 @@ spec:
                           group to use as service to connect on Elasticsearch Default,
                           it use the global service
                         type: string
+                    required:
+                    - name
                     type: object
                 type: object
               name:
@@ -159,6 +164,12 @@ spec:
                 description: SnapshotLifecyclePolicyName is the custom snapshot lifecycle
                   policy name If empty, it use the ressource name
                 type: string
+            required:
+            - config
+            - elasticsearchRef
+            - name
+            - repository
+            - schedule
             type: object
           status:
             description: SnapshotLifecyclePolicyStatus defines the observed state
@@ -242,6 +253,7 @@ spec:
                 type: boolean
             required:
             - conditions
+            - originalObject
             - sync
             type: object
         type: object

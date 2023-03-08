@@ -392,6 +392,8 @@ spec:
                           node group is responsible to receive external access, like
                           ingest nodes
                         type: string
+                    required:
+                    - host
                     type: object
                   loadBalancer:
                     description: Load balancer permit to set load balancer settings
@@ -2043,6 +2045,8 @@ spec:
                       type:
                         description: Type permit to set anti affinity as soft or hard
                         type: string
+                    required:
+                    - type
                     type: object
                   config:
                     additionalProperties:
@@ -9984,6 +9988,8 @@ spec:
                           description: Type permit to set anti affinity as soft or
                             hard
                           type: string
+                      required:
+                      - type
                       type: object
                     config:
                       additionalProperties:
@@ -19924,6 +19930,10 @@ spec:
                       description: WaitClusterStatus permit to wait the cluster state
                         on readyness probe Default to green
                       type: string
+                  required:
+                  - name
+                  - replicas
+                  - roles
                   type: object
                 type: array
               pluginsList:
@@ -20093,6 +20103,7 @@ spec:
             - conditions
             - credentialsRef
             - health
+            - isOnError
             - phase
             - url
             type: object

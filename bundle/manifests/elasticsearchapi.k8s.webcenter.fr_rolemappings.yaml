@@ -77,6 +77,9 @@ spec:
                             type: string
                         type: object
                         x-kubernetes-map-type: atomic
+                    required:
+                    - addresses
+                    - secretRef
                     type: object
                   managed:
                     description: ManagedElasticsearchRef is the managed Elasticsearch
@@ -96,6 +99,8 @@ spec:
                           group to use as service to connect on Elasticsearch Default,
                           it use the global service
                         type: string
+                    required:
+                    - name
                     type: object
                 type: object
               enabled:
@@ -117,6 +122,10 @@ spec:
               rules:
                 description: Rules is the mapping rules JSON string
                 type: string
+            required:
+            - elasticsearchRef
+            - roles
+            - rules
             type: object
           status:
             description: RoleMappingStatus defines the observed state of RoleMapping
@@ -199,6 +208,7 @@ spec:
                 type: boolean
             required:
             - conditions
+            - originalObject
             - sync
             type: object
         type: object

@@ -78,6 +78,9 @@ spec:
                             type: string
                         type: object
                         x-kubernetes-map-type: atomic
+                    required:
+                    - addresses
+                    - secretRef
                     type: object
                   managed:
                     description: ManagedElasticsearchRef is the managed Elasticsearch
@@ -97,6 +100,8 @@ spec:
                           group to use as service to connect on Elasticsearch Default,
                           it use the global service
                         type: string
+                    required:
+                    - name
                     type: object
                 type: object
               name:
@@ -106,6 +111,9 @@ spec:
               policy:
                 description: Policy is the raw policy on JSON
                 type: string
+            required:
+            - elasticsearchRef
+            - policy
             type: object
           status:
             description: IndexLifecyclePolicyStatus defines the observed state of
@@ -189,6 +197,7 @@ spec:
                 type: boolean
             required:
             - conditions
+            - originalObject
             - sync
             type: object
         type: object

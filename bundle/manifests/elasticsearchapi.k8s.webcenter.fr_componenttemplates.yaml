@@ -80,6 +80,9 @@ spec:
                             type: string
                         type: object
                         x-kubernetes-map-type: atomic
+                    required:
+                    - addresses
+                    - secretRef
                     type: object
                   managed:
                     description: ManagedElasticsearchRef is the managed Elasticsearch
@@ -99,6 +102,8 @@ spec:
                           group to use as service to connect on Elasticsearch Default,
                           it use the global service
                         type: string
+                    required:
+                    - name
                     type: object
                 type: object
               mappings:
@@ -108,9 +113,15 @@ spec:
                 description: Name is the custom component template name If empty,
                   it use the ressource name
                 type: string
+              rawTemplate:
+                description: Template is the raw template You can use it instead to
+                  set settings, mappings or aliases
+                type: string
               settings:
                 description: Settings is the component setting
                 type: string
+            required:
+            - elasticsearchRef
             type: object
           status:
             description: ComponentTemplateStatus defines the observed state of ComponentTemplate
@@ -193,6 +204,7 @@ spec:
                 type: boolean
             required:
             - conditions
+            - originalObject
             - sync
             type: object
         type: object

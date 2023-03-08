@@ -4,7 +4,7 @@ metadata:
   annotations:
     alm-examples: '[]'
     capabilities: Basic Install
-  name: elasticsearch-operator.v0.0.14
+  name: elasticsearch-operator.v0.0.16
   namespace: placeholder
 spec:
   apiservicedefinitions: {}
@@ -34,6 +34,10 @@ spec:
           not managed by operator
         displayName: External Elasticsearch Ref
         path: elasticsearchRef.external
+      - description: ManagedElasticsearchRef is the managed Elasticsearch cluster
+          by operator
+        displayName: Managed Elasticsearch Ref
+        path: elasticsearchRef.managed
       - description: Mappings is the component mapping
         displayName: Mappings
         path: mappings
@@ -41,6 +45,10 @@ spec:
           ressource name
         displayName: Name
         path: name
+      - description: Template is the raw template You can use it instead to set settings,
+          mappings or aliases
+        displayName: Template
+        path: rawTemplate
       - description: Settings is the component setting
         displayName: Settings
         path: settings
@@ -155,6 +163,9 @@ spec:
       - description: AntiAffinity permit to set anti affinity policy
         displayName: Anti Affinity
         path: globalNodeGroup.antiAffinity
+      - description: TopologyKey is the topology key to use Default to topology.kubernetes.io/zone
+        displayName: Topology Key
+        path: globalNodeGroup.antiAffinity.topologyKey
       - description: Type permit to set anti affinity as soft or hard
         displayName: Type
         path: globalNodeGroup.antiAffinity.type
@@ -239,6 +250,9 @@ spec:
       - description: AntiAffinity permit to set anti affinity policy
         displayName: Anti Affinity
         path: nodeGroups[0].antiAffinity
+      - description: TopologyKey is the topology key to use Default to topology.kubernetes.io/zone
+        displayName: Topology Key
+        path: nodeGroups[0].antiAffinity.topologyKey
       - description: Type permit to set anti affinity as soft or hard
         displayName: Type
         path: nodeGroups[0].antiAffinity.type
@@ -268,6 +282,10 @@ spec:
       - description: Persistence is the spec to persist data
         displayName: Persistence
         path: nodeGroups[0].persistence
+      - description: Volume is the volume source to use instead volumeClaim It usefull
+          if you should to use hostPath
+        displayName: Volume
+        path: nodeGroups[0].persistence.volume
       - description: VolumeClaim is the persistent volume claim spec use by statefullset
         displayName: Volume Claim Spec
         path: nodeGroups[0].persistence.volumeClaim
@@ -406,6 +424,9 @@ spec:
       - description: AntiAffinity permit to set anti affinity policy
         displayName: Anti Affinity
         path: deployment.antiAffinity
+      - description: TopologyKey is the topology key to use Default to topology.kubernetes.io/zone
+        displayName: Topology Key
+        path: deployment.antiAffinity.topologyKey
       - description: Type permit to set anti affinity as soft or hard
         displayName: Type
         path: deployment.antiAffinity.type
@@ -431,6 +452,10 @@ spec:
       - description: Persistence is the spec to persist data Default is emptyDir
         displayName: Persistence
         path: deployment.persistence
+      - description: Volume is the volume source to use instead volumeClaim It usefull
+          if you should to use hostPath
+        displayName: Volume
+        path: deployment.persistence.volume
       - description: VolumeClaim is the persistent volume claim spec use by statefullset
         displayName: Volume Claim Spec
         path: deployment.persistence.volumeClaim
@@ -467,6 +492,10 @@ spec:
           not managed by operator
         displayName: External Elasticsearch Ref
         path: elasticsearchRef.external
+      - description: ManagedElasticsearchRef is the managed Elasticsearch cluster
+          by operator
+        displayName: Managed Elasticsearch Ref
+        path: elasticsearchRef.managed
       - description: Image is the image to use when deploy Elasticsearch It can be
           usefull to use internal registry or mirror
         displayName: Image
@@ -518,6 +547,9 @@ spec:
           following keys: ca.crt'
         displayName: Logstash Ca Secret Ref
         path: logstashRef.logstashCASecretRef
+      - description: ManagedLogstashRef is the managed Logstash instance by operator
+        displayName: Managed Logstash Ref
+        path: logstashRef.managed
       - description: Name is the Logstash cluster deployed by operator
         displayName: Name
         path: logstashRef.managed.name
@@ -605,6 +637,10 @@ spec:
           not managed by operator
         displayName: External Elasticsearch Ref
         path: elasticsearchRef.external
+      - description: ManagedElasticsearchRef is the managed Elasticsearch cluster
+          by operator
+        displayName: Managed Elasticsearch Ref
+        path: elasticsearchRef.managed
       - description: Name is the custom index lifecycle policy name If empty, it use
           the ressource name
         displayName: Name
@@ -650,6 +686,10 @@ spec:
           not managed by operator
         displayName: External Elasticsearch Ref
         path: elasticsearchRef.external
+      - description: ManagedElasticsearchRef is the managed Elasticsearch cluster
+          by operator
+        displayName: Managed Elasticsearch Ref
+        path: elasticsearchRef.managed
       - description: IndexPatterns is the list of index to apply this template
         displayName: Index Patterns
         path: indexPatterns
@@ -731,6 +771,9 @@ spec:
       - description: AntiAffinity permit to set anti affinity policy
         displayName: Anti Affinity
         path: deployment.antiAffinity
+      - description: TopologyKey is the topology key to use Default to topology.kubernetes.io/zone
+        displayName: Topology Key
+        path: deployment.antiAffinity.topologyKey
       - description: Type permit to set anti affinity as soft or hard
         displayName: Type
         path: deployment.antiAffinity.type
@@ -781,6 +824,10 @@ spec:
           not managed by operator
         displayName: External Elasticsearch Ref
         path: elasticsearchRef.external
+      - description: ManagedElasticsearchRef is the managed Elasticsearch cluster
+          by operator
+        displayName: Managed Elasticsearch Ref
+        path: elasticsearchRef.managed
       - description: Endpoint permit to set endpoints to access on Kibana from external
           kubernetes You can set ingress and / or load balancer
         displayName: Endpoint
@@ -918,6 +965,10 @@ spec:
           not managed by operator
         displayName: External Elasticsearch Ref
         path: elasticsearchRef.external
+      - description: ManagedElasticsearchRef is the managed Elasticsearch cluster
+          by operator
+        displayName: Managed Elasticsearch Ref
+        path: elasticsearchRef.managed
       - description: Basic permit to enable basic license Default to true if secretRef
           not set
         displayName: Basic
@@ -988,6 +1039,9 @@ spec:
       - description: AntiAffinity permit to set anti affinity policy
         displayName: Anti Affinity
         path: deployment.antiAffinity
+      - description: TopologyKey is the topology key to use Default to topology.kubernetes.io/zone
+        displayName: Topology Key
+        path: deployment.antiAffinity.topologyKey
       - description: Type permit to set anti affinity as soft or hard
         displayName: Type
         path: deployment.antiAffinity.type
@@ -1013,6 +1067,10 @@ spec:
       - description: Persistence is the spec to persist data
         displayName: Persistence
         path: deployment.persistence
+      - description: Volume is the volume source to use instead volumeClaim It usefull
+          if you should to use hostPath
+        displayName: Volume
+        path: deployment.persistence.volume
       - description: VolumeClaim is the persistent volume claim spec use by statefullset
         displayName: Volume Claim Spec
         path: deployment.persistence.volumeClaim
@@ -1050,6 +1108,10 @@ spec:
           not managed by operator
         displayName: External Elasticsearch Ref
         path: elasticsearchRef.external
+      - description: ManagedElasticsearchRef is the managed Elasticsearch cluster
+          by operator
+        displayName: Managed Elasticsearch Ref
+        path: elasticsearchRef.managed
       - description: Image is the image to use when deploy Elasticsearch It can be
           usefull to use internal registry or mirror
         displayName: Image
@@ -1169,6 +1231,10 @@ spec:
           not managed by operator
         displayName: External Elasticsearch Ref
         path: elasticsearchRef.external
+      - description: ManagedElasticsearchRef is the managed Elasticsearch cluster
+          by operator
+        displayName: Managed Elasticsearch Ref
+        path: elasticsearchRef.managed
       - description: Enabled permit to enable or disable the role mapping Default
           to true
         displayName: Enabled
@@ -1233,6 +1299,10 @@ spec:
           not managed by operator
         displayName: External Elasticsearch Ref
         path: elasticsearchRef.external
+      - description: ManagedElasticsearchRef is the managed Elasticsearch cluster
+          by operator
+        displayName: Managed Elasticsearch Ref
+        path: elasticsearchRef.managed
       - description: Global  defining global privileges JSON string
         displayName: Global
         path: global
@@ -1320,6 +1390,10 @@ spec:
           not managed by operator
         displayName: External Elasticsearch Ref
         path: elasticsearchRef.external
+      - description: ManagedElasticsearchRef is the managed Elasticsearch cluster
+          by operator
+        displayName: Managed Elasticsearch Ref
+        path: elasticsearchRef.managed
       - description: Name is the template name to generte final name
         displayName: Name
         path: name
@@ -1377,6 +1451,10 @@ spec:
           not managed by operator
         displayName: External Elasticsearch Ref
         path: elasticsearchRef.external
+      - description: ManagedElasticsearchRef is the managed Elasticsearch cluster
+          by operator
+        displayName: Managed Elasticsearch Ref
+        path: elasticsearchRef.managed
       - description: Name is the custom snapshot repository name If empty, it use
           the ressource name
         displayName: Name
@@ -1419,6 +1497,10 @@ spec:
           not managed by operator
         displayName: External Elasticsearch Ref
         path: elasticsearchRef.external
+      - description: ManagedElasticsearchRef is the managed Elasticsearch cluster
+          by operator
+        displayName: Managed Elasticsearch Ref
+        path: elasticsearchRef.managed
       - description: Email is the email user
         displayName: Email
         path: email
@@ -1495,6 +1577,10 @@ spec:
           not managed by operator
         displayName: External Elasticsearch Ref
         path: elasticsearchRef.external
+      - description: ManagedElasticsearchRef is the managed Elasticsearch cluster
+          by operator
+        displayName: Managed Elasticsearch Ref
+        path: elasticsearchRef.managed
       - description: Input JSON string
         displayName: Input
         path: input
@@ -1562,5 +1648,5 @@ spec:
   provider:
     name: webcenter.fr
     url: https://github.com/webcenter-fr/elasticsearch-operator
-  replaces: elasticsearch-operator.v0.0.13
-  version: 0.0.14
+  replaces: elasticsearch-operator.v0.0.15
+  version: 0.0.16
