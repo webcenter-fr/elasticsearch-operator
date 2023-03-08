@@ -23,7 +23,6 @@ import (
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	condition "k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/tools/record"
@@ -39,6 +38,7 @@ const (
 	TlsConditionGenerateCertificate  = "TlsGenerateCertificates"
 	TlsConditionPropagateCertificate = "TlsPropagateCertificates"
 	TlsCondition                     = "TlsReady"
+	TlsConditionBlackout             = "TlsBlackout"
 	TlsPhase                         = "Tls"
 	DefaultRenewCertificate          = -time.Hour * 24 * 30 // 30 days before expired
 )
@@ -110,6 +110,14 @@ func (r *TlsReconciler) Configure(ctx context.Context, req ctrl.Request, resourc
 	if condition.FindStatusCondition(o.Status.Conditions, TlsConditionPropagateCertificate) == nil {
 		condition.SetStatusCondition(&o.Status.Conditions, metav1.Condition{
 			Type:   TlsConditionPropagateCertificate,
+			Status: metav1.ConditionFalse,
+			Reason: "Initialize",
+		})
+	}
+
+	if condition.FindStatusCondition(o.Status.Conditions, TlsConditionBlackout) == nil {
+		condition.SetStatusCondition(&o.Status.Conditions, metav1.Condition{
+			Type:   TlsConditionBlackout,
 			Status: metav1.ConditionFalse,
 			Reason: "Initialize",
 		})
@@ -300,9 +308,11 @@ func (r *TlsReconciler) Diff(ctx context.Context, resource client.Object, data m
 	secretToCreate := make([]client.Object, 0)
 	secretToDelete := make([]client.Object, 0)
 
-	// phaseInit -> phaseCreate
+	data["isTlsBlackout"] = false
+
+	// Cluster initialization or blackout TLS (secret manually deleted)
 	// Generate all certificates
-	if sTransport == nil {
+	if sTransport == nil || sTransportPki == nil {
 		r.Log.Debugf("Detect phase: %s", phaseTlsCreate)
 
 		diff.Diff.WriteString("Generate new certificates\n")
@@ -327,18 +337,23 @@ func (r *TlsReconciler) Diff(ctx context.Context, resource client.Object, data m
 		}
 
 		// Generate nodes certificates
-		sTransport, err = BuildTransportSecret(o, transportRootCA)
+		tmpTransport, err := BuildTransportSecret(o, transportRootCA)
 		if err != nil {
 			return diff, res, errors.Wrap(err, "Error when generate nodes certificates")
 		}
-		err = ctrl.SetControllerReference(o, sTransport, r.Scheme)
-		if err != nil {
-			return diff, res, errors.Wrap(err, "Error when set as owner reference")
-		}
+		sTransport, isUpdated = updateSecret(sTransport, tmpTransport)
 		if err := patch.DefaultAnnotator.SetLastAppliedAnnotation(sTransport); err != nil {
 			return diff, res, errors.Wrapf(err, "Error when set diff annotation on secret %s", sTransport.Name)
 		}
-		secretToCreate = append(secretToCreate, sTransport)
+		if isUpdated {
+			secretToUpdate = append(secretToUpdate, sTransport)
+		} else {
+			err = ctrl.SetControllerReference(o, sTransport, r.Scheme)
+			if err != nil {
+				return diff, res, errors.Wrap(err, "Error when set as owner reference")
+			}
+			secretToCreate = append(secretToCreate, sTransport)
+		}
 
 		// Handle API certificates
 		if o.IsTlsApiEnabled() && o.IsSelfManagedSecretForTlsApi() {
@@ -396,6 +411,7 @@ func (r *TlsReconciler) Diff(ctx context.Context, resource client.Object, data m
 		data["listToUpdate"] = secretToUpdate
 		data["listToDelete"] = secretToDelete
 		data["phase"] = phaseTlsCreate
+		data["isTlsBlackout"] = true
 
 		return diff, res, nil
 	}
@@ -521,8 +537,18 @@ func (r *TlsReconciler) Diff(ctx context.Context, resource client.Object, data m
 		// No deed to recreate here, it wil generate in next
 		certificates["transportPki"] = *transportRootCA.GoCertificate()
 	} else {
+		// Pki certificates will be regenerated in next step
+		r.Log.Warn("Transport PKI not exist, we enter on TLS Blackout phase to reconcile")
+		data["isTlsBlackout"] = true
 		isRenew = true
 	}
+
+	// Check if transport root CA already expired
+	if transportRootCA.GoCertificate().NotAfter.Before(time.Now()) {
+		r.Log.Warn("Transport PKI already expired, we enter on TLS Blackout phase to reconcile")
+		data["isTlsBlackout"] = true
+	}
+
 	for nodeName, nodeCrt := range nodeCertificates {
 		certificates[nodeName] = nodeCrt
 	}
@@ -768,31 +794,35 @@ func (r *TlsReconciler) OnSuccess(ctx context.Context, resource client.Object, d
 	}
 	phase := d.(tlsPhase)
 
+	d, err = helper.Get(data, "isTlsBlackout")
+	if err != nil {
+		return res, err
+	}
+	isTlsBlackout := d.(bool)
+
+	if isTlsBlackout {
+		if condition.IsStatusConditionPresentAndEqual(o.Status.Conditions, TlsConditionBlackout, metav1.ConditionFalse) {
+			condition.SetStatusCondition(&o.Status.Conditions, metav1.Condition{
+				Type:    TlsConditionBlackout,
+				Reason:  "Blackout",
+				Status:  metav1.ConditionTrue,
+				Message: "Force renew all transport certificates",
+			})
+		}
+
+	} else {
+		if condition.IsStatusConditionPresentAndEqual(o.Status.Conditions, TlsConditionBlackout, metav1.ConditionTrue) {
+			condition.SetStatusCondition(&o.Status.Conditions, metav1.Condition{
+				Type:    TlsConditionBlackout,
+				Reason:  "NoBlackout",
+				Status:  metav1.ConditionFalse,
+				Message: "Note in blackout",
+			})
+		}
+	}
+
 	switch phase {
 	case phaseTlsCreate:
-
-		// Check if pod already exist. Need to delete them to have a chance to reconcile
-		// It's a kind of last hope
-		// Need to delete all pod to force to reconcil with right ca / certificates
-		podList := &corev1.PodList{}
-		labelSelectors, err := labels.Parse(fmt.Sprintf("cluster=%s,%s=true", o.Name, ElasticsearchAnnotationKey))
-		if err != nil {
-			return res, errors.Wrap(err, "Error when generate label selector")
-		}
-		if err = r.Client.List(ctx, podList, &client.ListOptions{Namespace: o.Namespace, LabelSelector: labelSelectors}, &client.ListOptions{}); err != nil {
-			return res, errors.Wrapf(err, "Error when read Elasticsearch pods")
-		}
-		if len(podList.Items) > 0 {
-			r.Log.Warn("Transport secret have been deleted and Elasticsearch pods already exists. Start to delete them for the last hope to reconcile")
-			for _, p := range podList.Items {
-				if err = r.Client.Delete(ctx, &p); err != nil {
-					return res, errors.Wrapf(err, "Error when delete pod %s", p.Name)
-				}
-				r.Log.Infof("Successfully delete pod %s", p.Name)
-			}
-
-			r.Recorder.Eventf(resource, corev1.EventTypeNormal, "Completed", "Existing pod successfully deleted")
-		}
 
 		r.Recorder.Eventf(resource, corev1.EventTypeNormal, "Completed", "Tls secrets successfully generated")
 
@@ -870,6 +900,13 @@ func (r *TlsReconciler) OnSuccess(ctx context.Context, resource client.Object, d
 			Message: "Wait renew all certificates",
 		})
 
+		condition.SetStatusCondition(&o.Status.Conditions, metav1.Condition{
+			Type:    TlsConditionBlackout,
+			Reason:  "NoBlackout",
+			Status:  metav1.ConditionFalse,
+			Message: "Note in blackout",
+		})
+
 		r.Log.Info("Phase to renew PKI successfully finished")
 
 	case phaseTlsPropagatePki:
@@ -925,7 +962,6 @@ func (r *TlsReconciler) OnSuccess(ctx context.Context, resource client.Object, d
 		})
 
 		r.Log.Info("Clean old transport CA certificate successfully")
-
 	}
 
 	return res, nil

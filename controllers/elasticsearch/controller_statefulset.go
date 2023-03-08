@@ -356,67 +356,75 @@ func (r *StatefulsetReconciler) Diff(ctx context.Context, resource client.Object
 		}
 	}
 
-	// Check if on current upgrade phase, to only upgrade the statefullset currently being upgraded
-	// Or statefullset with current replica to 0 (maybee stop all pod)
-	if condition.IsStatusConditionPresentAndEqual(o.Status.Conditions, StatefulsetConditionUpgrade, metav1.ConditionTrue) && condition.IsStatusConditionPresentAndEqual(o.Status.Conditions, StatefulsetCondition, metav1.ConditionFalse) {
-		// Already on upgrade phase
-		r.Log.Debugf("Detect phase: %s", phaseStsUpgrade)
-
-		// Upgrade only one active statefulset or current upgrade
-		for _, sts := range currentStatefulsets {
-
-			// Not found a way to detect that we are on envtest, so without kubelet. We use env TEST to to that.
-			// It avoid to stuck test on this phase
-			if localhelper.IsOnStatefulSetUpgradeState(&sts) && *sts.Spec.Replicas > 0 && os.Getenv("TEST") != "true" {
-
-				data["phase"] = phaseStsUpgrade
-
-				// Check if current statefullset need to be upgraded
-				for _, stsNeedUpgraded := range stsToExpectedUpdated {
-					if stsNeedUpgraded.GetName() == sts.Name {
-						r.Log.Infof("Detect we need to upgrade Statefullset %s that being already on upgrade state", sts.Name)
-						stsToUpdate = append(stsToUpdate, stsNeedUpgraded)
-						break
-					}
-				}
-
-				r.Log.Infof("Phase statefulset upgrade: wait pod %d (upgraded) / %d (ready) on %s", (sts.Status.Replicas - sts.Status.UpdatedReplicas), (sts.Status.Replicas - sts.Status.ReadyReplicas), sts.Name)
-			}
-		}
-
-		// Allow upgrade no active statefulset
-		for _, sts := range currentStatefulsets {
-
-			// Not found a way to detect that we are on envtest, so without kubelet. We use env TEST to to that.
-			// It avoid to stuck test on this phase
-			if *sts.Spec.Replicas == 0 && os.Getenv("TEST") != "true" {
-				// Check if current statefullset need to be upgraded
-				for _, stsNeedUpgraded := range stsToExpectedUpdated {
-					if stsNeedUpgraded.GetName() == sts.Name {
-						data["phase"] = phaseStsUpgrade
-						r.Log.Infof("Detect we need to upgrade Statefullset %s that not yet active (replica 0)", sts.Name)
-						stsToUpdate = append(stsToUpdate, stsNeedUpgraded)
-						break
-					}
-				}
-			}
-		}
-
-		// Update phase if needed
-		if data["phase"] != phaseStsUpgrade {
-			data["phase"] = phaseStsUpgradeFinished
-		}
-	} else if condition.IsStatusConditionPresentAndEqual(o.Status.Conditions, StatefulsetConditionUpgrade, metav1.ConditionFalse) && condition.IsStatusConditionPresentAndEqual(o.Status.Conditions, StatefulsetCondition, metav1.ConditionTrue) {
-		// Start upgrade phase
-		activeStateFulsetAlreadyUpgraded := false
-
+	// Check if on TLS blackout to reconcile all statefulset as the last hope
+	if condition.IsStatusConditionPresentAndEqual(o.Status.Conditions, TlsConditionBlackout, metav1.ConditionTrue) {
+		r.Log.Info("Detect we are on TLS blackout. Reconcile all statefulset")
 		for _, sts := range stsToExpectedUpdated {
-			if *sts.Spec.Replicas == 0 {
-				stsToUpdate = append(stsToUpdate, sts)
-			} else if !activeStateFulsetAlreadyUpgraded {
-				data["phase"] = phaseStsUpgradeStarted
-				activeStateFulsetAlreadyUpgraded = true
-				stsToUpdate = append(stsToUpdate, sts)
+			stsToUpdate = append(stsToUpdate, sts)
+		}
+	} else {
+		// Check if on current upgrade phase, to only upgrade the statefullset currently being upgraded
+		// Or statefullset with current replica to 0 (maybee stop all pod)
+		if condition.IsStatusConditionPresentAndEqual(o.Status.Conditions, StatefulsetConditionUpgrade, metav1.ConditionTrue) && condition.IsStatusConditionPresentAndEqual(o.Status.Conditions, StatefulsetCondition, metav1.ConditionFalse) {
+			// Already on upgrade phase
+			r.Log.Debugf("Detect phase: %s", phaseStsUpgrade)
+
+			// Upgrade only one active statefulset or current upgrade
+			for _, sts := range currentStatefulsets {
+
+				// Not found a way to detect that we are on envtest, so without kubelet. We use env TEST to to that.
+				// It avoid to stuck test on this phase
+				if localhelper.IsOnStatefulSetUpgradeState(&sts) && *sts.Spec.Replicas > 0 && os.Getenv("TEST") != "true" {
+
+					data["phase"] = phaseStsUpgrade
+
+					// Check if current statefullset need to be upgraded
+					for _, stsNeedUpgraded := range stsToExpectedUpdated {
+						if stsNeedUpgraded.GetName() == sts.Name {
+							r.Log.Infof("Detect we need to upgrade Statefullset %s that being already on upgrade state", sts.Name)
+							stsToUpdate = append(stsToUpdate, stsNeedUpgraded)
+							break
+						}
+					}
+
+					r.Log.Infof("Phase statefulset upgrade: wait pod %d (upgraded) / %d (ready) on %s", (sts.Status.Replicas - sts.Status.UpdatedReplicas), (sts.Status.Replicas - sts.Status.ReadyReplicas), sts.Name)
+				}
+			}
+
+			// Allow upgrade no active statefulset
+			for _, sts := range currentStatefulsets {
+
+				// Not found a way to detect that we are on envtest, so without kubelet. We use env TEST to to that.
+				// It avoid to stuck test on this phase
+				if *sts.Spec.Replicas == 0 && os.Getenv("TEST") != "true" {
+					// Check if current statefullset need to be upgraded
+					for _, stsNeedUpgraded := range stsToExpectedUpdated {
+						if stsNeedUpgraded.GetName() == sts.Name {
+							data["phase"] = phaseStsUpgrade
+							r.Log.Infof("Detect we need to upgrade Statefullset %s that not yet active (replica 0)", sts.Name)
+							stsToUpdate = append(stsToUpdate, stsNeedUpgraded)
+							break
+						}
+					}
+				}
+			}
+
+			// Update phase if needed
+			if data["phase"] != phaseStsUpgrade {
+				data["phase"] = phaseStsUpgradeFinished
+			}
+		} else if condition.IsStatusConditionPresentAndEqual(o.Status.Conditions, StatefulsetConditionUpgrade, metav1.ConditionFalse) && condition.IsStatusConditionPresentAndEqual(o.Status.Conditions, StatefulsetCondition, metav1.ConditionTrue) {
+			// Start upgrade phase
+			activeStateFulsetAlreadyUpgraded := false
+
+			for _, sts := range stsToExpectedUpdated {
+				if *sts.Spec.Replicas == 0 {
+					stsToUpdate = append(stsToUpdate, sts)
+				} else if !activeStateFulsetAlreadyUpgraded {
+					data["phase"] = phaseStsUpgradeStarted
+					activeStateFulsetAlreadyUpgraded = true
+					stsToUpdate = append(stsToUpdate, sts)
+				}
 			}
 		}
 	}
@@ -462,6 +470,27 @@ func (r *StatefulsetReconciler) OnSuccess(ctx context.Context, resource client.O
 	phase := d.(statefulsetPhase)
 
 	r.Log.Debugf("Phase on success: %s", phase)
+
+	// Handle TLS blackout
+	if condition.IsStatusConditionPresentAndEqual(o.Status.Conditions, TlsConditionBlackout, metav1.ConditionTrue) {
+		r.Log.Info("Detect we are on blackout TLS, start to delete all pods")
+		podList := &corev1.PodList{}
+		labelSelectors, err := labels.Parse(fmt.Sprintf("cluster=%s,%s=true", o.Name, ElasticsearchAnnotationKey))
+		if err != nil {
+			return res, errors.Wrap(err, "Error when generate label selector")
+		}
+		if err = r.Client.List(ctx, podList, &client.ListOptions{Namespace: o.Namespace, LabelSelector: labelSelectors}, &client.ListOptions{}); err != nil {
+			return res, errors.Wrapf(err, "Error when read Elasticsearch pods")
+		}
+		if len(podList.Items) > 0 {
+			for _, p := range podList.Items {
+				if err = r.Client.Delete(ctx, &p); err != nil {
+					return res, errors.Wrapf(err, "Error when delete pod %s", p.Name)
+				}
+				r.Log.Infof("Successfully delete pod %s", p.Name)
+			}
+		}
+	}
 
 	switch phase {
 	case phaseStsUpgradeStarted:
