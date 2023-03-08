@@ -127,6 +127,10 @@ spec:
               priority:
                 description: Priority is the priority to apply this template
                 type: integer
+              rawTemplate:
+                description: RawTemplate is the raw template You can use it instead
+                  to set indexPatterns, composedOf, priority, template etc.
+                type: string
               template:
                 description: Template is the template specification
                 properties:

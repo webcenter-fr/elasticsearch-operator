@@ -5,7 +5,7 @@ go 1.19
 require (
 	github.com/codingsince1985/checksum v1.2.5
 	github.com/davecgh/go-spew v1.1.1
-	github.com/disaster37/es-handler/v8 v8.1.1
+	github.com/disaster37/es-handler/v8 v8.1.2
 	github.com/disaster37/goca v1.0.4-0.20221213082455-a233467aa7fe
 	github.com/disaster37/k8s-objectmatcher v1.8.2-0.20230118153724-8144c44645a8
 	github.com/disaster37/k8sbuilder v1.0.1
