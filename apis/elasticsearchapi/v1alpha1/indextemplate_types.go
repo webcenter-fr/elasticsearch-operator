@@ -73,6 +73,12 @@ type IndexTemplateSpec struct {
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
 	// +optional
 	AllowAutoCreate bool `json:"allowAutoCreate,omitempty"`
+
+	// RawTemplate is the raw template
+	// You can use it instead to set indexPatterns, composedOf, priority, template etc.
+	// +operator-sdk:csv:customresourcedefinitions:type=spec
+	// +optional
+	RawTemplate string `json:"rawTemplate,omitempty"`
 }
 
 // IndexTemplateData is the template specification

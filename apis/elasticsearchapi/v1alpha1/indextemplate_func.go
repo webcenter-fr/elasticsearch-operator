@@ -9,3 +9,8 @@ func (o *IndexTemplate) GetIndexTemplateName() string {
 
 	return o.Spec.Name
 }
+
+// IsRawTemplate return true if raw template is set
+func (o *IndexTemplate) IsRawTemplate() bool {
+	return o.Spec.RawTemplate != ""
+}
