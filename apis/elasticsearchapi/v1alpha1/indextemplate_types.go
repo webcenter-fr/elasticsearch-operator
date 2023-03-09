@@ -42,7 +42,8 @@ type IndexTemplateSpec struct {
 
 	// IndexPatterns is the list of index to apply this template
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
-	IndexPatterns []string `json:"indexPatterns"`
+	// +optional
+	IndexPatterns []string `json:"indexPatterns,omitempty"`
 
 	//ComposedOf is the list of component templates
 	// +operator-sdk:csv:customresourcedefinitions:type=spec

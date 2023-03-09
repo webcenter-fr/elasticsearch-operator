@@ -149,7 +149,6 @@ spec:
                 type: integer
             required:
             - elasticsearchRef
-            - indexPatterns
             type: object
           status:
             description: IndexTemplateStatus defines the observed state of IndexTemplate
