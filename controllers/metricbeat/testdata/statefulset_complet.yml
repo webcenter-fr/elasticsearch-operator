@@ -1,0 +1,207 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: test-mb
+  namespace: default
+  labels:
+    cluster: test
+    metricbeat.k8s.webcenter.fr: "true"
+  annotations:
+    metricbeat.k8s.webcenter.fr: "true"
+spec:
+  replicas: 1
+  serviceName: test-headless-mb
+  selector:
+    matchLabels:
+      cluster: test
+      metricbeat.k8s.webcenter.fr: "true"
+  template:
+    metadata:
+      labels:
+        cluster: test
+        metricbeat.k8s.webcenter.fr: "true"
+      annotations:
+        metricbeat.k8s.webcenter.fr: "true"
+        metricbeat.k8s.webcenter.fr/configmap-test: "1dd74b8deb13203ff016c1b47d4d7cc2ad0c0400e9c2103369690038ce7a31ac"
+        metricbeat.k8s.webcenter.fr/configmap-test-config-mb:   "1dd74b8deb13203ff016c1b47d4d7cc2ad0c0400e9c2103369690038ce7a31ac"
+        metricbeat.k8s.webcenter.fr/configmap-test-module-mb: "1dd74b8deb13203ff016c1b47d4d7cc2ad0c0400e9c2103369690038ce7a31ac"
+        metricbeat.k8s.webcenter.fr/secret-keystore:      "e9b98d78f4b0fc3c077e9ba9d8a5bf2ab2a993c1590aa117e0f1d0c9a3b96694"
+      name: test-mb
+    spec:
+      affinity:
+        podAntiAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+          - labelSelector:
+              matchLabels:
+                cluster: test
+                metricbeat.k8s.webcenter.fr: "true"
+            topologyKey: rack
+      containers:
+      - env:
+        - name: POD_NAME
+          valueFrom:
+            fieldRef:
+              apiVersion: v1
+              fieldPath: metadata.name
+        - name: NODE_NAME
+          valueFrom:
+            fieldRef:
+              apiVersion: v1
+              fieldPath: spec.nodeName
+        - name: POD_IP
+          valueFrom:
+            fieldRef:
+              apiVersion: v1
+              fieldPath: status.podIP
+        - name: NAMESPACE
+          valueFrom:
+            fieldRef:
+              apiVersion: v1
+              fieldPath: metadata.namespace
+        - name: ELASTICSEARCH_CA_PATH
+          value: /usr/share/metricbeat/config/es-ca/ca.crt
+        - name: ELASTICSEARCH_HOST
+          value: https://test-es.default.svc:9200
+        - name: env1
+          value: value1
+        envFrom:
+          - configMapRef:
+              name: test
+        image: docker.elastic.co/beats/metricbeat:8.5.1
+        resources:
+          limits:
+            cpu: "4"
+            memory: 4Gi
+          requests:
+            cpu: "2"
+            memory: 2Gi
+        livenessProbe:
+          failureThreshold: 3
+          periodSeconds: 30
+          successThreshold: 1
+          tcpSocket:
+            port: 5066
+          timeoutSeconds: 5
+        name: metricbeat
+        ports:
+        - containerPort: 5066
+          name: http
+          protocol: TCP
+        readinessProbe:
+          failureThreshold: 3
+          periodSeconds: 10
+          successThreshold: 1
+          httpGet:
+            path: /
+            port: 5066
+          timeoutSeconds: 5
+        securityContext:
+          capabilities:
+            drop:
+            - ALL
+          runAsNonRoot: true
+          runAsUser: 1000
+        startupProbe:
+          failureThreshold: 30
+          initialDelaySeconds: 10
+          periodSeconds: 10
+          successThreshold: 1
+          tcpSocket:
+            port: 5066
+          timeoutSeconds: 5
+        volumeMounts:
+        - mountPath: /usr/share/metricbeat/metricbeat.yml
+          name: metricbeat-config
+          subPath: metricbeat.yml
+        - mountPath: /usr/share/metricbeat/log4j.yaml
+          name: metricbeat-config
+          subPath: log4j.yaml
+        - mountPath: /usr/share/metricbeat/modules.d
+          name: metricbeat-module
+        - mountPath: /usr/share/metricbeat/es-ca
+          name: ca-elasticsearch
+        - mountPath: /usr/share/metricbeat/data
+          name: metricbeat-data
+      initContainers:
+      - command:
+        - /bin/bash
+        - -c
+        - |
+            #!/usr/bin/env bash
+            set -euo pipefail
+
+            # Set right
+            echo "Set right"
+            chown -v metricbeat:metricbeat /mnt/data
+            
+        image: docker.elastic.co/beats/metricbeat:8.5.1
+        name: init-filesystem
+        resources:
+          limits:
+            cpu: 300m
+            memory: 500Mi
+          requests:
+            cpu: 100m
+            memory: 100Mi
+        env:
+        - name: POD_NAME
+          valueFrom:
+            fieldRef:
+              apiVersion: v1
+              fieldPath: metadata.name
+        - name: NODE_NAME
+          valueFrom:
+            fieldRef:
+              apiVersion: v1
+              fieldPath: spec.nodeName
+        - name: POD_IP
+          valueFrom:
+            fieldRef:
+              apiVersion: v1
+              fieldPath: status.podIP
+        - name: NAMESPACE
+          valueFrom:
+            fieldRef:
+              apiVersion: v1
+              fieldPath: metadata.namespace
+        - name: env1
+          value: value1
+        envFrom:
+          - configMapRef:
+              name: test
+        volumeMounts:
+          - name: metricbeat-data
+            mountPath: /mnt/data
+        securityContext:
+          runAsUser: 0
+      securityContext:
+        fsGroup: 1000
+      terminationGracePeriodSeconds: 60
+      nodeSelector:
+        project: metricbeat
+      tolerations:
+        - effect: NoSchedule
+          key: project
+          operator: Equal
+          value: metricbeat
+      volumes:
+      - name: ca-elasticsearch
+        secret:
+          secretName: test-ca-es-mb
+      - name: metricbeat-config
+        configMap:
+          name: test-config-mb
+      - name: metricbeat-module
+        configMap:
+          name: test-module-mb
+  volumeClaimTemplates:
+  - metadata:
+      creationTimestamp: null
+      name: metricbeat-data
+    spec:
+      accessModes:
+      - ReadWriteOnce
+      resources:
+        requests:
+          storage: 5Gi
+      storageClassName: local-path

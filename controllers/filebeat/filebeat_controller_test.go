@@ -28,7 +28,7 @@ import (
 
 func (t *FilebeatControllerTestSuite) TestFilebeatController() {
 	key := types.NamespacedName{
-		Name:      "t-ls-" + localhelper.RandomString(10),
+		Name:      "t-fb-" + localhelper.RandomString(10),
 		Namespace: "default",
 	}
 	fb := &beatcrd.Filebeat{}

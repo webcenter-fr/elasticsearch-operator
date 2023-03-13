@@ -11456,8 +11456,7 @@ spec:
                       secretRef:
                         description: SecretName is the secret that contain the setting
                           to connect on Elasticsearch that is not managed by ECK.
-                          It need to contain only one entry. The user is the key,
-                          and the password is the data
+                          It need to contain the keys `username` and `password`.
                         properties:
                           name:
                             description: 'Name of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names

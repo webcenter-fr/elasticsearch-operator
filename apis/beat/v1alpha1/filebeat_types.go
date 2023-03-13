@@ -272,11 +272,6 @@ type FilebeatDeploymentSpec struct {
 	// +optional
 	PodDisruptionBudgetSpec *policyv1.PodDisruptionBudgetSpec `json:"podDisruptionBudget,omitempty"`
 
-	// Node permit to set extra option on Node process
-	// +operator-sdk:csv:customresourcedefinitions:type=spec
-	// +optional
-	Jvm string `json:"jvm,omitempty"`
-
 	// InitContainerResources permit to set resources on init containers
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
 	// +optional

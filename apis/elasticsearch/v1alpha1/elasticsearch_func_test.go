@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/webcenter-fr/elasticsearch-operator/apis/shared"
 	corev1 "k8s.io/api/core/v1"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -229,6 +230,52 @@ func TestIsPrometheusMonitoring(t *testing.T) {
 		},
 	}
 	assert.False(t, o.IsPrometheusMonitoring())
+}
+
+func TestIsMetricbeatMonitoring(t *testing.T) {
+	var o *Elasticsearch
+
+	// With default values
+	o = &Elasticsearch{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: "default",
+			Name:      "test",
+		},
+		Spec: ElasticsearchSpec{},
+	}
+	assert.False(t, o.IsMetricbeatMonitoring())
+
+	// When enabled
+	o = &Elasticsearch{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: "default",
+			Name:      "test",
+		},
+		Spec: ElasticsearchSpec{
+			Monitoring: ElasticsearchMonitoringSpec{
+				Metricbeat: &shared.MetricbeatMonitoringSpec{
+					Enabled: true,
+				},
+			},
+		},
+	}
+	assert.True(t, o.IsMetricbeatMonitoring())
+
+	// When disabled
+	o = &Elasticsearch{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: "default",
+			Name:      "test",
+		},
+		Spec: ElasticsearchSpec{
+			Monitoring: ElasticsearchMonitoringSpec{
+				Metricbeat: &shared.MetricbeatMonitoringSpec{
+					Enabled: true,
+				},
+			},
+		},
+	}
+	assert.False(t, o.IsMetricbeatMonitoring())
 }
 
 func TestIsPersistence(t *testing.T) {

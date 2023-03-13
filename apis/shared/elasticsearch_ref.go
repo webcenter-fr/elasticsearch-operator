@@ -49,7 +49,7 @@ type ElasticsearchExternalRef struct {
 	Addresses []string `json:"addresses"`
 
 	// SecretName is the secret that contain the setting to connect on Elasticsearch that is not managed by ECK.
-	// It need to contain only one entry. The user is the key, and the password is the data
+	// It need to contain the keys `username` and `password`.
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
 	SecretRef *corev1.LocalObjectReference `json:"secretRef"`
 }

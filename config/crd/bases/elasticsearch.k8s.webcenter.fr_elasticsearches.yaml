@@ -9928,9 +9928,118 @@ spec:
                 description: Monitoring permit to monitor current cluster Default,
                   it not monitor cluster
                 properties:
+                  metricbeat:
+                    description: Metricbeat permit to monitor cluster with metricbeat
+                      and to dedicated monitoring cluster
+                    properties:
+                      elasticsearchRef:
+                        description: ElasticsearchRef is the Elasticsearch ref to
+                          connect on.
+                        properties:
+                          elasticsearchCASecretRef:
+                            description: 'ElasticsearchCaSecretRef is the secret that
+                              store your custom CA certificate to connect on Elasticsearch
+                              API. It need to have the following keys: ca.crt'
+                            properties:
+                              name:
+                                description: 'Name of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                                  TODO: Add other useful fields. apiVersion, kind,
+                                  uid?'
+                                type: string
+                            type: object
+                            x-kubernetes-map-type: atomic
+                          external:
+                            description: ExternalElasticsearchRef is the external
+                              Elasticsearch cluster not managed by operator
+                            properties:
+                              addresses:
+                                description: Addresses is the list of Elasticsearch
+                                  addresses
+                                items:
+                                  type: string
+                                type: array
+                              secretRef:
+                                description: SecretName is the secret that contain
+                                  the setting to connect on Elasticsearch that is
+                                  not managed by ECK. It need to contain the keys
+                                  `username` and `password`.
+                                properties:
+                                  name:
+                                    description: 'Name of the referent. More info:
+                                      https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                                      TODO: Add other useful fields. apiVersion, kind,
+                                      uid?'
+                                    type: string
+                                type: object
+                                x-kubernetes-map-type: atomic
+                            required:
+                            - addresses
+                            - secretRef
+                            type: object
+                          managed:
+                            description: ManagedElasticsearchRef is the managed Elasticsearch
+                              cluster by operator
+                            properties:
+                              name:
+                                description: Name is the Elasticsearch cluster deployed
+                                  by operator
+                                type: string
+                              namespace:
+                                description: Namespace is the namespace where Elasticsearch
+                                  is deployed by operator No need to set if Kibana
+                                  is deployed on the same namespace
+                                type: string
+                              targetNodeGroup:
+                                description: TargetNodeGroup is the target Elasticsearch
+                                  node group to use as service to connect on Elasticsearch
+                                  Default, it use the global service
+                                type: string
+                            required:
+                            - name
+                            type: object
+                        type: object
+                      enabled:
+                        default: false
+                        description: Enabled permit to enable Metricbeat monitoring
+                          It will deploy metricbeat to collect metric Default to false
+                        type: boolean
+                      initContainerResources:
+                        description: Resources permit to set resources on metricbeat
+                        properties:
+                          limits:
+                            additionalProperties:
+                              anyOf:
+                              - type: integer
+                              - type: string
+                              pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                              x-kubernetes-int-or-string: true
+                            description: 'Limits describes the maximum amount of compute
+                              resources allowed. More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/'
+                            type: object
+                          requests:
+                            additionalProperties:
+                              anyOf:
+                              - type: integer
+                              - type: string
+                              pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                              x-kubernetes-int-or-string: true
+                            description: 'Requests describes the minimum amount of
+                              compute resources required. If Requests is omitted for
+                              a container, it defaults to Limits if that is explicitly
+                              specified, otherwise to an implementation-defined value.
+                              More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/'
+                            type: object
+                        type: object
+                      refreshPeriod:
+                        description: RefreshPeriod permit to set the time to collect
+                          data Defaullt to  `10s`
+                        type: string
+                    required:
+                    - elasticsearchRef
+                    type: object
                   prometheus:
                     description: Prometheus permit to monitor cluster with Prometheus
-                      en graphana (via exporter)
+                      and graphana (via exporter)
                     properties:
                       enabled:
                         default: false

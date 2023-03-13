@@ -245,7 +245,6 @@ func TestBuildStatefulset(t *testing.T) {
 						corev1.ResourceMemory: resource.MustParse("4Gi"),
 					},
 				},
-				Jvm: "-Xms1G -Xmx1G",
 				InitContainerResources: &corev1.ResourceRequirements{
 					Requests: corev1.ResourceList{
 						corev1.ResourceCPU:    resource.MustParse("100m"),

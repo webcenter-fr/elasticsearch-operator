@@ -14,4 +14,5 @@ resources:
 - elasticsearchapi_v1alpha1_watch.yaml
 - logstash_v1alpha1_logstash.yaml
 - beat_v1alpha1_filebeat.yaml
+- beat_v1alpha1_metricbeat.yaml
 #+kubebuilder:scaffold:manifestskustomizesamples

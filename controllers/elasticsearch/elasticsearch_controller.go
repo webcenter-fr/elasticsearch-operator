@@ -30,6 +30,7 @@ import (
 	elastic "github.com/elastic/go-elasticsearch/v8"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
+	beatcrd "github.com/webcenter-fr/elasticsearch-operator/apis/beat/v1alpha1"
 	elasticsearchcrd "github.com/webcenter-fr/elasticsearch-operator/apis/elasticsearch/v1alpha1"
 	elasticsearchapicrd "github.com/webcenter-fr/elasticsearch-operator/apis/elasticsearchapi/v1alpha1"
 	"github.com/webcenter-fr/elasticsearch-operator/controllers/common"
@@ -96,6 +97,7 @@ func NewElasticsearchReconciler(client client.Client, scheme *runtime.Scheme) *E
 //+kubebuilder:rbac:groups="monitoring.coreos.com",resources=podmonitors,verbs=get;list;watch;create;update;patch;delete
 //+kubebuilder:rbac:groups="elasticsearchapi.k8s.webcenter.fr",resources=users,verbs=get;list;watch;create;update;patch;delete
 //+kubebuilder:rbac:groups="elasticsearchapi.k8s.webcenter.fr",resources=licenses,verbs=get;list;watch;create;update;patch;delete
+//+kubebuilder:rbac:groups="beat.k8s.webcenter.fr",resources=metricbeats,verbs=get;list;watch;create;update;patch;delete
 
 // Reconcile is part of the main kubernetes reconciliation loop which aims to
 // move the current state of the cluster closer to the desired state.
@@ -128,6 +130,7 @@ func (r *ElasticsearchReconciler) Reconcile(ctx context.Context, req ctrl.Reques
 	licenseReconciler := NewLicenseReconciler(r.Client, r.Scheme, r.GetRecorder(), r.GetLogger())
 	exporterReconciler := NewExporterReconciler(r.Client, r.Scheme, r.GetRecorder(), r.GetLogger())
 	podMonitorReconciler := NewPodMonitorReconciler(r.Client, r.Scheme, r.GetRecorder(), r.GetLogger())
+	metricbeatReconciler := NewMetricbeatReconciler(r.Client, r.Scheme, r.GetRecorder(), r.GetLogger())
 
 	return reconciler.Reconcile(ctx, req, es, data,
 		tlsReconsiler,
@@ -141,6 +144,7 @@ func (r *ElasticsearchReconciler) Reconcile(ctx context.Context, req ctrl.Reques
 		loadBalancerReconciler,
 		userReconciler,
 		licenseReconciler,
+		metricbeatReconciler,
 		exporterReconciler,
 		podMonitorReconciler,
 	)
@@ -160,9 +164,36 @@ func (h *ElasticsearchReconciler) SetupWithManager(mgr ctrl.Manager) error {
 		Owns(&appv1.Deployment{}).
 		Owns(&elasticsearchapicrd.User{}).
 		Owns(&elasticsearchapicrd.License{}).
+		Owns(&beatcrd.Metricbeat{}).
 		Watches(&source.Kind{Type: &corev1.Secret{}}, handler.EnqueueRequestsFromMapFunc(watchSecret(h.Client))).
 		Watches(&source.Kind{Type: &corev1.ConfigMap{}}, handler.EnqueueRequestsFromMapFunc(watchConfigMap(h.Client))).
+		Watches(&source.Kind{Type: &elasticsearchcrd.Elasticsearch{}}, handler.EnqueueRequestsFromMapFunc(watchElasticsearchMonitoring(h.Client))).
 		Complete(h)
+}
+
+// watchElasticsearch permit to update if ElasticsearchRef change
+func watchElasticsearchMonitoring(c client.Client) handler.MapFunc {
+	return func(a client.Object) []reconcile.Request {
+		var (
+			listElasticsearchs *elasticsearchcrd.ElasticsearchList
+			fs                 fields.Selector
+		)
+
+		reconcileRequests := make([]reconcile.Request, 0)
+
+		// ElasticsearchRef
+		listElasticsearchs = &elasticsearchcrd.ElasticsearchList{}
+		fs = fields.ParseSelectorOrDie(fmt.Sprintf("spec.monitoring.metricbeat.elasticsearchRef.managed.name=%s", a.GetName()))
+		if err := c.List(context.Background(), listElasticsearchs, &client.ListOptions{Namespace: a.GetNamespace(), FieldSelector: fs}); err != nil {
+			panic(err)
+		}
+		for _, k := range listElasticsearchs.Items {
+			reconcileRequests = append(reconcileRequests, reconcile.Request{NamespacedName: types.NamespacedName{Name: k.Name, Namespace: k.Namespace}})
+		}
+
+		return reconcileRequests
+
+	}
 }
 
 // watchConfigMap permit to update if configMapRef change
@@ -287,6 +318,26 @@ func watchSecret(c client.Client) handler.MapFunc {
 		}
 		for _, e := range listElasticsearch.Items {
 			reconcileRequests = append(reconcileRequests, reconcile.Request{NamespacedName: types.NamespacedName{Name: e.Name, Namespace: e.Namespace}})
+		}
+
+		// Elasticsearch API cert secret when external
+		listElasticsearch = &elasticsearchcrd.ElasticsearchList{}
+		fs = fields.ParseSelectorOrDie(fmt.Sprintf("spec.monitoring.metricbeat.elasticsearchRef.elasticsearchCASecretRef.name=%s", a.GetName()))
+		if err := c.List(context.Background(), listElasticsearch, &client.ListOptions{Namespace: a.GetNamespace(), FieldSelector: fs}); err != nil {
+			panic(err)
+		}
+		for _, k := range listElasticsearch.Items {
+			reconcileRequests = append(reconcileRequests, reconcile.Request{NamespacedName: types.NamespacedName{Name: k.Name, Namespace: k.Namespace}})
+		}
+
+		// Elasticsearch credentials when external
+		listElasticsearch = &elasticsearchcrd.ElasticsearchList{}
+		fs = fields.ParseSelectorOrDie(fmt.Sprintf("spec.monitoring.metricbeat.elasticsearchRef.external.secretRef.name=%s", a.GetName()))
+		if err := c.List(context.Background(), listElasticsearch, &client.ListOptions{Namespace: a.GetNamespace(), FieldSelector: fs}); err != nil {
+			panic(err)
+		}
+		for _, k := range listElasticsearch.Items {
+			reconcileRequests = append(reconcileRequests, reconcile.Request{NamespacedName: types.NamespacedName{Name: k.Name, Namespace: k.Namespace}})
 		}
 
 		return reconcileRequests

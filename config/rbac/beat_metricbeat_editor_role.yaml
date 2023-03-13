@@ -1,0 +1,31 @@
+# permissions for end users to edit metricbeats.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  labels:
+    app.kubernetes.io/name: clusterrole
+    app.kubernetes.io/instance: metricbeat-editor-role
+    app.kubernetes.io/component: rbac
+    app.kubernetes.io/created-by: elasticsearch-operator
+    app.kubernetes.io/part-of: elasticsearch-operator
+    app.kubernetes.io/managed-by: kustomize
+  name: metricbeat-editor-role
+rules:
+- apiGroups:
+  - beat.k8s.webcenter.fr
+  resources:
+  - metricbeats
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - beat.k8s.webcenter.fr
+  resources:
+  - metricbeats/status
+  verbs:
+  - get

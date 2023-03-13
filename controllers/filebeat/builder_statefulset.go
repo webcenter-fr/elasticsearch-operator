@@ -337,7 +337,7 @@ func BuildStatefulset(fb *beatcrd.Filebeat, es *elasticsearchcrd.Elasticsearch, 
 	ptb.WithNodeSelector(fb.Spec.Deployment.NodeSelector, k8sbuilder.OverwriteIfDefaultValue)
 
 	// Compute Termination grac period
-	ptb.WithTerminationGracePeriodSeconds(120, k8sbuilder.OverwriteIfDefaultValue)
+	ptb.WithTerminationGracePeriodSeconds(60, k8sbuilder.OverwriteIfDefaultValue)
 
 	// Compute toleration
 	ptb.WithTolerations(fb.Spec.Deployment.Tolerations, k8sbuilder.OverwriteIfDefaultValue)

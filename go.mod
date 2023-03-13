@@ -20,6 +20,8 @@ require (
 	github.com/json-iterator/go v1.1.12
 	github.com/kr/pretty v0.2.1
 	github.com/olivere/elastic/v7 v7.0.32
+	github.com/onsi/ginkgo/v2 v2.4.0
+	github.com/onsi/gomega v1.23.0
 	github.com/pkg/errors v0.9.1
 	github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring v0.62.0
 	github.com/prometheus/client_golang v1.14.0

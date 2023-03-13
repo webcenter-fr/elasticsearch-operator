@@ -1,0 +1,24 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  annotations:
+    metricbeat.k8s.webcenter.fr: "true"
+  labels:
+    cluster: test
+    metricbeat.k8s.webcenter.fr: "true"
+  name: test-config-mb
+  namespace: default
+data:
+  metricbeat.yml: |
+    http:
+        enabled: true
+        host: 0.0.0.0
+    output:
+        elasticsearch:
+            hosts: ${ELASTICSEARCH_HOST}
+            password: ${METRICBEAT_PASSWORD}
+            ssl:
+                certificate_authorities: ${ELASTICSEARCH_CA_PATH}
+                enable: true
+            username: ${METRICBEAT_USERNAME}
+    

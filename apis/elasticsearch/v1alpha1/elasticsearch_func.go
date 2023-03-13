@@ -51,6 +51,16 @@ func (h *Elasticsearch) IsPrometheusMonitoring() bool {
 	return false
 }
 
+// IsMetricbeatMonitoring return true if Metricbeat monitoring is enabled
+func (h *Elasticsearch) IsMetricbeatMonitoring() bool {
+
+	if h.Spec.Monitoring.Metricbeat != nil && h.Spec.Monitoring.Metricbeat.Enabled {
+		return true
+	}
+
+	return false
+}
+
 // IsPersistence return true if persistence is enabled
 func (h ElasticsearchNodeGroupSpec) IsPersistence() bool {
 	if h.Persistence != nil && (h.Persistence.Volume != nil || h.Persistence.VolumeClaimSpec != nil) {

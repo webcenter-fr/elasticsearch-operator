@@ -98,10 +98,15 @@ type ElasticsearchSpec struct {
 
 type ElasticsearchMonitoringSpec struct {
 
-	// Prometheus permit to monitor cluster with Prometheus en graphana (via exporter)
+	// Prometheus permit to monitor cluster with Prometheus and graphana (via exporter)
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
 	// +optional
 	Prometheus *ElasticsearchPrometheusSpec `json:"prometheus,omitempty"`
+
+	// Metricbeat permit to monitor cluster with metricbeat and to dedicated monitoring cluster
+	// +operator-sdk:csv:customresourcedefinitions:type=spec
+	// +optional
+	Metricbeat *shared.MetricbeatMonitoringSpec `json:"metricbeat,omitempty"`
 }
 
 type ElasticsearchPrometheusSpec struct {
@@ -474,7 +479,7 @@ type ElasticsearchStatus struct {
 //+kubebuilder:storageversion
 
 // Elasticsearch is the Schema for the elasticsearchs API
-// +operator-sdk:csv:customresourcedefinitions:resources={{Ingress,networking.k8s.io/v1},{ConfigMap,v1},{Service,v1},{Secret,v1},{Deployment,apps/v1},{StatefulSet,apps/v1},{License,elasticsearchapi.k8s.webcenter.fr/v1alpha1},{NetworkPolicy,networking.k8s.io/v1},{PodDisruptionBudget,policy/v1},{PodMonitor,monitoring.coreos.com/v1},{User,elasticsearchapi.k8s.webcenter.fr/v1alpha1}}
+// +operator-sdk:csv:customresourcedefinitions:resources={{Ingress,networking.k8s.io/v1},{ConfigMap,v1},{Service,v1},{Secret,v1},{Deployment,apps/v1},{StatefulSet,apps/v1},{License,elasticsearchapi.k8s.webcenter.fr/v1alpha1},{NetworkPolicy,networking.k8s.io/v1},{PodDisruptionBudget,policy/v1},{PodMonitor,monitoring.coreos.com/v1},{User,elasticsearchapi.k8s.webcenter.fr/v1alpha1},{Metricbeat,beat.k8s.webcenter.fr/v1alpha1}}
 // +kubebuilder:printcolumn:name="URL",type="string",JSONPath=".status.url"
 // +kubebuilder:printcolumn:name="CredentialsRef",type="string",JSONPath=".status.credentialsRef.name"
 // +kubebuilder:printcolumn:name="Phase",type="string",JSONPath=".status.phase",description="Cluster deployment status"

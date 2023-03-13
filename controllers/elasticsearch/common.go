@@ -108,4 +108,34 @@ func MustSetUpIndex(k8sManager manager.Manager) {
 	}); err != nil {
 		panic(err)
 	}
+
+	if err := k8sManager.GetFieldIndexer().IndexField(context.Background(), &elasticsearchcrd.Elasticsearch{}, "spec.monitoring.metricbeat.elasticsearchRef.managed.name", func(o client.Object) []string {
+		p := o.(*elasticsearchcrd.Elasticsearch)
+		if p.IsMetricbeatMonitoring() {
+			return []string{p.Spec.Monitoring.Metricbeat.ElasticsearchRef.ManagedElasticsearchRef.Name}
+		}
+		return []string{}
+	}); err != nil {
+		panic(err)
+	}
+
+	if err := k8sManager.GetFieldIndexer().IndexField(context.Background(), &elasticsearchcrd.Elasticsearch{}, "spec.monitoring.metricbeat.elasticsearchRef.elasticsearchCASecretRef.name", func(o client.Object) []string {
+		p := o.(*elasticsearchcrd.Elasticsearch)
+		if p.IsMetricbeatMonitoring() && p.Spec.Monitoring.Metricbeat.ElasticsearchRef.ElasticsearchCaSecretRef != nil {
+			return []string{p.Spec.Monitoring.Metricbeat.ElasticsearchRef.ElasticsearchCaSecretRef.Name}
+		}
+		return []string{}
+	}); err != nil {
+		panic(err)
+	}
+
+	if err := k8sManager.GetFieldIndexer().IndexField(context.Background(), &elasticsearchcrd.Elasticsearch{}, "spec.monitoring.metricbeat.elasticsearchRef.external.secretRef.name", func(o client.Object) []string {
+		p := o.(*elasticsearchcrd.Elasticsearch)
+		if p.IsMetricbeatMonitoring() && p.Spec.Monitoring.Metricbeat.ElasticsearchRef.IsExternal() && p.Spec.Monitoring.Metricbeat.ElasticsearchRef.ExternalElasticsearchRef.SecretRef != nil {
+			return []string{p.Spec.Monitoring.Metricbeat.ElasticsearchRef.ExternalElasticsearchRef.SecretRef.Name}
+		}
+		return []string{}
+	}); err != nil {
+		panic(err)
+	}
 }

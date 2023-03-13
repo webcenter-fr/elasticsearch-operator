@@ -8,7 +8,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-func TestIsPrometheusMonitoring(t *testing.T) {
+func TestFilebeatIsPrometheusMonitoring(t *testing.T) {
 	var o *Filebeat
 
 	// With default values
@@ -54,7 +54,7 @@ func TestIsPrometheusMonitoring(t *testing.T) {
 	assert.False(t, o.IsPrometheusMonitoring())
 }
 
-func TestIsPersistence(t *testing.T) {
+func TestFilebeatIsPersistence(t *testing.T) {
 	var o *Filebeat
 
 	// With default value
@@ -119,7 +119,7 @@ func TestIsPersistence(t *testing.T) {
 
 }
 
-func TestIsManaged(t *testing.T) {
+func TestFilebeatIsManaged(t *testing.T) {
 	var o FilebeatLogstashRef
 
 	// When managed
@@ -142,7 +142,7 @@ func TestIsManaged(t *testing.T) {
 
 }
 
-func TestIsExternal(t *testing.T) {
+func TestFilebeatIsExternal(t *testing.T) {
 	var o FilebeatLogstashRef
 
 	// When external
