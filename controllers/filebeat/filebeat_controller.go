@@ -82,7 +82,6 @@ func NewFilebeatReconciler(client client.Client, scheme *runtime.Scheme) *Filebe
 //+kubebuilder:rbac:groups="",resources=secrets,verbs=get;list;watch;create;update;patch;delete
 //+kubebuilder:rbac:groups="networking.k8s.io",resources=ingresses,verbs=get;list;watch;create;update;patch;delete
 //+kubebuilder:rbac:groups="",resources=services,verbs=get;list;watch;create;update;patch;delete
-//+kubebuilder:rbac:groups="networking.k8s.io",resources=networkpolicies,verbs=get;list;watch;create;update;patch;delete
 //+kubebuilder:rbac:groups="policy",resources=poddisruptionbudgets,verbs=get;list;watch;create;update;patch;delete
 //+kubebuilder:rbac:groups="apps",resources=statefulsets,verbs=get;list;watch;create;update;patch;delete
 
@@ -110,7 +109,6 @@ func (r *FilebeatReconciler) Reconcile(ctx context.Context, req ctrl.Request) (c
 	serviceReconciler := NewServiceReconciler(r.Client, r.Scheme, r.GetRecorder(), r.GetLogger())
 	pdbReconciler := NewPdbReconciler(r.Client, r.Scheme, r.GetRecorder(), r.GetLogger())
 	ingressReconciler := NewIngressReconciler(r.Client, r.Scheme, r.GetRecorder(), r.GetLogger())
-	networkPolicyReconciler := NewNetworkPolicyReconciler(r.Client, r.Scheme, r.GetRecorder(), r.GetLogger())
 	statefulsetReconciler := NewStatefulsetReconciler(r.Client, r.Scheme, r.GetRecorder(), r.GetLogger())
 
 	return reconciler.Reconcile(ctx, req, fb, data,
@@ -119,7 +117,6 @@ func (r *FilebeatReconciler) Reconcile(ctx context.Context, req ctrl.Request) (c
 		configMapReconciler,
 		serviceReconciler,
 		pdbReconciler,
-		networkPolicyReconciler,
 		statefulsetReconciler,
 		ingressReconciler,
 	)
@@ -132,7 +129,6 @@ func (h *FilebeatReconciler) SetupWithManager(mgr ctrl.Manager) error {
 		Owns(&corev1.ConfigMap{}).
 		Owns(&corev1.Secret{}).
 		Owns(&networkingv1.Ingress{}).
-		Owns(&networkingv1.NetworkPolicy{}).
 		Owns(&corev1.Service{}).
 		Owns(&policyv1.PodDisruptionBudget{}).
 		Owns(&appv1.StatefulSet{}).
@@ -155,8 +151,8 @@ func watchLogstash(c client.Client) handler.MapFunc {
 
 		// ElasticsearchRef
 		listFilebeats = &beatcrd.FilebeatList{}
-		fs = fields.ParseSelectorOrDie(fmt.Sprintf("spec.logstashRef.managed.name=%s", a.GetName()))
-		if err := c.List(context.Background(), listFilebeats, &client.ListOptions{Namespace: a.GetNamespace(), FieldSelector: fs}); err != nil {
+		fs = fields.ParseSelectorOrDie(fmt.Sprintf("spec.logstashRef.managed.fullname=%s/%s", a.GetNamespace(), a.GetName()))
+		if err := c.List(context.Background(), listFilebeats, &client.ListOptions{FieldSelector: fs}); err != nil {
 			panic(err)
 		}
 		for _, k := range listFilebeats.Items {
@@ -180,8 +176,8 @@ func watchElasticsearch(c client.Client) handler.MapFunc {
 
 		// ElasticsearchRef
 		listFilebeats = &beatcrd.FilebeatList{}
-		fs = fields.ParseSelectorOrDie(fmt.Sprintf("spec.elasticsearchRef.managed.name=%s", a.GetName()))
-		if err := c.List(context.Background(), listFilebeats, &client.ListOptions{Namespace: a.GetNamespace(), FieldSelector: fs}); err != nil {
+		fs = fields.ParseSelectorOrDie(fmt.Sprintf("spec.elasticsearchRef.managed.fullname=%s/%s", a.GetNamespace(), a.GetName()))
+		if err := c.List(context.Background(), listFilebeats, &client.ListOptions{FieldSelector: fs}); err != nil {
 			panic(err)
 		}
 		for _, k := range listFilebeats.Items {

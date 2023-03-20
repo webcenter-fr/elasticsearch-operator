@@ -42,7 +42,7 @@ func BuildStatefulset(fb *beatcrd.Filebeat, es *elasticsearchcrd.Elasticsearch, 
 		if err != nil {
 			return nil, errors.Wrapf(err, "Error when generate checksum for extra configMap %s", cm.Name)
 		}
-		checksumAnnotations[fmt.Sprintf("%s/configmap-%s", FilebeatAnnotationKey, cm.Name)] = sum
+		checksumAnnotations[fmt.Sprintf("%s/configmap-%s", beatcrd.FilebeatAnnotationKey, cm.Name)] = sum
 	}
 	// checksum for secret
 	for _, s := range secretsChecksum {
@@ -54,7 +54,7 @@ func BuildStatefulset(fb *beatcrd.Filebeat, es *elasticsearchcrd.Elasticsearch, 
 		if err != nil {
 			return nil, errors.Wrapf(err, "Error when generate checksum for extra secret %s", s.Name)
 		}
-		checksumAnnotations[fmt.Sprintf("%s/secret-%s", FilebeatAnnotationKey, s.Name)] = sum
+		checksumAnnotations[fmt.Sprintf("%s/secret-%s", beatcrd.FilebeatAnnotationKey, s.Name)] = sum
 	}
 
 	cb := k8sbuilder.NewContainerBuilder()
@@ -320,15 +320,15 @@ func BuildStatefulset(fb *beatcrd.Filebeat, es *elasticsearchcrd.Elasticsearch, 
 	// Compute labels
 	// Do not set global labels here to avoid reconcile pod just because global label change
 	ptb.WithLabels(map[string]string{
-		"cluster":             fb.Name,
-		FilebeatAnnotationKey: "true",
+		"cluster":                     fb.Name,
+		beatcrd.FilebeatAnnotationKey: "true",
 	}).
 		WithLabels(fb.Spec.Deployment.Labels, k8sbuilder.Merge)
 
 	// Compute annotations
 	// Do not set global annotation here to avoid reconcile pod just because global annotation change
 	ptb.WithAnnotations(map[string]string{
-		FilebeatAnnotationKey: "true",
+		beatcrd.FilebeatAnnotationKey: "true",
 	}).
 		WithAnnotations(fb.Spec.Deployment.Annotations, k8sbuilder.Merge).
 		WithAnnotations(checksumAnnotations, k8sbuilder.Merge)
@@ -551,8 +551,8 @@ chown -v root:root /mnt/data
 			Replicas: pointer.Int32(fb.Spec.Deployment.Replicas),
 			Selector: &metav1.LabelSelector{
 				MatchLabels: map[string]string{
-					"cluster":             fb.Name,
-					FilebeatAnnotationKey: "true",
+					"cluster":                     fb.Name,
+					beatcrd.FilebeatAnnotationKey: "true",
 				},
 			},
 			ServiceName: GetGlobalServiceName(fb),
@@ -609,8 +609,8 @@ func computeAntiAffinity(fb *beatcrd.Filebeat) (antiAffinity *corev1.PodAntiAffi
 				TopologyKey: topologyKey,
 				LabelSelector: &metav1.LabelSelector{
 					MatchLabels: map[string]string{
-						"cluster":             fb.Name,
-						FilebeatAnnotationKey: "true",
+						"cluster":                     fb.Name,
+						beatcrd.FilebeatAnnotationKey: "true",
 					},
 				},
 			},
@@ -626,8 +626,8 @@ func computeAntiAffinity(fb *beatcrd.Filebeat) (antiAffinity *corev1.PodAntiAffi
 				TopologyKey: topologyKey,
 				LabelSelector: &metav1.LabelSelector{
 					MatchLabels: map[string]string{
-						"cluster":             fb.Name,
-						FilebeatAnnotationKey: "true",
+						"cluster":                     fb.Name,
+						beatcrd.FilebeatAnnotationKey: "true",
 					},
 				},
 			},

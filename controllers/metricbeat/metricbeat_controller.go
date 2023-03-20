@@ -28,7 +28,6 @@ import (
 	"github.com/webcenter-fr/elasticsearch-operator/controllers/common"
 	appv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
-	networkingv1 "k8s.io/api/networking/v1"
 	policyv1 "k8s.io/api/policy/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	condition "k8s.io/apimachinery/pkg/api/meta"
@@ -81,7 +80,6 @@ func NewMetricbeatReconciler(client client.Client, scheme *runtime.Scheme) *Metr
 //+kubebuilder:rbac:groups="",resources=secrets,verbs=get;list;watch;create;update;patch;delete
 //+kubebuilder:rbac:groups="networking.k8s.io",resources=ingresses,verbs=get;list;watch;create;update;patch;delete
 //+kubebuilder:rbac:groups="",resources=services,verbs=get;list;watch;create;update;patch;delete
-//+kubebuilder:rbac:groups="networking.k8s.io",resources=networkpolicies,verbs=get;list;watch;create;update;patch;delete
 //+kubebuilder:rbac:groups="policy",resources=poddisruptionbudgets,verbs=get;list;watch;create;update;patch;delete
 //+kubebuilder:rbac:groups="apps",resources=statefulsets,verbs=get;list;watch;create;update;patch;delete
 
@@ -108,7 +106,6 @@ func (r *MetricbeatReconciler) Reconcile(ctx context.Context, req ctrl.Request) 
 	configMapReconciler := NewConfiMapReconciler(r.Client, r.Scheme, r.GetRecorder(), r.GetLogger())
 	serviceReconciler := NewServiceReconciler(r.Client, r.Scheme, r.GetRecorder(), r.GetLogger())
 	pdbReconciler := NewPdbReconciler(r.Client, r.Scheme, r.GetRecorder(), r.GetLogger())
-	networkPolicyReconciler := NewNetworkPolicyReconciler(r.Client, r.Scheme, r.GetRecorder(), r.GetLogger())
 	statefulsetReconciler := NewStatefulsetReconciler(r.Client, r.Scheme, r.GetRecorder(), r.GetLogger())
 
 	return reconciler.Reconcile(ctx, req, mb, data,
@@ -117,7 +114,6 @@ func (r *MetricbeatReconciler) Reconcile(ctx context.Context, req ctrl.Request) 
 		configMapReconciler,
 		serviceReconciler,
 		pdbReconciler,
-		networkPolicyReconciler,
 		statefulsetReconciler,
 	)
 }
@@ -128,7 +124,6 @@ func (h *MetricbeatReconciler) SetupWithManager(mgr ctrl.Manager) error {
 		For(&beatcrd.Metricbeat{}).
 		Owns(&corev1.ConfigMap{}).
 		Owns(&corev1.Secret{}).
-		Owns(&networkingv1.NetworkPolicy{}).
 		Owns(&corev1.Service{}).
 		Owns(&policyv1.PodDisruptionBudget{}).
 		Owns(&appv1.StatefulSet{}).
@@ -150,8 +145,8 @@ func watchElasticsearch(c client.Client) handler.MapFunc {
 
 		// ElasticsearchRef
 		listMetricbeats = &beatcrd.MetricbeatList{}
-		fs = fields.ParseSelectorOrDie(fmt.Sprintf("spec.elasticsearchRef.managed.name=%s", a.GetName()))
-		if err := c.List(context.Background(), listMetricbeats, &client.ListOptions{Namespace: a.GetNamespace(), FieldSelector: fs}); err != nil {
+		fs = fields.ParseSelectorOrDie(fmt.Sprintf("spec.elasticsearchRef.managed.fullname=%s/%s", a.GetNamespace(), a.GetName()))
+		if err := c.List(context.Background(), listMetricbeats, &client.ListOptions{FieldSelector: fs}); err != nil {
 			panic(err)
 		}
 		for _, k := range listMetricbeats.Items {

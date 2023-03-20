@@ -8,17 +8,17 @@ import (
 )
 
 // BuilderServices permit to generate service
-func BuildServices(fb *beatcrd.Metricbeat) (services []corev1.Service, err error) {
+func BuildServices(mb *beatcrd.Metricbeat) (services []corev1.Service, err error) {
 
 	services = make([]corev1.Service, 0, 1)
 
 	// Create global service with all ports
 	service := &corev1.Service{
 		ObjectMeta: metav1.ObjectMeta{
-			Namespace:   fb.Namespace,
-			Name:        GetGlobalServiceName(fb),
-			Labels:      getLabels(fb),
-			Annotations: getAnnotations(fb),
+			Namespace:   mb.Namespace,
+			Name:        GetGlobalServiceName(mb),
+			Labels:      getLabels(mb),
+			Annotations: getAnnotations(mb),
 		},
 		Spec: corev1.ServiceSpec{
 			Type: corev1.ServiceTypeClusterIP,
@@ -31,8 +31,8 @@ func BuildServices(fb *beatcrd.Metricbeat) (services []corev1.Service, err error
 				},
 			},
 			Selector: map[string]string{
-				MetricbeatAnnotationKey: "true",
-				"cluster":               fb.Name,
+				beatcrd.MetricbeatAnnotationKey: "true",
+				"cluster":                       mb.Name,
 			},
 			ClusterIP: "None",
 		},

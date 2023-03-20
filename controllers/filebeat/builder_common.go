@@ -66,8 +66,8 @@ func GetContainerImage(fb *beatcrd.Filebeat) string {
 // getLabels permit to return global label must be set on all resources
 func getLabels(fb *beatcrd.Filebeat, customLabels ...map[string]string) (labels map[string]string) {
 	labels = map[string]string{
-		"cluster":             fb.Name,
-		FilebeatAnnotationKey: "true",
+		"cluster":                     fb.Name,
+		beatcrd.FilebeatAnnotationKey: "true",
 	}
 	for _, label := range customLabels {
 		for key, val := range label {
@@ -83,7 +83,7 @@ func getLabels(fb *beatcrd.Filebeat, customLabels ...map[string]string) (labels 
 // getAnnotations permit to return global annotations must be set on all resources
 func getAnnotations(fb *beatcrd.Filebeat, customAnnotation ...map[string]string) (annotations map[string]string) {
 	annotations = map[string]string{
-		FilebeatAnnotationKey: "true",
+		beatcrd.FilebeatAnnotationKey: "true",
 	}
 	for _, annotation := range customAnnotation {
 		for key, val := range annotation {

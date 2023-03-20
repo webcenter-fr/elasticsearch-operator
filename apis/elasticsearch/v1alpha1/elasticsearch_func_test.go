@@ -270,7 +270,7 @@ func TestIsMetricbeatMonitoring(t *testing.T) {
 		Spec: ElasticsearchSpec{
 			Monitoring: ElasticsearchMonitoringSpec{
 				Metricbeat: &shared.MetricbeatMonitoringSpec{
-					Enabled: true,
+					Enabled: false,
 				},
 			},
 		},

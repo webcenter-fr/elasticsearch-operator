@@ -16,6 +16,10 @@ data:
     http:
         enabled: true
         host: 0.0.0.0
+    metricbeat:
+        config:
+            modules:
+                path: ${path.config}/modules.d/*.yml
     node:
         value: test
         value2: test
@@ -24,7 +28,7 @@ data:
             hosts: ${ELASTICSEARCH_HOST}
             password: ${METRICBEAT_PASSWORD}
             ssl:
-                certificate_authorities: ${ELASTICSEARCH_CA_PATH}
+                certificate_authorities: /usr/share/metricbeat/es-ca/ca.crt
                 enable: true
             username: ${METRICBEAT_USERNAME}
     

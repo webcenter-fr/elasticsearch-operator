@@ -67,7 +67,7 @@ func (r *IngressReconciler) Read(ctx context.Context, resource client.Object, da
 	ingressList := &networkingv1.IngressList{}
 
 	// Read current ingress
-	labelSelectors, err := labels.Parse(fmt.Sprintf("cluster=%s,%s=true", o.Name, FilebeatAnnotationKey))
+	labelSelectors, err := labels.Parse(fmt.Sprintf("cluster=%s,%s=true", o.Name, beatcrd.FilebeatAnnotationKey))
 	if err != nil {
 		return res, errors.Wrap(err, "Error when generate label selector")
 	}

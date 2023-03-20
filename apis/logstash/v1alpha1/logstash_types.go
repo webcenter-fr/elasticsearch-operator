@@ -27,6 +27,10 @@ import (
 // EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!
 // NOTE: json tags are required.  Any new fields you add must have json tags for the fields to be serialized.
 
+const (
+	LogstashAnnotationKey = "logstash.k8s.webcenter.fr"
+)
+
 // LogstashSpec defines the desired state of Logstash
 // +k8s:openapi-gen=true
 type LogstashSpec struct {

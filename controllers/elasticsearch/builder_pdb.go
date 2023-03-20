@@ -28,9 +28,9 @@ func BuildPodDisruptionBudget(es *elasticsearchcrd.Elasticsearch) (podDisruption
 			Spec: policyv1.PodDisruptionBudgetSpec{
 				Selector: &metav1.LabelSelector{
 					MatchLabels: map[string]string{
-						"cluster":                  es.Name,
-						"nodeGroup":                nodeGroup.Name,
-						ElasticsearchAnnotationKey: "true",
+						"cluster":   es.Name,
+						"nodeGroup": nodeGroup.Name,
+						elasticsearchcrd.ElasticsearchAnnotationKey: "true",
 					},
 				},
 			},

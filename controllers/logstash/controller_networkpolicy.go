@@ -7,14 +7,17 @@ import (
 	"github.com/disaster37/operator-sdk-extra/pkg/controller"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
+	beatcrd "github.com/webcenter-fr/elasticsearch-operator/apis/beat/v1alpha1"
 	logstashcrd "github.com/webcenter-fr/elasticsearch-operator/apis/logstash/v1alpha1"
 	"github.com/webcenter-fr/elasticsearch-operator/controllers/common"
 	corev1 "k8s.io/api/core/v1"
 	networkingv1 "k8s.io/api/networking/v1"
+	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	condition "k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/labels"
+	"k8s.io/apimachinery/pkg/fields"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/tools/record"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -64,31 +67,43 @@ func (r *NetworkPolicyReconciler) Configure(ctx context.Context, req ctrl.Reques
 // Read existing network policy
 func (r *NetworkPolicyReconciler) Read(ctx context.Context, resource client.Object, data map[string]any) (res ctrl.Result, err error) {
 	o := resource.(*logstashcrd.Logstash)
-	npList := &networkingv1.NetworkPolicyList{}
+	np := &networkingv1.NetworkPolicy{}
+	filebeatList := &beatcrd.FilebeatList{}
+	oList := make([]client.Object, 0)
 
-	// Read current network policies
-	labelSelectors, err := labels.Parse(fmt.Sprintf("cluster=%s,%s=true", o.Name, LogstashAnnotationKey))
-	if err != nil {
-		return res, errors.Wrap(err, "Error when generate label selector")
+	// Read current network policy
+	if err = r.Client.Get(ctx, types.NamespacedName{Namespace: o.Namespace, Name: GetNetworkPolicyName(o)}, np); err != nil {
+		if !k8serrors.IsNotFound(err) {
+			return res, errors.Wrapf(err, "Error when read network policy")
+		}
+		np = nil
 	}
-	if err = r.Client.List(ctx, npList, &client.ListOptions{Namespace: o.Namespace, LabelSelector: labelSelectors}); err != nil {
-		return res, errors.Wrapf(err, "Error when read network policies")
+	data["currentObject"] = np
+
+	// Read filebeat referer
+	fs := fields.ParseSelectorOrDie(fmt.Sprintf("spec.logstashRef.managed.fullname=%s/%s", o.GetNamespace(), o.GetName()))
+	if err := r.Client.List(context.Background(), filebeatList, &client.ListOptions{FieldSelector: fs}); err != nil {
+		return res, errors.Wrapf(err, "Error when read filebeat")
 	}
-	data["currentObjects"] = npList.Items
+	for _, fb := range filebeatList.Items {
+		if fb.Namespace != o.Namespace {
+			oList = append(oList, &fb)
+		}
+	}
 
 	// Generate expected network policy
-	expectedNps, err := BuildNetworkPolicies(o)
+	expectedNp, err := BuildNetworkPolicy(o, oList)
 	if err != nil {
-		return res, errors.Wrap(err, "Error when generate network policies")
+		return res, errors.Wrap(err, "Error when generate network policy")
 	}
-	data["expectedObjects"] = expectedNps
+	data["expectedObject"] = expectedNp
 
 	return res, nil
 }
 
 // Diff permit to check if network policy is up to date
 func (r *NetworkPolicyReconciler) Diff(ctx context.Context, resource client.Object, data map[string]interface{}) (diff controller.K8sDiff, res ctrl.Result, err error) {
-	return r.Reconciler.StdListDiff(ctx, resource, data)
+	return r.Reconciler.StdDiff(ctx, resource, data)
 }
 
 // OnError permit to set status condition on the right state and record error

@@ -100,11 +100,12 @@ func (t *KibanaControllerTestSuite) SetupSuite() {
 	k8sClient := k8sManager.GetClient()
 	t.k8sClient = k8sClient
 
-	// Add indexers on Elasticsearch to track secret change
-	elasticsearchcontrollers.MustSetUpIndex(k8sManager)
-
-	// Add indexers on Kibana to track secret change
-	MustSetUpIndex(k8sManager)
+	// Add indexers
+	elasticsearchcrd.MustSetUpIndex(k8sManager)
+	kibanacrd.MustSetUpIndex(k8sManager)
+	logstashcrd.MustSetUpIndex(k8sManager)
+	beatcrd.MustSetUpIndexForFilebeat(k8sManager)
+	beatcrd.MustSetUpIndexForMetricbeat(k8sManager)
 
 	// Init controllers
 

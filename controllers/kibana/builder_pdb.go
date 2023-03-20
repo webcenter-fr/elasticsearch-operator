@@ -23,8 +23,8 @@ func BuildPodDisruptionBudget(kb *kibanacrd.Kibana) (pdb *policyv1.PodDisruption
 		Spec: policyv1.PodDisruptionBudgetSpec{
 			Selector: &metav1.LabelSelector{
 				MatchLabels: map[string]string{
-					"cluster":           kb.Name,
-					KibanaAnnotationKey: "true",
+					"cluster":                     kb.Name,
+					kibanacrd.KibanaAnnotationKey: "true",
 				},
 			},
 		},

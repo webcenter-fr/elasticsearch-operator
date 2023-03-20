@@ -37,8 +37,8 @@ func BuildServices(ls *logstashcrd.Logstash) (services []corev1.Service, err err
 		}
 
 		service.Spec.Selector = map[string]string{
-			LogstashAnnotationKey: "true",
-			"cluster":             ls.Name,
+			logstashcrd.LogstashAnnotationKey: "true",
+			"cluster":                         ls.Name,
 		}
 
 		services = append(services, *service)
@@ -85,8 +85,8 @@ func BuildServices(ls *logstashcrd.Logstash) (services []corev1.Service, err err
 					},
 				},
 				Selector: map[string]string{
-					LogstashAnnotationKey: "true",
-					"cluster":             ls.Name,
+					logstashcrd.LogstashAnnotationKey: "true",
+					"cluster":                         ls.Name,
 				},
 			},
 		}
@@ -143,8 +143,8 @@ func BuildServices(ls *logstashcrd.Logstash) (services []corev1.Service, err err
 			Type:  corev1.ServiceTypeClusterIP,
 			Ports: computedPort,
 			Selector: map[string]string{
-				LogstashAnnotationKey: "true",
-				"cluster":             ls.Name,
+				logstashcrd.LogstashAnnotationKey: "true",
+				"cluster":                         ls.Name,
 			},
 			ClusterIP: "None",
 		},

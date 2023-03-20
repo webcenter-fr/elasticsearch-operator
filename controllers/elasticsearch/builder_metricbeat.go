@@ -27,7 +27,7 @@ func BuildMetricbeat(es *elasticsearchcrd.Elasticsearch) (mb *beatcrd.Metricbeat
   password: '${SOURCE_METRICBEAT_PASSWORD}'
   ssl:
     enable: true
-    certificate_authorities: '/usr/share/metricbeat/config/source-es-ca/ca.crt'
+    certificate_authorities: '/usr/share/metricbeat/source-es-ca/ca.crt'
     verification_mode: full
   scope: cluster
 `)
@@ -62,8 +62,8 @@ func BuildMetricbeat(es *elasticsearchcrd.Elasticsearch) (mb *beatcrd.Metricbeat
 		ObjectMeta: metav1.ObjectMeta{
 			Name:        GetMetricbeatName(es),
 			Namespace:   es.Namespace,
-			Labels:      getLabels(es),
-			Annotations: getAnnotations(es),
+			Labels:      es.Labels,      // not use getLabels() to avoid collision
+			Annotations: es.Annotations, // not use getAnnotations() to avoid collision
 		},
 		Spec: beatcrd.MetricbeatSpec{
 			Version:          es.Spec.Version,

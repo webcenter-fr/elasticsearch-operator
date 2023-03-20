@@ -60,8 +60,8 @@ func GetContainerImage(mb *beatcrd.Metricbeat) string {
 // getLabels permit to return global label must be set on all resources
 func getLabels(mb *beatcrd.Metricbeat, customLabels ...map[string]string) (labels map[string]string) {
 	labels = map[string]string{
-		"cluster":               mb.Name,
-		MetricbeatAnnotationKey: "true",
+		"cluster":                       mb.Name,
+		beatcrd.MetricbeatAnnotationKey: "true",
 	}
 	for _, label := range customLabels {
 		for key, val := range label {
@@ -77,7 +77,7 @@ func getLabels(mb *beatcrd.Metricbeat, customLabels ...map[string]string) (label
 // getAnnotations permit to return global annotations must be set on all resources
 func getAnnotations(mb *beatcrd.Metricbeat, customAnnotation ...map[string]string) (annotations map[string]string) {
 	annotations = map[string]string{
-		MetricbeatAnnotationKey: "true",
+		beatcrd.MetricbeatAnnotationKey: "true",
 	}
 	for _, annotation := range customAnnotation {
 		for key, val := range annotation {

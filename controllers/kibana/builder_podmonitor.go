@@ -55,8 +55,8 @@ func BuildPodMonitor(kb *kibanacrd.Kibana) (podMonitor *monitoringv1.PodMonitor,
 			},
 			Selector: metav1.LabelSelector{
 				MatchLabels: map[string]string{
-					"cluster":           kb.Name,
-					KibanaAnnotationKey: "true",
+					"cluster":                     kb.Name,
+					kibanacrd.KibanaAnnotationKey: "true",
 				},
 			},
 		},

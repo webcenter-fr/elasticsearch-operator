@@ -16,8 +16,8 @@ func BuildLoadbalancer(kb *kibanacrd.Kibana) (service *corev1.Service, err error
 	}
 
 	selector := map[string]string{
-		"cluster":           kb.Name,
-		KibanaAnnotationKey: "true",
+		"cluster":                     kb.Name,
+		kibanacrd.KibanaAnnotationKey: "true",
 	}
 
 	service = &corev1.Service{

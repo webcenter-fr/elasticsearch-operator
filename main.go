@@ -142,23 +142,13 @@ func main() {
 		os.Exit(1)
 	}
 
-	// Add indexers on ElasticsearchAPI to track change
+	// Add indexers
+	elasticsearchcrd.MustSetUpIndex(mgr)
+	kibanacrd.MustSetUpIndex(mgr)
+	logstashcrd.MustSetUpIndex(mgr)
+	beatcrd.MustSetUpIndexForFilebeat(mgr)
+	beatcrd.MustSetUpIndexForMetricbeat(mgr)
 	elasticsearchapicontrollers.MustSetUpIndex(mgr)
-
-	// Add indexers on Elasticsearch to track secret change
-	elasticsearchcontrollers.MustSetUpIndex(mgr)
-
-	// Add indexers on Kibana to track secret change
-	kibanacontrollers.MustSetUpIndex(mgr)
-
-	// Add indexers on Logstash to track secret change
-	logstashcontrollers.MustSetUpIndex(mgr)
-
-	// Add indexers on Filebeat to track secret change
-	filebeatcontrollers.MustSetUpIndex(mgr)
-
-	// Add indexers on Metricbeat to track secret change
-	metricbeatcontrollers.MustSetUpIndex(mgr)
 
 	// Init controllers
 	elasticsearchController := elasticsearchcontrollers.NewElasticsearchReconciler(mgr.GetClient(), mgr.GetScheme())

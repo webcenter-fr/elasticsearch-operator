@@ -26,6 +26,8 @@ func BuildConfigMaps(mb *beatcrd.Metricbeat, es *elasticsearchcrd.Elasticsearch)
 	metricbeatConf.WriteString(`
 http.enabled: true
 http.host: 0.0.0.0
+metricbeat.config.modules:
+  path: ${path.config}/modules.d/*.yml
 `)
 
 	// Elasticsearch output
@@ -37,7 +39,7 @@ output.elasticsearch:
   password: '${METRICBEAT_PASSWORD}'
   ssl:
     enable: true
-    certificate_authorities: '${ELASTICSEARCH_CA_PATH}'
+    certificate_authorities: '/usr/share/metricbeat/es-ca/ca.crt'
 
 `)
 	} else {

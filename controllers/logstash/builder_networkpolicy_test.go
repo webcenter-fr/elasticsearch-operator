@@ -4,21 +4,24 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	beatcrd "github.com/webcenter-fr/elasticsearch-operator/apis/beat/v1alpha1"
 	logstashcrd "github.com/webcenter-fr/elasticsearch-operator/apis/logstash/v1alpha1"
 	"github.com/webcenter-fr/elasticsearch-operator/apis/shared"
 	"github.com/webcenter-fr/elasticsearch-operator/pkg/test"
 	networkingv1 "k8s.io/api/networking/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 func TestBuildNetworkPolicies(t *testing.T) {
 	var (
-		err error
-		o   *logstashcrd.Logstash
-		np  []networkingv1.NetworkPolicy
+		err   error
+		o     *logstashcrd.Logstash
+		np    *networkingv1.NetworkPolicy
+		oList []client.Object
 	)
 
-	// When not in pod
+	// Default
 	o = &logstashcrd.Logstash{
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: "default",
@@ -27,12 +30,12 @@ func TestBuildNetworkPolicies(t *testing.T) {
 		Spec: logstashcrd.LogstashSpec{},
 	}
 
-	np, err = BuildNetworkPolicies(o)
+	np, err = BuildNetworkPolicy(o, nil)
 
 	assert.NoError(t, err)
-	assert.Empty(t, np)
+	assert.Nil(t, np)
 
-	// When Elasticsearch is managed
+	// When some logstash referer
 	o = &logstashcrd.Logstash{
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: "default",
@@ -47,9 +50,27 @@ func TestBuildNetworkPolicies(t *testing.T) {
 			},
 		},
 	}
-	np, err = BuildNetworkPolicies(o)
+	oList = []client.Object{
+
+		&beatcrd.Filebeat{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "filebeat",
+				Namespace: "test",
+			},
+			TypeMeta: metav1.TypeMeta{
+				Kind: "Filebeat",
+			},
+			Spec: beatcrd.FilebeatSpec{
+				LogstashRef: beatcrd.FilebeatLogstashRef{
+					ManagedLogstashRef: &beatcrd.FilebeatLogstashManagedRef{
+						Port: 5003,
+					},
+				},
+			},
+		},
+	}
+	np, err = BuildNetworkPolicy(o, oList)
 
 	assert.NoError(t, err)
-	assert.Equal(t, 1, len(np))
-	test.EqualFromYamlFile(t, "testdata/networkpolicy_es.yml", &np[0], test.CleanApi)
+	test.EqualFromYamlFile(t, "testdata/networkpolicy_referer.yml", np, test.CleanApi)
 }

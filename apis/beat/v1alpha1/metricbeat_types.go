@@ -27,6 +27,10 @@ import (
 // NOTE: json tags are required.  Any new fields you add must have json tags for the fields to be serialized.
 // +k8s:openapi-gen=true
 
+const (
+	MetricbeatAnnotationKey = "metricbeat.k8s.webcenter.fr"
+)
+
 // MetricbeatSpec defines the desired state of Metricbeat
 type MetricbeatSpec struct {
 	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster

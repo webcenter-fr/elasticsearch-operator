@@ -66,7 +66,7 @@ func (r *ServiceReconciler) Read(ctx context.Context, resource client.Object, da
 	serviceList := &corev1.ServiceList{}
 
 	// Read current services
-	labelSelectors, err := labels.Parse(fmt.Sprintf("cluster=%s,%s=true", o.Name, MetricbeatAnnotationKey))
+	labelSelectors, err := labels.Parse(fmt.Sprintf("cluster=%s,%s=true", o.Name, beatcrd.MetricbeatAnnotationKey))
 	if err != nil {
 		return res, errors.Wrap(err, "Error when generate label selector")
 	}

@@ -23,8 +23,8 @@ func BuildPodDisruptionBudget(mb *beatcrd.Metricbeat) (pdb *policyv1.PodDisrupti
 		Spec: policyv1.PodDisruptionBudgetSpec{
 			Selector: &metav1.LabelSelector{
 				MatchLabels: map[string]string{
-					"cluster":               mb.Name,
-					MetricbeatAnnotationKey: "true",
+					"cluster":                       mb.Name,
+					beatcrd.MetricbeatAnnotationKey: "true",
 				},
 			},
 		},

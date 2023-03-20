@@ -3,11 +3,6 @@ kind: Metricbeat
 metadata:
   namespace: default
   name: test-metricbeat-es
-  labels:
-    cluster: test
-    elasticsearch.k8s.webcenter.fr: "true"
-  annotations:
-    elasticsearch.k8s.webcenter.fr: "true"
 spec:
   elasticsearchRef:
     managed:
@@ -21,7 +16,7 @@ spec:
         password: '${SOURCE_METRICBEAT_PASSWORD}'
         ssl:
           enable: true
-          certificate_authorities: '/usr/share/metricbeat/config/source-es-ca/ca.crt'
+          certificate_authorities: '/usr/share/metricbeat/source-es-ca/ca.crt'
           verification_mode: full
         scope: cluster
         period: 5s

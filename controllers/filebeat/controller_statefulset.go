@@ -154,7 +154,7 @@ func (r *StatefulsetReconciler) Read(ctx context.Context, resource client.Object
 	}
 
 	// Read configMaps to generate checksum
-	labelSelectors, err := labels.Parse(fmt.Sprintf("cluster=%s,%s=true", o.Name, FilebeatAnnotationKey))
+	labelSelectors, err := labels.Parse(fmt.Sprintf("cluster=%s,%s=true", o.Name, beatcrd.FilebeatAnnotationKey))
 	if err != nil {
 		return res, errors.Wrap(err, "Error when generate label selector")
 	}
@@ -166,11 +166,11 @@ func (r *StatefulsetReconciler) Read(ctx context.Context, resource client.Object
 	// Read extra volumes to generate checksum if secret or configmap
 	for _, v := range o.Spec.Deployment.AdditionalVolumes {
 		if v.ConfigMap != nil {
-			if err = r.Client.Get(ctx, types.NamespacedName{Namespace: o.Namespace, Name: v.Name}, cm); err != nil {
+			if err = r.Client.Get(ctx, types.NamespacedName{Namespace: o.Namespace, Name: v.ConfigMap.Name}, cm); err != nil {
 				if !k8serrors.IsNotFound(err) {
-					return res, errors.Wrapf(err, "Error when read configMap %s", v.Name)
+					return res, errors.Wrapf(err, "Error when read configMap %s", v.ConfigMap.Name)
 				}
-				r.Log.Warnf("ConfigMap %s not yet exist, try again later", v.Name)
+				r.Log.Warnf("ConfigMap %s not yet exist, try again later", v.ConfigMap.Name)
 				return ctrl.Result{RequeueAfter: 30 * time.Second}, nil
 			}
 
@@ -179,11 +179,11 @@ func (r *StatefulsetReconciler) Read(ctx context.Context, resource client.Object
 		}
 
 		if v.Secret != nil {
-			if err = r.Client.Get(ctx, types.NamespacedName{Namespace: o.Namespace, Name: v.Name}, s); err != nil {
+			if err = r.Client.Get(ctx, types.NamespacedName{Namespace: o.Namespace, Name: v.Secret.SecretName}, s); err != nil {
 				if !k8serrors.IsNotFound(err) {
-					return res, errors.Wrapf(err, "Error when read secret %s", v.Name)
+					return res, errors.Wrapf(err, "Error when read secret %s", v.Secret.SecretName)
 				}
-				r.Log.Warnf("Secret %s not yet exist, try again later", v.Name)
+				r.Log.Warnf("Secret %s not yet exist, try again later", v.Secret.SecretName)
 				return ctrl.Result{RequeueAfter: 30 * time.Second}, nil
 			}
 
@@ -195,11 +195,11 @@ func (r *StatefulsetReconciler) Read(ctx context.Context, resource client.Object
 	// Read extra Env to generate checksum if secret or configmap
 	for _, env := range o.Spec.Deployment.Env {
 		if env.ValueFrom != nil && env.ValueFrom.SecretKeyRef != nil {
-			if err = r.Client.Get(ctx, types.NamespacedName{Namespace: o.Namespace, Name: env.ValueFrom.SecretKeyRef.LocalObjectReference.Name}, s); err != nil {
+			if err = r.Client.Get(ctx, types.NamespacedName{Namespace: o.Namespace, Name: env.ValueFrom.SecretKeyRef.Name}, s); err != nil {
 				if !k8serrors.IsNotFound(err) {
-					return res, errors.Wrapf(err, "Error when read secret %s", env.ValueFrom.SecretKeyRef.LocalObjectReference.Name)
+					return res, errors.Wrapf(err, "Error when read secret %s", env.ValueFrom.SecretKeyRef.Name)
 				}
-				r.Log.Warnf("Secret %s not yet exist, try again later", env.ValueFrom.SecretKeyRef.LocalObjectReference.Name)
+				r.Log.Warnf("Secret %s not yet exist, try again later", env.ValueFrom.SecretKeyRef.Name)
 				return ctrl.Result{RequeueAfter: 30 * time.Second}, nil
 			}
 
@@ -208,11 +208,11 @@ func (r *StatefulsetReconciler) Read(ctx context.Context, resource client.Object
 		}
 
 		if env.ValueFrom != nil && env.ValueFrom.ConfigMapKeyRef != nil {
-			if err = r.Client.Get(ctx, types.NamespacedName{Namespace: o.Namespace, Name: env.ValueFrom.ConfigMapKeyRef.LocalObjectReference.Name}, cm); err != nil {
+			if err = r.Client.Get(ctx, types.NamespacedName{Namespace: o.Namespace, Name: env.ValueFrom.ConfigMapKeyRef.Name}, cm); err != nil {
 				if !k8serrors.IsNotFound(err) {
-					return res, errors.Wrapf(err, "Error when read configMap %s", env.ValueFrom.ConfigMapKeyRef.LocalObjectReference.Name)
+					return res, errors.Wrapf(err, "Error when read configMap %s", env.ValueFrom.ConfigMapKeyRef.Name)
 				}
-				r.Log.Warnf("ConfigMap %s not yet exist, try again later", env.ValueFrom.ConfigMapKeyRef.LocalObjectReference.Name)
+				r.Log.Warnf("ConfigMap %s not yet exist, try again later", env.ValueFrom.ConfigMapKeyRef.Name)
 				return ctrl.Result{RequeueAfter: 30 * time.Second}, nil
 			}
 
@@ -224,11 +224,11 @@ func (r *StatefulsetReconciler) Read(ctx context.Context, resource client.Object
 	// Read extra Env from to generate checksum if secret or configmap
 	for _, ef := range o.Spec.Deployment.EnvFrom {
 		if ef.SecretRef != nil {
-			if err = r.Client.Get(ctx, types.NamespacedName{Namespace: o.Namespace, Name: ef.SecretRef.LocalObjectReference.Name}, s); err != nil {
+			if err = r.Client.Get(ctx, types.NamespacedName{Namespace: o.Namespace, Name: ef.SecretRef.Name}, s); err != nil {
 				if !k8serrors.IsNotFound(err) {
-					return res, errors.Wrapf(err, "Error when read secret %s", ef.SecretRef.LocalObjectReference.Name)
+					return res, errors.Wrapf(err, "Error when read secret %s", ef.SecretRef.Name)
 				}
-				r.Log.Warnf("Secret %s not yet exist, try again later", ef.SecretRef.LocalObjectReference.Name)
+				r.Log.Warnf("Secret %s not yet exist, try again later", ef.SecretRef.Name)
 				return ctrl.Result{RequeueAfter: 30 * time.Second}, nil
 			}
 
@@ -237,11 +237,11 @@ func (r *StatefulsetReconciler) Read(ctx context.Context, resource client.Object
 		}
 
 		if ef.ConfigMapRef != nil {
-			if err = r.Client.Get(ctx, types.NamespacedName{Namespace: o.Namespace, Name: ef.ConfigMapRef.LocalObjectReference.Name}, cm); err != nil {
+			if err = r.Client.Get(ctx, types.NamespacedName{Namespace: o.Namespace, Name: ef.ConfigMapRef.Name}, cm); err != nil {
 				if !k8serrors.IsNotFound(err) {
-					return res, errors.Wrapf(err, "Error when read configMap %s", ef.ConfigMapRef.LocalObjectReference.Name)
+					return res, errors.Wrapf(err, "Error when read configMap %s", ef.ConfigMapRef.Name)
 				}
-				r.Log.Warnf("ConfigMap %s not yet exist, try again later", ef.ConfigMapRef.LocalObjectReference.Name)
+				r.Log.Warnf("ConfigMap %s not yet exist, try again later", ef.ConfigMapRef.Name)
 				return ctrl.Result{RequeueAfter: 30 * time.Second}, nil
 			}
 

@@ -160,8 +160,8 @@ func watchElasticsearch(c client.Client) handler.MapFunc {
 
 		// ElasticsearchRef
 		listKibanas = &kibanacrd.KibanaList{}
-		fs = fields.ParseSelectorOrDie(fmt.Sprintf("spec.elasticsearchRef.managed.name=%s", a.GetName()))
-		if err := c.List(context.Background(), listKibanas, &client.ListOptions{Namespace: a.GetNamespace(), FieldSelector: fs}); err != nil {
+		fs = fields.ParseSelectorOrDie(fmt.Sprintf("spec.elasticsearchRef.managed.fullname=%s/%s", a.GetNamespace(), a.GetName()))
+		if err := c.List(context.Background(), listKibanas, &client.ListOptions{FieldSelector: fs}); err != nil {
 			panic(err)
 		}
 		for _, k := range listKibanas.Items {

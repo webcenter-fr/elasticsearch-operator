@@ -68,7 +68,7 @@ func (r *PdbReconciler) Read(ctx context.Context, resource client.Object, data m
 	pdbList := &policyv1.PodDisruptionBudgetList{}
 
 	// Read current node group pdbs
-	labelSelectors, err := labels.Parse(fmt.Sprintf("cluster=%s,%s=true", o.Name, ElasticsearchAnnotationKey))
+	labelSelectors, err := labels.Parse(fmt.Sprintf("cluster=%s,%s=true", o.Name, elasticsearchcrd.ElasticsearchAnnotationKey))
 	if err != nil {
 		return res, errors.Wrap(err, "Error when generate label selector")
 	}

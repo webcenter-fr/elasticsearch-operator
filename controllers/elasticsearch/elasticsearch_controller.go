@@ -183,8 +183,8 @@ func watchElasticsearchMonitoring(c client.Client) handler.MapFunc {
 
 		// ElasticsearchRef
 		listElasticsearchs = &elasticsearchcrd.ElasticsearchList{}
-		fs = fields.ParseSelectorOrDie(fmt.Sprintf("spec.monitoring.metricbeat.elasticsearchRef.managed.name=%s", a.GetName()))
-		if err := c.List(context.Background(), listElasticsearchs, &client.ListOptions{Namespace: a.GetNamespace(), FieldSelector: fs}); err != nil {
+		fs = fields.ParseSelectorOrDie(fmt.Sprintf("spec.monitoring.metricbeat.elasticsearchRef.managed.fullname=%s/%s", a.GetNamespace(), a.GetName()))
+		if err := c.List(context.Background(), listElasticsearchs, &client.ListOptions{FieldSelector: fs}); err != nil {
 			panic(err)
 		}
 		for _, k := range listElasticsearchs.Items {
@@ -427,7 +427,7 @@ func (h *ElasticsearchReconciler) OnSuccess(ctx context.Context, r client.Object
 
 	// Check all statefulsets are ready to change Phase status and set main condition to true
 	stsList := &appv1.StatefulSetList{}
-	labelSelectors, err := labels.Parse(fmt.Sprintf("cluster=%s,%s=true", o.Name, ElasticsearchAnnotationKey))
+	labelSelectors, err := labels.Parse(fmt.Sprintf("cluster=%s,%s=true", o.Name, elasticsearchcrd.ElasticsearchAnnotationKey))
 	if err != nil {
 		return res, errors.Wrap(err, "Error when generate label selector")
 	}

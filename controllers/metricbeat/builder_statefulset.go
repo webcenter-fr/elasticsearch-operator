@@ -40,7 +40,7 @@ func BuildStatefulset(mb *beatcrd.Metricbeat, es *elasticsearchcrd.Elasticsearch
 		if err != nil {
 			return nil, errors.Wrapf(err, "Error when generate checksum for extra configMap %s", cm.Name)
 		}
-		checksumAnnotations[fmt.Sprintf("%s/configmap-%s", MetricbeatAnnotationKey, cm.Name)] = sum
+		checksumAnnotations[fmt.Sprintf("%s/configmap-%s", beatcrd.MetricbeatAnnotationKey, cm.Name)] = sum
 	}
 	// checksum for secret
 	for _, s := range secretsChecksum {
@@ -52,7 +52,7 @@ func BuildStatefulset(mb *beatcrd.Metricbeat, es *elasticsearchcrd.Elasticsearch
 		if err != nil {
 			return nil, errors.Wrapf(err, "Error when generate checksum for extra secret %s", s.Name)
 		}
-		checksumAnnotations[fmt.Sprintf("%s/secret-%s", MetricbeatAnnotationKey, s.Name)] = sum
+		checksumAnnotations[fmt.Sprintf("%s/secret-%s", beatcrd.MetricbeatAnnotationKey, s.Name)] = sum
 	}
 
 	cb := k8sbuilder.NewContainerBuilder()
@@ -111,29 +111,55 @@ func BuildStatefulset(mb *beatcrd.Metricbeat, es *elasticsearchcrd.Elasticsearch
 			},
 		}, k8sbuilder.Merge)
 
-	// Inject Elasticsearch CA Path if provided
-	if es != nil && es.IsTlsApiEnabled() || mb.Spec.ElasticsearchRef.IsExternal() && mb.Spec.ElasticsearchRef.ElasticsearchCaSecretRef != nil {
-		cb.WithEnv([]corev1.EnvVar{
-			{
-				Name:  "ELASTICSEARCH_CA_PATH",
-				Value: "/usr/share/metricbeat/config/es-ca/ca.crt",
-			},
-		}, k8sbuilder.Merge)
-	}
-
-	// Inject Elasticsearch targets if provided
-	if es != nil {
+	if mb.Spec.ElasticsearchRef.IsManaged() {
 		cb.WithEnv([]corev1.EnvVar{
 			{
 				Name:  "ELASTICSEARCH_HOST",
 				Value: elasticsearchcontrollers.GetPublicUrl(es, mb.Spec.ElasticsearchRef.ManagedElasticsearchRef.TargetNodeGroup, false),
 			},
+			{
+				Name:  "METRICBEAT_USERNAME",
+				Value: "remote_monitoring_user",
+			},
+			{
+				Name: "METRICBEAT_PASSWORD",
+				ValueFrom: &corev1.EnvVarSource{
+					SecretKeyRef: &corev1.SecretKeySelector{
+						LocalObjectReference: corev1.LocalObjectReference{
+							Name: GetSecretNameForCredentials(mb),
+						},
+						Key: "remote_monitoring_user",
+					},
+				},
+			},
 		}, k8sbuilder.Merge)
-	} else if mb.Spec.ElasticsearchRef.IsExternal() && len(mb.Spec.ElasticsearchRef.ExternalElasticsearchRef.Addresses) > 0 {
+	} else {
 		cb.WithEnv([]corev1.EnvVar{
 			{
 				Name:  "ELASTICSEARCH_HOST",
 				Value: mb.Spec.ElasticsearchRef.ExternalElasticsearchRef.Addresses[0],
+			},
+			{
+				Name: "METRICBEAT_USERNAME",
+				ValueFrom: &corev1.EnvVarSource{
+					SecretKeyRef: &corev1.SecretKeySelector{
+						LocalObjectReference: corev1.LocalObjectReference{
+							Name: mb.Spec.ElasticsearchRef.ExternalElasticsearchRef.SecretRef.Name,
+						},
+						Key: "username",
+					},
+				},
+			},
+			{
+				Name: "METRICBEAT_PASSWORD",
+				ValueFrom: &corev1.EnvVarSource{
+					SecretKeyRef: &corev1.SecretKeySelector{
+						LocalObjectReference: corev1.LocalObjectReference{
+							Name: mb.Spec.ElasticsearchRef.ExternalElasticsearchRef.SecretRef.Name,
+						},
+						Key: "password",
+					},
+				},
 			},
 		}, k8sbuilder.Merge)
 	}
@@ -267,15 +293,15 @@ func BuildStatefulset(mb *beatcrd.Metricbeat, es *elasticsearchcrd.Elasticsearch
 	// Compute labels
 	// Do not set global labels here to avoid reconcile pod just because global label change
 	ptb.WithLabels(map[string]string{
-		"cluster":               mb.Name,
-		MetricbeatAnnotationKey: "true",
+		"cluster":                       mb.Name,
+		beatcrd.MetricbeatAnnotationKey: "true",
 	}).
 		WithLabels(mb.Spec.Deployment.Labels, k8sbuilder.Merge)
 
 	// Compute annotations
 	// Do not set global annotation here to avoid reconcile pod just because global annotation change
 	ptb.WithAnnotations(map[string]string{
-		MetricbeatAnnotationKey: "true",
+		beatcrd.MetricbeatAnnotationKey: "true",
 	}).
 		WithAnnotations(mb.Spec.Deployment.Annotations, k8sbuilder.Merge).
 		WithAnnotations(checksumAnnotations, k8sbuilder.Merge)
@@ -484,8 +510,8 @@ chown -v metricbeat:metricbeat /mnt/data
 			Replicas: pointer.Int32(mb.Spec.Deployment.Replicas),
 			Selector: &metav1.LabelSelector{
 				MatchLabels: map[string]string{
-					"cluster":               mb.Name,
-					MetricbeatAnnotationKey: "true",
+					"cluster":                       mb.Name,
+					beatcrd.MetricbeatAnnotationKey: "true",
 				},
 			},
 			ServiceName: GetGlobalServiceName(mb),
@@ -542,8 +568,8 @@ func computeAntiAffinity(mb *beatcrd.Metricbeat) (antiAffinity *corev1.PodAntiAf
 				TopologyKey: topologyKey,
 				LabelSelector: &metav1.LabelSelector{
 					MatchLabels: map[string]string{
-						"cluster":               mb.Name,
-						MetricbeatAnnotationKey: "true",
+						"cluster":                       mb.Name,
+						beatcrd.MetricbeatAnnotationKey: "true",
 					},
 				},
 			},
@@ -559,8 +585,8 @@ func computeAntiAffinity(mb *beatcrd.Metricbeat) (antiAffinity *corev1.PodAntiAf
 				TopologyKey: topologyKey,
 				LabelSelector: &metav1.LabelSelector{
 					MatchLabels: map[string]string{
-						"cluster":               mb.Name,
-						MetricbeatAnnotationKey: "true",
+						"cluster":                       mb.Name,
+						beatcrd.MetricbeatAnnotationKey: "true",
 					},
 				},
 			},

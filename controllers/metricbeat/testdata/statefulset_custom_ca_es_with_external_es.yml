@@ -57,10 +57,18 @@ spec:
             fieldRef:
               apiVersion: v1
               fieldPath: metadata.namespace
-        - name: ELASTICSEARCH_CA_PATH
-          value: /usr/share/metricbeat/config/es-ca/ca.crt
         - name: ELASTICSEARCH_HOST
           value: https://es1:9200
+        - name: METRICBEAT_USERNAME
+          valueFrom:
+            secretKeyRef:
+              name: es-credential
+              key: username
+        - name: METRICBEAT_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: es-credential
+              key: password
         image: docker.elastic.co/beats/metricbeat:latest
         livenessProbe:
           failureThreshold: 3

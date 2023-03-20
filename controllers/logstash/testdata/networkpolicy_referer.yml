@@ -1,7 +1,7 @@
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
-  name: test-allow-es-ls
+  name: test-allow-ls
   namespace: default
   labels:
     cluster: test
@@ -9,20 +9,20 @@ metadata:
   annotations:
     logstash.k8s.webcenter.fr: "true"
 spec:
-  egress:
-    - to:
+  ingress:
+    - from:
         - podSelector:
             matchLabels:
-              cluster: test
-              elasticsearch.k8s.webcenter.fr: true
+              cluster: filebeat
+              filebeat.k8s.webcenter.fr: true
           namespaceSelector:
             matchLabels:
-              kubernetes.io/metadata.name: elastic
+              kubernetes.io/metadata.name: test
       ports:
-        - port: 9200
+        - port: 5003
           protocol: TCP
   policyTypes:
-    - Egress
+    - Ingress
   podSelector:
     matchLabels:
       cluster: test

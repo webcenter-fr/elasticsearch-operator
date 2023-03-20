@@ -248,8 +248,8 @@ func GetMetricbeatName(es *elasticsearchcrd.Elasticsearch) (name string) {
 // getLabels permit to return global label must be set on all resources
 func getLabels(elasticsearch *elasticsearchcrd.Elasticsearch, customLabels ...map[string]string) (labels map[string]string) {
 	labels = map[string]string{
-		"cluster":                  elasticsearch.Name,
-		ElasticsearchAnnotationKey: "true",
+		"cluster": elasticsearch.Name,
+		elasticsearchcrd.ElasticsearchAnnotationKey: "true",
 	}
 	for _, label := range customLabels {
 		for key, val := range label {
@@ -265,7 +265,7 @@ func getLabels(elasticsearch *elasticsearchcrd.Elasticsearch, customLabels ...ma
 // getAnnotations permit to return global annotations must be set on all resources
 func getAnnotations(elasticsearch *elasticsearchcrd.Elasticsearch, customAnnotation ...map[string]string) (annotations map[string]string) {
 	annotations = map[string]string{
-		ElasticsearchAnnotationKey: "true",
+		elasticsearchcrd.ElasticsearchAnnotationKey: "true",
 	}
 	for _, annotation := range customAnnotation {
 		for key, val := range annotation {

@@ -65,7 +65,7 @@ func (r *ConfigMapReconciler) Read(ctx context.Context, resource client.Object, 
 	o := resource.(*logstashcrd.Logstash)
 	cmList := &corev1.ConfigMapList{}
 
-	labelSelectors, err := labels.Parse(fmt.Sprintf("cluster=%s,%s=true", o.Name, LogstashAnnotationKey))
+	labelSelectors, err := labels.Parse(fmt.Sprintf("cluster=%s,%s=true", o.Name, logstashcrd.LogstashAnnotationKey))
 	if err != nil {
 		return res, errors.Wrap(err, "Error when generate label selector")
 	}
