@@ -34,6 +34,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 
 	beatcrd "github.com/webcenter-fr/elasticsearch-operator/apis/beat/v1alpha1"
+	beatv1alpha1 "github.com/webcenter-fr/elasticsearch-operator/apis/beat/v1alpha1"
 	elasticsearchcrd "github.com/webcenter-fr/elasticsearch-operator/apis/elasticsearch/v1alpha1"
 	elasticsearchapicrd "github.com/webcenter-fr/elasticsearch-operator/apis/elasticsearchapi/v1alpha1"
 	kibanacrd "github.com/webcenter-fr/elasticsearch-operator/apis/kibana/v1alpha1"
@@ -43,6 +44,7 @@ import (
 	filebeatcontrollers "github.com/webcenter-fr/elasticsearch-operator/controllers/filebeat"
 	kibanacontrollers "github.com/webcenter-fr/elasticsearch-operator/controllers/kibana"
 	logstashcontrollers "github.com/webcenter-fr/elasticsearch-operator/controllers/logstash"
+	metricbeatcontrollers "github.com/webcenter-fr/elasticsearch-operator/controllers/metricbeat"
 	"github.com/webcenter-fr/elasticsearch-operator/pkg/helper"
 	//+kubebuilder:scaffold:imports
 )
@@ -63,6 +65,7 @@ func init() {
 	utilruntime.Must(elasticsearchapicrd.AddToScheme(scheme))
 	utilruntime.Must(logstashcrd.AddToScheme(scheme))
 	utilruntime.Must(beatcrd.AddToScheme(scheme))
+	utilruntime.Must(beatv1alpha1.AddToScheme(scheme))
 	//+kubebuilder:scaffold:scheme
 }
 
@@ -139,20 +142,13 @@ func main() {
 		os.Exit(1)
 	}
 
-	// Add indexers on ElasticsearchAPI to track change
+	// Add indexers
+	elasticsearchcrd.MustSetUpIndex(mgr)
+	kibanacrd.MustSetUpIndex(mgr)
+	logstashcrd.MustSetUpIndex(mgr)
+	beatcrd.MustSetUpIndexForFilebeat(mgr)
+	beatcrd.MustSetUpIndexForMetricbeat(mgr)
 	elasticsearchapicontrollers.MustSetUpIndex(mgr)
-
-	// Add indexers on Elasticsearch to track secret change
-	elasticsearchcontrollers.MustSetUpIndex(mgr)
-
-	// Add indexers on Kibana to track secret change
-	kibanacontrollers.MustSetUpIndex(mgr)
-
-	// Add indexers on Logstash to track secret change
-	logstashcontrollers.MustSetUpIndex(mgr)
-
-	// Add indexers on Filebeat to track secret change
-	filebeatcontrollers.MustSetUpIndex(mgr)
 
 	// Init controllers
 	elasticsearchController := elasticsearchcontrollers.NewElasticsearchReconciler(mgr.GetClient(), mgr.GetScheme())
@@ -196,6 +192,17 @@ func main() {
 	filebeatController.SetReconciler(filebeatController)
 	if err = filebeatController.SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "Filebeat")
+		os.Exit(1)
+	}
+
+	metricbeatController := metricbeatcontrollers.NewMetricbeatReconciler(mgr.GetClient(), mgr.GetScheme())
+	metricbeatController.SetLogger(log.WithFields(logrus.Fields{
+		"type": "MetricbeatController",
+	}))
+	metricbeatController.SetRecorder(mgr.GetEventRecorderFor("metricbeat-controller"))
+	metricbeatController.SetReconciler(metricbeatController)
+	if err = metricbeatController.SetupWithManager(mgr); err != nil {
+		setupLog.Error(err, "unable to create controller", "controller", "Metricbeat")
 		os.Exit(1)
 	}
 
@@ -308,7 +315,6 @@ func main() {
 		setupLog.Error(err, "unable to create controller", "controller", "ElasticsearchWatch")
 		os.Exit(1)
 	}
-
 	//+kubebuilder:scaffold:builder
 
 	if err := mgr.AddHealthzCheck("healthz", healthz.Ping); err != nil {

@@ -67,7 +67,7 @@ func (r *NetworkPolicyReconciler) Read(ctx context.Context, resource client.Obje
 	npList := &networkingv1.NetworkPolicyList{}
 
 	// Read current network policies
-	labelSelectors, err := labels.Parse(fmt.Sprintf("cluster=%s,%s=true", o.Name, KibanaAnnotationKey))
+	labelSelectors, err := labels.Parse(fmt.Sprintf("cluster=%s,%s=true", o.Name, kibanacrd.KibanaAnnotationKey))
 	if err != nil {
 		return res, errors.Wrap(err, "Error when generate label selector")
 	}

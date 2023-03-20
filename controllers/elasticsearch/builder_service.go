@@ -29,7 +29,7 @@ func BuildServices(es *elasticsearchcrd.Elasticsearch) (services []corev1.Servic
 			Namespace: es.Namespace,
 			Name:      GetGlobalServiceName(es),
 			Labels: getLabels(es, map[string]string{
-				fmt.Sprintf("%s/service", ElasticsearchAnnotationKey): "true",
+				fmt.Sprintf("%s/service", elasticsearchcrd.ElasticsearchAnnotationKey): "true",
 			}),
 			Annotations: getAnnotations(es),
 		},
@@ -37,8 +37,8 @@ func BuildServices(es *elasticsearchcrd.Elasticsearch) (services []corev1.Servic
 			Type:            corev1.ServiceTypeClusterIP,
 			SessionAffinity: corev1.ServiceAffinityNone,
 			Selector: map[string]string{
-				"cluster":                  es.Name,
-				ElasticsearchAnnotationKey: "true",
+				"cluster": es.Name,
+				elasticsearchcrd.ElasticsearchAnnotationKey: "true",
 			},
 			Ports: []corev1.ServicePort{
 				{
@@ -67,7 +67,7 @@ func BuildServices(es *elasticsearchcrd.Elasticsearch) (services []corev1.Servic
 				Name:      GetNodeGroupServiceName(es, nodeGroup.Name),
 				Labels: getLabels(es, map[string]string{
 					"nodeGroup": nodeGroup.Name,
-					fmt.Sprintf("%s/service", ElasticsearchAnnotationKey): "true",
+					fmt.Sprintf("%s/service", elasticsearchcrd.ElasticsearchAnnotationKey): "true",
 				}),
 				Annotations: getAnnotations(es),
 			},
@@ -75,9 +75,9 @@ func BuildServices(es *elasticsearchcrd.Elasticsearch) (services []corev1.Servic
 				Type:            corev1.ServiceTypeClusterIP,
 				SessionAffinity: corev1.ServiceAffinityNone,
 				Selector: map[string]string{
-					"cluster":                  es.Name,
-					"nodeGroup":                nodeGroup.Name,
-					ElasticsearchAnnotationKey: "true",
+					"cluster":   es.Name,
+					"nodeGroup": nodeGroup.Name,
+					elasticsearchcrd.ElasticsearchAnnotationKey: "true",
 				},
 				Ports: []corev1.ServicePort{
 					{
@@ -102,7 +102,7 @@ func BuildServices(es *elasticsearchcrd.Elasticsearch) (services []corev1.Servic
 				Name:      GetNodeGroupServiceNameHeadless(es, nodeGroup.Name),
 				Labels: getLabels(es, map[string]string{
 					"nodeGroup": nodeGroup.Name,
-					fmt.Sprintf("%s/service", ElasticsearchAnnotationKey): "true",
+					fmt.Sprintf("%s/service", elasticsearchcrd.ElasticsearchAnnotationKey): "true",
 				}),
 				Annotations: getAnnotations(es, defaultHeadlessAnnotations),
 			},
@@ -112,9 +112,9 @@ func BuildServices(es *elasticsearchcrd.Elasticsearch) (services []corev1.Servic
 				Type:                     corev1.ServiceTypeClusterIP,
 				SessionAffinity:          corev1.ServiceAffinityNone,
 				Selector: map[string]string{
-					"cluster":                  es.Name,
-					"nodeGroup":                nodeGroup.Name,
-					ElasticsearchAnnotationKey: "true",
+					"cluster":   es.Name,
+					"nodeGroup": nodeGroup.Name,
+					elasticsearchcrd.ElasticsearchAnnotationKey: "true",
 				},
 				Ports: []corev1.ServicePort{
 					{

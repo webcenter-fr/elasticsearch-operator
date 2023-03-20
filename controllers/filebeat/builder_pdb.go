@@ -23,8 +23,8 @@ func BuildPodDisruptionBudget(fb *beatcrd.Filebeat) (pdb *policyv1.PodDisruption
 		Spec: policyv1.PodDisruptionBudgetSpec{
 			Selector: &metav1.LabelSelector{
 				MatchLabels: map[string]string{
-					"cluster":             fb.Name,
-					FilebeatAnnotationKey: "true",
+					"cluster":                     fb.Name,
+					beatcrd.FilebeatAnnotationKey: "true",
 				},
 			},
 		},

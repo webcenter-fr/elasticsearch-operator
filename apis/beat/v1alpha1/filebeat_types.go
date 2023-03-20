@@ -24,6 +24,10 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
+const (
+	FilebeatAnnotationKey = "filebeat.k8s.webcenter.fr"
+)
+
 // EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!
 // NOTE: json tags are required.  Any new fields you add must have json tags for the fields to be serialized.
 
@@ -271,11 +275,6 @@ type FilebeatDeploymentSpec struct {
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
 	// +optional
 	PodDisruptionBudgetSpec *policyv1.PodDisruptionBudgetSpec `json:"podDisruptionBudget,omitempty"`
-
-	// Node permit to set extra option on Node process
-	// +operator-sdk:csv:customresourcedefinitions:type=spec
-	// +optional
-	Jvm string `json:"jvm,omitempty"`
 
 	// InitContainerResources permit to set resources on init containers
 	// +operator-sdk:csv:customresourcedefinitions:type=spec

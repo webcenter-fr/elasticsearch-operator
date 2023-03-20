@@ -96,8 +96,8 @@ func GetContainerImage(kb *kibanacrd.Kibana) string {
 // getLabels permit to return global label must be set on all resources
 func getLabels(kb *kibanacrd.Kibana, customLabels ...map[string]string) (labels map[string]string) {
 	labels = map[string]string{
-		"cluster":           kb.Name,
-		KibanaAnnotationKey: "true",
+		"cluster":                     kb.Name,
+		kibanacrd.KibanaAnnotationKey: "true",
 	}
 	for _, label := range customLabels {
 		for key, val := range label {
@@ -113,7 +113,7 @@ func getLabels(kb *kibanacrd.Kibana, customLabels ...map[string]string) (labels 
 // getAnnotations permit to return global annotations must be set on all resources
 func getAnnotations(kb *kibanacrd.Kibana, customAnnotation ...map[string]string) (annotations map[string]string) {
 	annotations = map[string]string{
-		KibanaAnnotationKey: "true",
+		kibanacrd.KibanaAnnotationKey: "true",
 	}
 	for _, annotation := range customAnnotation {
 		for key, val := range annotation {

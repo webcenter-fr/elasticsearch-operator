@@ -69,7 +69,7 @@ func (r *SystemUserReconciler) Read(ctx context.Context, resource client.Object,
 	s := &corev1.Secret{}
 
 	// Read current system users
-	labelSelectors, err := labels.Parse(fmt.Sprintf("cluster=%s,%s=true", o.Name, ElasticsearchAnnotationKey))
+	labelSelectors, err := labels.Parse(fmt.Sprintf("cluster=%s,%s=true", o.Name, elasticsearchcrd.ElasticsearchAnnotationKey))
 	if err != nil {
 		return res, errors.Wrap(err, "Error when generate label selector")
 	}

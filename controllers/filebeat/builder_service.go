@@ -37,8 +37,8 @@ func BuildServices(fb *beatcrd.Filebeat) (services []corev1.Service, err error) 
 		}
 
 		service.Spec.Selector = map[string]string{
-			FilebeatAnnotationKey: "true",
-			"cluster":             fb.Name,
+			beatcrd.FilebeatAnnotationKey: "true",
+			"cluster":                     fb.Name,
 		}
 
 		services = append(services, *service)
@@ -86,8 +86,8 @@ func BuildServices(fb *beatcrd.Filebeat) (services []corev1.Service, err error) 
 					},
 				},
 				Selector: map[string]string{
-					FilebeatAnnotationKey: "true",
-					"cluster":             fb.Name,
+					beatcrd.FilebeatAnnotationKey: "true",
+					"cluster":                     fb.Name,
 				},
 			},
 		}
@@ -144,8 +144,8 @@ func BuildServices(fb *beatcrd.Filebeat) (services []corev1.Service, err error) 
 			Type:  corev1.ServiceTypeClusterIP,
 			Ports: computedPort,
 			Selector: map[string]string{
-				FilebeatAnnotationKey: "true",
-				"cluster":             fb.Name,
+				beatcrd.FilebeatAnnotationKey: "true",
+				"cluster":                     fb.Name,
 			},
 			ClusterIP: "None",
 		},

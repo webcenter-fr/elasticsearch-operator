@@ -156,37 +156,6 @@ func GetNodeGroupNameFromNodeName(nodeName string) (nodeGroupName string) {
 	return ""
 }
 
-// getLabels permit to return global label must be set on all resources
-func getLabels(elasticsearch *elasticsearchcrd.Elasticsearch, customLabels ...map[string]string) (labels map[string]string) {
-	labels = map[string]string{
-		"cluster":                  elasticsearch.Name,
-		ElasticsearchAnnotationKey: "true",
-	}
-	for _, label := range customLabels {
-		for key, val := range label {
-			labels[key] = val
-		}
-	}
-
-	labels = funk.UnionStringMap(labels, elasticsearch.Labels)
-
-	return labels
-}
-
-// getAnnotations permit to return global annotations must be set on all resources
-func getAnnotations(elasticsearch *elasticsearchcrd.Elasticsearch, customAnnotation ...map[string]string) (annotations map[string]string) {
-	annotations = map[string]string{
-		ElasticsearchAnnotationKey: "true",
-	}
-	for _, annotation := range customAnnotation {
-		for key, val := range annotation {
-			annotations[key] = val
-		}
-	}
-
-	return annotations
-}
-
 // isMasterRole return true if nodegroup have `cluster_manager` role
 func IsMasterRole(elasticsearch *elasticsearchcrd.Elasticsearch, nodeGroupName string) bool {
 
@@ -269,4 +238,40 @@ func GetPublicUrl(es *elasticsearchcrd.Elasticsearch, targetNodeGroup string, ex
 
 	return es.Status.Url
 
+}
+
+// GetMetricbeatName return the metricbeat namme
+func GetMetricbeatName(es *elasticsearchcrd.Elasticsearch) (name string) {
+	return fmt.Sprintf("%s-metricbeat-es", es.Name)
+}
+
+// getLabels permit to return global label must be set on all resources
+func getLabels(elasticsearch *elasticsearchcrd.Elasticsearch, customLabels ...map[string]string) (labels map[string]string) {
+	labels = map[string]string{
+		"cluster": elasticsearch.Name,
+		elasticsearchcrd.ElasticsearchAnnotationKey: "true",
+	}
+	for _, label := range customLabels {
+		for key, val := range label {
+			labels[key] = val
+		}
+	}
+
+	labels = funk.UnionStringMap(labels, elasticsearch.Labels)
+
+	return labels
+}
+
+// getAnnotations permit to return global annotations must be set on all resources
+func getAnnotations(elasticsearch *elasticsearchcrd.Elasticsearch, customAnnotation ...map[string]string) (annotations map[string]string) {
+	annotations = map[string]string{
+		elasticsearchcrd.ElasticsearchAnnotationKey: "true",
+	}
+	for _, annotation := range customAnnotation {
+		for key, val := range annotation {
+			annotations[key] = val
+		}
+	}
+
+	return annotations
 }

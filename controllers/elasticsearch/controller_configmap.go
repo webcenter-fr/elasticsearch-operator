@@ -66,7 +66,7 @@ func (r *ConfigMapReconciler) Read(ctx context.Context, resource client.Object, 
 	cmList := &corev1.ConfigMapList{}
 
 	// Read current node group configmaps
-	labelSelectors, err := labels.Parse(fmt.Sprintf("cluster=%s,%s=true", o.Name, ElasticsearchAnnotationKey))
+	labelSelectors, err := labels.Parse(fmt.Sprintf("cluster=%s,%s=true", o.Name, elasticsearchcrd.ElasticsearchAnnotationKey))
 	if err != nil {
 		return res, errors.Wrap(err, "Error when generate label selector")
 	}

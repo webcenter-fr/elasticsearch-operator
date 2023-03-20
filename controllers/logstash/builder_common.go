@@ -84,8 +84,8 @@ func GetContainerImage(ls *logstashcrd.Logstash) string {
 // getLabels permit to return global label must be set on all resources
 func getLabels(ls *logstashcrd.Logstash, customLabels ...map[string]string) (labels map[string]string) {
 	labels = map[string]string{
-		"cluster":             ls.Name,
-		LogstashAnnotationKey: "true",
+		"cluster":                         ls.Name,
+		logstashcrd.LogstashAnnotationKey: "true",
 	}
 	for _, label := range customLabels {
 		for key, val := range label {
@@ -101,7 +101,7 @@ func getLabels(ls *logstashcrd.Logstash, customLabels ...map[string]string) (lab
 // getAnnotations permit to return global annotations must be set on all resources
 func getAnnotations(ls *logstashcrd.Logstash, customAnnotation ...map[string]string) (annotations map[string]string) {
 	annotations = map[string]string{
-		LogstashAnnotationKey: "true",
+		logstashcrd.LogstashAnnotationKey: "true",
 	}
 	for _, annotation := range customAnnotation {
 		for key, val := range annotation {
@@ -118,8 +118,8 @@ func GetSecretNameForCredentials(ls *logstashcrd.Logstash) (secretName string) {
 }
 
 // GetNetworkPolicyName return the name for network policy
-func GetNetworkPolicyElasticsearchName(ls *logstashcrd.Logstash) string {
-	return fmt.Sprintf("%s-allow-es-ls", ls.Name)
+func GetNetworkPolicyName(ls *logstashcrd.Logstash) string {
+	return fmt.Sprintf("%s-allow-ls", ls.Name)
 }
 
 // GetExporterUrl permit to get the URL to download plugin for prometheus exporter

@@ -900,13 +900,6 @@ func (r *TlsReconciler) OnSuccess(ctx context.Context, resource client.Object, d
 			Message: "Wait renew all certificates",
 		})
 
-		condition.SetStatusCondition(&o.Status.Conditions, metav1.Condition{
-			Type:    TlsConditionBlackout,
-			Reason:  "NoBlackout",
-			Status:  metav1.ConditionFalse,
-			Message: "Note in blackout",
-		})
-
 		r.Log.Info("Phase to renew PKI successfully finished")
 
 	case phaseTlsPropagatePki:

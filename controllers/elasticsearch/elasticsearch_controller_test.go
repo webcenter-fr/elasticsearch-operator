@@ -12,8 +12,10 @@ import (
 	monitoringv1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1"
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
+	beatcrd "github.com/webcenter-fr/elasticsearch-operator/apis/beat/v1alpha1"
 	elasticsearchcrd "github.com/webcenter-fr/elasticsearch-operator/apis/elasticsearch/v1alpha1"
 	elasticsearchapicrd "github.com/webcenter-fr/elasticsearch-operator/apis/elasticsearchapi/v1alpha1"
+	"github.com/webcenter-fr/elasticsearch-operator/apis/shared"
 	localhelper "github.com/webcenter-fr/elasticsearch-operator/pkg/helper"
 	localtest "github.com/webcenter-fr/elasticsearch-operator/pkg/test"
 	appv1 "k8s.io/api/apps/v1"
@@ -77,6 +79,15 @@ func doCreateElasticsearchStep() test.TestStep {
 						Prometheus: &elasticsearchcrd.ElasticsearchPrometheusSpec{
 							Enabled: true,
 						},
+						Metricbeat: &shared.MetricbeatMonitoringSpec{
+							Enabled: true,
+							ElasticsearchRef: shared.ElasticsearchRef{
+								ManagedElasticsearchRef: &shared.ElasticsearchManagedRef{
+									Name:      "elastic",
+									Namespace: "monitoring",
+								},
+							},
+						},
 					},
 					NodeGroups: []elasticsearchcrd.ElasticsearchNodeGroupSpec{
 						{
@@ -111,16 +122,17 @@ func doCreateElasticsearchStep() test.TestStep {
 		Check: func(t *testing.T, c client.Client, key types.NamespacedName, o client.Object, data map[string]any) (err error) {
 			es := &elasticsearchcrd.Elasticsearch{}
 			var (
-				s    *corev1.Secret
-				svc  *corev1.Service
-				i    *networkingv1.Ingress
-				np   *networkingv1.NetworkPolicy
-				cm   *corev1.ConfigMap
-				pdb  *policyv1.PodDisruptionBudget
-				sts  *appv1.StatefulSet
-				dpl  *appv1.Deployment
-				user *elasticsearchapicrd.User
-				pm   *monitoringv1.PodMonitor
+				s          *corev1.Secret
+				svc        *corev1.Service
+				i          *networkingv1.Ingress
+				np         *networkingv1.NetworkPolicy
+				cm         *corev1.ConfigMap
+				pdb        *policyv1.PodDisruptionBudget
+				sts        *appv1.StatefulSet
+				dpl        *appv1.Deployment
+				user       *elasticsearchapicrd.User
+				pm         *monitoringv1.PodMonitor
+				metricbeat *beatcrd.Metricbeat
 			)
 
 			isTimeout, err := localtest.RunWithTimeout(func() error {
@@ -295,6 +307,14 @@ func doCreateElasticsearchStep() test.TestStep {
 			assert.NotEmpty(t, pm.OwnerReferences)
 			assert.NotEmpty(t, pm.Annotations[patch.LastAppliedConfig])
 
+			// Metricbeat must exist
+			metricbeat = &beatcrd.Metricbeat{}
+			if err = c.Get(context.Background(), types.NamespacedName{Namespace: key.Namespace, Name: GetMetricbeatName(es)}, metricbeat); err != nil {
+				t.Fatal(err)
+			}
+			assert.NotEmpty(t, metricbeat.OwnerReferences)
+			assert.NotEmpty(t, metricbeat.Annotations[patch.LastAppliedConfig])
+
 			// Status must be update
 			assert.NotEmpty(t, es.Status.Health)
 			assert.NotEmpty(t, es.Status.Phase)
@@ -337,16 +357,17 @@ func doUpdateElasticsearchStep() test.TestStep {
 			es := &elasticsearchcrd.Elasticsearch{}
 
 			var (
-				s    *corev1.Secret
-				svc  *corev1.Service
-				i    *networkingv1.Ingress
-				np   *networkingv1.NetworkPolicy
-				cm   *corev1.ConfigMap
-				pdb  *policyv1.PodDisruptionBudget
-				sts  *appv1.StatefulSet
-				dpl  *appv1.Deployment
-				user *elasticsearchapicrd.User
-				pm   *monitoringv1.PodMonitor
+				s          *corev1.Secret
+				svc        *corev1.Service
+				i          *networkingv1.Ingress
+				np         *networkingv1.NetworkPolicy
+				cm         *corev1.ConfigMap
+				pdb        *policyv1.PodDisruptionBudget
+				sts        *appv1.StatefulSet
+				dpl        *appv1.Deployment
+				user       *elasticsearchapicrd.User
+				pm         *monitoringv1.PodMonitor
+				metricbeat *beatcrd.Metricbeat
 			)
 
 			lastVersion := data["lastVersion"].(string)
@@ -540,6 +561,15 @@ func doUpdateElasticsearchStep() test.TestStep {
 			assert.NotEmpty(t, pm.Annotations[patch.LastAppliedConfig])
 			assert.Equal(t, "fu", pm.Labels["test"])
 
+			// Metricbeat must exist
+			metricbeat = &beatcrd.Metricbeat{}
+			if err = c.Get(context.Background(), types.NamespacedName{Namespace: key.Namespace, Name: GetMetricbeatName(es)}, metricbeat); err != nil {
+				t.Fatal(err)
+			}
+			assert.NotEmpty(t, metricbeat.OwnerReferences)
+			assert.NotEmpty(t, metricbeat.Annotations[patch.LastAppliedConfig])
+			assert.Equal(t, "fu", metricbeat.Labels["test"])
+
 			// Status must be update
 			assert.NotEmpty(t, es.Status.Health)
 			assert.NotEmpty(t, es.Status.Phase)
@@ -586,16 +616,17 @@ func doUpdateElasticsearchIncreaseNodeGroupStep() test.TestStep {
 			es := &elasticsearchcrd.Elasticsearch{}
 
 			var (
-				s    *corev1.Secret
-				svc  *corev1.Service
-				i    *networkingv1.Ingress
-				np   *networkingv1.NetworkPolicy
-				cm   *corev1.ConfigMap
-				pdb  *policyv1.PodDisruptionBudget
-				sts  *appv1.StatefulSet
-				dpl  *appv1.Deployment
-				user *elasticsearchapicrd.User
-				pm   *monitoringv1.PodMonitor
+				s          *corev1.Secret
+				svc        *corev1.Service
+				i          *networkingv1.Ingress
+				np         *networkingv1.NetworkPolicy
+				cm         *corev1.ConfigMap
+				pdb        *policyv1.PodDisruptionBudget
+				sts        *appv1.StatefulSet
+				dpl        *appv1.Deployment
+				user       *elasticsearchapicrd.User
+				pm         *monitoringv1.PodMonitor
+				metricbeat *beatcrd.Metricbeat
 			)
 
 			lastVersion := data["lastVersion"].(string)
@@ -772,6 +803,14 @@ func doUpdateElasticsearchIncreaseNodeGroupStep() test.TestStep {
 			assert.NotEmpty(t, pm.OwnerReferences)
 			assert.NotEmpty(t, pm.Annotations[patch.LastAppliedConfig])
 
+			// Metricbeat must exist
+			metricbeat = &beatcrd.Metricbeat{}
+			if err = c.Get(context.Background(), types.NamespacedName{Namespace: key.Namespace, Name: GetMetricbeatName(es)}, metricbeat); err != nil {
+				t.Fatal(err)
+			}
+			assert.NotEmpty(t, metricbeat.OwnerReferences)
+			assert.NotEmpty(t, metricbeat.Annotations[patch.LastAppliedConfig])
+
 			// Status must be update
 			assert.NotEmpty(t, es.Status.Health)
 			assert.NotEmpty(t, es.Status.Phase)
@@ -815,16 +854,17 @@ func doUpdateElasticsearchDecreaseNodeGroupStep() test.TestStep {
 			es := &elasticsearchcrd.Elasticsearch{}
 
 			var (
-				s    *corev1.Secret
-				svc  *corev1.Service
-				i    *networkingv1.Ingress
-				np   *networkingv1.NetworkPolicy
-				cm   *corev1.ConfigMap
-				pdb  *policyv1.PodDisruptionBudget
-				sts  *appv1.StatefulSet
-				dpl  *appv1.Deployment
-				user *elasticsearchapicrd.User
-				pm   *monitoringv1.PodMonitor
+				s          *corev1.Secret
+				svc        *corev1.Service
+				i          *networkingv1.Ingress
+				np         *networkingv1.NetworkPolicy
+				cm         *corev1.ConfigMap
+				pdb        *policyv1.PodDisruptionBudget
+				sts        *appv1.StatefulSet
+				dpl        *appv1.Deployment
+				user       *elasticsearchapicrd.User
+				pm         *monitoringv1.PodMonitor
+				metricbeat *beatcrd.Metricbeat
 			)
 
 			lastVersion := data["lastVersion"].(string)
@@ -1061,6 +1101,14 @@ func doUpdateElasticsearchDecreaseNodeGroupStep() test.TestStep {
 			assert.NotEmpty(t, pm.OwnerReferences)
 			assert.NotEmpty(t, pm.Annotations[patch.LastAppliedConfig])
 
+			// Metricbeat must exist
+			metricbeat = &beatcrd.Metricbeat{}
+			if err = c.Get(context.Background(), types.NamespacedName{Namespace: key.Namespace, Name: GetMetricbeatName(es)}, metricbeat); err != nil {
+				t.Fatal(err)
+			}
+			assert.NotEmpty(t, metricbeat.OwnerReferences)
+			assert.NotEmpty(t, metricbeat.Annotations[patch.LastAppliedConfig])
+
 			// Status must be update
 			assert.NotEmpty(t, es.Status.Health)
 			assert.NotEmpty(t, es.Status.Phase)
@@ -1118,17 +1166,18 @@ func doUpdateElasticsearchAddLicenseStep() test.TestStep {
 			es := &elasticsearchcrd.Elasticsearch{}
 
 			var (
-				s       *corev1.Secret
-				svc     *corev1.Service
-				i       *networkingv1.Ingress
-				np      *networkingv1.NetworkPolicy
-				cm      *corev1.ConfigMap
-				pdb     *policyv1.PodDisruptionBudget
-				sts     *appv1.StatefulSet
-				dpl     *appv1.Deployment
-				user    *elasticsearchapicrd.User
-				license *elasticsearchapicrd.License
-				pm      *monitoringv1.PodMonitor
+				s          *corev1.Secret
+				svc        *corev1.Service
+				i          *networkingv1.Ingress
+				np         *networkingv1.NetworkPolicy
+				cm         *corev1.ConfigMap
+				pdb        *policyv1.PodDisruptionBudget
+				sts        *appv1.StatefulSet
+				dpl        *appv1.Deployment
+				user       *elasticsearchapicrd.User
+				license    *elasticsearchapicrd.License
+				pm         *monitoringv1.PodMonitor
+				metricbeat *beatcrd.Metricbeat
 			)
 
 			lastVersion := data["lastVersion"].(string)
@@ -1371,6 +1420,14 @@ func doUpdateElasticsearchAddLicenseStep() test.TestStep {
 			}
 			assert.NotEmpty(t, pm.OwnerReferences)
 			assert.NotEmpty(t, pm.Annotations[patch.LastAppliedConfig])
+
+			// Metricbeat must exist
+			metricbeat = &beatcrd.Metricbeat{}
+			if err = c.Get(context.Background(), types.NamespacedName{Namespace: key.Namespace, Name: GetMetricbeatName(es)}, metricbeat); err != nil {
+				t.Fatal(err)
+			}
+			assert.NotEmpty(t, metricbeat.OwnerReferences)
+			assert.NotEmpty(t, metricbeat.Annotations[patch.LastAppliedConfig])
 
 			// Status must be update
 			assert.NotEmpty(t, es.Status.Health)

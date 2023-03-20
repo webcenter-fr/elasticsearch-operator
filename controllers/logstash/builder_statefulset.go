@@ -40,7 +40,7 @@ func BuildStatefulset(ls *logstashcrd.Logstash, es *elasticsearchcrd.Elasticsear
 		if err != nil {
 			return nil, errors.Wrapf(err, "Error when generate checksum for extra configMap %s", cm.Name)
 		}
-		checksumAnnotations[fmt.Sprintf("%s/configmap-%s", LogstashAnnotationKey, cm.Name)] = sum
+		checksumAnnotations[fmt.Sprintf("%s/configmap-%s", logstashcrd.LogstashAnnotationKey, cm.Name)] = sum
 	}
 	// checksum for secret
 	for _, s := range secretsChecksum {
@@ -52,7 +52,7 @@ func BuildStatefulset(ls *logstashcrd.Logstash, es *elasticsearchcrd.Elasticsear
 		if err != nil {
 			return nil, errors.Wrapf(err, "Error when generate checksum for extra secret %s", s.Name)
 		}
-		checksumAnnotations[fmt.Sprintf("%s/secret-%s", LogstashAnnotationKey, s.Name)] = sum
+		checksumAnnotations[fmt.Sprintf("%s/secret-%s", logstashcrd.LogstashAnnotationKey, s.Name)] = sum
 	}
 
 	cb := k8sbuilder.NewContainerBuilder()
@@ -276,15 +276,15 @@ func BuildStatefulset(ls *logstashcrd.Logstash, es *elasticsearchcrd.Elasticsear
 	// Compute labels
 	// Do not set global labels here to avoid reconcile pod just because global label change
 	ptb.WithLabels(map[string]string{
-		"cluster":             ls.Name,
-		LogstashAnnotationKey: "true",
+		"cluster":                         ls.Name,
+		logstashcrd.LogstashAnnotationKey: "true",
 	}).
 		WithLabels(ls.Spec.Deployment.Labels, k8sbuilder.Merge)
 
 	// Compute annotations
 	// Do not set global annotation here to avoid reconcile pod just because global annotation change
 	ptb.WithAnnotations(map[string]string{
-		LogstashAnnotationKey: "true",
+		logstashcrd.LogstashAnnotationKey: "true",
 	}).
 		WithAnnotations(ls.Spec.Deployment.Annotations, k8sbuilder.Merge).
 		WithAnnotations(checksumAnnotations, k8sbuilder.Merge)
@@ -646,8 +646,8 @@ fi
 			Replicas: pointer.Int32(ls.Spec.Deployment.Replicas),
 			Selector: &metav1.LabelSelector{
 				MatchLabels: map[string]string{
-					"cluster":             ls.Name,
-					LogstashAnnotationKey: "true",
+					"cluster":                         ls.Name,
+					logstashcrd.LogstashAnnotationKey: "true",
 				},
 			},
 			ServiceName: GetGlobalServiceName(ls),
@@ -704,8 +704,8 @@ func computeAntiAffinity(ls *logstashcrd.Logstash) (antiAffinity *corev1.PodAnti
 				TopologyKey: topologyKey,
 				LabelSelector: &metav1.LabelSelector{
 					MatchLabels: map[string]string{
-						"cluster":             ls.Name,
-						LogstashAnnotationKey: "true",
+						"cluster":                         ls.Name,
+						logstashcrd.LogstashAnnotationKey: "true",
 					},
 				},
 			},
@@ -721,8 +721,8 @@ func computeAntiAffinity(ls *logstashcrd.Logstash) (antiAffinity *corev1.PodAnti
 				TopologyKey: topologyKey,
 				LabelSelector: &metav1.LabelSelector{
 					MatchLabels: map[string]string{
-						"cluster":             ls.Name,
-						LogstashAnnotationKey: "true",
+						"cluster":                         ls.Name,
+						logstashcrd.LogstashAnnotationKey: "true",
 					},
 				},
 			},

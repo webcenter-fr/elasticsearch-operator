@@ -1,0 +1,56 @@
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: test-allow-api-es
+  namespace: default
+  labels:
+    cluster: test
+    elasticsearch.k8s.webcenter.fr: "true"
+  annotations:
+    elasticsearch.k8s.webcenter.fr: "true"
+spec:
+  ingress:
+    - from:
+        - podSelector:
+            matchLabels:
+              elasticsearch-operator.k8s.webcenter.fr: "true"
+          namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: test
+        - podSelector:
+            matchLabels:
+              metricbeat.k8s.webcenter.fr: "true"
+              cluster: metricbeat
+          namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: test
+        - podSelector:
+            matchLabels:
+              filebeat.k8s.webcenter.fr: "true"
+              cluster: filebeat
+          namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: test
+        - podSelector:
+            matchLabels:
+              kibana.k8s.webcenter.fr: "true"
+              cluster: kibana
+          namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: test
+        - podSelector:
+            matchLabels:
+              logstash.k8s.webcenter.fr: "true"
+              cluster: logstash
+          namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: test
+      ports:
+        - port: 9200
+          protocol: TCP
+  policyTypes:
+    - Ingress
+  podSelector:
+    matchLabels:
+      cluster: test
+      elasticsearch.k8s.webcenter.fr: "true"

@@ -1,0 +1,12 @@
+apiVersion: beat.k8s.webcenter.fr/v1alpha1
+kind: Metricbeat
+metadata:
+  labels:
+    app.kubernetes.io/name: metricbeat
+    app.kubernetes.io/instance: metricbeat-sample
+    app.kubernetes.io/part-of: elasticsearch-operator
+    app.kubernetes.io/managed-by: kustomize
+    app.kubernetes.io/created-by: elasticsearch-operator
+  name: metricbeat-sample
+spec:
+  # TODO(user): Add fields here

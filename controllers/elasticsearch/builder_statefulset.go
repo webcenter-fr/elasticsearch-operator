@@ -60,7 +60,7 @@ func BuildStatefulsets(es *elasticsearchcrd.Elasticsearch, secretsChecksum []cor
 		if err != nil {
 			return nil, errors.Wrapf(err, "Error when generate checksum for extra secret %s", s.Name)
 		}
-		checksumAnnotations[fmt.Sprintf("%s/secret-%s", ElasticsearchAnnotationKey, s.Name)] = sum
+		checksumAnnotations[fmt.Sprintf("%s/secret-%s", elasticsearchcrd.ElasticsearchAnnotationKey, s.Name)] = sum
 	}
 
 	// Compute cluster name
@@ -87,7 +87,7 @@ func BuildStatefulsets(es *elasticsearchcrd.Elasticsearch, secretsChecksum []cor
 				if err != nil {
 					return nil, errors.Wrapf(err, "Error when generate checksum for extra configMap %s", cm.Name)
 				}
-				nodeGroupCheckSumAnnotations[fmt.Sprintf("%s/configmap-%s", ElasticsearchAnnotationKey, cm.Name)] = sum
+				nodeGroupCheckSumAnnotations[fmt.Sprintf("%s/configmap-%s", elasticsearchcrd.ElasticsearchAnnotationKey, cm.Name)] = sum
 			}
 		}
 
@@ -412,9 +412,9 @@ fi
 		// Compute labels
 		// Do not set global labels here to avoid reconcile pod just because global label change
 		ptb.WithLabels(map[string]string{
-			"cluster":                  es.Name,
-			"nodeGroup":                nodeGroup.Name,
-			ElasticsearchAnnotationKey: "true",
+			"cluster":   es.Name,
+			"nodeGroup": nodeGroup.Name,
+			elasticsearchcrd.ElasticsearchAnnotationKey: "true",
 		}).
 			WithLabels(es.Spec.GlobalNodeGroup.Labels, k8sbuilder.Merge).
 			WithLabels(nodeGroup.Labels, k8sbuilder.Merge)
@@ -422,7 +422,7 @@ fi
 		// Compute annotations
 		// Do not set global annotation here to avoid reconcile pod just because global annotation change
 		ptb.WithAnnotations(map[string]string{
-			ElasticsearchAnnotationKey: "true",
+			elasticsearchcrd.ElasticsearchAnnotationKey: "true",
 		}).
 			WithAnnotations(es.Spec.GlobalNodeGroup.Annotations, k8sbuilder.Merge).
 			WithAnnotations(nodeGroup.Annotations, k8sbuilder.Merge).
@@ -771,9 +771,9 @@ fi
 				ServiceName:         GetNodeGroupServiceNameHeadless(es, nodeGroup.Name),
 				Selector: &metav1.LabelSelector{
 					MatchLabels: map[string]string{
-						"cluster":                  es.Name,
-						"nodeGroup":                nodeGroup.Name,
-						ElasticsearchAnnotationKey: "true",
+						"cluster":   es.Name,
+						"nodeGroup": nodeGroup.Name,
+						elasticsearchcrd.ElasticsearchAnnotationKey: "true",
 					},
 				},
 
@@ -880,9 +880,9 @@ func computeAntiAffinity(es *elasticsearchcrd.Elasticsearch, nodeGroup *elastics
 				TopologyKey: topologyKey,
 				LabelSelector: &metav1.LabelSelector{
 					MatchLabels: map[string]string{
-						"cluster":                  es.Name,
-						"nodeGroup":                nodeGroup.Name,
-						ElasticsearchAnnotationKey: "true",
+						"cluster":   es.Name,
+						"nodeGroup": nodeGroup.Name,
+						elasticsearchcrd.ElasticsearchAnnotationKey: "true",
 					},
 				},
 			},
@@ -898,9 +898,9 @@ func computeAntiAffinity(es *elasticsearchcrd.Elasticsearch, nodeGroup *elastics
 				TopologyKey: topologyKey,
 				LabelSelector: &metav1.LabelSelector{
 					MatchLabels: map[string]string{
-						"cluster":                  es.Name,
-						"nodeGroup":                nodeGroup.Name,
-						ElasticsearchAnnotationKey: "true",
+						"cluster":   es.Name,
+						"nodeGroup": nodeGroup.Name,
+						elasticsearchcrd.ElasticsearchAnnotationKey: "true",
 					},
 				},
 			},

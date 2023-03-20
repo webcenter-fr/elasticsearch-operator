@@ -112,6 +112,32 @@ rules:
   - patch
   - update
 - apiGroups:
+  - beat.k8s.webcenter.fr
+  resources:
+  - metricbeats
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - beat.k8s.webcenter.fr
+  resources:
+  - metricbeats/finalizers
+  verbs:
+  - update
+- apiGroups:
+  - beat.k8s.webcenter.fr
+  resources:
+  - metricbeats/status
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
   - elasticsearch.k8s.webcenter.fr
   resources:
   - elasticsearches

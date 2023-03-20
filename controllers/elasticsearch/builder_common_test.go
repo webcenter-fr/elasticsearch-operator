@@ -638,3 +638,15 @@ func TestGetPublicUrl(t *testing.T) {
 
 	assert.Equal(t, "https://fake", GetPublicUrl(o, "", true))
 }
+
+func TestGetMetricbeatName(t *testing.T) {
+	o := &elasticsearchcrd.Elasticsearch{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: "default",
+			Name:      "test",
+		},
+		Spec: elasticsearchcrd.ElasticsearchSpec{},
+	}
+
+	assert.Equal(t, "test-metricbeat-es", GetMetricbeatName(o))
+}

@@ -230,7 +230,7 @@ func TestGetSecretNameForCredentials(t *testing.T) {
 
 }
 
-func TestGetNetworkPolicyElasticsearchName(t *testing.T) {
+func TestGetNetworkPolicyName(t *testing.T) {
 	o := &logstashcrd.Logstash{
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: "default",
@@ -239,7 +239,7 @@ func TestGetNetworkPolicyElasticsearchName(t *testing.T) {
 		Spec: logstashcrd.LogstashSpec{},
 	}
 
-	assert.Equal(t, "test-allow-es-ls", GetNetworkPolicyElasticsearchName(o))
+	assert.Equal(t, "test-allow-ls", GetNetworkPolicyName(o))
 }
 
 func TestGetExporterUrl(t *testing.T) {

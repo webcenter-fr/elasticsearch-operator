@@ -13,6 +13,10 @@ data:
   log4j.yml: |
     log.test: test
   filebeat.yml: |
+    filebeat:
+        config:
+            modules:
+                path: ${path.config}/modules.d/*.yml
     http:
         enabled: true
         host: 0.0.0.0

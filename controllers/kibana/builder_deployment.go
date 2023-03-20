@@ -49,7 +49,7 @@ func BuildDeployment(kb *kibanacrd.Kibana, es *elasticsearchcrd.Elasticsearch, s
 		if err != nil {
 			return nil, errors.Wrapf(err, "Error when generate checksum for extra configMap %s", cm.Name)
 		}
-		checksumAnnotations[fmt.Sprintf("%s/configmap-%s", KibanaAnnotationKey, cm.Name)] = sum
+		checksumAnnotations[fmt.Sprintf("%s/configmap-%s", kibanacrd.KibanaAnnotationKey, cm.Name)] = sum
 	}
 	// checksum for secret
 	for _, s := range secretsChecksum {
@@ -61,7 +61,7 @@ func BuildDeployment(kb *kibanacrd.Kibana, es *elasticsearchcrd.Elasticsearch, s
 		if err != nil {
 			return nil, errors.Wrapf(err, "Error when generate checksum for extra secret %s", s.Name)
 		}
-		checksumAnnotations[fmt.Sprintf("%s/secret-%s", KibanaAnnotationKey, s.Name)] = sum
+		checksumAnnotations[fmt.Sprintf("%s/secret-%s", kibanacrd.KibanaAnnotationKey, s.Name)] = sum
 	}
 
 	cb := k8sbuilder.NewContainerBuilder()
@@ -320,15 +320,15 @@ fi
 	// Compute labels
 	// Do not set global labels here to avoid reconcile pod just because global label change
 	ptb.WithLabels(map[string]string{
-		"cluster":           kb.Name,
-		KibanaAnnotationKey: "true",
+		"cluster":                     kb.Name,
+		kibanacrd.KibanaAnnotationKey: "true",
 	}).
 		WithLabels(kb.Spec.Deployment.Labels, k8sbuilder.Merge)
 
 	// Compute annotations
 	// Do not set global annotation here to avoid reconcile pod just because global annotation change
 	ptb.WithAnnotations(map[string]string{
-		KibanaAnnotationKey: "true",
+		kibanacrd.KibanaAnnotationKey: "true",
 	}).
 		WithAnnotations(kb.Spec.Deployment.Annotations, k8sbuilder.Merge).
 		WithAnnotations(checksumAnnotations, k8sbuilder.Merge)
@@ -653,8 +653,8 @@ fi
 			Replicas: pointer.Int32(kb.Spec.Deployment.Replicas),
 			Selector: &metav1.LabelSelector{
 				MatchLabels: map[string]string{
-					"cluster":           kb.Name,
-					KibanaAnnotationKey: "true",
+					"cluster":                     kb.Name,
+					kibanacrd.KibanaAnnotationKey: "true",
 				},
 			},
 
@@ -726,8 +726,8 @@ func computeAntiAffinity(kb *kibanacrd.Kibana) (antiAffinity *corev1.PodAntiAffi
 				TopologyKey: topologyKey,
 				LabelSelector: &metav1.LabelSelector{
 					MatchLabels: map[string]string{
-						"cluster":           kb.Name,
-						KibanaAnnotationKey: "true",
+						"cluster":                     kb.Name,
+						kibanacrd.KibanaAnnotationKey: "true",
 					},
 				},
 			},
@@ -743,8 +743,8 @@ func computeAntiAffinity(kb *kibanacrd.Kibana) (antiAffinity *corev1.PodAntiAffi
 				TopologyKey: topologyKey,
 				LabelSelector: &metav1.LabelSelector{
 					MatchLabels: map[string]string{
-						"cluster":           kb.Name,
-						KibanaAnnotationKey: "true",
+						"cluster":                     kb.Name,
+						kibanacrd.KibanaAnnotationKey: "true",
 					},
 				},
 			},

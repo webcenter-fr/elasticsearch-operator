@@ -17,7 +17,7 @@ func BuildService(kb *kibanacrd.Kibana) (service *corev1.Service, err error) {
 			Namespace: kb.Namespace,
 			Name:      GetServiceName(kb),
 			Labels: getLabels(kb, map[string]string{
-				fmt.Sprintf("%s/service", KibanaAnnotationKey): "true",
+				fmt.Sprintf("%s/service", kibanacrd.KibanaAnnotationKey): "true",
 			}),
 			Annotations: getAnnotations(kb),
 		},
@@ -25,8 +25,8 @@ func BuildService(kb *kibanacrd.Kibana) (service *corev1.Service, err error) {
 			Type:            corev1.ServiceTypeClusterIP,
 			SessionAffinity: corev1.ServiceAffinityNone,
 			Selector: map[string]string{
-				"cluster":           kb.Name,
-				KibanaAnnotationKey: "true",
+				"cluster":                     kb.Name,
+				kibanacrd.KibanaAnnotationKey: "true",
 			},
 			Ports: []corev1.ServicePort{
 				{

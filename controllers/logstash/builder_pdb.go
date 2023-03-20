@@ -23,8 +23,8 @@ func BuildPodDisruptionBudget(ls *logstashcrd.Logstash) (pdb *policyv1.PodDisrup
 		Spec: policyv1.PodDisruptionBudgetSpec{
 			Selector: &metav1.LabelSelector{
 				MatchLabels: map[string]string{
-					"cluster":             ls.Name,
-					LogstashAnnotationKey: "true",
+					"cluster":                         ls.Name,
+					logstashcrd.LogstashAnnotationKey: "true",
 				},
 			},
 		},

@@ -146,7 +146,7 @@ spec:
           runAsUser: 0
       securityContext:
         fsGroup: 0
-      terminationGracePeriodSeconds: 120
+      terminationGracePeriodSeconds: 60
       volumes:
       - name: filebeat-config
         configMap:

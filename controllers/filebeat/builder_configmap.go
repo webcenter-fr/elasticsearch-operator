@@ -26,6 +26,8 @@ func BuildConfigMaps(fb *beatcrd.Filebeat, es *elasticsearchcrd.Elasticsearch) (
 	filebeatConf.WriteString(`
 http.enabled: true
 http.host: 0.0.0.0
+filebeat.config.modules:
+  path: ${path.config}/modules.d/*.yml
 `)
 
 	// Logstash output

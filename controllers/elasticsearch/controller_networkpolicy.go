@@ -2,17 +2,22 @@ package elasticsearch
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/disaster37/operator-sdk-extra/pkg/controller"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
+	beatcrd "github.com/webcenter-fr/elasticsearch-operator/apis/beat/v1alpha1"
 	elasticsearchcrd "github.com/webcenter-fr/elasticsearch-operator/apis/elasticsearch/v1alpha1"
+	kibanacrd "github.com/webcenter-fr/elasticsearch-operator/apis/kibana/v1alpha1"
+	logstashcrd "github.com/webcenter-fr/elasticsearch-operator/apis/logstash/v1alpha1"
 	"github.com/webcenter-fr/elasticsearch-operator/controllers/common"
 	corev1 "k8s.io/api/core/v1"
 	networkingv1 "k8s.io/api/networking/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	condition "k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/fields"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/tools/record"
@@ -65,6 +70,11 @@ func (r *NetworkPolicyReconciler) Configure(ctx context.Context, req ctrl.Reques
 func (r *NetworkPolicyReconciler) Read(ctx context.Context, resource client.Object, data map[string]any) (res ctrl.Result, err error) {
 	o := resource.(*elasticsearchcrd.Elasticsearch)
 	np := &networkingv1.NetworkPolicy{}
+	kibanaList := &kibanacrd.KibanaList{}
+	logstashList := &logstashcrd.LogstashList{}
+	filebeatList := &beatcrd.FilebeatList{}
+	metricbeatList := &beatcrd.MetricbeatList{}
+	oList := make([]client.Object, 0)
 
 	// Read current ingress
 	if err = r.Client.Get(ctx, types.NamespacedName{Namespace: o.Namespace, Name: GetNetworkPolicyName(o)}, np); err != nil {
@@ -75,8 +85,53 @@ func (r *NetworkPolicyReconciler) Read(ctx context.Context, resource client.Obje
 	}
 	data["currentObject"] = np
 
+	// Read remote target that access on this Elasticsearch cluster
+	// Read kibana referer
+	fs := fields.ParseSelectorOrDie(fmt.Sprintf("spec.elasticsearchRef.managed.fullname=%s/%s", o.GetNamespace(), o.GetName()))
+	if err := r.Client.List(context.Background(), kibanaList, &client.ListOptions{FieldSelector: fs}); err != nil {
+		return res, errors.Wrapf(err, "Error when read Kibana")
+	}
+	for _, kb := range kibanaList.Items {
+		if kb.Namespace != o.Namespace {
+			oList = append(oList, &kb)
+		}
+	}
+
+	// Read Logstash referer
+	fs = fields.ParseSelectorOrDie(fmt.Sprintf("spec.elasticsearchRef.managed.fullname=%s/%s", o.GetNamespace(), o.GetName()))
+	if err := r.Client.List(context.Background(), logstashList, &client.ListOptions{FieldSelector: fs}); err != nil {
+		return res, errors.Wrapf(err, "Error when read Logstash")
+	}
+	for _, ls := range logstashList.Items {
+		if ls.Namespace != o.Namespace {
+			oList = append(oList, &ls)
+		}
+	}
+
+	// Read filebeat referer
+	fs = fields.ParseSelectorOrDie(fmt.Sprintf("spec.elasticsearchRef.managed.fullname=%s/%s", o.GetNamespace(), o.GetName()))
+	if err := r.Client.List(context.Background(), filebeatList, &client.ListOptions{FieldSelector: fs}); err != nil {
+		return res, errors.Wrapf(err, "Error when read filebeat")
+	}
+	for _, fb := range filebeatList.Items {
+		if fb.Namespace != o.Namespace {
+			oList = append(oList, &fb)
+		}
+	}
+
+	// Read metricbeat referer
+	fs = fields.ParseSelectorOrDie(fmt.Sprintf("spec.elasticsearchRef.managed.fullname=%s/%s", o.GetNamespace(), o.GetName()))
+	if err := r.Client.List(context.Background(), metricbeatList, &client.ListOptions{FieldSelector: fs}); err != nil {
+		return res, errors.Wrapf(err, "Error when read metricbeat")
+	}
+	for _, mb := range metricbeatList.Items {
+		if mb.Namespace != o.Namespace {
+			oList = append(oList, &mb)
+		}
+	}
+
 	// Generate expected network policy
-	expectedNp, err := BuildNetworkPolicy(o)
+	expectedNp, err := BuildNetworkPolicy(o, oList)
 	if err != nil {
 		return res, errors.Wrap(err, "Error when generate network policy")
 	}
