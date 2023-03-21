@@ -22,7 +22,8 @@ func BuildCredentialSecret(ls *logstashcrd.Logstash, secretCredentials *corev1.S
 		},
 		Type: corev1.SecretTypeOpaque,
 		Data: map[string][]byte{
-			"logstash_system": secretCredentials.Data["logstash_system"],
+			"logstash_system":        secretCredentials.Data["logstash_system"],
+			"remote_monitoring_user": secretCredentials.Data["remote_monitoring_user"],
 		},
 	}
 

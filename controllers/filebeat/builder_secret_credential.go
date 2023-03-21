@@ -22,7 +22,8 @@ func BuildCredentialSecret(fb *beatcrd.Filebeat, secretCredentials *corev1.Secre
 		},
 		Type: corev1.SecretTypeOpaque,
 		Data: map[string][]byte{
-			"beats_system": secretCredentials.Data["beats_system"],
+			"beats_system":           secretCredentials.Data["beats_system"],
+			"remote_monitoring_user": secretCredentials.Data["remote_monitoring_user"],
 		},
 	}
 

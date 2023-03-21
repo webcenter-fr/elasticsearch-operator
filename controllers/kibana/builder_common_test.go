@@ -322,3 +322,15 @@ func TestGetPodMonitorName(t *testing.T) {
 
 	assert.Equal(t, "test-kb", GetPodMonitorName(o))
 }
+
+func TestGetMetricbeatName(t *testing.T) {
+	o := &kibanacrd.Kibana{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: "default",
+			Name:      "test",
+		},
+		Spec: kibanacrd.KibanaSpec{},
+	}
+
+	assert.Equal(t, "test-metricbeat-kb", GetMetricbeatName(o))
+}

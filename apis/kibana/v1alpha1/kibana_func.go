@@ -50,6 +50,16 @@ func (h *Kibana) IsPrometheusMonitoring() bool {
 	return false
 }
 
+// IsMetricbeatMonitoring return true if Metricbeat monitoring is enabled
+func (h *Kibana) IsMetricbeatMonitoring() bool {
+
+	if h.Spec.Monitoring.Metricbeat != nil && h.Spec.Monitoring.Metricbeat.Enabled && h.Spec.Deployment.Replicas > 0 {
+		return true
+	}
+
+	return false
+}
+
 // MustSetUpIndex setup indexer for kibana
 func MustSetUpIndex(k8sManager manager.Manager) {
 	if err := k8sManager.GetFieldIndexer().IndexField(context.Background(), &Kibana{}, "spec.tls.certificateSecretRef.name", func(o client.Object) []string {

@@ -46,7 +46,7 @@ spec:
           valueFrom:
             fieldRef:
               apiVersion: v1
-              fieldPath: spec.nodeName
+              fieldPath: metadata.name
         - name: POD_IP
           valueFrom:
             fieldRef:

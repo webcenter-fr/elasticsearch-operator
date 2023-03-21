@@ -144,3 +144,8 @@ func GetPodMonitorName(ls *logstashcrd.Logstash) string {
 func GetIngressName(ls *logstashcrd.Logstash, ingressName string) string {
 	return fmt.Sprintf("%s-%s-ls", ls.Name, ingressName)
 }
+
+// GetMetricbeatName return the metricbeat namme
+func GetMetricbeatName(ls *logstashcrd.Logstash) (name string) {
+	return fmt.Sprintf("%s-metricbeat-ls", ls.Name)
+}

@@ -84,6 +84,7 @@ func NewFilebeatReconciler(client client.Client, scheme *runtime.Scheme) *Filebe
 //+kubebuilder:rbac:groups="",resources=services,verbs=get;list;watch;create;update;patch;delete
 //+kubebuilder:rbac:groups="policy",resources=poddisruptionbudgets,verbs=get;list;watch;create;update;patch;delete
 //+kubebuilder:rbac:groups="apps",resources=statefulsets,verbs=get;list;watch;create;update;patch;delete
+//+kubebuilder:rbac:groups="beat.k8s.webcenter.fr",resources=metricbeats,verbs=get;list;watch;create;update;patch;delete
 
 // Reconcile is part of the main kubernetes reconciliation loop which aims to
 // move the current state of the cluster closer to the desired state.
@@ -110,6 +111,7 @@ func (r *FilebeatReconciler) Reconcile(ctx context.Context, req ctrl.Request) (c
 	pdbReconciler := NewPdbReconciler(r.Client, r.Scheme, r.GetRecorder(), r.GetLogger())
 	ingressReconciler := NewIngressReconciler(r.Client, r.Scheme, r.GetRecorder(), r.GetLogger())
 	statefulsetReconciler := NewStatefulsetReconciler(r.Client, r.Scheme, r.GetRecorder(), r.GetLogger())
+	metricbeatReconciler := NewMetricbeatReconciler(r.Client, r.Scheme, r.GetRecorder(), r.GetLogger())
 
 	return reconciler.Reconcile(ctx, req, fb, data,
 		caElasticsearchReconciler,
@@ -119,6 +121,7 @@ func (r *FilebeatReconciler) Reconcile(ctx context.Context, req ctrl.Request) (c
 		pdbReconciler,
 		statefulsetReconciler,
 		ingressReconciler,
+		metricbeatReconciler,
 	)
 }
 
@@ -132,6 +135,7 @@ func (h *FilebeatReconciler) SetupWithManager(mgr ctrl.Manager) error {
 		Owns(&corev1.Service{}).
 		Owns(&policyv1.PodDisruptionBudget{}).
 		Owns(&appv1.StatefulSet{}).
+		Owns(&beatcrd.Filebeat{}).
 		Watches(&source.Kind{Type: &corev1.Secret{}}, handler.EnqueueRequestsFromMapFunc(watchSecret(h.Client))).
 		Watches(&source.Kind{Type: &corev1.ConfigMap{}}, handler.EnqueueRequestsFromMapFunc(watchConfigMap(h.Client))).
 		Watches(&source.Kind{Type: &elasticsearchcrd.Elasticsearch{}}, handler.EnqueueRequestsFromMapFunc(watchElasticsearch(h.Client))).

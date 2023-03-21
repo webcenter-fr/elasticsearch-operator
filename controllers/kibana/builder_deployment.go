@@ -130,8 +130,13 @@ func BuildDeployment(kb *kibanacrd.Kibana, es *elasticsearchcrd.Elasticsearch, s
 				Value: "0.0.0.0",
 			},
 			{
-				Name:  "SERVER_NAME",
-				Value: kb.Name,
+				Name: "SERVER_NAME",
+				ValueFrom: &corev1.EnvVarSource{
+					FieldRef: &corev1.ObjectFieldSelector{
+						APIVersion: "v1",
+						FieldPath:  "metadata.name",
+					},
+				},
 			},
 			{
 				Name:  "PROBE_PATH",

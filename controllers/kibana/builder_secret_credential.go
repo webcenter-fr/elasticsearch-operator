@@ -23,8 +23,9 @@ func BuildCredentialSecret(kb *kibanacrd.Kibana, secretCredentials *corev1.Secre
 		},
 		Type: corev1.SecretTypeOpaque,
 		Data: map[string][]byte{
-			"kibana_system": secretCredentials.Data["kibana_system"],
-			"username":      []byte("kibana_system"),
+			"kibana_system":          secretCredentials.Data["kibana_system"],
+			"remote_monitoring_user": secretCredentials.Data["remote_monitoring_user"],
+			"username":               []byte("kibana_system"),
 		},
 	}
 

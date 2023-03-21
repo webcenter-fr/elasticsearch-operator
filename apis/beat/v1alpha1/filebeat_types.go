@@ -200,6 +200,11 @@ type FilebeatMonitoringSpec struct {
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
 	// +optional
 	Prometheus *FilebeatPrometheusSpec `json:"prometheus,omitempty"`
+
+	// Metricbeat permit to monitor cluster with metricbeat and to dedicated monitoring cluster
+	// +operator-sdk:csv:customresourcedefinitions:type=spec
+	// +optional
+	Metricbeat *shared.MetricbeatMonitoringSpec `json:"metricbeat,omitempty"`
 }
 
 type FilebeatPrometheusSpec struct {

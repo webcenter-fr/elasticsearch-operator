@@ -49,7 +49,8 @@ func TestBuildCredentialSecret(t *testing.T) {
 
 	esSecret = &corev1.Secret{
 		Data: map[string][]byte{
-			"logstash_system": []byte("password"),
+			"logstash_system":        []byte("password"),
+			"remote_monitoring_user": []byte("password"),
 		},
 	}
 
@@ -61,5 +62,6 @@ func TestBuildCredentialSecret(t *testing.T) {
 	assert.Equal(t, labels, s.Labels)
 	assert.Equal(t, annotations, s.Annotations)
 	assert.Equal(t, []byte("password"), s.Data["logstash_system"])
+	assert.Equal(t, []byte("password"), s.Data["remote_monitoring_user"])
 
 }

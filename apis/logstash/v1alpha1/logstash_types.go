@@ -163,6 +163,11 @@ type LogstashMonitoringSpec struct {
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
 	// +optional
 	Prometheus *LogstashPrometheusSpec `json:"prometheus,omitempty"`
+
+	// Metricbeat permit to monitor cluster with metricbeat and to dedicated monitoring cluster
+	// +operator-sdk:csv:customresourcedefinitions:type=spec
+	// +optional
+	Metricbeat *shared.MetricbeatMonitoringSpec `json:"metricbeat,omitempty"`
 }
 
 type LogstashPrometheusSpec struct {

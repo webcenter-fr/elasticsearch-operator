@@ -78,7 +78,7 @@ func BuildStatefulset(ls *logstashcrd.Logstash, es *elasticsearchcrd.Elasticsear
 				ValueFrom: &corev1.EnvVarSource{
 					FieldRef: &corev1.ObjectFieldSelector{
 						APIVersion: "v1",
-						FieldPath:  "spec.nodeName",
+						FieldPath:  "metadata.name",
 					},
 				},
 			},

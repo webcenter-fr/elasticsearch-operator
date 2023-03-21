@@ -299,3 +299,15 @@ func TestGetPodMonitorName(t *testing.T) {
 
 	assert.Equal(t, "test-ls", GetPodMonitorName(o))
 }
+
+func TestGetMetricbeatName(t *testing.T) {
+	o := &logstashcrd.Logstash{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: "default",
+			Name:      "test",
+		},
+		Spec: logstashcrd.LogstashSpec{},
+	}
+
+	assert.Equal(t, "test-metricbeat-ls", GetMetricbeatName(o))
+}

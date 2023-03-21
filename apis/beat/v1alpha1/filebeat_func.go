@@ -37,6 +37,16 @@ func (h FilebeatLogstashRef) IsExternal() bool {
 	return h.ExternalLogstashRef != nil && len(h.ExternalLogstashRef.Addresses) > 0
 }
 
+// IsMetricbeatMonitoring return true if Metricbeat monitoring is enabled
+func (h *Filebeat) IsMetricbeatMonitoring() bool {
+
+	if h.Spec.Monitoring.Metricbeat != nil && h.Spec.Monitoring.Metricbeat.Enabled && h.Spec.Deployment.Replicas > 0 {
+		return true
+	}
+
+	return false
+}
+
 // MustSetUpIndexForFilebeat setup indexer for Filebeat
 func MustSetUpIndexForFilebeat(k8sManager manager.Manager) {
 	if err := k8sManager.GetFieldIndexer().IndexField(context.Background(), &Filebeat{}, "spec.elasticsearchRef.managed.name", func(o client.Object) []string {

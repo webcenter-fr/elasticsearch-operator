@@ -118,3 +118,8 @@ func GetPodMonitorName(fb *beatcrd.Filebeat) string {
 func GetIngressName(fb *beatcrd.Filebeat, ingressName string) string {
 	return fmt.Sprintf("%s-%s-fb", fb.Name, ingressName)
 }
+
+// GetMetricbeatName return the metricbeat namme
+func GetMetricbeatName(fb *beatcrd.Filebeat) (name string) {
+	return fmt.Sprintf("%s-metricbeat-fb", fb.Name)
+}
