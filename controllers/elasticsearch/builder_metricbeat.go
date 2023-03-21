@@ -123,7 +123,8 @@ func BuildMetricbeat(es *elasticsearchcrd.Elasticsearch) (mb *beatcrd.Metricbeat
 						SecretName: GetSecretNameForTlsApi(es),
 						Items: []corev1.KeyToPath{
 							{
-								Key: "ca.crt",
+								Key:  "ca.crt",
+								Path: "ca.crt",
 							},
 						},
 					},
