@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/webcenter-fr/elasticsearch-operator/apis/shared"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/utils/pointer"
@@ -190,4 +191,75 @@ func TestIsPrometheusMonitoring(t *testing.T) {
 		},
 	}
 	assert.False(t, o.IsPrometheusMonitoring())
+}
+
+func TestIsMetricbeatMonitoring(t *testing.T) {
+	var o *Kibana
+
+	// With default values
+	o = &Kibana{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: "default",
+			Name:      "test",
+		},
+		Spec: KibanaSpec{},
+	}
+	assert.False(t, o.IsMetricbeatMonitoring())
+
+	// When enabled
+	o = &Kibana{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: "default",
+			Name:      "test",
+		},
+		Spec: KibanaSpec{
+			Monitoring: KibanaMonitoringSpec{
+				Metricbeat: &shared.MetricbeatMonitoringSpec{
+					Enabled: true,
+				},
+			},
+			Deployment: KibanaDeploymentSpec{
+				Replicas: 1,
+			},
+		},
+	}
+	assert.True(t, o.IsMetricbeatMonitoring())
+
+	// When disabled
+	o = &Kibana{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: "default",
+			Name:      "test",
+		},
+		Spec: KibanaSpec{
+			Monitoring: KibanaMonitoringSpec{
+				Metricbeat: &shared.MetricbeatMonitoringSpec{
+					Enabled: false,
+				},
+			},
+			Deployment: KibanaDeploymentSpec{
+				Replicas: 1,
+			},
+		},
+	}
+	assert.False(t, o.IsMetricbeatMonitoring())
+
+	// When enabled but replica is set to 0
+	o = &Kibana{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: "default",
+			Name:      "test",
+		},
+		Spec: KibanaSpec{
+			Monitoring: KibanaMonitoringSpec{
+				Metricbeat: &shared.MetricbeatMonitoringSpec{
+					Enabled: true,
+				},
+			},
+			Deployment: KibanaDeploymentSpec{
+				Replicas: 0,
+			},
+		},
+	}
+	assert.False(t, o.IsMetricbeatMonitoring())
 }

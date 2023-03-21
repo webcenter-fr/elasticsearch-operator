@@ -96,6 +96,11 @@ type KibanaMonitoringSpec struct {
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
 	// +optional
 	Prometheus *KibanaPrometheusSpec `json:"prometheus,omitempty"`
+
+	// Metricbeat permit to monitor cluster with metricbeat and to dedicated monitoring cluster
+	// +operator-sdk:csv:customresourcedefinitions:type=spec
+	// +optional
+	Metricbeat *shared.MetricbeatMonitoringSpec `json:"metricbeat,omitempty"`
 }
 
 type KibanaPrometheusSpec struct {

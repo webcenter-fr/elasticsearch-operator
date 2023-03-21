@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/webcenter-fr/elasticsearch-operator/apis/shared"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -164,4 +165,75 @@ func TestFilebeatIsExternal(t *testing.T) {
 	o = FilebeatLogstashRef{}
 	assert.False(t, o.IsExternal())
 
+}
+
+func TestFilebeatIsMetricbeatMonitoring(t *testing.T) {
+	var o *Filebeat
+
+	// With default values
+	o = &Filebeat{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: "default",
+			Name:      "test",
+		},
+		Spec: FilebeatSpec{},
+	}
+	assert.False(t, o.IsMetricbeatMonitoring())
+
+	// When enabled
+	o = &Filebeat{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: "default",
+			Name:      "test",
+		},
+		Spec: FilebeatSpec{
+			Monitoring: FilebeatMonitoringSpec{
+				Metricbeat: &shared.MetricbeatMonitoringSpec{
+					Enabled: true,
+				},
+			},
+			Deployment: FilebeatDeploymentSpec{
+				Replicas: 1,
+			},
+		},
+	}
+	assert.True(t, o.IsMetricbeatMonitoring())
+
+	// When disabled
+	o = &Filebeat{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: "default",
+			Name:      "test",
+		},
+		Spec: FilebeatSpec{
+			Monitoring: FilebeatMonitoringSpec{
+				Metricbeat: &shared.MetricbeatMonitoringSpec{
+					Enabled: false,
+				},
+			},
+			Deployment: FilebeatDeploymentSpec{
+				Replicas: 1,
+			},
+		},
+	}
+	assert.False(t, o.IsMetricbeatMonitoring())
+
+	// When enabled but replica is set to 0
+	o = &Filebeat{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: "default",
+			Name:      "test",
+		},
+		Spec: FilebeatSpec{
+			Monitoring: FilebeatMonitoringSpec{
+				Metricbeat: &shared.MetricbeatMonitoringSpec{
+					Enabled: true,
+				},
+			},
+			Deployment: FilebeatDeploymentSpec{
+				Replicas: 0,
+			},
+		},
+	}
+	assert.False(t, o.IsMetricbeatMonitoring())
 }

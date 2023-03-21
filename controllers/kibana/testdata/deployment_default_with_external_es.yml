@@ -60,7 +60,10 @@ spec:
         - name: SERVER_HOST
           value: 0.0.0.0
         - name: SERVER_NAME
-          value: test
+          valueFrom:
+            fieldRef:
+              apiVersion: v1
+              fieldPath: metadata.name
         - name: ELASTICSEARCH_HOSTS
           value: '[https://es1:9200]'
         - name: ELASTICSEARCH_USERNAME

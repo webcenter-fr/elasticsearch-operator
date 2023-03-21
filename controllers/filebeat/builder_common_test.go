@@ -222,3 +222,15 @@ func TestGetPodMonitorName(t *testing.T) {
 
 	assert.Equal(t, "test-fb", GetPodMonitorName(o))
 }
+
+func TestGetMetricbeatName(t *testing.T) {
+	o := &beatcrd.Filebeat{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: "default",
+			Name:      "test",
+		},
+		Spec: beatcrd.FilebeatSpec{},
+	}
+
+	assert.Equal(t, "test-metricbeat-fb", GetMetricbeatName(o))
+}

@@ -2,25 +2,23 @@ apiVersion: beat.k8s.webcenter.fr/v1alpha1
 kind: Metricbeat
 metadata:
   namespace: default
-  name: test-metricbeat-es
+  name: test-metricbeat-ls
 spec:
   elasticsearchRef:
     managed:
       name: test
       namespace: monitoring
   module:
-    'elasticsearch-xpack.yml': |
-      - module: elasticsearch
+    'logstash-xpack.yml': |
+      - module: logstash
         xpack.enabled: true
         username: '${SOURCE_METRICBEAT_USERNAME}'
         password: '${SOURCE_METRICBEAT_PASSWORD}'
-        ssl:
-          enable: true
-          certificate_authorities: '/usr/share/metricbeat/source-es-ca/ca.crt'
-          verification_mode: full
-        scope: cluster
+        metricsets:
+          - node
+          - node_stats
         period: 5s
-        hosts: https://test-es.default.svc:9200
+        hosts: [http://test-ls-0.test-headless-ls.default.svc:9600, http://test-ls-1.test-headless-ls.default.svc:9600, http://test-ls-2.test-headless-ls.default.svc:9600]
   deployment:
     replicas: 1
     env:
@@ -29,7 +27,7 @@ spec:
       - name: SOURCE_METRICBEAT_PASSWORD
         valueFrom:
             secretKeyRef:
-              name: test-credential-es
+              name: test-credential-ls
               key: remote_monitoring_user
     resources:
       limits:
@@ -38,11 +36,3 @@ spec:
       requests:
         cpu: "200m"
         memory: 200Mi
-    additionalVolumes:
-      - name: ca-source-elasticsearch
-        mountPath: /usr/share/metricbeat/source-es-ca
-        secret:
-          secretName: test-tls-api-es
-          items:
-            - key: ca.crt
-              path: ca.crt

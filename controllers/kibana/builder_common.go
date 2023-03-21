@@ -156,3 +156,8 @@ func GetExporterUrl(kb *kibanacrd.Kibana) string {
 func GetPodMonitorName(kb *kibanacrd.Kibana) string {
 	return fmt.Sprintf("%s-kb", kb.Name)
 }
+
+// GetMetricbeatName return the metricbeat namme
+func GetMetricbeatName(kb *kibanacrd.Kibana) (name string) {
+	return fmt.Sprintf("%s-metricbeat-kb", kb.Name)
+}

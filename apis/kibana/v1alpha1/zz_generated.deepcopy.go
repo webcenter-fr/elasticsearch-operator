@@ -22,6 +22,7 @@ limitations under the License.
 package v1alpha1
 
 import (
+	"github.com/webcenter-fr/elasticsearch-operator/apis/shared"
 	"k8s.io/api/core/v1"
 	networkingv1 "k8s.io/api/networking/v1"
 	policyv1 "k8s.io/api/policy/v1"
@@ -271,6 +272,11 @@ func (in *KibanaMonitoringSpec) DeepCopyInto(out *KibanaMonitoringSpec) {
 		in, out := &in.Prometheus, &out.Prometheus
 		*out = new(KibanaPrometheusSpec)
 		**out = **in
+	}
+	if in.Metricbeat != nil {
+		in, out := &in.Metricbeat, &out.Metricbeat
+		*out = new(shared.MetricbeatMonitoringSpec)
+		(*in).DeepCopyInto(*out)
 	}
 }
 

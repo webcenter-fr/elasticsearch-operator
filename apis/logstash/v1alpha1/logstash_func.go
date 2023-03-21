@@ -27,6 +27,16 @@ func (h *Logstash) IsPersistence() bool {
 	return false
 }
 
+// IsMetricbeatMonitoring return true if Metricbeat monitoring is enabled
+func (h *Logstash) IsMetricbeatMonitoring() bool {
+
+	if h.Spec.Monitoring.Metricbeat != nil && h.Spec.Monitoring.Metricbeat.Enabled && h.Spec.Deployment.Replicas > 0 {
+		return true
+	}
+
+	return false
+}
+
 // MustSetUpIndex setup indexer for Logstash
 func MustSetUpIndex(k8sManager manager.Manager) {
 	// Add indexers on Logstash to track secret change

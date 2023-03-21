@@ -108,7 +108,11 @@ func BuildTlsSecret(o *kibanacrd.Kibana, rootCA *goca.CA) (s *corev1.Secret, err
 func generateCertificate(o *kibanacrd.Kibana, rootCA *goca.CA) (nodeCrt *goca.Certificate, err error) {
 
 	var ips []net.IP
-	dnsNames := []string{}
+	dnsNames := []string{
+		GetServiceName(o),
+		fmt.Sprintf("%s.%s", GetServiceName(o), o.Namespace),
+		fmt.Sprintf("%s.%s.svc", GetServiceName(o), o.Namespace),
+	}
 
 	var (
 		keySize      int
