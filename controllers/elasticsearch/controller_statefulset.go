@@ -413,7 +413,7 @@ func (r *StatefulsetReconciler) Diff(ctx context.Context, resource client.Object
 			if data["phase"] != phaseStsUpgrade {
 				data["phase"] = phaseStsUpgradeFinished
 			}
-		} else if (condition.IsStatusConditionPresentAndEqual(o.Status.Conditions, StatefulsetConditionUpgrade, metav1.ConditionFalse) && condition.IsStatusConditionPresentAndEqual(o.Status.Conditions, StatefulsetCondition, metav1.ConditionTrue)) {
+		} else if condition.IsStatusConditionPresentAndEqual(o.Status.Conditions, StatefulsetConditionUpgrade, metav1.ConditionFalse) && condition.IsStatusConditionPresentAndEqual(o.Status.Conditions, StatefulsetCondition, metav1.ConditionTrue) {
 			// Chain with the next upgrade if needed, to avoid break TLS propagation ...
 			// Start upgrade phase
 			activeStateFulsetAlreadyUpgraded := false
