@@ -208,7 +208,7 @@ func watchConfigMap(c client.Client) handler.MapFunc {
 
 		// Additional volumes configMap
 		listElasticsearch = &elasticsearchcrd.ElasticsearchList{}
-		fs = fields.ParseSelectorOrDie(fmt.Sprintf("spec.globalNodeGroup.additionalVolumes.name=%s", a.GetName()))
+		fs = fields.ParseSelectorOrDie(fmt.Sprintf("spec.globalNodeGroup.additionalVolumes.configMap.name=%s", a.GetName()))
 		// Get all elasticsearch linked with secret
 		if err := c.List(context.Background(), listElasticsearch, &client.ListOptions{Namespace: a.GetNamespace(), FieldSelector: fs}); err != nil {
 			panic(err)
@@ -219,7 +219,7 @@ func watchConfigMap(c client.Client) handler.MapFunc {
 
 		// Env of type configMap
 		listElasticsearch = &elasticsearchcrd.ElasticsearchList{}
-		fs = fields.ParseSelectorOrDie(fmt.Sprintf("spec.statefulset.env.name=%s", a.GetName()))
+		fs = fields.ParseSelectorOrDie(fmt.Sprintf("spec.statefulset.env.valueFrom.configMapKeyRef.name=%s", a.GetName()))
 		// Get all elasticsearch linked with secret
 		if err := c.List(context.Background(), listElasticsearch, &client.ListOptions{Namespace: a.GetNamespace(), FieldSelector: fs}); err != nil {
 			panic(err)
@@ -230,7 +230,7 @@ func watchConfigMap(c client.Client) handler.MapFunc {
 
 		// EnvFrom of type configMap
 		listElasticsearch = &elasticsearchcrd.ElasticsearchList{}
-		fs = fields.ParseSelectorOrDie(fmt.Sprintf("spec.statefulset.envFrom.name=%s", a.GetName()))
+		fs = fields.ParseSelectorOrDie(fmt.Sprintf("spec.statefulset.envFrom.configMapRef.name=%s", a.GetName()))
 		// Get all elasticsearch linked with secret
 		if err := c.List(context.Background(), listElasticsearch, &client.ListOptions{Namespace: a.GetNamespace(), FieldSelector: fs}); err != nil {
 			panic(err)
@@ -289,7 +289,7 @@ func watchSecret(c client.Client) handler.MapFunc {
 
 		// Additional volumes secrets
 		listElasticsearch = &elasticsearchcrd.ElasticsearchList{}
-		fs = fields.ParseSelectorOrDie(fmt.Sprintf("spec.globalNodeGroup.additionalVolumes.name=%s", a.GetName()))
+		fs = fields.ParseSelectorOrDie(fmt.Sprintf("spec.globalNodeGroup.additionalVolumes.secret.secretName=%s", a.GetName()))
 		// Get all elasticsearch linked with secret
 		if err := c.List(context.Background(), listElasticsearch, &client.ListOptions{Namespace: a.GetNamespace(), FieldSelector: fs}); err != nil {
 			panic(err)
@@ -300,7 +300,7 @@ func watchSecret(c client.Client) handler.MapFunc {
 
 		// Env of type secrets
 		listElasticsearch = &elasticsearchcrd.ElasticsearchList{}
-		fs = fields.ParseSelectorOrDie(fmt.Sprintf("spec.statefulset.env.name=%s", a.GetName()))
+		fs = fields.ParseSelectorOrDie(fmt.Sprintf("spec.statefulset.env.valueFrom.secretKeyRef.name=%s", a.GetName()))
 		// Get all elasticsearch linked with secret
 		if err := c.List(context.Background(), listElasticsearch, &client.ListOptions{Namespace: a.GetNamespace(), FieldSelector: fs}); err != nil {
 			panic(err)
@@ -311,7 +311,7 @@ func watchSecret(c client.Client) handler.MapFunc {
 
 		// EnvFrom of type secrets
 		listElasticsearch = &elasticsearchcrd.ElasticsearchList{}
-		fs = fields.ParseSelectorOrDie(fmt.Sprintf("spec.statefulset.envFrom.name=%s", a.GetName()))
+		fs = fields.ParseSelectorOrDie(fmt.Sprintf("spec.statefulset.envFrom.secretRef.name=%s", a.GetName()))
 		// Get all elasticsearch linked with secret
 		if err := c.List(context.Background(), listElasticsearch, &client.ListOptions{Namespace: a.GetNamespace(), FieldSelector: fs}); err != nil {
 			panic(err)

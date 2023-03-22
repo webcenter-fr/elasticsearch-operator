@@ -190,7 +190,7 @@ func watchConfigMap(c client.Client) handler.MapFunc {
 
 		// Env of type configMap
 		listKibanas = &kibanacrd.KibanaList{}
-		fs = fields.ParseSelectorOrDie(fmt.Sprintf("spec.deployment.env.name=%s", a.GetName()))
+		fs = fields.ParseSelectorOrDie(fmt.Sprintf("spec.deployment.env.valueFrom.configMapKeyRef.name=%s", a.GetName()))
 		if err := c.List(context.Background(), listKibanas, &client.ListOptions{Namespace: a.GetNamespace(), FieldSelector: fs}); err != nil {
 			panic(err)
 		}
@@ -200,7 +200,7 @@ func watchConfigMap(c client.Client) handler.MapFunc {
 
 		// EnvFrom of type configMap
 		listKibanas = &kibanacrd.KibanaList{}
-		fs = fields.ParseSelectorOrDie(fmt.Sprintf("spec.deployment.envFrom.name=%s", a.GetName()))
+		fs = fields.ParseSelectorOrDie(fmt.Sprintf("spec.deployment.envFrom.configMapRef.name=%s", a.GetName()))
 		if err := c.List(context.Background(), listKibanas, &client.ListOptions{Namespace: a.GetNamespace(), FieldSelector: fs}); err != nil {
 			panic(err)
 		}
@@ -267,7 +267,7 @@ func watchSecret(c client.Client) handler.MapFunc {
 
 		// Env of type secrets
 		listKibanas = &kibanacrd.KibanaList{}
-		fs = fields.ParseSelectorOrDie(fmt.Sprintf("spec.deployment.env.name=%s", a.GetName()))
+		fs = fields.ParseSelectorOrDie(fmt.Sprintf("spec.deployment.env.valueFrom.secretKeyRef.name=%s", a.GetName()))
 		if err := c.List(context.Background(), listKibanas, &client.ListOptions{Namespace: a.GetNamespace(), FieldSelector: fs}); err != nil {
 			panic(err)
 		}
@@ -277,7 +277,7 @@ func watchSecret(c client.Client) handler.MapFunc {
 
 		// EnvFrom of type secrets
 		listKibanas = &kibanacrd.KibanaList{}
-		fs = fields.ParseSelectorOrDie(fmt.Sprintf("spec.deployment.envFrom.name=%s", a.GetName()))
+		fs = fields.ParseSelectorOrDie(fmt.Sprintf("spec.deployment.envFrom.secretRef.name=%s", a.GetName()))
 		if err := c.List(context.Background(), listKibanas, &client.ListOptions{Namespace: a.GetNamespace(), FieldSelector: fs}); err != nil {
 			panic(err)
 		}

@@ -170,7 +170,7 @@ func watchConfigMap(c client.Client) handler.MapFunc {
 
 		// Additional volumes secrets
 		listMetricbeats = &beatcrd.MetricbeatList{}
-		fs = fields.ParseSelectorOrDie(fmt.Sprintf("spec.deployment.additionalVolumes.name=%s", a.GetName()))
+		fs = fields.ParseSelectorOrDie(fmt.Sprintf("spec.deployment.additionalVolumes.configMap.name=%s", a.GetName()))
 		if err := c.List(context.Background(), listMetricbeats, &client.ListOptions{Namespace: a.GetNamespace(), FieldSelector: fs}); err != nil {
 			panic(err)
 		}
@@ -180,7 +180,7 @@ func watchConfigMap(c client.Client) handler.MapFunc {
 
 		// Env of type secrets
 		listMetricbeats = &beatcrd.MetricbeatList{}
-		fs = fields.ParseSelectorOrDie(fmt.Sprintf("spec.deployment.env.name=%s", a.GetName()))
+		fs = fields.ParseSelectorOrDie(fmt.Sprintf("spec.deployment.env.valueFrom.configMapKeyRef.name=%s", a.GetName()))
 		if err := c.List(context.Background(), listMetricbeats, &client.ListOptions{Namespace: a.GetNamespace(), FieldSelector: fs}); err != nil {
 			panic(err)
 		}
@@ -190,7 +190,7 @@ func watchConfigMap(c client.Client) handler.MapFunc {
 
 		// EnvFrom of type secrets
 		listMetricbeats = &beatcrd.MetricbeatList{}
-		fs = fields.ParseSelectorOrDie(fmt.Sprintf("spec.deployment.envFrom.name=%s", a.GetName()))
+		fs = fields.ParseSelectorOrDie(fmt.Sprintf("spec.deployment.envFrom.configMapRef.name=%s", a.GetName()))
 		if err := c.List(context.Background(), listMetricbeats, &client.ListOptions{Namespace: a.GetNamespace(), FieldSelector: fs}); err != nil {
 			panic(err)
 		}
@@ -235,7 +235,7 @@ func watchSecret(c client.Client) handler.MapFunc {
 
 		// Additional volumes secrets
 		listMetricbeats = &beatcrd.MetricbeatList{}
-		fs = fields.ParseSelectorOrDie(fmt.Sprintf("spec.deployment.additionalVolumes.name=%s", a.GetName()))
+		fs = fields.ParseSelectorOrDie(fmt.Sprintf("spec.deployment.additionalVolumes.secret.secretName=%s", a.GetName()))
 		if err := c.List(context.Background(), listMetricbeats, &client.ListOptions{Namespace: a.GetNamespace(), FieldSelector: fs}); err != nil {
 			panic(err)
 		}
@@ -245,7 +245,7 @@ func watchSecret(c client.Client) handler.MapFunc {
 
 		// Env of type secrets
 		listMetricbeats = &beatcrd.MetricbeatList{}
-		fs = fields.ParseSelectorOrDie(fmt.Sprintf("spec.deployment.env.name=%s", a.GetName()))
+		fs = fields.ParseSelectorOrDie(fmt.Sprintf("spec.deployment.env.valueFrom.secretKeyRef.name=%s", a.GetName()))
 		if err := c.List(context.Background(), listMetricbeats, &client.ListOptions{Namespace: a.GetNamespace(), FieldSelector: fs}); err != nil {
 			panic(err)
 		}
@@ -255,7 +255,7 @@ func watchSecret(c client.Client) handler.MapFunc {
 
 		// EnvFrom of type secrets
 		listMetricbeats = &beatcrd.MetricbeatList{}
-		fs = fields.ParseSelectorOrDie(fmt.Sprintf("spec.deployment.envFrom.name=%s", a.GetName()))
+		fs = fields.ParseSelectorOrDie(fmt.Sprintf("spec.deployment.envFrom.secretRef.name=%s", a.GetName()))
 		if err := c.List(context.Background(), listMetricbeats, &client.ListOptions{Namespace: a.GetNamespace(), FieldSelector: fs}); err != nil {
 			panic(err)
 		}
