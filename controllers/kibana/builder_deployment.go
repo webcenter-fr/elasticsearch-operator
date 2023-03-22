@@ -6,7 +6,6 @@ import (
 	"strings"
 
 	"github.com/codingsince1985/checksum"
-	"github.com/davecgh/go-spew/spew"
 	"github.com/disaster37/k8sbuilder"
 	"github.com/elastic/go-ucfg"
 	"github.com/pkg/errors"
@@ -780,8 +779,6 @@ func computeProbePath(cm *corev1.ConfigMap) (path string, err error) {
 	if ucfg.ErrMissing == err {
 		return "/app/kibana", nil
 	}
-
-	spew.Dump(cm.Data["kibana.yml"])
 
 	return path, nil
 
