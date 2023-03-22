@@ -270,8 +270,6 @@ func (r *StatefulsetReconciler) Diff(ctx context.Context, resource client.Object
 	o := resource.(*elasticsearchcrd.Elasticsearch)
 	var d any
 
-	currentUpgradeIsFinished := false
-
 	d, err = helper.Get(data, "currentStatefulsets")
 	if err != nil {
 		return diff, res, err
@@ -413,10 +411,9 @@ func (r *StatefulsetReconciler) Diff(ctx context.Context, resource client.Object
 
 			// Update phase if needed
 			if data["phase"] != phaseStsUpgrade {
-				currentUpgradeIsFinished = true
 				data["phase"] = phaseStsUpgradeFinished
 			}
-		} else if currentUpgradeIsFinished || (condition.IsStatusConditionPresentAndEqual(o.Status.Conditions, StatefulsetConditionUpgrade, metav1.ConditionFalse) && condition.IsStatusConditionPresentAndEqual(o.Status.Conditions, StatefulsetCondition, metav1.ConditionTrue)) {
+		} else if (condition.IsStatusConditionPresentAndEqual(o.Status.Conditions, StatefulsetConditionUpgrade, metav1.ConditionFalse) && condition.IsStatusConditionPresentAndEqual(o.Status.Conditions, StatefulsetCondition, metav1.ConditionTrue)) {
 			// Chain with the next upgrade if needed, to avoid break TLS propagation ...
 			// Start upgrade phase
 			activeStateFulsetAlreadyUpgraded := false
