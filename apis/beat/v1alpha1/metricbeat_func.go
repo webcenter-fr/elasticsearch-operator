@@ -62,13 +62,13 @@ func MustSetUpIndexForMetricbeat(k8sManager manager.Manager) {
 		panic(err)
 	}
 
-	if err := k8sManager.GetFieldIndexer().IndexField(context.Background(), &Metricbeat{}, "spec.deployment.additionalVolumes.name", func(o client.Object) []string {
+	if err := k8sManager.GetFieldIndexer().IndexField(context.Background(), &Metricbeat{}, "spec.deployment.additionalVolumes.configMap.name", func(o client.Object) []string {
 		p := o.(*Metricbeat)
 		volumeNames := make([]string, 0, len(p.Spec.Deployment.AdditionalVolumes))
 
 		for _, volume := range p.Spec.Deployment.AdditionalVolumes {
-			if volume.ConfigMap != nil || volume.Secret != nil {
-				volumeNames = append(volumeNames, volume.Name)
+			if volume.ConfigMap != nil {
+				volumeNames = append(volumeNames, volume.ConfigMap.Name)
 			}
 		}
 
@@ -77,13 +77,28 @@ func MustSetUpIndexForMetricbeat(k8sManager manager.Manager) {
 		panic(err)
 	}
 
-	if err := k8sManager.GetFieldIndexer().IndexField(context.Background(), &Metricbeat{}, "spec.deployment.env.name", func(o client.Object) []string {
+	if err := k8sManager.GetFieldIndexer().IndexField(context.Background(), &Metricbeat{}, "spec.deployment.additionalVolumes.secret.secretName", func(o client.Object) []string {
+		p := o.(*Metricbeat)
+		volumeNames := make([]string, 0, len(p.Spec.Deployment.AdditionalVolumes))
+
+		for _, volume := range p.Spec.Deployment.AdditionalVolumes {
+			if volume.Secret != nil {
+				volumeNames = append(volumeNames, volume.Secret.SecretName)
+			}
+		}
+
+		return volumeNames
+	}); err != nil {
+		panic(err)
+	}
+
+	if err := k8sManager.GetFieldIndexer().IndexField(context.Background(), &Metricbeat{}, "spec.deployment.env.valueFrom.configMapKeyRef.name", func(o client.Object) []string {
 		p := o.(*Metricbeat)
 		envNames := make([]string, 0, len(p.Spec.Deployment.Env))
 
 		for _, env := range p.Spec.Deployment.Env {
-			if env.ValueFrom != nil && (env.ValueFrom.SecretKeyRef != nil || env.ValueFrom.ConfigMapKeyRef != nil) {
-				envNames = append(envNames, env.Name)
+			if env.ValueFrom != nil && env.ValueFrom.ConfigMapKeyRef != nil {
+				envNames = append(envNames, env.ValueFrom.ConfigMapKeyRef.Name)
 			}
 		}
 
@@ -92,14 +107,42 @@ func MustSetUpIndexForMetricbeat(k8sManager manager.Manager) {
 		panic(err)
 	}
 
-	if err := k8sManager.GetFieldIndexer().IndexField(context.Background(), &Metricbeat{}, "spec.deployment.envFrom.name", func(o client.Object) []string {
+	if err := k8sManager.GetFieldIndexer().IndexField(context.Background(), &Metricbeat{}, "spec.deployment.env.valueFrom.secretKeyRef.name", func(o client.Object) []string {
+		p := o.(*Metricbeat)
+		envNames := make([]string, 0, len(p.Spec.Deployment.Env))
+
+		for _, env := range p.Spec.Deployment.Env {
+			if env.ValueFrom != nil && env.ValueFrom.SecretKeyRef != nil {
+				envNames = append(envNames, env.ValueFrom.SecretKeyRef.Name)
+			}
+		}
+
+		return envNames
+	}); err != nil {
+		panic(err)
+	}
+
+	if err := k8sManager.GetFieldIndexer().IndexField(context.Background(), &Metricbeat{}, "spec.deployment.envFrom.configMapRef.name", func(o client.Object) []string {
 		p := o.(*Metricbeat)
 		envFromNames := make([]string, 0, len(p.Spec.Deployment.EnvFrom))
 
 		for _, envFrom := range p.Spec.Deployment.EnvFrom {
 			if envFrom.ConfigMapRef != nil {
 				envFromNames = append(envFromNames, envFrom.ConfigMapRef.Name)
-			} else if envFrom.SecretRef != nil {
+			}
+		}
+
+		return envFromNames
+	}); err != nil {
+		panic(err)
+	}
+
+	if err := k8sManager.GetFieldIndexer().IndexField(context.Background(), &Metricbeat{}, "spec.deployment.envFrom.secretRef.name", func(o client.Object) []string {
+		p := o.(*Metricbeat)
+		envFromNames := make([]string, 0, len(p.Spec.Deployment.EnvFrom))
+
+		for _, envFrom := range p.Spec.Deployment.EnvFrom {
+			if envFrom.SecretRef != nil {
 				envFromNames = append(envFromNames, envFrom.SecretRef.Name)
 			}
 		}

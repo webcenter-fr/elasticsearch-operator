@@ -111,13 +111,13 @@ func MustSetUpIndex(k8sManager manager.Manager) {
 		panic(err)
 	}
 
-	if err := k8sManager.GetFieldIndexer().IndexField(context.Background(), &Elasticsearch{}, "spec.globalNodeGroup.additionalVolumes.name", func(o client.Object) []string {
+	if err := k8sManager.GetFieldIndexer().IndexField(context.Background(), &Elasticsearch{}, "spec.globalNodeGroup.additionalVolumes.configMap.name", func(o client.Object) []string {
 		p := o.(*Elasticsearch)
 		volumeNames := make([]string, 0, len(p.Spec.GlobalNodeGroup.AdditionalVolumes))
 
 		for _, volume := range p.Spec.GlobalNodeGroup.AdditionalVolumes {
-			if volume.ConfigMap != nil || volume.Secret != nil {
-				volumeNames = append(volumeNames, volume.Name)
+			if volume.ConfigMap != nil {
+				volumeNames = append(volumeNames, volume.ConfigMap.Name)
 			}
 		}
 
@@ -126,20 +126,35 @@ func MustSetUpIndex(k8sManager manager.Manager) {
 		panic(err)
 	}
 
-	if err := k8sManager.GetFieldIndexer().IndexField(context.Background(), &Elasticsearch{}, "spec.statefulset.env.name", func(o client.Object) []string {
+	if err := k8sManager.GetFieldIndexer().IndexField(context.Background(), &Elasticsearch{}, "spec.globalNodeGroup.additionalVolumes.secret.secretName", func(o client.Object) []string {
+		p := o.(*Elasticsearch)
+		volumeNames := make([]string, 0, len(p.Spec.GlobalNodeGroup.AdditionalVolumes))
+
+		for _, volume := range p.Spec.GlobalNodeGroup.AdditionalVolumes {
+			if volume.Secret != nil {
+				volumeNames = append(volumeNames, volume.Secret.SecretName)
+			}
+		}
+
+		return volumeNames
+	}); err != nil {
+		panic(err)
+	}
+
+	if err := k8sManager.GetFieldIndexer().IndexField(context.Background(), &Elasticsearch{}, "spec.statefulset.env.valueFrom.configMapKeyRef.name", func(o client.Object) []string {
 		p := o.(*Elasticsearch)
 		envNames := make([]string, 0, len(p.Spec.GlobalNodeGroup.Env))
 
 		for _, env := range p.Spec.GlobalNodeGroup.Env {
-			if env.ValueFrom != nil && (env.ValueFrom.SecretKeyRef != nil || env.ValueFrom.ConfigMapKeyRef != nil) {
-				envNames = append(envNames, env.Name)
+			if env.ValueFrom != nil && env.ValueFrom.ConfigMapKeyRef != nil {
+				envNames = append(envNames, env.ValueFrom.ConfigMapKeyRef.Name)
 			}
 		}
 
 		for _, nodeGroup := range p.Spec.NodeGroups {
 			for _, env := range nodeGroup.Env {
-				if env.ValueFrom != nil && (env.ValueFrom.SecretKeyRef != nil || env.ValueFrom.ConfigMapKeyRef != nil) {
-					envNames = append(envNames, env.Name)
+				if env.ValueFrom != nil && env.ValueFrom.ConfigMapKeyRef != nil {
+					envNames = append(envNames, env.ValueFrom.ConfigMapKeyRef.Name)
 				}
 			}
 		}
@@ -149,15 +164,36 @@ func MustSetUpIndex(k8sManager manager.Manager) {
 		panic(err)
 	}
 
-	if err := k8sManager.GetFieldIndexer().IndexField(context.Background(), &Elasticsearch{}, "spec.statefulset.envFrom.name", func(o client.Object) []string {
+	if err := k8sManager.GetFieldIndexer().IndexField(context.Background(), &Elasticsearch{}, "spec.statefulset.env.valueFrom.secretKeyRef.name", func(o client.Object) []string {
+		p := o.(*Elasticsearch)
+		envNames := make([]string, 0, len(p.Spec.GlobalNodeGroup.Env))
+
+		for _, env := range p.Spec.GlobalNodeGroup.Env {
+			if env.ValueFrom != nil && env.ValueFrom.SecretKeyRef != nil {
+				envNames = append(envNames, env.ValueFrom.SecretKeyRef.Name)
+			}
+		}
+
+		for _, nodeGroup := range p.Spec.NodeGroups {
+			for _, env := range nodeGroup.Env {
+				if env.ValueFrom != nil && env.ValueFrom.SecretKeyRef != nil {
+					envNames = append(envNames, env.ValueFrom.SecretKeyRef.Name)
+				}
+			}
+		}
+
+		return funk.UniqString(envNames)
+	}); err != nil {
+		panic(err)
+	}
+
+	if err := k8sManager.GetFieldIndexer().IndexField(context.Background(), &Elasticsearch{}, "spec.statefulset.envFrom.configMapRef.name", func(o client.Object) []string {
 		p := o.(*Elasticsearch)
 		envFromNames := make([]string, 0, len(p.Spec.GlobalNodeGroup.EnvFrom))
 
 		for _, envFrom := range p.Spec.GlobalNodeGroup.EnvFrom {
 			if envFrom.ConfigMapRef != nil {
 				envFromNames = append(envFromNames, envFrom.ConfigMapRef.Name)
-			} else if envFrom.SecretRef != nil {
-				envFromNames = append(envFromNames, envFrom.SecretRef.Name)
 			}
 		}
 
@@ -165,7 +201,28 @@ func MustSetUpIndex(k8sManager manager.Manager) {
 			for _, envFrom := range nodeGroup.EnvFrom {
 				if envFrom.ConfigMapRef != nil {
 					envFromNames = append(envFromNames, envFrom.ConfigMapRef.Name)
-				} else if envFrom.SecretRef != nil {
+				}
+			}
+		}
+
+		return funk.UniqString(envFromNames)
+	}); err != nil {
+		panic(err)
+	}
+
+	if err := k8sManager.GetFieldIndexer().IndexField(context.Background(), &Elasticsearch{}, "spec.statefulset.envFrom.secretRef.name", func(o client.Object) []string {
+		p := o.(*Elasticsearch)
+		envFromNames := make([]string, 0, len(p.Spec.GlobalNodeGroup.EnvFrom))
+
+		for _, envFrom := range p.Spec.GlobalNodeGroup.EnvFrom {
+			if envFrom.SecretRef != nil {
+				envFromNames = append(envFromNames, envFrom.SecretRef.Name)
+			}
+		}
+
+		for _, nodeGroup := range p.Spec.NodeGroups {
+			for _, envFrom := range nodeGroup.EnvFrom {
+				if envFrom.SecretRef != nil {
 					envFromNames = append(envFromNames, envFrom.SecretRef.Name)
 				}
 			}
