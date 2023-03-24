@@ -1,0 +1,112 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: test-cb
+  namespace: default
+  labels:
+    cluster: test
+    cerebro.k8s.webcenter.fr: "true"
+  annotations:
+    cerebro.k8s.webcenter.fr: "true"
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      cluster: test
+      cerebro.k8s.webcenter.fr: "true"
+  template:
+    metadata:
+      labels:
+        cluster: test
+        cerebro.k8s.webcenter.fr: "true"
+      annotations:
+        cerebro.k8s.webcenter.fr: "true"
+      name: test-cb
+    spec:
+      containers:
+      - env:
+        - name: POD_NAME
+          valueFrom:
+            fieldRef:
+              apiVersion: v1
+              fieldPath: metadata.name
+        - name: NODE_NAME
+          valueFrom:
+            fieldRef:
+              apiVersion: v1
+              fieldPath: spec.nodeName
+        - name: POD_IP
+          valueFrom:
+            fieldRef:
+              apiVersion: v1
+              fieldPath: status.podIP
+        - name: NAMESPACE
+          valueFrom:
+            fieldRef:
+              apiVersion: v1
+              fieldPath: metadata.namespace
+        - name: APPLICATION_SECRET
+          valueFrom:
+            secretKeyRef:
+              key: application
+              name: test-application-cb
+        image: lmenezes/cerebro:latest
+        args:
+          - '-Dconfig.file=/etc/cerebro/application.conf'
+        livenessProbe:
+          failureThreshold: 3
+          periodSeconds: 30
+          successThreshold: 1
+          tcpSocket:
+            port: 9000
+          timeoutSeconds: 5
+        name: cerebro
+        ports:
+        - containerPort: 9000
+          name: http
+          protocol: TCP
+        readinessProbe:
+          failureThreshold: 3
+          periodSeconds: 10
+          successThreshold: 1
+          httpGet:
+            path: /
+            port: 9000
+            scheme: HTTP
+          timeoutSeconds: 5
+        securityContext:
+          capabilities:
+            drop:
+            - ALL
+          runAsNonRoot: true
+          runAsUser: 1000
+        startupProbe:
+          failureThreshold: 30
+          initialDelaySeconds: 10
+          periodSeconds: 10
+          successThreshold: 1
+          tcpSocket:
+            port: 9000
+          timeoutSeconds: 5
+        volumeMounts:
+        - mountPath: /etc/cerebro
+          name: config
+        - mountPath: /var/db/cerebro
+          name: db
+        - mountPath: /opt/cerebro/logs
+          name: logs
+        - mountPath: /tmp
+          name: tmp
+      securityContext:
+        fsGroup: 1000
+      terminationGracePeriodSeconds: 30
+      volumes:
+      - configMap:
+          name: test-config-cb
+        name: config
+      - name: db
+        emptyDir: {}
+      - name: logs
+        emptyDir: {}
+      - name: tmp
+        emptyDir: {}

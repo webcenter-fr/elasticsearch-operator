@@ -1,0 +1,12 @@
+apiVersion: cerebro.k8s.webcenter.fr/v1alpha1
+kind: Cerebro
+metadata:
+  labels:
+    app.kubernetes.io/name: cerebro
+    app.kubernetes.io/instance: cerebro-sample
+    app.kubernetes.io/part-of: elasticsearch-operator
+    app.kubernetes.io/managed-by: kustomize
+    app.kubernetes.io/created-by: elasticsearch-operator
+  name: cerebro-sample
+spec:
+  # TODO(user): Add fields here

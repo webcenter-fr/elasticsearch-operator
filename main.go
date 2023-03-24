@@ -35,10 +35,12 @@ import (
 
 	beatcrd "github.com/webcenter-fr/elasticsearch-operator/apis/beat/v1alpha1"
 	beatv1alpha1 "github.com/webcenter-fr/elasticsearch-operator/apis/beat/v1alpha1"
+	cerebrocrd "github.com/webcenter-fr/elasticsearch-operator/apis/cerebro/v1alpha1"
 	elasticsearchcrd "github.com/webcenter-fr/elasticsearch-operator/apis/elasticsearch/v1alpha1"
 	elasticsearchapicrd "github.com/webcenter-fr/elasticsearch-operator/apis/elasticsearchapi/v1alpha1"
 	kibanacrd "github.com/webcenter-fr/elasticsearch-operator/apis/kibana/v1alpha1"
 	logstashcrd "github.com/webcenter-fr/elasticsearch-operator/apis/logstash/v1alpha1"
+	cerebrocontrollers "github.com/webcenter-fr/elasticsearch-operator/controllers/cerebro"
 	elasticsearchcontrollers "github.com/webcenter-fr/elasticsearch-operator/controllers/elasticsearch"
 	elasticsearchapicontrollers "github.com/webcenter-fr/elasticsearch-operator/controllers/elasticsearchapi"
 	filebeatcontrollers "github.com/webcenter-fr/elasticsearch-operator/controllers/filebeat"
@@ -66,6 +68,7 @@ func init() {
 	utilruntime.Must(logstashcrd.AddToScheme(scheme))
 	utilruntime.Must(beatcrd.AddToScheme(scheme))
 	utilruntime.Must(beatv1alpha1.AddToScheme(scheme))
+	utilruntime.Must(cerebrocrd.AddToScheme(scheme))
 	//+kubebuilder:scaffold:scheme
 }
 
@@ -148,6 +151,8 @@ func main() {
 	logstashcrd.MustSetUpIndex(mgr)
 	beatcrd.MustSetUpIndexForFilebeat(mgr)
 	beatcrd.MustSetUpIndexForMetricbeat(mgr)
+	cerebrocrd.MustSetUpIndexCerebro(mgr)
+	cerebrocrd.MustSetUpIndexHost(mgr)
 	elasticsearchapicontrollers.MustSetUpIndex(mgr)
 
 	// Init controllers
@@ -203,6 +208,17 @@ func main() {
 	metricbeatController.SetReconciler(metricbeatController)
 	if err = metricbeatController.SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "Metricbeat")
+		os.Exit(1)
+	}
+
+	cerebroController := cerebrocontrollers.NewCerebroReconciler(mgr.GetClient(), mgr.GetScheme())
+	cerebroController.SetLogger(log.WithFields(logrus.Fields{
+		"type": "CerebroController",
+	}))
+	cerebroController.SetRecorder(mgr.GetEventRecorderFor("cerebro-controller"))
+	cerebroController.SetReconciler(cerebroController)
+	if err = cerebroController.SetupWithManager(mgr); err != nil {
+		setupLog.Error(err, "unable to create controller", "controller", "Cerebro")
 		os.Exit(1)
 	}
 

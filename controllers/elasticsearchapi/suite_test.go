@@ -10,6 +10,12 @@ import (
 	"github.com/golang/mock/gomock"
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/suite"
+	beatcrd "github.com/webcenter-fr/elasticsearch-operator/apis/beat/v1alpha1"
+	cerebrocrd "github.com/webcenter-fr/elasticsearch-operator/apis/cerebro/v1alpha1"
+	elasticsearchcrd "github.com/webcenter-fr/elasticsearch-operator/apis/elasticsearch/v1alpha1"
+	elasticsearchapicrd "github.com/webcenter-fr/elasticsearch-operator/apis/elasticsearchapi/v1alpha1"
+	kibanacrd "github.com/webcenter-fr/elasticsearch-operator/apis/kibana/v1alpha1"
+	logstashcrd "github.com/webcenter-fr/elasticsearch-operator/apis/logstash/v1alpha1"
 	"k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/rest"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -17,10 +23,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/envtest"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
-
-	elasticsearchcrd "github.com/webcenter-fr/elasticsearch-operator/apis/elasticsearch/v1alpha1"
-	elasticsearchapicrd "github.com/webcenter-fr/elasticsearch-operator/apis/elasticsearchapi/v1alpha1"
-	kibanacrd "github.com/webcenter-fr/elasticsearch-operator/apis/kibana/v1alpha1"
 	//+kubebuilder:scaffold:imports
 	//+kubebuilder:scaffold:imports
 )
@@ -82,6 +84,18 @@ func (t *ElasticsearchapiControllerTestSuite) SetupSuite() {
 	if err != nil {
 		panic(err)
 	}
+	err = logstashcrd.AddToScheme(scheme.Scheme)
+	if err != nil {
+		panic(err)
+	}
+	err = beatcrd.AddToScheme(scheme.Scheme)
+	if err != nil {
+		panic(err)
+	}
+	err = cerebrocrd.AddToScheme(scheme.Scheme)
+	if err != nil {
+		panic(err)
+	}
 
 	// Init k8smanager and k8sclient
 	k8sManager, err := ctrl.NewManager(cfg, ctrl.Options{
@@ -95,6 +109,13 @@ func (t *ElasticsearchapiControllerTestSuite) SetupSuite() {
 
 	// Add indexers
 	MustSetUpIndex(k8sManager)
+	elasticsearchcrd.MustSetUpIndex(k8sManager)
+	kibanacrd.MustSetUpIndex(k8sManager)
+	logstashcrd.MustSetUpIndex(k8sManager)
+	beatcrd.MustSetUpIndexForFilebeat(k8sManager)
+	beatcrd.MustSetUpIndexForMetricbeat(k8sManager)
+	cerebrocrd.MustSetUpIndexCerebro(k8sManager)
+	cerebrocrd.MustSetUpIndexHost(k8sManager)
 
 	// Init controllers
 	userReconciler := NewUserReconciler(k8sClient, scheme.Scheme)

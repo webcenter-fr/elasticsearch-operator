@@ -31,6 +31,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 	beatcrd "github.com/webcenter-fr/elasticsearch-operator/apis/beat/v1alpha1"
+	cerebrocrd "github.com/webcenter-fr/elasticsearch-operator/apis/cerebro/v1alpha1"
 	elasticsearchcrd "github.com/webcenter-fr/elasticsearch-operator/apis/elasticsearch/v1alpha1"
 	elasticsearchapicrd "github.com/webcenter-fr/elasticsearch-operator/apis/elasticsearchapi/v1alpha1"
 	"github.com/webcenter-fr/elasticsearch-operator/controllers/common"
@@ -168,6 +169,7 @@ func (h *ElasticsearchReconciler) SetupWithManager(mgr ctrl.Manager) error {
 		Watches(&source.Kind{Type: &corev1.Secret{}}, handler.EnqueueRequestsFromMapFunc(watchSecret(h.Client))).
 		Watches(&source.Kind{Type: &corev1.ConfigMap{}}, handler.EnqueueRequestsFromMapFunc(watchConfigMap(h.Client))).
 		Watches(&source.Kind{Type: &elasticsearchcrd.Elasticsearch{}}, handler.EnqueueRequestsFromMapFunc(watchElasticsearchMonitoring(h.Client))).
+		Watches(&source.Kind{Type: &cerebrocrd.Host{}}, handler.EnqueueRequestsFromMapFunc(watchHost(h.Client))).
 		Complete(h)
 }
 
@@ -338,6 +340,32 @@ func watchSecret(c client.Client) handler.MapFunc {
 		}
 		for _, k := range listElasticsearch.Items {
 			reconcileRequests = append(reconcileRequests, reconcile.Request{NamespacedName: types.NamespacedName{Name: k.Name, Namespace: k.Namespace}})
+		}
+
+		return reconcileRequests
+	}
+}
+
+// watchHost permit to update networkpolicy to allow cerebro access on Elasticsearch
+func watchHost(c client.Client) handler.MapFunc {
+	return func(a client.Object) []reconcile.Request {
+		var (
+			listHosts *cerebrocrd.HostList
+			fs        fields.Selector
+		)
+
+		o := a.(*cerebrocrd.Host)
+
+		reconcileRequests := make([]reconcile.Request, 0)
+
+		// ElasticsearchRef
+		listHosts = &cerebrocrd.HostList{}
+		fs = fields.ParseSelectorOrDie(fmt.Sprintf("spec.elasticsearchRef=%s", o.Spec.ElasticsearchRef))
+		if err := c.List(context.Background(), listHosts, &client.ListOptions{Namespace: a.GetNamespace(), FieldSelector: fs}); err != nil {
+			panic(err)
+		}
+		for _, k := range listHosts.Items {
+			reconcileRequests = append(reconcileRequests, reconcile.Request{NamespacedName: types.NamespacedName{Name: k.Spec.ElasticsearchRef, Namespace: k.Namespace}})
 		}
 
 		return reconcileRequests

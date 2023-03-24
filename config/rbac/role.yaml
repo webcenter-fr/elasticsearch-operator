@@ -138,6 +138,32 @@ rules:
   - patch
   - update
 - apiGroups:
+  - cerebro.k8s.webcenter.fr
+  resources:
+  - cerebroes
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - cerebro.k8s.webcenter.fr
+  resources:
+  - cerebroes/finalizers
+  verbs:
+  - update
+- apiGroups:
+  - cerebro.k8s.webcenter.fr
+  resources:
+  - cerebroes/status
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
   - elasticsearch.k8s.webcenter.fr
   resources:
   - elasticsearches
