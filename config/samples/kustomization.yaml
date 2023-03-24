@@ -15,4 +15,6 @@ resources:
 - logstash_v1alpha1_logstash.yaml
 - beat_v1alpha1_filebeat.yaml
 - beat_v1alpha1_metricbeat.yaml
+- cerebro_v1alpha1_cerebro.yaml
+- cerebro_v1alpha1_host.yaml
 #+kubebuilder:scaffold:manifestskustomizesamples

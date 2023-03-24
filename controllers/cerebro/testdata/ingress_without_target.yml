@@ -1,0 +1,22 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  labels:
+    cluster: test
+    cerebro.k8s.webcenter.fr: "true"
+  annotations:
+    cerebro.k8s.webcenter.fr: "true"
+  name: test-cb
+  namespace: default
+spec:
+  rules:
+  - host: my-test.cluster.local
+    http:
+      paths:
+      - backend:
+          service:
+            name: test-cb
+            port:
+              number: 9000
+        path: /
+        pathType: Prefix

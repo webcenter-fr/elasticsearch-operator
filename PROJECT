@@ -143,4 +143,21 @@ resources:
   kind: Metricbeat
   path: github.com/webcenter-fr/elasticsearch-operator/apis/beat/v1alpha1
   version: v1alpha1
+- api:
+    crdVersion: v1
+    namespaced: true
+  controller: true
+  domain: k8s.webcenter.fr
+  group: cerebro
+  kind: Cerebro
+  path: github.com/webcenter-fr/elasticsearch-operator/apis/cerebro/v1alpha1
+  version: v1alpha1
+- api:
+    crdVersion: v1
+    namespaced: true
+  domain: k8s.webcenter.fr
+  group: cerebro
+  kind: Host
+  path: github.com/webcenter-fr/elasticsearch-operator/apis/cerebro/v1alpha1
+  version: v1alpha1
 version: "3"

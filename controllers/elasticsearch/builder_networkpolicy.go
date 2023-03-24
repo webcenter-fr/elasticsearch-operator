@@ -4,6 +4,7 @@ import (
 	"os"
 
 	beatcrd "github.com/webcenter-fr/elasticsearch-operator/apis/beat/v1alpha1"
+	cerebrocrd "github.com/webcenter-fr/elasticsearch-operator/apis/cerebro/v1alpha1"
 	elasticsearchcrd "github.com/webcenter-fr/elasticsearch-operator/apis/elasticsearch/v1alpha1"
 	kibanacrd "github.com/webcenter-fr/elasticsearch-operator/apis/kibana/v1alpha1"
 	logstashcrd "github.com/webcenter-fr/elasticsearch-operator/apis/logstash/v1alpha1"
@@ -44,6 +45,8 @@ func BuildNetworkPolicy(es *elasticsearchcrd.Elasticsearch, listCaller []client.
 			npp.PodSelector.MatchLabels[beatcrd.MetricbeatAnnotationKey] = "true"
 		case "Kibana":
 			npp.PodSelector.MatchLabels[kibanacrd.KibanaAnnotationKey] = "true"
+		case "Cerebro":
+			npp.PodSelector.MatchLabels[cerebrocrd.CerebroAnnotationKey] = "true"
 		}
 		npps = append(npps, npp)
 	}

@@ -8,6 +8,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 	beatcrd "github.com/webcenter-fr/elasticsearch-operator/apis/beat/v1alpha1"
+	cerebrocrd "github.com/webcenter-fr/elasticsearch-operator/apis/cerebro/v1alpha1"
 	elasticsearchcrd "github.com/webcenter-fr/elasticsearch-operator/apis/elasticsearch/v1alpha1"
 	kibanacrd "github.com/webcenter-fr/elasticsearch-operator/apis/kibana/v1alpha1"
 	logstashcrd "github.com/webcenter-fr/elasticsearch-operator/apis/logstash/v1alpha1"
@@ -23,6 +24,7 @@ import (
 	"k8s.io/client-go/tools/record"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 )
 
 const (
@@ -74,7 +76,9 @@ func (r *NetworkPolicyReconciler) Read(ctx context.Context, resource client.Obje
 	logstashList := &logstashcrd.LogstashList{}
 	filebeatList := &beatcrd.FilebeatList{}
 	metricbeatList := &beatcrd.MetricbeatList{}
+	hostList := &cerebrocrd.HostList{}
 	oList := make([]client.Object, 0)
+	var cb *cerebrocrd.Cerebro
 
 	// Read current ingress
 	if err = r.Client.Get(ctx, types.NamespacedName{Namespace: o.Namespace, Name: GetNetworkPolicyName(o)}, np); err != nil {
@@ -127,6 +131,40 @@ func (r *NetworkPolicyReconciler) Read(ctx context.Context, resource client.Obje
 	for _, mb := range metricbeatList.Items {
 		if mb.Namespace != o.Namespace {
 			oList = append(oList, &mb)
+		}
+	}
+
+	// Read Cerebro referer
+	// Add and clean finalizer to track change on Host because of there are not controller on it
+	fs = fields.ParseSelectorOrDie(fmt.Sprintf("spec.elasticsearchRef=%s", o.GetName()))
+	if err = r.Client.List(ctx, hostList, &client.ListOptions{Namespace: o.GetNamespace(), FieldSelector: fs}); err != nil {
+		return res, errors.Wrap(err, "error when read Cerebro hosts")
+	}
+	for _, host := range hostList.Items {
+		// Handle finalizer
+		if !host.DeletionTimestamp.IsZero() {
+			controllerutil.RemoveFinalizer(&host, ElasticsearchFinalizer)
+			if err = r.Client.Update(ctx, &host); err != nil {
+				return res, errors.Wrapf(err, "Error when add finalizer on Host %s", host.Name)
+			}
+			continue
+		}
+		if !controllerutil.ContainsFinalizer(&host, ElasticsearchFinalizer) {
+			controllerutil.AddFinalizer(&host, ElasticsearchFinalizer)
+			if err = r.Client.Update(ctx, &host); err != nil {
+				return res, errors.Wrapf(err, "Error when add finalizer on Host %s", host.Name)
+			}
+		}
+
+		cb = &cerebrocrd.Cerebro{}
+		if err = r.Client.Get(ctx, types.NamespacedName{Namespace: host.Spec.CerebroRef.Namespace, Name: host.Spec.CerebroRef.Name}, cb); err != nil {
+			if !k8serrors.IsNotFound(err) {
+				return res, errors.Wrap(err, "Error when read cerebro")
+			}
+		} else {
+			if cb.Namespace != o.Namespace {
+				oList = append(oList, cb)
+			}
 		}
 	}
 

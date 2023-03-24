@@ -9,6 +9,7 @@ import (
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/suite"
 	beatcrd "github.com/webcenter-fr/elasticsearch-operator/apis/beat/v1alpha1"
+	cerebrocrd "github.com/webcenter-fr/elasticsearch-operator/apis/cerebro/v1alpha1"
 	elasticsearchcrd "github.com/webcenter-fr/elasticsearch-operator/apis/elasticsearch/v1alpha1"
 	elasticsearchapicrd "github.com/webcenter-fr/elasticsearch-operator/apis/elasticsearchapi/v1alpha1"
 	kibanacrd "github.com/webcenter-fr/elasticsearch-operator/apis/kibana/v1alpha1"
@@ -85,6 +86,10 @@ func (t *KibanaControllerTestSuite) SetupSuite() {
 	if err != nil {
 		panic(err)
 	}
+	err = cerebrocrd.AddToScheme(scheme.Scheme)
+	if err != nil {
+		panic(err)
+	}
 	err = monitoringv1.AddToScheme(scheme.Scheme)
 	if err != nil {
 		panic(err)
@@ -106,6 +111,8 @@ func (t *KibanaControllerTestSuite) SetupSuite() {
 	logstashcrd.MustSetUpIndex(k8sManager)
 	beatcrd.MustSetUpIndexForFilebeat(k8sManager)
 	beatcrd.MustSetUpIndexForMetricbeat(k8sManager)
+	cerebrocrd.MustSetUpIndexCerebro(k8sManager)
+	cerebrocrd.MustSetUpIndexHost(k8sManager)
 
 	// Init controllers
 

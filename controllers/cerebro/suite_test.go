@@ -1,4 +1,4 @@
-package elasticsearch
+package cerebro
 
 import (
 	"path/filepath"
@@ -14,6 +14,7 @@ import (
 	elasticsearchapicrd "github.com/webcenter-fr/elasticsearch-operator/apis/elasticsearchapi/v1alpha1"
 	kibanacrd "github.com/webcenter-fr/elasticsearch-operator/apis/kibana/v1alpha1"
 	logstashcrd "github.com/webcenter-fr/elasticsearch-operator/apis/logstash/v1alpha1"
+	elasticsearchcontrollers "github.com/webcenter-fr/elasticsearch-operator/controllers/elasticsearch"
 	"k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/rest"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -26,17 +27,17 @@ import (
 
 var testEnv *envtest.Environment
 
-type ElasticsearchControllerTestSuite struct {
+type CerebroControllerTestSuite struct {
 	suite.Suite
 	k8sClient client.Client
 	cfg       *rest.Config
 }
 
-func TestElasticsearchControllerSuite(t *testing.T) {
-	suite.Run(t, new(ElasticsearchControllerTestSuite))
+func TestControllerSuite(t *testing.T) {
+	suite.Run(t, new(CerebroControllerTestSuite))
 }
 
-func (t *ElasticsearchControllerTestSuite) SetupSuite() {
+func (t *CerebroControllerTestSuite) SetupSuite() {
 
 	logf.SetLogger(zap.New(zap.UseDevMode(true)))
 	logrus.SetLevel(logrus.TraceLevel)
@@ -114,7 +115,7 @@ func (t *ElasticsearchControllerTestSuite) SetupSuite() {
 	cerebrocrd.MustSetUpIndexHost(k8sManager)
 
 	// Init controllers
-	elasticsearchReconciler := NewElasticsearchReconciler(k8sClient, scheme.Scheme)
+	elasticsearchReconciler := elasticsearchcontrollers.NewElasticsearchReconciler(k8sClient, scheme.Scheme)
 	elasticsearchReconciler.SetLogger(logrus.WithFields(logrus.Fields{
 		"type": "elasticsearchController",
 	}))
@@ -124,15 +125,26 @@ func (t *ElasticsearchControllerTestSuite) SetupSuite() {
 		panic(err)
 	}
 
+	cerebroReconciler := NewCerebroReconciler(k8sClient, scheme.Scheme)
+	cerebroReconciler.SetLogger(logrus.WithFields(logrus.Fields{
+		"type": "cerebroController",
+	}))
+	cerebroReconciler.SetRecorder(k8sManager.GetEventRecorderFor("cerebro-controller"))
+	cerebroReconciler.SetReconciler(cerebroReconciler)
+	if err = cerebroReconciler.SetupWithManager(k8sManager); err != nil {
+		panic(err)
+	}
+
 	go func() {
 		err = k8sManager.Start(ctrl.SetupSignalHandler())
 		if err != nil {
 			panic(err)
 		}
 	}()
+
 }
 
-func (t *ElasticsearchControllerTestSuite) TearDownSuite() {
+func (t *CerebroControllerTestSuite) TearDownSuite() {
 
 	// Teardown the test environment once controller is fnished.
 	// Otherwise from Kubernetes 1.21+, teardon timeouts waiting on
@@ -141,11 +153,12 @@ func (t *ElasticsearchControllerTestSuite) TearDownSuite() {
 	if err != nil {
 		panic(err)
 	}
-}
-
-func (t *ElasticsearchControllerTestSuite) BeforeTest(suiteName, testName string) {
 
 }
 
-func (t *ElasticsearchControllerTestSuite) AfterTest(suiteName, testName string) {
+func (t *CerebroControllerTestSuite) BeforeTest(suiteName, testName string) {
+
+}
+
+func (t *CerebroControllerTestSuite) AfterTest(suiteName, testName string) {
 }
