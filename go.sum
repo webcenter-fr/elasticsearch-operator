@@ -82,11 +82,10 @@ github.com/disaster37/kb-handler/v8 v8.0.1/go.mod h1:ETu0Mfz0+FYj81pAJTP/Zpgs28E
 github.com/disaster37/operator-sdk-extra v0.1.2-0.20230228101929-481061b1d0e7 h1:j3Z7QOv5JCJZpVedgvm6lijc6kMoQOKLLTkXGxg2Sww=
 github.com/disaster37/operator-sdk-extra v0.1.2-0.20230228101929-481061b1d0e7/go.mod h1:c5LT8vnQ3VEkQzqDdkHMwMuS+QD+ym4c6+hcx9ng7f8=
 github.com/docopt/docopt-go v0.0.0-20180111231733-ee0de3bc6815/go.mod h1:WwZ+bS3ebgob9U8Nd0kOddGdZWjyMGR8Wziv+TBNwSE=
-github.com/elastic/elastic-transport-go/v8 v8.0.0-20211216131617-bbee439d559c/go.mod h1:87Tcz8IVNe6rVSLdBux1o/PEItLtyabHU3naC7IoqKI=
-github.com/elastic/elastic-transport-go/v8 v8.1.0 h1:NeqEz1ty4RQz+TVbUrpSU7pZ48XkzGWQj02k5koahIE=
-github.com/elastic/elastic-transport-go/v8 v8.1.0/go.mod h1:87Tcz8IVNe6rVSLdBux1o/PEItLtyabHU3naC7IoqKI=
-github.com/elastic/go-elasticsearch/v8 v8.6.0 h1:xMaSe8jIh7NHzmNo9YBkewmaD2Pr+tX+zLkXxhieny4=
-github.com/elastic/go-elasticsearch/v8 v8.6.0/go.mod h1:Usvydt+x0dv9a1TzEUaovqbJor8rmOHy5dSmPeMAE2k=
+github.com/elastic/elastic-transport-go/v8 v8.2.0 h1:hkK5IIs/15mpSXzd5THWVlWTKJyMw6cbCWM3T/B2S5E=
+github.com/elastic/elastic-transport-go/v8 v8.2.0/go.mod h1:87Tcz8IVNe6rVSLdBux1o/PEItLtyabHU3naC7IoqKI=
+github.com/elastic/go-elasticsearch/v8 v8.7.0 h1:ZvbT1YHppBC0QxGnMmaDUxoDa26clwhRaB3Gp5E3UcY=
+github.com/elastic/go-elasticsearch/v8 v8.7.0/go.mod h1:lVb8SvJV8McVkdswpL8YR5QKIkhlWaoSq60YpHilOLI=
 github.com/elastic/go-ucfg v0.8.6 h1:stUeyh2goTgGX+/wb9gzKvTv0YB0231LTpKUgCKj4U0=
 github.com/elastic/go-ucfg v0.8.6/go.mod h1:4E8mPOLSUV9hQ7sgLEJ4bvt0KhMuDJa8joDT2QGAEKA=
 github.com/emicklei/go-restful/v3 v3.9.0 h1:XwGDlfxEnQZzuopoqxwSEllNcCOM9DhhFyhFIIGKwxE=
