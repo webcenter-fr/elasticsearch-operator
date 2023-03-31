@@ -1,0 +1,27 @@
+# permissions for end users to view logstashpipelines.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  labels:
+    app.kubernetes.io/name: clusterrole
+    app.kubernetes.io/instance: logstashpipeline-viewer-role
+    app.kubernetes.io/component: rbac
+    app.kubernetes.io/created-by: elasticsearch-operator
+    app.kubernetes.io/part-of: elasticsearch-operator
+    app.kubernetes.io/managed-by: kustomize
+  name: logstashpipeline-viewer-role
+rules:
+- apiGroups:
+  - kibanaapi.k8s.webcenter.fr
+  resources:
+  - logstashpipelines
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - kibanaapi.k8s.webcenter.fr
+  resources:
+  - logstashpipelines/status
+  verbs:
+  - get

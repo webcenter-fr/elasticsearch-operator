@@ -29,6 +29,7 @@ import (
 	elasticsearchcrd "github.com/webcenter-fr/elasticsearch-operator/apis/elasticsearch/v1alpha1"
 	elasticsearchapicrd "github.com/webcenter-fr/elasticsearch-operator/apis/elasticsearchapi/v1alpha1"
 	kibanacrd "github.com/webcenter-fr/elasticsearch-operator/apis/kibana/v1alpha1"
+	kibanaapicrd "github.com/webcenter-fr/elasticsearch-operator/apis/kibanaapi/v1alpha1"
 	logstashcrd "github.com/webcenter-fr/elasticsearch-operator/apis/logstash/v1alpha1"
 	elasticsearchcontrollers "github.com/webcenter-fr/elasticsearch-operator/controllers/elasticsearch"
 	"k8s.io/client-go/kubernetes/scheme"
@@ -110,6 +111,10 @@ func (t *FilebeatControllerTestSuite) SetupSuite() {
 	if err != nil {
 		panic(err)
 	}
+	err = kibanaapicrd.AddToScheme(scheme.Scheme)
+	if err != nil {
+		panic(err)
+	}
 
 	// Init k8smanager and k8sclient
 	k8sManager, err := ctrl.NewManager(cfg, ctrl.Options{
@@ -129,6 +134,7 @@ func (t *FilebeatControllerTestSuite) SetupSuite() {
 	beatcrd.MustSetUpIndexForMetricbeat(k8sManager)
 	cerebrocrd.MustSetUpIndexCerebro(k8sManager)
 	cerebrocrd.MustSetUpIndexHost(k8sManager)
+	kibanaapicrd.MustSetUpIndex(k8sManager)
 
 	// Init controllers
 	elasticsearchReconciler := elasticsearchcontrollers.NewElasticsearchReconciler(k8sClient, scheme.Scheme)

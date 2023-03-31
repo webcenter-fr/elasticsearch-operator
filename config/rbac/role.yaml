@@ -476,6 +476,84 @@ rules:
   - patch
   - update
 - apiGroups:
+  - kibanaapi.k8s.webcenter.fr
+  resources:
+  - logstashpipelines
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - kibanaapi.k8s.webcenter.fr
+  resources:
+  - logstashpipelines/finalizers
+  verbs:
+  - update
+- apiGroups:
+  - kibanaapi.k8s.webcenter.fr
+  resources:
+  - logstashpipelines/status
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
+  - kibanaapi.k8s.webcenter.fr
+  resources:
+  - roles
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - kibanaapi.k8s.webcenter.fr
+  resources:
+  - roles/finalizers
+  verbs:
+  - update
+- apiGroups:
+  - kibanaapi.k8s.webcenter.fr
+  resources:
+  - roles/status
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
+  - kibanaapi.k8s.webcenter.fr
+  resources:
+  - userspaces
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - kibanaapi.k8s.webcenter.fr
+  resources:
+  - userspaces/finalizers
+  verbs:
+  - update
+- apiGroups:
+  - kibanaapi.k8s.webcenter.fr
+  resources:
+  - userspaces/status
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
   - logstash.k8s.webcenter.fr
   resources:
   - logstashes

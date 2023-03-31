@@ -19,6 +19,9 @@ resources:
 - bases/beat.k8s.webcenter.fr_metricbeats.yaml
 - bases/cerebro.k8s.webcenter.fr_cerebroes.yaml
 - bases/cerebro.k8s.webcenter.fr_hosts.yaml
+- bases/kibanaapi.k8s.webcenter.fr_userspaces.yaml
+- bases/kibanaapi.k8s.webcenter.fr_roles.yaml
+- bases/kibanaapi.k8s.webcenter.fr_logstashpipelines.yaml
 #+kubebuilder:scaffold:crdkustomizeresource
 
 patchesStrategicMerge:
@@ -41,6 +44,8 @@ patchesStrategicMerge:
 #- patches/webhook_in_metricbeats.yaml
 #- patches/webhook_in_cerebroes.yaml
 #- patches/webhook_in_hosts.yaml
+#- patches/webhook_in_userspaces.yaml
+#- patches/webhook_in_logstashpipelines.yaml
 #+kubebuilder:scaffold:crdkustomizewebhookpatch
 
 # [CERTMANAGER] To enable cert-manager, uncomment all the sections with [CERTMANAGER] prefix.
@@ -62,6 +67,8 @@ patchesStrategicMerge:
 #- patches/cainjection_in_metricbeats.yaml
 #- patches/cainjection_in_cerebroes.yaml
 #- patches/cainjection_in_hosts.yaml
+#- patches/cainjection_in_userspaces.yaml
+#- patches/cainjection_in_logstashpipelines.yaml
 #+kubebuilder:scaffold:crdkustomizecainjectionpatch
 
 # the following config is for teaching kustomize how to do kustomization for CRDs.

@@ -1,0 +1,27 @@
+# permissions for end users to view roles.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  labels:
+    app.kubernetes.io/name: clusterrole
+    app.kubernetes.io/instance: role-viewer-role
+    app.kubernetes.io/component: rbac
+    app.kubernetes.io/created-by: elasticsearch-operator
+    app.kubernetes.io/part-of: elasticsearch-operator
+    app.kubernetes.io/managed-by: kustomize
+  name: role-viewer-role
+rules:
+- apiGroups:
+  - kibanaapi.k8s.webcenter.fr
+  resources:
+  - roles
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - kibanaapi.k8s.webcenter.fr
+  resources:
+  - roles/status
+  verbs:
+  - get
