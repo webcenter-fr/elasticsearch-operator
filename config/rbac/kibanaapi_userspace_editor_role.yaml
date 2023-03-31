@@ -1,0 +1,31 @@
+# permissions for end users to edit userspaces.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  labels:
+    app.kubernetes.io/name: clusterrole
+    app.kubernetes.io/instance: userspace-editor-role
+    app.kubernetes.io/component: rbac
+    app.kubernetes.io/created-by: elasticsearch-operator
+    app.kubernetes.io/part-of: elasticsearch-operator
+    app.kubernetes.io/managed-by: kustomize
+  name: userspace-editor-role
+rules:
+- apiGroups:
+  - kibanaapi.k8s.webcenter.fr
+  resources:
+  - userspaces
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - kibanaapi.k8s.webcenter.fr
+  resources:
+  - userspaces/status
+  verbs:
+  - get

@@ -17,4 +17,7 @@ resources:
 - beat_v1alpha1_metricbeat.yaml
 - cerebro_v1alpha1_cerebro.yaml
 - cerebro_v1alpha1_host.yaml
+- kibanaapi_v1alpha1_userspace.yaml
+- kibanaapi_v1alpha1_role.yaml
+- kibanaapi_v1alpha1_logstashpipeline.yaml
 #+kubebuilder:scaffold:manifestskustomizesamples

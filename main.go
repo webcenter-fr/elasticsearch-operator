@@ -39,12 +39,14 @@ import (
 	elasticsearchcrd "github.com/webcenter-fr/elasticsearch-operator/apis/elasticsearch/v1alpha1"
 	elasticsearchapicrd "github.com/webcenter-fr/elasticsearch-operator/apis/elasticsearchapi/v1alpha1"
 	kibanacrd "github.com/webcenter-fr/elasticsearch-operator/apis/kibana/v1alpha1"
+	kibanaapiv1alpha1 "github.com/webcenter-fr/elasticsearch-operator/apis/kibanaapi/v1alpha1"
 	logstashcrd "github.com/webcenter-fr/elasticsearch-operator/apis/logstash/v1alpha1"
 	cerebrocontrollers "github.com/webcenter-fr/elasticsearch-operator/controllers/cerebro"
 	elasticsearchcontrollers "github.com/webcenter-fr/elasticsearch-operator/controllers/elasticsearch"
 	elasticsearchapicontrollers "github.com/webcenter-fr/elasticsearch-operator/controllers/elasticsearchapi"
 	filebeatcontrollers "github.com/webcenter-fr/elasticsearch-operator/controllers/filebeat"
 	kibanacontrollers "github.com/webcenter-fr/elasticsearch-operator/controllers/kibana"
+	kibanaapicontrollers "github.com/webcenter-fr/elasticsearch-operator/controllers/kibanaapi"
 	logstashcontrollers "github.com/webcenter-fr/elasticsearch-operator/controllers/logstash"
 	metricbeatcontrollers "github.com/webcenter-fr/elasticsearch-operator/controllers/metricbeat"
 	"github.com/webcenter-fr/elasticsearch-operator/pkg/helper"
@@ -69,6 +71,7 @@ func init() {
 	utilruntime.Must(beatcrd.AddToScheme(scheme))
 	utilruntime.Must(beatv1alpha1.AddToScheme(scheme))
 	utilruntime.Must(cerebrocrd.AddToScheme(scheme))
+	utilruntime.Must(kibanaapiv1alpha1.AddToScheme(scheme))
 	//+kubebuilder:scaffold:scheme
 }
 
@@ -153,7 +156,7 @@ func main() {
 	beatcrd.MustSetUpIndexForMetricbeat(mgr)
 	cerebrocrd.MustSetUpIndexCerebro(mgr)
 	cerebrocrd.MustSetUpIndexHost(mgr)
-	elasticsearchapicontrollers.MustSetUpIndex(mgr)
+	elasticsearchapicrd.MustSetUpIndex(mgr)
 
 	// Init controllers
 	elasticsearchController := elasticsearchcontrollers.NewElasticsearchReconciler(mgr.GetClient(), mgr.GetScheme())
@@ -329,6 +332,27 @@ func main() {
 	elasticsearchWatchController.SetReconciler(elasticsearchWatchController)
 	if err = elasticsearchWatchController.SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "ElasticsearchWatch")
+		os.Exit(1)
+	}
+	if err = (&kibanaapicontrollers.UserSpaceReconciler{
+		Client: mgr.GetClient(),
+		Scheme: mgr.GetScheme(),
+	}).SetupWithManager(mgr); err != nil {
+		setupLog.Error(err, "unable to create controller", "controller", "UserSpace")
+		os.Exit(1)
+	}
+	if err = (&kibanaapicontrollers.RoleReconciler{
+		Client: mgr.GetClient(),
+		Scheme: mgr.GetScheme(),
+	}).SetupWithManager(mgr); err != nil {
+		setupLog.Error(err, "unable to create controller", "controller", "Role")
+		os.Exit(1)
+	}
+	if err = (&kibanaapicontrollers.LogstashPipelineReconciler{
+		Client: mgr.GetClient(),
+		Scheme: mgr.GetScheme(),
+	}).SetupWithManager(mgr); err != nil {
+		setupLog.Error(err, "unable to create controller", "controller", "LogstashPipeline")
 		os.Exit(1)
 	}
 	//+kubebuilder:scaffold:builder
