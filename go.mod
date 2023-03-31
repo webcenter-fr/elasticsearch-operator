@@ -12,7 +12,7 @@ require (
 	github.com/disaster37/k8sbuilder v1.0.1
 	github.com/disaster37/kb-handler/v8 v8.0.1
 	github.com/disaster37/operator-sdk-extra v0.1.2-0.20230228101929-481061b1d0e7
-	github.com/elastic/elastic-transport-go/v8 v8.1.0
+	github.com/elastic/elastic-transport-go/v8 v8.2.0
 	github.com/elastic/go-elasticsearch/v8 v8.6.0
 	github.com/elastic/go-ucfg v0.8.6
 	github.com/go-logr/logr v1.2.4
