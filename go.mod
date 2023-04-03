@@ -7,23 +7,23 @@ require (
 	github.com/davecgh/go-spew v1.1.1
 	github.com/disaster37/es-handler/v8 v8.1.2
 	github.com/disaster37/go-kibana-rest/v8 v8.5.0
-	github.com/disaster37/goca v1.0.4-0.20221213082455-a233467aa7fe
-	github.com/disaster37/k8s-objectmatcher v1.8.2-0.20230118153724-8144c44645a8
+	github.com/disaster37/goca v1.0.4
+	github.com/disaster37/k8s-objectmatcher v1.8.2
 	github.com/disaster37/k8sbuilder v1.0.1
 	github.com/disaster37/kb-handler/v8 v8.0.1
-	github.com/disaster37/operator-sdk-extra v0.1.2-0.20230228101929-481061b1d0e7
-	github.com/elastic/elastic-transport-go/v8 v8.1.0
-	github.com/elastic/go-elasticsearch/v8 v8.6.0
+	github.com/disaster37/operator-sdk-extra v0.1.2
+	github.com/elastic/elastic-transport-go/v8 v8.2.0
+	github.com/elastic/go-elasticsearch/v8 v8.7.0
 	github.com/elastic/go-ucfg v0.8.6
 	github.com/go-logr/logr v1.2.4
 	github.com/golang/mock v1.6.0
 	github.com/google/go-cmp v0.5.9
-	github.com/imdario/mergo v0.3.14
+	github.com/imdario/mergo v0.3.15
 	github.com/json-iterator/go v1.1.12
 	github.com/kr/pretty v0.3.1
 	github.com/olivere/elastic/v7 v7.0.32
 	github.com/pkg/errors v0.9.1
-	github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring v0.63.0
+	github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring v0.64.0
 	github.com/prometheus/client_golang v1.14.0
 	github.com/sethvargo/go-password v0.2.0
 	github.com/sirupsen/logrus v1.9.0
@@ -36,7 +36,7 @@ require (
 	k8s.io/apimachinery v0.26.3
 	k8s.io/client-go v0.26.3
 	k8s.io/utils v0.0.0-20230313181309-38a27ef9d749
-	sigs.k8s.io/controller-runtime v0.14.5
+	sigs.k8s.io/controller-runtime v0.14.6
 	sigs.k8s.io/yaml v1.3.0
 )
 

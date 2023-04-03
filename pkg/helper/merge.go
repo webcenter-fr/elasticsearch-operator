@@ -11,7 +11,7 @@ import (
 // It return error if dst is nil
 func Merge(dst any, srcs ...any) (err error) {
 	if dst != nil && reflect.ValueOf(dst).Kind() != reflect.Ptr {
-		return mergo.ErrNonPointerAgument
+		return mergo.ErrNonPointerArgument
 	}
 
 	for _, src := range srcs {
