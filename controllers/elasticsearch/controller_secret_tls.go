@@ -56,6 +56,7 @@ var (
 	phaseTlsPropagateCertificates tlsPhase = "tlsPropagateCertificates"
 	phaseTlsCleanTransportCA      tlsPhase = "tlsCleanCA"
 	phaseTlsNormal                tlsPhase = "tlsNormal"
+	phaseTlsReconcile             tlsPhase = "tlsReconcile"
 )
 
 type TlsReconciler struct {
@@ -246,9 +247,10 @@ func (r *TlsReconciler) Read(ctx context.Context, resource client.Object, data m
 func (r *TlsReconciler) Diff(ctx context.Context, resource client.Object, data map[string]interface{}) (diff controller.K8sDiff, res ctrl.Result, err error) {
 	o := resource.(*elasticsearchcrd.Elasticsearch)
 	var (
-		d         any
-		needRenew bool
-		isUpdated bool
+		d          any
+		needRenew  bool
+		isUpdated  bool
+		isBlackout bool
 	)
 
 	defaultRenewCertificate := DefaultRenewCertificate
@@ -315,91 +317,25 @@ func (r *TlsReconciler) Diff(ctx context.Context, resource client.Object, data m
 
 	data["isTlsBlackout"] = false
 
-	// Cluster initialization or blackout TLS (secret manually deleted)
+	// Check if on blackout
+	if sTransport == nil || sTransportPki == nil || transportRootCA == nil || transportRootCA.GoCertificate().NotAfter.Before(time.Now()) {
+		isBlackout = true
+	}
+	for _, nodeCrt := range nodeCertificates {
+		if nodeCrt.NotAfter.Before(time.Now()) {
+			isBlackout = true
+			break
+		}
+	}
+
 	// Generate all certificates
-	if sTransport == nil || sTransportPki == nil {
+	if isBlackout {
 		r.Log.Debugf("Detect phase: %s", phaseTlsCreate)
 
 		diff.Diff.WriteString("Generate new certificates\n")
 
-		// Generate transport PKI
-		tmpTransportPki, transportRootCA, err := BuildTransportPkiSecret(o)
-		if err != nil {
-			return diff, res, errors.Wrap(err, "Error when generate transport PKI")
-		}
-		sTransportPki, isUpdated = updateSecret(sTransportPki, tmpTransportPki)
-		if err := patch.DefaultAnnotator.SetLastAppliedAnnotation(sTransportPki); err != nil {
-			return diff, res, errors.Wrapf(err, "Error when set diff annotation on secret %s", sTransportPki.Name)
-		}
-		if isUpdated {
-			secretToUpdate = append(secretToUpdate, sTransportPki)
-		} else {
-			err = ctrl.SetControllerReference(o, sTransportPki, r.Scheme)
-			if err != nil {
-				return diff, res, errors.Wrap(err, "Error when set as owner reference")
-			}
-			secretToCreate = append(secretToCreate, sTransportPki)
-		}
-
-		// Generate nodes certificates
-		tmpTransport, err := BuildTransportSecret(o, transportRootCA)
-		if err != nil {
-			return diff, res, errors.Wrap(err, "Error when generate nodes certificates")
-		}
-		sTransport, isUpdated = updateSecret(sTransport, tmpTransport)
-		if err := patch.DefaultAnnotator.SetLastAppliedAnnotation(sTransport); err != nil {
-			return diff, res, errors.Wrapf(err, "Error when set diff annotation on secret %s", sTransport.Name)
-		}
-		if isUpdated {
-			secretToUpdate = append(secretToUpdate, sTransport)
-		} else {
-			err = ctrl.SetControllerReference(o, sTransport, r.Scheme)
-			if err != nil {
-				return diff, res, errors.Wrap(err, "Error when set as owner reference")
-			}
-			secretToCreate = append(secretToCreate, sTransport)
-		}
-
-		// Handle API certificates
-		if o.IsTlsApiEnabled() && o.IsSelfManagedSecretForTlsApi() {
-
-			// Generate API PKI
-			tmpApiPki, apiRootCA, err := BuildApiPkiSecret(o)
-			if err != nil {
-				return diff, res, errors.Wrap(err, "Error when generate API PKI")
-			}
-			sApiPki, isUpdated = updateSecret(sApiPki, tmpApiPki)
-			if err := patch.DefaultAnnotator.SetLastAppliedAnnotation(sApiPki); err != nil {
-				return diff, res, errors.Wrapf(err, "Error when set diff annotation on secret %s", sApiPki.Name)
-			}
-			if isUpdated {
-				secretToUpdate = append(secretToUpdate, sApiPki)
-			} else {
-				err = ctrl.SetControllerReference(o, sApiPki, r.Scheme)
-				if err != nil {
-					return diff, res, errors.Wrap(err, "Error when set as owner reference")
-				}
-				secretToCreate = append(secretToCreate, sApiPki)
-			}
-
-			// Generate API certificate
-			tmpApi, err := BuildApiSecret(o, apiRootCA)
-			if err != nil {
-				return diff, res, errors.Wrap(err, "Error when generate API certificate")
-			}
-			sApi, isUpdated = updateSecret(sApi, tmpApi)
-			if err := patch.DefaultAnnotator.SetLastAppliedAnnotation(sApi); err != nil {
-				return diff, res, errors.Wrapf(err, "Error when set diff annotation on secret %s", sApi.Name)
-			}
-			if isUpdated {
-				secretToUpdate = append(secretToUpdate, sApi)
-			} else {
-				err = ctrl.SetControllerReference(o, sApi, r.Scheme)
-				if err != nil {
-					return diff, res, errors.Wrap(err, "Error when set as owner reference")
-				}
-				secretToCreate = append(secretToCreate, sApi)
-			}
+		if secretToCreate, secretToUpdate, err = r.generateAllSecretsCertificates(o, sTransportPki, sTransport, sApiPki, sApi, secretToCreate, secretToUpdate); err != nil {
+			return diff, res, err
 		}
 
 		if len(secretToCreate) > 0 {
@@ -421,6 +357,50 @@ func (r *TlsReconciler) Diff(ctx context.Context, resource client.Object, data m
 		return diff, res, nil
 	}
 
+	// Require API secret exist to allow pod start
+	// Not real blackout because of not need to restart all pod on same time
+	if o.IsTlsApiEnabled() && o.IsSelfManagedSecretForTlsApi() {
+		isBad := false
+		if apiRootCA == nil {
+			// Generate API PKI
+			sApiPki, apiRootCA, isUpdated, err = r.generateAPISecretPki(o, sApiPki)
+			if err != nil {
+				return diff, res, err
+			}
+			if !isUpdated {
+				secretToCreate = append(secretToCreate, sApiPki)
+			} else {
+				secretToUpdate = append(secretToUpdate, sApiPki)
+			}
+
+			diff.Diff.WriteString("Generate new API PKI\n")
+
+			isBad = true
+		}
+		if apiCrt == nil {
+
+			// Generate API certificate
+			sApi, isUpdated, err = r.generateApiSecretCertificate(o, sApi, apiRootCA)
+			if err != nil {
+				return diff, res, err
+			}
+			if !isUpdated {
+				secretToCreate = append(secretToCreate, sApi)
+			} else {
+				secretToUpdate = append(secretToUpdate, sApi)
+			}
+
+			diff.Diff.WriteString("Generate new API certificate")
+
+			isBad = true
+		}
+
+		if isBad {
+			data["phase"] = phaseTlsReconcile
+			return diff, res, nil
+		}
+	}
+
 	// phaseGeneratePki -> phasePropagatePKI
 	// Wait new CA propagated on all Elasticsearch instance
 	if condition.IsStatusConditionPresentAndEqual(o.Status.Conditions, TlsConditionGeneratePki, metav1.ConditionTrue) && condition.IsStatusConditionPresentAndEqual(o.Status.Conditions, TlsConditionPropagatePki, metav1.ConditionFalse) {
@@ -435,50 +415,42 @@ func (r *TlsReconciler) Diff(ctx context.Context, resource client.Object, data m
 
 		r.Log.Debugf("Detect phase: %s", phaseTlsUpdateCertificates)
 
-		// Generates certificates
-		tmpTransportSecret, err := BuildTransportSecret(o, transportRootCA)
+		// Generate nodes certificates
+		tmpTransport, isUpdated, err := r.generateTransportSecretCertificates(o, sTransport, transportRootCA)
 		if err != nil {
-			return diff, res, errors.Wrap(err, "Error when renew transport certificates")
+			return diff, res, err
 		}
-		// Keep here the transitionnal CA appended in previous step
-		tmpTransportSecret.Data["ca.crt"] = sTransport.Data["ca.crt"]
-		diff.Diff.WriteString("Renew nodes certificates\n")
-		sTransport, isUpdated = updateSecret(sTransport, tmpTransportSecret)
-		if err := patch.DefaultAnnotator.SetLastAppliedAnnotation(sTransport); err != nil {
-			return diff, res, errors.Wrapf(err, "Error when set diff annotation on secret %s", sTransport.Name)
-		}
-		if isUpdated {
-			secretToUpdate = append(secretToUpdate, sTransport)
-		} else {
-			err = ctrl.SetControllerReference(o, sTransport, r.Scheme)
-			if err != nil {
-				return diff, res, errors.Wrap(err, "Error when set as owner reference")
-			}
+
+		// Keep transitional CA
+		tmpTransport.Data["ca.crt"] = sTransport.Data["ca.crt"]
+
+		sTransport = tmpTransport
+		if !isUpdated {
 			secretToCreate = append(secretToCreate, sTransport)
+		} else {
+			secretToUpdate = append(secretToUpdate, sTransport)
 		}
+
+		diff.Diff.WriteString("Generate new transport certificates")
 
 		if o.IsTlsApiEnabled() && o.IsSelfManagedSecretForTlsApi() {
 
-			tmpApi, err := BuildApiSecret(o, apiRootCA)
+			// Generate API certificate
+			tmpApi, isUpdated, err := r.generateApiSecretCertificate(o, sApi, apiRootCA)
 			if err != nil {
-				return diff, res, errors.Wrap(err, "Error when renew API certificate")
+				return diff, res, err
 			}
-			// Keep here the transitionnal CA appended in previous step
+			// Keep transisional CA
 			tmpApi.Data["ca.crt"] = sApi.Data["ca.crt"]
-			diff.Diff.WriteString("Renew API certificate\n")
-			sApi, isUpdated = updateSecret(sApi, tmpApi)
-			if err := patch.DefaultAnnotator.SetLastAppliedAnnotation(sApi); err != nil {
-				return diff, res, errors.Wrapf(err, "Error when set diff annotation on secret %s", sApi.Name)
-			}
-			if isUpdated {
-				secretToUpdate = append(secretToUpdate, sApi)
-			} else {
-				err = ctrl.SetControllerReference(o, sApi, r.Scheme)
-				if err != nil {
-					return diff, res, errors.Wrap(err, "Error when set as owner reference")
-				}
+
+			sApi = tmpApi
+			if !isUpdated {
 				secretToCreate = append(secretToCreate, sApi)
+			} else {
+				secretToUpdate = append(secretToUpdate, sApi)
 			}
+
+			diff.Diff.WriteString("Generate new API certificate\n")
 		}
 
 		if len(secretToCreate) > 0 {
@@ -544,67 +516,17 @@ func (r *TlsReconciler) Diff(ctx context.Context, resource client.Object, data m
 		isRenew = true
 	}
 
-	certificates := map[string]x509.Certificate{}
-	if transportRootCA != nil {
-		// No deed to recreate here, it wil generate in next
-		certificates["transportPki"] = *transportRootCA.GoCertificate()
-	} else {
-		// Pki certificates will be regenerated in next step
-		r.Log.Warn("Transport PKI not exist, we enter on TLS Blackout phase to reconcile")
-		data["isTlsBlackout"] = true
-		isRenew = true
-	}
-
-	// Check if transport root CA already expired
-	if transportRootCA.GoCertificate().NotAfter.Before(time.Now()) {
-		r.Log.Warn("Transport PKI already expired, we enter on TLS Blackout phase to reconcile")
-		data["isTlsBlackout"] = true
+	certificates := map[string]x509.Certificate{
+		"transportPki": *transportRootCA.GoCertificate(),
 	}
 
 	for nodeName, nodeCrt := range nodeCertificates {
 		certificates[nodeName] = nodeCrt
 	}
+
 	if o.IsTlsApiEnabled() && o.IsSelfManagedSecretForTlsApi() {
-		if apiRootCA != nil {
-			certificates["apiPki"] = *apiRootCA.GoCertificate()
-		} else {
-			isRenew = true
-
-			// Need to recreate Pki to allow node to start
-			sApiPki, apiRootCA, err = BuildApiPkiSecret(o)
-			if err != nil {
-				return diff, res, errors.Wrap(err, "Error when generate deleted API PKI")
-			}
-
-			err = ctrl.SetControllerReference(o, sApiPki, r.Scheme)
-			if err != nil {
-				return diff, res, errors.Wrap(err, "Error when set as owner reference")
-			}
-			if err := patch.DefaultAnnotator.SetLastAppliedAnnotation(sApiPki); err != nil {
-				return diff, res, errors.Wrapf(err, "Error when set diff annotation on secret %s", sApiPki.Name)
-			}
-			secretToCreate = append(secretToCreate, sApiPki)
-		}
-		if apiCrt != nil {
-			certificates["apiCrt"] = *apiCrt
-		} else {
-			isRenew = true
-
-			// Need to recreate certificate to allow node to start
-			sApi, err = BuildApiSecret(o, apiRootCA)
-			if err != nil {
-				return diff, res, errors.Wrap(err, "Error when generate deleted API certificate")
-			}
-			err = ctrl.SetControllerReference(o, sApi, r.Scheme)
-			if err != nil {
-				return diff, res, errors.Wrap(err, "Error when set as owner reference")
-			}
-			if err := patch.DefaultAnnotator.SetLastAppliedAnnotation(sApi); err != nil {
-				return diff, res, errors.Wrapf(err, "Error when set diff annotation on secret %s", sApi.Name)
-			}
-			secretToCreate = append(secretToCreate, sApi)
-
-		}
+		certificates["apiPki"] = *apiRootCA.GoCertificate()
+		certificates["apiCrt"] = *apiCrt
 	}
 
 	if !isRenew {
@@ -623,29 +545,19 @@ func (r *TlsReconciler) Diff(ctx context.Context, resource client.Object, data m
 
 	if isRenew {
 		r.Log.Debugf("Detect phase: %s", phaseTlsUpdatePki)
-
 		// Renew only pki and wait all nodes get the new CA before to upgrade certificates
 
-		// Transport PKI
-		tmpTransportPki, transportRootCA, err := BuildTransportPkiSecret(o)
+		// Generate transport PKI
+		sTransportPki, transportRootCA, isUpdated, err := r.generateTransportSecretPki(o, sTransportPki)
 		if err != nil {
-			return diff, res, errors.Wrap(err, "Error when renew transport PKI")
+			return diff, res, err
+		}
+		if !isUpdated {
+			secretToCreate = append(secretToCreate, sTransportPki)
+		} else {
+			secretToUpdate = append(secretToUpdate, sTransportPki)
 		}
 		diff.Diff.WriteString("Renew transport PKI\n")
-
-		sTransportPki, isUpdated = updateSecret(sTransportPki, tmpTransportPki)
-		if err := patch.DefaultAnnotator.SetLastAppliedAnnotation(sTransportPki); err != nil {
-			return diff, res, errors.Wrapf(err, "Error when set diff annotation on secret %s", sTransportPki.Name)
-		}
-		if isUpdated {
-			secretToUpdate = append(secretToUpdate, sTransportPki)
-		} else {
-			err = ctrl.SetControllerReference(o, sTransportPki, r.Scheme)
-			if err != nil {
-				return diff, res, errors.Wrap(err, "Error when set as owner reference")
-			}
-			secretToCreate = append(secretToCreate, sTransportPki)
-		}
 
 		// Append new CA with others CA
 		sTransport.Data["ca.crt"] = []byte(fmt.Sprintf("%s\n%s", string(sTransport.Data["ca.crt"]), transportRootCA.GetCertificate()))
@@ -653,25 +565,17 @@ func (r *TlsReconciler) Diff(ctx context.Context, resource client.Object, data m
 
 		// API PKI
 		if o.IsTlsApiEnabled() && o.IsSelfManagedSecretForTlsApi() {
-			tmpApiPki, apiRootCA, err := BuildApiPkiSecret(o)
+			// Generate API PKI
+			sApiPki, apiRootCA, isUpdated, err := r.generateAPISecretPki(o, sApiPki)
 			if err != nil {
-				return diff, res, errors.Wrap(err, "Error when renew Api PKI")
+				return diff, res, err
+			}
+			if !isUpdated {
+				secretToCreate = append(secretToCreate, sApiPki)
+			} else {
+				secretToUpdate = append(secretToUpdate, sApiPki)
 			}
 			diff.Diff.WriteString("Renew Api PKI\n")
-
-			sApiPki, isUpdated = updateSecret(sApiPki, tmpApiPki)
-			if err := patch.DefaultAnnotator.SetLastAppliedAnnotation(sApiPki); err != nil {
-				return diff, res, errors.Wrapf(err, "Error when set diff annotation on secret %s", sTransportPki.Name)
-			}
-			if isUpdated {
-				secretToUpdate = append(secretToUpdate, sApiPki)
-			} else {
-				err = ctrl.SetControllerReference(o, sApiPki, r.Scheme)
-				if err != nil {
-					return diff, res, errors.Wrap(err, "Error when set as owner reference")
-				}
-				secretToCreate = append(secretToCreate, sApiPki)
-			}
 
 			// Append new CA with others CA
 			sApi.Data["ca.crt"] = []byte(fmt.Sprintf("%s\n%s", string(sApi.Data["ca.crt"]), apiRootCA.GetCertificate()))
@@ -1029,7 +933,144 @@ func (r *TlsReconciler) OnSuccess(ctx context.Context, resource client.Object, d
 		})
 
 		r.Log.Info("Clean old transport CA certificate successfully")
+
+	case phaseTlsReconcile:
+		return ctrl.Result{Requeue: true}, nil
 	}
 
 	return res, nil
+}
+
+func (r *TlsReconciler) generateTransportSecretPki(o *elasticsearchcrd.Elasticsearch, sTransportPki *corev1.Secret) (sTransportPkiRes *corev1.Secret, transportRootCA *goca.CA, isUpdated bool, err error) {
+
+	tmpTransportPki, transportRootCA, err := BuildTransportPkiSecret(o)
+	if err != nil {
+		return nil, nil, isUpdated, errors.Wrap(err, "Error when generate transport PKI")
+	}
+	sTransportPkiRes, isUpdated = updateSecret(sTransportPki, tmpTransportPki)
+	if err := patch.DefaultAnnotator.SetLastAppliedAnnotation(sTransportPkiRes); err != nil {
+		return nil, nil, isUpdated, errors.Wrapf(err, "Error when set diff annotation on secret %s", sTransportPkiRes.Name)
+	}
+	if !isUpdated {
+		err = ctrl.SetControllerReference(o, sTransportPkiRes, r.Scheme)
+		if err != nil {
+			return nil, nil, isUpdated, errors.Wrap(err, "Error when set as owner reference")
+		}
+	}
+
+	return sTransportPkiRes, transportRootCA, isUpdated, nil
+}
+
+func (r *TlsReconciler) generateTransportSecretCertificates(o *elasticsearchcrd.Elasticsearch, sTransport *corev1.Secret, transportRootCA *goca.CA) (sTransportRes *corev1.Secret, isUpdated bool, err error) {
+
+	tmpTransport, err := BuildTransportSecret(o, transportRootCA)
+	if err != nil {
+		return nil, isUpdated, errors.Wrap(err, "Error when generate nodes certificates")
+	}
+	sTransportRes, isUpdated = updateSecret(sTransport, tmpTransport)
+	if err := patch.DefaultAnnotator.SetLastAppliedAnnotation(sTransportRes); err != nil {
+		return nil, isUpdated, errors.Wrapf(err, "Error when set diff annotation on secret %s", sTransportRes.Name)
+	}
+	if !isUpdated {
+		err = ctrl.SetControllerReference(o, sTransportRes, r.Scheme)
+		if err != nil {
+			return nil, isUpdated, errors.Wrap(err, "Error when set as owner reference")
+		}
+	}
+
+	return sTransportRes, isUpdated, nil
+}
+
+func (r *TlsReconciler) generateAPISecretPki(o *elasticsearchcrd.Elasticsearch, sApiPki *corev1.Secret) (sApiPkiRes *corev1.Secret, apiRootCA *goca.CA, isUpdated bool, err error) {
+
+	tmpApiPki, apiRootCA, err := BuildApiPkiSecret(o)
+	if err != nil {
+		return nil, nil, isUpdated, errors.Wrap(err, "Error when generate API PKI")
+	}
+	sApiPkiRes, isUpdated = updateSecret(sApiPki, tmpApiPki)
+	if err := patch.DefaultAnnotator.SetLastAppliedAnnotation(sApiPkiRes); err != nil {
+		return nil, nil, isUpdated, errors.Wrapf(err, "Error when set diff annotation on secret %s", sApiPkiRes.Name)
+	}
+	if !isUpdated {
+		err = ctrl.SetControllerReference(o, sApiPkiRes, r.Scheme)
+		if err != nil {
+			return nil, nil, isUpdated, errors.Wrap(err, "Error when set as owner reference")
+		}
+	}
+
+	return sApiPkiRes, apiRootCA, isUpdated, nil
+}
+
+func (r *TlsReconciler) generateApiSecretCertificate(o *elasticsearchcrd.Elasticsearch, sApi *corev1.Secret, apiRootCA *goca.CA) (sApiRes *corev1.Secret, isUpdated bool, err error) {
+
+	tmpApi, err := BuildApiSecret(o, apiRootCA)
+	if err != nil {
+		return nil, isUpdated, errors.Wrap(err, "Error when generate API certificate")
+	}
+	sApiRes, isUpdated = updateSecret(sApi, tmpApi)
+	if err := patch.DefaultAnnotator.SetLastAppliedAnnotation(sApiRes); err != nil {
+		return nil, isUpdated, errors.Wrapf(err, "Error when set diff annotation on secret %s", sApiRes.Name)
+	}
+	if !isUpdated {
+		err = ctrl.SetControllerReference(o, sApiRes, r.Scheme)
+		if err != nil {
+			return nil, isUpdated, errors.Wrap(err, "Error when set as owner reference")
+		}
+	}
+
+	return sApiRes, isUpdated, nil
+}
+
+func (r *TlsReconciler) generateAllSecretsCertificates(o *elasticsearchcrd.Elasticsearch, sTransportPki *corev1.Secret, sTransport *corev1.Secret, sApiPki *corev1.Secret, sApi *corev1.Secret, secretToCreate []client.Object, secretToUpdate []client.Object) (secretToCreateRes []client.Object, secretToUpdateRes []client.Object, err error) {
+
+	// Generate transport PKI
+	sTransportPki, transportRootCA, isUpdated, err := r.generateTransportSecretPki(o, sTransportPki)
+	if err != nil {
+		return secretToCreate, secretToUpdate, err
+	}
+	if !isUpdated {
+		secretToCreate = append(secretToCreate, sTransportPki)
+	} else {
+		secretToUpdate = append(secretToUpdate, sTransportPki)
+	}
+
+	// Generate nodes certificates
+	sTransport, isUpdated, err = r.generateTransportSecretCertificates(o, sTransport, transportRootCA)
+	if err != nil {
+		return secretToCreate, secretToUpdate, err
+	}
+	if !isUpdated {
+		secretToCreate = append(secretToCreate, sTransport)
+	} else {
+		secretToUpdate = append(secretToUpdate, sTransport)
+	}
+
+	// Handle API certificates
+	if o.IsTlsApiEnabled() && o.IsSelfManagedSecretForTlsApi() {
+
+		// Generate API PKI
+		sApiPki, apiRootCA, isUpdated, err := r.generateAPISecretPki(o, sApiPki)
+		if err != nil {
+			return secretToCreate, secretToUpdate, err
+		}
+		if !isUpdated {
+			secretToCreate = append(secretToCreate, sApiPki)
+		} else {
+			secretToUpdate = append(secretToUpdate, sApiPki)
+		}
+
+		// Generate API certificate
+		sApi, isUpdated, err = r.generateApiSecretCertificate(o, sApi, apiRootCA)
+		if err != nil {
+			return secretToCreate, secretToUpdate, err
+		}
+		if !isUpdated {
+			secretToCreate = append(secretToCreate, sApi)
+		} else {
+			secretToUpdate = append(secretToUpdate, sApi)
+		}
+
+	}
+
+	return secretToCreate, secretToUpdate, nil
 }
