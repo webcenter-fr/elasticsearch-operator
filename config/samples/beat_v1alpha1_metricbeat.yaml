@@ -9,4 +9,53 @@ metadata:
     app.kubernetes.io/created-by: elasticsearch-operator
   name: metricbeat-sample
 spec:
-  # TODO(user): Add fields here
+  version: 8.6.0
+  elasticsearchRef:
+    managed:
+      name: elasticsearch
+      namespace: elk-monitoring
+  module:
+    elasticsearch-xpack.yml: |
+      - module: elasticsearch
+        xpack.enabled: true
+        username: '${SOURCE_METRICBEAT_USERNAME}'
+        password: '${SOURCE_METRICBEAT_PASSWORD}'
+        ssl:
+          enable: true
+          certificate_authorities: '/usr/share/metricbeat/source-es-ca/ca.crt'
+          verification_mode: full
+        scope: cluster
+        period: 10s
+        hosts: https://elasticsearch.elk.svc:9200
+  deployment:
+    replicas: 1
+    resources:
+      requests:
+        cpu: "100m"
+        memory: "256Mi"
+      limits:
+        cpu: "500m"
+        memory: "512Mi"
+    persistence:
+      volumeClaim:
+        accessModes: [ "ReadWriteOnce" ]
+        storageClassName: "local-path"
+        resources:
+          requests:
+            storage: 5Gi
+    annotations:
+      co.elastic.logs.logstash/multiline.pattern: '^\{'
+      co.elastic.logs.logstash/multiline.negate: 'true'
+      co.elastic.logs.logstash/multiline.match: 'after'
+      co.elastic.logs.logstash/multiline.timeout: '5s'
+      co.elastic.logs.logstash/processors.0.decode_json_fields: '{"fields": ["message"], "target": "hm.metricbeat", "add_error_key": true, "max_depth": 10}'
+      co.elastic.logs.logstash/processors.2.add_fields: '{"target": "", "fields": {"event": {"dataset": "metricbeat"}, "service": {"type": "metricbeat"}}}'
+    additionalVolumes:
+    - mountPath: /usr/share/metricbeat/source-es-ca
+      name: ca-source-elasticsearch
+      secret:
+        items:
+        - key: ca.crt
+          path: ca.crt
+        secretName: elasticsearch-tls-api-es
+

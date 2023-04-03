@@ -53,14 +53,10 @@ spec:
       requests:
         cpu: "25m"
         memory: "64Mi"
-    podTemplate:
-      metadata:
-        annotations:
-          co.elastic.logs.kibana/multiline.pattern: '^\{'
-          co.elastic.logs.kibana/multiline.negate: 'true'
-          co.elastic.logs.kibana/multiline.match: 'after'
-          co.elastic.logs.kibana/multiline.timeout: '5s'
-          co.elastic.logs.kibana/processors.0.decode_json_fields: '{"fields": ["message"], "target": "hm.kibana", "add_error_key": true, "max_depth": 10}'
-          co.elastic.logs.kibana/processors.2.add_fields: '{"target": "", "fields": {"event": {"dataset": "kibana"}, "service": {"type": "kibana"}}}'
-      spec:
-        containers: []
+    annotations:
+      co.elastic.logs.kibana/multiline.pattern: '^\{'
+      co.elastic.logs.kibana/multiline.negate: 'true'
+      co.elastic.logs.kibana/multiline.match: 'after'
+      co.elastic.logs.kibana/multiline.timeout: '5s'
+      co.elastic.logs.kibana/processors.0.decode_json_fields: '{"fields": ["message"], "target": "hm.kibana", "add_error_key": true, "max_depth": 10}'
+      co.elastic.logs.kibana/processors.2.add_fields: '{"target": "", "fields": {"event": {"dataset": "kibana"}, "service": {"type": "kibana"}}}'

@@ -158,6 +158,7 @@ func GetKibanaHandler(ctx context.Context, o client.Object, kbRef shared.KibanaR
 
 	if log.Logger.GetLevel() == logrus.DebugLevel {
 		kbHandler.Client().Client.SetLogger(log)
+		kbHandler.Client().Client.SetDebug(true)
 	}
 
 	return kbHandler, nil

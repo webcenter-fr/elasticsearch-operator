@@ -9,4 +9,19 @@ metadata:
     app.kubernetes.io/created-by: elasticsearch-operator
   name: cerebro-sample
 spec:
-  # TODO(user): Add fields here
+  deployment:
+    replicas: 1
+    resources:
+      limits:
+        cpu: 500m
+        memory: 512Mi
+      requests:
+        cpu: 250m
+        memory: 256Mi
+  endpoint:
+    ingress:
+      enabled: true
+      host: cerebro.cluster.local
+      secretRef:
+        name: cerebro-tls
+  version: 0.9.4

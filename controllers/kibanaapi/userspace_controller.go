@@ -178,12 +178,22 @@ func (r *UserSpaceReconciler) Create(ctx context.Context, resource client.Object
 	// Copy object that not enforce reconcile
 	for _, copySpec := range space.Spec.KibanaUserSpaceCopies {
 		if !copySpec.IsForceUpdate() {
-			if err = kbHandler.UserSpaceCopyObject(copySpec.OriginUserSpace, &kbapi.KibanaSpaceCopySavedObjectParameter{
+			cs := &kbapi.KibanaSpaceCopySavedObjectParameter{
 				Spaces:            []string{space.GetUserSpaceID()},
 				IncludeReferences: copySpec.IsIncludeReference(),
 				Overwrite:         copySpec.IsOverwrite(),
 				CreateNewCopies:   copySpec.IsCreateNewCopy(),
-			}); err != nil {
+				Objects:           make([]kbapi.KibanaSpaceObjectParameter, 0, len(copySpec.KibanaObjects)),
+			}
+
+			for _, kibanaObject := range copySpec.KibanaObjects {
+				cs.Objects = append(cs.Objects, kbapi.KibanaSpaceObjectParameter{
+					Type: kibanaObject.Type,
+					ID:   kibanaObject.ID,
+				})
+			}
+
+			if err = kbHandler.UserSpaceCopyObject(copySpec.OriginUserSpace, cs); err != nil {
 				return res, errors.Wrap(err, "Error when copy objects on new Kibana user space")
 			}
 		}
@@ -317,14 +327,24 @@ func (r *UserSpaceReconciler) OnSuccess(ctx context.Context, resource client.Obj
 
 	// Copy object on force reconcile
 	for _, copySpec := range space.Spec.KibanaUserSpaceCopies {
-		if copySpec.IsForceUpdate() {
-			if err = kbHandler.UserSpaceCopyObject(copySpec.OriginUserSpace, &kbapi.KibanaSpaceCopySavedObjectParameter{
+		if !copySpec.IsForceUpdate() {
+			cs := &kbapi.KibanaSpaceCopySavedObjectParameter{
 				Spaces:            []string{space.GetUserSpaceID()},
 				IncludeReferences: copySpec.IsIncludeReference(),
-				Overwrite:         true,
-				CreateNewCopies:   false,
-			}); err != nil {
-				return errors.Wrap(err, "Error when copy objects on user space")
+				Overwrite:         copySpec.IsOverwrite(),
+				CreateNewCopies:   copySpec.IsCreateNewCopy(),
+				Objects:           make([]kbapi.KibanaSpaceObjectParameter, 0, len(copySpec.KibanaObjects)),
+			}
+
+			for _, kibanaObject := range copySpec.KibanaObjects {
+				cs.Objects = append(cs.Objects, kbapi.KibanaSpaceObjectParameter{
+					Type: kibanaObject.Type,
+					ID:   kibanaObject.ID,
+				})
+			}
+
+			if err = kbHandler.UserSpaceCopyObject(copySpec.OriginUserSpace, cs); err != nil {
+				return errors.Wrap(err, "Error when copy objects on new Kibana user space")
 			}
 		}
 	}

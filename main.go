@@ -24,22 +24,12 @@ import (
 	// to ensure that exec-entrypoint and run can make use of them.
 	monitoringv1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1"
 	"github.com/sirupsen/logrus"
-	"k8s.io/apimachinery/pkg/runtime"
-	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
-	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
-	_ "k8s.io/client-go/plugin/pkg/client/auth"
-	ctrl "sigs.k8s.io/controller-runtime"
-	"sigs.k8s.io/controller-runtime/pkg/cache"
-	"sigs.k8s.io/controller-runtime/pkg/healthz"
-	"sigs.k8s.io/controller-runtime/pkg/log/zap"
-
 	beatcrd "github.com/webcenter-fr/elasticsearch-operator/apis/beat/v1alpha1"
-	beatv1alpha1 "github.com/webcenter-fr/elasticsearch-operator/apis/beat/v1alpha1"
 	cerebrocrd "github.com/webcenter-fr/elasticsearch-operator/apis/cerebro/v1alpha1"
 	elasticsearchcrd "github.com/webcenter-fr/elasticsearch-operator/apis/elasticsearch/v1alpha1"
 	elasticsearchapicrd "github.com/webcenter-fr/elasticsearch-operator/apis/elasticsearchapi/v1alpha1"
 	kibanacrd "github.com/webcenter-fr/elasticsearch-operator/apis/kibana/v1alpha1"
-	kibanaapiv1alpha1 "github.com/webcenter-fr/elasticsearch-operator/apis/kibanaapi/v1alpha1"
+	kibanaapicrd "github.com/webcenter-fr/elasticsearch-operator/apis/kibanaapi/v1alpha1"
 	logstashcrd "github.com/webcenter-fr/elasticsearch-operator/apis/logstash/v1alpha1"
 	cerebrocontrollers "github.com/webcenter-fr/elasticsearch-operator/controllers/cerebro"
 	elasticsearchcontrollers "github.com/webcenter-fr/elasticsearch-operator/controllers/elasticsearch"
@@ -50,6 +40,14 @@ import (
 	logstashcontrollers "github.com/webcenter-fr/elasticsearch-operator/controllers/logstash"
 	metricbeatcontrollers "github.com/webcenter-fr/elasticsearch-operator/controllers/metricbeat"
 	"github.com/webcenter-fr/elasticsearch-operator/pkg/helper"
+	"k8s.io/apimachinery/pkg/runtime"
+	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
+	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
+	_ "k8s.io/client-go/plugin/pkg/client/auth"
+	ctrl "sigs.k8s.io/controller-runtime"
+	"sigs.k8s.io/controller-runtime/pkg/cache"
+	"sigs.k8s.io/controller-runtime/pkg/healthz"
+	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 	//+kubebuilder:scaffold:imports
 )
 
@@ -69,9 +67,8 @@ func init() {
 	utilruntime.Must(elasticsearchapicrd.AddToScheme(scheme))
 	utilruntime.Must(logstashcrd.AddToScheme(scheme))
 	utilruntime.Must(beatcrd.AddToScheme(scheme))
-	utilruntime.Must(beatv1alpha1.AddToScheme(scheme))
 	utilruntime.Must(cerebrocrd.AddToScheme(scheme))
-	utilruntime.Must(kibanaapiv1alpha1.AddToScheme(scheme))
+	utilruntime.Must(kibanaapicrd.AddToScheme(scheme))
 	//+kubebuilder:scaffold:scheme
 }
 
@@ -157,6 +154,7 @@ func main() {
 	cerebrocrd.MustSetUpIndexCerebro(mgr)
 	cerebrocrd.MustSetUpIndexHost(mgr)
 	elasticsearchapicrd.MustSetUpIndex(mgr)
+	kibanaapicrd.MustSetUpIndex(mgr)
 
 	// Init controllers
 	elasticsearchController := elasticsearchcontrollers.NewElasticsearchReconciler(mgr.GetClient(), mgr.GetScheme())
@@ -334,27 +332,40 @@ func main() {
 		setupLog.Error(err, "unable to create controller", "controller", "ElasticsearchWatch")
 		os.Exit(1)
 	}
-	if err = (&kibanaapicontrollers.UserSpaceReconciler{
-		Client: mgr.GetClient(),
-		Scheme: mgr.GetScheme(),
-	}).SetupWithManager(mgr); err != nil {
-		setupLog.Error(err, "unable to create controller", "controller", "UserSpace")
+
+	kibanaUserSpaceController := kibanaapicontrollers.NewUserSpaceReconciler(mgr.GetClient(), mgr.GetScheme())
+	kibanaUserSpaceController.SetLogger(log.WithFields(logrus.Fields{
+		"type": "KibanaUserSpaceController",
+	}))
+	kibanaUserSpaceController.SetRecorder(mgr.GetEventRecorderFor("kibana-userspace-controller"))
+	kibanaUserSpaceController.SetReconciler(kibanaUserSpaceController)
+	if err = kibanaUserSpaceController.SetupWithManager(mgr); err != nil {
+		setupLog.Error(err, "unable to create controller", "controller", "KibanaUserSpace")
 		os.Exit(1)
 	}
-	if err = (&kibanaapicontrollers.RoleReconciler{
-		Client: mgr.GetClient(),
-		Scheme: mgr.GetScheme(),
-	}).SetupWithManager(mgr); err != nil {
-		setupLog.Error(err, "unable to create controller", "controller", "Role")
+
+	kibanaRoleController := kibanaapicontrollers.NewRoleReconciler(mgr.GetClient(), mgr.GetScheme())
+	kibanaRoleController.SetLogger(log.WithFields(logrus.Fields{
+		"type": "KibanaRoleController",
+	}))
+	kibanaRoleController.SetRecorder(mgr.GetEventRecorderFor("kibana-role-controller"))
+	kibanaRoleController.SetReconciler(kibanaRoleController)
+	if err = kibanaRoleController.SetupWithManager(mgr); err != nil {
+		setupLog.Error(err, "unable to create controller", "controller", "KibanaRole")
 		os.Exit(1)
 	}
-	if err = (&kibanaapicontrollers.LogstashPipelineReconciler{
-		Client: mgr.GetClient(),
-		Scheme: mgr.GetScheme(),
-	}).SetupWithManager(mgr); err != nil {
-		setupLog.Error(err, "unable to create controller", "controller", "LogstashPipeline")
+
+	kibanaLogstashPipelineController := kibanaapicontrollers.NewLogstashPipelineReconciler(mgr.GetClient(), mgr.GetScheme())
+	kibanaLogstashPipelineController.SetLogger(log.WithFields(logrus.Fields{
+		"type": "KibanaLogstashPipelineController",
+	}))
+	kibanaLogstashPipelineController.SetRecorder(mgr.GetEventRecorderFor("kibana-logstashpipeline-controller"))
+	kibanaLogstashPipelineController.SetReconciler(kibanaLogstashPipelineController)
+	if err = kibanaLogstashPipelineController.SetupWithManager(mgr); err != nil {
+		setupLog.Error(err, "unable to create controller", "controller", "KibanaLogstashPipeline")
 		os.Exit(1)
 	}
+
 	//+kubebuilder:scaffold:builder
 
 	if err := mgr.AddHealthzCheck("healthz", healthz.Ping); err != nil {

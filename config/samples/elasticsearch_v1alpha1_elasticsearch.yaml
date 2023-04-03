@@ -48,17 +48,13 @@ spec:
         valueFrom:
           fieldRef:
             fieldPath: spec.nodeName
-    podTemplate:
-      metadata:
-        annotations:
-          co.elastic.logs.elasticsearch/multiline.pattern: '^\{'
-          co.elastic.logs.elasticsearch/multiline.negate: 'true'
-          co.elastic.logs.elasticsearch/multiline.match: 'after'
-          co.elastic.logs.elasticsearch/multiline.timeout: '5s'
-          co.elastic.logs.elasticsearch/processors.0.decode_json_fields: '{"fields": ["message"], "target": "hm.elasticsearch", "add_error_key": true, "max_depth": 10}'
-          co.elastic.logs.elasticsearch/processors.2.add_fields: '{"target": "", "fields": {"event": {"dataset": "elasticsearch"}, "service": {"type": "elasticsearch"}}}'
-      spec:
-        containers: []
+    annotations:
+      co.elastic.logs.elasticsearch/multiline.pattern: '^\{'
+      co.elastic.logs.elasticsearch/multiline.negate: 'true'
+      co.elastic.logs.elasticsearch/multiline.match: 'after'
+      co.elastic.logs.elasticsearch/multiline.timeout: '5s'
+      co.elastic.logs.elasticsearch/processors.0.decode_json_fields: '{"fields": ["message"], "target": "hm.elasticsearch", "add_error_key": true, "max_depth": 10}'
+      co.elastic.logs.elasticsearch/processors.2.add_fields: '{"target": "", "fields": {"event": {"dataset": "elasticsearch"}, "service": {"type": "elasticsearch"}}}'
     initContainerResources:
       limits:
         cpu: "500m"

@@ -9,4 +9,22 @@ metadata:
     app.kubernetes.io/created-by: elasticsearch-operator
   name: userspace-sample
 spec:
-  # TODO(user): Add fields here
+  kibanaRef:
+    managed:
+      name: kibana
+  name: 'my user space'
+  description: 'my super user space'
+  disabledFeatures:
+    - advancedSettings
+    - graph
+    - monitoring
+    - ml
+    - apm
+    - infrastructure
+    - siem
+    - uptime
+  userSpaceCopies:
+    - originUserSpace: default
+      objects:
+        - type: index-pattern
+          id: 'logs-*'
