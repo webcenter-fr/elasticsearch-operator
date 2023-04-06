@@ -9,4 +9,9 @@ metadata:
     app.kubernetes.io/created-by: elasticsearch-operator
   name: role-sample
 spec:
-  # TODO(user): Add fields here
+  kibanaRef:
+    managed:
+      name: kibana
+  kibana:
+    - base: ["all"]
+      spaces: ["userspace-sample"]

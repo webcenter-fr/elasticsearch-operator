@@ -9,4 +9,18 @@ metadata:
     app.kubernetes.io/created-by: elasticsearch-operator
   name: logstashpipeline-sample
 spec:
-  # TODO(user): Add fields here
+  kibanaRef:
+    managed:
+      name: kibana
+  description: 'my logstash pipeline'
+  settings: |
+    {
+      "queue.type": "persisted"
+    }
+  pipeline: |
+    input { 
+      stdin {} 
+    } 
+    output { 
+      stdout {} 
+    }
