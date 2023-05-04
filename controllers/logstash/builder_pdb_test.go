@@ -4,7 +4,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
-	logstashcrd "github.com/webcenter-fr/elasticsearch-operator/apis/logstash/v1alpha1"
+	logstashcrd "github.com/webcenter-fr/elasticsearch-operator/apis/logstash/v1"
 	"github.com/webcenter-fr/elasticsearch-operator/pkg/test"
 	policyv1 "k8s.io/api/policy/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"

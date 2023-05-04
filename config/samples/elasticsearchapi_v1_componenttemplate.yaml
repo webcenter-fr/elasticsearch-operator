@@ -1,0 +1,20 @@
+apiVersion: elasticsearchapi.k8s.webcenter.fr/v1
+kind: ComponentTemplate
+metadata:
+  labels:
+    app.kubernetes.io/name: componenttemplate
+    app.kubernetes.io/instance: componenttemplate-sample
+    app.kubernetes.io/part-of: bootstrap
+    app.kubernetes.io/managed-by: kustomize
+    app.kubernetes.io/created-by: bootstrap
+  name: componenttemplate-sample
+spec:
+  elasticsearchRef:
+    managed:
+      name: elasticsearch-sample
+  name: custom-log
+  settings: |
+    {
+        "index.number_of_shards": 3,
+        "index.number_of_replicas": 1
+    }

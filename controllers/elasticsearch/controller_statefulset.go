@@ -11,7 +11,7 @@ import (
 	"github.com/disaster37/operator-sdk-extra/pkg/helper"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
-	elasticsearchcrd "github.com/webcenter-fr/elasticsearch-operator/apis/elasticsearch/v1alpha1"
+	elasticsearchcrd "github.com/webcenter-fr/elasticsearch-operator/apis/elasticsearch/v1"
 	"github.com/webcenter-fr/elasticsearch-operator/controllers/common"
 	helperdiff "github.com/webcenter-fr/elasticsearch-operator/pkg/helper"
 	localhelper "github.com/webcenter-fr/elasticsearch-operator/pkg/helper"

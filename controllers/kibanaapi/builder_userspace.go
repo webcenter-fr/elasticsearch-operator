@@ -2,7 +2,7 @@ package kibanaapi
 
 import (
 	"github.com/disaster37/go-kibana-rest/v8/kbapi"
-	kibanaapicrd "github.com/webcenter-fr/elasticsearch-operator/apis/kibanaapi/v1alpha1"
+	kibanaapicrd "github.com/webcenter-fr/elasticsearch-operator/apis/kibanaapi/v1"
 )
 
 // BuildUserSpace permit to build user space

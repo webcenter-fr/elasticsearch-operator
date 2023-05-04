@@ -7,7 +7,7 @@ import (
 	"github.com/pkg/errors"
 	monitoringv1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1"
 	"github.com/sirupsen/logrus"
-	kibanacrd "github.com/webcenter-fr/elasticsearch-operator/apis/kibana/v1alpha1"
+	kibanacrd "github.com/webcenter-fr/elasticsearch-operator/apis/kibana/v1"
 	"github.com/webcenter-fr/elasticsearch-operator/controllers/common"
 	corev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"

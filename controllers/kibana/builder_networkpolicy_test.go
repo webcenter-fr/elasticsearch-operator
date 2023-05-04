@@ -5,7 +5,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
-	kibanacrd "github.com/webcenter-fr/elasticsearch-operator/apis/kibana/v1alpha1"
+	kibanacrd "github.com/webcenter-fr/elasticsearch-operator/apis/kibana/v1"
 	"github.com/webcenter-fr/elasticsearch-operator/pkg/test"
 	networkingv1 "k8s.io/api/networking/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"

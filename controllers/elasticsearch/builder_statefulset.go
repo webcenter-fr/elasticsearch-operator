@@ -9,7 +9,7 @@ import (
 	"github.com/disaster37/k8sbuilder"
 	"github.com/pkg/errors"
 	"github.com/thoas/go-funk"
-	elasticsearchcrd "github.com/webcenter-fr/elasticsearch-operator/apis/elasticsearch/v1alpha1"
+	elasticsearchcrd "github.com/webcenter-fr/elasticsearch-operator/apis/elasticsearch/v1"
 	"github.com/webcenter-fr/elasticsearch-operator/pkg/helper"
 	appv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"

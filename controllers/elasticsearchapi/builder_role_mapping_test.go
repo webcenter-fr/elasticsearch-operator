@@ -5,7 +5,7 @@ import (
 
 	olivere "github.com/olivere/elastic/v7"
 	"github.com/stretchr/testify/assert"
-	elasticsearchapicrd "github.com/webcenter-fr/elasticsearch-operator/apis/elasticsearchapi/v1alpha1"
+	elasticsearchapicrd "github.com/webcenter-fr/elasticsearch-operator/apis/elasticsearchapi/v1"
 	"github.com/webcenter-fr/elasticsearch-operator/apis/shared"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )

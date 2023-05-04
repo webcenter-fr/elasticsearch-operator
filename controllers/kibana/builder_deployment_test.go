@@ -4,8 +4,8 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
-	elasticsearchcrd "github.com/webcenter-fr/elasticsearch-operator/apis/elasticsearch/v1alpha1"
-	kibanacrd "github.com/webcenter-fr/elasticsearch-operator/apis/kibana/v1alpha1"
+	elasticsearchcrd "github.com/webcenter-fr/elasticsearch-operator/apis/elasticsearch/v1"
+	kibanacrd "github.com/webcenter-fr/elasticsearch-operator/apis/kibana/v1"
 	"github.com/webcenter-fr/elasticsearch-operator/apis/shared"
 	"github.com/webcenter-fr/elasticsearch-operator/pkg/test"
 	appv1 "k8s.io/api/apps/v1"

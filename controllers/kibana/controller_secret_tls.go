@@ -12,7 +12,7 @@ import (
 	"github.com/disaster37/operator-sdk-extra/pkg/helper"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
-	kibanacrd "github.com/webcenter-fr/elasticsearch-operator/apis/kibana/v1alpha1"
+	kibanacrd "github.com/webcenter-fr/elasticsearch-operator/apis/kibana/v1"
 	"github.com/webcenter-fr/elasticsearch-operator/controllers/common"
 	localhelper "github.com/webcenter-fr/elasticsearch-operator/pkg/helper"
 	"github.com/webcenter-fr/elasticsearch-operator/pkg/pki"

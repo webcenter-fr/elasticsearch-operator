@@ -4,7 +4,7 @@ import (
 	"fmt"
 
 	"github.com/thoas/go-funk"
-	beatcrd "github.com/webcenter-fr/elasticsearch-operator/apis/beat/v1alpha1"
+	beatcrd "github.com/webcenter-fr/elasticsearch-operator/apis/beat/v1"
 )
 
 const (

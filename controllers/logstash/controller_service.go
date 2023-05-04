@@ -7,7 +7,7 @@ import (
 	"github.com/disaster37/operator-sdk-extra/pkg/controller"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
-	logstashcrd "github.com/webcenter-fr/elasticsearch-operator/apis/logstash/v1alpha1"
+	logstashcrd "github.com/webcenter-fr/elasticsearch-operator/apis/logstash/v1"
 	"github.com/webcenter-fr/elasticsearch-operator/controllers/common"
 	corev1 "k8s.io/api/core/v1"
 	condition "k8s.io/apimachinery/pkg/api/meta"

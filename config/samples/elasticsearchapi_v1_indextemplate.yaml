@@ -1,0 +1,21 @@
+apiVersion: elasticsearchapi.k8s.webcenter.fr/v1
+kind: IndexTemplate
+metadata:
+  labels:
+    app.kubernetes.io/name: indextemplate
+    app.kubernetes.io/instance: indextemplate-sample
+    app.kubernetes.io/part-of: bootstrap
+    app.kubernetes.io/managed-by: kustomize
+    app.kubernetes.io/created-by: bootstrap
+  name: indextemplate-sample
+spec:
+  elasticsearchRef:
+    managed:
+      name: elasticsearch-sample
+  name: custom-template
+  indexPatterns:
+    - 'ecs-*'
+  composedOf:
+    - 'ecs_agent'
+    - 'ecs-base'
+  priority: 100

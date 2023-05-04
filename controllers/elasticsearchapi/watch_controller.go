@@ -22,7 +22,7 @@ import (
 	"github.com/disaster37/operator-sdk-extra/pkg/helper"
 	olivere "github.com/olivere/elastic/v7"
 	"github.com/pkg/errors"
-	elasticsearchapicrd "github.com/webcenter-fr/elasticsearch-operator/apis/elasticsearchapi/v1alpha1"
+	elasticsearchapicrd "github.com/webcenter-fr/elasticsearch-operator/apis/elasticsearchapi/v1"
 	"github.com/webcenter-fr/elasticsearch-operator/controllers/common"
 	localhelper "github.com/webcenter-fr/elasticsearch-operator/pkg/helper"
 	core "k8s.io/api/core/v1"

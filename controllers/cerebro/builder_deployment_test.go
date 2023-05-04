@@ -4,7 +4,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
-	cerebrocrd "github.com/webcenter-fr/elasticsearch-operator/apis/cerebro/v1alpha1"
+	cerebrocrd "github.com/webcenter-fr/elasticsearch-operator/apis/cerebro/v1"
 	"github.com/webcenter-fr/elasticsearch-operator/pkg/test"
 	appv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"

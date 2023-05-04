@@ -4,8 +4,8 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
-	beatcrd "github.com/webcenter-fr/elasticsearch-operator/apis/beat/v1alpha1"
-	logstashcrd "github.com/webcenter-fr/elasticsearch-operator/apis/logstash/v1alpha1"
+	beatcrd "github.com/webcenter-fr/elasticsearch-operator/apis/beat/v1"
+	logstashcrd "github.com/webcenter-fr/elasticsearch-operator/apis/logstash/v1"
 	"github.com/webcenter-fr/elasticsearch-operator/apis/shared"
 	"github.com/webcenter-fr/elasticsearch-operator/pkg/test"
 	networkingv1 "k8s.io/api/networking/v1"

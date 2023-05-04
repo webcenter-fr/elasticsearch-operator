@@ -1,0 +1,27 @@
+apiVersion: elasticsearchapi.k8s.webcenter.fr/v1
+kind: IndexLifecyclePolicy
+metadata:
+  labels:
+    app.kubernetes.io/name: indexlifecyclepolicy
+    app.kubernetes.io/instance: indexlifecyclepolicy-sample
+    app.kubernetes.io/part-of: bootstrap
+    app.kubernetes.io/managed-by: kustomize
+    app.kubernetes.io/created-by: bootstrap
+  name: indexlifecyclepolicy-sample
+spec:
+  elasticsearchRef:
+    managed:
+      name: elasticsearch-sample
+  policy: |
+    {
+        "policy": {
+            "phases": {
+                "delete": {
+                    "min_age": "7d",
+                    "actions": {
+                        "delete": {}
+                    }
+                }
+            }
+        }
+    }

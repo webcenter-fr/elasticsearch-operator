@@ -23,9 +23,9 @@ import (
 
 	"github.com/disaster37/operator-sdk-extra/pkg/controller"
 	"github.com/pkg/errors"
-	beatcrd "github.com/webcenter-fr/elasticsearch-operator/apis/beat/v1alpha1"
-	elasticsearchcrd "github.com/webcenter-fr/elasticsearch-operator/apis/elasticsearch/v1alpha1"
-	logstashcrd "github.com/webcenter-fr/elasticsearch-operator/apis/logstash/v1alpha1"
+	beatcrd "github.com/webcenter-fr/elasticsearch-operator/apis/beat/v1"
+	elasticsearchcrd "github.com/webcenter-fr/elasticsearch-operator/apis/elasticsearch/v1"
+	logstashcrd "github.com/webcenter-fr/elasticsearch-operator/apis/logstash/v1"
 	"github.com/webcenter-fr/elasticsearch-operator/controllers/common"
 	appv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"

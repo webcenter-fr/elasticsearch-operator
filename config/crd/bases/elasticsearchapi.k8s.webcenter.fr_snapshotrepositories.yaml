@@ -22,7 +22,7 @@ spec:
     - jsonPath: .metadata.creationTimestamp
       name: Age
       type: date
-    name: v1alpha1
+    name: v1
     schema:
       openAPIV3Schema:
         description: SnapshotRepository is the Schema for the snapshotrepositories
@@ -204,5 +204,196 @@ spec:
         type: object
     served: true
     storage: true
+    subresources:
+      status: {}
+  - additionalPrinterColumns:
+    - jsonPath: .status.sync
+      name: Sync
+      type: boolean
+    - jsonPath: .metadata.creationTimestamp
+      name: Age
+      type: date
+    name: v1alpha1
+    schema:
+      openAPIV3Schema:
+        description: SnapshotRepository is the Schema for the snapshotrepositories
+          API
+        properties:
+          apiVersion:
+            description: 'APIVersion defines the versioned schema of this representation
+              of an object. Servers should convert recognized schemas to the latest
+              internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
+            type: string
+          kind:
+            description: 'Kind is a string value representing the REST resource this
+              object represents. Servers may infer this from the endpoint the client
+              submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
+            type: string
+          metadata:
+            type: object
+          spec:
+            description: SnapshotRepositorySpec defines the desired state of SnapshotRepository
+            properties:
+              elasticsearchRef:
+                description: ElasticsearchRef is the Elasticsearch ref to connect
+                  on.
+                properties:
+                  elasticsearchCASecretRef:
+                    description: 'ElasticsearchCaSecretRef is the secret that store
+                      your custom CA certificate to connect on Elasticsearch API.
+                      It need to have the following keys: ca.crt'
+                    properties:
+                      name:
+                        description: 'Name of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                          TODO: Add other useful fields. apiVersion, kind, uid?'
+                        type: string
+                    type: object
+                    x-kubernetes-map-type: atomic
+                  external:
+                    description: ExternalElasticsearchRef is the external Elasticsearch
+                      cluster not managed by operator
+                    properties:
+                      addresses:
+                        description: Addresses is the list of Elasticsearch addresses
+                        items:
+                          type: string
+                        type: array
+                      secretRef:
+                        description: SecretName is the secret that contain the setting
+                          to connect on Elasticsearch that is not managed by ECK.
+                          It need to contain the keys `username` and `password`.
+                        properties:
+                          name:
+                            description: 'Name of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                              TODO: Add other useful fields. apiVersion, kind, uid?'
+                            type: string
+                        type: object
+                        x-kubernetes-map-type: atomic
+                    required:
+                    - addresses
+                    - secretRef
+                    type: object
+                  managed:
+                    description: ManagedElasticsearchRef is the managed Elasticsearch
+                      cluster by operator
+                    properties:
+                      name:
+                        description: Name is the Elasticsearch cluster deployed by
+                          operator
+                        type: string
+                      namespace:
+                        description: Namespace is the namespace where Elasticsearch
+                          is deployed by operator No need to set if Kibana is deployed
+                          on the same namespace
+                        type: string
+                      targetNodeGroup:
+                        description: TargetNodeGroup is the target Elasticsearch node
+                          group to use as service to connect on Elasticsearch Default,
+                          it use the global service
+                        type: string
+                    required:
+                    - name
+                    type: object
+                type: object
+              name:
+                description: Name is the custom snapshot repository name If empty,
+                  it use the ressource name
+                type: string
+              settings:
+                description: The config of snapshot repository
+                type: string
+              type:
+                description: Type the Snapshot repository type
+                type: string
+            required:
+            - elasticsearchRef
+            type: object
+          status:
+            description: SnapshotRepositoryStatus defines the observed state of SnapshotRepository
+            properties:
+              conditions:
+                description: List of conditions
+                items:
+                  description: "Condition contains details for one aspect of the current
+                    state of this API Resource. --- This struct is intended for direct
+                    use as an array at the field path .status.conditions.  For example,
+                    \n type FooStatus struct{ // Represents the observations of a
+                    foo's current state. // Known .status.conditions.type are: \"Available\",
+                    \"Progressing\", and \"Degraded\" // +patchMergeKey=type // +patchStrategy=merge
+                    // +listType=map // +listMapKey=type Conditions []metav1.Condition
+                    `json:\"conditions,omitempty\" patchStrategy:\"merge\" patchMergeKey:\"type\"
+                    protobuf:\"bytes,1,rep,name=conditions\"` \n // other fields }"
+                  properties:
+                    lastTransitionTime:
+                      description: lastTransitionTime is the last time the condition
+                        transitioned from one status to another. This should be when
+                        the underlying condition changed.  If that is not known, then
+                        using the time when the API field changed is acceptable.
+                      format: date-time
+                      type: string
+                    message:
+                      description: message is a human readable message indicating
+                        details about the transition. This may be an empty string.
+                      maxLength: 32768
+                      type: string
+                    observedGeneration:
+                      description: observedGeneration represents the .metadata.generation
+                        that the condition was set based upon. For instance, if .metadata.generation
+                        is currently 12, but the .status.conditions[x].observedGeneration
+                        is 9, the condition is out of date with respect to the current
+                        state of the instance.
+                      format: int64
+                      minimum: 0
+                      type: integer
+                    reason:
+                      description: reason contains a programmatic identifier indicating
+                        the reason for the condition's last transition. Producers
+                        of specific condition types may define expected values and
+                        meanings for this field, and whether the values are considered
+                        a guaranteed API. The value should be a CamelCase string.
+                        This field may not be empty.
+                      maxLength: 1024
+                      minLength: 1
+                      pattern: ^[A-Za-z]([A-Za-z0-9_,:]*[A-Za-z0-9_])?$
+                      type: string
+                    status:
+                      description: status of the condition, one of True, False, Unknown.
+                      enum:
+                      - "True"
+                      - "False"
+                      - Unknown
+                      type: string
+                    type:
+                      description: type of condition in CamelCase or in foo.example.com/CamelCase.
+                        --- Many .condition.type values are consistent across resources
+                        like Available, but because arbitrary conditions can be useful
+                        (see .node.status.conditions), the ability to deconflict is
+                        important. The regex it matches is (dns1123SubdomainFmt/)?(qualifiedNameFmt)
+                      maxLength: 316
+                      pattern: ^([a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*/)?(([A-Za-z0-9][-A-Za-z0-9_.]*)?[A-Za-z0-9])$
+                      type: string
+                  required:
+                  - lastTransitionTime
+                  - message
+                  - reason
+                  - status
+                  - type
+                  type: object
+                type: array
+              originalObject:
+                description: OriginalObject is the original object used on 3 way diff
+                  merge
+                type: string
+              sync:
+                description: Sync
+                type: boolean
+            required:
+            - conditions
+            - originalObject
+            - sync
+            type: object
+        type: object
+    served: true
+    storage: false
     subresources:
       status: {}

@@ -3,7 +3,7 @@ package cerebro
 import (
 	"github.com/disaster37/k8sbuilder"
 	"github.com/pkg/errors"
-	cerebrocrd "github.com/webcenter-fr/elasticsearch-operator/apis/cerebro/v1alpha1"
+	cerebrocrd "github.com/webcenter-fr/elasticsearch-operator/apis/cerebro/v1"
 	networkingv1 "k8s.io/api/networking/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )

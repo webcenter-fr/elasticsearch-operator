@@ -1,23 +1,23 @@
 ## Append samples you want in your CSV to this file as resources ##
 resources:
-- elasticsearch_v1alpha1_elasticsearch.yaml
-- kibana_v1alpha1_kibana.yaml
-- elasticsearchapi_v1alpha1_user.yaml
-- elasticsearchapi_v1alpha1_license.yaml
-- elasticsearchapi_v1alpha1_role.yaml
-- elasticsearchapi_v1alpha1_rolemapping.yaml
-- elasticsearchapi_v1alpha1_indexlifecyclepolicy.yaml
-- elasticsearchapi_v1alpha1_snapshotlifecyclepolicy.yaml
-- elasticsearchapi_v1alpha1_snapshotrepository.yaml
-- elasticsearchapi_v1alpha1_indextemplate.yaml
-- elasticsearchapi_v1alpha1_componenttemplate.yaml
-- elasticsearchapi_v1alpha1_watch.yaml
-- logstash_v1alpha1_logstash.yaml
-- beat_v1alpha1_filebeat.yaml
-- beat_v1alpha1_metricbeat.yaml
-- cerebro_v1alpha1_cerebro.yaml
-- cerebro_v1alpha1_host.yaml
-- kibanaapi_v1alpha1_userspace.yaml
-- kibanaapi_v1alpha1_role.yaml
-- kibanaapi_v1alpha1_logstashpipeline.yaml
+- elasticsearch_v1_elasticsearch.yaml
+- kibana_v1_kibana.yaml
+- elasticsearchapi_v1_user.yaml
+- elasticsearchapi_v1_license.yaml
+- elasticsearchapi_v1_role.yaml
+- elasticsearchapi_v1_rolemapping.yaml
+- elasticsearchapi_v1_indexlifecyclepolicy.yaml
+- elasticsearchapi_v1_snapshotlifecyclepolicy.yaml
+- elasticsearchapi_v1_snapshotrepository.yaml
+- elasticsearchapi_v1_indextemplate.yaml
+- elasticsearchapi_v1_componenttemplate.yaml
+- elasticsearchapi_v1_watch.yaml
+- logstash_v1_logstash.yaml
+- beat_v1_filebeat.yaml
+- beat_v1_metricbeat.yaml
+- cerebro_v1_cerebro.yaml
+- cerebro_v1_host.yaml
+- kibanaapi_v1_userspace.yaml
+- kibanaapi_v1_role.yaml
+- kibanaapi_v1_logstashpipeline.yaml
 #+kubebuilder:scaffold:manifestskustomizesamples
