@@ -320,19 +320,19 @@ type KibanaStatus struct {
 
 	// Phase is the current deployment phase
 	// +operator-sdk:csv:customresourcedefinitions:type=status
-	Phase string `json:"phase"`
+	Phase string `json:"phase,omitempty"`
 
 	// IsError is true if controller is stuck on Error
 	// +operator-sdk:csv:customresourcedefinitions:type=status
-	IsError *bool `json:"isOnError"`
+	IsError *bool `json:"isOnError,omitempty"`
 
 	// Url is the Kibana endpoint
 	// +operator-sdk:csv:customresourcedefinitions:type=status
-	Url string `json:"url"`
+	Url string `json:"url,omitempty"`
 
 	// List of conditions
 	// +operator-sdk:csv:customresourcedefinitions:type=status
-	Conditions []metav1.Condition `json:"conditions"`
+	Conditions []metav1.Condition `json:"conditions,omitempty"`
 }
 
 //+kubebuilder:object:root=true

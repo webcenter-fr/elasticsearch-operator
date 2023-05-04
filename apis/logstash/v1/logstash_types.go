@@ -317,15 +317,15 @@ type LogstashStatus struct {
 
 	// Phase is the current deployment phase
 	// +operator-sdk:csv:customresourcedefinitions:type=status
-	Phase string `json:"phase"`
+	Phase string `json:"phase,omitempty"`
 
 	// IsError is true if controller is stuck on Error
 	// +operator-sdk:csv:customresourcedefinitions:type=status
-	IsError *bool `json:"isOnError"`
+	IsError *bool `json:"isOnError,omitempty"`
 
 	// List of conditions
 	// +operator-sdk:csv:customresourcedefinitions:type=status
-	Conditions []metav1.Condition `json:"conditions"`
+	Conditions []metav1.Condition `json:"conditions,omitempty"`
 }
 
 //+kubebuilder:object:root=true

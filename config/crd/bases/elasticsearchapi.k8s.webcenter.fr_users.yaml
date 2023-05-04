@@ -231,11 +231,6 @@ spec:
               sync:
                 description: Sync
                 type: boolean
-            required:
-            - conditions
-            - originalObject
-            - passwordHash
-            - sync
             type: object
         type: object
     served: true

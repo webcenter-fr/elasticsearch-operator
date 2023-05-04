@@ -209,10 +209,6 @@ spec:
                 description: Sync
                 type: boolean
             required:
-            - conditions
-            - expireAt
-            - licenseChecksum
-            - licenseType
             - sync
             type: object
         type: object

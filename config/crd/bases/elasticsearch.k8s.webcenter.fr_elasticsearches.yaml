@@ -20893,13 +20893,6 @@ spec:
               url:
                 description: Url is the Elasticsearch endpoint
                 type: string
-            required:
-            - conditions
-            - credentialsRef
-            - health
-            - isOnError
-            - phase
-            - url
             type: object
         type: object
     served: true

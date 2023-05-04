@@ -49,19 +49,19 @@ type LicenseStatus struct {
 
 	// LicenseType is the license type
 	// +operator-sdk:csv:customresourcedefinitions:type=status
-	LicenseType string `json:"licenseType"`
+	LicenseType string `json:"licenseType,omitempty"`
 
 	// ExpireAt is the expiration date
 	// +operator-sdk:csv:customresourcedefinitions:type=status
-	ExpireAt string `json:"expireAt"`
+	ExpireAt string `json:"expireAt,omitempty"`
 
 	// LicenseChecksum is the checksum of the current license
 	// +operator-sdk:csv:customresourcedefinitions:type=status
-	LicenseChecksum string `json:"licenseChecksum"`
+	LicenseChecksum string `json:"licenseChecksum,omitempty"`
 
 	// List of conditions
 	// +operator-sdk:csv:customresourcedefinitions:type=status
-	Conditions []metav1.Condition `json:"conditions"`
+	Conditions []metav1.Condition `json:"conditions,omitempty"`
 
 	// Sync
 	// +operator-sdk:csv:customresourcedefinitions:type=status

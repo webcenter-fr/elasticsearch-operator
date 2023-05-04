@@ -128,15 +128,15 @@ type RoleStatus struct {
 
 	// List of conditions
 	// +operator-sdk:csv:customresourcedefinitions:type=status
-	Conditions []metav1.Condition `json:"conditions"`
+	Conditions []metav1.Condition `json:"conditions,omitempty"`
 
 	// Sync
 	// +operator-sdk:csv:customresourcedefinitions:type=status
-	Sync bool `json:"sync"`
+	Sync bool `json:"sync,omitempty"`
 
 	// OriginalObject is the original object used on 3 way diff merge
 	// +operator-sdk:csv:customresourcedefinitions:type=status
-	OriginalObject string `json:"originalObject"`
+	OriginalObject string `json:"originalObject,omitempty"`
 }
 
 //+kubebuilder:object:root=true

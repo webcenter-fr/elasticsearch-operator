@@ -250,10 +250,6 @@ spec:
               sync:
                 description: Sync
                 type: boolean
-            required:
-            - conditions
-            - originalObject
-            - sync
             type: object
         type: object
     served: true

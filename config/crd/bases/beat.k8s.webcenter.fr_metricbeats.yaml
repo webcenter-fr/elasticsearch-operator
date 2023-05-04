@@ -11972,10 +11972,6 @@ spec:
               phase:
                 description: Phase is the current deployment phase
                 type: string
-            required:
-            - conditions
-            - isOnError
-            - phase
             type: object
         type: object
     served: true

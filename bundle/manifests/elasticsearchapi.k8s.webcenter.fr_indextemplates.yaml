@@ -227,10 +227,6 @@ spec:
               sync:
                 description: Health
                 type: boolean
-            required:
-            - conditions
-            - originalObject
-            - sync
             type: object
         type: object
     served: true

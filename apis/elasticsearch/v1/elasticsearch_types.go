@@ -455,27 +455,27 @@ type ElasticsearchStatus struct {
 
 	// Phase is the current cluster deployment phase
 	// +operator-sdk:csv:customresourcedefinitions:type=status
-	Phase string `json:"phase"`
+	Phase string `json:"phase,omitempty"`
 
 	// IsError is true if controller is stuck on Error
 	// +operator-sdk:csv:customresourcedefinitions:type=status
-	IsError *bool `json:"isOnError"`
+	IsError *bool `json:"isOnError,omitempty"`
 
 	// Url is the Elasticsearch endpoint
 	// +operator-sdk:csv:customresourcedefinitions:type=status
-	Url string `json:"url"`
+	Url string `json:"url,omitempty"`
 
 	// CredentialsRef is the secret that store the credentials to access on Elasticsearch
 	// +operator-sdk:csv:customresourcedefinitions:type=status
-	CredentialsRef corev1.LocalObjectReference `json:"credentialsRef"`
+	CredentialsRef corev1.LocalObjectReference `json:"credentialsRef,omitempty"`
 
 	// Health is the cluster health
 	// +operator-sdk:csv:customresourcedefinitions:type=status
-	Health string `json:"health"`
+	Health string `json:"health,omitempty"`
 
 	// List of conditions
 	// +operator-sdk:csv:customresourcedefinitions:type=status
-	Conditions []metav1.Condition `json:"conditions"`
+	Conditions []metav1.Condition `json:"conditions,omitempty"`
 }
 
 //+kubebuilder:object:root=true
