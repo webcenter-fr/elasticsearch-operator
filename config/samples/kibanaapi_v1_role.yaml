@@ -1,0 +1,17 @@
+apiVersion: kibanaapi.k8s.webcenter.fr/v1
+kind: Role
+metadata:
+  labels:
+    app.kubernetes.io/name: role
+    app.kubernetes.io/instance: role-sample
+    app.kubernetes.io/part-of: elasticsearch-operator
+    app.kubernetes.io/managed-by: kustomize
+    app.kubernetes.io/created-by: elasticsearch-operator
+  name: role-sample
+spec:
+  kibanaRef:
+    managed:
+      name: kibana
+  kibana:
+    - base: ["all"]
+      spaces: ["userspace-sample"]

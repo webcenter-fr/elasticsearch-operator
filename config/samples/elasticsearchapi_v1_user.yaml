@@ -1,0 +1,21 @@
+apiVersion: elasticsearchapi.k8s.webcenter.fr/v1
+kind: User
+metadata:
+  labels:
+    app.kubernetes.io/name: user
+    app.kubernetes.io/instance: user-sample
+    app.kubernetes.io/part-of: bootstrap
+    app.kubernetes.io/managed-by: kustomize
+    app.kubernetes.io/created-by: bootstrap
+  name: user-sample
+spec:
+  elasticsearchRef:
+    managed:
+      name: elasticsearch-sample
+  enabled: true
+  isProtected: true
+  secretRef:
+    key: kibana_system
+    name: credential
+  username: kibana_system
+

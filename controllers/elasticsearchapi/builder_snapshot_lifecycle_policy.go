@@ -2,7 +2,7 @@ package elasticsearchapi
 
 import (
 	eshandler "github.com/disaster37/es-handler/v8"
-	elasticsearchapicrd "github.com/webcenter-fr/elasticsearch-operator/apis/elasticsearchapi/v1alpha1"
+	elasticsearchapicrd "github.com/webcenter-fr/elasticsearch-operator/apis/elasticsearchapi/v1"
 )
 
 // BuildSnapshotLifecyclePolicy permit to build SLM policy

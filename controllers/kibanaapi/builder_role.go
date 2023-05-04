@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 
 	"github.com/disaster37/go-kibana-rest/v8/kbapi"
-	kibanaapicrd "github.com/webcenter-fr/elasticsearch-operator/apis/kibanaapi/v1alpha1"
+	kibanaapicrd "github.com/webcenter-fr/elasticsearch-operator/apis/kibanaapi/v1"
 )
 
 // BuildRole permit to build role

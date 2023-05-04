@@ -6,7 +6,7 @@ import (
 	"strings"
 
 	"github.com/thoas/go-funk"
-	elasticsearchcrd "github.com/webcenter-fr/elasticsearch-operator/apis/elasticsearch/v1alpha1"
+	elasticsearchcrd "github.com/webcenter-fr/elasticsearch-operator/apis/elasticsearch/v1"
 )
 
 const (

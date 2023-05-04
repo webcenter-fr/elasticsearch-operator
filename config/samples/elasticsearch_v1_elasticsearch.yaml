@@ -1,0 +1,116 @@
+apiVersion: elasticsearch.k8s.webcenter.fr/v1
+kind: Elasticsearch
+metadata:
+  name: sample
+  labels:
+    env: test
+spec:
+  version: 8.6.0
+  setVMMaxMapCount: true
+  licenseSecretRef:
+    name: es-license
+  monitoring:
+    prometheus:
+      enabled: true
+  tls:
+    enabled: true
+    validityDays: 360
+    renewalDays: 60
+    keySize: 2048
+  endpoint:
+    ingress:
+      enabled: true
+      host: elasticsearch.cluster.local
+      secretRef:
+        name: es-tls
+      annotations:
+        nginx.ingress.kubernetes.io/ssl-redirect: "true"
+        nginx.ingress.kubernetes.io/proxy-body-size: 512M
+        nginx.ingress.kubernetes.io/proxy-connect-timeout: "600"
+        nginx.ingress.kubernetes.io/proxy-read-timeout: "600"
+        nginx.ingress.kubernetes.io/proxy-send-timeout: "600"
+  globalNodeGroup:
+    additionalVolumes:
+      - name: snapshot
+        persistentVolumeClaim:
+          claimName: pvc-elasticsearch-snapshot
+        mountPath: /mnt/snapshot
+    antiAffinity:
+      type: hard
+      topologyKey: 'topology.kubernetes.io/zone'
+    keystoreSecretRef:
+      name: es-keystore
+    envFrom:
+      - secretRef:
+          name: es-env
+    env:
+      - name: NODE_RACK
+        valueFrom:
+          fieldRef:
+            fieldPath: spec.nodeName
+    annotations:
+      co.elastic.logs.elasticsearch/multiline.pattern: '^\{'
+      co.elastic.logs.elasticsearch/multiline.negate: 'true'
+      co.elastic.logs.elasticsearch/multiline.match: 'after'
+      co.elastic.logs.elasticsearch/multiline.timeout: '5s'
+      co.elastic.logs.elasticsearch/processors.0.decode_json_fields: '{"fields": ["message"], "target": "hm.elasticsearch", "add_error_key": true, "max_depth": 10}'
+      co.elastic.logs.elasticsearch/processors.2.add_fields: '{"target": "", "fields": {"event": {"dataset": "elasticsearch"}, "service": {"type": "elasticsearch"}}}'
+    initContainerResources:
+      limits:
+        cpu: "500m"
+        memory: "256Mi"
+      requests:
+        cpu: "25m"
+        memory: "64Mi"
+    config:
+      elasticsearch.yml: |
+        action.destructive_requires_name: true
+        cluster.routing.allocation.disk.watermark.flood_stage: 1gb
+        cluster.routing.allocation.disk.watermark.high: 1gb
+        cluster.routing.allocation.disk.watermark.low: 2gb
+        
+        gateway.expected_data_nodes: 1
+        gateway.recover_after_data_nodes: 1
+        gateway.recover_after_time: 5m
+        http.cors.allow-credentials: true
+        http.cors.allow-headers: X-Requested-With,X-Auth-Token,Content-Type, Content-Length, Authorization
+        http.cors.allow-origin: /.*/
+        http.cors.enabled: true
+        http.max_content_length: 500mb
+        
+        # Rack awarness
+        node.attr.rack: "${NODE_RACK}"
+        cluster.routing.allocation.awareness.attributes: rack
+        path.repo:
+          - /mnt/snapshot
+        
+        xpack.security.audit.enabled: true
+        xpack.security.audit.logfile.events.exclude:
+          - access_granted
+        xpack.security.authc:
+          anonymous:
+            authz_exception: false
+            roles: monitoring
+            username: anonymous_user
+  nodeGroups:
+    - name: all
+      replicas: 1
+      roles:
+        - master
+        - data_hot
+        - data_content
+        - ingest
+      resources:
+        requests:
+          cpu: "250m"
+          memory: "2Gi"
+        limits:
+          cpu: "1000m"
+          memory: "2Gi"
+      persistence:
+        volumeClaim:
+          accessModes: [ "ReadWriteOnce" ]
+          storageClassName: "local-path"
+          resources:
+            requests:
+              storage: 20Gi

@@ -1,0 +1,16 @@
+apiVersion: elasticsearchapi.k8s.webcenter.fr/v1
+kind: License
+metadata:
+  labels:
+    app.kubernetes.io/name: license
+    app.kubernetes.io/instance: license-sample
+    app.kubernetes.io/part-of: bootstrap
+    app.kubernetes.io/managed-by: kustomize
+    app.kubernetes.io/created-by: bootstrap
+  name: license-sample
+spec:
+  elasticsearchRef:
+    managed:
+      name: elasticsearch-sample
+  secretRef:
+    name: license

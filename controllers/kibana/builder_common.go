@@ -4,7 +4,7 @@ import (
 	"fmt"
 
 	"github.com/thoas/go-funk"
-	kibanacrd "github.com/webcenter-fr/elasticsearch-operator/apis/kibana/v1alpha1"
+	kibanacrd "github.com/webcenter-fr/elasticsearch-operator/apis/kibana/v1"
 )
 
 const (

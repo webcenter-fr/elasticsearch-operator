@@ -3,7 +3,7 @@ package filebeat
 import (
 	"github.com/disaster37/k8sbuilder"
 	"github.com/pkg/errors"
-	beatcrd "github.com/webcenter-fr/elasticsearch-operator/apis/beat/v1alpha1"
+	beatcrd "github.com/webcenter-fr/elasticsearch-operator/apis/beat/v1"
 	policyv1 "k8s.io/api/policy/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"

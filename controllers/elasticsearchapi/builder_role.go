@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 
 	eshandler "github.com/disaster37/es-handler/v8"
-	elasticsearchapicrd "github.com/webcenter-fr/elasticsearch-operator/apis/elasticsearchapi/v1alpha1"
+	elasticsearchapicrd "github.com/webcenter-fr/elasticsearch-operator/apis/elasticsearchapi/v1"
 )
 
 // BuildRole permit to build role

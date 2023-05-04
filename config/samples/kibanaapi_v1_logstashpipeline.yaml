@@ -1,0 +1,26 @@
+apiVersion: kibanaapi.k8s.webcenter.fr/v1
+kind: LogstashPipeline
+metadata:
+  labels:
+    app.kubernetes.io/name: logstashpipeline
+    app.kubernetes.io/instance: logstashpipeline-sample
+    app.kubernetes.io/part-of: elasticsearch-operator
+    app.kubernetes.io/managed-by: kustomize
+    app.kubernetes.io/created-by: elasticsearch-operator
+  name: logstashpipeline-sample
+spec:
+  kibanaRef:
+    managed:
+      name: kibana
+  description: 'my logstash pipeline'
+  settings: |
+    {
+      "queue.type": "persisted"
+    }
+  pipeline: |
+    input { 
+      stdin {} 
+    } 
+    output { 
+      stdout {} 
+    }

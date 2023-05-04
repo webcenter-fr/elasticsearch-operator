@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 
 	olivere "github.com/olivere/elastic/v7"
-	elasticsearchapicrd "github.com/webcenter-fr/elasticsearch-operator/apis/elasticsearchapi/v1alpha1"
+	elasticsearchapicrd "github.com/webcenter-fr/elasticsearch-operator/apis/elasticsearchapi/v1"
 )
 
 // BuildRoleMapping permit to build roleMapping
