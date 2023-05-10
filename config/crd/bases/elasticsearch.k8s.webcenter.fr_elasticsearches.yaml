@@ -20774,13 +20774,13 @@ spec:
                     description: SelfSignedCertificate permit to set self signed certificate
                       settings
                     properties:
-                      'altIPs:':
+                      altIPs:
                         description: AltIps permit to set subject alt names of type
                           ip when generate certificate
                         items:
                           type: string
                         type: array
-                      'altNames:':
+                      altNames:
                         description: AltNames permit to set subject alt names of type
                           dns when generate certificate
                         items:
@@ -41658,13 +41658,13 @@ spec:
                     description: SelfSignedCertificate permit to set self signed certificate
                       settings
                     properties:
-                      'altIPs:':
+                      altIPs:
                         description: AltIps permit to set subject alt names of type
                           ip when generate certificate
                         items:
                           type: string
                         type: array
-                      'altNames:':
+                      altNames:
                         description: AltNames permit to set subject alt names of type
                           dns when generate certificate
                         items:
