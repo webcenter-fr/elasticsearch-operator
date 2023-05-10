@@ -206,12 +206,12 @@ type ElasticsearchSelfSignedCertificateSpec struct {
 	// AltIps permit to set subject alt names of type ip when generate certificate
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
 	// +optional
-	AltIps []string `json:"altIPs:,omitempty"`
+	AltIps []string `json:"altIPs,omitempty"`
 
 	// AltNames permit to set subject alt names of type dns when generate certificate
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
 	// +optional
-	AltNames []string `json:"altNames:,omitempty"`
+	AltNames []string `json:"altNames,omitempty"`
 }
 
 type ElasticsearchIngressSpec struct {
