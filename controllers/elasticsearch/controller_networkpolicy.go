@@ -13,6 +13,7 @@ import (
 	kibanacrd "github.com/webcenter-fr/elasticsearch-operator/apis/kibana/v1"
 	logstashcrd "github.com/webcenter-fr/elasticsearch-operator/apis/logstash/v1"
 	"github.com/webcenter-fr/elasticsearch-operator/controllers/common"
+	"github.com/webcenter-fr/elasticsearch-operator/pkg/helper"
 	corev1 "k8s.io/api/core/v1"
 	networkingv1 "k8s.io/api/networking/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
@@ -79,8 +80,9 @@ func (r *NetworkPolicyReconciler) Read(ctx context.Context, resource client.Obje
 	hostList := &cerebrocrd.HostList{}
 	oList := make([]client.Object, 0)
 	var cb *cerebrocrd.Cerebro
+	var oListTmp []client.Object
 
-	// Read current ingress
+	// Read current network policy
 	if err = r.Client.Get(ctx, types.NamespacedName{Namespace: o.Namespace, Name: GetNetworkPolicyName(o)}, np); err != nil {
 		if !k8serrors.IsNotFound(err) {
 			return res, errors.Wrapf(err, "Error when read network policy")
@@ -95,9 +97,10 @@ func (r *NetworkPolicyReconciler) Read(ctx context.Context, resource client.Obje
 	if err := r.Client.List(context.Background(), kibanaList, &client.ListOptions{FieldSelector: fs}); err != nil {
 		return res, errors.Wrapf(err, "Error when read Kibana")
 	}
-	for _, kb := range kibanaList.Items {
-		if kb.Namespace != o.Namespace {
-			oList = append(oList, &kb)
+	oListTmp = helper.ToSliceOfObject(kibanaList.Items)
+	for _, kb := range oListTmp {
+		if kb.GetNamespace() != o.Namespace {
+			oList = append(oList, kb)
 		}
 	}
 
@@ -106,9 +109,10 @@ func (r *NetworkPolicyReconciler) Read(ctx context.Context, resource client.Obje
 	if err := r.Client.List(context.Background(), logstashList, &client.ListOptions{FieldSelector: fs}); err != nil {
 		return res, errors.Wrapf(err, "Error when read Logstash")
 	}
-	for _, ls := range logstashList.Items {
-		if ls.Namespace != o.Namespace {
-			oList = append(oList, &ls)
+	oListTmp = helper.ToSliceOfObject(logstashList.Items)
+	for _, ls := range oListTmp {
+		if ls.GetNamespace() != o.Namespace {
+			oList = append(oList, ls)
 		}
 	}
 
@@ -117,9 +121,10 @@ func (r *NetworkPolicyReconciler) Read(ctx context.Context, resource client.Obje
 	if err := r.Client.List(context.Background(), filebeatList, &client.ListOptions{FieldSelector: fs}); err != nil {
 		return res, errors.Wrapf(err, "Error when read filebeat")
 	}
-	for _, fb := range filebeatList.Items {
-		if fb.Namespace != o.Namespace {
-			oList = append(oList, &fb)
+	oListTmp = helper.ToSliceOfObject(filebeatList.Items)
+	for _, fb := range oListTmp {
+		if fb.GetNamespace() != o.Namespace {
+			oList = append(oList, fb)
 		}
 	}
 
@@ -128,9 +133,10 @@ func (r *NetworkPolicyReconciler) Read(ctx context.Context, resource client.Obje
 	if err := r.Client.List(context.Background(), metricbeatList, &client.ListOptions{FieldSelector: fs}); err != nil {
 		return res, errors.Wrapf(err, "Error when read metricbeat")
 	}
-	for _, mb := range metricbeatList.Items {
-		if mb.Namespace != o.Namespace {
-			oList = append(oList, &mb)
+	oListTmp = helper.ToSliceOfObject(metricbeatList.Items)
+	for _, mb := range oListTmp {
+		if mb.GetNamespace() != o.Namespace {
+			oList = append(oList, mb)
 		}
 	}
 

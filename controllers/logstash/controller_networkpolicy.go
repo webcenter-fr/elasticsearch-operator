@@ -10,6 +10,7 @@ import (
 	beatcrd "github.com/webcenter-fr/elasticsearch-operator/apis/beat/v1"
 	logstashcrd "github.com/webcenter-fr/elasticsearch-operator/apis/logstash/v1"
 	"github.com/webcenter-fr/elasticsearch-operator/controllers/common"
+	"github.com/webcenter-fr/elasticsearch-operator/pkg/helper"
 	corev1 "k8s.io/api/core/v1"
 	networkingv1 "k8s.io/api/networking/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
@@ -70,6 +71,7 @@ func (r *NetworkPolicyReconciler) Read(ctx context.Context, resource client.Obje
 	np := &networkingv1.NetworkPolicy{}
 	filebeatList := &beatcrd.FilebeatList{}
 	oList := make([]client.Object, 0)
+	var oListTmp []client.Object
 
 	// Read current network policy
 	if err = r.Client.Get(ctx, types.NamespacedName{Namespace: o.Namespace, Name: GetNetworkPolicyName(o)}, np); err != nil {
@@ -85,9 +87,10 @@ func (r *NetworkPolicyReconciler) Read(ctx context.Context, resource client.Obje
 	if err := r.Client.List(context.Background(), filebeatList, &client.ListOptions{FieldSelector: fs}); err != nil {
 		return res, errors.Wrapf(err, "Error when read filebeat")
 	}
-	for _, fb := range filebeatList.Items {
-		if fb.Namespace != o.Namespace {
-			oList = append(oList, &fb)
+	oListTmp = helper.ToSliceOfObject(filebeatList.Items)
+	for _, fb := range oListTmp {
+		if fb.GetNamespace() != o.Namespace {
+			oList = append(oList, fb)
 		}
 	}
 
