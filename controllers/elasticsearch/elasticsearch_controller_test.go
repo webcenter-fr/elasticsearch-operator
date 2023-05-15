@@ -91,8 +91,8 @@ func doCreateElasticsearchStep() test.TestStep {
 					},
 					NodeGroups: []elasticsearchcrd.ElasticsearchNodeGroupSpec{
 						{
-							Name:     "single",
-							Replicas: 1,
+							Name:     "test",
+							Replicas: 2,
 							Roles: []string{
 								"master",
 								"data",
@@ -596,7 +596,7 @@ func doUpdateElasticsearchIncreaseNodeGroupStep() test.TestStep {
 			// Add labels must force to update all resources
 			es.Spec.NodeGroups = append(es.Spec.NodeGroups, elasticsearchcrd.ElasticsearchNodeGroupSpec{
 				Name:     "data",
-				Replicas: 1,
+				Replicas: 2,
 				Roles: []string{
 					"data",
 				},

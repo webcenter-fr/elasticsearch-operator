@@ -7,6 +7,7 @@ import (
 	"github.com/webcenter-fr/elasticsearch-operator/apis/shared"
 	corev1 "k8s.io/api/core/v1"
 	v1 "k8s.io/api/core/v1"
+	policyv1 "k8s.io/api/policy/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/utils/pointer"
 )
@@ -309,5 +310,63 @@ func TestIsPersistence(t *testing.T) {
 	}
 
 	assert.True(t, o.IsPersistence())
+
+}
+
+func TestIsPdb(t *testing.T) {
+	var o Elasticsearch
+
+	// When default
+	o = Elasticsearch{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "test",
+			Namespace: "default",
+		},
+		Spec: ElasticsearchSpec{},
+	}
+	assert.False(t, o.IsPdb(ElasticsearchNodeGroupSpec{}))
+
+	// When default with replica > 1
+	o = Elasticsearch{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "test",
+			Namespace: "default",
+		},
+		Spec: ElasticsearchSpec{
+			NodeGroups: []ElasticsearchNodeGroupSpec{
+				{
+					Name:     "test",
+					Replicas: 2,
+				},
+			},
+		},
+	}
+	assert.True(t, o.IsPdb(o.Spec.NodeGroups[0]))
+
+	// When PDB is set on globalGroup
+	o = Elasticsearch{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "test",
+			Namespace: "default",
+		},
+		Spec: ElasticsearchSpec{
+			GlobalNodeGroup: ElasticsearchGlobalNodeGroupSpec{
+				PodDisruptionBudgetSpec: &policyv1.PodDisruptionBudgetSpec{},
+			},
+		},
+	}
+	assert.True(t, o.IsPdb(ElasticsearchNodeGroupSpec{}))
+
+	// When PDB is set on nodeGroup
+	o = Elasticsearch{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "test",
+			Namespace: "default",
+		},
+		Spec: ElasticsearchSpec{},
+	}
+	assert.True(t, o.IsPdb(ElasticsearchNodeGroupSpec{
+		PodDisruptionBudgetSpec: &policyv1.PodDisruptionBudgetSpec{},
+	}))
 
 }

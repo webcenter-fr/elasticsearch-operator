@@ -30,6 +30,23 @@ func TestBuildPodDisruptionBudget(t *testing.T) {
 
 	pdb, err = BuildPodDisruptionBudget(o)
 	assert.NoError(t, err)
+	assert.Nil(t, pdb)
+
+	// With default values with replica > 0
+	o = &beatcrd.Metricbeat{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: "default",
+			Name:      "test",
+		},
+		Spec: beatcrd.MetricbeatSpec{
+			Deployment: beatcrd.MetricbeatDeploymentSpec{
+				Replicas: 2,
+			},
+		},
+	}
+
+	pdb, err = BuildPodDisruptionBudget(o)
+	assert.NoError(t, err)
 	test.EqualFromYamlFile(t, "testdata/pdb_default.yaml", pdb, test.CleanApi)
 
 	// When Pdb is defined

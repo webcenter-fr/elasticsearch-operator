@@ -47,6 +47,15 @@ func (h *Filebeat) IsMetricbeatMonitoring() bool {
 	return false
 }
 
+// IsPdb return true if PDB is enabled
+func (h *Filebeat) IsPdb() bool {
+	if h.Spec.Deployment.PodDisruptionBudgetSpec != nil || h.Spec.Deployment.Replicas > 1 {
+		return true
+	}
+
+	return false
+}
+
 // MustSetUpIndexForFilebeat setup indexer for Filebeat
 func MustSetUpIndexForFilebeat(k8sManager manager.Manager) {
 	if err := k8sManager.GetFieldIndexer().IndexField(context.Background(), &Filebeat{}, "spec.elasticsearchRef.managed.name", func(o client.Object) []string {

@@ -5,6 +5,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	v1 "k8s.io/api/core/v1"
+	policyv1 "k8s.io/api/policy/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -70,5 +71,48 @@ func TestMetricbeatIsPersistence(t *testing.T) {
 	}
 
 	assert.True(t, o.IsPersistence())
+
+}
+
+func TestMetricbeatIsPdb(t *testing.T) {
+	var o Metricbeat
+
+	// When default
+	o = Metricbeat{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "test",
+			Namespace: "default",
+		},
+		Spec: MetricbeatSpec{},
+	}
+	assert.False(t, o.IsPdb())
+
+	// When default with replica > 1
+	o = Metricbeat{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "test",
+			Namespace: "default",
+		},
+		Spec: MetricbeatSpec{
+			Deployment: MetricbeatDeploymentSpec{
+				Replicas: 2,
+			},
+		},
+	}
+	assert.True(t, o.IsPdb())
+
+	// When PDB is set
+	o = Metricbeat{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "test",
+			Namespace: "default",
+		},
+		Spec: MetricbeatSpec{
+			Deployment: MetricbeatDeploymentSpec{
+				PodDisruptionBudgetSpec: &policyv1.PodDisruptionBudgetSpec{},
+			},
+		},
+	}
+	assert.True(t, o.IsPdb())
 
 }

@@ -6,6 +6,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/webcenter-fr/elasticsearch-operator/apis/shared"
 	v1 "k8s.io/api/core/v1"
+	policyv1 "k8s.io/api/policy/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -189,4 +190,47 @@ func TestIsMetricbeatMonitoring(t *testing.T) {
 		},
 	}
 	assert.False(t, o.IsMetricbeatMonitoring())
+}
+
+func TestIsPdb(t *testing.T) {
+	var o Logstash
+
+	// When default
+	o = Logstash{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "test",
+			Namespace: "default",
+		},
+		Spec: LogstashSpec{},
+	}
+	assert.False(t, o.IsPdb())
+
+	// When default with replica > 1
+	o = Logstash{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "test",
+			Namespace: "default",
+		},
+		Spec: LogstashSpec{
+			Deployment: LogstashDeploymentSpec{
+				Replicas: 2,
+			},
+		},
+	}
+	assert.True(t, o.IsPdb())
+
+	// When PDB is set
+	o = Logstash{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "test",
+			Namespace: "default",
+		},
+		Spec: LogstashSpec{
+			Deployment: LogstashDeploymentSpec{
+				PodDisruptionBudgetSpec: &policyv1.PodDisruptionBudgetSpec{},
+			},
+		},
+	}
+	assert.True(t, o.IsPdb())
+
 }

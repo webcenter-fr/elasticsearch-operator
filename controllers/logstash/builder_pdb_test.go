@@ -30,6 +30,23 @@ func TestBuildPodDisruptionBudget(t *testing.T) {
 
 	pdb, err = BuildPodDisruptionBudget(o)
 	assert.NoError(t, err)
+	assert.Nil(t, pdb)
+
+	// With default values when replica > 1
+	o = &logstashcrd.Logstash{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: "default",
+			Name:      "test",
+		},
+		Spec: logstashcrd.LogstashSpec{
+			Deployment: logstashcrd.LogstashDeploymentSpec{
+				Replicas: 2,
+			},
+		},
+	}
+
+	pdb, err = BuildPodDisruptionBudget(o)
+	assert.NoError(t, err)
 	test.EqualFromYamlFile(t, "testdata/pdb_default.yaml", pdb, test.CleanApi)
 
 	// When Pdb is defined

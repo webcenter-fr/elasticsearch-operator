@@ -50,6 +50,26 @@ func TestBuildPodDisruptionBudget(t *testing.T) {
 
 	pdbs, err = BuildPodDisruptionBudget(o)
 	assert.NoError(t, err)
+	assert.Empty(t, pdbs)
+
+	// When pdb spec not provided, default and replica > 0
+	o = &elasticsearchcrd.Elasticsearch{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: "default",
+			Name:      "test",
+		},
+		Spec: elasticsearchcrd.ElasticsearchSpec{
+			NodeGroups: []elasticsearchcrd.ElasticsearchNodeGroupSpec{
+				{
+					Name:     "master",
+					Replicas: 2,
+				},
+			},
+		},
+	}
+
+	pdbs, err = BuildPodDisruptionBudget(o)
+	assert.NoError(t, err)
 	assert.Equal(t, 1, len(pdbs))
 	test.EqualFromYamlFile(t, "testdata/pdb_default.yaml", &pdbs[0], test.CleanApi)
 

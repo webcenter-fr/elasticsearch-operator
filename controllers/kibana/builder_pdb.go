@@ -12,6 +12,10 @@ import (
 // GeneratePodDisruptionBudget permit to generate pod disruption budgets for each node group
 func BuildPodDisruptionBudget(kb *kibanacrd.Kibana) (pdb *policyv1.PodDisruptionBudget, err error) {
 
+	if !kb.IsPdb() {
+		return nil, nil
+	}
+
 	maxUnavailable := intstr.FromInt(1)
 	pdb = &policyv1.PodDisruptionBudget{
 		ObjectMeta: metav1.ObjectMeta{

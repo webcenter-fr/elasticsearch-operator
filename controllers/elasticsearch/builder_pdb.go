@@ -18,6 +18,10 @@ func BuildPodDisruptionBudget(es *elasticsearchcrd.Elasticsearch) (podDisruption
 
 	maxUnavailable := intstr.FromInt(1)
 	for _, nodeGroup := range es.Spec.NodeGroups {
+		if !es.IsPdb(nodeGroup) {
+			continue
+		}
+
 		pdb = &policyv1.PodDisruptionBudget{
 			ObjectMeta: metav1.ObjectMeta{
 				Namespace:   es.Namespace,
