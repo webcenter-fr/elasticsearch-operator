@@ -37,6 +37,15 @@ func (h *Logstash) IsMetricbeatMonitoring() bool {
 	return false
 }
 
+// IsPdb return true if PDB is enabled
+func (h *Logstash) IsPdb() bool {
+	if h.Spec.Deployment.PodDisruptionBudgetSpec != nil || h.Spec.Deployment.Replicas > 1 {
+		return true
+	}
+
+	return false
+}
+
 // MustSetUpIndex setup indexer for Logstash
 func MustSetUpIndex(k8sManager manager.Manager) {
 	// Add indexers on Logstash to track secret change

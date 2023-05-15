@@ -60,6 +60,15 @@ func (h *Kibana) IsMetricbeatMonitoring() bool {
 	return false
 }
 
+// IsPdb return true if PDB is enabled
+func (h *Kibana) IsPdb() bool {
+	if h.Spec.Deployment.PodDisruptionBudgetSpec != nil || h.Spec.Deployment.Replicas > 1 {
+		return true
+	}
+
+	return false
+}
+
 // MustSetUpIndex setup indexer for kibana
 func MustSetUpIndex(k8sManager manager.Manager) {
 	if err := k8sManager.GetFieldIndexer().IndexField(context.Background(), &Kibana{}, "spec.tls.certificateSecretRef.name", func(o client.Object) []string {

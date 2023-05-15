@@ -109,7 +109,7 @@ func doCreateLogstashStep() test.TestStep {
 						},
 					},
 					Deployment: logstashcrd.LogstashDeploymentSpec{
-						Replicas: 1,
+						Replicas: 2,
 					},
 					Config: map[string]string{
 						"logstash.yml": `

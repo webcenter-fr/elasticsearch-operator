@@ -79,6 +79,15 @@ func (h ElasticsearchNodeGroupSpec) IsPersistence() bool {
 	return false
 }
 
+// IsPdb return true if PDB is enabled
+func (h *Elasticsearch) IsPdb(nodeGroup ElasticsearchNodeGroupSpec) bool {
+	if h.Spec.GlobalNodeGroup.PodDisruptionBudgetSpec != nil || nodeGroup.PodDisruptionBudgetSpec != nil || nodeGroup.Replicas > 1 {
+		return true
+	}
+
+	return false
+}
+
 // MustSetUpIndex setup indexer for Elasticsearch
 func MustSetUpIndex(k8sManager manager.Manager) {
 	if err := k8sManager.GetFieldIndexer().IndexField(context.Background(), &Elasticsearch{}, "spec.licenseSecretRef.name", func(o client.Object) []string {

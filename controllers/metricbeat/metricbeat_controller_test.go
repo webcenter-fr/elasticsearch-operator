@@ -107,7 +107,7 @@ func doCreateMetricbeatStep() test.TestStep {
 						},
 					},
 					Deployment: beatcrd.MetricbeatDeploymentSpec{
-						Replicas: 1,
+						Replicas: 2,
 					},
 					Config: map[string]string{
 						"metricbeat.yml": `

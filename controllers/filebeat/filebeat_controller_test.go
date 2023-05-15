@@ -109,7 +109,7 @@ func doCreateFilebeatStep() test.TestStep {
 						},
 					},
 					Deployment: beatcrd.FilebeatDeploymentSpec{
-						Replicas: 1,
+						Replicas: 2,
 					},
 					Config: map[string]string{
 						"filebeat.yml": `

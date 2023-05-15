@@ -17,6 +17,15 @@ func (h *Metricbeat) IsPersistence() bool {
 	return false
 }
 
+// IsPdb return true if PDB is enabled
+func (h *Metricbeat) IsPdb() bool {
+	if h.Spec.Deployment.PodDisruptionBudgetSpec != nil || h.Spec.Deployment.Replicas > 1 {
+		return true
+	}
+
+	return false
+}
+
 // MustSetUpIndexForMetricbeat setup indexer for Metricbeat
 func MustSetUpIndexForMetricbeat(k8sManager manager.Manager) {
 	if err := k8sManager.GetFieldIndexer().IndexField(context.Background(), &Metricbeat{}, "spec.elasticsearchRef.managed.name", func(o client.Object) []string {
