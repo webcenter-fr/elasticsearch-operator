@@ -73,6 +73,9 @@ func NewCerebroReconciler(client client.Client, scheme *runtime.Scheme) *Cerebro
 //+kubebuilder:rbac:groups=cerebro.k8s.webcenter.fr,resources=cerebroes,verbs=get;list;watch;create;update;patch;delete
 //+kubebuilder:rbac:groups=cerebro.k8s.webcenter.fr,resources=cerebroes/status,verbs=get;update;patch
 //+kubebuilder:rbac:groups=cerebro.k8s.webcenter.fr,resources=cerebroes/finalizers,verbs=update
+//+kubebuilder:rbac:groups=cerebro.k8s.webcenter.fr,resources=hosts,verbs=get;list;watch;create;update;patch;delete
+//+kubebuilder:rbac:groups=cerebro.k8s.webcenter.fr,resources=hosts/status,verbs=get;update;patch
+//+kubebuilder:rbac:groups=cerebro.k8s.webcenter.fr,resources=hosts/finalizers,verbs=update
 //+kubebuilder:rbac:groups="",resources=events,verbs=patch;get;create
 //+kubebuilder:rbac:groups="",resources=configmaps,verbs=get;list;watch;create;update;patch;delete
 //+kubebuilder:rbac:groups="",resources=secrets,verbs=get;list;watch;create;update;patch;delete

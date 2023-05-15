@@ -936,10 +936,10 @@ metadata:
         }
       ]
     capabilities: Basic Install
-    createdAt: "2023-05-04T12:11:07Z"
+    createdAt: "2023-05-10T15:16:10Z"
     operators.operatorframework.io/builder: operator-sdk-v1.26.1
     operators.operatorframework.io/project_layout: go.kubebuilder.io/v3
-  name: elasticsearch-operator.v0.0.17
+  name: elasticsearch-operator.v0.0.19
   namespace: placeholder
 spec:
   apiservicedefinitions: {}
@@ -1359,11 +1359,11 @@ spec:
       - description: AltIps permit to set subject alt names of type ip when generate
           certificate
         displayName: Alt Ips
-        path: 'tls.selfSignedCertificate.altIPs:'
+        path: tls.selfSignedCertificate.altIPs
       - description: AltNames permit to set subject alt names of type dns when generate
           certificate
         displayName: Alt Names
-        path: 'tls.selfSignedCertificate.altNames:'
+        path: tls.selfSignedCertificate.altNames
       - description: ValidityDays is the number of days that certificates are valid
           Default to 365
         displayName: Validity Days
@@ -2734,11 +2734,11 @@ spec:
       - description: AltIps permit to set subject alt names of type ip when generate
           certificate
         displayName: Alt Ips
-        path: 'tls.selfSignedCertificate.altIPs:'
+        path: tls.selfSignedCertificate.altIPs
       - description: AltNames permit to set subject alt names of type dns when generate
           certificate
         displayName: Alt Names
-        path: 'tls.selfSignedCertificate.altNames:'
+        path: tls.selfSignedCertificate.altNames
       - description: ValidityDays is the number of days that certificates are valid
           Default to 365
         displayName: Validity Days
@@ -5211,6 +5211,32 @@ spec:
           - patch
           - update
         - apiGroups:
+          - cerebro.k8s.webcenter.fr
+          resources:
+          - hosts
+          verbs:
+          - create
+          - delete
+          - get
+          - list
+          - patch
+          - update
+          - watch
+        - apiGroups:
+          - cerebro.k8s.webcenter.fr
+          resources:
+          - hosts/finalizers
+          verbs:
+          - update
+        - apiGroups:
+          - cerebro.k8s.webcenter.fr
+          resources:
+          - hosts/status
+          verbs:
+          - get
+          - patch
+          - update
+        - apiGroups:
           - elasticsearch.k8s.webcenter.fr
           resources:
           - elasticsearches
@@ -5749,7 +5775,7 @@ spec:
                       fieldPath: metadata.namespace
                 - name: LOG_LEVEL
                   value: DEBUG
-                image: quay.io/webcenter/elasticsearch-operator:0.0.17
+                image: quay.io/webcenter/elasticsearch-operator:0.0.19
                 livenessProbe:
                   httpGet:
                     path: /healthz
@@ -5839,5 +5865,5 @@ spec:
   provider:
     name: webcenter.fr
     url: https://github.com/webcenter-fr/elasticsearch-operator
-  replaces: elasticsearch-operator.v0.0.16
-  version: 0.0.17
+  replaces: elasticsearch-operator.v0.0.18
+  version: 0.0.19
