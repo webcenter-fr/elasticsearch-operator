@@ -58,6 +58,11 @@ func BuildMetricbeat(es *elasticsearchcrd.Elasticsearch) (mb *beatcrd.Metricbeat
 		sb.WriteString(fmt.Sprintf("  hosts: http://%s.%s.svc:9200\n", GetGlobalServiceName(es), es.Namespace))
 	}
 
+	version := es.Spec.Version
+	if es.Spec.Monitoring.Metricbeat.Version != "" {
+		version = es.Spec.Monitoring.Metricbeat.Version
+	}
+
 	mb = &beatcrd.Metricbeat{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:        GetMetricbeatName(es),
@@ -66,7 +71,7 @@ func BuildMetricbeat(es *elasticsearchcrd.Elasticsearch) (mb *beatcrd.Metricbeat
 			Annotations: es.Annotations, // not use getAnnotations() to avoid collision
 		},
 		Spec: beatcrd.MetricbeatSpec{
-			Version:          es.Spec.Version,
+			Version:          version,
 			ElasticsearchRef: es.Spec.Monitoring.Metricbeat.ElasticsearchRef,
 			Module: map[string]string{
 				"elasticsearch-xpack.yml": sb.String(),

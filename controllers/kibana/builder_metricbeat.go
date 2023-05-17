@@ -60,6 +60,11 @@ func BuildMetricbeat(kb *kibanacrd.Kibana) (mb *beatcrd.Metricbeat, err error) {
 		sb.WriteString(fmt.Sprintf("  hosts: http://%s.%s.svc:5601\n", GetServiceName(kb), kb.Namespace))
 	}
 
+	version := kb.Spec.Version
+	if kb.Spec.Monitoring.Metricbeat.Version != "" {
+		version = kb.Spec.Monitoring.Metricbeat.Version
+	}
+
 	mb = &beatcrd.Metricbeat{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:        GetMetricbeatName(kb),
@@ -68,7 +73,7 @@ func BuildMetricbeat(kb *kibanacrd.Kibana) (mb *beatcrd.Metricbeat, err error) {
 			Annotations: kb.Annotations, // not use getAnnotations() to avoid collision
 		},
 		Spec: beatcrd.MetricbeatSpec{
-			Version:          kb.Spec.Version,
+			Version:          version,
 			ElasticsearchRef: kb.Spec.Monitoring.Metricbeat.ElasticsearchRef,
 			Module: map[string]string{
 				"kibana-xpack.yml": sb.String(),
