@@ -25,4 +25,11 @@ type MetricbeatMonitoringSpec struct {
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
 	// +optional
 	RefreshPeriod string `json:"refreshPeriod,omitempty"`
+
+	// Version is the Metricbeat version to use
+	// Default it use the same version of the product that it monitor
+	// +operator-sdk:csv:customresourcedefinitions:type=spec
+	// +optional
+	// +kubebuilder:default=latest
+	Version string `json:"version,omitempty"`
 }

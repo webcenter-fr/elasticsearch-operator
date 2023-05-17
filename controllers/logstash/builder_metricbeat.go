@@ -37,6 +37,11 @@ func BuildMetricbeat(ls *logstashcrd.Logstash) (mb *beatcrd.Metricbeat, err erro
 
 	sb.WriteString(fmt.Sprintf("  hosts: [%s]\n", strings.Join(getLogstashTargets(ls), ", ")))
 
+	version := ls.Spec.Version
+	if ls.Spec.Monitoring.Metricbeat.Version != "" {
+		version = ls.Spec.Monitoring.Metricbeat.Version
+	}
+
 	mb = &beatcrd.Metricbeat{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:        GetMetricbeatName(ls),
@@ -45,7 +50,7 @@ func BuildMetricbeat(ls *logstashcrd.Logstash) (mb *beatcrd.Metricbeat, err erro
 			Annotations: ls.Annotations, // not use getAnnotations() to avoid collision
 		},
 		Spec: beatcrd.MetricbeatSpec{
-			Version:          ls.Spec.Version,
+			Version:          version,
 			ElasticsearchRef: ls.Spec.Monitoring.Metricbeat.ElasticsearchRef,
 			Module: map[string]string{
 				"logstash-xpack.yml": sb.String(),

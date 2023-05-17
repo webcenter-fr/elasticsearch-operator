@@ -4,6 +4,7 @@ metadata:
   namespace: default
   name: test-metricbeat-ls
 spec:
+  version: 1.0.0
   elasticsearchRef:
     managed:
       name: test

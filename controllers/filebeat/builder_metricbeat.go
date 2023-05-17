@@ -34,6 +34,11 @@ func BuildMetricbeat(fb *beatcrd.Filebeat) (mb *beatcrd.Metricbeat, err error) {
 
 	sb.WriteString(fmt.Sprintf("  hosts: [%s]\n", strings.Join(getFilebeatTargets(fb), ", ")))
 
+	version := fb.Spec.Version
+	if fb.Spec.Monitoring.Metricbeat.Version != "" {
+		version = fb.Spec.Monitoring.Metricbeat.Version
+	}
+
 	mb = &beatcrd.Metricbeat{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:        GetMetricbeatName(fb),
@@ -42,7 +47,7 @@ func BuildMetricbeat(fb *beatcrd.Filebeat) (mb *beatcrd.Metricbeat, err error) {
 			Annotations: fb.Annotations, // not use getAnnotations() to avoid collision
 		},
 		Spec: beatcrd.MetricbeatSpec{
-			Version:          fb.Spec.Version,
+			Version:          version,
 			ElasticsearchRef: fb.Spec.Monitoring.Metricbeat.ElasticsearchRef,
 			Module: map[string]string{
 				"beat-xpack.yml": sb.String(),

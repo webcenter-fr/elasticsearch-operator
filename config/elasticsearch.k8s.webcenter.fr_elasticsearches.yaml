@@ -10364,6 +10364,11 @@ spec:
                         description: RefreshPeriod permit to set the time to collect
                           data Defaullt to  `10s`
                         type: string
+                      version:
+                        default: latest
+                        description: Version is the Metricbeat version to use Default
+                          it use the same version of the product that it monitor
+                        type: string
                     required:
                     - elasticsearchRef
                     type: object
@@ -31247,6 +31252,11 @@ spec:
                       refreshPeriod:
                         description: RefreshPeriod permit to set the time to collect
                           data Defaullt to  `10s`
+                        type: string
+                      version:
+                        default: latest
+                        description: Version is the Metricbeat version to use Default
+                          it use the same version of the product that it monitor
                         type: string
                     required:
                     - elasticsearchRef

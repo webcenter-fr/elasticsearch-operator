@@ -89,6 +89,7 @@ func TestBuildMetricbeat(t *testing.T) {
 			Monitoring: elasticsearchcrd.ElasticsearchMonitoringSpec{
 				Metricbeat: &shared.MetricbeatMonitoringSpec{
 					Enabled: true,
+					Version: "1.0.0",
 					ElasticsearchRef: shared.ElasticsearchRef{
 						ManagedElasticsearchRef: &shared.ElasticsearchManagedRef{
 							Name:      "test",
