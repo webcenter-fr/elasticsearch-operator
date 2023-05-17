@@ -4,7 +4,7 @@ metadata:
   annotations:
     alm-examples: '[]'
     capabilities: Basic Install
-  name: elasticsearch-operator.v0.0.21
+  name: elasticsearch-operator.v0.0.22
   namespace: placeholder
 spec:
   apiservicedefinitions: {}
@@ -2522,6 +2522,10 @@ spec:
           to  `10s`
         displayName: Refresh Period
         path: monitoring.metricbeat.refreshPeriod
+      - description: Version is the Metricbeat version to use Default it use the same
+          version of the product that it monitor
+        displayName: Version
+        path: monitoring.metricbeat.version
       - description: Prometheus permit to monitor cluster with Prometheus and graphana
           (via exporter)
         displayName: Prometheus
@@ -2889,6 +2893,10 @@ spec:
           to  `10s`
         displayName: Refresh Period
         path: monitoring.metricbeat.refreshPeriod
+      - description: Version is the Metricbeat version to use Default it use the same
+          version of the product that it monitor
+        displayName: Version
+        path: monitoring.metricbeat.version
       - description: Prometheus permit to monitor cluster with Prometheus and graphana
           (via exporter)
         displayName: Prometheus
@@ -3246,6 +3254,10 @@ spec:
           to  `10s`
         displayName: Refresh Period
         path: monitoring.metricbeat.refreshPeriod
+      - description: Version is the Metricbeat version to use Default it use the same
+          version of the product that it monitor
+        displayName: Version
+        path: monitoring.metricbeat.version
       - description: Prometheus permit to monitor cluster with Prometheus and graphana
           (via exporter)
         displayName: Prometheus
@@ -3541,6 +3553,10 @@ spec:
           to  `10s`
         displayName: Refresh Period
         path: monitoring.metricbeat.refreshPeriod
+      - description: Version is the Metricbeat version to use Default it use the same
+          version of the product that it monitor
+        displayName: Version
+        path: monitoring.metricbeat.version
       - description: Prometheus permit to monitor cluster with Prometheus and graphana
           (via exporter)
         displayName: Prometheus
@@ -4372,5 +4388,5 @@ spec:
   provider:
     name: webcenter.fr
     url: https://github.com/webcenter-fr/elasticsearch-operator
-  replaces: elasticsearch-operator.v0.0.20
-  version: 0.0.21
+  replaces: elasticsearch-operator.v0.0.21
+  version: 0.0.22

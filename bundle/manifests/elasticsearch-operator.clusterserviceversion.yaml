@@ -936,10 +936,10 @@ metadata:
         }
       ]
     capabilities: Basic Install
-    createdAt: "2023-05-15T13:10:27Z"
+    createdAt: "2023-05-17T13:41:48Z"
     operators.operatorframework.io/builder: operator-sdk-v1.26.1
     operators.operatorframework.io/project_layout: go.kubebuilder.io/v3
-  name: elasticsearch-operator.v0.0.21
+  name: elasticsearch-operator.v0.0.22
   namespace: placeholder
 spec:
   apiservicedefinitions: {}
@@ -1234,6 +1234,10 @@ spec:
           to  `10s`
         displayName: Refresh Period
         path: monitoring.metricbeat.refreshPeriod
+      - description: Version is the Metricbeat version to use Default it use the same
+          version of the product that it monitor
+        displayName: Version
+        path: monitoring.metricbeat.version
       - description: Prometheus permit to monitor cluster with Prometheus and graphana
           (via exporter)
         displayName: Prometheus
@@ -1937,6 +1941,10 @@ spec:
           to  `10s`
         displayName: Refresh Period
         path: monitoring.metricbeat.refreshPeriod
+      - description: Version is the Metricbeat version to use Default it use the same
+          version of the product that it monitor
+        displayName: Version
+        path: monitoring.metricbeat.version
       - description: Prometheus permit to monitor cluster with Prometheus and graphana
           (via exporter)
         displayName: Prometheus
@@ -2693,6 +2701,10 @@ spec:
           to  `10s`
         displayName: Refresh Period
         path: monitoring.metricbeat.refreshPeriod
+      - description: Version is the Metricbeat version to use Default it use the same
+          version of the product that it monitor
+        displayName: Version
+        path: monitoring.metricbeat.version
       - description: Prometheus permit to monitor cluster with Prometheus and graphana
           (via exporter)
         displayName: Prometheus
@@ -3270,6 +3282,10 @@ spec:
           to  `10s`
         displayName: Refresh Period
         path: monitoring.metricbeat.refreshPeriod
+      - description: Version is the Metricbeat version to use Default it use the same
+          version of the product that it monitor
+        displayName: Version
+        path: monitoring.metricbeat.version
       - description: Prometheus permit to monitor cluster with Prometheus and graphana
           (via exporter)
         displayName: Prometheus
@@ -5775,7 +5791,7 @@ spec:
                       fieldPath: metadata.namespace
                 - name: LOG_LEVEL
                   value: DEBUG
-                image: quay.io/webcenter/elasticsearch-operator:0.0.21
+                image: quay.io/webcenter/elasticsearch-operator:0.0.22
                 livenessProbe:
                   httpGet:
                     path: /healthz
@@ -5865,5 +5881,5 @@ spec:
   provider:
     name: webcenter.fr
     url: https://github.com/webcenter-fr/elasticsearch-operator
-  replaces: elasticsearch-operator.v0.0.20
-  version: 0.0.21
+  replaces: elasticsearch-operator.v0.0.21
+  version: 0.0.22
