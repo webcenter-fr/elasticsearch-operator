@@ -4,7 +4,7 @@ metadata:
   annotations:
     alm-examples: '[]'
     capabilities: Basic Install
-  name: elasticsearch-operator.v0.0.22
+  name: elasticsearch-operator.v0.0.23
   namespace: placeholder
 spec:
   apiservicedefinitions: {}
@@ -4383,10 +4383,10 @@ spec:
   maintainers:
   - email: linuxworkgroup@hotmail.com
     name: disaster37
-  maturity: alpha
+  maturity: stable
   minKubeVersion: v1.18.0
   provider:
     name: webcenter.fr
     url: https://github.com/webcenter-fr/elasticsearch-operator
-  replaces: elasticsearch-operator.v0.0.21
-  version: 0.0.22
+  replaces: elasticsearch-operator.v0.0.22
+  version: 0.0.23

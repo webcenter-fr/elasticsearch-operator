@@ -4385,7 +4385,6 @@ spec:
                       refreshPeriod:
                         type: string
                       version:
-                        default: latest
                         type: string
                     required:
                     - elasticsearchRef
@@ -13094,7 +13093,6 @@ spec:
                       refreshPeriod:
                         type: string
                       version:
-                        default: latest
                         type: string
                     required:
                     - elasticsearchRef
