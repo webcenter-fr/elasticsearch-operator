@@ -63,7 +63,13 @@ func (h *Elasticsearch) IsPrometheusMonitoring() bool {
 // IsMetricbeatMonitoring return true if Metricbeat monitoring is enabled
 func (h *Elasticsearch) IsMetricbeatMonitoring() bool {
 
-	if h.Spec.Monitoring.Metricbeat != nil && h.Spec.Monitoring.Metricbeat.Enabled {
+	// compute the numbers of replica
+	nbReplica := int32(0)
+	for _, nodeGroup := range h.Spec.NodeGroups {
+		nbReplica += nodeGroup.Replicas
+	}
+
+	if h.Spec.Monitoring.Metricbeat != nil && h.Spec.Monitoring.Metricbeat.Enabled && nbReplica > 0 {
 		return true
 	}
 

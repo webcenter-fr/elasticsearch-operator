@@ -72,6 +72,12 @@ func TestBuildMetricbeat(t *testing.T) {
 					},
 				},
 			},
+			NodeGroups: []elasticsearchcrd.ElasticsearchNodeGroupSpec{
+				{
+					Name:     "test",
+					Replicas: 1,
+				},
+			},
 		},
 	}
 
@@ -109,6 +115,12 @@ func TestBuildMetricbeat(t *testing.T) {
 					},
 				},
 			},
+			NodeGroups: []elasticsearchcrd.ElasticsearchNodeGroupSpec{
+				{
+					Name:     "test",
+					Replicas: 1,
+				},
+			},
 		},
 	}
 
@@ -136,6 +148,12 @@ func TestBuildMetricbeat(t *testing.T) {
 			},
 			Tls: elasticsearchcrd.ElasticsearchTlsSpec{
 				Enabled: pointer.Bool(false),
+			},
+			NodeGroups: []elasticsearchcrd.ElasticsearchNodeGroupSpec{
+				{
+					Name:     "test",
+					Replicas: 1,
+				},
 			},
 		},
 	}
