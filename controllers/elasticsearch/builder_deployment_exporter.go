@@ -84,7 +84,7 @@ func BuildDeploymentExporter(es *elasticsearchcrd.Elasticsearch) (dpl *appv1.Dep
 		},
 		Limits: corev1.ResourceList{
 			corev1.ResourceCPU:    resource.MustParse("100m"),
-			corev1.ResourceMemory: resource.MustParse("128Mi"),
+			corev1.ResourceMemory: resource.MustParse("512Mi"),
 		},
 	})
 
