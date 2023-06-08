@@ -258,6 +258,12 @@ func TestIsMetricbeatMonitoring(t *testing.T) {
 					Enabled: true,
 				},
 			},
+			NodeGroups: []ElasticsearchNodeGroupSpec{
+				{
+					Name:     "test",
+					Replicas: 1,
+				},
+			},
 		},
 	}
 	assert.True(t, o.IsMetricbeatMonitoring())

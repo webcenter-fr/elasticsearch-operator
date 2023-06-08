@@ -42,7 +42,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/handler"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
-	"sigs.k8s.io/controller-runtime/pkg/source"
 )
 
 const (
@@ -140,15 +139,15 @@ func (h *LogstashReconciler) SetupWithManager(mgr ctrl.Manager) error {
 		Owns(&policyv1.PodDisruptionBudget{}).
 		Owns(&appv1.StatefulSet{}).
 		Owns(&beatcrd.Metricbeat{}).
-		Watches(&source.Kind{Type: &corev1.Secret{}}, handler.EnqueueRequestsFromMapFunc(watchSecret(h.Client))).
-		Watches(&source.Kind{Type: &corev1.ConfigMap{}}, handler.EnqueueRequestsFromMapFunc(watchConfigMap(h.Client))).
-		Watches(&source.Kind{Type: &elasticsearchcrd.Elasticsearch{}}, handler.EnqueueRequestsFromMapFunc(watchElasticsearch(h.Client))).
+		Watches(&corev1.Secret{}, handler.EnqueueRequestsFromMapFunc(watchSecret(h.Client))).
+		Watches(&corev1.ConfigMap{}, handler.EnqueueRequestsFromMapFunc(watchConfigMap(h.Client))).
+		Watches(&elasticsearchcrd.Elasticsearch{}, handler.EnqueueRequestsFromMapFunc(watchElasticsearch(h.Client))).
 		Complete(h)
 }
 
 // watchElasticsearch permit to update if ElasticsearchRef change
 func watchElasticsearch(c client.Client) handler.MapFunc {
-	return func(a client.Object) []reconcile.Request {
+	return func(ctx context.Context, a client.Object) []reconcile.Request {
 		var (
 			listLogstashs *logstashcrd.LogstashList
 			fs            fields.Selector
@@ -173,7 +172,7 @@ func watchElasticsearch(c client.Client) handler.MapFunc {
 
 // watchConfigMap permit to update if configMapRef change
 func watchConfigMap(c client.Client) handler.MapFunc {
-	return func(a client.Object) []reconcile.Request {
+	return func(ctx context.Context, a client.Object) []reconcile.Request {
 		var (
 			listLogstashs *logstashcrd.LogstashList
 			fs            fields.Selector
@@ -218,7 +217,7 @@ func watchConfigMap(c client.Client) handler.MapFunc {
 
 // watchSecret permit to update Logstash if secretRef change
 func watchSecret(c client.Client) handler.MapFunc {
-	return func(a client.Object) []reconcile.Request {
+	return func(ctx context.Context, a client.Object) []reconcile.Request {
 		var (
 			listLogstashs *logstashcrd.LogstashList
 			fs            fields.Selector

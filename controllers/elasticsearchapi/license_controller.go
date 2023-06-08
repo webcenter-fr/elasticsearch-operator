@@ -39,7 +39,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/handler"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
-	"sigs.k8s.io/controller-runtime/pkg/source"
 )
 
 const (
@@ -101,13 +100,13 @@ func (r *LicenseReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 func (r *LicenseReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&elasticsearchapicrd.License{}).
-		Watches(&source.Kind{Type: &core.Secret{}}, handler.EnqueueRequestsFromMapFunc(watchLicenseSecret(r.Client))).
+		Watches(&core.Secret{}, handler.EnqueueRequestsFromMapFunc(watchLicenseSecret(r.Client))).
 		Complete(r)
 }
 
 // watchLicenseSecret permit to update license if secret change
 func watchLicenseSecret(c client.Client) handler.MapFunc {
-	return func(a client.Object) []reconcile.Request {
+	return func(ctx context.Context, a client.Object) []reconcile.Request {
 
 		reconcileRequests := make([]reconcile.Request, 0)
 		listLicenses := &elasticsearchapicrd.LicenseList{}

@@ -39,7 +39,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/handler"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
-	"sigs.k8s.io/controller-runtime/pkg/source"
 )
 
 const (
@@ -126,15 +125,15 @@ func (h *CerebroReconciler) SetupWithManager(mgr ctrl.Manager) error {
 		Owns(&networkingv1.Ingress{}).
 		Owns(&corev1.Service{}).
 		Owns(&appv1.Deployment{}).
-		Watches(&source.Kind{Type: &corev1.Secret{}}, handler.EnqueueRequestsFromMapFunc(watchSecret(h.Client))).
-		Watches(&source.Kind{Type: &corev1.ConfigMap{}}, handler.EnqueueRequestsFromMapFunc(watchConfigMap(h.Client))).
-		Watches(&source.Kind{Type: &cerebrocrd.Host{}}, handler.EnqueueRequestsFromMapFunc(watchHost(h.Client))).
+		Watches(&corev1.Secret{}, handler.EnqueueRequestsFromMapFunc(watchSecret(h.Client))).
+		Watches(&corev1.ConfigMap{}, handler.EnqueueRequestsFromMapFunc(watchConfigMap(h.Client))).
+		Watches(&cerebrocrd.Host{}, handler.EnqueueRequestsFromMapFunc(watchHost(h.Client))).
 		Complete(h)
 }
 
 // watchHost permit to update configmap to add Elasticsearch cluster on list of know cluster
 func watchHost(c client.Client) handler.MapFunc {
-	return func(a client.Object) []reconcile.Request {
+	return func(ctx context.Context, a client.Object) []reconcile.Request {
 		var (
 			listHosts *cerebrocrd.HostList
 			fs        fields.Selector
@@ -160,7 +159,7 @@ func watchHost(c client.Client) handler.MapFunc {
 
 // watchConfigMap permit to update if configMapRef change
 func watchConfigMap(c client.Client) handler.MapFunc {
-	return func(a client.Object) []reconcile.Request {
+	return func(ctx context.Context, a client.Object) []reconcile.Request {
 		var (
 			listCerebros *cerebrocrd.CerebroList
 			fs           fields.Selector
@@ -195,7 +194,7 @@ func watchConfigMap(c client.Client) handler.MapFunc {
 
 // watchSecret permit to update Kibana if secretRef change
 func watchSecret(c client.Client) handler.MapFunc {
-	return func(a client.Object) []reconcile.Request {
+	return func(ctx context.Context, a client.Object) []reconcile.Request {
 		var (
 			listCerebros *cerebrocrd.CerebroList
 			fs           fields.Selector

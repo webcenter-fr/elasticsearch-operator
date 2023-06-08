@@ -51,7 +51,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/handler"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
-	"sigs.k8s.io/controller-runtime/pkg/source"
 )
 
 const (
@@ -166,16 +165,16 @@ func (h *ElasticsearchReconciler) SetupWithManager(mgr ctrl.Manager) error {
 		Owns(&elasticsearchapicrd.User{}).
 		Owns(&elasticsearchapicrd.License{}).
 		Owns(&beatcrd.Metricbeat{}).
-		Watches(&source.Kind{Type: &corev1.Secret{}}, handler.EnqueueRequestsFromMapFunc(watchSecret(h.Client))).
-		Watches(&source.Kind{Type: &corev1.ConfigMap{}}, handler.EnqueueRequestsFromMapFunc(watchConfigMap(h.Client))).
-		Watches(&source.Kind{Type: &elasticsearchcrd.Elasticsearch{}}, handler.EnqueueRequestsFromMapFunc(watchElasticsearchMonitoring(h.Client))).
-		Watches(&source.Kind{Type: &cerebrocrd.Host{}}, handler.EnqueueRequestsFromMapFunc(watchHost(h.Client))).
+		Watches(&corev1.Secret{}, handler.EnqueueRequestsFromMapFunc(watchSecret(h.Client))).
+		Watches(&corev1.ConfigMap{}, handler.EnqueueRequestsFromMapFunc(watchConfigMap(h.Client))).
+		Watches(&elasticsearchcrd.Elasticsearch{}, handler.EnqueueRequestsFromMapFunc(watchElasticsearchMonitoring(h.Client))).
+		Watches(&cerebrocrd.Host{}, handler.EnqueueRequestsFromMapFunc(watchHost(h.Client))).
 		Complete(h)
 }
 
 // watchElasticsearch permit to update if ElasticsearchRef change
 func watchElasticsearchMonitoring(c client.Client) handler.MapFunc {
-	return func(a client.Object) []reconcile.Request {
+	return func(ctx context.Context, a client.Object) []reconcile.Request {
 		var (
 			listElasticsearchs *elasticsearchcrd.ElasticsearchList
 			fs                 fields.Selector
@@ -200,7 +199,7 @@ func watchElasticsearchMonitoring(c client.Client) handler.MapFunc {
 
 // watchConfigMap permit to update if configMapRef change
 func watchConfigMap(c client.Client) handler.MapFunc {
-	return func(a client.Object) []reconcile.Request {
+	return func(ctx context.Context, a client.Object) []reconcile.Request {
 		var (
 			listElasticsearch *elasticsearchcrd.ElasticsearchList
 			fs                fields.Selector
@@ -248,7 +247,7 @@ func watchConfigMap(c client.Client) handler.MapFunc {
 
 // watchSecret permit to update elasticsearch if secretRef change
 func watchSecret(c client.Client) handler.MapFunc {
-	return func(a client.Object) []reconcile.Request {
+	return func(ctx context.Context, a client.Object) []reconcile.Request {
 		var (
 			listElasticsearch *elasticsearchcrd.ElasticsearchList
 			fs                fields.Selector
@@ -348,7 +347,7 @@ func watchSecret(c client.Client) handler.MapFunc {
 
 // watchHost permit to update networkpolicy to allow cerebro access on Elasticsearch
 func watchHost(c client.Client) handler.MapFunc {
-	return func(a client.Object) []reconcile.Request {
+	return func(ctx context.Context, a client.Object) []reconcile.Request {
 		var (
 			listHosts *cerebrocrd.HostList
 			fs        fields.Selector

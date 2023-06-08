@@ -457,7 +457,7 @@ spec:
                                 value between the SizeLimit specified here and the
                                 sum of memory limits of all containers in a pod. The
                                 default is nil which means that the limit is undefined.
-                                More info: http://kubernetes.io/docs/user-guide/volumes#emptydir'
+                                More info: https://kubernetes.io/docs/concepts/storage/volumes#emptydir'
                               pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
                               x-kubernetes-int-or-string: true
                           type: object
@@ -701,7 +701,8 @@ spec:
                                             If Requests is omitted for a container,
                                             it defaults to Limits if that is explicitly
                                             specified, otherwise to an implementation-defined
-                                            value. More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/'
+                                            value. Requests cannot exceed Limits.
+                                            More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/'
                                           type: object
                                       type: object
                                     selector:
@@ -1934,7 +1935,8 @@ spec:
                         description: 'Requests describes the minimum amount of compute
                           resources required. If Requests is omitted for a container,
                           it defaults to Limits if that is explicitly specified, otherwise
-                          to an implementation-defined value. More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/'
+                          to an implementation-defined value. Requests cannot exceed
+                          Limits. More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/'
                         type: object
                     type: object
                   jvm:
@@ -2364,7 +2366,7 @@ spec:
                                   the minimum value between the SizeLimit specified
                                   here and the sum of memory limits of all containers
                                   in a pod. The default is nil which means that the
-                                  limit is undefined. More info: http://kubernetes.io/docs/user-guide/volumes#emptydir'
+                                  limit is undefined. More info: https://kubernetes.io/docs/concepts/storage/volumes#emptydir'
                                 pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
                                 x-kubernetes-int-or-string: true
                             type: object
@@ -2613,7 +2615,8 @@ spec:
                                               If Requests is omitted for a container,
                                               it defaults to Limits if that is explicitly
                                               specified, otherwise to an implementation-defined
-                                              value. More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/'
+                                              value. Requests cannot exceed Limits.
+                                              More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/'
                                             type: object
                                         type: object
                                       selector:
@@ -3772,7 +3775,8 @@ spec:
                                   of compute resources required. If Requests is omitted
                                   for a container, it defaults to Limits if that is
                                   explicitly specified, otherwise to an implementation-defined
-                                  value. More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/'
+                                  value. Requests cannot exceed Limits. More info:
+                                  https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/'
                                 type: object
                             type: object
                           selector:
@@ -3931,9 +3935,9 @@ spec:
                           the PDB for eviction. \n Additional policies may be added
                           in the future. Clients making eviction decisions should
                           disallow eviction of unhealthy pods if they encounter an
-                          unrecognized policy in this field. \n This field is alpha-level.
+                          unrecognized policy in this field. \n This field is beta-level.
                           The eviction API uses this field when the feature gate PDBUnhealthyPodEvictionPolicy
-                          is enabled (disabled by default)."
+                          is enabled (enabled by default)."
                         type: string
                     type: object
                   podTemplate:
@@ -5219,7 +5223,10 @@ spec:
                                                 properties:
                                                   name:
                                                     description: The header field
-                                                      name
+                                                      name. This will be canonicalized
+                                                      upon output, so case-variant
+                                                      names will be understood as
+                                                      the same header.
                                                     type: string
                                                   value:
                                                     description: The header field
@@ -5332,7 +5339,10 @@ spec:
                                                 properties:
                                                   name:
                                                     description: The header field
-                                                      name
+                                                      name. This will be canonicalized
+                                                      upon output, so case-variant
+                                                      names will be understood as
+                                                      the same header.
                                                     type: string
                                                   value:
                                                     description: The header field
@@ -5421,8 +5431,7 @@ spec:
                                       type: integer
                                     grpc:
                                       description: GRPC specifies an action involving
-                                        a GRPC port. This is a beta field and requires
-                                        enabling GRPCContainerProbe feature gate.
+                                        a GRPC port.
                                       properties:
                                         port:
                                           description: Port number of the gRPC service.
@@ -5456,7 +5465,10 @@ spec:
                                               header to be used in HTTP probes
                                             properties:
                                               name:
-                                                description: The header field name
+                                                description: The header field name.
+                                                  This will be canonicalized upon
+                                                  output, so case-variant names will
+                                                  be understood as the same header.
                                                 type: string
                                               value:
                                                 description: The header field value
@@ -5641,8 +5653,7 @@ spec:
                                       type: integer
                                     grpc:
                                       description: GRPC specifies an action involving
-                                        a GRPC port. This is a beta field and requires
-                                        enabling GRPCContainerProbe feature gate.
+                                        a GRPC port.
                                       properties:
                                         port:
                                           description: Port number of the gRPC service.
@@ -5676,7 +5687,10 @@ spec:
                                               header to be used in HTTP probes
                                             properties:
                                               name:
-                                                description: The header field name
+                                                description: The header field name.
+                                                  This will be canonicalized upon
+                                                  output, so case-variant names will
+                                                  be understood as the same header.
                                                 type: string
                                               value:
                                                 description: The header field value
@@ -5772,6 +5786,28 @@ spec:
                                       format: int32
                                       type: integer
                                   type: object
+                                resizePolicy:
+                                  description: Resources resize policy for the container.
+                                  items:
+                                    description: ContainerResizePolicy represents
+                                      resource resize policy for the container.
+                                    properties:
+                                      resourceName:
+                                        description: 'Name of the resource to which
+                                          this resource resize policy applies. Supported
+                                          values: cpu, memory.'
+                                        type: string
+                                      restartPolicy:
+                                        description: Restart policy to apply when
+                                          specified resource is resized. If not specified,
+                                          it defaults to NotRequired.
+                                        type: string
+                                    required:
+                                    - resourceName
+                                    - restartPolicy
+                                    type: object
+                                  type: array
+                                  x-kubernetes-list-type: atomic
                                 resources:
                                   description: 'Compute Resources required by this
                                     container. Cannot be updated. More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/'
@@ -5822,8 +5858,8 @@ spec:
                                         amount of compute resources required. If Requests
                                         is omitted for a container, it defaults to
                                         Limits if that is explicitly specified, otherwise
-                                        to an implementation-defined value. More info:
-                                        https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/'
+                                        to an implementation-defined value. Requests
+                                        cannot exceed Limits. More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/'
                                       type: object
                                   type: object
                                 securityContext:
@@ -6063,8 +6099,7 @@ spec:
                                       type: integer
                                     grpc:
                                       description: GRPC specifies an action involving
-                                        a GRPC port. This is a beta field and requires
-                                        enabling GRPCContainerProbe feature gate.
+                                        a GRPC port.
                                       properties:
                                         port:
                                           description: Port number of the gRPC service.
@@ -6098,7 +6133,10 @@ spec:
                                               header to be used in HTTP probes
                                             properties:
                                               name:
-                                                description: The header field name
+                                                description: The header field name.
+                                                  This will be canonicalized upon
+                                                  output, so case-variant names will
+                                                  be understood as the same header.
                                                 type: string
                                               value:
                                                 description: The header field value
@@ -6661,7 +6699,10 @@ spec:
                                                 properties:
                                                   name:
                                                     description: The header field
-                                                      name
+                                                      name. This will be canonicalized
+                                                      upon output, so case-variant
+                                                      names will be understood as
+                                                      the same header.
                                                     type: string
                                                   value:
                                                     description: The header field
@@ -6774,7 +6815,10 @@ spec:
                                                 properties:
                                                   name:
                                                     description: The header field
-                                                      name
+                                                      name. This will be canonicalized
+                                                      upon output, so case-variant
+                                                      names will be understood as
+                                                      the same header.
                                                     type: string
                                                   value:
                                                     description: The header field
@@ -6862,8 +6906,7 @@ spec:
                                       type: integer
                                     grpc:
                                       description: GRPC specifies an action involving
-                                        a GRPC port. This is a beta field and requires
-                                        enabling GRPCContainerProbe feature gate.
+                                        a GRPC port.
                                       properties:
                                         port:
                                           description: Port number of the gRPC service.
@@ -6897,7 +6940,10 @@ spec:
                                               header to be used in HTTP probes
                                             properties:
                                               name:
-                                                description: The header field name
+                                                description: The header field name.
+                                                  This will be canonicalized upon
+                                                  output, so case-variant names will
+                                                  be understood as the same header.
                                                 type: string
                                               value:
                                                 description: The header field value
@@ -7075,8 +7121,7 @@ spec:
                                       type: integer
                                     grpc:
                                       description: GRPC specifies an action involving
-                                        a GRPC port. This is a beta field and requires
-                                        enabling GRPCContainerProbe feature gate.
+                                        a GRPC port.
                                       properties:
                                         port:
                                           description: Port number of the gRPC service.
@@ -7110,7 +7155,10 @@ spec:
                                               header to be used in HTTP probes
                                             properties:
                                               name:
-                                                description: The header field name
+                                                description: The header field name.
+                                                  This will be canonicalized upon
+                                                  output, so case-variant names will
+                                                  be understood as the same header.
                                                 type: string
                                               value:
                                                 description: The header field value
@@ -7206,6 +7254,28 @@ spec:
                                       format: int32
                                       type: integer
                                   type: object
+                                resizePolicy:
+                                  description: Resources resize policy for the container.
+                                  items:
+                                    description: ContainerResizePolicy represents
+                                      resource resize policy for the container.
+                                    properties:
+                                      resourceName:
+                                        description: 'Name of the resource to which
+                                          this resource resize policy applies. Supported
+                                          values: cpu, memory.'
+                                        type: string
+                                      restartPolicy:
+                                        description: Restart policy to apply when
+                                          specified resource is resized. If not specified,
+                                          it defaults to NotRequired.
+                                        type: string
+                                    required:
+                                    - resourceName
+                                    - restartPolicy
+                                    type: object
+                                  type: array
+                                  x-kubernetes-list-type: atomic
                                 resources:
                                   description: Resources are not allowed for ephemeral
                                     containers. Ephemeral containers use spare resources
@@ -7257,8 +7327,8 @@ spec:
                                         amount of compute resources required. If Requests
                                         is omitted for a container, it defaults to
                                         Limits if that is explicitly specified, otherwise
-                                        to an implementation-defined value. More info:
-                                        https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/'
+                                        to an implementation-defined value. Requests
+                                        cannot exceed Limits. More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/'
                                       type: object
                                   type: object
                                 securityContext:
@@ -7490,8 +7560,7 @@ spec:
                                       type: integer
                                     grpc:
                                       description: GRPC specifies an action involving
-                                        a GRPC port. This is a beta field and requires
-                                        enabling GRPCContainerProbe feature gate.
+                                        a GRPC port.
                                       properties:
                                         port:
                                           description: Port number of the gRPC service.
@@ -7525,7 +7594,10 @@ spec:
                                               header to be used in HTTP probes
                                             properties:
                                               name:
-                                                description: The header field name
+                                                description: The header field name.
+                                                  This will be canonicalized upon
+                                                  output, so case-variant names will
+                                                  be understood as the same header.
                                                 type: string
                                               value:
                                                 description: The header field value
@@ -8124,7 +8196,10 @@ spec:
                                                 properties:
                                                   name:
                                                     description: The header field
-                                                      name
+                                                      name. This will be canonicalized
+                                                      upon output, so case-variant
+                                                      names will be understood as
+                                                      the same header.
                                                     type: string
                                                   value:
                                                     description: The header field
@@ -8237,7 +8312,10 @@ spec:
                                                 properties:
                                                   name:
                                                     description: The header field
-                                                      name
+                                                      name. This will be canonicalized
+                                                      upon output, so case-variant
+                                                      names will be understood as
+                                                      the same header.
                                                     type: string
                                                   value:
                                                     description: The header field
@@ -8326,8 +8404,7 @@ spec:
                                       type: integer
                                     grpc:
                                       description: GRPC specifies an action involving
-                                        a GRPC port. This is a beta field and requires
-                                        enabling GRPCContainerProbe feature gate.
+                                        a GRPC port.
                                       properties:
                                         port:
                                           description: Port number of the gRPC service.
@@ -8361,7 +8438,10 @@ spec:
                                               header to be used in HTTP probes
                                             properties:
                                               name:
-                                                description: The header field name
+                                                description: The header field name.
+                                                  This will be canonicalized upon
+                                                  output, so case-variant names will
+                                                  be understood as the same header.
                                                 type: string
                                               value:
                                                 description: The header field value
@@ -8546,8 +8626,7 @@ spec:
                                       type: integer
                                     grpc:
                                       description: GRPC specifies an action involving
-                                        a GRPC port. This is a beta field and requires
-                                        enabling GRPCContainerProbe feature gate.
+                                        a GRPC port.
                                       properties:
                                         port:
                                           description: Port number of the gRPC service.
@@ -8581,7 +8660,10 @@ spec:
                                               header to be used in HTTP probes
                                             properties:
                                               name:
-                                                description: The header field name
+                                                description: The header field name.
+                                                  This will be canonicalized upon
+                                                  output, so case-variant names will
+                                                  be understood as the same header.
                                                 type: string
                                               value:
                                                 description: The header field value
@@ -8677,6 +8759,28 @@ spec:
                                       format: int32
                                       type: integer
                                   type: object
+                                resizePolicy:
+                                  description: Resources resize policy for the container.
+                                  items:
+                                    description: ContainerResizePolicy represents
+                                      resource resize policy for the container.
+                                    properties:
+                                      resourceName:
+                                        description: 'Name of the resource to which
+                                          this resource resize policy applies. Supported
+                                          values: cpu, memory.'
+                                        type: string
+                                      restartPolicy:
+                                        description: Restart policy to apply when
+                                          specified resource is resized. If not specified,
+                                          it defaults to NotRequired.
+                                        type: string
+                                    required:
+                                    - resourceName
+                                    - restartPolicy
+                                    type: object
+                                  type: array
+                                  x-kubernetes-list-type: atomic
                                 resources:
                                   description: 'Compute Resources required by this
                                     container. Cannot be updated. More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/'
@@ -8727,8 +8831,8 @@ spec:
                                         amount of compute resources required. If Requests
                                         is omitted for a container, it defaults to
                                         Limits if that is explicitly specified, otherwise
-                                        to an implementation-defined value. More info:
-                                        https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/'
+                                        to an implementation-defined value. Requests
+                                        cannot exceed Limits. More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/'
                                       type: object
                                   type: object
                                 securityContext:
@@ -8968,8 +9072,7 @@ spec:
                                       type: integer
                                     grpc:
                                       description: GRPC specifies an action involving
-                                        a GRPC port. This is a beta field and requires
-                                        enabling GRPCContainerProbe feature gate.
+                                        a GRPC port.
                                       properties:
                                         port:
                                           description: Port number of the gRPC service.
@@ -9003,7 +9106,10 @@ spec:
                                               header to be used in HTTP probes
                                             properties:
                                               name:
-                                                description: The header field name
+                                                description: The header field name.
+                                                  This will be canonicalized upon
+                                                  output, so case-variant names will
+                                                  be understood as the same header.
                                                 type: string
                                               value:
                                                 description: The header field value
@@ -9390,8 +9496,9 @@ spec:
                             x-kubernetes-list-type: map
                           restartPolicy:
                             description: 'Restart policy for all containers within
-                              the pod. One of Always, OnFailure, Never. Default to
-                              Always. More info: https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle/#restart-policy'
+                              the pod. One of Always, OnFailure, Never. In some contexts,
+                              only a subset of those values may be permitted. Default
+                              to Always. More info: https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle/#restart-policy'
                             type: string
                           runtimeClassName:
                             description: 'RuntimeClassName refers to a RuntimeClass
@@ -9409,9 +9516,12 @@ spec:
                             type: string
                           schedulingGates:
                             description: "SchedulingGates is an opaque list of values
-                              that if specified will block scheduling the pod. More
-                              info:  https://git.k8s.io/enhancements/keps/sig-scheduling/3521-pod-scheduling-readiness.
-                              \n This is an alpha-level feature enabled by PodSchedulingReadiness
+                              that if specified will block scheduling the pod. If
+                              schedulingGates is not empty, the pod will stay in the
+                              SchedulingGated state and the scheduler will not attempt
+                              to schedule the pod. \n SchedulingGates can only be
+                              set at pod creation time, and be removed only afterwards.
+                              \n This is a beta feature enabled by the PodSchedulingReadiness
                               feature gate."
                             items:
                               description: PodSchedulingGate is associated to a Pod
@@ -9778,16 +9888,21 @@ spec:
                                   type: object
                                   x-kubernetes-map-type: atomic
                                 matchLabelKeys:
-                                  description: MatchLabelKeys is a set of pod label
+                                  description: "MatchLabelKeys is a set of pod label
                                     keys to select the pods over which spreading will
                                     be calculated. The keys are used to lookup values
                                     from the incoming pod labels, those key-value
                                     labels are ANDed with labelSelector to select
                                     the group of existing pods over which spreading
-                                    will be calculated for the incoming pod. Keys
-                                    that don't exist in the incoming pod labels will
-                                    be ignored. A null or empty list means only match
-                                    against labelSelector.
+                                    will be calculated for the incoming pod. The same
+                                    key is forbidden to exist in both MatchLabelKeys
+                                    and LabelSelector. MatchLabelKeys cannot be set
+                                    when LabelSelector isn't set. Keys that don't
+                                    exist in the incoming pod labels will be ignored.
+                                    A null or empty list means only match against
+                                    labelSelector. \n This is a beta field and requires
+                                    the MatchLabelKeysInPodTopologySpread feature
+                                    gate to be enabled (enabled by default)."
                                   items:
                                     type: string
                                   type: array
@@ -10358,7 +10473,7 @@ spec:
                                         between the SizeLimit specified here and the
                                         sum of memory limits of all containers in
                                         a pod. The default is nil which means that
-                                        the limit is undefined. More info: http://kubernetes.io/docs/user-guide/volumes#emptydir'
+                                        the limit is undefined. More info: https://kubernetes.io/docs/concepts/storage/volumes#emptydir'
                                       pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
                                       x-kubernetes-int-or-string: true
                                   type: object
@@ -10631,6 +10746,7 @@ spec:
                                                     defaults to Limits if that is
                                                     explicitly specified, otherwise
                                                     to an implementation-defined value.
+                                                    Requests cannot exceed Limits.
                                                     More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/'
                                                   type: object
                                               type: object
@@ -11802,7 +11918,8 @@ spec:
                         description: 'Requests describes the minimum amount of compute
                           resources required. If Requests is omitted for a container,
                           it defaults to Limits if that is explicitly specified, otherwise
-                          to an implementation-defined value. More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/'
+                          to an implementation-defined value. Requests cannot exceed
+                          Limits. More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/'
                         type: object
                     type: object
                   tolerations:
@@ -11964,14 +12081,14 @@ spec:
                       description: Spec is the ingress spec
                       properties:
                         defaultBackend:
-                          description: DefaultBackend is the backend that should handle
+                          description: defaultBackend is the backend that should handle
                             requests that don't match any rule. If Rules are not specified,
                             DefaultBackend must be specified. If DefaultBackend is
                             not set, the handling of requests that do not match any
                             of the rules will be up to the Ingress controller.
                           properties:
                             resource:
-                              description: Resource is an ObjectRef to another Kubernetes
+                              description: resource is an ObjectRef to another Kubernetes
                                 resource in the namespace of the Ingress object. If
                                 resource is specified, a service.Name and service.Port
                                 must not be specified. This is a mutually exclusive
@@ -11997,25 +12114,25 @@ spec:
                               type: object
                               x-kubernetes-map-type: atomic
                             service:
-                              description: Service references a Service as a Backend.
+                              description: service references a service as a backend.
                                 This is a mutually exclusive setting with "Resource".
                               properties:
                                 name:
-                                  description: Name is the referenced service. The
+                                  description: name is the referenced service. The
                                     service must exist in the same namespace as the
                                     Ingress object.
                                   type: string
                                 port:
-                                  description: Port of the referenced service. A port
+                                  description: port of the referenced service. A port
                                     name or port number is required for a IngressServiceBackend.
                                   properties:
                                     name:
-                                      description: Name is the name of the port on
+                                      description: name is the name of the port on
                                         the Service. This is a mutually exclusive
                                         setting with "Number".
                                       type: string
                                     number:
-                                      description: Number is the numerical port number
+                                      description: number is the numerical port number
                                         (e.g. 80) on the Service. This is a mutually
                                         exclusive setting with "Name".
                                       format: int32
@@ -12026,7 +12143,7 @@ spec:
                               type: object
                           type: object
                         ingressClassName:
-                          description: IngressClassName is the name of an IngressClass
+                          description: ingressClassName is the name of an IngressClass
                             cluster resource. Ingress controller implementations use
                             this field to know whether they should be serving this
                             Ingress resource, by a transitive connection (controller
@@ -12041,8 +12158,8 @@ spec:
                             if present.
                           type: string
                         rules:
-                          description: A list of host rules used to configure the
-                            Ingress. If unspecified, or no rule matches, all traffic
+                          description: rules is a list of host rules used to configure
+                            the Ingress. If unspecified, or no rule matches, all traffic
                             is sent to the default backend.
                           items:
                             description: IngressRule represents the rules mapping
@@ -12052,7 +12169,7 @@ spec:
                               with the matching IngressRuleValue.
                             properties:
                               host:
-                                description: "Host is the fully qualified domain name
+                                description: "host is the fully qualified domain name
                                   of a network host, as defined by RFC 3986. Note
                                   the following deviations from the \"host\" part
                                   of the URI as defined in RFC 3986: 1. IPs are not
@@ -12065,7 +12182,7 @@ spec:
                                   are matched against the host before the IngressRuleValue.
                                   If the host is unspecified, the Ingress routes all
                                   traffic based on the specified IngressRuleValue.
-                                  \n Host can be \"precise\" which is a domain name
+                                  \n host can be \"precise\" which is a domain name
                                   without the terminating dot of a network host (e.g.
                                   \"foo.bar.com\") or \"wildcard\", which is a domain
                                   name prefixed with a single wildcard label (e.g.
@@ -12074,9 +12191,9 @@ spec:
                                   only a single label. You cannot have a wildcard
                                   label by itself (e.g. Host == \"*\"). Requests will
                                   be matched against the Host field in the following
-                                  way: 1. If Host is precise, the request matches
+                                  way: 1. If host is precise, the request matches
                                   this rule if the http host header is equal to Host.
-                                  2. If Host is a wildcard, then the request matches
+                                  2. If host is a wildcard, then the request matches
                                   this rule if the http host header is to equal to
                                   the suffix (removing the first label) of the wildcard
                                   rule."
@@ -12091,20 +12208,20 @@ spec:
                                   or ''#''.'
                                 properties:
                                   paths:
-                                    description: A collection of paths that map requests
-                                      to backends.
+                                    description: paths is a collection of paths that
+                                      map requests to backends.
                                     items:
                                       description: HTTPIngressPath associates a path
                                         with a backend. Incoming urls matching the
                                         path are forwarded to the backend.
                                       properties:
                                         backend:
-                                          description: Backend defines the referenced
+                                          description: backend defines the referenced
                                             service endpoint to which the traffic
                                             will be forwarded to.
                                           properties:
                                             resource:
-                                              description: Resource is an ObjectRef
+                                              description: resource is an ObjectRef
                                                 to another Kubernetes resource in
                                                 the namespace of the Ingress object.
                                                 If resource is specified, a service.Name
@@ -12135,29 +12252,29 @@ spec:
                                               type: object
                                               x-kubernetes-map-type: atomic
                                             service:
-                                              description: Service references a Service
-                                                as a Backend. This is a mutually exclusive
+                                              description: service references a service
+                                                as a backend. This is a mutually exclusive
                                                 setting with "Resource".
                                               properties:
                                                 name:
-                                                  description: Name is the referenced
+                                                  description: name is the referenced
                                                     service. The service must exist
                                                     in the same namespace as the Ingress
                                                     object.
                                                   type: string
                                                 port:
-                                                  description: Port of the referenced
+                                                  description: port of the referenced
                                                     service. A port name or port number
                                                     is required for a IngressServiceBackend.
                                                   properties:
                                                     name:
-                                                      description: Name is the name
+                                                      description: name is the name
                                                         of the port on the Service.
                                                         This is a mutually exclusive
                                                         setting with "Number".
                                                       type: string
                                                     number:
-                                                      description: Number is the numerical
+                                                      description: number is the numerical
                                                         port number (e.g. 80) on the
                                                         Service. This is a mutually
                                                         exclusive setting with "Name".
@@ -12169,7 +12286,7 @@ spec:
                                               type: object
                                           type: object
                                         path:
-                                          description: Path is matched against the
+                                          description: path is matched against the
                                             path of an incoming request. Currently
                                             it can contain characters disallowed from
                                             the conventional "path" part of a URL
@@ -12178,8 +12295,8 @@ spec:
                                             PathType with value "Exact" or "Prefix".
                                           type: string
                                         pathType:
-                                          description: 'PathType determines the interpretation
-                                            of the Path matching. PathType can be
+                                          description: 'pathType determines the interpretation
+                                            of the path matching. PathType can be
                                             one of the following values: * Exact:
                                             Matches the URL path exactly. * Prefix:
                                             Matches based on a URL path prefix split
@@ -12214,18 +12331,18 @@ spec:
                           type: array
                           x-kubernetes-list-type: atomic
                         tls:
-                          description: TLS configuration. Currently the Ingress only
-                            supports a single TLS port, 443. If multiple members of
-                            this list specify different hosts, they will be multiplexed
-                            on the same port according to the hostname specified through
-                            the SNI TLS extension, if the ingress controller fulfilling
-                            the ingress supports SNI.
+                          description: tls represents the TLS configuration. Currently
+                            the Ingress only supports a single TLS port, 443. If multiple
+                            members of this list specify different hosts, they will
+                            be multiplexed on the same port according to the hostname
+                            specified through the SNI TLS extension, if the ingress
+                            controller fulfilling the ingress supports SNI.
                           items:
                             description: IngressTLS describes the transport layer
-                              security associated with an Ingress.
+                              security associated with an ingress.
                             properties:
                               hosts:
-                                description: Hosts are a list of hosts included in
+                                description: hosts is a list of hosts included in
                                   the TLS certificate. The values in this list must
                                   match the name/s used in the tlsSecret. Defaults
                                   to the wildcard host setting for the loadbalancer
@@ -12235,13 +12352,13 @@ spec:
                                 type: array
                                 x-kubernetes-list-type: atomic
                               secretName:
-                                description: SecretName is the name of the secret
+                                description: secretName is the name of the secret
                                   used to terminate TLS traffic on port 443. Field
                                   is left optional to allow TLS routing based on SNI
                                   hostname alone. If the SNI host in a listener conflicts
                                   with the "Host" header field used by an IngressRule,
                                   the SNI host is used for termination and value of
-                                  the Host header is used for routing.
+                                  the "Host" header is used for routing.
                                 type: string
                             type: object
                           type: array
@@ -12389,7 +12506,7 @@ spec:
                               compute resources required. If Requests is omitted for
                               a container, it defaults to Limits if that is explicitly
                               specified, otherwise to an implementation-defined value.
-                              More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/'
+                              Requests cannot exceed Limits. More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/'
                             type: object
                         type: object
                       refreshPeriod:
@@ -13335,7 +13452,7 @@ spec:
                                 value between the SizeLimit specified here and the
                                 sum of memory limits of all containers in a pod. The
                                 default is nil which means that the limit is undefined.
-                                More info: http://kubernetes.io/docs/user-guide/volumes#emptydir'
+                                More info: https://kubernetes.io/docs/concepts/storage/volumes#emptydir'
                               pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
                               x-kubernetes-int-or-string: true
                           type: object
@@ -13579,7 +13696,8 @@ spec:
                                             If Requests is omitted for a container,
                                             it defaults to Limits if that is explicitly
                                             specified, otherwise to an implementation-defined
-                                            value. More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/'
+                                            value. Requests cannot exceed Limits.
+                                            More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/'
                                           type: object
                                       type: object
                                     selector:
@@ -14812,7 +14930,8 @@ spec:
                         description: 'Requests describes the minimum amount of compute
                           resources required. If Requests is omitted for a container,
                           it defaults to Limits if that is explicitly specified, otherwise
-                          to an implementation-defined value. More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/'
+                          to an implementation-defined value. Requests cannot exceed
+                          Limits. More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/'
                         type: object
                     type: object
                   jvm:
@@ -15242,7 +15361,7 @@ spec:
                                   the minimum value between the SizeLimit specified
                                   here and the sum of memory limits of all containers
                                   in a pod. The default is nil which means that the
-                                  limit is undefined. More info: http://kubernetes.io/docs/user-guide/volumes#emptydir'
+                                  limit is undefined. More info: https://kubernetes.io/docs/concepts/storage/volumes#emptydir'
                                 pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
                                 x-kubernetes-int-or-string: true
                             type: object
@@ -15491,7 +15610,8 @@ spec:
                                               If Requests is omitted for a container,
                                               it defaults to Limits if that is explicitly
                                               specified, otherwise to an implementation-defined
-                                              value. More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/'
+                                              value. Requests cannot exceed Limits.
+                                              More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/'
                                             type: object
                                         type: object
                                       selector:
@@ -16650,7 +16770,8 @@ spec:
                                   of compute resources required. If Requests is omitted
                                   for a container, it defaults to Limits if that is
                                   explicitly specified, otherwise to an implementation-defined
-                                  value. More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/'
+                                  value. Requests cannot exceed Limits. More info:
+                                  https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/'
                                 type: object
                             type: object
                           selector:
@@ -16809,9 +16930,9 @@ spec:
                           the PDB for eviction. \n Additional policies may be added
                           in the future. Clients making eviction decisions should
                           disallow eviction of unhealthy pods if they encounter an
-                          unrecognized policy in this field. \n This field is alpha-level.
+                          unrecognized policy in this field. \n This field is beta-level.
                           The eviction API uses this field when the feature gate PDBUnhealthyPodEvictionPolicy
-                          is enabled (disabled by default)."
+                          is enabled (enabled by default)."
                         type: string
                     type: object
                   podTemplate:
@@ -18097,7 +18218,10 @@ spec:
                                                 properties:
                                                   name:
                                                     description: The header field
-                                                      name
+                                                      name. This will be canonicalized
+                                                      upon output, so case-variant
+                                                      names will be understood as
+                                                      the same header.
                                                     type: string
                                                   value:
                                                     description: The header field
@@ -18210,7 +18334,10 @@ spec:
                                                 properties:
                                                   name:
                                                     description: The header field
-                                                      name
+                                                      name. This will be canonicalized
+                                                      upon output, so case-variant
+                                                      names will be understood as
+                                                      the same header.
                                                     type: string
                                                   value:
                                                     description: The header field
@@ -18299,8 +18426,7 @@ spec:
                                       type: integer
                                     grpc:
                                       description: GRPC specifies an action involving
-                                        a GRPC port. This is a beta field and requires
-                                        enabling GRPCContainerProbe feature gate.
+                                        a GRPC port.
                                       properties:
                                         port:
                                           description: Port number of the gRPC service.
@@ -18334,7 +18460,10 @@ spec:
                                               header to be used in HTTP probes
                                             properties:
                                               name:
-                                                description: The header field name
+                                                description: The header field name.
+                                                  This will be canonicalized upon
+                                                  output, so case-variant names will
+                                                  be understood as the same header.
                                                 type: string
                                               value:
                                                 description: The header field value
@@ -18519,8 +18648,7 @@ spec:
                                       type: integer
                                     grpc:
                                       description: GRPC specifies an action involving
-                                        a GRPC port. This is a beta field and requires
-                                        enabling GRPCContainerProbe feature gate.
+                                        a GRPC port.
                                       properties:
                                         port:
                                           description: Port number of the gRPC service.
@@ -18554,7 +18682,10 @@ spec:
                                               header to be used in HTTP probes
                                             properties:
                                               name:
-                                                description: The header field name
+                                                description: The header field name.
+                                                  This will be canonicalized upon
+                                                  output, so case-variant names will
+                                                  be understood as the same header.
                                                 type: string
                                               value:
                                                 description: The header field value
@@ -18650,6 +18781,28 @@ spec:
                                       format: int32
                                       type: integer
                                   type: object
+                                resizePolicy:
+                                  description: Resources resize policy for the container.
+                                  items:
+                                    description: ContainerResizePolicy represents
+                                      resource resize policy for the container.
+                                    properties:
+                                      resourceName:
+                                        description: 'Name of the resource to which
+                                          this resource resize policy applies. Supported
+                                          values: cpu, memory.'
+                                        type: string
+                                      restartPolicy:
+                                        description: Restart policy to apply when
+                                          specified resource is resized. If not specified,
+                                          it defaults to NotRequired.
+                                        type: string
+                                    required:
+                                    - resourceName
+                                    - restartPolicy
+                                    type: object
+                                  type: array
+                                  x-kubernetes-list-type: atomic
                                 resources:
                                   description: 'Compute Resources required by this
                                     container. Cannot be updated. More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/'
@@ -18700,8 +18853,8 @@ spec:
                                         amount of compute resources required. If Requests
                                         is omitted for a container, it defaults to
                                         Limits if that is explicitly specified, otherwise
-                                        to an implementation-defined value. More info:
-                                        https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/'
+                                        to an implementation-defined value. Requests
+                                        cannot exceed Limits. More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/'
                                       type: object
                                   type: object
                                 securityContext:
@@ -18941,8 +19094,7 @@ spec:
                                       type: integer
                                     grpc:
                                       description: GRPC specifies an action involving
-                                        a GRPC port. This is a beta field and requires
-                                        enabling GRPCContainerProbe feature gate.
+                                        a GRPC port.
                                       properties:
                                         port:
                                           description: Port number of the gRPC service.
@@ -18976,7 +19128,10 @@ spec:
                                               header to be used in HTTP probes
                                             properties:
                                               name:
-                                                description: The header field name
+                                                description: The header field name.
+                                                  This will be canonicalized upon
+                                                  output, so case-variant names will
+                                                  be understood as the same header.
                                                 type: string
                                               value:
                                                 description: The header field value
@@ -19539,7 +19694,10 @@ spec:
                                                 properties:
                                                   name:
                                                     description: The header field
-                                                      name
+                                                      name. This will be canonicalized
+                                                      upon output, so case-variant
+                                                      names will be understood as
+                                                      the same header.
                                                     type: string
                                                   value:
                                                     description: The header field
@@ -19652,7 +19810,10 @@ spec:
                                                 properties:
                                                   name:
                                                     description: The header field
-                                                      name
+                                                      name. This will be canonicalized
+                                                      upon output, so case-variant
+                                                      names will be understood as
+                                                      the same header.
                                                     type: string
                                                   value:
                                                     description: The header field
@@ -19740,8 +19901,7 @@ spec:
                                       type: integer
                                     grpc:
                                       description: GRPC specifies an action involving
-                                        a GRPC port. This is a beta field and requires
-                                        enabling GRPCContainerProbe feature gate.
+                                        a GRPC port.
                                       properties:
                                         port:
                                           description: Port number of the gRPC service.
@@ -19775,7 +19935,10 @@ spec:
                                               header to be used in HTTP probes
                                             properties:
                                               name:
-                                                description: The header field name
+                                                description: The header field name.
+                                                  This will be canonicalized upon
+                                                  output, so case-variant names will
+                                                  be understood as the same header.
                                                 type: string
                                               value:
                                                 description: The header field value
@@ -19953,8 +20116,7 @@ spec:
                                       type: integer
                                     grpc:
                                       description: GRPC specifies an action involving
-                                        a GRPC port. This is a beta field and requires
-                                        enabling GRPCContainerProbe feature gate.
+                                        a GRPC port.
                                       properties:
                                         port:
                                           description: Port number of the gRPC service.
@@ -19988,7 +20150,10 @@ spec:
                                               header to be used in HTTP probes
                                             properties:
                                               name:
-                                                description: The header field name
+                                                description: The header field name.
+                                                  This will be canonicalized upon
+                                                  output, so case-variant names will
+                                                  be understood as the same header.
                                                 type: string
                                               value:
                                                 description: The header field value
@@ -20084,6 +20249,28 @@ spec:
                                       format: int32
                                       type: integer
                                   type: object
+                                resizePolicy:
+                                  description: Resources resize policy for the container.
+                                  items:
+                                    description: ContainerResizePolicy represents
+                                      resource resize policy for the container.
+                                    properties:
+                                      resourceName:
+                                        description: 'Name of the resource to which
+                                          this resource resize policy applies. Supported
+                                          values: cpu, memory.'
+                                        type: string
+                                      restartPolicy:
+                                        description: Restart policy to apply when
+                                          specified resource is resized. If not specified,
+                                          it defaults to NotRequired.
+                                        type: string
+                                    required:
+                                    - resourceName
+                                    - restartPolicy
+                                    type: object
+                                  type: array
+                                  x-kubernetes-list-type: atomic
                                 resources:
                                   description: Resources are not allowed for ephemeral
                                     containers. Ephemeral containers use spare resources
@@ -20135,8 +20322,8 @@ spec:
                                         amount of compute resources required. If Requests
                                         is omitted for a container, it defaults to
                                         Limits if that is explicitly specified, otherwise
-                                        to an implementation-defined value. More info:
-                                        https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/'
+                                        to an implementation-defined value. Requests
+                                        cannot exceed Limits. More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/'
                                       type: object
                                   type: object
                                 securityContext:
@@ -20368,8 +20555,7 @@ spec:
                                       type: integer
                                     grpc:
                                       description: GRPC specifies an action involving
-                                        a GRPC port. This is a beta field and requires
-                                        enabling GRPCContainerProbe feature gate.
+                                        a GRPC port.
                                       properties:
                                         port:
                                           description: Port number of the gRPC service.
@@ -20403,7 +20589,10 @@ spec:
                                               header to be used in HTTP probes
                                             properties:
                                               name:
-                                                description: The header field name
+                                                description: The header field name.
+                                                  This will be canonicalized upon
+                                                  output, so case-variant names will
+                                                  be understood as the same header.
                                                 type: string
                                               value:
                                                 description: The header field value
@@ -21002,7 +21191,10 @@ spec:
                                                 properties:
                                                   name:
                                                     description: The header field
-                                                      name
+                                                      name. This will be canonicalized
+                                                      upon output, so case-variant
+                                                      names will be understood as
+                                                      the same header.
                                                     type: string
                                                   value:
                                                     description: The header field
@@ -21115,7 +21307,10 @@ spec:
                                                 properties:
                                                   name:
                                                     description: The header field
-                                                      name
+                                                      name. This will be canonicalized
+                                                      upon output, so case-variant
+                                                      names will be understood as
+                                                      the same header.
                                                     type: string
                                                   value:
                                                     description: The header field
@@ -21204,8 +21399,7 @@ spec:
                                       type: integer
                                     grpc:
                                       description: GRPC specifies an action involving
-                                        a GRPC port. This is a beta field and requires
-                                        enabling GRPCContainerProbe feature gate.
+                                        a GRPC port.
                                       properties:
                                         port:
                                           description: Port number of the gRPC service.
@@ -21239,7 +21433,10 @@ spec:
                                               header to be used in HTTP probes
                                             properties:
                                               name:
-                                                description: The header field name
+                                                description: The header field name.
+                                                  This will be canonicalized upon
+                                                  output, so case-variant names will
+                                                  be understood as the same header.
                                                 type: string
                                               value:
                                                 description: The header field value
@@ -21424,8 +21621,7 @@ spec:
                                       type: integer
                                     grpc:
                                       description: GRPC specifies an action involving
-                                        a GRPC port. This is a beta field and requires
-                                        enabling GRPCContainerProbe feature gate.
+                                        a GRPC port.
                                       properties:
                                         port:
                                           description: Port number of the gRPC service.
@@ -21459,7 +21655,10 @@ spec:
                                               header to be used in HTTP probes
                                             properties:
                                               name:
-                                                description: The header field name
+                                                description: The header field name.
+                                                  This will be canonicalized upon
+                                                  output, so case-variant names will
+                                                  be understood as the same header.
                                                 type: string
                                               value:
                                                 description: The header field value
@@ -21555,6 +21754,28 @@ spec:
                                       format: int32
                                       type: integer
                                   type: object
+                                resizePolicy:
+                                  description: Resources resize policy for the container.
+                                  items:
+                                    description: ContainerResizePolicy represents
+                                      resource resize policy for the container.
+                                    properties:
+                                      resourceName:
+                                        description: 'Name of the resource to which
+                                          this resource resize policy applies. Supported
+                                          values: cpu, memory.'
+                                        type: string
+                                      restartPolicy:
+                                        description: Restart policy to apply when
+                                          specified resource is resized. If not specified,
+                                          it defaults to NotRequired.
+                                        type: string
+                                    required:
+                                    - resourceName
+                                    - restartPolicy
+                                    type: object
+                                  type: array
+                                  x-kubernetes-list-type: atomic
                                 resources:
                                   description: 'Compute Resources required by this
                                     container. Cannot be updated. More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/'
@@ -21605,8 +21826,8 @@ spec:
                                         amount of compute resources required. If Requests
                                         is omitted for a container, it defaults to
                                         Limits if that is explicitly specified, otherwise
-                                        to an implementation-defined value. More info:
-                                        https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/'
+                                        to an implementation-defined value. Requests
+                                        cannot exceed Limits. More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/'
                                       type: object
                                   type: object
                                 securityContext:
@@ -21846,8 +22067,7 @@ spec:
                                       type: integer
                                     grpc:
                                       description: GRPC specifies an action involving
-                                        a GRPC port. This is a beta field and requires
-                                        enabling GRPCContainerProbe feature gate.
+                                        a GRPC port.
                                       properties:
                                         port:
                                           description: Port number of the gRPC service.
@@ -21881,7 +22101,10 @@ spec:
                                               header to be used in HTTP probes
                                             properties:
                                               name:
-                                                description: The header field name
+                                                description: The header field name.
+                                                  This will be canonicalized upon
+                                                  output, so case-variant names will
+                                                  be understood as the same header.
                                                 type: string
                                               value:
                                                 description: The header field value
@@ -22268,8 +22491,9 @@ spec:
                             x-kubernetes-list-type: map
                           restartPolicy:
                             description: 'Restart policy for all containers within
-                              the pod. One of Always, OnFailure, Never. Default to
-                              Always. More info: https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle/#restart-policy'
+                              the pod. One of Always, OnFailure, Never. In some contexts,
+                              only a subset of those values may be permitted. Default
+                              to Always. More info: https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle/#restart-policy'
                             type: string
                           runtimeClassName:
                             description: 'RuntimeClassName refers to a RuntimeClass
@@ -22287,9 +22511,12 @@ spec:
                             type: string
                           schedulingGates:
                             description: "SchedulingGates is an opaque list of values
-                              that if specified will block scheduling the pod. More
-                              info:  https://git.k8s.io/enhancements/keps/sig-scheduling/3521-pod-scheduling-readiness.
-                              \n This is an alpha-level feature enabled by PodSchedulingReadiness
+                              that if specified will block scheduling the pod. If
+                              schedulingGates is not empty, the pod will stay in the
+                              SchedulingGated state and the scheduler will not attempt
+                              to schedule the pod. \n SchedulingGates can only be
+                              set at pod creation time, and be removed only afterwards.
+                              \n This is a beta feature enabled by the PodSchedulingReadiness
                               feature gate."
                             items:
                               description: PodSchedulingGate is associated to a Pod
@@ -22656,16 +22883,21 @@ spec:
                                   type: object
                                   x-kubernetes-map-type: atomic
                                 matchLabelKeys:
-                                  description: MatchLabelKeys is a set of pod label
+                                  description: "MatchLabelKeys is a set of pod label
                                     keys to select the pods over which spreading will
                                     be calculated. The keys are used to lookup values
                                     from the incoming pod labels, those key-value
                                     labels are ANDed with labelSelector to select
                                     the group of existing pods over which spreading
-                                    will be calculated for the incoming pod. Keys
-                                    that don't exist in the incoming pod labels will
-                                    be ignored. A null or empty list means only match
-                                    against labelSelector.
+                                    will be calculated for the incoming pod. The same
+                                    key is forbidden to exist in both MatchLabelKeys
+                                    and LabelSelector. MatchLabelKeys cannot be set
+                                    when LabelSelector isn't set. Keys that don't
+                                    exist in the incoming pod labels will be ignored.
+                                    A null or empty list means only match against
+                                    labelSelector. \n This is a beta field and requires
+                                    the MatchLabelKeysInPodTopologySpread feature
+                                    gate to be enabled (enabled by default)."
                                   items:
                                     type: string
                                   type: array
@@ -23236,7 +23468,7 @@ spec:
                                         between the SizeLimit specified here and the
                                         sum of memory limits of all containers in
                                         a pod. The default is nil which means that
-                                        the limit is undefined. More info: http://kubernetes.io/docs/user-guide/volumes#emptydir'
+                                        the limit is undefined. More info: https://kubernetes.io/docs/concepts/storage/volumes#emptydir'
                                       pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
                                       x-kubernetes-int-or-string: true
                                   type: object
@@ -23509,6 +23741,7 @@ spec:
                                                     defaults to Limits if that is
                                                     explicitly specified, otherwise
                                                     to an implementation-defined value.
+                                                    Requests cannot exceed Limits.
                                                     More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/'
                                                   type: object
                                               type: object
@@ -24680,7 +24913,8 @@ spec:
                         description: 'Requests describes the minimum amount of compute
                           resources required. If Requests is omitted for a container,
                           it defaults to Limits if that is explicitly specified, otherwise
-                          to an implementation-defined value. More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/'
+                          to an implementation-defined value. Requests cannot exceed
+                          Limits. More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/'
                         type: object
                     type: object
                   tolerations:
@@ -24842,14 +25076,14 @@ spec:
                       description: Spec is the ingress spec
                       properties:
                         defaultBackend:
-                          description: DefaultBackend is the backend that should handle
+                          description: defaultBackend is the backend that should handle
                             requests that don't match any rule. If Rules are not specified,
                             DefaultBackend must be specified. If DefaultBackend is
                             not set, the handling of requests that do not match any
                             of the rules will be up to the Ingress controller.
                           properties:
                             resource:
-                              description: Resource is an ObjectRef to another Kubernetes
+                              description: resource is an ObjectRef to another Kubernetes
                                 resource in the namespace of the Ingress object. If
                                 resource is specified, a service.Name and service.Port
                                 must not be specified. This is a mutually exclusive
@@ -24875,25 +25109,25 @@ spec:
                               type: object
                               x-kubernetes-map-type: atomic
                             service:
-                              description: Service references a Service as a Backend.
+                              description: service references a service as a backend.
                                 This is a mutually exclusive setting with "Resource".
                               properties:
                                 name:
-                                  description: Name is the referenced service. The
+                                  description: name is the referenced service. The
                                     service must exist in the same namespace as the
                                     Ingress object.
                                   type: string
                                 port:
-                                  description: Port of the referenced service. A port
+                                  description: port of the referenced service. A port
                                     name or port number is required for a IngressServiceBackend.
                                   properties:
                                     name:
-                                      description: Name is the name of the port on
+                                      description: name is the name of the port on
                                         the Service. This is a mutually exclusive
                                         setting with "Number".
                                       type: string
                                     number:
-                                      description: Number is the numerical port number
+                                      description: number is the numerical port number
                                         (e.g. 80) on the Service. This is a mutually
                                         exclusive setting with "Name".
                                       format: int32
@@ -24904,7 +25138,7 @@ spec:
                               type: object
                           type: object
                         ingressClassName:
-                          description: IngressClassName is the name of an IngressClass
+                          description: ingressClassName is the name of an IngressClass
                             cluster resource. Ingress controller implementations use
                             this field to know whether they should be serving this
                             Ingress resource, by a transitive connection (controller
@@ -24919,8 +25153,8 @@ spec:
                             if present.
                           type: string
                         rules:
-                          description: A list of host rules used to configure the
-                            Ingress. If unspecified, or no rule matches, all traffic
+                          description: rules is a list of host rules used to configure
+                            the Ingress. If unspecified, or no rule matches, all traffic
                             is sent to the default backend.
                           items:
                             description: IngressRule represents the rules mapping
@@ -24930,7 +25164,7 @@ spec:
                               with the matching IngressRuleValue.
                             properties:
                               host:
-                                description: "Host is the fully qualified domain name
+                                description: "host is the fully qualified domain name
                                   of a network host, as defined by RFC 3986. Note
                                   the following deviations from the \"host\" part
                                   of the URI as defined in RFC 3986: 1. IPs are not
@@ -24943,7 +25177,7 @@ spec:
                                   are matched against the host before the IngressRuleValue.
                                   If the host is unspecified, the Ingress routes all
                                   traffic based on the specified IngressRuleValue.
-                                  \n Host can be \"precise\" which is a domain name
+                                  \n host can be \"precise\" which is a domain name
                                   without the terminating dot of a network host (e.g.
                                   \"foo.bar.com\") or \"wildcard\", which is a domain
                                   name prefixed with a single wildcard label (e.g.
@@ -24952,9 +25186,9 @@ spec:
                                   only a single label. You cannot have a wildcard
                                   label by itself (e.g. Host == \"*\"). Requests will
                                   be matched against the Host field in the following
-                                  way: 1. If Host is precise, the request matches
+                                  way: 1. If host is precise, the request matches
                                   this rule if the http host header is equal to Host.
-                                  2. If Host is a wildcard, then the request matches
+                                  2. If host is a wildcard, then the request matches
                                   this rule if the http host header is to equal to
                                   the suffix (removing the first label) of the wildcard
                                   rule."
@@ -24969,20 +25203,20 @@ spec:
                                   or ''#''.'
                                 properties:
                                   paths:
-                                    description: A collection of paths that map requests
-                                      to backends.
+                                    description: paths is a collection of paths that
+                                      map requests to backends.
                                     items:
                                       description: HTTPIngressPath associates a path
                                         with a backend. Incoming urls matching the
                                         path are forwarded to the backend.
                                       properties:
                                         backend:
-                                          description: Backend defines the referenced
+                                          description: backend defines the referenced
                                             service endpoint to which the traffic
                                             will be forwarded to.
                                           properties:
                                             resource:
-                                              description: Resource is an ObjectRef
+                                              description: resource is an ObjectRef
                                                 to another Kubernetes resource in
                                                 the namespace of the Ingress object.
                                                 If resource is specified, a service.Name
@@ -25013,29 +25247,29 @@ spec:
                                               type: object
                                               x-kubernetes-map-type: atomic
                                             service:
-                                              description: Service references a Service
-                                                as a Backend. This is a mutually exclusive
+                                              description: service references a service
+                                                as a backend. This is a mutually exclusive
                                                 setting with "Resource".
                                               properties:
                                                 name:
-                                                  description: Name is the referenced
+                                                  description: name is the referenced
                                                     service. The service must exist
                                                     in the same namespace as the Ingress
                                                     object.
                                                   type: string
                                                 port:
-                                                  description: Port of the referenced
+                                                  description: port of the referenced
                                                     service. A port name or port number
                                                     is required for a IngressServiceBackend.
                                                   properties:
                                                     name:
-                                                      description: Name is the name
+                                                      description: name is the name
                                                         of the port on the Service.
                                                         This is a mutually exclusive
                                                         setting with "Number".
                                                       type: string
                                                     number:
-                                                      description: Number is the numerical
+                                                      description: number is the numerical
                                                         port number (e.g. 80) on the
                                                         Service. This is a mutually
                                                         exclusive setting with "Name".
@@ -25047,7 +25281,7 @@ spec:
                                               type: object
                                           type: object
                                         path:
-                                          description: Path is matched against the
+                                          description: path is matched against the
                                             path of an incoming request. Currently
                                             it can contain characters disallowed from
                                             the conventional "path" part of a URL
@@ -25056,8 +25290,8 @@ spec:
                                             PathType with value "Exact" or "Prefix".
                                           type: string
                                         pathType:
-                                          description: 'PathType determines the interpretation
-                                            of the Path matching. PathType can be
+                                          description: 'pathType determines the interpretation
+                                            of the path matching. PathType can be
                                             one of the following values: * Exact:
                                             Matches the URL path exactly. * Prefix:
                                             Matches based on a URL path prefix split
@@ -25092,18 +25326,18 @@ spec:
                           type: array
                           x-kubernetes-list-type: atomic
                         tls:
-                          description: TLS configuration. Currently the Ingress only
-                            supports a single TLS port, 443. If multiple members of
-                            this list specify different hosts, they will be multiplexed
-                            on the same port according to the hostname specified through
-                            the SNI TLS extension, if the ingress controller fulfilling
-                            the ingress supports SNI.
+                          description: tls represents the TLS configuration. Currently
+                            the Ingress only supports a single TLS port, 443. If multiple
+                            members of this list specify different hosts, they will
+                            be multiplexed on the same port according to the hostname
+                            specified through the SNI TLS extension, if the ingress
+                            controller fulfilling the ingress supports SNI.
                           items:
                             description: IngressTLS describes the transport layer
-                              security associated with an Ingress.
+                              security associated with an ingress.
                             properties:
                               hosts:
-                                description: Hosts are a list of hosts included in
+                                description: hosts is a list of hosts included in
                                   the TLS certificate. The values in this list must
                                   match the name/s used in the tlsSecret. Defaults
                                   to the wildcard host setting for the loadbalancer
@@ -25113,13 +25347,13 @@ spec:
                                 type: array
                                 x-kubernetes-list-type: atomic
                               secretName:
-                                description: SecretName is the name of the secret
+                                description: secretName is the name of the secret
                                   used to terminate TLS traffic on port 443. Field
                                   is left optional to allow TLS routing based on SNI
                                   hostname alone. If the SNI host in a listener conflicts
                                   with the "Host" header field used by an IngressRule,
                                   the SNI host is used for termination and value of
-                                  the Host header is used for routing.
+                                  the "Host" header is used for routing.
                                 type: string
                             type: object
                           type: array
@@ -25267,7 +25501,7 @@ spec:
                               compute resources required. If Requests is omitted for
                               a container, it defaults to Limits if that is explicitly
                               specified, otherwise to an implementation-defined value.
-                              More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/'
+                              Requests cannot exceed Limits. More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/'
                             type: object
                         type: object
                       refreshPeriod:

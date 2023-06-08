@@ -37,7 +37,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/handler"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
-	"sigs.k8s.io/controller-runtime/pkg/source"
 )
 
 const (
@@ -98,13 +97,13 @@ func (r *UserReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.
 func (r *UserReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&elasticsearchapicrd.User{}).
-		Watches(&source.Kind{Type: &core.Secret{}}, handler.EnqueueRequestsFromMapFunc(watchUserSecret(r.Client))).
+		Watches(&core.Secret{}, handler.EnqueueRequestsFromMapFunc(watchUserSecret(r.Client))).
 		Complete(r)
 }
 
 // watchUserSecret permit to update user if secret change
 func watchUserSecret(c client.Client) handler.MapFunc {
-	return func(a client.Object) []reconcile.Request {
+	return func(ctx context.Context, a client.Object) []reconcile.Request {
 
 		reconcileRequests := make([]reconcile.Request, 0)
 		listUsers := &elasticsearchapicrd.UserList{}
