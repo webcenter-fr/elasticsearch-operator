@@ -46,6 +46,15 @@ func getLogrusLogLevel() logrus.Level {
 	}
 }
 
+func getLogrusFormatter() logrus.Formatter {
+	logFormatter, _ := os.LookupEnv("LOG_FORMATTER")
+	if logFormatter == "json" {
+		return &logrus.JSONFormatter{}
+	}
+
+	return &logrus.TextFormatter{}
+}
+
 func printVersion(logger logr.Logger, metricsAddr, probeAddr string) {
 	logger.Info("Binary info ", "Go version", osruntime.Version())
 	logger.Info("Binary info ", "OS", osruntime.GOOS, "Arch", osruntime.GOARCH)

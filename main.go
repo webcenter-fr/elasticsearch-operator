@@ -92,6 +92,7 @@ func main() {
 	ctrl.SetLogger(zap.New(zap.UseFlagOptions(&opts)))
 	log := logrus.New()
 	log.SetLevel(getLogrusLogLevel())
+	log.SetFormatter(getLogrusFormatter())
 
 	watchNamespace, err := getWatchNamespace()
 	var namespace string
