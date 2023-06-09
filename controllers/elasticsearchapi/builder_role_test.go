@@ -93,6 +93,7 @@ func TestBuildRole(t *testing.T) {
 						"view_index_metadata",
 						"monitor",
 					},
+					AllowRestrictedIndices: true,
 					FieldSecurity: `
 {
 	"grant" : [ "title", "body" ]
@@ -147,6 +148,7 @@ func TestBuildRole(t *testing.T) {
 					"view_index_metadata",
 					"monitor",
 				},
+				AllowRestrictedIndices: true,
 				FieldSecurity: map[string]any{
 					"grant": []any{
 						"title",

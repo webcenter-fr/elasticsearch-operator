@@ -24,8 +24,8 @@ github.com/creack/pty v1.1.9/go.mod h1:oKZEueFk5CKHvIhNR5MUki03XCEU+Q6VDXinZuGJ3
 github.com/davecgh/go-spew v1.1.0/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
 github.com/davecgh/go-spew v1.1.1 h1:vj9j/u1bqnvCEfJOwUhtlOARqs3+rkHYY13jYWTU97c=
 github.com/davecgh/go-spew v1.1.1/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
-github.com/disaster37/es-handler/v8 v8.1.2 h1:EdhPjxbkltYUXVZspKIJ9jcgV1zJMs6+/NiLzKZsnvU=
-github.com/disaster37/es-handler/v8 v8.1.2/go.mod h1:dSWNCMteCqGnENuUYTAg3PuDy/4Dw9aLOX9rBnhao7U=
+github.com/disaster37/es-handler/v8 v8.1.3-0.20230609084243-2fd1dddecf73 h1:roOU9/d+y/Z/KedlVdQqewoYvzhrL0E1IkGqZQbQRbA=
+github.com/disaster37/es-handler/v8 v8.1.3-0.20230609084243-2fd1dddecf73/go.mod h1:a6g5Qb1z+GsxIvAy0ZZqGIsk5YmtYKf5e81L3QQd1gg=
 github.com/disaster37/go-kibana-rest/v8 v8.5.0 h1:Wr2CMopHj0wAh7kq3p355jXctISL1LdAZ9kYN/v6abw=
 github.com/disaster37/go-kibana-rest/v8 v8.5.0/go.mod h1:wVGm1b93CSmsHYoxzqhDszv347xr+fELdigS8XLO+bg=
 github.com/disaster37/goca v1.0.4 h1:QTEQc3eRrknXojp4rnK1rDw3Tc0vSTAMH9kxWQ3nfdQ=
@@ -39,10 +39,10 @@ github.com/disaster37/kb-handler/v8 v8.0.1/go.mod h1:ETu0Mfz0+FYj81pAJTP/Zpgs28E
 github.com/disaster37/operator-sdk-extra v0.1.3-0.20230608094714-39c2ad33b94b h1:S8QyWySlbriQZtdg9QiuVzl/bt/nE0gcHrs2whJGgbE=
 github.com/disaster37/operator-sdk-extra v0.1.3-0.20230608094714-39c2ad33b94b/go.mod h1:O68NfAXsCbIG+08fkjXHr0/rttZncVDORzEwfZboRY0=
 github.com/docopt/docopt-go v0.0.0-20180111231733-ee0de3bc6815/go.mod h1:WwZ+bS3ebgob9U8Nd0kOddGdZWjyMGR8Wziv+TBNwSE=
-github.com/elastic/elastic-transport-go/v8 v8.2.0 h1:hkK5IIs/15mpSXzd5THWVlWTKJyMw6cbCWM3T/B2S5E=
-github.com/elastic/elastic-transport-go/v8 v8.2.0/go.mod h1:87Tcz8IVNe6rVSLdBux1o/PEItLtyabHU3naC7IoqKI=
-github.com/elastic/go-elasticsearch/v8 v8.7.0 h1:ZvbT1YHppBC0QxGnMmaDUxoDa26clwhRaB3Gp5E3UcY=
-github.com/elastic/go-elasticsearch/v8 v8.7.0/go.mod h1:lVb8SvJV8McVkdswpL8YR5QKIkhlWaoSq60YpHilOLI=
+github.com/elastic/elastic-transport-go/v8 v8.3.0 h1:DJGxovyQLXGr62e9nDMPSxRyWION0Bh6d9eCFBriiHo=
+github.com/elastic/elastic-transport-go/v8 v8.3.0/go.mod h1:87Tcz8IVNe6rVSLdBux1o/PEItLtyabHU3naC7IoqKI=
+github.com/elastic/go-elasticsearch/v8 v8.8.1 h1:/OiP5Yex40q5eWpzFVQIS8jRE7SaEZrFkG9JbE6TXtY=
+github.com/elastic/go-elasticsearch/v8 v8.8.1/go.mod h1:GU1BJHO7WeamP7UhuElYwzzHtvf9SDmeVpSSy9+o6Qg=
 github.com/elastic/go-ucfg v0.8.6 h1:stUeyh2goTgGX+/wb9gzKvTv0YB0231LTpKUgCKj4U0=
 github.com/elastic/go-ucfg v0.8.6/go.mod h1:4E8mPOLSUV9hQ7sgLEJ4bvt0KhMuDJa8joDT2QGAEKA=
 github.com/emicklei/go-restful/v3 v3.9.0 h1:XwGDlfxEnQZzuopoqxwSEllNcCOM9DhhFyhFIIGKwxE=
@@ -201,8 +201,8 @@ github.com/stretchr/testify v1.7.0/go.mod h1:6Fq8oRcR53rry900zMqJjRRixrwX3KX962/
 github.com/stretchr/testify v1.7.1/go.mod h1:6Fq8oRcR53rry900zMqJjRRixrwX3KX962/h/Wwjteg=
 github.com/stretchr/testify v1.8.0/go.mod h1:yNjHg4UonilssWZ8iaSj1OCr/vHnekPRkoO+kdMU+MU=
 github.com/stretchr/testify v1.8.1/go.mod h1:w2LPCIKwWwSfY2zedu0+kehJoqGctiVI29o6fzry7u4=
-github.com/stretchr/testify v1.8.2 h1:+h33VjcLVPDHtOdpUCuF+7gSuG3yGIftsP1YvFihtJ8=
-github.com/stretchr/testify v1.8.2/go.mod h1:w2LPCIKwWwSfY2zedu0+kehJoqGctiVI29o6fzry7u4=
+github.com/stretchr/testify v1.8.4 h1:CcVxjf3Q8PM0mHUKJCdn+eZZtm5yQwehR5yeSVQQcUk=
+github.com/stretchr/testify v1.8.4/go.mod h1:sz/lmYIOXD/1dqDmKjjqLyZ2RngseejIcXlSw2iwfAo=
 github.com/thoas/go-funk v0.9.3 h1:7+nAEx3kn5ZJcnDm2Bh23N2yOtweO14bi//dvRtgLpw=
 github.com/thoas/go-funk v0.9.3/go.mod h1:+IWnUfUmFO1+WVYQWQtIJHeRRdaIyyYglZN7xzUPe4Q=
 github.com/x-cray/logrus-prefixed-formatter v0.5.2 h1:00txxvfBM9muc0jiLIEAkAcIMJzfthRT6usrui8uGmg=

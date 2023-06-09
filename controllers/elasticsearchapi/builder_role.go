@@ -54,9 +54,10 @@ func BuildRole(o *elasticsearchapicrd.Role) (role *eshandler.XPackSecurityRole, 
 		role.Indices = make([]eshandler.XPackSecurityIndicesPermissions, 0, len(o.Spec.Indices))
 		for _, indice := range o.Spec.Indices {
 			i := eshandler.XPackSecurityIndicesPermissions{
-				Names:      indice.Names,
-				Privileges: indice.Privileges,
-				Query:      indice.Query,
+				Names:                  indice.Names,
+				Privileges:             indice.Privileges,
+				Query:                  indice.Query,
+				AllowRestrictedIndices: indice.AllowRestrictedIndices,
 			}
 			if indice.FieldSecurity != "" {
 				fs := make(map[string]any)

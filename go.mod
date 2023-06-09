@@ -5,15 +5,15 @@ go 1.20
 require (
 	github.com/codingsince1985/checksum v1.3.0
 	github.com/davecgh/go-spew v1.1.1
-	github.com/disaster37/es-handler/v8 v8.1.2
+	github.com/disaster37/es-handler/v8 v8.1.3-0.20230609084243-2fd1dddecf73
 	github.com/disaster37/go-kibana-rest/v8 v8.5.0
 	github.com/disaster37/goca v1.0.4
 	github.com/disaster37/k8s-objectmatcher v1.8.2
 	github.com/disaster37/k8sbuilder v1.0.1
 	github.com/disaster37/kb-handler/v8 v8.0.1
 	github.com/disaster37/operator-sdk-extra v0.1.3-0.20230608094714-39c2ad33b94b
-	github.com/elastic/elastic-transport-go/v8 v8.2.0
-	github.com/elastic/go-elasticsearch/v8 v8.7.0
+	github.com/elastic/elastic-transport-go/v8 v8.3.0
+	github.com/elastic/go-elasticsearch/v8 v8.8.1
 	github.com/elastic/go-ucfg v0.8.6
 	github.com/go-logr/logr v1.2.4
 	github.com/golang/mock v1.6.0
@@ -27,7 +27,7 @@ require (
 	github.com/prometheus/client_golang v1.15.1
 	github.com/sethvargo/go-password v0.2.0
 	github.com/sirupsen/logrus v1.9.3
-	github.com/stretchr/testify v1.8.2
+	github.com/stretchr/testify v1.8.4
 	github.com/thoas/go-funk v0.9.3
 	go.uber.org/zap v1.24.0
 	golang.org/x/crypto v0.7.0

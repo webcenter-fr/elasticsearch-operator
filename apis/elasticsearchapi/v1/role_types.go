@@ -118,6 +118,11 @@ type RoleSpecIndicesPermissions struct {
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
 	// +optional
 	Query string `json:"query,omitempty"`
+
+	// Allow to manage restricted index
+	// +operator-sdk:csv:customresourcedefinitions:type=spec
+	// +optional
+	AllowRestrictedIndices bool `json:"allowRestrictedIndices,omitempty"`
 }
 
 // RoleStatus defines the observed state of Role

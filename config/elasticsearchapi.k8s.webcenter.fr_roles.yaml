@@ -140,6 +140,9 @@ spec:
                   description: RoleSpecIndicesPermissions is the indices permission
                     object
                   properties:
+                    allowRestrictedIndices:
+                      description: Allow to manage restricted index
+                      type: boolean
                     fieldSecurity:
                       description: FieldSecurity JSON string
                       type: string
