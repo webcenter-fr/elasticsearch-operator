@@ -18,7 +18,7 @@ require (
 	github.com/go-logr/logr v1.2.4
 	github.com/golang/mock v1.6.0
 	github.com/google/go-cmp v0.5.9
-	github.com/imdario/mergo v0.3.15
+	github.com/imdario/mergo v0.3.16
 	github.com/json-iterator/go v1.1.12
 	github.com/kr/pretty v0.3.1
 	github.com/olivere/elastic/v7 v7.0.32
