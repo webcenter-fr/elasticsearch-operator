@@ -1,14 +1,12 @@
 package elasticsearch
 
 import (
-	"bytes"
 	"context"
 	"crypto/x509"
 	"fmt"
 	"regexp"
 	"time"
 
-	"github.com/codingsince1985/checksum"
 	"github.com/disaster37/goca"
 	"github.com/disaster37/goca/cert"
 	"github.com/disaster37/k8s-objectmatcher/patch"
@@ -29,7 +27,6 @@ import (
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
-	"k8s.io/apimachinery/pkg/util/json"
 	"k8s.io/client-go/tools/record"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -559,8 +556,9 @@ func (r *TlsReconciler) Diff(ctx context.Context, resource client.Object, data m
 		}
 		diff.Diff.WriteString("Renew transport PKI\n")
 
-		// Append new CA with others CA
+		// Append new CA with others CA and change sequence to propagate it on pod (rolling restart)
 		sTransport.Data["ca.crt"] = []byte(fmt.Sprintf("%s\n%s", string(sTransport.Data["ca.crt"]), transportRootCA.GetCertificate()))
+		sTransport.Annotations[fmt.Sprintf("%s/sequence", elasticsearchcrd.ElasticsearchAnnotationKey)] = localhelper.RandomString(64)
 		secretToUpdate = append(secretToUpdate, sTransport)
 
 		// API PKI
@@ -577,8 +575,9 @@ func (r *TlsReconciler) Diff(ctx context.Context, resource client.Object, data m
 			}
 			diff.Diff.WriteString("Renew Api PKI\n")
 
-			// Append new CA with others CA
+			// Append new CA with others CA and change sequence to propagate it on pod (rolling restart)
 			sApi.Data["ca.crt"] = []byte(fmt.Sprintf("%s\n%s", string(sApi.Data["ca.crt"]), apiRootCA.GetCertificate()))
+			sApi.Annotations[fmt.Sprintf("%s/sequence", elasticsearchcrd.ElasticsearchAnnotationKey)] = localhelper.RandomString(64)
 			secretToUpdate = append(secretToUpdate, sApi)
 		}
 
@@ -620,7 +619,10 @@ func (r *TlsReconciler) Diff(ctx context.Context, resource client.Object, data m
 
 	if len(addedNode) > 0 || len(deletedNode) > 0 {
 		sTransport.Labels = getLabels(o)
-		sTransport.Annotations = getAnnotations(o)
+		// Keep existing sequence to not rolling restart all nodes
+		sTransport.Annotations = getAnnotations(o, map[string]string{
+			fmt.Sprintf("%s/sequence", elasticsearchcrd.ElasticsearchAnnotationKey): sTransport.Annotations[fmt.Sprintf("%s/sequence", elasticsearchcrd.ElasticsearchAnnotationKey)],
+		})
 
 		if err := patch.DefaultAnnotator.SetLastAppliedAnnotation(sTransport); err != nil {
 			return diff, res, errors.Wrapf(err, "Error when set diff annotation on secret %s", sTransport.Name)
@@ -835,14 +837,7 @@ func (r *TlsReconciler) OnSuccess(ctx context.Context, resource client.Object, d
 			return res, err
 		}
 		sTransport := d.(*corev1.Secret)
-		j, err := json.Marshal(sTransport.Data)
-		if err != nil {
-			return res, errors.Wrapf(err, "Error when convert data of secret %s on json string", sTransport.Name)
-		}
-		sum, err := checksum.SHA256sumReader(bytes.NewReader(j))
-		if err != nil {
-			return res, errors.Wrapf(err, "Error when generate checksum for extra secret %s", sTransport.Name)
-		}
+		sequence := sTransport.Annotations[fmt.Sprintf("%s/sequence", elasticsearchcrd.ElasticsearchAnnotationKey)]
 
 		stsList := &appv1.StatefulSetList{}
 		labelSelectors, err := labels.Parse(fmt.Sprintf("cluster=%s,%s=true", o.Name, elasticsearchcrd.ElasticsearchAnnotationKey))
@@ -854,8 +849,8 @@ func (r *TlsReconciler) OnSuccess(ctx context.Context, resource client.Object, d
 		}
 
 		for _, sts := range stsList.Items {
-			if sts.Spec.Template.Annotations[fmt.Sprintf("%s/secret-%s", elasticsearchcrd.ElasticsearchAnnotationKey, sTransport.Name)] != sum || localhelper.IsOnStatefulSetUpgradeState(&sts) {
-				r.Log.Debugf("Expected: %s, actual: %s", sum, sts.Spec.Template.Annotations[fmt.Sprintf("%s/secret-%s", elasticsearchcrd.ElasticsearchAnnotationKey, sTransport.Name)])
+			if sts.Spec.Template.Annotations[fmt.Sprintf("%s/secret-%s", elasticsearchcrd.ElasticsearchAnnotationKey, sTransport.Name)] != sequence || localhelper.IsOnStatefulSetUpgradeState(&sts) {
+				r.Log.Debugf("Expected: %s, actual: %s", sequence, sts.Spec.Template.Annotations[fmt.Sprintf("%s/secret-%s", elasticsearchcrd.ElasticsearchAnnotationKey, sTransport.Name)])
 				r.Log.Info("Phase propagate CA: wait statefullset controller finished to propagate CA certificate")
 				return res, nil
 			}
@@ -888,14 +883,7 @@ func (r *TlsReconciler) OnSuccess(ctx context.Context, resource client.Object, d
 			return res, err
 		}
 		sTransport := d.(*corev1.Secret)
-		j, err := json.Marshal(sTransport.Data)
-		if err != nil {
-			return res, errors.Wrapf(err, "Error when convert data of secret %s on json string", sTransport.Name)
-		}
-		sum, err := checksum.SHA256sumReader(bytes.NewReader(j))
-		if err != nil {
-			return res, errors.Wrapf(err, "Error when generate checksum for extra secret %s", sTransport.Name)
-		}
+		sequence := sTransport.Annotations[fmt.Sprintf("%s/sequence", elasticsearchcrd.ElasticsearchAnnotationKey)]
 
 		stsList := &appv1.StatefulSetList{}
 		labelSelectors, err := labels.Parse(fmt.Sprintf("cluster=%s,%s=true", o.Name, elasticsearchcrd.ElasticsearchAnnotationKey))
@@ -907,8 +895,8 @@ func (r *TlsReconciler) OnSuccess(ctx context.Context, resource client.Object, d
 		}
 
 		for _, sts := range stsList.Items {
-			if sts.Spec.Template.Annotations[fmt.Sprintf("%s/secret-%s", elasticsearchcrd.ElasticsearchAnnotationKey, sTransport.Name)] != sum || localhelper.IsOnStatefulSetUpgradeState(&sts) {
-				r.Log.Debugf("Expected: %s, actual: %s", sum, sts.Spec.Template.Annotations[fmt.Sprintf("%s/secret-%s", elasticsearchcrd.ElasticsearchAnnotationKey, sTransport.Name)])
+			if sts.Spec.Template.Annotations[fmt.Sprintf("%s/secret-%s", elasticsearchcrd.ElasticsearchAnnotationKey, sTransport.Name)] != sequence || localhelper.IsOnStatefulSetUpgradeState(&sts) {
+				r.Log.Debugf("Expected: %s, actual: %s", sequence, sts.Spec.Template.Annotations[fmt.Sprintf("%s/secret-%s", elasticsearchcrd.ElasticsearchAnnotationKey, sTransport.Name)])
 				r.Log.Info("Phase propagate certificates:  wait statefullset controller finished to propagate certificate")
 				return res, nil
 			}

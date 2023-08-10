@@ -268,7 +268,7 @@ catalog-push: ## Push a catalog image.
 
 .PHONY: k8s
 k8s: ## Start and config k8s cluster to test OLM deployement
-	go install sigs.k8s.io/kind@v0.17.0 && kind create cluster
+	go install sigs.k8s.io/kind@v0.19.0 && kind create cluster
 	kubectl config use-context kind-kind
 	kubectl config set-context --current --namespace=default
 	KUBERNETES_SERVICE_HOST= KUBERNETES_SERVICE_PORT= operator-sdk olm install

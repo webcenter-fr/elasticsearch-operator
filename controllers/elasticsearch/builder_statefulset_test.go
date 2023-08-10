@@ -265,6 +265,9 @@ func TestBuildStatefulset(t *testing.T) {
 			ObjectMeta: metav1.ObjectMeta{
 				Namespace: "default",
 				Name:      "transport-certificates",
+				Annotations: map[string]string{
+					"elasticsearch.k8s.webcenter.fr/sequence": "testsequence",
+				},
 			},
 			Data: map[string][]byte{
 				"tls.crt": []byte("secret1"),

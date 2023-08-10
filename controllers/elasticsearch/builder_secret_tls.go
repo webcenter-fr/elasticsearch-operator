@@ -7,6 +7,7 @@ import (
 	"github.com/disaster37/goca"
 	"github.com/pkg/errors"
 	elasticsearchcrd "github.com/webcenter-fr/elasticsearch-operator/apis/elasticsearch/v1"
+	"github.com/webcenter-fr/elasticsearch-operator/pkg/helper"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -72,14 +73,17 @@ func BuildTransportPkiSecret(o *elasticsearchcrd.Elasticsearch) (sPki *corev1.Se
 }
 
 // buildTransportSecret generate the secret that store the node certificates
+// Add annotations to keep sequence version to know if need to rolling restart nodeGroup (statefullset) on statefullset controller
 func BuildTransportSecret(o *elasticsearchcrd.Elasticsearch, rootCA *goca.CA) (s *corev1.Secret, err error) {
 
 	s = &corev1.Secret{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:        GetSecretNameForTlsTransport(o),
-			Namespace:   o.Namespace,
-			Labels:      getLabels(o),
-			Annotations: getAnnotations(o),
+			Name:      GetSecretNameForTlsTransport(o),
+			Namespace: o.Namespace,
+			Labels:    getLabels(o),
+			Annotations: getAnnotations(o, map[string]string{
+				fmt.Sprintf("%s/sequence", elasticsearchcrd.ElasticsearchAnnotationKey): helper.RandomString(64),
+			}),
 		},
 		Type: corev1.SecretTypeOpaque,
 		Data: map[string][]byte{
@@ -177,10 +181,12 @@ func BuildApiSecret(o *elasticsearchcrd.Elasticsearch, rootCA *goca.CA) (s *core
 
 	s = &corev1.Secret{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:        GetSecretNameForTlsApi(o),
-			Namespace:   o.Namespace,
-			Labels:      getLabels(o),
-			Annotations: getAnnotations(o),
+			Name:      GetSecretNameForTlsApi(o),
+			Namespace: o.Namespace,
+			Labels:    getLabels(o),
+			Annotations: getAnnotations(o, map[string]string{
+				fmt.Sprintf("%s/sequence", elasticsearchcrd.ElasticsearchAnnotationKey): helper.RandomString(64),
+			}),
 		},
 		Type: corev1.SecretTypeOpaque,
 		Data: map[string][]byte{

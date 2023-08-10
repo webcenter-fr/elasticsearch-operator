@@ -51,15 +51,21 @@ func BuildStatefulsets(es *elasticsearchcrd.Elasticsearch, secretsChecksum []cor
 	}
 
 	// checksum for secret
+	// Use annotations sequence instead compute checksum if provided
 	for _, s := range secretsChecksum {
-		j, err := json.Marshal(s.Data)
-		if err != nil {
-			return nil, errors.Wrapf(err, "Error when convert data of secret %s on json string", s.Name)
+
+		sum := s.Annotations[fmt.Sprintf("%s/sequence", elasticsearchcrd.ElasticsearchAnnotationKey)]
+		if sum == "" {
+			j, err := json.Marshal(s.Data)
+			if err != nil {
+				return nil, errors.Wrapf(err, "Error when convert data of secret %s on json string", s.Name)
+			}
+			sum, err = checksum.SHA256sumReader(bytes.NewReader(j))
+			if err != nil {
+				return nil, errors.Wrapf(err, "Error when generate checksum for extra secret %s", s.Name)
+			}
 		}
-		sum, err := checksum.SHA256sumReader(bytes.NewReader(j))
-		if err != nil {
-			return nil, errors.Wrapf(err, "Error when generate checksum for extra secret %s", s.Name)
-		}
+
 		checksumAnnotations[fmt.Sprintf("%s/secret-%s", elasticsearchcrd.ElasticsearchAnnotationKey, s.Name)] = sum
 	}
 

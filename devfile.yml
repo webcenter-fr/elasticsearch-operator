@@ -1,0 +1,82 @@
+schemaVersion: 2.2.0
+metadata:
+  name: golang
+components:
+  - name: home
+    volume:
+      size: 1Gi
+  - name: tools
+    container:
+      image: quay.io/webcenter/developer-image:golang-ubi9-latest
+      env:
+        - name: GOPATH
+          value: /projects:/home/user/go
+        - name: GOCACHE
+          value: /tmp/.cache
+      endpoints:
+        - name: web
+          targetPort: 8080
+          exposure: public
+      memoryLimit: 4Gi
+      cpuLimit: 4000m
+      cpuRequest: 1000m
+      memoryRequest: 2Gi
+      mountSources: true
+      volumeMounts:
+        - name: home
+          path: /profile
+  - name: docker
+    attributes:
+      pod-overrides:
+        spec:
+           container:
+             - securityContext:
+                 allowPrivilegeEscalation: true
+                 privileged: true
+                 runAsUser: 0
+    container:
+      image: alpine
+      env:
+        - name: 'DOCKER_TLS_CERTDIR'
+          value: ''
+      mountSources: true
+      memoryLimit: 4Gi
+      cpuLimit: 4000m
+      cpuRequest: 1000m
+      memoryRequest: 1Gi
+
+commands:
+  - id: run
+    exec:
+      label: "1.1 Run"
+      component: tools
+      workingDir: ${PROJECT_SOURCE}/
+      commandLine: "go run ."
+      group:
+        kind: run
+
+  - id: stop
+    exec:
+      label: "1.2 Stop"
+      component: tools
+      commandLine: "kill $(pidof go)"
+      group:
+        kind: run
+
+  - id: test
+    exec:
+      label: "1.3 Test"
+      component: tools
+      workingDir: ${PROJECT_SOURCE}/
+      commandLine: "go test -v"
+      group:
+        kind: test
+
+  - id: run-current-file
+    exec:
+      label: "Run current file"
+      component: tools
+      workingDir: ${fileDirname}
+      commandLine: "go run ${file}"
+      group:
+        kind: run
