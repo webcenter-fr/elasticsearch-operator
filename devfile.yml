@@ -3,6 +3,8 @@ metadata:
   name: golang2
 components:
   - name: tools
+    attributes:
+       controller.devfile.io/merge-contribution: true
     container:
       image: quay.io/webcenter/developer-image:golang-ubi9-latest
       env:
