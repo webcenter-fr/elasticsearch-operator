@@ -1,10 +1,7 @@
 schemaVersion: 2.2.0
 metadata:
-  name: golang
+  name: golang2
 components:
-  - name: home
-    volume:
-      size: 1Gi
   - name: tools
     container:
       image: quay.io/webcenter/developer-image:golang-ubi9-latest
@@ -13,6 +10,10 @@ components:
           value: /projects:/home/user/go
         - name: GOCACHE
           value: /tmp/.cache
+        - name: DOCKER_HOST
+          value: tcp://localhost:2375
+        - name: SEB
+          value: test
       endpoints:
         - name: web
           targetPort: 8080
@@ -22,20 +23,16 @@ components:
       cpuRequest: 1000m
       memoryRequest: 2Gi
       mountSources: true
-      volumeMounts:
-        - name: home
-          path: /profile
   - name: docker
     attributes:
-      pod-overrides:
-        spec:
-           container:
-             - securityContext:
-                 allowPrivilegeEscalation: true
-                 privileged: true
-                 runAsUser: 0
+      container-overrides:
+        securityContext:
+          allowPrivilegeEscalation: true
+          privileged: true
+          runAsNonRoot: false
+          runAsUser: 0
     container:
-      image: alpine
+      image: docker:dind
       env:
         - name: 'DOCKER_TLS_CERTDIR'
           value: ''
