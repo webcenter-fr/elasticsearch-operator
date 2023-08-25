@@ -94,6 +94,15 @@ func (h *Elasticsearch) IsPdb(nodeGroup ElasticsearchNodeGroupSpec) bool {
 	return false
 }
 
+// IsBoostraping return true if cluster is already bootstraped
+func (h *Elasticsearch) IsBoostrapping() bool {
+	if h.Status.IsBootstrapping == nil || !*h.Status.IsBootstrapping {
+		return false
+	}
+
+	return true
+}
+
 // MustSetUpIndex setup indexer for Elasticsearch
 func MustSetUpIndex(k8sManager manager.Manager) {
 	if err := k8sManager.GetFieldIndexer().IndexField(context.Background(), &Elasticsearch{}, "spec.licenseSecretRef.name", func(o client.Object) []string {

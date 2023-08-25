@@ -5312,8 +5312,6 @@ spec:
                         type: string
                       version:
                         type: string
-                    required:
-                    - elasticsearchRef
                     type: object
                   prometheus:
                     properties:
@@ -10792,8 +10790,6 @@ spec:
                         type: string
                       version:
                         type: string
-                    required:
-                    - elasticsearchRef
                     type: object
                   prometheus:
                     properties:

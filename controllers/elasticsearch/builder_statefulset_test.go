@@ -1,6 +1,7 @@
 package elasticsearch
 
 import (
+	"fmt"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -211,9 +212,16 @@ func TestBuildStatefulset(t *testing.T) {
 		},
 	}
 
-	extraConfigMaps, err = BuildConfigMaps(o)
+	// Keep only configmap of type config
+	extraConfigMapsTmp, err := BuildConfigMaps(o)
 	if err != nil {
 		t.Fatal(err.Error())
+	}
+	extraConfigMaps = make([]corev1.ConfigMap, 0, len(extraConfigMapsTmp))
+	for _, cm := range extraConfigMapsTmp {
+		if cm.Annotations[fmt.Sprintf("%s/type", elasticsearchcrd.ElasticsearchAnnotationKey)] == "config" {
+			extraConfigMaps = append(extraConfigMaps, cm)
+		}
 	}
 
 	sts, err = BuildStatefulsets(o, extraSecrets, extraConfigMaps)
@@ -277,9 +285,16 @@ func TestBuildStatefulset(t *testing.T) {
 		},
 	}
 
-	extraConfigMaps, err = BuildConfigMaps(o)
+	// Keep only configmap of type config
+	extraConfigMapsTmp, err = BuildConfigMaps(o)
 	if err != nil {
 		t.Fatal(err.Error())
+	}
+	extraConfigMaps = make([]corev1.ConfigMap, 0, len(extraConfigMapsTmp))
+	for _, cm := range extraConfigMapsTmp {
+		if cm.Annotations[fmt.Sprintf("%s/type", elasticsearchcrd.ElasticsearchAnnotationKey)] == "config" {
+			extraConfigMaps = append(extraConfigMaps, cm)
+		}
 	}
 
 	sts, err = BuildStatefulsets(o, extraSecrets, extraConfigMaps)
@@ -351,124 +366,6 @@ func TestComputeJavaOpts(t *testing.T) {
 	}
 
 	assert.Equal(t, "-param1=1 -xmx1G -xms1G", computeJavaOpts(o, &o.Spec.NodeGroups[0]))
-}
-
-func TestComputeInitialMasterNodes(t *testing.T) {
-	var (
-		o *elasticsearchcrd.Elasticsearch
-	)
-
-	// With only one master
-	o = &elasticsearchcrd.Elasticsearch{
-		ObjectMeta: metav1.ObjectMeta{
-			Namespace: "default",
-			Name:      "test",
-		},
-		Spec: elasticsearchcrd.ElasticsearchSpec{
-			NodeGroups: []elasticsearchcrd.ElasticsearchNodeGroupSpec{
-				{
-					Name:     "master",
-					Replicas: 3,
-					Roles: []string{
-						"master",
-						"data",
-						"ingest",
-					},
-				},
-			},
-		},
-	}
-
-	assert.Equal(t, "test-master-es-0, test-master-es-1, test-master-es-2", computeInitialMasterNodes(o))
-
-	// With multiple node groups
-	o = &elasticsearchcrd.Elasticsearch{
-		ObjectMeta: metav1.ObjectMeta{
-			Namespace: "default",
-			Name:      "test",
-		},
-		Spec: elasticsearchcrd.ElasticsearchSpec{
-			NodeGroups: []elasticsearchcrd.ElasticsearchNodeGroupSpec{
-				{
-					Name:     "all",
-					Replicas: 3,
-					Roles: []string{
-						"master",
-						"data",
-						"ingest",
-					},
-				},
-				{
-					Name:     "master",
-					Replicas: 3,
-					Roles: []string{
-						"master",
-					},
-				},
-			},
-		},
-	}
-
-	assert.Equal(t, "test-all-es-0, test-all-es-1, test-all-es-2, test-master-es-0, test-master-es-1, test-master-es-2", computeInitialMasterNodes(o))
-}
-
-func TestComputeDiscoverySeedHosts(t *testing.T) {
-	var (
-		o *elasticsearchcrd.Elasticsearch
-	)
-
-	// With only one master
-	o = &elasticsearchcrd.Elasticsearch{
-		ObjectMeta: metav1.ObjectMeta{
-			Namespace: "default",
-			Name:      "test",
-		},
-		Spec: elasticsearchcrd.ElasticsearchSpec{
-			NodeGroups: []elasticsearchcrd.ElasticsearchNodeGroupSpec{
-				{
-					Name:     "master",
-					Replicas: 3,
-					Roles: []string{
-						"master",
-						"data",
-						"ingest",
-					},
-				},
-			},
-		},
-	}
-
-	assert.Equal(t, "test-master-headless-es", computeDiscoverySeedHosts(o))
-
-	// With multiple node groups
-	o = &elasticsearchcrd.Elasticsearch{
-		ObjectMeta: metav1.ObjectMeta{
-			Namespace: "default",
-			Name:      "test",
-		},
-		Spec: elasticsearchcrd.ElasticsearchSpec{
-			NodeGroups: []elasticsearchcrd.ElasticsearchNodeGroupSpec{
-				{
-					Name:     "all",
-					Replicas: 3,
-					Roles: []string{
-						"master",
-						"data",
-						"ingest",
-					},
-				},
-				{
-					Name:     "master",
-					Replicas: 3,
-					Roles: []string{
-						"master",
-					},
-				},
-			},
-		},
-	}
-
-	assert.Equal(t, "test-all-headless-es, test-master-headless-es", computeDiscoverySeedHosts(o))
 }
 
 func TestComputeRoles(t *testing.T) {

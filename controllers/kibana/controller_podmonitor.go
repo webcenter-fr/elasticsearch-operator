@@ -66,13 +66,18 @@ func (r *PodMonitorReconciler) Read(ctx context.Context, resource client.Object,
 	o := resource.(*kibanacrd.Kibana)
 	pm := &monitoringv1.PodMonitor{}
 
-	// Read current podMonitor
-	if err = r.Client.Get(ctx, types.NamespacedName{Namespace: o.Namespace, Name: GetPodMonitorName(o)}, pm); err != nil {
-		if !k8serrors.IsNotFound(err) {
-			return res, errors.Wrapf(err, "Error when read podMonitor")
+	// Read current podMonitor if enabled
+	if o.IsPrometheusMonitoring() {
+		if err = r.Client.Get(ctx, types.NamespacedName{Namespace: o.Namespace, Name: GetPodMonitorName(o)}, pm); err != nil {
+			if !k8serrors.IsNotFound(err) {
+				return res, errors.Wrapf(err, "Error when read podMonitor")
+			}
+			pm = nil
 		}
+	} else {
 		pm = nil
 	}
+
 	data["currentObject"] = pm
 
 	// Generate expected podMonitor

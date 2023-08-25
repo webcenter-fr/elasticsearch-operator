@@ -8948,8 +8948,6 @@ spec:
                         description: Version is the Metricbeat version to use Default
                           it use the same version of the product that it monitor
                         type: string
-                    required:
-                    - elasticsearchRef
                     type: object
                   prometheus:
                     description: Prometheus permit to monitor cluster with Prometheus
@@ -18054,8 +18052,6 @@ spec:
                         description: Version is the Metricbeat version to use Default
                           it use the same version of the product that it monitor
                         type: string
-                    required:
-                    - elasticsearchRef
                     type: object
                   prometheus:
                     description: Prometheus permit to monitor cluster with Prometheus

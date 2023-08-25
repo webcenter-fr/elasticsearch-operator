@@ -37,9 +37,14 @@ func GetNodeGroupNodeNames(elasticsearch *elasticsearchcrd.Elasticsearch, nodeGr
 	return nil
 }
 
-// GetConfigMapNameForConfig permit to get the configMap name that store the config of Elasticsearch
+// GetNodeGroupConfigMapName permit to get the configMap name that store the config of Elasticsearch
 func GetNodeGroupConfigMapName(elasticsearch *elasticsearchcrd.Elasticsearch, nodeGroupName string) (configMapName string) {
 	return fmt.Sprintf("%s-%s-config-es", elasticsearch.Name, nodeGroupName)
+}
+
+// GetBootstrappingConfigMapName permit to get the configMap name that store the bootstrapping properties of Elasticsearch cluster
+func GetBootstrappingConfigMapName(elasticsearch *elasticsearchcrd.Elasticsearch) (configMapName string) {
+	return fmt.Sprintf("%s-bootstrapping-es", elasticsearch.Name)
 }
 
 // GetNodeGroupServiceName permit to get the service name for specified node group name

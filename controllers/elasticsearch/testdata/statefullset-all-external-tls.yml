@@ -92,12 +92,13 @@ spec:
           value: test
         - name: network.host
           value: 0.0.0.0
-        - name: discovery.type
-          value: single-node
         - name: PROBE_WAIT_STATUS
           value: green
         - name: PROBE_SCHEME
           value: https
+        envFrom:
+        - configMapRef:
+            name: test-bootstrapping-es
         image: docker.elastic.co/elasticsearch/elasticsearch:latest
         livenessProbe:
           failureThreshold: 3

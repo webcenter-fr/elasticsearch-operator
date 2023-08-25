@@ -85,10 +85,6 @@ spec:
               fieldPath: metadata.namespace
         - name: ELASTICSEARCH_JAVA_OPTS
           value: -Xms2g -Xmx2g
-        - name: cluster.initial_master_nodes
-          value: test-master-es-0, test-master-es-1, test-master-es-2
-        - name: discovery.seed_hosts
-          value: test-master-headless-es
         - name: cluster.name
           value: test
         - name: network.host
@@ -97,6 +93,9 @@ spec:
           value: green
         - name: PROBE_SCHEME
           value: https
+        envFrom:
+        - configMapRef:
+            name: test-bootstrapping-es
         image: docker.elastic.co/elasticsearch/elasticsearch:2.3.0
         livenessProbe:
           failureThreshold: 3

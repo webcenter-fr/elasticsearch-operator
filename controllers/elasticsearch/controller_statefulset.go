@@ -148,6 +148,7 @@ func (r *StatefulsetReconciler) Read(ctx context.Context, resource client.Object
 	secretsChecksum = append(secretsChecksum, *s)
 
 	// Read configMaps to generate checksum
+	// Keep only configmap of type config
 	labelSelectors, err = labels.Parse(fmt.Sprintf("cluster=%s,%s=true", o.Name, elasticsearchcrd.ElasticsearchAnnotationKey))
 	if err != nil {
 		return res, errors.Wrap(err, "Error when generate label selector")
@@ -155,7 +156,11 @@ func (r *StatefulsetReconciler) Read(ctx context.Context, resource client.Object
 	if err = r.Client.List(ctx, cmList, &client.ListOptions{Namespace: o.Namespace, LabelSelector: labelSelectors}); err != nil {
 		return res, errors.Wrapf(err, "Error when read configMap")
 	}
-	configMapsChecksum = append(configMapsChecksum, cmList.Items...)
+	for _, cm := range cmList.Items {
+		if cm.Annotations[fmt.Sprintf("%s/type", elasticsearchcrd.ElasticsearchAnnotationKey)] == "config" {
+			configMapsChecksum = append(configMapsChecksum, cm)
+		}
+	}
 
 	// Read extra volumes to generate checksum if secret or configmap
 	for _, v := range o.Spec.GlobalNodeGroup.AdditionalVolumes {

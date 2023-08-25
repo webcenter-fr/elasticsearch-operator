@@ -98,4 +98,212 @@ node:
 	configMaps, err = BuildConfigMaps(o)
 	assert.NoError(t, err)
 	test.EqualFromYamlFile(t, "testdata/configmap_api_tls_disabled.yml", &configMaps[0], test.CleanApi)
+
+	// When cluster is not yet bootstrapped
+	o = &elasticsearchcrd.Elasticsearch{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: "default",
+			Name:      "test",
+			Labels: map[string]string{
+				"label1": "value1",
+			},
+			Annotations: map[string]string{
+				"anno1": "value1",
+			},
+		},
+		Spec: elasticsearchcrd.ElasticsearchSpec{
+			NodeGroups: []elasticsearchcrd.ElasticsearchNodeGroupSpec{
+				{
+					Name: "master",
+					Roles: []string{
+						"master",
+					},
+					Replicas: 3,
+				},
+			},
+		},
+	}
+
+	configMaps, err = BuildConfigMaps(o)
+	assert.NoError(t, err)
+	test.EqualFromYamlFile(t, "testdata/configmap_not_bootstrapping.yml", &configMaps[1], test.CleanApi)
+
+	// When cluster is bootstrapped
+	o = &elasticsearchcrd.Elasticsearch{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: "default",
+			Name:      "test",
+			Labels: map[string]string{
+				"label1": "value1",
+			},
+			Annotations: map[string]string{
+				"anno1": "value1",
+			},
+		},
+		Spec: elasticsearchcrd.ElasticsearchSpec{
+			NodeGroups: []elasticsearchcrd.ElasticsearchNodeGroupSpec{
+				{
+					Name: "master",
+					Roles: []string{
+						"master",
+					},
+					Replicas: 3,
+				},
+			},
+		},
+		Status: elasticsearchcrd.ElasticsearchStatus{
+			IsBootstrapping: pointer.Bool(true),
+		},
+	}
+
+	configMaps, err = BuildConfigMaps(o)
+	assert.NoError(t, err)
+	test.EqualFromYamlFile(t, "testdata/configmap_bootstrapping.yml", &configMaps[1], test.CleanApi)
+
+	// When cluster is not yet bootstrapped and single node
+	o = &elasticsearchcrd.Elasticsearch{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: "default",
+			Name:      "test",
+			Labels: map[string]string{
+				"label1": "value1",
+			},
+			Annotations: map[string]string{
+				"anno1": "value1",
+			},
+		},
+		Spec: elasticsearchcrd.ElasticsearchSpec{
+			NodeGroups: []elasticsearchcrd.ElasticsearchNodeGroupSpec{
+				{
+					Name: "master",
+					Roles: []string{
+						"master",
+					},
+					Replicas: 1,
+				},
+			},
+		},
+	}
+
+	configMaps, err = BuildConfigMaps(o)
+	assert.NoError(t, err)
+	test.EqualFromYamlFile(t, "testdata/configmap_not_bootstrapping_single.yml", &configMaps[1], test.CleanApi)
+}
+
+func TestComputeInitialMasterNodes(t *testing.T) {
+	var (
+		o *elasticsearchcrd.Elasticsearch
+	)
+
+	// With only one master
+	o = &elasticsearchcrd.Elasticsearch{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: "default",
+			Name:      "test",
+		},
+		Spec: elasticsearchcrd.ElasticsearchSpec{
+			NodeGroups: []elasticsearchcrd.ElasticsearchNodeGroupSpec{
+				{
+					Name:     "master",
+					Replicas: 3,
+					Roles: []string{
+						"master",
+						"data",
+						"ingest",
+					},
+				},
+			},
+		},
+	}
+
+	assert.Equal(t, "test-master-es-0, test-master-es-1, test-master-es-2", computeInitialMasterNodes(o))
+
+	// With multiple node groups
+	o = &elasticsearchcrd.Elasticsearch{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: "default",
+			Name:      "test",
+		},
+		Spec: elasticsearchcrd.ElasticsearchSpec{
+			NodeGroups: []elasticsearchcrd.ElasticsearchNodeGroupSpec{
+				{
+					Name:     "all",
+					Replicas: 3,
+					Roles: []string{
+						"master",
+						"data",
+						"ingest",
+					},
+				},
+				{
+					Name:     "master",
+					Replicas: 3,
+					Roles: []string{
+						"master",
+					},
+				},
+			},
+		},
+	}
+
+	assert.Equal(t, "test-all-es-0, test-all-es-1, test-all-es-2, test-master-es-0, test-master-es-1, test-master-es-2", computeInitialMasterNodes(o))
+}
+
+func TestComputeDiscoverySeedHosts(t *testing.T) {
+	var (
+		o *elasticsearchcrd.Elasticsearch
+	)
+
+	// With only one master
+	o = &elasticsearchcrd.Elasticsearch{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: "default",
+			Name:      "test",
+		},
+		Spec: elasticsearchcrd.ElasticsearchSpec{
+			NodeGroups: []elasticsearchcrd.ElasticsearchNodeGroupSpec{
+				{
+					Name:     "master",
+					Replicas: 3,
+					Roles: []string{
+						"master",
+						"data",
+						"ingest",
+					},
+				},
+			},
+		},
+	}
+
+	assert.Equal(t, "test-master-headless-es", computeDiscoverySeedHosts(o))
+
+	// With multiple node groups
+	o = &elasticsearchcrd.Elasticsearch{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: "default",
+			Name:      "test",
+		},
+		Spec: elasticsearchcrd.ElasticsearchSpec{
+			NodeGroups: []elasticsearchcrd.ElasticsearchNodeGroupSpec{
+				{
+					Name:     "all",
+					Replicas: 3,
+					Roles: []string{
+						"master",
+						"data",
+						"ingest",
+					},
+				},
+				{
+					Name:     "master",
+					Replicas: 3,
+					Roles: []string{
+						"master",
+					},
+				},
+			},
+		},
+	}
+
+	assert.Equal(t, "test-all-headless-es, test-master-headless-es", computeDiscoverySeedHosts(o))
 }

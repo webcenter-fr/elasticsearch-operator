@@ -272,10 +272,26 @@ k8s: ## Start and config k8s cluster to test OLM deployement
 	kubectl config use-context kind-kind
 	kubectl config set-context --current --namespace=default
 	KUBERNETES_SERVICE_HOST= KUBERNETES_SERVICE_PORT= operator-sdk olm install
+	export KUBECONFIG=$HOME/.kube/config
 .PHONY: clean-k8s
 clean-k8s:
 	kind delete cluster
-	docker rm centreon --force
+
+.PHONY: kwok
+kwok:
+	kwokctl create cluster -c ./.ci/kwok/pod-general.yaml
+	kwokctl scale node node --replicas 10
+	kubectl config use-context kwok-kwok
+	kubectl config set-context --current --namespace=default
+	unset KUBERNETES_SERVICE_HOST
+	unset KUBERNETES_SERVICE_PORT
+	export KUBECONFIG=$HOME/.kube/config
+	make install
+	make run
+
+.PHONY: clean-kwok
+clean-kwok:
+	kwokctl delete cluster
 
 .PHONY: release
 release: generate manifests docker-buildx bundle bundle-buildx catalog-build catalog-push

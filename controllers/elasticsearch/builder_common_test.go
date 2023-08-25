@@ -650,3 +650,26 @@ func TestGetMetricbeatName(t *testing.T) {
 
 	assert.Equal(t, "test-metricbeat-es", GetMetricbeatName(o))
 }
+
+func TestGetBootstrappingConfigMapName(t *testing.T) {
+	o := &elasticsearchcrd.Elasticsearch{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: "default",
+			Name:      "test",
+		},
+		Spec: elasticsearchcrd.ElasticsearchSpec{
+			NodeGroups: []elasticsearchcrd.ElasticsearchNodeGroupSpec{
+				{
+					Name:     "master",
+					Replicas: 3,
+				},
+				{
+					Name:     "data",
+					Replicas: 1,
+				},
+			},
+		},
+	}
+
+	assert.Equal(t, "test-bootstrapping-es", GetBootstrappingConfigMapName(o))
+}

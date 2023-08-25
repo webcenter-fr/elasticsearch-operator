@@ -244,10 +244,11 @@ func (r *TlsReconciler) Read(ctx context.Context, resource client.Object, data m
 func (r *TlsReconciler) Diff(ctx context.Context, resource client.Object, data map[string]interface{}) (diff controller.K8sDiff, res ctrl.Result, err error) {
 	o := resource.(*elasticsearchcrd.Elasticsearch)
 	var (
-		d          any
-		needRenew  bool
-		isUpdated  bool
-		isBlackout bool
+		d                  any
+		needRenew          bool
+		isUpdated          bool
+		isBlackout         bool
+		isClusterBootstrap bool
 	)
 
 	defaultRenewCertificate := DefaultRenewCertificate
@@ -315,8 +316,13 @@ func (r *TlsReconciler) Diff(ctx context.Context, resource client.Object, data m
 	data["isTlsBlackout"] = false
 
 	// Check if on blackout
+	// When cluster no yet bootstrapping, the certificates not yet exist
 	if sTransport == nil || sTransportPki == nil || transportRootCA == nil || transportRootCA.GoCertificate().NotAfter.Before(time.Now()) {
-		isBlackout = true
+		if !o.IsBoostrapping() {
+			isClusterBootstrap = true
+		} else {
+			isBlackout = true
+		}
 	}
 	for _, nodeCrt := range nodeCertificates {
 		if nodeCrt.NotAfter.Before(time.Now()) {
@@ -325,8 +331,8 @@ func (r *TlsReconciler) Diff(ctx context.Context, resource client.Object, data m
 		}
 	}
 
-	// Generate all certificates
-	if isBlackout {
+	// Generate all certificates when bootstrap cluster or when we are on blackout
+	if isClusterBootstrap || isBlackout {
 		r.Log.Debugf("Detect phase: %s", phaseTlsCreate)
 
 		diff.Diff.WriteString("Generate new certificates\n")
@@ -349,7 +355,7 @@ func (r *TlsReconciler) Diff(ctx context.Context, resource client.Object, data m
 		data["listToUpdate"] = secretToUpdate
 		data["listToDelete"] = secretToDelete
 		data["phase"] = phaseTlsCreate
-		data["isTlsBlackout"] = true
+		data["isTlsBlackout"] = isBlackout
 
 		return diff, res, nil
 	}

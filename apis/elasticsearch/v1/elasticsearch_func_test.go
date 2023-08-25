@@ -80,6 +80,7 @@ func TestIsIngressEnabled(t *testing.T) {
 
 	// When ingress is enabled
 	o.Spec.Endpoint.Ingress.Enabled = true
+	assert.True(t, o.IsIngressEnabled())
 
 }
 
@@ -374,5 +375,27 @@ func TestIsPdb(t *testing.T) {
 	assert.True(t, o.IsPdb(ElasticsearchNodeGroupSpec{
 		PodDisruptionBudgetSpec: &policyv1.PodDisruptionBudgetSpec{},
 	}))
+
+}
+
+func TestIsBootstrapping(t *testing.T) {
+
+	// With default values
+	o := &Elasticsearch{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: "default",
+			Name:      "test",
+		},
+		Spec: ElasticsearchSpec{},
+	}
+	assert.False(t, o.IsBoostrapping())
+
+	// When is false
+	o.Status.IsBootstrapping = pointer.Bool(false)
+	assert.False(t, o.IsBoostrapping())
+
+	// When is true
+	o.Status.IsBootstrapping = pointer.Bool(true)
+	assert.True(t, o.IsBoostrapping())
 
 }

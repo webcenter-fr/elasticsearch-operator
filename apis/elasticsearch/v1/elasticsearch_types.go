@@ -461,6 +461,10 @@ type ElasticsearchStatus struct {
 	// +operator-sdk:csv:customresourcedefinitions:type=status
 	IsError *bool `json:"isOnError,omitempty"`
 
+	// IsBootstrapping is true when the cluster is bootstraping
+	// +operator-sdk:csv:customresourcedefinitions:type=status
+	IsBootstrapping *bool `json:"isBootstrapping,omitempty"`
+
 	// Url is the Elasticsearch endpoint
 	// +operator-sdk:csv:customresourcedefinitions:type=status
 	Url string `json:"url,omitempty"`
