@@ -1,8 +1,8 @@
 package elasticsearch
 
 import (
+	"emperror.dev/errors"
 	"github.com/disaster37/k8sbuilder"
-	"github.com/pkg/errors"
 	elasticsearchcrd "github.com/webcenter-fr/elasticsearch-operator/apis/elasticsearch/v1"
 	networkingv1 "k8s.io/api/networking/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"

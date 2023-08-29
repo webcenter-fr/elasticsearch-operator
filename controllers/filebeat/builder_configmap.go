@@ -3,7 +3,7 @@ package filebeat
 import (
 	"strings"
 
-	"github.com/pkg/errors"
+	"emperror.dev/errors"
 	beatcrd "github.com/webcenter-fr/elasticsearch-operator/apis/beat/v1"
 	elasticsearchcrd "github.com/webcenter-fr/elasticsearch-operator/apis/elasticsearch/v1"
 	"github.com/webcenter-fr/elasticsearch-operator/pkg/helper"

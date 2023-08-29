@@ -23,7 +23,6 @@ require (
 	github.com/json-iterator/go v1.1.12
 	github.com/kr/pretty v0.3.1
 	github.com/olivere/elastic/v7 v7.0.32
-	github.com/pkg/errors v0.9.1
 	github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring v0.67.1
 	github.com/prometheus/client_golang v1.16.0
 	github.com/sethvargo/go-password v0.2.0
@@ -69,6 +68,7 @@ require (
 	github.com/modern-go/concurrent v0.0.0-20180306012644-bacd9c7ef1dd // indirect
 	github.com/modern-go/reflect2 v1.0.2 // indirect
 	github.com/munnerz/goautoneg v0.0.0-20191010083416-a7dc8b61c822 // indirect
+	github.com/pkg/errors v0.9.1 // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect
 	github.com/prometheus/client_model v0.4.0 // indirect
 	github.com/prometheus/common v0.44.0 // indirect

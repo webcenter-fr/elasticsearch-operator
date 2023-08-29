@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"net"
 
+	"emperror.dev/errors"
 	"github.com/disaster37/goca"
-	"github.com/pkg/errors"
 	elasticsearchcrd "github.com/webcenter-fr/elasticsearch-operator/apis/elasticsearch/v1"
 	"github.com/webcenter-fr/elasticsearch-operator/pkg/helper"
 	corev1 "k8s.io/api/core/v1"

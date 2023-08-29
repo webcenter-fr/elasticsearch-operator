@@ -3,7 +3,7 @@ package elasticsearchapi
 import (
 	"encoding/json"
 
-	"github.com/pkg/errors"
+	"emperror.dev/errors"
 	elasticsearchapicrd "github.com/webcenter-fr/elasticsearch-operator/apis/elasticsearchapi/v1"
 
 	olivere "github.com/olivere/elastic/v7"

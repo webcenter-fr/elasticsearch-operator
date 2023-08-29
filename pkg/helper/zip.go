@@ -6,8 +6,8 @@ import (
 	"encoding/base64"
 	"io"
 
+	"emperror.dev/errors"
 	json "github.com/json-iterator/go"
-	"github.com/pkg/errors"
 )
 
 func ZipAndBase64Encode(originalObject any) (string, error) {

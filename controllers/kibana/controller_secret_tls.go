@@ -5,12 +5,12 @@ import (
 	"crypto/x509"
 	"time"
 
+	"emperror.dev/errors"
 	"github.com/disaster37/goca"
 	"github.com/disaster37/goca/cert"
 	"github.com/disaster37/k8s-objectmatcher/patch"
 	"github.com/disaster37/operator-sdk-extra/pkg/controller"
 	"github.com/disaster37/operator-sdk-extra/pkg/helper"
-	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 	kibanacrd "github.com/webcenter-fr/elasticsearch-operator/apis/kibana/v1"
 	"github.com/webcenter-fr/elasticsearch-operator/controllers/common"

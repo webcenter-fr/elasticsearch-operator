@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"time"
 
+	"emperror.dev/errors"
 	"github.com/disaster37/operator-sdk-extra/pkg/controller"
-	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 	cerebrocrd "github.com/webcenter-fr/elasticsearch-operator/apis/cerebro/v1"
 	"github.com/webcenter-fr/elasticsearch-operator/controllers/common"

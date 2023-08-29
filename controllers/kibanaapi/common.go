@@ -8,10 +8,10 @@ import (
 	"net/http"
 	"time"
 
+	"emperror.dev/errors"
 	"github.com/disaster37/go-kibana-rest/v8"
 	kbhandler "github.com/disaster37/kb-handler/v8"
 	"github.com/disaster37/operator-sdk-extra/pkg/controller"
-	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 	"github.com/webcenter-fr/elasticsearch-operator/apis/shared"
 	"github.com/webcenter-fr/elasticsearch-operator/controllers/common"

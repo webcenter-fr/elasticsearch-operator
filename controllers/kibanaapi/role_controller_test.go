@@ -5,12 +5,12 @@ import (
 	"testing"
 	"time"
 
+	"emperror.dev/errors"
 	"github.com/disaster37/go-kibana-rest/v8/kbapi"
 	"github.com/disaster37/kb-handler/v8/mocks"
 	"github.com/disaster37/kb-handler/v8/patch"
 	"github.com/disaster37/operator-sdk-extra/pkg/test"
 	"github.com/golang/mock/gomock"
-	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
 	kibanaapicrd "github.com/webcenter-fr/elasticsearch-operator/apis/kibanaapi/v1"

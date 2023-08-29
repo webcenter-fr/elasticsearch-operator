@@ -1,8 +1,8 @@
 package pki
 
 import (
+	"emperror.dev/errors"
 	"github.com/disaster37/goca"
-	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 )
 

@@ -5,7 +5,7 @@ import (
 	"strings"
 
 	"dario.cat/mergo"
-	"github.com/pkg/errors"
+	"emperror.dev/errors"
 	cerebrocrd "github.com/webcenter-fr/elasticsearch-operator/apis/cerebro/v1"
 	elasticsearchcrd "github.com/webcenter-fr/elasticsearch-operator/apis/elasticsearch/v1"
 	elasticsearchcontrollers "github.com/webcenter-fr/elasticsearch-operator/controllers/elasticsearch"

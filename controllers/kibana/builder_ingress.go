@@ -1,8 +1,8 @@
 package kibana
 
 import (
+	"emperror.dev/errors"
 	"github.com/disaster37/k8sbuilder"
-	"github.com/pkg/errors"
 	kibanacrd "github.com/webcenter-fr/elasticsearch-operator/apis/kibana/v1"
 	networkingv1 "k8s.io/api/networking/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"

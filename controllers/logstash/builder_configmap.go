@@ -1,7 +1,7 @@
 package logstash
 
 import (
-	"github.com/pkg/errors"
+	"emperror.dev/errors"
 	logstashcrd "github.com/webcenter-fr/elasticsearch-operator/apis/logstash/v1"
 	"github.com/webcenter-fr/elasticsearch-operator/pkg/helper"
 	corev1 "k8s.io/api/core/v1"

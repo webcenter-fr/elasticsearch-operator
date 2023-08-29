@@ -3,7 +3,7 @@ package kibana
 import (
 	"fmt"
 
-	"github.com/pkg/errors"
+	"emperror.dev/errors"
 	elasticsearchcrd "github.com/webcenter-fr/elasticsearch-operator/apis/elasticsearch/v1"
 	kibanacrd "github.com/webcenter-fr/elasticsearch-operator/apis/kibana/v1"
 	"github.com/webcenter-fr/elasticsearch-operator/pkg/helper"

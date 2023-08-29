@@ -5,12 +5,12 @@ import (
 	"testing"
 	"time"
 
+	"emperror.dev/errors"
 	eshandler "github.com/disaster37/es-handler/v8"
 	"github.com/disaster37/es-handler/v8/mocks"
 	"github.com/disaster37/es-handler/v8/patch"
 	"github.com/disaster37/operator-sdk-extra/pkg/test"
 	"github.com/golang/mock/gomock"
-	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
 	elasticsearchapicrd "github.com/webcenter-fr/elasticsearch-operator/apis/elasticsearchapi/v1"

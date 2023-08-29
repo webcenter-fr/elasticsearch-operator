@@ -5,9 +5,9 @@ import (
 	"fmt"
 	"strings"
 
+	"emperror.dev/errors"
 	"github.com/codingsince1985/checksum"
 	"github.com/disaster37/k8sbuilder"
-	"github.com/pkg/errors"
 	beatcrd "github.com/webcenter-fr/elasticsearch-operator/apis/beat/v1"
 	elasticsearchcrd "github.com/webcenter-fr/elasticsearch-operator/apis/elasticsearch/v1"
 	elasticsearchcontrollers "github.com/webcenter-fr/elasticsearch-operator/controllers/elasticsearch"

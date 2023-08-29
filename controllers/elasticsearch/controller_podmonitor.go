@@ -3,8 +3,8 @@ package elasticsearch
 import (
 	"context"
 
+	"emperror.dev/errors"
 	"github.com/disaster37/operator-sdk-extra/pkg/controller"
-	"github.com/pkg/errors"
 	monitoringv1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1"
 	"github.com/sirupsen/logrus"
 	elasticsearchcrd "github.com/webcenter-fr/elasticsearch-operator/apis/elasticsearch/v1"
