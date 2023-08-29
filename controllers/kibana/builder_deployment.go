@@ -5,10 +5,10 @@ import (
 	"fmt"
 	"strings"
 
+	"emperror.dev/errors"
 	"github.com/codingsince1985/checksum"
 	"github.com/disaster37/k8sbuilder"
 	"github.com/elastic/go-ucfg"
-	"github.com/pkg/errors"
 	elasticsearchcrd "github.com/webcenter-fr/elasticsearch-operator/apis/elasticsearch/v1"
 	kibanacrd "github.com/webcenter-fr/elasticsearch-operator/apis/kibana/v1"
 	"github.com/webcenter-fr/elasticsearch-operator/controllers/elasticsearch"

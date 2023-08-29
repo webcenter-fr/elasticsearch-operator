@@ -4,7 +4,7 @@ import (
 	"crypto/x509"
 	"time"
 
-	"github.com/pkg/errors"
+	"emperror.dev/errors"
 	"github.com/sirupsen/logrus"
 )
 

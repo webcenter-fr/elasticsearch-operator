@@ -3,7 +3,7 @@ package common
 import (
 	"context"
 
-	"github.com/pkg/errors"
+	"emperror.dev/errors"
 	elasticsearchcrd "github.com/webcenter-fr/elasticsearch-operator/apis/elasticsearch/v1"
 	"github.com/webcenter-fr/elasticsearch-operator/apis/shared"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"

@@ -3,8 +3,8 @@ package kibana
 import (
 	"context"
 
+	"emperror.dev/errors"
 	"github.com/disaster37/operator-sdk-extra/pkg/controller"
-	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 	kibanacrd "github.com/webcenter-fr/elasticsearch-operator/apis/kibana/v1"
 	"github.com/webcenter-fr/elasticsearch-operator/controllers/common"

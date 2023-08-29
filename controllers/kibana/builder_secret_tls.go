@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"net"
 
+	"emperror.dev/errors"
 	"github.com/disaster37/goca"
-	"github.com/pkg/errors"
 	kibanacrd "github.com/webcenter-fr/elasticsearch-operator/apis/kibana/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"

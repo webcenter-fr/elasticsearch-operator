@@ -1,11 +1,11 @@
 package helper
 
 import (
+	"dario.cat/mergo"
+	"emperror.dev/errors"
 	"github.com/davecgh/go-spew/spew"
 	"github.com/elastic/go-ucfg"
 	ucfgyaml "github.com/elastic/go-ucfg/yaml"
-	"github.com/imdario/mergo"
-	"github.com/pkg/errors"
 	"github.com/thoas/go-funk"
 	"gopkg.in/yaml.v3"
 )

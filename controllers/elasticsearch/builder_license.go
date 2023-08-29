@@ -1,7 +1,7 @@
 package elasticsearch
 
 import (
-	"github.com/pkg/errors"
+	"emperror.dev/errors"
 	elasticsearchcrd "github.com/webcenter-fr/elasticsearch-operator/apis/elasticsearch/v1"
 	elasticsearchapicrd "github.com/webcenter-fr/elasticsearch-operator/apis/elasticsearchapi/v1"
 	"github.com/webcenter-fr/elasticsearch-operator/apis/shared"

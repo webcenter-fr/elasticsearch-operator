@@ -1,7 +1,7 @@
 package cerebro
 
 import (
-	"github.com/pkg/errors"
+	"emperror.dev/errors"
 	"github.com/sethvargo/go-password/password"
 	cerebrocrd "github.com/webcenter-fr/elasticsearch-operator/apis/cerebro/v1"
 	corev1 "k8s.io/api/core/v1"

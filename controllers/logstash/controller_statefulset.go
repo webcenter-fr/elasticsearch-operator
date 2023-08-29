@@ -5,9 +5,9 @@ import (
 	"fmt"
 	"time"
 
+	"emperror.dev/errors"
 	"github.com/disaster37/k8s-objectmatcher/patch"
 	"github.com/disaster37/operator-sdk-extra/pkg/controller"
-	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 	elasticsearchcrd "github.com/webcenter-fr/elasticsearch-operator/apis/elasticsearch/v1"
 	logstashcrd "github.com/webcenter-fr/elasticsearch-operator/apis/logstash/v1"

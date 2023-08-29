@@ -47,11 +47,12 @@ import (
 	"k8s.io/client-go/kubernetes"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
 	_ "k8s.io/client-go/plugin/pkg/client/auth"
-	"k8s.io/client-go/rest"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/cache"
 	"sigs.k8s.io/controller-runtime/pkg/healthz"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
+	"sigs.k8s.io/controller-runtime/pkg/metrics/server"
+	"sigs.k8s.io/controller-runtime/pkg/webhook"
 	//+kubebuilder:scaffold:imports
 )
 
@@ -98,21 +99,16 @@ func main() {
 	log.SetLevel(getLogrusLogLevel())
 	log.SetFormatter(getLogrusFormatter())
 
-	var namespace string
-	var multiNamespacesCached cache.NewCacheFunc
+	var cacheNamespaces map[string]cache.Config
 	watchNamespace, err := getWatchNamespace()
 	if err != nil {
 		setupLog.Info("WATCH_NAMESPACES env variable not setted, the manager will watch and manage resources in all namespaces")
 	} else {
 		setupLog.Info("Manager look only resources on namespaces %s", watchNamespace)
 		watchNamespaces := helper.StringToSlice(watchNamespace, ",")
-		if len(watchNamespaces) == 1 {
-			namespace = watchNamespace
-		} else {
-			multiNamespacesCached = func(config *rest.Config, opts cache.Options) (cache.Cache, error) {
-				opts.Namespaces = watchNamespaces
-				return cache.New(config, opts)
-			}
+		cacheNamespaces = make(map[string]cache.Config)
+		for _, namespace := range watchNamespaces {
+			cacheNamespaces[namespace] = cache.Config{}
 		}
 	}
 
@@ -128,14 +124,19 @@ func main() {
 	cfg.Timeout = timeout
 
 	mgr, err := ctrl.NewManager(cfg, ctrl.Options{
-		Scheme:                 scheme,
-		MetricsBindAddress:     metricsAddr,
-		Port:                   9443,
+		Scheme: scheme,
+		Metrics: server.Options{
+			BindAddress: metricsAddr,
+		},
+		WebhookServer: webhook.NewServer(webhook.Options{
+			Port: 9443,
+		}),
 		HealthProbeBindAddress: probeAddr,
 		LeaderElection:         enableLeaderElection,
 		LeaderElectionID:       "baa95990.k8s.webcenter.fr",
-		Namespace:              namespace,
-		NewCache:               multiNamespacesCached,
+		Cache: cache.Options{
+			DefaultNamespaces: cacheNamespaces,
+		},
 		// LeaderElectionReleaseOnCancel defines if the leader should step down voluntarily
 		// when the Manager ends. This requires the binary to immediately end when the
 		// Manager is stopped, otherwise, this setting is unsafe. Setting this significantly

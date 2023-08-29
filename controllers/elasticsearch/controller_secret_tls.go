@@ -7,12 +7,12 @@ import (
 	"regexp"
 	"time"
 
+	"emperror.dev/errors"
 	"github.com/disaster37/goca"
 	"github.com/disaster37/goca/cert"
 	"github.com/disaster37/k8s-objectmatcher/patch"
 	"github.com/disaster37/operator-sdk-extra/pkg/controller"
 	"github.com/disaster37/operator-sdk-extra/pkg/helper"
-	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 	"github.com/thoas/go-funk"
 	elasticsearchcrd "github.com/webcenter-fr/elasticsearch-operator/apis/elasticsearch/v1"

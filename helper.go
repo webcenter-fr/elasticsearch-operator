@@ -6,8 +6,8 @@ import (
 	"strings"
 	"time"
 
+	"emperror.dev/errors"
 	"github.com/go-logr/logr"
-	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 	"go.uber.org/zap/zapcore"
 )

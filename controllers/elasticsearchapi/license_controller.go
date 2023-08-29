@@ -20,12 +20,12 @@ import (
 	"strings"
 	"time"
 
+	"emperror.dev/errors"
 	"github.com/codingsince1985/checksum"
 	eshandler "github.com/disaster37/es-handler/v8"
 	"github.com/disaster37/operator-sdk-extra/pkg/controller"
 	"github.com/disaster37/operator-sdk-extra/pkg/helper"
 	olivere "github.com/olivere/elastic/v7"
-	"github.com/pkg/errors"
 	elasticsearchapicrd "github.com/webcenter-fr/elasticsearch-operator/apis/elasticsearchapi/v1"
 	"github.com/webcenter-fr/elasticsearch-operator/controllers/common"
 	core "k8s.io/api/core/v1"

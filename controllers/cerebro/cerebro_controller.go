@@ -21,8 +21,8 @@ import (
 	"fmt"
 	"time"
 
+	"emperror.dev/errors"
 	"github.com/disaster37/operator-sdk-extra/pkg/controller"
-	"github.com/pkg/errors"
 	cerebrocrd "github.com/webcenter-fr/elasticsearch-operator/apis/cerebro/v1"
 	"github.com/webcenter-fr/elasticsearch-operator/controllers/common"
 	appv1 "k8s.io/api/apps/v1"

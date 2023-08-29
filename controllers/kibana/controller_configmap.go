@@ -4,8 +4,8 @@ import (
 	"context"
 	"time"
 
+	"emperror.dev/errors"
 	"github.com/disaster37/operator-sdk-extra/pkg/controller"
-	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 	elasticsearchcrd "github.com/webcenter-fr/elasticsearch-operator/apis/elasticsearch/v1"
 	kibanacrd "github.com/webcenter-fr/elasticsearch-operator/apis/kibana/v1"
