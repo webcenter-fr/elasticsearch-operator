@@ -33,6 +33,7 @@ import (
 	"k8s.io/apimachinery/pkg/fields"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/utils/strings"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/handler"
@@ -148,7 +149,6 @@ func (r *UserReconciler) Configure(ctx context.Context, req ctrl.Request, resour
 	// Get elasticsearch handler / client
 	meta, err = GetElasticsearchHandler(ctx, o, o.Spec.ElasticsearchRef, r.Client, r.log)
 	if err != nil && o.DeletionTimestamp.IsZero() {
-		r.recorder.Eventf(resource, core.EventTypeWarning, "Failed", "Unable to init elasticsearch handler: %s", err.Error())
 		return nil, err
 	}
 
@@ -412,14 +412,14 @@ func (r *UserReconciler) Diff(resource client.Object, data map[string]interface{
 // OnError permit to set status condition on the right state and record error
 func (r *UserReconciler) OnError(ctx context.Context, resource client.Object, data map[string]any, meta any, err error) {
 	user := resource.(*elasticsearchapicrd.User)
+
 	r.log.Error(err)
-	r.recorder.Event(resource, core.EventTypeWarning, "Failed", err.Error())
 
 	condition.SetStatusCondition(&user.Status.Conditions, metav1.Condition{
 		Type:    UserCondition,
 		Status:  metav1.ConditionFalse,
 		Reason:  "Failed",
-		Message: err.Error(),
+		Message: strings.ShortenString(err.Error(), common.ShortenError),
 	})
 
 	condition.SetStatusCondition(&user.Status.Conditions, metav1.Condition{

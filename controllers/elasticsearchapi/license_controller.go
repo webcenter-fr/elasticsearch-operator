@@ -35,6 +35,7 @@ import (
 	"k8s.io/apimachinery/pkg/fields"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
+	stringsk8s "k8s.io/utils/strings"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/handler"
@@ -150,7 +151,6 @@ func (r *LicenseReconciler) Configure(ctx context.Context, req ctrl.Request, res
 	// Get elasticsearch handler / client
 	meta, err = GetElasticsearchHandler(ctx, license, license.Spec.ElasticsearchRef, r.Client, r.log)
 	if err != nil && license.DeletionTimestamp.IsZero() {
-		r.recorder.Eventf(resource, core.EventTypeWarning, "Failed", "Unable to init elasticsearch handler: %s", err.Error())
 		return nil, err
 	}
 
@@ -342,13 +342,12 @@ func (r *LicenseReconciler) OnError(ctx context.Context, resource client.Object,
 	license := resource.(*elasticsearchapicrd.License)
 
 	r.log.Error(err)
-	r.recorder.Event(resource, core.EventTypeWarning, "Failed", err.Error())
 
 	condition.SetStatusCondition(&license.Status.Conditions, metav1.Condition{
 		Type:    LicenseCondition,
 		Status:  metav1.ConditionFalse,
 		Reason:  "Failed",
-		Message: err.Error(),
+		Message: stringsk8s.ShortenString(err.Error(), common.ShortenError),
 	})
 
 	condition.SetStatusCondition(&license.Status.Conditions, metav1.Condition{

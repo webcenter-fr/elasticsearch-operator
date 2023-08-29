@@ -98,19 +98,7 @@ func (r *ApplicationSecretReconciler) Diff(ctx context.Context, resource client.
 // OnError permit to set status condition on the right state and record error
 func (r *ApplicationSecretReconciler) OnError(ctx context.Context, resource client.Object, data map[string]any, currentErr error) (res ctrl.Result, err error) {
 	o := resource.(*cerebrocrd.Cerebro)
-
-	r.Log.Error(currentErr)
-	r.Recorder.Event(resource, corev1.EventTypeWarning, "Failed", currentErr.Error())
-
-	condition.SetStatusCondition(&o.Status.Conditions, metav1.Condition{
-		Type:    ApplicationSecretCondition,
-		Status:  metav1.ConditionFalse,
-		Reason:  "Failed",
-		Message: currentErr.Error(),
-	})
-
-	return res, currentErr
-
+	return r.StdOnError(ctx, resource, data, currentErr, &o.Status.Conditions, ApplicationSecretCondition)
 }
 
 // OnSuccess permit to set status condition on the right state is everithink is good

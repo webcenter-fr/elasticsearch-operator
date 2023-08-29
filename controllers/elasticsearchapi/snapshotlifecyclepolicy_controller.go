@@ -28,6 +28,7 @@ import (
 	condition "k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/utils/strings"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
@@ -117,7 +118,6 @@ func (r *SnapshotLifecyclePolicyReconciler) Configure(ctx context.Context, req c
 	// Get elasticsearch handler / client
 	meta, err = GetElasticsearchHandler(ctx, slm, slm.Spec.ElasticsearchRef, r.Client, r.log)
 	if err != nil && slm.DeletionTimestamp.IsZero() {
-		r.recorder.Eventf(resource, core.EventTypeWarning, "Failed", "Unable to init elasticsearch handler: %s", err.Error())
 		return nil, err
 	}
 
@@ -275,13 +275,12 @@ func (r *SnapshotLifecyclePolicyReconciler) OnError(ctx context.Context, resourc
 	slm := resource.(*elasticsearchapicrd.SnapshotLifecyclePolicy)
 
 	r.log.Error(err)
-	r.recorder.Event(resource, core.EventTypeWarning, "Failed", err.Error())
 
 	condition.SetStatusCondition(&slm.Status.Conditions, metav1.Condition{
 		Type:    SnapshotLifecyclePolicyCondition,
 		Status:  metav1.ConditionFalse,
 		Reason:  "Failed",
-		Message: err.Error(),
+		Message: strings.ShortenString(err.Error(), common.ShortenError),
 	})
 
 	condition.SetStatusCondition(&slm.Status.Conditions, metav1.Condition{

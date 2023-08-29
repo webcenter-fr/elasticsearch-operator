@@ -11,8 +11,11 @@ import (
 	"github.com/disaster37/operator-sdk-extra/pkg/helper"
 	"github.com/sirupsen/logrus"
 	helperdiff "github.com/webcenter-fr/elasticsearch-operator/pkg/helper"
+	condition "k8s.io/apimachinery/pkg/api/meta"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/tools/record"
+	"k8s.io/utils/strings"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
@@ -89,6 +92,19 @@ func (r *Reconciler) Delete(ctx context.Context, resource client.Object, data ma
 	}
 
 	return res, nil
+}
+
+func (r *Reconciler) StdOnError(ctx context.Context, resource client.Object, data map[string]any, currentErr error, conditions *[]metav1.Condition, conditionType string) (res ctrl.Result, err error) {
+
+	condition.SetStatusCondition(conditions, metav1.Condition{
+		Type:    conditionType,
+		Status:  metav1.ConditionFalse,
+		Reason:  "Failed",
+		Message: strings.ShortenString(err.Error(), ShortenError),
+	})
+
+	return res, currentErr
+
 }
 
 // StdDiff is the standard diff when we need to diff only one resource

@@ -36,6 +36,7 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/utils/pointer"
+	"k8s.io/utils/strings"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/handler"
@@ -307,7 +308,7 @@ func (h *MetricbeatReconciler) OnError(ctx context.Context, r client.Object, dat
 		Type:    MetricbeatCondition,
 		Status:  metav1.ConditionFalse,
 		Reason:  "Failed",
-		Message: currentErr.Error(),
+		Message: strings.ShortenString(err.Error(), common.ShortenError),
 	})
 
 	condition.SetStatusCondition(&o.Status.Conditions, metav1.Condition{
@@ -317,7 +318,9 @@ func (h *MetricbeatReconciler) OnError(ctx context.Context, r client.Object, dat
 	})
 
 	common.TotalErrors.Inc()
-	return res, currentErr
+	h.GetLogger().Error(currentErr)
+
+	return res, errors.Errorf("Error on %s controller", h.name)
 }
 func (h *MetricbeatReconciler) OnSuccess(ctx context.Context, r client.Object, data map[string]any) (res ctrl.Result, err error) {
 	o := r.(*beatcrd.Metricbeat)
