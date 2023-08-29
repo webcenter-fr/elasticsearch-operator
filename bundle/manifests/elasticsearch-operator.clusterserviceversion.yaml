@@ -936,10 +936,10 @@ metadata:
         }
       ]
     capabilities: Basic Install
-    createdAt: "2023-05-19T13:33:47Z"
-    operators.operatorframework.io/builder: operator-sdk-v1.26.1
+    createdAt: "2023-08-28T18:33:46Z"
+    operators.operatorframework.io/builder: operator-sdk-v1.31.0
     operators.operatorframework.io/project_layout: go.kubebuilder.io/v3
-  name: elasticsearch-operator.v0.0.23
+  name: elasticsearch-operator.v0.0.26
   namespace: placeholder
 spec:
   apiservicedefinitions: {}
@@ -1387,6 +1387,9 @@ spec:
       - description: Health is the cluster health
         displayName: Health
         path: health
+      - description: IsBootstrapping is true when the cluster is bootstraping
+        displayName: Is Bootstrapping
+        path: isBootstrapping
       - description: IsError is true if controller is stuck on Error
         displayName: Is Error
         path: isOnError
@@ -4065,6 +4068,9 @@ spec:
       - description: Indices is the list of indices permissions
         displayName: Indices
         path: indices
+      - description: Allow to manage restricted index
+        displayName: Allow Restricted Indices
+        path: indices[0].allowRestrictedIndices
       - description: FieldSecurity JSON string
         displayName: Field Security
         path: indices[0].fieldSecurity
@@ -5791,7 +5797,7 @@ spec:
                       fieldPath: metadata.namespace
                 - name: LOG_LEVEL
                   value: DEBUG
-                image: quay.io/webcenter/elasticsearch-operator:0.0.23
+                image: quay.io/webcenter/elasticsearch-operator:0.0.26
                 livenessProbe:
                   httpGet:
                     path: /healthz
@@ -5881,5 +5887,5 @@ spec:
   provider:
     name: webcenter.fr
     url: https://github.com/webcenter-fr/elasticsearch-operator
-  replaces: elasticsearch-operator.v0.0.22
-  version: 0.0.23
+  replaces: elasticsearch-operator.v0.0.25
+  version: 0.0.26

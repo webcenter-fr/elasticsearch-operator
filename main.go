@@ -17,6 +17,7 @@ limitations under the License.
 package main
 
 import (
+	"context"
 	"flag"
 	"os"
 
@@ -42,8 +43,11 @@ import (
 	"github.com/webcenter-fr/elasticsearch-operator/pkg/helper"
 	"k8s.io/apimachinery/pkg/runtime"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
+	"k8s.io/client-go/dynamic"
+	"k8s.io/client-go/kubernetes"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
 	_ "k8s.io/client-go/plugin/pkg/client/auth"
+	"k8s.io/client-go/rest"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/cache"
 	"sigs.k8s.io/controller-runtime/pkg/healthz"
@@ -94,9 +98,9 @@ func main() {
 	log.SetLevel(getLogrusLogLevel())
 	log.SetFormatter(getLogrusFormatter())
 
-	watchNamespace, err := getWatchNamespace()
 	var namespace string
 	var multiNamespacesCached cache.NewCacheFunc
+	watchNamespace, err := getWatchNamespace()
 	if err != nil {
 		setupLog.Info("WATCH_NAMESPACES env variable not setted, the manager will watch and manage resources in all namespaces")
 	} else {
@@ -105,7 +109,10 @@ func main() {
 		if len(watchNamespaces) == 1 {
 			namespace = watchNamespace
 		} else {
-			multiNamespacesCached = cache.MultiNamespacedCacheBuilder(watchNamespaces)
+			multiNamespacesCached = func(config *rest.Config, opts cache.Options) (cache.Cache, error) {
+				opts.Namespaces = watchNamespaces
+				return cache.New(config, opts)
+			}
 		}
 	}
 
@@ -143,6 +150,20 @@ func main() {
 	})
 	if err != nil {
 		setupLog.Error(err, "unable to start manager")
+		os.Exit(1)
+	}
+
+	// Migrate existing ressources
+	clientDinamic, err := dynamic.NewForConfig(cfg)
+	if err != nil {
+		panic(err)
+	}
+	clientStd, err := kubernetes.NewForConfig(cfg)
+	if err != nil {
+		panic(err)
+	}
+	if err = migrateElasticsearch(context.Background(), clientDinamic, clientStd, log.WithFields(logrus.Fields{"type": "MigrateElasticsearch"})); err != nil {
+		setupLog.Error(err, "unable to migrate existing Elasticsearch cluster")
 		os.Exit(1)
 	}
 
@@ -383,4 +404,5 @@ func main() {
 		setupLog.Error(err, "problem running manager")
 		os.Exit(1)
 	}
+
 }
