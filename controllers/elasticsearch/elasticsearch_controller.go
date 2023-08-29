@@ -376,6 +376,10 @@ func (h *ElasticsearchReconciler) Configure(ctx context.Context, req ctrl.Reques
 
 	o.Status.IsError = pointer.Bool(false)
 
+	if o.Status.IsBootstrapping == nil {
+		o.Status.IsBootstrapping = pointer.Bool(false)
+	}
+
 	// Init condition status if not exist
 	if condition.FindStatusCondition(o.Status.Conditions, ElasticsearchCondition) == nil {
 		condition.SetStatusCondition(&o.Status.Conditions, metav1.Condition{
@@ -498,6 +502,10 @@ loopStatefulset:
 				Reason: "Available",
 				Status: metav1.ConditionTrue,
 			})
+		}
+
+		if !o.IsBoostrapping() {
+			o.Status.IsBootstrapping = pointer.Bool(true)
 		}
 
 	} else {

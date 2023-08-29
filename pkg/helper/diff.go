@@ -1,10 +1,13 @@
 package helper
 
 import (
+	"fmt"
+
 	"github.com/disaster37/k8s-objectmatcher/patch"
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
 	"github.com/kr/pretty"
+	elasticsearchcrd "github.com/webcenter-fr/elasticsearch-operator/apis/elasticsearch/v1"
 )
 
 // Diff is cmp.Diff with custom function to compare slices with pretty.Sprint
@@ -52,6 +55,7 @@ func DiffAnnotations(expected, current map[string]string) (diff string) {
 	excludeKeys := []string{
 		"kubectl.kubernetes.io/last-applied-configuration",
 		patch.LastAppliedConfig,
+		fmt.Sprintf("%s/sequence", elasticsearchcrd.ElasticsearchAnnotationKey),
 	}
 	return DiffMapString(expected, current, excludeKeys)
 }

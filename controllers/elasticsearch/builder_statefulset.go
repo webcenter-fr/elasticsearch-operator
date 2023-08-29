@@ -51,15 +51,21 @@ func BuildStatefulsets(es *elasticsearchcrd.Elasticsearch, secretsChecksum []cor
 	}
 
 	// checksum for secret
+	// Use annotations sequence instead compute checksum if provided
 	for _, s := range secretsChecksum {
-		j, err := json.Marshal(s.Data)
-		if err != nil {
-			return nil, errors.Wrapf(err, "Error when convert data of secret %s on json string", s.Name)
+
+		sum := s.Annotations[fmt.Sprintf("%s/sequence", elasticsearchcrd.ElasticsearchAnnotationKey)]
+		if sum == "" {
+			j, err := json.Marshal(s.Data)
+			if err != nil {
+				return nil, errors.Wrapf(err, "Error when convert data of secret %s on json string", s.Name)
+			}
+			sum, err = checksum.SHA256sumReader(bytes.NewReader(j))
+			if err != nil {
+				return nil, errors.Wrapf(err, "Error when generate checksum for extra secret %s", s.Name)
+			}
 		}
-		sum, err := checksum.SHA256sumReader(bytes.NewReader(j))
-		if err != nil {
-			return nil, errors.Wrapf(err, "Error when generate checksum for extra secret %s", s.Name)
-		}
+
 		checksumAnnotations[fmt.Sprintf("%s/secret-%s", elasticsearchcrd.ElasticsearchAnnotationKey, s.Name)] = sum
 	}
 
@@ -109,7 +115,16 @@ func BuildStatefulsets(es *elasticsearchcrd.Elasticsearch, secretsChecksum []cor
 
 		// Compute EnvFrom
 		cb.WithEnvFrom(es.Spec.GlobalNodeGroup.EnvFrom, k8sbuilder.Merge).
-			WithEnvFrom(nodeGroup.EnvFrom, k8sbuilder.Merge)
+			WithEnvFrom(nodeGroup.EnvFrom, k8sbuilder.Merge).
+			WithEnvFrom([]corev1.EnvFromSource{
+				{
+					ConfigMapRef: &corev1.ConfigMapEnvSource{
+						LocalObjectReference: corev1.LocalObjectReference{
+							Name: GetBootstrappingConfigMapName(es),
+						},
+					},
+				},
+			}, k8sbuilder.Merge)
 
 		// Compute Env
 		cb.WithEnv(es.Spec.GlobalNodeGroup.Env, k8sbuilder.Merge).
@@ -206,27 +221,7 @@ func BuildStatefulsets(es *elasticsearchcrd.Elasticsearch, secretsChecksum []cor
 					},
 				},
 			}, k8sbuilder.Merge)
-		if len(es.Spec.NodeGroups) == 1 && es.Spec.NodeGroups[0].Replicas == 1 {
-			// Cluster with only one node
-			cb.WithEnv([]corev1.EnvVar{
-				{
-					Name:  "discovery.type",
-					Value: "single-node",
-				},
-			}, k8sbuilder.Merge)
-		} else {
-			// Cluster with multiple nodes
-			cb.WithEnv([]corev1.EnvVar{
-				{
-					Name:  "cluster.initial_master_nodes",
-					Value: computeInitialMasterNodes(es),
-				},
-				{
-					Name:  "discovery.seed_hosts",
-					Value: computeDiscoverySeedHosts(es),
-				},
-			}, k8sbuilder.Merge)
-		}
+
 		if es.IsTlsApiEnabled() {
 			cb.WithEnv([]corev1.EnvVar{
 				{
@@ -936,29 +931,4 @@ func computeJavaOpts(es *elasticsearchcrd.Elasticsearch, nodeGroup *elasticsearc
 	}
 
 	return strings.Join(javaOpts, " ")
-}
-
-// computeInitialMasterNodes create the list of all master nodes
-func computeInitialMasterNodes(es *elasticsearchcrd.Elasticsearch) string {
-	masterNodes := make([]string, 0, 3)
-	for _, nodeGroup := range es.Spec.NodeGroups {
-		if IsMasterRole(es, nodeGroup.Name) {
-			masterNodes = append(masterNodes, GetNodeGroupNodeNames(es, nodeGroup.Name)...)
-		}
-	}
-
-	return strings.Join(masterNodes, ", ")
-}
-
-// computeDiscoverySeedHosts create the list of all headless service of all masters node groups
-func computeDiscoverySeedHosts(es *elasticsearchcrd.Elasticsearch) string {
-	serviceNames := make([]string, 0, 1)
-
-	for _, nodeGroup := range es.Spec.NodeGroups {
-		if IsMasterRole(es, nodeGroup.Name) {
-			serviceNames = append(serviceNames, GetNodeGroupServiceNameHeadless(es, nodeGroup.Name))
-		}
-	}
-
-	return strings.Join(serviceNames, ", ")
 }

@@ -4426,8 +4426,6 @@ spec:
                         type: string
                       version:
                         type: string
-                    required:
-                    - elasticsearchRef
                     type: object
                   prometheus:
                     properties:
@@ -8789,6 +8787,8 @@ spec:
                 x-kubernetes-map-type: atomic
               health:
                 type: string
+              isBootstrapping:
+                type: boolean
               isOnError:
                 type: boolean
               phase:
@@ -13212,8 +13212,6 @@ spec:
                         type: string
                       version:
                         type: string
-                    required:
-                    - elasticsearchRef
                     type: object
                   prometheus:
                     properties:

@@ -500,6 +500,11 @@ func (in *ElasticsearchStatus) DeepCopyInto(out *ElasticsearchStatus) {
 		*out = new(bool)
 		**out = **in
 	}
+	if in.IsBootstrapping != nil {
+		in, out := &in.IsBootstrapping, &out.IsBootstrapping
+		*out = new(bool)
+		**out = **in
+	}
 	out.CredentialsRef = in.CredentialsRef
 	if in.Conditions != nil {
 		in, out := &in.Conditions, &out.Conditions

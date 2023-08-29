@@ -13,6 +13,7 @@ type MetricbeatMonitoringSpec struct {
 
 	// ElasticsearchRef is the Elasticsearch ref to connect on.
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
+	// +optional
 	ElasticsearchRef ElasticsearchRef `json:"elasticsearchRef"`
 
 	// Resources permit to set resources on metricbeat

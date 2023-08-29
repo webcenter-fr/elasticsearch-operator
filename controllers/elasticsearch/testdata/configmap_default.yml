@@ -3,6 +3,7 @@ kind: ConfigMap
 metadata:
   annotations:
     elasticsearch.k8s.webcenter.fr: "true"
+    elasticsearch.k8s.webcenter.fr/type: config
   creationTimestamp: null
   labels:
     cluster: test

@@ -1,0 +1,82 @@
+apiVersion: elasticsearch.k8s.webcenter.fr/v1
+kind: Elasticsearch
+metadata:
+  labels:
+    socle: develop
+  name: elasticsearch
+spec:
+  clusterName: develop
+  endpoint:
+    ingress:
+      enabled: true
+      host: develop
+      secretRef:
+        name: es-tls
+  globalNodeGroup:
+    antiAffinity:
+      topologyKey: kubernetes.io/hostname
+      type: soft
+    config:
+      elasticsearch.yml: |
+        action.destructive_requires_name: false
+        gateway.recover_after_time: 5m
+        http.cors.allow-credentials: true
+        http.cors.allow-headers: X-Requested-With,X-Auth-Token,Content-Type,Content-Length, Authorization
+        http.cors.allow-origin: /.*/
+        http.cors.enabled: true
+        http.max_content_length: 500mb
+        cluster.routing.allocation.disk.watermark.flood_stage: 1gb
+        cluster.routing.allocation.disk.watermark.high: 1gb
+        cluster.routing.allocation.disk.watermark.low: 2gb
+        gateway.expected_data_nodes: 1
+        gateway.recover_after_data_nodes: 1
+    initContainerResources:
+      limits:
+        cpu: 500m
+        memory: 256Mi
+      requests:
+        cpu: 25m
+        memory: 64Mi
+  monitoring:
+    metricbeat:
+      enabled: false
+    prometheus:
+      enabled: false
+  nodeGroups:
+    - name: all
+      replicas: 3
+      resources:
+        limits:
+          cpu: 1000m
+          memory: 1Gi
+        requests:
+          cpu: 250m
+          memory: 1Gi
+      roles:
+        - master
+        - data_hot
+        - data_content
+        - ingest
+      waitClusterStatus: yellow
+    - name: all2
+      replicas: 3
+      resources:
+        limits:
+          cpu: 1000m
+          memory: 1Gi
+        requests:
+          cpu: 250m
+          memory: 1Gi
+      roles:
+        - master
+        - data_hot
+        - data_content
+        - ingest
+      waitClusterStatus: yellow
+  setVMMaxMapCount: true
+  tls:
+    enabled: true
+    keySize: 2048
+    renewalDays: 365
+    validityDays: 1000
+  version: 8.7.1

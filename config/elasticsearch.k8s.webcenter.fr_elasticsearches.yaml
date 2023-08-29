@@ -10483,8 +10483,6 @@ spec:
                         description: Version is the Metricbeat version to use Default
                           it use the same version of the product that it monitor
                         type: string
-                    required:
-                    - elasticsearchRef
                     type: object
                   prometheus:
                     description: Prometheus permit to monitor cluster with Prometheus
@@ -21129,6 +21127,9 @@ spec:
               health:
                 description: Health is the cluster health
                 type: string
+              isBootstrapping:
+                description: IsBootstrapping is true when the cluster is bootstraping
+                type: boolean
               isOnError:
                 description: IsError is true if controller is stuck on Error
                 type: boolean
@@ -31612,8 +31613,6 @@ spec:
                         description: Version is the Metricbeat version to use Default
                           it use the same version of the product that it monitor
                         type: string
-                    required:
-                    - elasticsearchRef
                     type: object
                   prometheus:
                     description: Prometheus permit to monitor cluster with Prometheus

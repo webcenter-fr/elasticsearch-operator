@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  annotations:
+    elasticsearch.k8s.webcenter.fr: "true"
+    elasticsearch.k8s.webcenter.fr/type: bootstrapping
+  creationTimestamp: null
+  labels:
+    cluster: test
+    elasticsearch.k8s.webcenter.fr: "true"
+    label1: value1
+  name: test-bootstrapping-es
+  namespace: default
+data:
+  discovery.type: single-node

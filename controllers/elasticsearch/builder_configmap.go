@@ -1,6 +1,9 @@
 package elasticsearch
 
 import (
+	"fmt"
+	"strings"
+
 	"github.com/pkg/errors"
 	elasticsearchcrd "github.com/webcenter-fr/elasticsearch-operator/apis/elasticsearch/v1"
 	"github.com/webcenter-fr/elasticsearch-operator/pkg/helper"
@@ -15,7 +18,9 @@ func BuildConfigMaps(es *elasticsearchcrd.Elasticsearch) (configMaps []corev1.Co
 		expectedConfig map[string]string
 	)
 
-	configMaps = make([]corev1.ConfigMap, 0, len(es.Spec.NodeGroups))
+	configMaps = make([]corev1.ConfigMap, 0, len(es.Spec.NodeGroups)+1)
+
+	// Compute configmap that store Elasticsearch settings
 	injectedConfigMap := map[string]string{
 		"elasticsearch.yml": `
 xpack.security.enabled: true
@@ -59,15 +64,70 @@ xpack.security.http.ssl.certificate_authorities: /usr/share/elasticsearch/config
 
 		configMap = corev1.ConfigMap{
 			ObjectMeta: metav1.ObjectMeta{
-				Namespace:   es.Namespace,
-				Name:        GetNodeGroupConfigMapName(es, nodeGroup.Name),
-				Labels:      getLabels(es, map[string]string{"nodeGroup": nodeGroup.Name}),
-				Annotations: getAnnotations(es),
+				Namespace: es.Namespace,
+				Name:      GetNodeGroupConfigMapName(es, nodeGroup.Name),
+				Labels:    getLabels(es, map[string]string{"nodeGroup": nodeGroup.Name}),
+				Annotations: getAnnotations(es, map[string]string{
+					fmt.Sprintf("%s/type", elasticsearchcrd.ElasticsearchAnnotationKey): "config",
+				}),
 			},
 			Data: expectedConfig,
 		}
 		configMaps = append(configMaps, configMap)
 	}
 
+	// Compute configmap that store the bootstrapping properties
+	configMap = corev1.ConfigMap{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: es.Namespace,
+			Name:      GetBootstrappingConfigMapName(es),
+			Labels:    getLabels(es),
+			Annotations: getAnnotations(es, map[string]string{
+				fmt.Sprintf("%s/type", elasticsearchcrd.ElasticsearchAnnotationKey): "bootstrapping",
+			}),
+		},
+		Data: make(map[string]string),
+	}
+
+	if len(es.Spec.NodeGroups) == 1 && es.Spec.NodeGroups[0].Replicas == 1 {
+		// Cluster with only one node
+		configMap.Data["discovery.type"] = "single-node"
+	} else {
+		if !es.IsBoostrapping() {
+			// Cluster with multiple nodes
+			configMap.Data["cluster.initial_master_nodes"] = computeInitialMasterNodes(es)
+		}
+
+		configMap.Data["discovery.seed_hosts"] = computeDiscoverySeedHosts(es)
+	}
+
+	configMaps = append(configMaps, configMap)
+
 	return configMaps, nil
+}
+
+// computeInitialMasterNodes create the list of all master nodes
+func computeInitialMasterNodes(es *elasticsearchcrd.Elasticsearch) string {
+
+	masterNodes := make([]string, 0, 3)
+	for _, nodeGroup := range es.Spec.NodeGroups {
+		if IsMasterRole(es, nodeGroup.Name) {
+			masterNodes = append(masterNodes, GetNodeGroupNodeNames(es, nodeGroup.Name)...)
+		}
+	}
+
+	return strings.Join(masterNodes, ", ")
+}
+
+// computeDiscoverySeedHosts create the list of all headless service of all masters node groups
+func computeDiscoverySeedHosts(es *elasticsearchcrd.Elasticsearch) string {
+	serviceNames := make([]string, 0, 1)
+
+	for _, nodeGroup := range es.Spec.NodeGroups {
+		if IsMasterRole(es, nodeGroup.Name) {
+			serviceNames = append(serviceNames, GetNodeGroupServiceNameHeadless(es, nodeGroup.Name))
+		}
+	}
+
+	return strings.Join(serviceNames, ", ")
 }

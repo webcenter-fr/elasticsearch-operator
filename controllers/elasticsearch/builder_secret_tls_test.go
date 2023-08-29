@@ -6,6 +6,7 @@ import (
 	"github.com/disaster37/goca"
 	"github.com/stretchr/testify/assert"
 	elasticsearchcrd "github.com/webcenter-fr/elasticsearch-operator/apis/elasticsearch/v1"
+	"github.com/webcenter-fr/elasticsearch-operator/pkg/helper"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/utils/pointer"
@@ -209,7 +210,8 @@ func TestBuildTransportSecret(t *testing.T) {
 	assert.Equal(t, s.Name, "test-tls-transport-es")
 	assert.Equal(t, s.Namespace, "default")
 	assert.Equal(t, s.Labels, labels)
-	assert.Equal(t, s.Annotations, annotations)
+	assert.Empty(t, helper.DiffAnnotations(s.Annotations, annotations))
+	assert.NotEmpty(t, s.Annotations["elasticsearch.k8s.webcenter.fr/sequence"])
 	assert.NotEmpty(t, s.Data["ca.crt"])
 	assert.NotEmpty(t, s.Data["test-master-es-0.crt"])
 	assert.NotEmpty(t, s.Data["test-master-es-0.key"])
@@ -319,7 +321,8 @@ func TestBuildApiSecret(t *testing.T) {
 	assert.Equal(t, s.Name, "test-tls-api-es")
 	assert.Equal(t, s.Namespace, "default")
 	assert.Equal(t, s.Labels, labels)
-	assert.Equal(t, s.Annotations, annotations)
+	assert.Empty(t, helper.DiffAnnotations(s.Annotations, annotations))
+	assert.NotEmpty(t, s.Annotations["elasticsearch.k8s.webcenter.fr/sequence"])
 	assert.NotEmpty(t, s.Data["ca.crt"])
 	assert.NotEmpty(t, s.Data["tls.crt"])
 	assert.NotEmpty(t, s.Data["tls.key"])

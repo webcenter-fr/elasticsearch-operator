@@ -95,6 +95,8 @@ spec:
               indices:
                 items:
                   properties:
+                    allowRestrictedIndices:
+                      type: boolean
                     fieldSecurity:
                       type: string
                     names:
