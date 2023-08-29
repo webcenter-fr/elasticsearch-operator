@@ -14,7 +14,10 @@ type Controller struct {
 	reconciler controller.K8sReconciler
 }
 
-const ReadyCondition = "Ready"
+const (
+	ReadyCondition = "Ready"
+	ShortenError   = 100
+)
 
 var (
 	TotalErrors = prometheus.NewCounter(

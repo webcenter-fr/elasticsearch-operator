@@ -30,6 +30,7 @@ import (
 	condition "k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/utils/strings"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
@@ -119,7 +120,6 @@ func (r *IndexLifecyclePolicyReconciler) Configure(ctx context.Context, req ctrl
 	// Get elasticsearch handler / client
 	meta, err = GetElasticsearchHandler(ctx, ilm, ilm.Spec.ElasticsearchRef, r.Client, r.log)
 	if err != nil && ilm.DeletionTimestamp.IsZero() {
-		r.recorder.Eventf(resource, core.EventTypeWarning, "Failed", "Unable to init elasticsearch handler: %s", err.Error())
 		return nil, err
 	}
 
@@ -265,13 +265,12 @@ func (r *IndexLifecyclePolicyReconciler) OnError(ctx context.Context, resource c
 	ilm := resource.(*elasticsearchapicrd.IndexLifecyclePolicy)
 
 	r.log.Error(err)
-	r.recorder.Event(resource, core.EventTypeWarning, "Failed", err.Error())
 
 	condition.SetStatusCondition(&ilm.Status.Conditions, metav1.Condition{
 		Type:    IndexLifecyclePolicyCondition,
 		Status:  metav1.ConditionFalse,
 		Reason:  "Failed",
-		Message: err.Error(),
+		Message: strings.ShortenString(err.Error(), common.ShortenError),
 	})
 
 	condition.SetStatusCondition(&ilm.Status.Conditions, metav1.Condition{
