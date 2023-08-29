@@ -130,6 +130,12 @@ type ElasticsearchPrometheusSpec struct {
 	// +optional
 	// +kubebuilder:default=latest
 	Version string `json:"version,omitempty"`
+
+	// Resources permit to set ressources on Prometheus expporter container
+	// If not defined, it will use the default requirements
+	// +operator-sdk:csv:customresourcedefinitions:type=spec
+	// +optional
+	Resources *corev1.ResourceRequirements `json:"resources,omitempty"`
 }
 
 type ElasticsearchEndpointSpec struct {

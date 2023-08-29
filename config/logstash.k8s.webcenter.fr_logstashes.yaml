@@ -12510,6 +12510,7 @@ spec:
                             type: object
                         type: object
                       refreshPeriod:
+                        default: 10s
                         description: RefreshPeriod permit to set the time to collect
                           data Defaullt to  `10s`
                         type: string
@@ -25503,6 +25504,7 @@ spec:
                             type: object
                         type: object
                       refreshPeriod:
+                        default: 10s
                         description: RefreshPeriod permit to set the time to collect
                           data Defaullt to  `10s`
                         type: string

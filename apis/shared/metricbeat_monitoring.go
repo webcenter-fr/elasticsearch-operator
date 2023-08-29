@@ -25,6 +25,7 @@ type MetricbeatMonitoringSpec struct {
 	// Defaullt to  `10s`
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
 	// +optional
+	// +kubebuilder:default="10s"
 	RefreshPeriod string `json:"refreshPeriod,omitempty"`
 
 	// Version is the Metricbeat version to use
