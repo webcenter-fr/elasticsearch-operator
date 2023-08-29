@@ -3,7 +3,7 @@ package helper
 import (
 	"reflect"
 
-	"github.com/imdario/mergo"
+	"dario.cat/mergo"
 )
 
 // Merge permit to merge unlimited same interface. The last src is the higher priority
