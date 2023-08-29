@@ -30,7 +30,7 @@ spec:
             secretKeyRef:
               name: test-credential-es
               key: elastic
-        image: quay.io/prometheuscommunity/elasticsearch-exporter:latest
+        image: quay.io/prometheuscommunity/elasticsearch-exporter:v1.6.0
         args:
           - "--es.aliases"
           - "--es.all"
@@ -69,11 +69,11 @@ spec:
           timeoutSeconds: 10
         resources:
           limits:
-            cpu: 100m
-            memory: 512Mi
+            cpu: 1000m
+            memory: 1024Mi
           requests:
-            cpu: 25m
-            memory: 64Mi
+            cpu: 500m
+            memory: 512Mi
         securityContext:
           capabilities:
             drop:

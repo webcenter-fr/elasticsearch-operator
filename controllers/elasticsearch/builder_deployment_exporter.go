@@ -33,15 +33,18 @@ func BuildDeploymentExporter(es *elasticsearchcrd.Elasticsearch) (dpl *appv1.Dep
 	if !es.IsTlsApiEnabled() {
 		scheme = "http"
 	}
+
 	cb.Container().Args = []string{
 		fmt.Sprintf("--es.uri=%s://%s.%s.svc:9200", scheme, GetGlobalServiceName(es), es.Namespace),
 		"--es.ssl-skip-verify",
 		"--es.all",
-		"--es.cluster_settings",
+		"--collector.clustersettings",
+		"--collector.cluster-info",
 		"--es.indices",
 		"--es.indices_settings",
 		"--es.indices_mappings",
 		"--es.aliases",
+		"--es.ilm",
 		"--es.shards",
 		"--es.snapshots",
 		"--es.slm",
@@ -77,16 +80,20 @@ func BuildDeploymentExporter(es *elasticsearchcrd.Elasticsearch) (dpl *appv1.Dep
 	})
 
 	// Compute resources
-	cb.WithResource(&corev1.ResourceRequirements{
-		Requests: corev1.ResourceList{
-			corev1.ResourceCPU:    resource.MustParse("25m"),
-			corev1.ResourceMemory: resource.MustParse("64Mi"),
-		},
-		Limits: corev1.ResourceList{
-			corev1.ResourceCPU:    resource.MustParse("100m"),
-			corev1.ResourceMemory: resource.MustParse("512Mi"),
-		},
-	})
+	if es.Spec.Monitoring.Prometheus.Resources != nil {
+		cb.WithResource(es.Spec.Monitoring.Prometheus.Resources)
+	} else {
+		cb.WithResource(&corev1.ResourceRequirements{
+			Requests: corev1.ResourceList{
+				corev1.ResourceCPU:    resource.MustParse("25m"),
+				corev1.ResourceMemory: resource.MustParse("64Mi"),
+			},
+			Limits: corev1.ResourceList{
+				corev1.ResourceCPU:    resource.MustParse("100m"),
+				corev1.ResourceMemory: resource.MustParse("512Mi"),
+			},
+		})
+	}
 
 	// Compute image
 	cb.WithImage(GetExporterImage(es))

@@ -3774,6 +3774,7 @@ spec:
                             type: object
                         type: object
                       refreshPeriod:
+                        default: 10s
                         type: string
                       version:
                         type: string
@@ -7638,6 +7639,7 @@ spec:
                             type: object
                         type: object
                       refreshPeriod:
+                        default: 10s
                         type: string
                       version:
                         type: string
