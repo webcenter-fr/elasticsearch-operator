@@ -4,7 +4,7 @@ metadata:
   annotations:
     alm-examples: '[]'
     capabilities: Basic Install
-  name: elasticsearch-operator.v0.0.26
+  name: elasticsearch-operator.v0.0.27
   namespace: placeholder
 spec:
   apiservicedefinitions: {}
@@ -2544,6 +2544,10 @@ spec:
       - description: ImagePullSecrets is the image pull secrets to use
         displayName: Image Pull Secrets
         path: monitoring.prometheus.imagePullSecrets
+      - description: Resources permit to set ressources on Prometheus expporter container
+          If not defined, it will use the default requirements
+        displayName: Resources
+        path: monitoring.prometheus.resources
       - description: Version is the exporter version to use Default is use the latest
         displayName: Version
         path: monitoring.prometheus.version
@@ -4394,5 +4398,5 @@ spec:
   provider:
     name: webcenter.fr
     url: https://github.com/webcenter-fr/elasticsearch-operator
-  replaces: elasticsearch-operator.v0.0.25
-  version: 0.0.26
+  replaces: elasticsearch-operator.v0.0.26
+  version: 0.0.27

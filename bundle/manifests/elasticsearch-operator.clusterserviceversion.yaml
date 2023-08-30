@@ -936,10 +936,10 @@ metadata:
         }
       ]
     capabilities: Basic Install
-    createdAt: "2023-08-28T18:33:46Z"
+    createdAt: "2023-08-29T16:33:08Z"
     operators.operatorframework.io/builder: operator-sdk-v1.31.0
     operators.operatorframework.io/project_layout: go.kubebuilder.io/v3
-  name: elasticsearch-operator.v0.0.26
+  name: elasticsearch-operator.v0.0.27
   namespace: placeholder
 spec:
   apiservicedefinitions: {}
@@ -1256,6 +1256,10 @@ spec:
       - description: ImagePullSecrets is the image pull secrets to use
         displayName: Image Pull Secrets
         path: monitoring.prometheus.imagePullSecrets
+      - description: Resources permit to set ressources on Prometheus expporter container
+          If not defined, it will use the default requirements
+        displayName: Resources
+        path: monitoring.prometheus.resources
       - description: Version is the exporter version to use Default is use the latest
         displayName: Version
         path: monitoring.prometheus.version
@@ -5797,7 +5801,7 @@ spec:
                       fieldPath: metadata.namespace
                 - name: LOG_LEVEL
                   value: DEBUG
-                image: quay.io/webcenter/elasticsearch-operator:0.0.26
+                image: quay.io/webcenter/elasticsearch-operator:0.0.27
                 livenessProbe:
                   httpGet:
                     path: /healthz
@@ -5887,5 +5891,5 @@ spec:
   provider:
     name: webcenter.fr
     url: https://github.com/webcenter-fr/elasticsearch-operator
-  replaces: elasticsearch-operator.v0.0.25
-  version: 0.0.26
+  replaces: elasticsearch-operator.v0.0.26
+  version: 0.0.27
