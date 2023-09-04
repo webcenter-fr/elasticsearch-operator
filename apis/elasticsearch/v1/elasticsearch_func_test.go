@@ -9,7 +9,7 @@ import (
 	v1 "k8s.io/api/core/v1"
 	policyv1 "k8s.io/api/policy/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/utils/pointer"
+	"k8s.io/utils/ptr"
 )
 
 func TestIsSelfManagedSecretForTlsApi(t *testing.T) {
@@ -33,7 +33,7 @@ func TestIsSelfManagedSecretForTlsApi(t *testing.T) {
 		},
 		Spec: ElasticsearchSpec{
 			Tls: ElasticsearchTlsSpec{
-				Enabled: pointer.Bool(true),
+				Enabled: ptr.To[bool](true),
 			},
 		},
 	}
@@ -47,7 +47,7 @@ func TestIsSelfManagedSecretForTlsApi(t *testing.T) {
 		},
 		Spec: ElasticsearchSpec{
 			Tls: ElasticsearchTlsSpec{
-				Enabled: pointer.Bool(true),
+				Enabled: ptr.To[bool](true),
 				CertificateSecretRef: &corev1.LocalObjectReference{
 					Name: "my-secret",
 				},
@@ -129,7 +129,7 @@ func TestIsTlsApiEnabled(t *testing.T) {
 		},
 		Spec: ElasticsearchSpec{
 			Tls: ElasticsearchTlsSpec{
-				Enabled: pointer.Bool(true),
+				Enabled: ptr.To[bool](true),
 			},
 		},
 	}
@@ -143,7 +143,7 @@ func TestIsTlsApiEnabled(t *testing.T) {
 		},
 		Spec: ElasticsearchSpec{
 			Tls: ElasticsearchTlsSpec{
-				Enabled: pointer.Bool(false),
+				Enabled: ptr.To[bool](false),
 			},
 		},
 	}
@@ -170,7 +170,7 @@ func TestIsSetVMMaxMapCount(t *testing.T) {
 			Name:      "test",
 		},
 		Spec: ElasticsearchSpec{
-			SetVMMaxMapCount: pointer.Bool(true),
+			SetVMMaxMapCount: ptr.To[bool](true),
 		},
 	}
 	assert.True(t, o.IsSetVMMaxMapCount())
@@ -182,7 +182,7 @@ func TestIsSetVMMaxMapCount(t *testing.T) {
 			Name:      "test",
 		},
 		Spec: ElasticsearchSpec{
-			SetVMMaxMapCount: pointer.Bool(false),
+			SetVMMaxMapCount: ptr.To[bool](false),
 		},
 	}
 	assert.False(t, o.IsSetVMMaxMapCount())
@@ -391,11 +391,11 @@ func TestIsBootstrapping(t *testing.T) {
 	assert.False(t, o.IsBoostrapping())
 
 	// When is false
-	o.Status.IsBootstrapping = pointer.Bool(false)
+	o.Status.IsBootstrapping = ptr.To[bool](false)
 	assert.False(t, o.IsBoostrapping())
 
 	// When is true
-	o.Status.IsBootstrapping = pointer.Bool(true)
+	o.Status.IsBootstrapping = ptr.To[bool](true)
 	assert.True(t, o.IsBoostrapping())
 
 }

@@ -8,7 +8,7 @@ import (
 	"github.com/webcenter-fr/elasticsearch-operator/apis/shared"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/utils/pointer"
+	"k8s.io/utils/ptr"
 )
 
 func TestGetNodeGroupName(t *testing.T) {
@@ -156,7 +156,7 @@ func TestGetSecretNameForTlsApi(t *testing.T) {
 		CertificateSecretRef: &v1.LocalObjectReference{
 			Name: "my-secret",
 		},
-		Enabled: pointer.Bool(true),
+		Enabled: ptr.To[bool](true),
 	}
 	assert.Equal(t, "my-secret", GetSecretNameForTlsApi(o))
 }
@@ -591,7 +591,7 @@ func TestGetPublicUrl(t *testing.T) {
 		},
 		Spec: elasticsearchcrd.ElasticsearchSpec{
 			Tls: elasticsearchcrd.ElasticsearchTlsSpec{
-				Enabled: pointer.Bool(false),
+				Enabled: ptr.To[bool](false),
 			},
 		},
 	}
@@ -617,7 +617,7 @@ func TestGetPublicUrl(t *testing.T) {
 		},
 		Spec: elasticsearchcrd.ElasticsearchSpec{
 			Tls: elasticsearchcrd.ElasticsearchTlsSpec{
-				Enabled: pointer.Bool(false),
+				Enabled: ptr.To[bool](false),
 			},
 		},
 	}

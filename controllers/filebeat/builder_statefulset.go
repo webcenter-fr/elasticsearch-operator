@@ -18,7 +18,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
 	"k8s.io/apimachinery/pkg/util/json"
-	"k8s.io/utils/pointer"
+	"k8s.io/utils/ptr"
 )
 
 // GenerateStatefullset permit to generate statefullset
@@ -206,8 +206,8 @@ func BuildStatefulset(fb *beatcrd.Filebeat, es *elasticsearchcrd.Elasticsearch, 
 				"ALL",
 			},
 		},
-		RunAsUser:    pointer.Int64(0),
-		RunAsNonRoot: pointer.Bool(false),
+		RunAsUser:    ptr.To[int64](0),
+		RunAsNonRoot: ptr.To[bool](false),
 	}, k8sbuilder.OverwriteIfDefaultValue)
 
 	// Compute volume mount
@@ -360,7 +360,7 @@ func BuildStatefulset(fb *beatcrd.Filebeat, es *elasticsearchcrd.Elasticsearch, 
 		Image:           GetContainerImage(fb),
 		ImagePullPolicy: fb.Spec.ImagePullPolicy,
 		SecurityContext: &corev1.SecurityContext{
-			RunAsUser: pointer.Int64(0),
+			RunAsUser: ptr.To[int64](0),
 		},
 		Env: []corev1.EnvVar{
 			{
@@ -530,7 +530,7 @@ chown -v root:root /mnt/data
 
 	// Compute Security context
 	ptb.WithSecurityContext(&corev1.PodSecurityContext{
-		FSGroup: pointer.Int64(0),
+		FSGroup: ptr.To[int64](0),
 	}, k8sbuilder.Merge)
 
 	// Compute pod template name
@@ -548,7 +548,7 @@ chown -v root:root /mnt/data
 			Annotations: getAnnotations(fb, fb.Spec.Deployment.Annotations),
 		},
 		Spec: appv1.StatefulSetSpec{
-			Replicas: pointer.Int32(fb.Spec.Deployment.Replicas),
+			Replicas: ptr.To[int32](fb.Spec.Deployment.Replicas),
 			Selector: &metav1.LabelSelector{
 				MatchLabels: map[string]string{
 					"cluster":                     fb.Name,

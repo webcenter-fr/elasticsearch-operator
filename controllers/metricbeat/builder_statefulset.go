@@ -16,7 +16,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
 	"k8s.io/apimachinery/pkg/util/json"
-	"k8s.io/utils/pointer"
+	"k8s.io/utils/ptr"
 )
 
 // GenerateStatefullset permit to generate statefullset
@@ -189,8 +189,8 @@ func BuildStatefulset(mb *beatcrd.Metricbeat, es *elasticsearchcrd.Elasticsearch
 				"ALL",
 			},
 		},
-		RunAsUser:    pointer.Int64(1000),
-		RunAsNonRoot: pointer.Bool(true),
+		RunAsUser:    ptr.To[int64](1000),
+		RunAsNonRoot: ptr.To[bool](true),
 	}, k8sbuilder.OverwriteIfDefaultValue)
 
 	// Compute volume mount
@@ -333,7 +333,7 @@ func BuildStatefulset(mb *beatcrd.Metricbeat, es *elasticsearchcrd.Elasticsearch
 		Image:           GetContainerImage(mb),
 		ImagePullPolicy: mb.Spec.ImagePullPolicy,
 		SecurityContext: &corev1.SecurityContext{
-			RunAsUser: pointer.Int64(0),
+			RunAsUser: ptr.To[int64](0),
 		},
 		Env: []corev1.EnvVar{
 			{
@@ -489,7 +489,7 @@ chown -v metricbeat:metricbeat /mnt/data
 
 	// Compute Security context
 	ptb.WithSecurityContext(&corev1.PodSecurityContext{
-		FSGroup: pointer.Int64(1000),
+		FSGroup: ptr.To[int64](1000),
 	}, k8sbuilder.Merge)
 
 	// Compute pod template name
@@ -507,7 +507,7 @@ chown -v metricbeat:metricbeat /mnt/data
 			Annotations: getAnnotations(mb, mb.Spec.Deployment.Annotations),
 		},
 		Spec: appv1.StatefulSetSpec{
-			Replicas: pointer.Int32(mb.Spec.Deployment.Replicas),
+			Replicas: ptr.To[int32](mb.Spec.Deployment.Replicas),
 			Selector: &metav1.LabelSelector{
 				MatchLabels: map[string]string{
 					"cluster":                       mb.Name,

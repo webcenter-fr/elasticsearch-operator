@@ -37,7 +37,7 @@ import (
 	"k8s.io/apimachinery/pkg/fields"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
-	"k8s.io/utils/pointer"
+	"k8s.io/utils/ptr"
 	"k8s.io/utils/strings"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -46,10 +46,10 @@ import (
 )
 
 const (
-	LogstashFinalizer     = "logstash.k8s.webcenter.fr/finalizer"
-	LogstashCondition     = "logstashReady"
-	LogstashPhaseRunning  = "running"
-	LogstashPhaseStarting = "starting"
+	LogstashFinalizer                          = "logstash.k8s.webcenter.fr/finalizer"
+	LogstashCondition     common.ConditionName = "logstashReady"
+	LogstashPhaseRunning  common.PhaseName     = "running"
+	LogstashPhaseStarting common.PhaseName     = "starting"
 )
 
 // LogstashReconciler reconciles a Logstash object
@@ -293,12 +293,12 @@ func watchSecret(c client.Client) handler.MapFunc {
 func (h *LogstashReconciler) Configure(ctx context.Context, req ctrl.Request, resource client.Object) (res ctrl.Result, err error) {
 	o := resource.(*logstashcrd.Logstash)
 
-	o.Status.IsError = pointer.Bool(false)
+	o.Status.IsError = ptr.To[bool](false)
 
 	// Init condition status if not exist
-	if condition.FindStatusCondition(o.Status.Conditions, LogstashCondition) == nil {
+	if condition.FindStatusCondition(o.Status.Conditions, LogstashCondition.String()) == nil {
 		condition.SetStatusCondition(&o.Status.Conditions, metav1.Condition{
-			Type:   LogstashCondition,
+			Type:   LogstashCondition.String(),
 			Status: metav1.ConditionFalse,
 			Reason: "Initialize",
 		})
@@ -325,10 +325,10 @@ func (h *LogstashReconciler) Delete(ctx context.Context, r client.Object, data m
 func (h *LogstashReconciler) OnError(ctx context.Context, r client.Object, data map[string]any, currentErr error) (res ctrl.Result, err error) {
 	o := r.(*logstashcrd.Logstash)
 
-	o.Status.IsError = pointer.Bool(true)
+	o.Status.IsError = ptr.To[bool](true)
 
 	condition.SetStatusCondition(&o.Status.Conditions, metav1.Condition{
-		Type:    LogstashCondition,
+		Type:    LogstashCondition.String(),
 		Status:  metav1.ConditionFalse,
 		Reason:  "Failed",
 		Message: strings.ShortenString(err.Error(), common.ShortenError),
@@ -364,16 +364,16 @@ func (h *LogstashReconciler) OnSuccess(ctx context.Context, r client.Object, dat
 	}
 
 	if isReady {
-		if !condition.IsStatusConditionPresentAndEqual(o.Status.Conditions, LogstashCondition, metav1.ConditionTrue) {
+		if !condition.IsStatusConditionPresentAndEqual(o.Status.Conditions, LogstashCondition.String(), metav1.ConditionTrue) {
 			condition.SetStatusCondition(&o.Status.Conditions, metav1.Condition{
-				Type:   LogstashCondition,
+				Type:   LogstashCondition.String(),
 				Status: metav1.ConditionTrue,
 				Reason: "Ready",
 			})
 		}
 
-		if o.Status.Phase != LogstashPhaseRunning {
-			o.Status.Phase = LogstashPhaseRunning
+		if o.Status.Phase != LogstashPhaseRunning.String() {
+			o.Status.Phase = LogstashPhaseRunning.String()
 		}
 
 		if condition.IsStatusConditionPresentAndEqual(o.Status.Conditions, common.ReadyCondition, metav1.ConditionFalse) {
@@ -385,16 +385,16 @@ func (h *LogstashReconciler) OnSuccess(ctx context.Context, r client.Object, dat
 		}
 
 	} else {
-		if condition.IsStatusConditionPresentAndEqual(o.Status.Conditions, LogstashCondition, metav1.ConditionTrue) || (condition.FindStatusCondition(o.Status.Conditions, LogstashCondition).Reason != "NotReady") {
+		if condition.IsStatusConditionPresentAndEqual(o.Status.Conditions, LogstashCondition.String(), metav1.ConditionTrue) || (condition.FindStatusCondition(o.Status.Conditions, LogstashCondition.String()).Reason != "NotReady") {
 			condition.SetStatusCondition(&o.Status.Conditions, metav1.Condition{
-				Type:   LogstashCondition,
+				Type:   LogstashCondition.String(),
 				Status: metav1.ConditionFalse,
 				Reason: "NotReady",
 			})
 		}
 
-		if o.Status.Phase != LogstashPhaseStarting {
-			o.Status.Phase = LogstashPhaseStarting
+		if o.Status.Phase != LogstashPhaseStarting.String() {
+			o.Status.Phase = LogstashPhaseStarting.String()
 		}
 
 		if condition.IsStatusConditionPresentAndEqual(o.Status.Conditions, common.ReadyCondition, metav1.ConditionTrue) || (condition.FindStatusCondition(o.Status.Conditions, common.ReadyCondition).Reason != "NotReady") {

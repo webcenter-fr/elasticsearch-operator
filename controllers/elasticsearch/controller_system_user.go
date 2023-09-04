@@ -11,8 +11,6 @@ import (
 	elasticsearchapicrd "github.com/webcenter-fr/elasticsearch-operator/apis/elasticsearchapi/v1"
 	"github.com/webcenter-fr/elasticsearch-operator/controllers/common"
 	corev1 "k8s.io/api/core/v1"
-	condition "k8s.io/apimachinery/pkg/api/meta"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
@@ -22,8 +20,8 @@ import (
 )
 
 const (
-	SystemUserCondition = "SystemUserReady"
-	SystemUserPhase     = "systemUser"
+	SystemUserCondition common.ConditionName = "SystemUserReady"
+	SystemUserPhase     common.PhaseName     = "systemUser"
 )
 
 type SystemUserReconciler struct {
@@ -46,20 +44,7 @@ func NewSystemUserReconciler(client client.Client, scheme *runtime.Scheme, recor
 
 // Configure permit to init condition
 func (r *SystemUserReconciler) Configure(ctx context.Context, req ctrl.Request, resource client.Object) (res ctrl.Result, err error) {
-	o := resource.(*elasticsearchcrd.Elasticsearch)
-
-	// Init condition status if not exist
-	if condition.FindStatusCondition(o.Status.Conditions, SystemUserCondition) == nil {
-		condition.SetStatusCondition(&o.Status.Conditions, metav1.Condition{
-			Type:   SystemUserCondition,
-			Status: metav1.ConditionFalse,
-			Reason: "Initialize",
-		})
-	}
-
-	o.Status.Phase = SystemUserPhase
-
-	return res, nil
+	return r.StdConfigure(ctx, req, resource, SystemUserCondition, SystemUserPhase)
 }
 
 // Read existing users
@@ -100,27 +85,10 @@ func (r *SystemUserReconciler) Diff(ctx context.Context, resource client.Object,
 
 // OnError permit to set status condition on the right state and record error
 func (r *SystemUserReconciler) OnError(ctx context.Context, resource client.Object, data map[string]any, currentErr error) (res ctrl.Result, err error) {
-	o := resource.(*elasticsearchcrd.Elasticsearch)
-	return r.StdOnError(ctx, resource, data, currentErr, &o.Status.Conditions, SystemUserCondition)
+	return r.StdOnError(ctx, resource, data, currentErr, SystemUserCondition, SystemUserPhase)
 }
 
 // OnSuccess permit to set status condition on the right state is everithink is good
 func (r *SystemUserReconciler) OnSuccess(ctx context.Context, resource client.Object, data map[string]any, diff controller.K8sDiff) (res ctrl.Result, err error) {
-	o := resource.(*elasticsearchcrd.Elasticsearch)
-
-	if diff.NeedCreate || diff.NeedUpdate || diff.NeedDelete {
-		r.Recorder.Eventf(resource, corev1.EventTypeNormal, "Completed", "System users successfully updated")
-	}
-
-	// Update condition status if needed
-	if !condition.IsStatusConditionPresentAndEqual(o.Status.Conditions, SystemUserCondition, metav1.ConditionTrue) {
-		condition.SetStatusCondition(&o.Status.Conditions, metav1.Condition{
-			Type:    SystemUserCondition,
-			Reason:  "Success",
-			Status:  metav1.ConditionTrue,
-			Message: "Ready",
-		})
-	}
-
-	return res, nil
+	return r.StdOnSuccess(ctx, resource, data, diff, SystemUserCondition, SystemUserPhase)
 }

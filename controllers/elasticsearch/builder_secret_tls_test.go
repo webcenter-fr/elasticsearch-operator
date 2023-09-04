@@ -9,7 +9,7 @@ import (
 	"github.com/webcenter-fr/elasticsearch-operator/pkg/helper"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/utils/pointer"
+	"k8s.io/utils/ptr"
 )
 
 func TestBuildTransportPkiSecret(t *testing.T) {
@@ -84,7 +84,7 @@ func TestBuildApiPkiSecret(t *testing.T) {
 		},
 		Spec: elasticsearchcrd.ElasticsearchSpec{
 			Tls: elasticsearchcrd.ElasticsearchTlsSpec{
-				Enabled: pointer.Bool(false),
+				Enabled: ptr.To[bool](false),
 			},
 			NodeGroups: []elasticsearchcrd.ElasticsearchNodeGroupSpec{
 				{
@@ -108,7 +108,7 @@ func TestBuildApiPkiSecret(t *testing.T) {
 		},
 		Spec: elasticsearchcrd.ElasticsearchSpec{
 			Tls: elasticsearchcrd.ElasticsearchTlsSpec{
-				Enabled: pointer.Bool(true),
+				Enabled: ptr.To[bool](true),
 				CertificateSecretRef: &corev1.LocalObjectReference{
 					Name: "test",
 				},
@@ -135,7 +135,7 @@ func TestBuildApiPkiSecret(t *testing.T) {
 		},
 		Spec: elasticsearchcrd.ElasticsearchSpec{
 			Tls: elasticsearchcrd.ElasticsearchTlsSpec{
-				Enabled: pointer.Bool(true),
+				Enabled: ptr.To[bool](true),
 			},
 			NodeGroups: []elasticsearchcrd.ElasticsearchNodeGroupSpec{
 				{
@@ -255,7 +255,7 @@ func TestBuildApiSecret(t *testing.T) {
 		},
 		Spec: elasticsearchcrd.ElasticsearchSpec{
 			Tls: elasticsearchcrd.ElasticsearchTlsSpec{
-				Enabled: pointer.Bool(false),
+				Enabled: ptr.To[bool](false),
 			},
 			NodeGroups: []elasticsearchcrd.ElasticsearchNodeGroupSpec{
 				{
@@ -278,7 +278,7 @@ func TestBuildApiSecret(t *testing.T) {
 		},
 		Spec: elasticsearchcrd.ElasticsearchSpec{
 			Tls: elasticsearchcrd.ElasticsearchTlsSpec{
-				Enabled: pointer.Bool(true),
+				Enabled: ptr.To[bool](true),
 				CertificateSecretRef: &corev1.LocalObjectReference{
 					Name: "test",
 				},
@@ -304,7 +304,7 @@ func TestBuildApiSecret(t *testing.T) {
 		},
 		Spec: elasticsearchcrd.ElasticsearchSpec{
 			Tls: elasticsearchcrd.ElasticsearchTlsSpec{
-				Enabled: pointer.Bool(true),
+				Enabled: ptr.To[bool](true),
 			},
 			NodeGroups: []elasticsearchcrd.ElasticsearchNodeGroupSpec{
 				{

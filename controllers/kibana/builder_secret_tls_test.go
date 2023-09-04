@@ -8,7 +8,7 @@ import (
 	kibanacrd "github.com/webcenter-fr/elasticsearch-operator/apis/kibana/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/utils/pointer"
+	"k8s.io/utils/ptr"
 )
 
 func TestBuildPkiSecret(t *testing.T) {
@@ -59,7 +59,7 @@ func TestBuildPkiSecret(t *testing.T) {
 		},
 		Spec: kibanacrd.KibanaSpec{
 			Tls: kibanacrd.KibanaTlsSpec{
-				Enabled: pointer.Bool(true),
+				Enabled: ptr.To[bool](true),
 			},
 		},
 	}
@@ -87,7 +87,7 @@ func TestBuildPkiSecret(t *testing.T) {
 		},
 		Spec: kibanacrd.KibanaSpec{
 			Tls: kibanacrd.KibanaTlsSpec{
-				Enabled: pointer.Bool(false),
+				Enabled: ptr.To[bool](false),
 			},
 		},
 	}
@@ -105,7 +105,7 @@ func TestBuildPkiSecret(t *testing.T) {
 		},
 		Spec: kibanacrd.KibanaSpec{
 			Tls: kibanacrd.KibanaTlsSpec{
-				Enabled: pointer.Bool(true),
+				Enabled: ptr.To[bool](true),
 				CertificateSecretRef: &corev1.LocalObjectReference{
 					Name: "test",
 				},
@@ -153,7 +153,7 @@ func TestBuildTlsSecret(t *testing.T) {
 		},
 		Spec: kibanacrd.KibanaSpec{
 			Tls: kibanacrd.KibanaTlsSpec{
-				Enabled: pointer.Bool(false),
+				Enabled: ptr.To[bool](false),
 			},
 		},
 	}
@@ -170,7 +170,7 @@ func TestBuildTlsSecret(t *testing.T) {
 		},
 		Spec: kibanacrd.KibanaSpec{
 			Tls: kibanacrd.KibanaTlsSpec{
-				Enabled: pointer.Bool(true),
+				Enabled: ptr.To[bool](true),
 				CertificateSecretRef: &corev1.LocalObjectReference{
 					Name: "test",
 				},
@@ -190,7 +190,7 @@ func TestBuildTlsSecret(t *testing.T) {
 		},
 		Spec: kibanacrd.KibanaSpec{
 			Tls: kibanacrd.KibanaTlsSpec{
-				Enabled: pointer.Bool(true),
+				Enabled: ptr.To[bool](true),
 			},
 		},
 	}

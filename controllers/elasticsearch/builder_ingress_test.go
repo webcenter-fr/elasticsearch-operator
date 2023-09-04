@@ -9,7 +9,7 @@ import (
 	v1 "k8s.io/api/core/v1"
 	networkingv1 "k8s.io/api/networking/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/utils/pointer"
+	"k8s.io/utils/ptr"
 )
 
 func TestBuildIngress(t *testing.T) {
@@ -138,7 +138,7 @@ func TestBuildIngress(t *testing.T) {
 						"annotationLabel": "annotationLabel",
 					},
 					IngressSpec: &networkingv1.IngressSpec{
-						IngressClassName: pointer.String("toto"),
+						IngressClassName: ptr.To[string]("toto"),
 					},
 				},
 			},

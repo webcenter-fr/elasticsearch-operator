@@ -10,8 +10,6 @@ import (
 	logstashcrd "github.com/webcenter-fr/elasticsearch-operator/apis/logstash/v1"
 	"github.com/webcenter-fr/elasticsearch-operator/controllers/common"
 	corev1 "k8s.io/api/core/v1"
-	condition "k8s.io/apimachinery/pkg/api/meta"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/tools/record"
@@ -20,8 +18,8 @@ import (
 )
 
 const (
-	ConfigmapCondition = "ConfigmapReady"
-	ConfigmapPhase     = "Configmap"
+	ConfigmapCondition common.ConditionName = "ConfigmapReady"
+	ConfigmapPhase     common.PhaseName     = "Configmap"
 )
 
 type ConfigMapReconciler struct {
@@ -44,20 +42,7 @@ func NewConfiMapReconciler(client client.Client, scheme *runtime.Scheme, recorde
 
 // Configure permit to init condition
 func (r *ConfigMapReconciler) Configure(ctx context.Context, req ctrl.Request, resource client.Object) (res ctrl.Result, err error) {
-	o := resource.(*logstashcrd.Logstash)
-
-	// Init condition status if not exist
-	if condition.FindStatusCondition(o.Status.Conditions, ConfigmapCondition) == nil {
-		condition.SetStatusCondition(&o.Status.Conditions, metav1.Condition{
-			Type:   ConfigmapCondition,
-			Status: metav1.ConditionFalse,
-			Reason: "Initialize",
-		})
-	}
-
-	o.Status.Phase = ConfigmapPhase
-
-	return res, nil
+	return r.StdConfigure(ctx, req, resource, ConfigmapCondition, ConfigmapPhase)
 }
 
 // Read existing configmaps
@@ -91,27 +76,10 @@ func (r *ConfigMapReconciler) Diff(ctx context.Context, resource client.Object, 
 
 // OnError permit to set status condition on the right state and record error
 func (r *ConfigMapReconciler) OnError(ctx context.Context, resource client.Object, data map[string]any, currentErr error) (res ctrl.Result, err error) {
-	o := resource.(*logstashcrd.Logstash)
-	return r.StdOnError(ctx, resource, data, currentErr, &o.Status.Conditions, ConfigmapCondition)
+	return r.StdOnError(ctx, resource, data, currentErr, ConfigmapCondition, ConfigmapPhase)
 }
 
 // OnSuccess permit to set status condition on the right state is everithink is good
 func (r *ConfigMapReconciler) OnSuccess(ctx context.Context, resource client.Object, data map[string]any, diff controller.K8sDiff) (res ctrl.Result, err error) {
-	o := resource.(*logstashcrd.Logstash)
-
-	if diff.NeedCreate || diff.NeedUpdate || diff.NeedDelete {
-		r.Recorder.Eventf(resource, corev1.EventTypeNormal, "Completed", "Configmap successfully updated")
-	}
-
-	// Update condition status if needed
-	if !condition.IsStatusConditionPresentAndEqual(o.Status.Conditions, ConfigmapCondition, metav1.ConditionTrue) {
-		condition.SetStatusCondition(&o.Status.Conditions, metav1.Condition{
-			Type:    ConfigmapCondition,
-			Reason:  "Success",
-			Status:  metav1.ConditionTrue,
-			Message: "Ready",
-		})
-	}
-
-	return res, nil
+	return r.StdOnSuccess(ctx, resource, data, diff, ConfigmapCondition, ConfigmapPhase)
 }

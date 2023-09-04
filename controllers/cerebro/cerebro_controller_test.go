@@ -94,7 +94,7 @@ func doCreateCerebroStep() test.TestStep {
 
 				// In envtest, no kubelet
 				// So the condition never set as true
-				if condition.FindStatusCondition(cb.Status.Conditions, CerebroCondition) != nil && condition.FindStatusCondition(cb.Status.Conditions, CerebroCondition).Reason != "Initialize" {
+				if condition.FindStatusCondition(cb.Status.Conditions, CerebroCondition.String()) != nil && condition.FindStatusCondition(cb.Status.Conditions, CerebroCondition.String()).Reason != "Initialize" {
 					return nil
 				}
 
@@ -210,7 +210,7 @@ func doUpdateCerebroStep() test.TestStep {
 
 				// In envtest, no kubelet
 				// So the condition never set as true
-				if lastVersion != cb.ResourceVersion && (cb.Status.Phase == CerebroPhaseStarting) {
+				if lastVersion != cb.ResourceVersion && (cb.Status.Phase == CerebroPhaseStarting.String()) {
 					return nil
 				}
 

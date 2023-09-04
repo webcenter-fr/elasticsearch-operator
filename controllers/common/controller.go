@@ -8,6 +8,20 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/metrics"
 )
 
+// PhaseName is the the current phase name (step) on controller
+type PhaseName string
+
+func (o PhaseName) String() string {
+	return string(o)
+}
+
+// Condition is the condition name
+type ConditionName string
+
+func (o ConditionName) String() string {
+	return string(o)
+}
+
 type Controller struct {
 	recorder   record.EventRecorder
 	log        *logrus.Entry

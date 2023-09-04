@@ -11,11 +11,8 @@ import (
 	logstashcrd "github.com/webcenter-fr/elasticsearch-operator/apis/logstash/v1"
 	"github.com/webcenter-fr/elasticsearch-operator/controllers/common"
 	"github.com/webcenter-fr/elasticsearch-operator/pkg/helper"
-	corev1 "k8s.io/api/core/v1"
 	networkingv1 "k8s.io/api/networking/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
-	condition "k8s.io/apimachinery/pkg/api/meta"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/fields"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
@@ -25,8 +22,8 @@ import (
 )
 
 const (
-	NetworkPolicyCondition = "NetworkPolicyReady"
-	NetworkPolicyPhase     = "NetworkPolicy"
+	NetworkPolicyCondition common.ConditionName = "NetworkPolicyReady"
+	NetworkPolicyPhase     common.PhaseName     = "NetworkPolicy"
 )
 
 type NetworkPolicyReconciler struct {
@@ -49,20 +46,7 @@ func NewNetworkPolicyReconciler(client client.Client, scheme *runtime.Scheme, re
 
 // Configure permit to init condition
 func (r *NetworkPolicyReconciler) Configure(ctx context.Context, req ctrl.Request, resource client.Object) (res ctrl.Result, err error) {
-	o := resource.(*logstashcrd.Logstash)
-
-	// Init condition status if not exist
-	if condition.FindStatusCondition(o.Status.Conditions, NetworkPolicyCondition) == nil {
-		condition.SetStatusCondition(&o.Status.Conditions, metav1.Condition{
-			Type:   NetworkPolicyCondition,
-			Status: metav1.ConditionFalse,
-			Reason: "Initialize",
-		})
-	}
-
-	o.Status.Phase = NetworkPolicyPhase
-
-	return res, nil
+	return r.StdConfigure(ctx, req, resource, NetworkPolicyCondition, NetworkPolicyPhase)
 }
 
 // Read existing network policy
@@ -111,27 +95,10 @@ func (r *NetworkPolicyReconciler) Diff(ctx context.Context, resource client.Obje
 
 // OnError permit to set status condition on the right state and record error
 func (r *NetworkPolicyReconciler) OnError(ctx context.Context, resource client.Object, data map[string]any, currentErr error) (res ctrl.Result, err error) {
-	o := resource.(*logstashcrd.Logstash)
-	return r.StdOnError(ctx, resource, data, currentErr, &o.Status.Conditions, NetworkPolicyCondition)
+	return r.StdOnError(ctx, resource, data, currentErr, NetworkPolicyCondition, NetworkPolicyPhase)
 }
 
 // OnSuccess permit to set status condition on the right state is everithink is good
 func (r *NetworkPolicyReconciler) OnSuccess(ctx context.Context, resource client.Object, data map[string]any, diff controller.K8sDiff) (res ctrl.Result, err error) {
-	o := resource.(*logstashcrd.Logstash)
-
-	if diff.NeedCreate || diff.NeedUpdate || diff.NeedDelete {
-		r.Recorder.Eventf(resource, corev1.EventTypeNormal, "Completed", "Network policy successfully updated")
-	}
-
-	// Update condition status if needed
-	if !condition.IsStatusConditionPresentAndEqual(o.Status.Conditions, NetworkPolicyCondition, metav1.ConditionTrue) {
-		condition.SetStatusCondition(&o.Status.Conditions, metav1.Condition{
-			Type:    NetworkPolicyCondition,
-			Reason:  "Success",
-			Status:  metav1.ConditionTrue,
-			Message: "Ready",
-		})
-	}
-
-	return res, nil
+	return r.StdOnSuccess(ctx, resource, data, diff, NetworkPolicyCondition, NetworkPolicyPhase)
 }

@@ -11,7 +11,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/utils/pointer"
+	"k8s.io/utils/ptr"
 )
 
 func TestBuildStatefulset(t *testing.T) {
@@ -60,7 +60,7 @@ func TestBuildStatefulset(t *testing.T) {
 			PluginsList: []string{
 				"repository-s3",
 			},
-			SetVMMaxMapCount: pointer.Bool(true),
+			SetVMMaxMapCount: ptr.To[bool](true),
 			GlobalNodeGroup: elasticsearchcrd.ElasticsearchGlobalNodeGroupSpec{
 				AdditionalVolumes: []elasticsearchcrd.ElasticsearchVolumeSpec{
 					{
@@ -106,7 +106,7 @@ func TestBuildStatefulset(t *testing.T) {
 					},
 					Persistence: &elasticsearchcrd.ElasticsearchPersistenceSpec{
 						VolumeClaimSpec: &corev1.PersistentVolumeClaimSpec{
-							StorageClassName: pointer.String("local-path"),
+							StorageClassName: ptr.To[string]("local-path"),
 							AccessModes: []corev1.PersistentVolumeAccessMode{
 								corev1.ReadWriteOnce,
 							},
@@ -173,7 +173,7 @@ func TestBuildStatefulset(t *testing.T) {
 					},
 					Persistence: &elasticsearchcrd.ElasticsearchPersistenceSpec{
 						VolumeClaimSpec: &corev1.PersistentVolumeClaimSpec{
-							StorageClassName: pointer.String("local-path"),
+							StorageClassName: ptr.To[string]("local-path"),
 							AccessModes: []corev1.PersistentVolumeAccessMode{
 								corev1.ReadWriteOnce,
 							},
@@ -238,7 +238,7 @@ func TestBuildStatefulset(t *testing.T) {
 		},
 		Spec: elasticsearchcrd.ElasticsearchSpec{
 			Tls: elasticsearchcrd.ElasticsearchTlsSpec{
-				Enabled: pointer.Bool(true),
+				Enabled: ptr.To[bool](true),
 				CertificateSecretRef: &corev1.LocalObjectReference{
 					Name: "api-certificates",
 				},

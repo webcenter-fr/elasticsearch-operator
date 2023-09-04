@@ -142,7 +142,7 @@ func doCreateElasticsearchStep() test.TestStep {
 
 				// In envtest, no kubelet
 				// So the Elasticsearch condition never set as true
-				if condition.FindStatusCondition(es.Status.Conditions, ElasticsearchCondition) != nil && condition.FindStatusCondition(es.Status.Conditions, ElasticsearchCondition).Reason != "Initialize" {
+				if condition.FindStatusCondition(es.Status.Conditions, ElasticsearchCondition.String()) != nil && condition.FindStatusCondition(es.Status.Conditions, ElasticsearchCondition.String()).Reason != "Initialize" {
 					return nil
 				}
 
@@ -379,7 +379,7 @@ func doUpdateElasticsearchStep() test.TestStep {
 
 				// In envtest, no kubelet
 				// So the Elasticsearch condition never set as true
-				if lastVersion != es.ResourceVersion && (es.Status.Phase == ElasticsearchPhaseStarting) {
+				if lastVersion != es.ResourceVersion && (es.Status.Phase == ElasticsearchPhaseStarting.String()) {
 					return nil
 				}
 
@@ -638,7 +638,7 @@ func doUpdateElasticsearchIncreaseNodeGroupStep() test.TestStep {
 
 				// In envtest, no kubelet
 				// So the Elasticsearch condition never set as true
-				if lastVersion != es.ResourceVersion && (es.Status.Phase == ElasticsearchPhaseStarting) {
+				if lastVersion != es.ResourceVersion && (es.Status.Phase == ElasticsearchPhaseStarting.String()) {
 					return nil
 				}
 
@@ -877,7 +877,7 @@ func doUpdateElasticsearchDecreaseNodeGroupStep() test.TestStep {
 
 				// In envtest, no kubelet
 				// So the Elasticsearch condition never set as true
-				if lastVersion != es.ResourceVersion && (es.Status.Phase == ElasticsearchPhaseStarting) {
+				if lastVersion != es.ResourceVersion && (es.Status.Phase == ElasticsearchPhaseStarting.String()) {
 					return nil
 				}
 
@@ -1190,7 +1190,7 @@ func doUpdateElasticsearchAddLicenseStep() test.TestStep {
 
 				// In envtest, no kubelet
 				// So the Elasticsearch condition never set as true
-				if lastVersion != es.ResourceVersion && (es.Status.Phase == ElasticsearchPhaseStarting) {
+				if lastVersion != es.ResourceVersion && (es.Status.Phase == ElasticsearchPhaseStarting.String()) {
 					return nil
 				}
 

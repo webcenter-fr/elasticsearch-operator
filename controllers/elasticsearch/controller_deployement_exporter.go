@@ -9,10 +9,7 @@ import (
 	elasticsearchcrd "github.com/webcenter-fr/elasticsearch-operator/apis/elasticsearch/v1"
 	"github.com/webcenter-fr/elasticsearch-operator/controllers/common"
 	appv1 "k8s.io/api/apps/v1"
-	corev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
-	condition "k8s.io/apimachinery/pkg/api/meta"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/tools/record"
@@ -21,8 +18,8 @@ import (
 )
 
 const (
-	ExporterCondition = "ExporterReady"
-	ExporterPhase     = "Exporter"
+	ExporterCondition common.ConditionName = "ExporterReady"
+	ExporterPhase     common.PhaseName     = "Exporter"
 )
 
 type ExporterReconciler struct {
@@ -45,20 +42,7 @@ func NewExporterReconciler(client client.Client, scheme *runtime.Scheme, recorde
 
 // Configure permit to init condition
 func (r *ExporterReconciler) Configure(ctx context.Context, req ctrl.Request, resource client.Object) (res ctrl.Result, err error) {
-	o := resource.(*elasticsearchcrd.Elasticsearch)
-
-	// Init condition status if not exist
-	if condition.FindStatusCondition(o.Status.Conditions, ExporterCondition) == nil {
-		condition.SetStatusCondition(&o.Status.Conditions, metav1.Condition{
-			Type:   ExporterCondition,
-			Status: metav1.ConditionFalse,
-			Reason: "Initialize",
-		})
-	}
-
-	o.Status.Phase = ExporterPhase
-
-	return res, nil
+	return r.StdConfigure(ctx, req, resource, ExporterCondition, ExporterPhase)
 }
 
 // Read existing deployement
@@ -92,27 +76,10 @@ func (r *ExporterReconciler) Diff(ctx context.Context, resource client.Object, d
 
 // OnError permit to set status condition on the right state and record error
 func (r *ExporterReconciler) OnError(ctx context.Context, resource client.Object, data map[string]any, currentErr error) (res ctrl.Result, err error) {
-	o := resource.(*elasticsearchcrd.Elasticsearch)
-	return r.StdOnError(ctx, resource, data, currentErr, &o.Status.Conditions, ExporterCondition)
+	return r.StdOnError(ctx, resource, data, currentErr, ExporterCondition, ExporterPhase)
 }
 
 // OnSuccess permit to set status condition on the right state is everithink is good
 func (r *ExporterReconciler) OnSuccess(ctx context.Context, resource client.Object, data map[string]any, diff controller.K8sDiff) (res ctrl.Result, err error) {
-	o := resource.(*elasticsearchcrd.Elasticsearch)
-
-	if diff.NeedCreate || diff.NeedUpdate || diff.NeedDelete {
-		r.Recorder.Eventf(resource, corev1.EventTypeNormal, "Completed", "Exporter deployment successfully updated")
-	}
-
-	// Update condition status if needed
-	if !condition.IsStatusConditionPresentAndEqual(o.Status.Conditions, ExporterCondition, metav1.ConditionTrue) {
-		condition.SetStatusCondition(&o.Status.Conditions, metav1.Condition{
-			Type:    ExporterCondition,
-			Reason:  "Success",
-			Status:  metav1.ConditionTrue,
-			Message: "Ready",
-		})
-	}
-
-	return res, nil
+	return r.StdOnSuccess(ctx, resource, data, diff, ExporterCondition, ExporterPhase)
 }

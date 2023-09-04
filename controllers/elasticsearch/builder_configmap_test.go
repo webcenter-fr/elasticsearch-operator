@@ -7,7 +7,7 @@ import (
 	elasticsearchcrd "github.com/webcenter-fr/elasticsearch-operator/apis/elasticsearch/v1"
 	"github.com/webcenter-fr/elasticsearch-operator/pkg/test"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/utils/pointer"
+	"k8s.io/utils/ptr"
 )
 
 func TestBuildConfigMaps(t *testing.T) {
@@ -69,7 +69,7 @@ node:
 		},
 		Spec: elasticsearchcrd.ElasticsearchSpec{
 			Tls: elasticsearchcrd.ElasticsearchTlsSpec{
-				Enabled: pointer.Bool(false),
+				Enabled: ptr.To[bool](false),
 			},
 			GlobalNodeGroup: elasticsearchcrd.ElasticsearchGlobalNodeGroupSpec{
 				Config: map[string]string{
@@ -152,7 +152,7 @@ node:
 			},
 		},
 		Status: elasticsearchcrd.ElasticsearchStatus{
-			IsBootstrapping: pointer.Bool(true),
+			IsBootstrapping: ptr.To[bool](true),
 		},
 	}
 

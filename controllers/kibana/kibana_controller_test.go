@@ -84,7 +84,7 @@ func doCreateKibanaStep() test.TestStep {
 
 				// In envtest, no kubelet
 				// So the Elasticsearch condition never set as true
-				if condition.FindStatusCondition(es.Status.Conditions, elasticsearchcontrollers.ElasticsearchCondition) != nil && condition.FindStatusCondition(es.Status.Conditions, elasticsearchcontrollers.ElasticsearchCondition).Reason != "Initialize" {
+				if condition.FindStatusCondition(es.Status.Conditions, elasticsearchcontrollers.ElasticsearchCondition.String()) != nil && condition.FindStatusCondition(es.Status.Conditions, elasticsearchcontrollers.ElasticsearchCondition.String()).Reason != "Initialize" {
 					return nil
 				}
 
@@ -157,7 +157,7 @@ func doCreateKibanaStep() test.TestStep {
 
 				// In envtest, no kubelet
 				// So the Kibana condition never set as true
-				if condition.FindStatusCondition(kb.Status.Conditions, KibanaCondition) != nil && condition.FindStatusCondition(kb.Status.Conditions, KibanaCondition).Reason != "Initialize" {
+				if condition.FindStatusCondition(kb.Status.Conditions, KibanaCondition.String()) != nil && condition.FindStatusCondition(kb.Status.Conditions, KibanaCondition.String()).Reason != "Initialize" {
 					return nil
 				}
 
@@ -326,7 +326,7 @@ func doUpdateKibanaStep() test.TestStep {
 
 				// In envtest, no kubelet
 				// So the Kibana condition never set as true
-				if lastVersion != kb.ResourceVersion && (kb.Status.Phase == KibanaPhaseStarting) {
+				if lastVersion != kb.ResourceVersion && (kb.Status.Phase == KibanaPhaseStarting.String()) {
 					return nil
 				}
 

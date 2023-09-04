@@ -10,7 +10,7 @@ import (
 	"github.com/webcenter-fr/elasticsearch-operator/pkg/test"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/utils/pointer"
+	"k8s.io/utils/ptr"
 )
 
 func TestBuildConfigMap(t *testing.T) {
@@ -52,7 +52,7 @@ node.value2: test`,
 		},
 		Spec: elasticsearchcrd.ElasticsearchSpec{
 			Tls: elasticsearchcrd.ElasticsearchTlsSpec{
-				Enabled: pointer.Bool(true),
+				Enabled: ptr.To[bool](true),
 			},
 		},
 	}
@@ -80,7 +80,7 @@ node.value2: test`,
 				},
 			},
 			Tls: kibanacrd.KibanaTlsSpec{
-				Enabled: pointer.Bool(false),
+				Enabled: ptr.To[bool](false),
 			},
 			Config: map[string]string{
 				"kibana.yml": `node.value: test
@@ -96,7 +96,7 @@ node.value2: test`,
 		},
 		Spec: elasticsearchcrd.ElasticsearchSpec{
 			Tls: elasticsearchcrd.ElasticsearchTlsSpec{
-				Enabled: pointer.Bool(false),
+				Enabled: ptr.To[bool](false),
 			},
 		},
 	}

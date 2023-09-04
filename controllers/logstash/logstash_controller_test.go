@@ -83,7 +83,7 @@ func doCreateLogstashStep() test.TestStep {
 
 				// In envtest, no kubelet
 				// So the Elasticsearch condition never set as true
-				if condition.FindStatusCondition(es.Status.Conditions, elasticsearchcontrollers.ElasticsearchCondition) != nil && condition.FindStatusCondition(es.Status.Conditions, elasticsearchcontrollers.ElasticsearchCondition).Reason != "Initialize" {
+				if condition.FindStatusCondition(es.Status.Conditions, elasticsearchcontrollers.ElasticsearchCondition.String()) != nil && condition.FindStatusCondition(es.Status.Conditions, elasticsearchcontrollers.ElasticsearchCondition.String()).Reason != "Initialize" {
 					return nil
 				}
 
@@ -175,7 +175,7 @@ queue.type: persisted
 
 				// In envtest, no kubelet
 				// So the Logstash condition never set as true
-				if condition.FindStatusCondition(ls.Status.Conditions, LogstashCondition) != nil && condition.FindStatusCondition(ls.Status.Conditions, LogstashCondition).Reason != "Initialize" {
+				if condition.FindStatusCondition(ls.Status.Conditions, LogstashCondition.String()) != nil && condition.FindStatusCondition(ls.Status.Conditions, LogstashCondition.String()).Reason != "Initialize" {
 					return nil
 				}
 
@@ -322,7 +322,7 @@ func doUpdateLogstashStep() test.TestStep {
 
 				// In envtest, no kubelet
 				// So the Logstash condition never set as true
-				if lastVersion != ls.ResourceVersion && (ls.Status.Phase == LogstashPhaseStarting) {
+				if lastVersion != ls.ResourceVersion && (ls.Status.Phase == LogstashPhaseStarting.String()) {
 					return nil
 				}
 

@@ -18,7 +18,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
 	"k8s.io/apimachinery/pkg/util/json"
-	"k8s.io/utils/pointer"
+	"k8s.io/utils/ptr"
 )
 
 // BuildDeployment permit to generate deployment for Kibana
@@ -235,8 +235,8 @@ func BuildDeployment(kb *kibanacrd.Kibana, es *elasticsearchcrd.Elasticsearch, s
 				"ALL",
 			},
 		},
-		RunAsUser:    pointer.Int64(1000),
-		RunAsNonRoot: pointer.Bool(true),
+		RunAsUser:    ptr.To[int64](1000),
+		RunAsNonRoot: ptr.To[bool](true),
 	}, k8sbuilder.OverwriteIfDefaultValue)
 
 	// Compute volume mount
@@ -401,7 +401,7 @@ cp -a /usr/share/kibana/config/kibana.keystore /mnt/keystore/
 		Image:           GetContainerImage(kb),
 		ImagePullPolicy: kb.Spec.ImagePullPolicy,
 		SecurityContext: &corev1.SecurityContext{
-			RunAsUser: pointer.Int64(0),
+			RunAsUser: ptr.To[int64](0),
 		},
 		Env: []corev1.EnvVar{
 			{
@@ -636,7 +636,7 @@ fi
 
 	// Compute Security context
 	ptb.WithSecurityContext(&corev1.PodSecurityContext{
-		FSGroup: pointer.Int64(1000),
+		FSGroup: ptr.To[int64](1000),
 	}, k8sbuilder.Merge)
 
 	// Compute pod template name
@@ -654,7 +654,7 @@ fi
 			Annotations: getAnnotations(kb, kb.Spec.Deployment.Annotations),
 		},
 		Spec: appv1.DeploymentSpec{
-			Replicas: pointer.Int32(kb.Spec.Deployment.Replicas),
+			Replicas: ptr.To[int32](kb.Spec.Deployment.Replicas),
 			Selector: &metav1.LabelSelector{
 				MatchLabels: map[string]string{
 					"cluster":                     kb.Name,

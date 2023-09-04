@@ -16,7 +16,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
 	"k8s.io/apimachinery/pkg/util/json"
-	"k8s.io/utils/pointer"
+	"k8s.io/utils/ptr"
 )
 
 // GenerateStatefullset permit to generate statefullset
@@ -172,8 +172,8 @@ func BuildStatefulset(ls *logstashcrd.Logstash, es *elasticsearchcrd.Elasticsear
 				"ALL",
 			},
 		},
-		RunAsUser:    pointer.Int64(1000),
-		RunAsNonRoot: pointer.Bool(true),
+		RunAsUser:    ptr.To[int64](1000),
+		RunAsNonRoot: ptr.To[bool](true),
 	}, k8sbuilder.OverwriteIfDefaultValue)
 
 	// Compute volume mount
@@ -352,7 +352,7 @@ cp -a /usr/share/logstash/config/logstash.keystore /mnt/keystore/
 		Image:           GetContainerImage(ls),
 		ImagePullPolicy: ls.Spec.ImagePullPolicy,
 		SecurityContext: &corev1.SecurityContext{
-			RunAsUser: pointer.Int64(0),
+			RunAsUser: ptr.To[int64](0),
 		},
 		Env: []corev1.EnvVar{
 			{
@@ -625,7 +625,7 @@ fi
 
 	// Compute Security context
 	ptb.WithSecurityContext(&corev1.PodSecurityContext{
-		FSGroup: pointer.Int64(1000),
+		FSGroup: ptr.To[int64](1000),
 	}, k8sbuilder.Merge)
 
 	// Compute pod template name
@@ -643,7 +643,7 @@ fi
 			Annotations: getAnnotations(ls, ls.Spec.Deployment.Annotations),
 		},
 		Spec: appv1.StatefulSetSpec{
-			Replicas: pointer.Int32(ls.Spec.Deployment.Replicas),
+			Replicas: ptr.To[int32](ls.Spec.Deployment.Replicas),
 			Selector: &metav1.LabelSelector{
 				MatchLabels: map[string]string{
 					"cluster":                         ls.Name,

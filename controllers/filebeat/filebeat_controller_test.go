@@ -83,7 +83,7 @@ func doCreateFilebeatStep() test.TestStep {
 
 				// In envtest, no kubelet
 				// So the Elasticsearch condition never set as true
-				if condition.FindStatusCondition(es.Status.Conditions, elasticsearchcontrollers.ElasticsearchCondition) != nil && condition.FindStatusCondition(es.Status.Conditions, elasticsearchcontrollers.ElasticsearchCondition).Reason != "Initialize" {
+				if condition.FindStatusCondition(es.Status.Conditions, elasticsearchcontrollers.ElasticsearchCondition.String()) != nil && condition.FindStatusCondition(es.Status.Conditions, elasticsearchcontrollers.ElasticsearchCondition.String()).Reason != "Initialize" {
 					return nil
 				}
 
@@ -172,7 +172,7 @@ queue.type: persisted
 
 				// In envtest, no kubelet
 				// So the Filebeat condition never set as true
-				if condition.FindStatusCondition(fb.Status.Conditions, FilebeatCondition) != nil && condition.FindStatusCondition(fb.Status.Conditions, FilebeatCondition).Reason != "Initialize" {
+				if condition.FindStatusCondition(fb.Status.Conditions, FilebeatCondition.String()) != nil && condition.FindStatusCondition(fb.Status.Conditions, FilebeatCondition.String()).Reason != "Initialize" {
 					return nil
 				}
 
@@ -312,7 +312,7 @@ func doUpdateFilebeatStep() test.TestStep {
 
 				// In envtest, no kubelet
 				// So the Filebeat condition never set as true
-				if lastVersion != fb.ResourceVersion && (fb.Status.Phase == FilebeatPhaseStarting) {
+				if lastVersion != fb.ResourceVersion && (fb.Status.Phase == FilebeatPhaseStarting.String()) {
 					return nil
 				}
 

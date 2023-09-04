@@ -12,8 +12,6 @@ import (
 	"github.com/webcenter-fr/elasticsearch-operator/controllers/common"
 	corev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
-	condition "k8s.io/apimachinery/pkg/api/meta"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/tools/record"
@@ -22,8 +20,8 @@ import (
 )
 
 const (
-	LicenseCondition = "LicenseReady"
-	LicensePhase     = "License"
+	LicenseCondition common.ConditionName = "LicenseReady"
+	LicensePhase     common.PhaseName     = "License"
 )
 
 type LicenseReconciler struct {
@@ -46,20 +44,7 @@ func NewLicenseReconciler(client client.Client, scheme *runtime.Scheme, recorder
 
 // Configure permit to init condition
 func (r *LicenseReconciler) Configure(ctx context.Context, req ctrl.Request, resource client.Object) (res ctrl.Result, err error) {
-	o := resource.(*elasticsearchcrd.Elasticsearch)
-
-	// Init condition status if not exist
-	if condition.FindStatusCondition(o.Status.Conditions, LicenseCondition) == nil {
-		condition.SetStatusCondition(&o.Status.Conditions, metav1.Condition{
-			Type:   LicenseCondition,
-			Status: metav1.ConditionFalse,
-			Reason: "Initialize",
-		})
-	}
-
-	o.Status.Phase = LicensePhase
-
-	return res, nil
+	return r.StdConfigure(ctx, req, resource, LicenseCondition, LicensePhase)
 }
 
 // Read existing license
@@ -107,27 +92,10 @@ func (r *LicenseReconciler) Diff(ctx context.Context, resource client.Object, da
 
 // OnError permit to set status condition on the right state and record error
 func (r *LicenseReconciler) OnError(ctx context.Context, resource client.Object, data map[string]any, currentErr error) (res ctrl.Result, err error) {
-	o := resource.(*elasticsearchcrd.Elasticsearch)
-	return r.StdOnError(ctx, resource, data, currentErr, &o.Status.Conditions, LicenseCondition)
+	return r.StdOnError(ctx, resource, data, currentErr, LicenseCondition, LicensePhase)
 }
 
 // OnSuccess permit to set status condition on the right state is everithink is good
 func (r *LicenseReconciler) OnSuccess(ctx context.Context, resource client.Object, data map[string]any, diff controller.K8sDiff) (res ctrl.Result, err error) {
-	o := resource.(*elasticsearchcrd.Elasticsearch)
-
-	if diff.NeedCreate || diff.NeedUpdate || diff.NeedDelete {
-		r.Recorder.Eventf(resource, corev1.EventTypeNormal, "Completed", "License successfully updated")
-	}
-
-	// Update condition status if needed
-	if !condition.IsStatusConditionPresentAndEqual(o.Status.Conditions, LicenseCondition, metav1.ConditionTrue) {
-		condition.SetStatusCondition(&o.Status.Conditions, metav1.Condition{
-			Type:    LicenseCondition,
-			Reason:  "Success",
-			Status:  metav1.ConditionTrue,
-			Message: "Ready",
-		})
-	}
-
-	return res, nil
+	return r.StdOnSuccess(ctx, resource, data, diff, LicenseCondition, LicensePhase)
 }
