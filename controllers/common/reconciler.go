@@ -10,12 +10,16 @@ import (
 	"github.com/disaster37/operator-sdk-extra/pkg/controller"
 	"github.com/disaster37/operator-sdk-extra/pkg/helper"
 	"github.com/sirupsen/logrus"
+	"github.com/thoas/go-funk"
 	helperdiff "github.com/webcenter-fr/elasticsearch-operator/pkg/helper"
+	"golang.org/x/text/cases"
+	"golang.org/x/text/language"
+	corev1 "k8s.io/api/core/v1"
 	condition "k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/tools/record"
-	"k8s.io/utils/strings"
+	k8sstrings "k8s.io/utils/strings"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
@@ -94,17 +98,70 @@ func (r *Reconciler) Delete(ctx context.Context, resource client.Object, data ma
 	return res, nil
 }
 
-func (r *Reconciler) StdOnError(ctx context.Context, resource client.Object, data map[string]any, currentErr error, conditions *[]metav1.Condition, conditionType string) (res ctrl.Result, err error) {
+func (r *Reconciler) StdConfigure(ctx context.Context, req ctrl.Request, resource client.Object, conditionName ConditionName, phaseName PhaseName) (res ctrl.Result, err error) {
 
-	condition.SetStatusCondition(conditions, metav1.Condition{
-		Type:    conditionType,
+	conditions := funk.Get(resource, "Status.Conditions").([]metav1.Condition)
+	if conditions == nil {
+		return res, errors.New("Status.Conditions field not found")
+	}
+
+	// Init condition status if not exist
+	if condition.FindStatusCondition(conditions, conditionName.String()) == nil {
+		condition.SetStatusCondition(&conditions, metav1.Condition{
+			Type:   conditionName.String(),
+			Status: metav1.ConditionFalse,
+			Reason: "Initialize",
+		})
+	}
+
+	if err = funk.Set(resource, phaseName.String(), "Status.Phase"); err != nil {
+		return res, errors.Wrap(err, "Field Status.Phase not found")
+	}
+
+	return res, nil
+}
+
+func (r *Reconciler) StdOnError(ctx context.Context, resource client.Object, data map[string]any, currentErr error, conditionName ConditionName, phaseName PhaseName) (res ctrl.Result, err error) {
+
+	conditions := funk.Get(resource, "Status.Conditions").([]metav1.Condition)
+	if conditions == nil {
+		return res, errors.New("Status.Conditions field not found")
+	}
+
+	condition.SetStatusCondition(&conditions, metav1.Condition{
+		Type:    conditionName.String(),
 		Status:  metav1.ConditionFalse,
 		Reason:  "Failed",
-		Message: strings.ShortenString(err.Error(), ShortenError),
+		Message: k8sstrings.ShortenString(err.Error(), ShortenError),
 	})
 
-	return res, currentErr
+	r.Recorder.Eventf(resource, corev1.EventTypeWarning, "Failed", "Error on phase '%s'", phaseName.String())
 
+	return res, currentErr
+}
+
+func (r *Reconciler) StdOnSuccess(ctx context.Context, resource client.Object, data map[string]any, diff controller.K8sDiff, conditionName ConditionName, phaseName PhaseName) (res ctrl.Result, err error) {
+
+	conditions := funk.Get(resource, "Status.Conditions").([]metav1.Condition)
+	if conditions == nil {
+		return res, errors.New("Status.Conditions field not found")
+	}
+
+	if diff.NeedCreate || diff.NeedUpdate || diff.NeedDelete {
+		r.Recorder.Eventf(resource, corev1.EventTypeNormal, "Completed", "%s successfully updated", cases.Title(language.Und).String(phaseName.String()))
+	}
+
+	// Update condition status if needed
+	if !condition.IsStatusConditionPresentAndEqual(conditions, conditionName.String(), metav1.ConditionTrue) {
+		condition.SetStatusCondition(&conditions, metav1.Condition{
+			Type:    conditionName.String(),
+			Reason:  "Success",
+			Status:  metav1.ConditionTrue,
+			Message: "Ready",
+		})
+	}
+
+	return res, nil
 }
 
 // StdDiff is the standard diff when we need to diff only one resource

@@ -10,10 +10,7 @@ import (
 	"github.com/sirupsen/logrus"
 	elasticsearchcrd "github.com/webcenter-fr/elasticsearch-operator/apis/elasticsearch/v1"
 	"github.com/webcenter-fr/elasticsearch-operator/controllers/common"
-	corev1 "k8s.io/api/core/v1"
 	policyv1 "k8s.io/api/policy/v1"
-	condition "k8s.io/apimachinery/pkg/api/meta"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/tools/record"
@@ -22,8 +19,8 @@ import (
 )
 
 const (
-	PdbCondition = "PodDisruptionBudgetReady"
-	PdbPhase     = "PodDisruptionBudget"
+	PdbCondition common.ConditionName = "PodDisruptionBudgetReady"
+	PdbPhase     common.PhaseName     = "PodDisruptionBudget"
 )
 
 type PdbReconciler struct {
@@ -46,20 +43,7 @@ func NewPdbReconciler(client client.Client, scheme *runtime.Scheme, recorder rec
 
 // Configure permit to init condition
 func (r *PdbReconciler) Configure(ctx context.Context, req ctrl.Request, resource client.Object) (res ctrl.Result, err error) {
-	o := resource.(*elasticsearchcrd.Elasticsearch)
-
-	// Init condition status if not exist
-	if condition.FindStatusCondition(o.Status.Conditions, PdbCondition) == nil {
-		condition.SetStatusCondition(&o.Status.Conditions, metav1.Condition{
-			Type:   PdbCondition,
-			Status: metav1.ConditionFalse,
-			Reason: "Initialize",
-		})
-	}
-
-	o.Status.Phase = PdbPhase
-
-	return res, nil
+	return r.StdConfigure(ctx, req, resource, PdbCondition, PdbPhase)
 }
 
 // Read existing pdbs
@@ -94,27 +78,10 @@ func (r *PdbReconciler) Diff(ctx context.Context, resource client.Object, data m
 
 // OnError permit to set status condition on the right state and record error
 func (r *PdbReconciler) OnError(ctx context.Context, resource client.Object, data map[string]any, currentErr error) (res ctrl.Result, err error) {
-	o := resource.(*elasticsearchcrd.Elasticsearch)
-	return r.StdOnError(ctx, resource, data, currentErr, &o.Status.Conditions, PdbCondition)
+	return r.StdOnError(ctx, resource, data, currentErr, PdbCondition, PdbPhase)
 }
 
 // OnSuccess permit to set status condition on the right state is everithink is good
 func (r *PdbReconciler) OnSuccess(ctx context.Context, resource client.Object, data map[string]any, diff controller.K8sDiff) (res ctrl.Result, err error) {
-	o := resource.(*elasticsearchcrd.Elasticsearch)
-
-	if diff.NeedCreate || diff.NeedUpdate || diff.NeedDelete {
-		r.Recorder.Eventf(resource, corev1.EventTypeNormal, "Completed", "Pdbs successfully updated")
-	}
-
-	// Update condition status if needed
-	if !condition.IsStatusConditionPresentAndEqual(o.Status.Conditions, PdbCondition, metav1.ConditionTrue) {
-		condition.SetStatusCondition(&o.Status.Conditions, metav1.Condition{
-			Type:    PdbCondition,
-			Reason:  "Success",
-			Status:  metav1.ConditionTrue,
-			Message: "Ready",
-		})
-	}
-
-	return res, nil
+	return r.StdOnSuccess(ctx, resource, data, diff, PdbCondition, PdbPhase)
 }

@@ -82,7 +82,7 @@ func doCreateMetricbeatStep() test.TestStep {
 
 				// In envtest, no kubelet
 				// So the Elasticsearch condition never set as true
-				if condition.FindStatusCondition(es.Status.Conditions, elasticsearchcontrollers.ElasticsearchCondition) != nil && condition.FindStatusCondition(es.Status.Conditions, elasticsearchcontrollers.ElasticsearchCondition).Reason != "Initialize" {
+				if condition.FindStatusCondition(es.Status.Conditions, elasticsearchcontrollers.ElasticsearchCondition.String()) != nil && condition.FindStatusCondition(es.Status.Conditions, elasticsearchcontrollers.ElasticsearchCondition.String()).Reason != "Initialize" {
 					return nil
 				}
 
@@ -144,7 +144,7 @@ queue.type: persisted
 
 				// In envtest, no kubelet
 				// So the Metricbeat condition never set as true
-				if condition.FindStatusCondition(mb.Status.Conditions, MetricbeatCondition) != nil && condition.FindStatusCondition(mb.Status.Conditions, MetricbeatCondition).Reason != "Initialize" {
+				if condition.FindStatusCondition(mb.Status.Conditions, MetricbeatCondition.String()) != nil && condition.FindStatusCondition(mb.Status.Conditions, MetricbeatCondition.String()).Reason != "Initialize" {
 					return nil
 				}
 
@@ -267,7 +267,7 @@ func doUpdateMetricbeatStep() test.TestStep {
 
 				// In envtest, no kubelet
 				// So the Metricbeat condition never set as true
-				if lastVersion != mb.ResourceVersion && (mb.Status.Phase == MetricbeatPhaseStarting) {
+				if lastVersion != mb.ResourceVersion && (mb.Status.Phase == MetricbeatPhaseStarting.String()) {
 					return nil
 				}
 

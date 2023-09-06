@@ -6,7 +6,7 @@ import (
 	"github.com/webcenter-fr/elasticsearch-operator/apis/shared"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/utils/pointer"
+	"k8s.io/utils/ptr"
 )
 
 // BuildUserSystem permit to generate system users
@@ -35,7 +35,7 @@ func BuildUserSystem(es *elasticsearchcrd.Elasticsearch, s *corev1.Secret) (user
 						Name: s.Name,
 						Key:  key,
 					},
-					IsProtected: pointer.Bool(true),
+					IsProtected: ptr.To[bool](true),
 				},
 			}
 

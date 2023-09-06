@@ -28,19 +28,14 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-type statefulsetPhase string
-
 const (
-	StatefulsetCondition        = "StatefulsetReady"
-	StatefulsetConditionUpgrade = "StatefulsetUpgrade"
-	StatefulsetPhase            = "Statefullset"
-)
-
-var (
-	phaseStsUpgradeStarted  statefulsetPhase = "statefulsetUpgradeStarted"
-	phaseStsUpgrade         statefulsetPhase = "statefulsetUpgrade"
-	phaseStsUpgradeFinished statefulsetPhase = "statefulsetUpgradeFinished"
-	phaseStsNormal          statefulsetPhase = "statefulsetNormal"
+	StatefulsetCondition            common.ConditionName = "StatefulsetReady"
+	StatefulsetConditionUpgrade     common.ConditionName = "StatefulsetUpgrade"
+	StatefulsetPhase                common.PhaseName     = "Statefullset"
+	StatefulsetPhaseUpgradeStarted  common.PhaseName     = "statefulsetUpgradeStarted"
+	StatefulsetPhaseUpgrade         common.PhaseName     = "statefulsetUpgrade"
+	StatefulsetPhaseUpgradeFinished common.PhaseName     = "statefulsetUpgradeFinished"
+	StatefulsetPhaseNormal          common.PhaseName     = "statefulsetNormal"
 )
 
 type StatefulsetReconciler struct {
@@ -63,20 +58,7 @@ func NewStatefulsetReconciler(client client.Client, scheme *runtime.Scheme, reco
 
 // Configure permit to init condition
 func (r *StatefulsetReconciler) Configure(ctx context.Context, req ctrl.Request, resource client.Object) (res ctrl.Result, err error) {
-	o := resource.(*elasticsearchcrd.Elasticsearch)
-
-	// Init condition status if not exist
-	if condition.FindStatusCondition(o.Status.Conditions, StatefulsetCondition) == nil {
-		condition.SetStatusCondition(&o.Status.Conditions, metav1.Condition{
-			Type:   StatefulsetCondition,
-			Status: metav1.ConditionFalse,
-			Reason: "Initialize",
-		})
-	}
-
-	o.Status.Phase = StatefulsetPhase
-
-	return res, nil
+	return r.StdConfigure(ctx, req, resource, StatefulsetCondition, StatefulsetPhase)
 }
 
 // Read existing satefulsets
@@ -299,7 +281,7 @@ func (r *StatefulsetReconciler) Diff(ctx context.Context, resource client.Object
 	stsToUpdate := make([]client.Object, 0)
 	stsToExpectedUpdated := make([]*appv1.StatefulSet, 0)
 	stsToCreate := make([]client.Object, 0)
-	data["phase"] = phaseStsNormal
+	data["phase"] = StatefulsetPhaseNormal
 
 	// Add some code to avoid reconcile multiple statefullset on same time
 	// It avoid to have multiple pod that exit the cluster on same time
@@ -362,7 +344,7 @@ func (r *StatefulsetReconciler) Diff(ctx context.Context, resource client.Object
 	}
 
 	// Check if on TLS blackout to reconcile all statefulset as the last hope
-	if condition.IsStatusConditionPresentAndEqual(o.Status.Conditions, TlsConditionBlackout, metav1.ConditionTrue) {
+	if condition.IsStatusConditionPresentAndEqual(o.Status.Conditions, TlsConditionBlackout.String(), metav1.ConditionTrue) {
 		r.Log.Info("Detect we are on TLS blackout. Reconcile all statefulset")
 		for _, sts := range stsToExpectedUpdated {
 			stsToUpdate = append(stsToUpdate, sts)
@@ -370,9 +352,9 @@ func (r *StatefulsetReconciler) Diff(ctx context.Context, resource client.Object
 	} else {
 		// Check if on current upgrade phase, to only upgrade the statefullset currently being upgraded
 		// Or statefullset with current replica to 0 (maybee stop all pod)
-		if condition.IsStatusConditionPresentAndEqual(o.Status.Conditions, StatefulsetConditionUpgrade, metav1.ConditionTrue) && condition.IsStatusConditionPresentAndEqual(o.Status.Conditions, StatefulsetCondition, metav1.ConditionFalse) {
+		if condition.IsStatusConditionPresentAndEqual(o.Status.Conditions, StatefulsetConditionUpgrade.String(), metav1.ConditionTrue) && condition.IsStatusConditionPresentAndEqual(o.Status.Conditions, StatefulsetCondition.String(), metav1.ConditionFalse) {
 			// Already on upgrade phase
-			r.Log.Debugf("Detect phase: %s", phaseStsUpgrade)
+			r.Log.Debugf("Detect phase: %s", StatefulsetPhaseUpgrade)
 
 			// Upgrade only one active statefulset or current upgrade
 			for _, sts := range currentStatefulsets {
@@ -381,7 +363,7 @@ func (r *StatefulsetReconciler) Diff(ctx context.Context, resource client.Object
 				// It avoid to stuck test on this phase
 				if localhelper.IsOnStatefulSetUpgradeState(&sts) && *sts.Spec.Replicas > 0 && os.Getenv("TEST") != "true" {
 
-					data["phase"] = phaseStsUpgrade
+					data["phase"] = StatefulsetPhaseUpgrade
 
 					// Check if current statefullset need to be upgraded
 					for _, stsNeedUpgraded := range stsToExpectedUpdated {
@@ -405,7 +387,7 @@ func (r *StatefulsetReconciler) Diff(ctx context.Context, resource client.Object
 					// Check if current statefullset need to be upgraded
 					for _, stsNeedUpgraded := range stsToExpectedUpdated {
 						if stsNeedUpgraded.GetName() == sts.Name {
-							data["phase"] = phaseStsUpgrade
+							data["phase"] = StatefulsetPhaseUpgrade
 							r.Log.Infof("Detect we need to upgrade Statefullset %s that not yet active (replica 0)", sts.Name)
 							stsToUpdate = append(stsToUpdate, stsNeedUpgraded)
 							break
@@ -415,10 +397,10 @@ func (r *StatefulsetReconciler) Diff(ctx context.Context, resource client.Object
 			}
 
 			// Update phase if needed
-			if data["phase"] != phaseStsUpgrade {
-				data["phase"] = phaseStsUpgradeFinished
+			if data["phase"] != StatefulsetPhaseUpgrade {
+				data["phase"] = StatefulsetPhaseUpgradeFinished
 			}
-		} else if condition.IsStatusConditionPresentAndEqual(o.Status.Conditions, StatefulsetConditionUpgrade, metav1.ConditionFalse) && condition.IsStatusConditionPresentAndEqual(o.Status.Conditions, StatefulsetCondition, metav1.ConditionTrue) {
+		} else if condition.IsStatusConditionPresentAndEqual(o.Status.Conditions, StatefulsetConditionUpgrade.String(), metav1.ConditionFalse) && condition.IsStatusConditionPresentAndEqual(o.Status.Conditions, StatefulsetCondition.String(), metav1.ConditionTrue) {
 			// Chain with the next upgrade if needed, to avoid break TLS propagation ...
 			// Start upgrade phase
 			activeStateFulsetAlreadyUpgraded := false
@@ -427,7 +409,7 @@ func (r *StatefulsetReconciler) Diff(ctx context.Context, resource client.Object
 				if *sts.Spec.Replicas == 0 {
 					stsToUpdate = append(stsToUpdate, sts)
 				} else if !activeStateFulsetAlreadyUpgraded {
-					data["phase"] = phaseStsUpgradeStarted
+					data["phase"] = StatefulsetPhaseUpgradeStarted
 					activeStateFulsetAlreadyUpgraded = true
 					stsToUpdate = append(stsToUpdate, sts)
 				}
@@ -446,8 +428,7 @@ func (r *StatefulsetReconciler) Diff(ctx context.Context, resource client.Object
 
 // OnError permit to set status condition on the right state and record error
 func (r *StatefulsetReconciler) OnError(ctx context.Context, resource client.Object, data map[string]any, currentErr error) (res ctrl.Result, err error) {
-	o := resource.(*elasticsearchcrd.Elasticsearch)
-	return r.StdOnError(ctx, resource, data, currentErr, &o.Status.Conditions, StatefulsetCondition)
+	return r.StdOnError(ctx, resource, data, currentErr, StatefulsetCondition, StatefulsetPhase)
 }
 
 // OnSuccess permit to set status condition on the right state is everithink is good
@@ -461,12 +442,12 @@ func (r *StatefulsetReconciler) OnSuccess(ctx context.Context, resource client.O
 	if err != nil {
 		return res, err
 	}
-	phase := d.(statefulsetPhase)
+	phase := d.(common.PhaseName)
 
 	r.Log.Debugf("Phase on success: %s", phase)
 
 	// Handle TLS blackout
-	if condition.IsStatusConditionPresentAndEqual(o.Status.Conditions, TlsConditionBlackout, metav1.ConditionTrue) {
+	if condition.IsStatusConditionPresentAndEqual(o.Status.Conditions, TlsConditionBlackout.String(), metav1.ConditionTrue) {
 		r.Log.Info("Detect we are on blackout TLS, start to delete all pods")
 		podList := &corev1.PodList{}
 		labelSelectors, err := labels.Parse(fmt.Sprintf("cluster=%s,%s=true", o.Name, elasticsearchcrd.ElasticsearchAnnotationKey))
@@ -487,16 +468,16 @@ func (r *StatefulsetReconciler) OnSuccess(ctx context.Context, resource client.O
 	}
 
 	switch phase {
-	case phaseStsUpgradeStarted:
+	case StatefulsetPhaseUpgradeStarted:
 		condition.SetStatusCondition(&o.Status.Conditions, metav1.Condition{
-			Type:    StatefulsetCondition,
+			Type:    StatefulsetCondition.String(),
 			Reason:  "Success",
 			Status:  metav1.ConditionFalse,
 			Message: "Statefulsets are being upgraded",
 		})
 
 		condition.SetStatusCondition(&o.Status.Conditions, metav1.Condition{
-			Type:    StatefulsetConditionUpgrade,
+			Type:    StatefulsetConditionUpgrade.String(),
 			Reason:  "Success",
 			Status:  metav1.ConditionTrue,
 			Message: "Statefulsets are being upgraded",
@@ -506,19 +487,19 @@ func (r *StatefulsetReconciler) OnSuccess(ctx context.Context, resource client.O
 
 		return ctrl.Result{RequeueAfter: time.Second * 30}, nil
 
-	case phaseStsUpgrade:
+	case StatefulsetPhaseUpgrade:
 		return ctrl.Result{RequeueAfter: time.Second * 30}, nil
 
-	case phaseStsUpgradeFinished:
+	case StatefulsetPhaseUpgradeFinished:
 		condition.SetStatusCondition(&o.Status.Conditions, metav1.Condition{
-			Type:    StatefulsetCondition,
+			Type:    StatefulsetCondition.String(),
 			Reason:  "Success",
 			Status:  metav1.ConditionTrue,
 			Message: "Statefulsets are ready",
 		})
 
 		condition.SetStatusCondition(&o.Status.Conditions, metav1.Condition{
-			Type:    StatefulsetConditionUpgrade,
+			Type:    StatefulsetConditionUpgrade.String(),
 			Reason:  "Success",
 			Status:  metav1.ConditionFalse,
 			Message: "Statefulsets are finished to be upgraded",
@@ -535,18 +516,18 @@ func (r *StatefulsetReconciler) OnSuccess(ctx context.Context, resource client.O
 	}
 
 	// Update condition status if needed
-	if !condition.IsStatusConditionPresentAndEqual(o.Status.Conditions, StatefulsetCondition, metav1.ConditionTrue) {
+	if !condition.IsStatusConditionPresentAndEqual(o.Status.Conditions, StatefulsetCondition.String(), metav1.ConditionTrue) {
 		condition.SetStatusCondition(&o.Status.Conditions, metav1.Condition{
-			Type:    StatefulsetCondition,
+			Type:    StatefulsetCondition.String(),
 			Reason:  "Success",
 			Status:  metav1.ConditionTrue,
 			Message: "Ready",
 		})
 	}
 
-	if !condition.IsStatusConditionPresentAndEqual(o.Status.Conditions, StatefulsetConditionUpgrade, metav1.ConditionFalse) {
+	if !condition.IsStatusConditionPresentAndEqual(o.Status.Conditions, StatefulsetConditionUpgrade.String(), metav1.ConditionFalse) {
 		condition.SetStatusCondition(&o.Status.Conditions, metav1.Condition{
-			Type:    StatefulsetConditionUpgrade,
+			Type:    StatefulsetConditionUpgrade.String(),
 			Reason:  "Success",
 			Status:  metav1.ConditionFalse,
 			Message: "No current upgrade",

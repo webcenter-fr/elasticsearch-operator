@@ -46,7 +46,7 @@ import (
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
-	"k8s.io/utils/pointer"
+	"k8s.io/utils/ptr"
 	"k8s.io/utils/strings"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -55,10 +55,10 @@ import (
 )
 
 const (
-	ElasticsearchFinalizer     = "elasticsearch.k8s.webcenter.fr/finalizer"
-	ElasticsearchCondition     = "ElasticsearchReady"
-	ElasticsearchPhaseRunning  = "running"
-	ElasticsearchPhaseStarting = "starting"
+	ElasticsearchFinalizer                          = "elasticsearch.k8s.webcenter.fr/finalizer"
+	ElasticsearchCondition     common.ConditionName = "ElasticsearchReady"
+	ElasticsearchPhaseRunning  common.PhaseName     = "running"
+	ElasticsearchPhaseStarting common.PhaseName     = "starting"
 )
 
 // ElasticsearchReconciler reconciles a Elasticsearch object
@@ -375,16 +375,16 @@ func watchHost(c client.Client) handler.MapFunc {
 func (h *ElasticsearchReconciler) Configure(ctx context.Context, req ctrl.Request, resource client.Object) (res ctrl.Result, err error) {
 	o := resource.(*elasticsearchcrd.Elasticsearch)
 
-	o.Status.IsError = pointer.Bool(false)
+	o.Status.IsError = ptr.To[bool](false)
 
 	if o.Status.IsBootstrapping == nil {
-		o.Status.IsBootstrapping = pointer.Bool(false)
+		o.Status.IsBootstrapping = ptr.To[bool](false)
 	}
 
 	// Init condition status if not exist
-	if condition.FindStatusCondition(o.Status.Conditions, ElasticsearchCondition) == nil {
+	if condition.FindStatusCondition(o.Status.Conditions, ElasticsearchCondition.String()) == nil {
 		condition.SetStatusCondition(&o.Status.Conditions, metav1.Condition{
-			Type:   ElasticsearchCondition,
+			Type:   ElasticsearchCondition.String(),
 			Status: metav1.ConditionFalse,
 			Reason: "Initialize",
 		})
@@ -436,10 +436,10 @@ func (h *ElasticsearchReconciler) Delete(ctx context.Context, r client.Object, d
 func (h *ElasticsearchReconciler) OnError(ctx context.Context, r client.Object, data map[string]any, currentErr error) (res ctrl.Result, err error) {
 	o := r.(*elasticsearchcrd.Elasticsearch)
 
-	o.Status.IsError = pointer.Bool(true)
+	o.Status.IsError = ptr.To[bool](true)
 
 	condition.SetStatusCondition(&o.Status.Conditions, metav1.Condition{
-		Type:    ElasticsearchCondition,
+		Type:    ElasticsearchCondition.String(),
 		Status:  metav1.ConditionFalse,
 		Reason:  "Failed",
 		Message: strings.ShortenString(err.Error(), common.ShortenError),
@@ -487,16 +487,16 @@ loopStatefulset:
 	}
 
 	if isReady {
-		if !condition.IsStatusConditionPresentAndEqual(o.Status.Conditions, ElasticsearchCondition, metav1.ConditionTrue) {
+		if !condition.IsStatusConditionPresentAndEqual(o.Status.Conditions, ElasticsearchCondition.String(), metav1.ConditionTrue) {
 			condition.SetStatusCondition(&o.Status.Conditions, metav1.Condition{
-				Type:   ElasticsearchCondition,
+				Type:   ElasticsearchCondition.String(),
 				Status: metav1.ConditionTrue,
 				Reason: "Ready",
 			})
 		}
 
-		if o.Status.Phase != ElasticsearchPhaseRunning {
-			o.Status.Phase = ElasticsearchPhaseRunning
+		if o.Status.Phase != ElasticsearchPhaseRunning.String() {
+			o.Status.Phase = ElasticsearchPhaseRunning.String()
 		}
 
 		if condition.IsStatusConditionPresentAndEqual(o.Status.Conditions, common.ReadyCondition, metav1.ConditionFalse) {
@@ -508,14 +508,14 @@ loopStatefulset:
 		}
 
 		if !o.IsBoostrapping() {
-			o.Status.IsBootstrapping = pointer.Bool(true)
+			o.Status.IsBootstrapping = ptr.To[bool](true)
 		}
 
 	} else {
 
-		if condition.IsStatusConditionPresentAndEqual(o.Status.Conditions, ElasticsearchCondition, metav1.ConditionTrue) || (condition.FindStatusCondition(o.Status.Conditions, ElasticsearchCondition).Reason != "NotReady") {
+		if condition.IsStatusConditionPresentAndEqual(o.Status.Conditions, ElasticsearchCondition.String(), metav1.ConditionTrue) || (condition.FindStatusCondition(o.Status.Conditions, ElasticsearchCondition.String()).Reason != "NotReady") {
 			condition.SetStatusCondition(&o.Status.Conditions, metav1.Condition{
-				Type:   ElasticsearchCondition,
+				Type:   ElasticsearchCondition.String(),
 				Status: metav1.ConditionFalse,
 				Reason: "NotReady",
 			})
@@ -529,8 +529,8 @@ loopStatefulset:
 			})
 		}
 
-		if o.Status.Phase != ElasticsearchPhaseStarting {
-			o.Status.Phase = ElasticsearchPhaseStarting
+		if o.Status.Phase != ElasticsearchPhaseStarting.String() {
+			o.Status.Phase = ElasticsearchPhaseStarting.String()
 		}
 
 		// Requeued to check if status change

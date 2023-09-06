@@ -15,8 +15,6 @@ import (
 	appv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
-	condition "k8s.io/apimachinery/pkg/api/meta"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
@@ -26,8 +24,8 @@ import (
 )
 
 const (
-	StatefulsetCondition = "StatefulsetReady"
-	StatefulsetPhase     = "Statefulset"
+	StatefulsetCondition common.ConditionName = "StatefulsetReady"
+	StatefulsetPhase     common.PhaseName     = "Statefulset"
 )
 
 type StatefulsetReconciler struct {
@@ -50,20 +48,7 @@ func NewStatefulsetReconciler(client client.Client, scheme *runtime.Scheme, reco
 
 // Configure permit to init condition
 func (r *StatefulsetReconciler) Configure(ctx context.Context, req ctrl.Request, resource client.Object) (res ctrl.Result, err error) {
-	o := resource.(*logstashcrd.Logstash)
-
-	// Init condition status if not exist
-	if condition.FindStatusCondition(o.Status.Conditions, StatefulsetCondition) == nil {
-		condition.SetStatusCondition(&o.Status.Conditions, metav1.Condition{
-			Type:   StatefulsetCondition,
-			Status: metav1.ConditionFalse,
-			Reason: "Initialize",
-		})
-	}
-
-	o.Status.Phase = StatefulsetPhase
-
-	return res, nil
+	return r.StdConfigure(ctx, req, resource, StatefulsetCondition, StatefulsetPhase)
 }
 
 // Read existing satefulsets
@@ -256,27 +241,10 @@ func (r *StatefulsetReconciler) Diff(ctx context.Context, resource client.Object
 
 // OnError permit to set status condition on the right state and record error
 func (r *StatefulsetReconciler) OnError(ctx context.Context, resource client.Object, data map[string]any, currentErr error) (res ctrl.Result, err error) {
-	o := resource.(*logstashcrd.Logstash)
-	return r.StdOnError(ctx, resource, data, currentErr, &o.Status.Conditions, StatefulsetCondition)
+	return r.StdOnError(ctx, resource, data, currentErr, StatefulsetCondition, StatefulsetPhase)
 }
 
 // OnSuccess permit to set status condition on the right state is everithink is good
 func (r *StatefulsetReconciler) OnSuccess(ctx context.Context, resource client.Object, data map[string]any, diff controller.K8sDiff) (res ctrl.Result, err error) {
-	o := resource.(*logstashcrd.Logstash)
-
-	if diff.NeedCreate || diff.NeedUpdate || diff.NeedDelete {
-		r.Recorder.Eventf(resource, corev1.EventTypeNormal, "Completed", "Statefulset successfully updated")
-	}
-
-	// Update condition status if needed
-	if !condition.IsStatusConditionPresentAndEqual(o.Status.Conditions, StatefulsetCondition, metav1.ConditionTrue) {
-		condition.SetStatusCondition(&o.Status.Conditions, metav1.Condition{
-			Type:    StatefulsetCondition,
-			Reason:  "Success",
-			Status:  metav1.ConditionTrue,
-			Message: "Ready",
-		})
-	}
-
-	return res, nil
+	return r.StdOnSuccess(ctx, resource, data, diff, StatefulsetCondition, StatefulsetPhase)
 }

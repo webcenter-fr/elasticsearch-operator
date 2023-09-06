@@ -18,8 +18,6 @@ import (
 	"github.com/webcenter-fr/elasticsearch-operator/pkg/pki"
 	corev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
-	condition "k8s.io/apimachinery/pkg/api/meta"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/tools/record"
@@ -28,9 +26,9 @@ import (
 )
 
 const (
-	TlsCondition            = "TlsReady"
-	TlsPhase                = "Tls"
-	DefaultRenewCertificate = -time.Hour * 24 * 30 // 30 days before expired
+	TlsCondition            common.ConditionName = "TlsReady"
+	TlsPhase                common.PhaseName     = "Tls"
+	DefaultRenewCertificate                      = -time.Hour * 24 * 30 // 30 days before expired
 )
 
 type TlsReconciler struct {
@@ -53,20 +51,7 @@ func NewTlsReconciler(client client.Client, scheme *runtime.Scheme, recorder rec
 
 // Configure permit to init condition
 func (r *TlsReconciler) Configure(ctx context.Context, req ctrl.Request, resource client.Object) (res ctrl.Result, err error) {
-	o := resource.(*kibanacrd.Kibana)
-
-	// Init condition status if not exist
-	if condition.FindStatusCondition(o.Status.Conditions, TlsCondition) == nil {
-		condition.SetStatusCondition(&o.Status.Conditions, metav1.Condition{
-			Type:   TlsCondition,
-			Status: metav1.ConditionFalse,
-			Reason: "Initialize",
-		})
-	}
-
-	o.Status.Phase = TlsPhase
-
-	return res, nil
+	return r.StdConfigure(ctx, req, resource, TlsCondition, TlsPhase)
 }
 
 // Read existing transport TLS secret
@@ -372,27 +357,10 @@ func (r *TlsReconciler) Diff(ctx context.Context, resource client.Object, data m
 
 // OnError permit to set status condition on the right state and record error
 func (r *TlsReconciler) OnError(ctx context.Context, resource client.Object, data map[string]any, currentErr error) (res ctrl.Result, err error) {
-	o := resource.(*kibanacrd.Kibana)
-	return r.StdOnError(ctx, resource, data, currentErr, &o.Status.Conditions, TlsCondition)
+	return r.StdOnError(ctx, resource, data, currentErr, TlsCondition, TlsPhase)
 }
 
 // OnSuccess permit to set status condition on the right state is everithink is good
 func (r *TlsReconciler) OnSuccess(ctx context.Context, resource client.Object, data map[string]any, diff controller.K8sDiff) (res ctrl.Result, err error) {
-	o := resource.(*kibanacrd.Kibana)
-
-	if diff.NeedCreate || diff.NeedUpdate || diff.NeedDelete {
-		r.Recorder.Eventf(resource, corev1.EventTypeNormal, "Completed", "TLS certificates successfully updated")
-	}
-
-	// Update condition status if needed
-	if !condition.IsStatusConditionPresentAndEqual(o.Status.Conditions, TlsCondition, metav1.ConditionTrue) {
-		condition.SetStatusCondition(&o.Status.Conditions, metav1.Condition{
-			Type:    TlsCondition,
-			Reason:  "Success",
-			Status:  metav1.ConditionTrue,
-			Message: "Ready",
-		})
-	}
-
-	return res, nil
+	return r.StdOnSuccess(ctx, resource, data, diff, TlsCondition, TlsPhase)
 }

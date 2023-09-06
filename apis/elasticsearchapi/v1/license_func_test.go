@@ -6,7 +6,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/utils/pointer"
+	"k8s.io/utils/ptr"
 )
 
 func TestIsBasicLicense(t *testing.T) {
@@ -30,7 +30,7 @@ func TestIsBasicLicense(t *testing.T) {
 			Name:      "test",
 		},
 		Spec: LicenseSpec{
-			Basic: pointer.Bool(true),
+			Basic: ptr.To[bool](true),
 		},
 	}
 
@@ -43,7 +43,7 @@ func TestIsBasicLicense(t *testing.T) {
 			Name:      "test",
 		},
 		Spec: LicenseSpec{
-			Basic: pointer.Bool(true),
+			Basic: ptr.To[bool](true),
 			SecretRef: &v1.LocalObjectReference{
 				Name: "test",
 			},
@@ -59,7 +59,7 @@ func TestIsBasicLicense(t *testing.T) {
 			Name:      "test",
 		},
 		Spec: LicenseSpec{
-			Basic: pointer.Bool(false),
+			Basic: ptr.To[bool](false),
 		},
 	}
 	assert.False(t, o.IsBasicLicense())

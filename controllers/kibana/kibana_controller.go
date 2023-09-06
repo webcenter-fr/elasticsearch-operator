@@ -37,7 +37,7 @@ import (
 	"k8s.io/apimachinery/pkg/fields"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
-	"k8s.io/utils/pointer"
+	"k8s.io/utils/ptr"
 	"k8s.io/utils/strings"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -46,10 +46,10 @@ import (
 )
 
 const (
-	KibanaFinalizer     = "kibana.k8s.webcenter.fr/finalizer"
-	KibanaCondition     = "KibanaReady"
-	KibanaPhaseRunning  = "running"
-	KibanaPhaseStarting = "starting"
+	KibanaFinalizer                          = "kibana.k8s.webcenter.fr/finalizer"
+	KibanaCondition     common.ConditionName = "KibanaReady"
+	KibanaPhaseRunning  common.PhaseName     = "running"
+	KibanaPhaseStarting common.PhaseName     = "starting"
 )
 
 // KibanaReconciler reconciles a Kibana object
@@ -292,12 +292,12 @@ func watchSecret(c client.Client) handler.MapFunc {
 func (h *KibanaReconciler) Configure(ctx context.Context, req ctrl.Request, resource client.Object) (res ctrl.Result, err error) {
 	o := resource.(*kibanacrd.Kibana)
 
-	o.Status.IsError = pointer.Bool(false)
+	o.Status.IsError = ptr.To[bool](false)
 
 	// Init condition status if not exist
-	if condition.FindStatusCondition(o.Status.Conditions, KibanaCondition) == nil {
+	if condition.FindStatusCondition(o.Status.Conditions, KibanaCondition.String()) == nil {
 		condition.SetStatusCondition(&o.Status.Conditions, metav1.Condition{
-			Type:   KibanaCondition,
+			Type:   KibanaCondition.String(),
 			Status: metav1.ConditionFalse,
 			Reason: "Initialize",
 		})
@@ -324,10 +324,10 @@ func (h *KibanaReconciler) Delete(ctx context.Context, r client.Object, data map
 func (h *KibanaReconciler) OnError(ctx context.Context, r client.Object, data map[string]any, currentErr error) (res ctrl.Result, err error) {
 	o := r.(*kibanacrd.Kibana)
 
-	o.Status.IsError = pointer.Bool(true)
+	o.Status.IsError = ptr.To[bool](true)
 
 	condition.SetStatusCondition(&o.Status.Conditions, metav1.Condition{
-		Type:    KibanaCondition,
+		Type:    KibanaCondition.String(),
 		Status:  metav1.ConditionFalse,
 		Reason:  "Failed",
 		Message: strings.ShortenString(err.Error(), common.ShortenError),
@@ -363,16 +363,16 @@ func (h *KibanaReconciler) OnSuccess(ctx context.Context, r client.Object, data 
 	}
 
 	if isReady {
-		if !condition.IsStatusConditionPresentAndEqual(o.Status.Conditions, KibanaCondition, metav1.ConditionTrue) {
+		if !condition.IsStatusConditionPresentAndEqual(o.Status.Conditions, KibanaCondition.String(), metav1.ConditionTrue) {
 			condition.SetStatusCondition(&o.Status.Conditions, metav1.Condition{
-				Type:   KibanaCondition,
+				Type:   KibanaCondition.String(),
 				Status: metav1.ConditionTrue,
 				Reason: "Ready",
 			})
 		}
 
-		if o.Status.Phase != KibanaPhaseRunning {
-			o.Status.Phase = KibanaPhaseRunning
+		if o.Status.Phase != KibanaPhaseRunning.String() {
+			o.Status.Phase = KibanaPhaseRunning.String()
 		}
 
 		if condition.IsStatusConditionPresentAndEqual(o.Status.Conditions, common.ReadyCondition, metav1.ConditionFalse) {
@@ -384,16 +384,16 @@ func (h *KibanaReconciler) OnSuccess(ctx context.Context, r client.Object, data 
 		}
 
 	} else {
-		if condition.IsStatusConditionPresentAndEqual(o.Status.Conditions, KibanaCondition, metav1.ConditionTrue) || (condition.FindStatusCondition(o.Status.Conditions, KibanaCondition).Reason != "NotReady") {
+		if condition.IsStatusConditionPresentAndEqual(o.Status.Conditions, KibanaCondition.String(), metav1.ConditionTrue) || (condition.FindStatusCondition(o.Status.Conditions, KibanaCondition.String()).Reason != "NotReady") {
 			condition.SetStatusCondition(&o.Status.Conditions, metav1.Condition{
-				Type:   KibanaCondition,
+				Type:   KibanaCondition.String(),
 				Status: metav1.ConditionFalse,
 				Reason: "NotReady",
 			})
 		}
 
-		if o.Status.Phase != KibanaPhaseStarting {
-			o.Status.Phase = KibanaPhaseStarting
+		if o.Status.Phase != KibanaPhaseStarting.String() {
+			o.Status.Phase = KibanaPhaseStarting.String()
 		}
 
 		if condition.IsStatusConditionPresentAndEqual(o.Status.Conditions, common.ReadyCondition, metav1.ConditionTrue) || (condition.FindStatusCondition(o.Status.Conditions, common.ReadyCondition).Reason != "NotReady") {

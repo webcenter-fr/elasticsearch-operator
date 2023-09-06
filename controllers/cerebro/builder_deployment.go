@@ -13,7 +13,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
 	"k8s.io/apimachinery/pkg/util/json"
-	"k8s.io/utils/pointer"
+	"k8s.io/utils/ptr"
 )
 
 // BuildDeployment permit to generate deployment
@@ -140,8 +140,8 @@ func BuildDeployment(cerebro *cerebrocrd.Cerebro, secretsChecksum []corev1.Secre
 				"ALL",
 			},
 		},
-		RunAsUser:    pointer.Int64(1000),
-		RunAsNonRoot: pointer.Bool(true),
+		RunAsUser:    ptr.To[int64](1000),
+		RunAsNonRoot: ptr.To[bool](true),
 	}, k8sbuilder.OverwriteIfDefaultValue)
 
 	// Compute volume mount
@@ -271,7 +271,7 @@ func BuildDeployment(cerebro *cerebrocrd.Cerebro, secretsChecksum []corev1.Secre
 
 	// Compute Security context
 	ptb.WithSecurityContext(&corev1.PodSecurityContext{
-		FSGroup: pointer.Int64(1000),
+		FSGroup: ptr.To[int64](1000),
 	}, k8sbuilder.Merge)
 
 	// Compute pod template name
@@ -289,7 +289,7 @@ func BuildDeployment(cerebro *cerebrocrd.Cerebro, secretsChecksum []corev1.Secre
 			Annotations: getAnnotations(cerebro, cerebro.Spec.Deployment.Annotations),
 		},
 		Spec: appv1.DeploymentSpec{
-			Replicas: pointer.Int32(cerebro.Spec.Deployment.Replicas),
+			Replicas: ptr.To[int32](cerebro.Spec.Deployment.Replicas),
 			Selector: &metav1.LabelSelector{
 				MatchLabels: map[string]string{
 					"cluster":                       cerebro.Name,

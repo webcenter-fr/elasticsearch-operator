@@ -10,8 +10,6 @@ import (
 	"github.com/webcenter-fr/elasticsearch-operator/controllers/common"
 	corev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
-	condition "k8s.io/apimachinery/pkg/api/meta"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/tools/record"
@@ -20,8 +18,8 @@ import (
 )
 
 const (
-	ServiceCondition = "ServiceReady"
-	ServicePhase     = "Service"
+	ServiceCondition common.ConditionName = "ServiceReady"
+	ServicePhase     common.PhaseName     = "Service"
 )
 
 type ServiceReconciler struct {
@@ -44,20 +42,7 @@ func NewServiceReconciler(client client.Client, scheme *runtime.Scheme, recorder
 
 // Configure permit to init condition
 func (r *ServiceReconciler) Configure(ctx context.Context, req ctrl.Request, resource client.Object) (res ctrl.Result, err error) {
-	o := resource.(*kibanacrd.Kibana)
-
-	// Init condition status if not exist
-	if condition.FindStatusCondition(o.Status.Conditions, ServiceCondition) == nil {
-		condition.SetStatusCondition(&o.Status.Conditions, metav1.Condition{
-			Type:   ServiceCondition,
-			Status: metav1.ConditionFalse,
-			Reason: "Initialize",
-		})
-	}
-
-	o.Status.Phase = ServicePhase
-
-	return res, nil
+	return r.StdConfigure(ctx, req, resource, ServiceCondition, ServicePhase)
 }
 
 // Read existing services
@@ -92,27 +77,10 @@ func (r *ServiceReconciler) Diff(ctx context.Context, resource client.Object, da
 
 // OnError permit to set status condition on the right state and record error
 func (r *ServiceReconciler) OnError(ctx context.Context, resource client.Object, data map[string]any, currentErr error) (res ctrl.Result, err error) {
-	o := resource.(*kibanacrd.Kibana)
-	return r.StdOnError(ctx, resource, data, currentErr, &o.Status.Conditions, ServiceCondition)
+	return r.StdOnError(ctx, resource, data, currentErr, ServiceCondition, ServicePhase)
 }
 
 // OnSuccess permit to set status condition on the right state is everithink is good
 func (r *ServiceReconciler) OnSuccess(ctx context.Context, resource client.Object, data map[string]any, diff controller.K8sDiff) (res ctrl.Result, err error) {
-	o := resource.(*kibanacrd.Kibana)
-
-	if diff.NeedCreate || diff.NeedUpdate || diff.NeedDelete {
-		r.Recorder.Eventf(resource, corev1.EventTypeNormal, "Completed", "Service successfully updated")
-	}
-
-	// Update condition status if needed
-	if !condition.IsStatusConditionPresentAndEqual(o.Status.Conditions, ServiceCondition, metav1.ConditionTrue) {
-		condition.SetStatusCondition(&o.Status.Conditions, metav1.Condition{
-			Type:    ServiceCondition,
-			Reason:  "Success",
-			Status:  metav1.ConditionTrue,
-			Message: "Ready",
-		})
-	}
-
-	return res, nil
+	return r.StdOnSuccess(ctx, resource, data, diff, ServiceCondition, ServicePhase)
 }

@@ -9,10 +9,7 @@ import (
 	beatcrd "github.com/webcenter-fr/elasticsearch-operator/apis/beat/v1"
 	elasticsearchcrd "github.com/webcenter-fr/elasticsearch-operator/apis/elasticsearch/v1"
 	"github.com/webcenter-fr/elasticsearch-operator/controllers/common"
-	corev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
-	condition "k8s.io/apimachinery/pkg/api/meta"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/tools/record"
@@ -21,8 +18,8 @@ import (
 )
 
 const (
-	MetricbeatCondition = "MetricbeatReady"
-	MetricbeatPhase     = "Metricbeat"
+	MetricbeatCondition common.ConditionName = "MetricbeatReady"
+	MetricbeatPhase     common.PhaseName     = "Metricbeat"
 )
 
 type MetricbeatReconciler struct {
@@ -45,20 +42,7 @@ func NewMetricbeatReconciler(client client.Client, scheme *runtime.Scheme, recor
 
 // Configure permit to init condition
 func (r *MetricbeatReconciler) Configure(ctx context.Context, req ctrl.Request, resource client.Object) (res ctrl.Result, err error) {
-	o := resource.(*elasticsearchcrd.Elasticsearch)
-
-	// Init condition status if not exist
-	if condition.FindStatusCondition(o.Status.Conditions, MetricbeatCondition) == nil {
-		condition.SetStatusCondition(&o.Status.Conditions, metav1.Condition{
-			Type:   MetricbeatCondition,
-			Status: metav1.ConditionFalse,
-			Reason: "Initialize",
-		})
-	}
-
-	o.Status.Phase = MetricbeatPhase
-
-	return res, nil
+	return r.StdConfigure(ctx, req, resource, MetricbeatCondition, MetricbeatPhase)
 }
 
 // Read existing Metricbeat
@@ -92,27 +76,10 @@ func (r *MetricbeatReconciler) Diff(ctx context.Context, resource client.Object,
 
 // OnError permit to set status condition on the right state and record error
 func (r *MetricbeatReconciler) OnError(ctx context.Context, resource client.Object, data map[string]any, currentErr error) (res ctrl.Result, err error) {
-	o := resource.(*elasticsearchcrd.Elasticsearch)
-	return r.StdOnError(ctx, resource, data, currentErr, &o.Status.Conditions, MetricbeatCondition)
+	return r.StdOnError(ctx, resource, data, currentErr, MetricbeatCondition, MetricbeatPhase)
 }
 
 // OnSuccess permit to set status condition on the right state is everithink is good
 func (r *MetricbeatReconciler) OnSuccess(ctx context.Context, resource client.Object, data map[string]any, diff controller.K8sDiff) (res ctrl.Result, err error) {
-	o := resource.(*elasticsearchcrd.Elasticsearch)
-
-	if diff.NeedCreate || diff.NeedUpdate || diff.NeedDelete {
-		r.Recorder.Eventf(resource, corev1.EventTypeNormal, "Completed", "Metricbeat successfully updated")
-	}
-
-	// Update condition status if needed
-	if !condition.IsStatusConditionPresentAndEqual(o.Status.Conditions, MetricbeatCondition, metav1.ConditionTrue) {
-		condition.SetStatusCondition(&o.Status.Conditions, metav1.Condition{
-			Type:    MetricbeatCondition,
-			Reason:  "Success",
-			Status:  metav1.ConditionTrue,
-			Message: "Ready",
-		})
-	}
-
-	return res, nil
+	return r.StdOnSuccess(ctx, resource, data, diff, MetricbeatCondition, MetricbeatPhase)
 }

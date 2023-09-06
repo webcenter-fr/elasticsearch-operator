@@ -5,7 +5,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/utils/pointer"
+	"k8s.io/utils/ptr"
 )
 
 func TestIsProtected(t *testing.T) {
@@ -32,7 +32,7 @@ func TestIsProtected(t *testing.T) {
 		},
 		Spec: UserSpec{
 			Username:    "test",
-			IsProtected: pointer.Bool(false),
+			IsProtected: ptr.To[bool](false),
 		},
 	}
 
@@ -46,7 +46,7 @@ func TestIsProtected(t *testing.T) {
 		},
 		Spec: UserSpec{
 			Username:    "test",
-			IsProtected: pointer.Bool(true),
+			IsProtected: ptr.To[bool](true),
 		},
 	}
 
@@ -65,7 +65,7 @@ func TestGetUsername(t *testing.T) {
 		},
 		Spec: UserSpec{
 			Username:    "test2",
-			IsProtected: pointer.Bool(false),
+			IsProtected: ptr.To[bool](false),
 		},
 	}
 
@@ -78,7 +78,7 @@ func TestGetUsername(t *testing.T) {
 			Name:      "test",
 		},
 		Spec: UserSpec{
-			IsProtected: pointer.Bool(false),
+			IsProtected: ptr.To[bool](false),
 		},
 	}
 

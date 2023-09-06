@@ -32,28 +32,23 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-type tlsPhase string
-
 const (
-	TlsConditionGeneratePki          = "TlsGeneratePki"
-	TlsConditionPropagatePki         = "TlsPropagatePki"
-	TlsConditionGenerateCertificate  = "TlsGenerateCertificates"
-	TlsConditionPropagateCertificate = "TlsPropagateCertificates"
-	TlsCondition                     = "TlsReady"
-	TlsConditionBlackout             = "TlsBlackout"
-	TlsPhase                         = "Tls"
-	DefaultRenewCertificate          = -time.Hour * 24 * 30 // 30 days before expired
-)
-
-var (
-	phaseTlsCreate                tlsPhase = "tlsCreate"
-	phaseTlsUpdatePki             tlsPhase = "tlsUpdatePki"
-	phaseTlsPropagatePki          tlsPhase = "tlsPropagatePki"
-	phaseTlsUpdateCertificates    tlsPhase = "tlsUpdateCertificates"
-	phaseTlsPropagateCertificates tlsPhase = "tlsPropagateCertificates"
-	phaseTlsCleanTransportCA      tlsPhase = "tlsCleanCA"
-	phaseTlsNormal                tlsPhase = "tlsNormal"
-	phaseTlsReconcile             tlsPhase = "tlsReconcile"
+	TlsConditionGeneratePki          common.ConditionName = "TlsGeneratePki"
+	TlsConditionPropagatePki         common.ConditionName = "TlsPropagatePki"
+	TlsConditionGenerateCertificate  common.ConditionName = "TlsGenerateCertificates"
+	TlsConditionPropagateCertificate common.ConditionName = "TlsPropagateCertificates"
+	TlsCondition                     common.ConditionName = "TlsReady"
+	TlsConditionBlackout             common.ConditionName = "TlsBlackout"
+	TlsPhase                         common.PhaseName     = "Tls"
+	TlsPhaseCreate                   common.PhaseName     = "tlsCreate"
+	TlsPhaseUpdatePki                common.PhaseName     = "tlsUpdatePki"
+	TlsPhasePropagatePki             common.PhaseName     = "tlsPropagatePki"
+	TlsPhaseUpdateCertificates       common.PhaseName     = "tlsUpdateCertificates"
+	TlsPhasePropagateCertificates    common.PhaseName     = "tlsPropagateCertificates"
+	TlsPhaseCleanTransportCA         common.PhaseName     = "tlsCleanCA"
+	TlsPhaseNormal                   common.PhaseName     = "tlsNormal"
+	TlsPhaseReconcile                common.PhaseName     = "tlsReconcile"
+	DefaultRenewCertificate                               = -time.Hour * 24 * 30 // 30 days before expired
 )
 
 type TlsReconciler struct {
@@ -78,57 +73,48 @@ func NewTlsReconciler(client client.Client, scheme *runtime.Scheme, recorder rec
 func (r *TlsReconciler) Configure(ctx context.Context, req ctrl.Request, resource client.Object) (res ctrl.Result, err error) {
 	o := resource.(*elasticsearchcrd.Elasticsearch)
 
-	// Init condition status if not exist
-	if condition.FindStatusCondition(o.Status.Conditions, TlsCondition) == nil {
+	if condition.FindStatusCondition(o.Status.Conditions, TlsConditionGeneratePki.String()) == nil {
 		condition.SetStatusCondition(&o.Status.Conditions, metav1.Condition{
-			Type:   TlsCondition,
-			Status: metav1.ConditionFalse,
-			Reason: "Initialize",
-		})
-	}
-	if condition.FindStatusCondition(o.Status.Conditions, TlsConditionGeneratePki) == nil {
-		condition.SetStatusCondition(&o.Status.Conditions, metav1.Condition{
-			Type:   TlsConditionGeneratePki,
+			Type:   TlsConditionGeneratePki.String(),
 			Status: metav1.ConditionFalse,
 			Reason: "Initialize",
 		})
 	}
 
-	if condition.FindStatusCondition(o.Status.Conditions, TlsConditionPropagatePki) == nil {
+	if condition.FindStatusCondition(o.Status.Conditions, TlsConditionPropagatePki.String()) == nil {
 		condition.SetStatusCondition(&o.Status.Conditions, metav1.Condition{
-			Type:   TlsConditionPropagatePki,
+			Type:   TlsConditionPropagatePki.String(),
 			Status: metav1.ConditionFalse,
 			Reason: "Initialize",
 		})
 	}
 
-	if condition.FindStatusCondition(o.Status.Conditions, TlsConditionGenerateCertificate) == nil {
+	if condition.FindStatusCondition(o.Status.Conditions, TlsConditionGenerateCertificate.String()) == nil {
 		condition.SetStatusCondition(&o.Status.Conditions, metav1.Condition{
-			Type:   TlsConditionGenerateCertificate,
+			Type:   TlsConditionGenerateCertificate.String(),
 			Status: metav1.ConditionFalse,
 			Reason: "Initialize",
 		})
 	}
 
-	if condition.FindStatusCondition(o.Status.Conditions, TlsConditionPropagateCertificate) == nil {
+	if condition.FindStatusCondition(o.Status.Conditions, TlsConditionPropagateCertificate.String()) == nil {
 		condition.SetStatusCondition(&o.Status.Conditions, metav1.Condition{
-			Type:   TlsConditionPropagateCertificate,
+			Type:   TlsConditionPropagateCertificate.String(),
 			Status: metav1.ConditionFalse,
 			Reason: "Initialize",
 		})
 	}
 
-	if condition.FindStatusCondition(o.Status.Conditions, TlsConditionBlackout) == nil {
+	if condition.FindStatusCondition(o.Status.Conditions, TlsConditionBlackout.String()) == nil {
 		condition.SetStatusCondition(&o.Status.Conditions, metav1.Condition{
-			Type:   TlsConditionBlackout,
+			Type:   TlsConditionBlackout.String(),
 			Status: metav1.ConditionFalse,
 			Reason: "Initialize",
 		})
 	}
 
-	o.Status.Phase = TlsPhase
+	return r.StdConfigure(ctx, req, o, TlsCondition, TlsPhase)
 
-	return res, nil
 }
 
 // Read existing transport TLS secret
@@ -333,7 +319,7 @@ func (r *TlsReconciler) Diff(ctx context.Context, resource client.Object, data m
 
 	// Generate all certificates when bootstrap cluster or when we are on blackout
 	if isClusterBootstrap || isBlackout {
-		r.Log.Debugf("Detect phase: %s", phaseTlsCreate)
+		r.Log.Debugf("Detect phase: %s", TlsPhaseCreate)
 
 		diff.Diff.WriteString("Generate new certificates\n")
 
@@ -354,7 +340,7 @@ func (r *TlsReconciler) Diff(ctx context.Context, resource client.Object, data m
 		data["listToCreate"] = secretToCreate
 		data["listToUpdate"] = secretToUpdate
 		data["listToDelete"] = secretToDelete
-		data["phase"] = phaseTlsCreate
+		data["phase"] = TlsPhaseCreate
 		data["isTlsBlackout"] = isBlackout
 
 		return diff, res, nil
@@ -399,24 +385,24 @@ func (r *TlsReconciler) Diff(ctx context.Context, resource client.Object, data m
 		}
 
 		if isBad {
-			data["phase"] = phaseTlsReconcile
+			data["phase"] = TlsPhaseReconcile
 			return diff, res, nil
 		}
 	}
 
 	// phaseGeneratePki -> phasePropagatePKI
 	// Wait new CA propagated on all Elasticsearch instance
-	if condition.IsStatusConditionPresentAndEqual(o.Status.Conditions, TlsConditionGeneratePki, metav1.ConditionTrue) && condition.IsStatusConditionPresentAndEqual(o.Status.Conditions, TlsConditionPropagatePki, metav1.ConditionFalse) {
-		r.Log.Debugf("Detect phase: %s", phaseTlsPropagatePki)
-		data["phase"] = phaseTlsPropagatePki
+	if condition.IsStatusConditionPresentAndEqual(o.Status.Conditions, TlsConditionGeneratePki.String(), metav1.ConditionTrue) && condition.IsStatusConditionPresentAndEqual(o.Status.Conditions, TlsConditionPropagatePki.String(), metav1.ConditionFalse) {
+		r.Log.Debugf("Detect phase: %s", TlsPhasePropagatePki)
+		data["phase"] = TlsPhasePropagatePki
 		return diff, res, nil
 	}
 
 	// phasePropagatePki -> phaseUpdateCertificates
 	// Generate all certificates
-	if condition.IsStatusConditionPresentAndEqual(o.Status.Conditions, TlsConditionPropagatePki, metav1.ConditionTrue) && condition.IsStatusConditionPresentAndEqual(o.Status.Conditions, TlsConditionGenerateCertificate, metav1.ConditionFalse) {
+	if condition.IsStatusConditionPresentAndEqual(o.Status.Conditions, TlsConditionPropagatePki.String(), metav1.ConditionTrue) && condition.IsStatusConditionPresentAndEqual(o.Status.Conditions, TlsConditionGenerateCertificate.String(), metav1.ConditionFalse) {
 
-		r.Log.Debugf("Detect phase: %s", phaseTlsUpdateCertificates)
+		r.Log.Debugf("Detect phase: %s", TlsPhaseUpdateCertificates)
 
 		// Generate nodes certificates
 		tmpTransport, isUpdated, err := r.generateTransportSecretCertificates(o, sTransport, transportRootCA)
@@ -469,24 +455,24 @@ func (r *TlsReconciler) Diff(ctx context.Context, resource client.Object, data m
 		data["listToCreate"] = secretToCreate
 		data["listToUpdate"] = secretToUpdate
 		data["listToDelete"] = secretToDelete
-		data["phase"] = phaseTlsUpdateCertificates
+		data["phase"] = TlsPhaseUpdateCertificates
 
 		return diff, res, nil
 	}
 
 	// phaseGenerateCertificate -> phasePropagateCertificate
 	// Wait new certificates propagated on all Elasticsearch instance
-	if condition.IsStatusConditionPresentAndEqual(o.Status.Conditions, TlsConditionGenerateCertificate, metav1.ConditionTrue) && condition.IsStatusConditionPresentAndEqual(o.Status.Conditions, TlsConditionPropagateCertificate, metav1.ConditionFalse) {
-		r.Log.Debugf("Detect phase: %s", phaseTlsPropagateCertificates)
+	if condition.IsStatusConditionPresentAndEqual(o.Status.Conditions, TlsConditionGenerateCertificate.String(), metav1.ConditionTrue) && condition.IsStatusConditionPresentAndEqual(o.Status.Conditions, TlsConditionPropagateCertificate.String(), metav1.ConditionFalse) {
+		r.Log.Debugf("Detect phase: %s", TlsPhasePropagateCertificates)
 
-		data["phase"] = phaseTlsPropagateCertificates
+		data["phase"] = TlsPhasePropagateCertificates
 		return diff, res, nil
 	}
 
 	// phaseCleanCA -> phaseNormal
 	// Remove old CA certificate
-	if condition.IsStatusConditionPresentAndEqual(o.Status.Conditions, TlsConditionPropagateCertificate, metav1.ConditionTrue) && condition.IsStatusConditionPresentAndEqual(o.Status.Conditions, TlsCondition, metav1.ConditionFalse) {
-		r.Log.Debugf("Detect phase: %s", phaseTlsCleanTransportCA)
+	if condition.IsStatusConditionPresentAndEqual(o.Status.Conditions, TlsConditionPropagateCertificate.String(), metav1.ConditionTrue) && condition.IsStatusConditionPresentAndEqual(o.Status.Conditions, TlsCondition.String(), metav1.ConditionFalse) {
+		r.Log.Debugf("Detect phase: %s", TlsPhaseCleanTransportCA)
 
 		if sTransport != nil && transportRootCA != nil {
 			sTransport.Data["ca.crt"] = []byte(transportRootCA.GetCertificate())
@@ -505,7 +491,7 @@ func (r *TlsReconciler) Diff(ctx context.Context, resource client.Object, data m
 		data["listToCreate"] = secretToCreate
 		data["listToUpdate"] = secretToUpdate
 		data["listToDelete"] = secretToDelete
-		data["phase"] = phaseTlsCleanTransportCA
+		data["phase"] = TlsPhaseCleanTransportCA
 
 		return diff, res, nil
 	}
@@ -547,7 +533,7 @@ func (r *TlsReconciler) Diff(ctx context.Context, resource client.Object, data m
 	}
 
 	if isRenew {
-		r.Log.Debugf("Detect phase: %s", phaseTlsUpdatePki)
+		r.Log.Debugf("Detect phase: %s", TlsPhaseUpdatePki)
 		// Renew only pki and wait all nodes get the new CA before to upgrade certificates
 
 		// Generate transport PKI
@@ -600,7 +586,7 @@ func (r *TlsReconciler) Diff(ctx context.Context, resource client.Object, data m
 		data["listToCreate"] = secretToCreate
 		data["listToUpdate"] = secretToUpdate
 		data["listToDelete"] = secretToDelete
-		data["phase"] = phaseTlsUpdatePki
+		data["phase"] = TlsPhaseUpdatePki
 
 		return diff, res, nil
 	}
@@ -681,15 +667,14 @@ func (r *TlsReconciler) Diff(ctx context.Context, resource client.Object, data m
 	data["listToCreate"] = secretToCreate
 	data["listToUpdate"] = secretToUpdate
 	data["listToDelete"] = secretToDelete
-	data["phase"] = phaseTlsNormal
+	data["phase"] = TlsPhaseNormal
 
 	return diff, res, nil
 }
 
 // OnError permit to set status condition on the right state and record error
 func (r *TlsReconciler) OnError(ctx context.Context, resource client.Object, data map[string]any, currentErr error) (res ctrl.Result, err error) {
-	o := resource.(*elasticsearchcrd.Elasticsearch)
-	return r.StdOnError(ctx, resource, data, currentErr, &o.Status.Conditions, TlsCondition)
+	return r.StdOnError(ctx, resource, data, currentErr, TlsCondition, TlsPhase)
 }
 
 // OnSuccess permit to set status condition on the right state is everithink is good
@@ -703,7 +688,7 @@ func (r *TlsReconciler) OnSuccess(ctx context.Context, resource client.Object, d
 	if err != nil {
 		return res, err
 	}
-	phase := d.(tlsPhase)
+	phase := d.(common.PhaseName)
 
 	d, err = helper.Get(data, "isTlsBlackout")
 	if err != nil {
@@ -714,9 +699,9 @@ func (r *TlsReconciler) OnSuccess(ctx context.Context, resource client.Object, d
 	r.Log.Debugf("TLS phase : %s, isBlackout: %t", phase, isTlsBlackout)
 
 	if isTlsBlackout {
-		if condition.IsStatusConditionPresentAndEqual(o.Status.Conditions, TlsConditionBlackout, metav1.ConditionFalse) {
+		if condition.IsStatusConditionPresentAndEqual(o.Status.Conditions, TlsConditionBlackout.String(), metav1.ConditionFalse) {
 			condition.SetStatusCondition(&o.Status.Conditions, metav1.Condition{
-				Type:    TlsConditionBlackout,
+				Type:    TlsConditionBlackout.String(),
 				Reason:  "Blackout",
 				Status:  metav1.ConditionTrue,
 				Message: "Force renew all transport certificates",
@@ -724,9 +709,9 @@ func (r *TlsReconciler) OnSuccess(ctx context.Context, resource client.Object, d
 		}
 
 	} else {
-		if condition.IsStatusConditionPresentAndEqual(o.Status.Conditions, TlsConditionBlackout, metav1.ConditionTrue) {
+		if condition.IsStatusConditionPresentAndEqual(o.Status.Conditions, TlsConditionBlackout.String(), metav1.ConditionTrue) {
 			condition.SetStatusCondition(&o.Status.Conditions, metav1.Condition{
-				Type:    TlsConditionBlackout,
+				Type:    TlsConditionBlackout.String(),
 				Reason:  "NoBlackout",
 				Status:  metav1.ConditionFalse,
 				Message: "Note in blackout",
@@ -735,47 +720,47 @@ func (r *TlsReconciler) OnSuccess(ctx context.Context, resource client.Object, d
 	}
 
 	switch phase {
-	case phaseTlsCreate:
+	case TlsPhaseCreate:
 
 		r.Recorder.Eventf(resource, corev1.EventTypeNormal, "Completed", "Tls secrets successfully generated")
 
 		condition.SetStatusCondition(&o.Status.Conditions, metav1.Condition{
-			Type:    TlsCondition,
+			Type:    TlsCondition.String(),
 			Reason:  "Success",
 			Status:  metav1.ConditionTrue,
 			Message: "Ready",
 		})
 
 		condition.SetStatusCondition(&o.Status.Conditions, metav1.Condition{
-			Type:    TlsConditionGeneratePki,
+			Type:    TlsConditionGeneratePki.String(),
 			Reason:  "Success",
 			Status:  metav1.ConditionTrue,
 			Message: "PKI generated",
 		})
 
 		condition.SetStatusCondition(&o.Status.Conditions, metav1.Condition{
-			Type:    TlsConditionPropagatePki,
+			Type:    TlsConditionPropagatePki.String(),
 			Reason:  "Success",
 			Status:  metav1.ConditionTrue,
 			Message: "CA certificate propagated",
 		})
 
 		condition.SetStatusCondition(&o.Status.Conditions, metav1.Condition{
-			Type:    TlsConditionGenerateCertificate,
+			Type:    TlsConditionGenerateCertificate.String(),
 			Reason:  "Success",
 			Status:  metav1.ConditionTrue,
 			Message: "Certificates generated",
 		})
 
 		condition.SetStatusCondition(&o.Status.Conditions, metav1.Condition{
-			Type:    TlsConditionPropagateCertificate,
+			Type:    TlsConditionPropagateCertificate.String(),
 			Reason:  "Success",
 			Status:  metav1.ConditionTrue,
 			Message: "Certificates propagated",
 		})
 
 		r.Log.Info("Phase Create all certificates successfully finished")
-	case phaseTlsUpdatePki:
+	case TlsPhaseUpdatePki:
 		// Remove force renew certificate
 		if o.Annotations[fmt.Sprintf("%s/renew-certificates", elasticsearchcrd.ElasticsearchAnnotationKey)] == "true" {
 			delete(o.Annotations, fmt.Sprintf("%s/renew-certificates", elasticsearchcrd.ElasticsearchAnnotationKey))
@@ -786,35 +771,35 @@ func (r *TlsReconciler) OnSuccess(ctx context.Context, resource client.Object, d
 
 		// The statefullset controller will upgrade statefullset because of the checksum certificate change
 		condition.SetStatusCondition(&o.Status.Conditions, metav1.Condition{
-			Type:    TlsConditionGeneratePki,
+			Type:    TlsConditionGeneratePki.String(),
 			Reason:  "Success",
 			Status:  metav1.ConditionTrue,
 			Message: "PKI generated",
 		})
 
 		condition.SetStatusCondition(&o.Status.Conditions, metav1.Condition{
-			Type:    TlsConditionPropagatePki,
+			Type:    TlsConditionPropagatePki.String(),
 			Reason:  "Wait",
 			Status:  metav1.ConditionFalse,
 			Message: "Wait propagate new CA certificate",
 		})
 
 		condition.SetStatusCondition(&o.Status.Conditions, metav1.Condition{
-			Type:    TlsConditionGenerateCertificate,
+			Type:    TlsConditionGenerateCertificate.String(),
 			Reason:  "Wait",
 			Status:  metav1.ConditionFalse,
 			Message: "Wait generate new certificates",
 		})
 
 		condition.SetStatusCondition(&o.Status.Conditions, metav1.Condition{
-			Type:    TlsConditionPropagateCertificate,
+			Type:    TlsConditionPropagateCertificate.String(),
 			Reason:  "Wait",
 			Status:  metav1.ConditionFalse,
 			Message: "Wait propagate new certificates",
 		})
 
 		condition.SetStatusCondition(&o.Status.Conditions, metav1.Condition{
-			Type:    TlsCondition,
+			Type:    TlsCondition.String(),
 			Reason:  "Wait",
 			Status:  metav1.ConditionFalse,
 			Message: "Wait renew all certificates",
@@ -822,7 +807,7 @@ func (r *TlsReconciler) OnSuccess(ctx context.Context, resource client.Object, d
 
 		r.Log.Info("Phase to renew PKI successfully finished")
 
-	case phaseTlsPropagatePki:
+	case TlsPhasePropagatePki:
 
 		// Compute expected checksum
 		d, err = helper.Get(data, "transportTlsSecret")
@@ -851,17 +836,17 @@ func (r *TlsReconciler) OnSuccess(ctx context.Context, resource client.Object, d
 
 		// all CA upgrade are finished
 		condition.SetStatusCondition(&o.Status.Conditions, metav1.Condition{
-			Type:    TlsConditionPropagatePki,
+			Type:    TlsConditionPropagatePki.String(),
 			Reason:  "Success",
 			Status:  metav1.ConditionTrue,
 			Message: "PKI generated",
 		})
 
 		r.Log.Info("Phase propagate CA: all statefulset restarted successfully with new CA")
-	case phaseTlsUpdateCertificates:
+	case TlsPhaseUpdateCertificates:
 		// The statefullset controller will upgrade statefullset because of the checksum certificate change
 		condition.SetStatusCondition(&o.Status.Conditions, metav1.Condition{
-			Type:    TlsConditionGenerateCertificate,
+			Type:    TlsConditionGenerateCertificate.String(),
 			Reason:  "Success",
 			Status:  metav1.ConditionTrue,
 			Message: "Certificates generated",
@@ -869,7 +854,7 @@ func (r *TlsReconciler) OnSuccess(ctx context.Context, resource client.Object, d
 
 		r.Log.Info("Phase propagate certificates: all certificates have been successfully renewed")
 
-	case phaseTlsPropagateCertificates:
+	case TlsPhasePropagateCertificates:
 		// Compute expected checksum
 		d, err = helper.Get(data, "transportTlsSecret")
 		if err != nil {
@@ -897,7 +882,7 @@ func (r *TlsReconciler) OnSuccess(ctx context.Context, resource client.Object, d
 
 		// all certificate upgrade are finished
 		condition.SetStatusCondition(&o.Status.Conditions, metav1.Condition{
-			Type:    TlsConditionPropagateCertificate,
+			Type:    TlsConditionPropagateCertificate.String(),
 			Reason:  "Success",
 			Status:  metav1.ConditionTrue,
 			Message: "Certificates propagated",
@@ -905,9 +890,9 @@ func (r *TlsReconciler) OnSuccess(ctx context.Context, resource client.Object, d
 
 		r.Log.Info("Phase propagate certificates: all nodes have been successfully restarted with new certificates")
 
-	case phaseTlsCleanTransportCA:
+	case TlsPhaseCleanTransportCA:
 		condition.SetStatusCondition(&o.Status.Conditions, metav1.Condition{
-			Type:    TlsCondition,
+			Type:    TlsCondition.String(),
 			Reason:  "Success",
 			Status:  metav1.ConditionTrue,
 			Message: "Ready",
@@ -915,7 +900,7 @@ func (r *TlsReconciler) OnSuccess(ctx context.Context, resource client.Object, d
 
 		r.Log.Info("Clean old transport CA certificate successfully")
 
-	case phaseTlsReconcile:
+	case TlsPhaseReconcile:
 		return ctrl.Result{Requeue: true}, nil
 	}
 

@@ -5,7 +5,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/utils/pointer"
+	"k8s.io/utils/ptr"
 )
 
 func TestGetUserSpaceID(t *testing.T) {
@@ -45,13 +45,13 @@ func TestIsIncludeReference(t *testing.T) {
 
 	// When set to true
 	o = KibanaUserSpaceCopy{
-		IncludeReferences: pointer.Bool(true),
+		IncludeReferences: ptr.To[bool](true),
 	}
 	assert.True(t, o.IsIncludeReference())
 
 	// When set to false
 	o = KibanaUserSpaceCopy{
-		IncludeReferences: pointer.Bool(false),
+		IncludeReferences: ptr.To[bool](false),
 	}
 	assert.False(t, o.IsIncludeReference())
 }
@@ -65,13 +65,13 @@ func TestIsOverwrite(t *testing.T) {
 
 	// When set to true
 	o = KibanaUserSpaceCopy{
-		Overwrite: pointer.Bool(true),
+		Overwrite: ptr.To[bool](true),
 	}
 	assert.True(t, o.IsOverwrite())
 
 	// When set to false
 	o = KibanaUserSpaceCopy{
-		Overwrite: pointer.Bool(false),
+		Overwrite: ptr.To[bool](false),
 	}
 	assert.False(t, o.IsOverwrite())
 }
@@ -85,13 +85,13 @@ func TestIsCreateNewCopy(t *testing.T) {
 
 	// When set to true
 	o = KibanaUserSpaceCopy{
-		CreateNewCopies: pointer.Bool(true),
+		CreateNewCopies: ptr.To[bool](true),
 	}
 	assert.True(t, o.IsCreateNewCopy())
 
 	// When set to false
 	o = KibanaUserSpaceCopy{
-		CreateNewCopies: pointer.Bool(false),
+		CreateNewCopies: ptr.To[bool](false),
 	}
 	assert.False(t, o.IsCreateNewCopy())
 }
@@ -105,13 +105,13 @@ func TestIsForceUpdate(t *testing.T) {
 
 	// When set to true
 	o = KibanaUserSpaceCopy{
-		ForceUpdateWhenReconcile: pointer.Bool(true),
+		ForceUpdateWhenReconcile: ptr.To[bool](true),
 	}
 	assert.True(t, o.IsForceUpdate())
 
 	// When set to false
 	o = KibanaUserSpaceCopy{
-		ForceUpdateWhenReconcile: pointer.Bool(false),
+		ForceUpdateWhenReconcile: ptr.To[bool](false),
 	}
 	assert.False(t, o.IsForceUpdate())
 }

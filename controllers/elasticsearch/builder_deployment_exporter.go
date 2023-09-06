@@ -10,7 +10,7 @@ import (
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
-	"k8s.io/utils/pointer"
+	"k8s.io/utils/ptr"
 )
 
 // BuildDeploymentExporter permit to generate deployment for exporter
@@ -108,8 +108,8 @@ func BuildDeploymentExporter(es *elasticsearchcrd.Elasticsearch) (dpl *appv1.Dep
 				"ALL",
 			},
 		},
-		RunAsNonRoot: pointer.Bool(true),
-		RunAsUser:    pointer.Int64(1000),
+		RunAsNonRoot: ptr.To[bool](true),
+		RunAsUser:    ptr.To[int64](1000),
 	})
 
 	// Compute liveness
@@ -179,7 +179,7 @@ func BuildDeploymentExporter(es *elasticsearchcrd.Elasticsearch) (dpl *appv1.Dep
 			Annotations: getAnnotations(es),
 		},
 		Spec: appv1.DeploymentSpec{
-			Replicas: pointer.Int32(1),
+			Replicas: ptr.To[int32](1),
 			Selector: &metav1.LabelSelector{
 				MatchLabels: map[string]string{
 					"exporter":      "true",

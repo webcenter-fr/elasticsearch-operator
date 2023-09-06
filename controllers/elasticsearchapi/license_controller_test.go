@@ -22,7 +22,7 @@ import (
 	condition "k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
-	"k8s.io/utils/pointer"
+	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -172,7 +172,7 @@ func doEnableBasicLicenseStep() test.TestStep {
 					SecretRef: &core.LocalObjectReference{
 						Name: key.Name,
 					},
-					Basic: pointer.Bool(true),
+					Basic: ptr.To[bool](true),
 				},
 			}
 
@@ -297,7 +297,7 @@ func doUpdateToEnterpriseLicenseStep() test.TestStep {
 					SecretRef: &core.LocalObjectReference{
 						Name: key.Name,
 					},
-					Basic: pointer.Bool(false),
+					Basic: ptr.To[bool](false),
 				},
 			}
 			if err = c.Create(context.Background(), secret); err != nil {

@@ -7,7 +7,7 @@ import (
 	kibanacrd "github.com/webcenter-fr/elasticsearch-operator/apis/kibana/v1"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/utils/pointer"
+	"k8s.io/utils/ptr"
 )
 
 func TestGetSecretNameForTls(t *testing.T) {
@@ -27,7 +27,7 @@ func TestGetSecretNameForTls(t *testing.T) {
 		CertificateSecretRef: &v1.LocalObjectReference{
 			Name: "my-secret",
 		},
-		Enabled: pointer.Bool(true),
+		Enabled: ptr.To[bool](true),
 	}
 	assert.Equal(t, "my-secret", GetSecretNameForTls(o))
 }

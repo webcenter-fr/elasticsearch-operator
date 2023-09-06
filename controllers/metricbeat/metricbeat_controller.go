@@ -35,7 +35,7 @@ import (
 	"k8s.io/apimachinery/pkg/fields"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
-	"k8s.io/utils/pointer"
+	"k8s.io/utils/ptr"
 	"k8s.io/utils/strings"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -44,10 +44,10 @@ import (
 )
 
 const (
-	MetricbeatFinalizer     = "metricbeat.k8s.webcenter.fr/finalizer"
-	MetricbeatCondition     = "metricbeatReady"
-	MetricbeatPhaseRunning  = "running"
-	MetricbeatPhaseStarting = "starting"
+	MetricbeatFinalizer                          = "metricbeat.k8s.webcenter.fr/finalizer"
+	MetricbeatCondition     common.ConditionName = "metricbeatReady"
+	MetricbeatPhaseRunning  common.PhaseName     = "running"
+	MetricbeatPhaseStarting common.PhaseName     = "starting"
 )
 
 // MetricbeatReconciler reconciles a Metricbeat object
@@ -270,12 +270,12 @@ func watchSecret(c client.Client) handler.MapFunc {
 func (h *MetricbeatReconciler) Configure(ctx context.Context, req ctrl.Request, resource client.Object) (res ctrl.Result, err error) {
 	o := resource.(*beatcrd.Metricbeat)
 
-	o.Status.IsError = pointer.Bool(false)
+	o.Status.IsError = ptr.To[bool](false)
 
 	// Init condition status if not exist
-	if condition.FindStatusCondition(o.Status.Conditions, MetricbeatCondition) == nil {
+	if condition.FindStatusCondition(o.Status.Conditions, MetricbeatCondition.String()) == nil {
 		condition.SetStatusCondition(&o.Status.Conditions, metav1.Condition{
-			Type:   MetricbeatCondition,
+			Type:   MetricbeatCondition.String(),
 			Status: metav1.ConditionFalse,
 			Reason: "Initialize",
 		})
@@ -302,10 +302,10 @@ func (h *MetricbeatReconciler) Delete(ctx context.Context, r client.Object, data
 func (h *MetricbeatReconciler) OnError(ctx context.Context, r client.Object, data map[string]any, currentErr error) (res ctrl.Result, err error) {
 	o := r.(*beatcrd.Metricbeat)
 
-	o.Status.IsError = pointer.Bool(true)
+	o.Status.IsError = ptr.To[bool](true)
 
 	condition.SetStatusCondition(&o.Status.Conditions, metav1.Condition{
-		Type:    MetricbeatCondition,
+		Type:    MetricbeatCondition.String(),
 		Status:  metav1.ConditionFalse,
 		Reason:  "Failed",
 		Message: strings.ShortenString(err.Error(), common.ShortenError),
@@ -341,16 +341,16 @@ func (h *MetricbeatReconciler) OnSuccess(ctx context.Context, r client.Object, d
 	}
 
 	if isReady {
-		if !condition.IsStatusConditionPresentAndEqual(o.Status.Conditions, MetricbeatCondition, metav1.ConditionTrue) {
+		if !condition.IsStatusConditionPresentAndEqual(o.Status.Conditions, MetricbeatCondition.String(), metav1.ConditionTrue) {
 			condition.SetStatusCondition(&o.Status.Conditions, metav1.Condition{
-				Type:   MetricbeatCondition,
+				Type:   MetricbeatCondition.String(),
 				Status: metav1.ConditionTrue,
 				Reason: "Ready",
 			})
 		}
 
-		if o.Status.Phase != MetricbeatPhaseRunning {
-			o.Status.Phase = MetricbeatPhaseRunning
+		if o.Status.Phase != MetricbeatPhaseRunning.String() {
+			o.Status.Phase = MetricbeatPhaseRunning.String()
 		}
 
 		if condition.IsStatusConditionPresentAndEqual(o.Status.Conditions, common.ReadyCondition, metav1.ConditionFalse) {
@@ -362,16 +362,16 @@ func (h *MetricbeatReconciler) OnSuccess(ctx context.Context, r client.Object, d
 		}
 
 	} else {
-		if condition.IsStatusConditionPresentAndEqual(o.Status.Conditions, MetricbeatCondition, metav1.ConditionTrue) || (condition.FindStatusCondition(o.Status.Conditions, MetricbeatCondition).Reason != "NotReady") {
+		if condition.IsStatusConditionPresentAndEqual(o.Status.Conditions, MetricbeatCondition.String(), metav1.ConditionTrue) || (condition.FindStatusCondition(o.Status.Conditions, MetricbeatCondition.String()).Reason != "NotReady") {
 			condition.SetStatusCondition(&o.Status.Conditions, metav1.Condition{
-				Type:   MetricbeatCondition,
+				Type:   MetricbeatCondition.String(),
 				Status: metav1.ConditionFalse,
 				Reason: "NotReady",
 			})
 		}
 
-		if o.Status.Phase != MetricbeatPhaseStarting {
-			o.Status.Phase = MetricbeatPhaseStarting
+		if o.Status.Phase != MetricbeatPhaseStarting.String() {
+			o.Status.Phase = MetricbeatPhaseStarting.String()
 		}
 
 		if condition.IsStatusConditionPresentAndEqual(o.Status.Conditions, common.ReadyCondition, metav1.ConditionTrue) || (condition.FindStatusCondition(o.Status.Conditions, common.ReadyCondition).Reason != "NotReady") {
