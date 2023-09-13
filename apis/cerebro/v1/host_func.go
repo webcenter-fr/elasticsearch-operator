@@ -4,9 +4,15 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/disaster37/operator-sdk-extra/pkg/object"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 )
+
+// GetStatus implement the object.MultiPhaseObject
+func (h *Host) GetStatus() object.MultiPhaseObjectStatus {
+	return &h.Status
+}
 
 // MustSetUpIndex setup indexer for Host
 func MustSetUpIndexHost(k8sManager manager.Manager) {

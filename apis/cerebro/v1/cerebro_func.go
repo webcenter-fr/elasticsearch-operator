@@ -3,9 +3,15 @@ package v1
 import (
 	"context"
 
+	"github.com/disaster37/operator-sdk-extra/pkg/object"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 )
+
+// GetStatus implement the object.MultiPhaseObject
+func (h *Cerebro) GetStatus() object.MultiPhaseObjectStatus {
+	return &h.Status
+}
 
 // IsIngressEnabled return true if ingress is enabled
 func (h *Cerebro) IsIngressEnabled() bool {

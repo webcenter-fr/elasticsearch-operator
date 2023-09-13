@@ -107,9 +107,9 @@ func (r *SnapshotLifecyclePolicyReconciler) Configure(ctx context.Context, req c
 		})
 	}
 
-	if condition.FindStatusCondition(slm.Status.Conditions, common.ReadyCondition) == nil {
+	if condition.FindStatusCondition(slm.Status.Conditions, common.ReadyCondition.String()) == nil {
 		condition.SetStatusCondition(&slm.Status.Conditions, metav1.Condition{
-			Type:   common.ReadyCondition,
+			Type:   common.ReadyCondition.String(),
 			Status: metav1.ConditionFalse,
 			Reason: "Initialize",
 		})
@@ -284,7 +284,7 @@ func (r *SnapshotLifecyclePolicyReconciler) OnError(ctx context.Context, resourc
 	})
 
 	condition.SetStatusCondition(&slm.Status.Conditions, metav1.Condition{
-		Type:   common.ReadyCondition,
+		Type:   common.ReadyCondition.String(),
 		Status: metav1.ConditionFalse,
 		Reason: "Error",
 	})
@@ -298,9 +298,9 @@ func (r *SnapshotLifecyclePolicyReconciler) OnSuccess(ctx context.Context, resou
 
 	slm.Status.Sync = true
 
-	if condition.IsStatusConditionPresentAndEqual(slm.Status.Conditions, common.ReadyCondition, metav1.ConditionFalse) {
+	if condition.IsStatusConditionPresentAndEqual(slm.Status.Conditions, common.ReadyCondition.String(), metav1.ConditionFalse) {
 		condition.SetStatusCondition(&slm.Status.Conditions, metav1.Condition{
-			Type:   common.ReadyCondition,
+			Type:   common.ReadyCondition.String(),
 			Reason: "Available",
 			Status: metav1.ConditionTrue,
 		})

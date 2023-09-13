@@ -131,12 +131,11 @@ func (t *CerebroControllerTestSuite) SetupSuite() {
 		panic(err)
 	}
 
-	cerebroReconciler := NewCerebroReconciler(k8sClient, scheme.Scheme)
-	cerebroReconciler.SetLogger(logrus.WithFields(logrus.Fields{
-		"type": "cerebroController",
-	}))
-	cerebroReconciler.SetRecorder(k8sManager.GetEventRecorderFor("cerebro-controller"))
-	cerebroReconciler.SetReconciler(cerebroReconciler)
+	cerebroReconciler := NewCerebroReconciler(
+		k8sClient,
+		logrus.NewEntry(logrus.StandardLogger()),
+		k8sManager.GetEventRecorderFor("cerebro-controller"),
+	)
 	if err = cerebroReconciler.SetupWithManager(k8sManager); err != nil {
 		panic(err)
 	}

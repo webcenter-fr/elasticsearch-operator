@@ -110,9 +110,9 @@ func (r *LogstashPipelineReconciler) Configure(ctx context.Context, req ctrl.Req
 		})
 	}
 
-	if condition.FindStatusCondition(pipeline.Status.Conditions, common.ReadyCondition) == nil {
+	if condition.FindStatusCondition(pipeline.Status.Conditions, common.ReadyCondition.String()) == nil {
 		condition.SetStatusCondition(&pipeline.Status.Conditions, metav1.Condition{
-			Type:   common.ReadyCondition,
+			Type:   common.ReadyCondition.String(),
 			Status: metav1.ConditionFalse,
 			Reason: "Initialize",
 		})
@@ -275,7 +275,7 @@ func (r *LogstashPipelineReconciler) OnError(ctx context.Context, resource clien
 	})
 
 	condition.SetStatusCondition(&pipeline.Status.Conditions, metav1.Condition{
-		Type:   common.ReadyCondition,
+		Type:   common.ReadyCondition.String(),
 		Status: metav1.ConditionFalse,
 		Reason: "Error",
 	})
@@ -289,9 +289,9 @@ func (r *LogstashPipelineReconciler) OnSuccess(ctx context.Context, resource cli
 
 	pipeline.Status.Sync = true
 
-	if condition.IsStatusConditionPresentAndEqual(pipeline.Status.Conditions, common.ReadyCondition, metav1.ConditionFalse) {
+	if condition.IsStatusConditionPresentAndEqual(pipeline.Status.Conditions, common.ReadyCondition.String(), metav1.ConditionFalse) {
 		condition.SetStatusCondition(&pipeline.Status.Conditions, metav1.Condition{
-			Type:   common.ReadyCondition,
+			Type:   common.ReadyCondition.String(),
 			Reason: "Available",
 			Status: metav1.ConditionTrue,
 		})

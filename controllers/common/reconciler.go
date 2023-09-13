@@ -7,6 +7,7 @@ import (
 
 	"emperror.dev/errors"
 	"github.com/disaster37/k8s-objectmatcher/patch"
+	"github.com/disaster37/operator-sdk-extra/pkg/apis/shared"
 	"github.com/disaster37/operator-sdk-extra/pkg/controller"
 	"github.com/disaster37/operator-sdk-extra/pkg/helper"
 	"github.com/sirupsen/logrus"
@@ -22,6 +23,11 @@ import (
 	k8sstrings "k8s.io/utils/strings"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+)
+
+const (
+	ReadyCondition shared.ConditionName = "Ready"
+	ShortenError   int                  = 100
 )
 
 type Reconciler struct {

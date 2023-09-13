@@ -108,9 +108,9 @@ func (r *WatchReconciler) Configure(ctx context.Context, req ctrl.Request, resou
 		})
 	}
 
-	if condition.FindStatusCondition(watch.Status.Conditions, common.ReadyCondition) == nil {
+	if condition.FindStatusCondition(watch.Status.Conditions, common.ReadyCondition.String()) == nil {
 		condition.SetStatusCondition(&watch.Status.Conditions, metav1.Condition{
-			Type:   common.ReadyCondition,
+			Type:   common.ReadyCondition.String(),
 			Status: metav1.ConditionFalse,
 			Reason: "Initialize",
 		})
@@ -273,7 +273,7 @@ func (r *WatchReconciler) OnError(ctx context.Context, resource client.Object, d
 	})
 
 	condition.SetStatusCondition(&watch.Status.Conditions, metav1.Condition{
-		Type:   common.ReadyCondition,
+		Type:   common.ReadyCondition.String(),
 		Status: metav1.ConditionFalse,
 		Reason: "Error",
 	})
@@ -287,9 +287,9 @@ func (r *WatchReconciler) OnSuccess(ctx context.Context, resource client.Object,
 
 	watch.Status.Sync = true
 
-	if condition.IsStatusConditionPresentAndEqual(watch.Status.Conditions, common.ReadyCondition, metav1.ConditionFalse) {
+	if condition.IsStatusConditionPresentAndEqual(watch.Status.Conditions, common.ReadyCondition.String(), metav1.ConditionFalse) {
 		condition.SetStatusCondition(&watch.Status.Conditions, metav1.Condition{
-			Type:   common.ReadyCondition,
+			Type:   common.ReadyCondition.String(),
 			Reason: "Available",
 			Status: metav1.ConditionTrue,
 		})

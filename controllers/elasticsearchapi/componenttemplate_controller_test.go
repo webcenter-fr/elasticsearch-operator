@@ -183,7 +183,7 @@ func doCreateComponentTemplateStep() test.TestStep {
 				t.Fatalf("Failed to get component template: %s", err.Error())
 			}
 			assert.True(t, condition.IsStatusConditionPresentAndEqual(ct.Status.Conditions, ComponentTemplateCondition, metav1.ConditionTrue))
-			assert.True(t, condition.IsStatusConditionPresentAndEqual(ct.Status.Conditions, common.ReadyCondition, metav1.ConditionTrue))
+			assert.True(t, condition.IsStatusConditionPresentAndEqual(ct.Status.Conditions, common.ReadyCondition.String(), metav1.ConditionTrue))
 			assert.True(t, ct.Status.Sync)
 
 			return nil
@@ -231,7 +231,7 @@ func doUpdateComponentTemplateStep() test.TestStep {
 				t.Fatalf("Failed to get component template: %s", err.Error())
 			}
 			assert.True(t, condition.IsStatusConditionPresentAndEqual(ct.Status.Conditions, ComponentTemplateCondition, metav1.ConditionTrue))
-			assert.True(t, condition.IsStatusConditionPresentAndEqual(ct.Status.Conditions, common.ReadyCondition, metav1.ConditionTrue))
+			assert.True(t, condition.IsStatusConditionPresentAndEqual(ct.Status.Conditions, common.ReadyCondition.String(), metav1.ConditionTrue))
 			assert.True(t, ct.Status.Sync)
 
 			return nil

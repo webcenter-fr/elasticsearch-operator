@@ -90,6 +90,10 @@ spec:
                 type: array
               isOnError:
                 type: boolean
+              lastErrorMessage:
+                type: string
+              phase:
+                type: string
             type: object
         type: object
     served: true

@@ -187,7 +187,7 @@ func doCreateRoleMappingStep() test.TestStep {
 				t.Fatalf("Failed to get role mapping: %s", err.Error())
 			}
 			assert.True(t, condition.IsStatusConditionPresentAndEqual(rm.Status.Conditions, RoleMappingCondition, metav1.ConditionTrue))
-			assert.True(t, condition.IsStatusConditionPresentAndEqual(rm.Status.Conditions, common.ReadyCondition, metav1.ConditionTrue))
+			assert.True(t, condition.IsStatusConditionPresentAndEqual(rm.Status.Conditions, common.ReadyCondition.String(), metav1.ConditionTrue))
 			assert.True(t, rm.Status.Sync)
 
 			return nil
@@ -233,7 +233,7 @@ func doUpdateRoleMappingStep() test.TestStep {
 				t.Fatalf("Failed to get role mapping: %s", err.Error())
 			}
 			assert.True(t, condition.IsStatusConditionPresentAndEqual(rm.Status.Conditions, RoleMappingCondition, metav1.ConditionTrue))
-			assert.True(t, condition.IsStatusConditionPresentAndEqual(rm.Status.Conditions, common.ReadyCondition, metav1.ConditionTrue))
+			assert.True(t, condition.IsStatusConditionPresentAndEqual(rm.Status.Conditions, common.ReadyCondition.String(), metav1.ConditionTrue))
 			assert.True(t, rm.Status.Sync)
 
 			return nil

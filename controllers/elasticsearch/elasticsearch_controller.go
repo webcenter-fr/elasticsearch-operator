@@ -390,9 +390,9 @@ func (h *ElasticsearchReconciler) Configure(ctx context.Context, req ctrl.Reques
 		})
 	}
 
-	if condition.FindStatusCondition(o.Status.Conditions, common.ReadyCondition) == nil {
+	if condition.FindStatusCondition(o.Status.Conditions, common.ReadyCondition.String()) == nil {
 		condition.SetStatusCondition(&o.Status.Conditions, metav1.Condition{
-			Type:   common.ReadyCondition,
+			Type:   common.ReadyCondition.String(),
 			Status: metav1.ConditionFalse,
 			Reason: "Initialize",
 		})
@@ -446,7 +446,7 @@ func (h *ElasticsearchReconciler) OnError(ctx context.Context, r client.Object, 
 	})
 
 	condition.SetStatusCondition(&o.Status.Conditions, metav1.Condition{
-		Type:   common.ReadyCondition,
+		Type:   common.ReadyCondition.String(),
 		Status: metav1.ConditionFalse,
 		Reason: "Error",
 	})
@@ -499,9 +499,9 @@ loopStatefulset:
 			o.Status.Phase = ElasticsearchPhaseRunning.String()
 		}
 
-		if condition.IsStatusConditionPresentAndEqual(o.Status.Conditions, common.ReadyCondition, metav1.ConditionFalse) {
+		if condition.IsStatusConditionPresentAndEqual(o.Status.Conditions, common.ReadyCondition.String(), metav1.ConditionFalse) {
 			condition.SetStatusCondition(&o.Status.Conditions, metav1.Condition{
-				Type:   common.ReadyCondition,
+				Type:   common.ReadyCondition.String(),
 				Reason: "Available",
 				Status: metav1.ConditionTrue,
 			})
@@ -521,9 +521,9 @@ loopStatefulset:
 			})
 		}
 
-		if condition.IsStatusConditionPresentAndEqual(o.Status.Conditions, common.ReadyCondition, metav1.ConditionTrue) || (condition.FindStatusCondition(o.Status.Conditions, common.ReadyCondition).Reason != "NotReady") {
+		if condition.IsStatusConditionPresentAndEqual(o.Status.Conditions, common.ReadyCondition.String(), metav1.ConditionTrue) || (condition.FindStatusCondition(o.Status.Conditions, common.ReadyCondition.String()).Reason != "NotReady") {
 			condition.SetStatusCondition(&o.Status.Conditions, metav1.Condition{
-				Type:   common.ReadyCondition,
+				Type:   common.ReadyCondition.String(),
 				Reason: "NotReady",
 				Status: metav1.ConditionFalse,
 			})

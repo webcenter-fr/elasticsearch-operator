@@ -200,7 +200,7 @@ func doCreateUserStep() test.TestStep {
 				t.Fatalf("Failed to get user: %s", err.Error())
 			}
 			assert.True(t, condition.IsStatusConditionPresentAndEqual(user.Status.Conditions, UserCondition, metav1.ConditionTrue))
-			assert.True(t, condition.IsStatusConditionPresentAndEqual(user.Status.Conditions, common.ReadyCondition, metav1.ConditionTrue))
+			assert.True(t, condition.IsStatusConditionPresentAndEqual(user.Status.Conditions, common.ReadyCondition.String(), metav1.ConditionTrue))
 			assert.True(t, user.Status.Sync)
 
 			return nil
@@ -246,7 +246,7 @@ func doUpdateUserStep() test.TestStep {
 				t.Fatalf("Failed to get User: %s", err.Error())
 			}
 			assert.True(t, condition.IsStatusConditionPresentAndEqual(user.Status.Conditions, UserCondition, metav1.ConditionTrue))
-			assert.True(t, condition.IsStatusConditionPresentAndEqual(user.Status.Conditions, common.ReadyCondition, metav1.ConditionTrue))
+			assert.True(t, condition.IsStatusConditionPresentAndEqual(user.Status.Conditions, common.ReadyCondition.String(), metav1.ConditionTrue))
 			assert.True(t, user.Status.Sync)
 
 			return nil
@@ -292,7 +292,7 @@ func doUpdateUserPasswordHashStep() test.TestStep {
 				t.Fatalf("Failed to get User: %s", err.Error())
 			}
 			assert.True(t, condition.IsStatusConditionPresentAndEqual(user.Status.Conditions, UserCondition, metav1.ConditionTrue))
-			assert.True(t, condition.IsStatusConditionPresentAndEqual(user.Status.Conditions, common.ReadyCondition, metav1.ConditionTrue))
+			assert.True(t, condition.IsStatusConditionPresentAndEqual(user.Status.Conditions, common.ReadyCondition.String(), metav1.ConditionTrue))
 			assert.True(t, user.Status.Sync)
 
 			return nil

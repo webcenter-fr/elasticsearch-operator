@@ -268,7 +268,7 @@ func doCreateILMStep() test.TestStep {
 				t.Fatalf("Failed to get ILM: %s", err.Error())
 			}
 			assert.True(t, condition.IsStatusConditionPresentAndEqual(ilm.Status.Conditions, IndexLifecyclePolicyCondition, metav1.ConditionTrue))
-			assert.True(t, condition.IsStatusConditionPresentAndEqual(ilm.Status.Conditions, common.ReadyCondition, metav1.ConditionTrue))
+			assert.True(t, condition.IsStatusConditionPresentAndEqual(ilm.Status.Conditions, common.ReadyCondition.String(), metav1.ConditionTrue))
 			assert.True(t, ilm.Status.Sync)
 
 			return nil
@@ -336,7 +336,7 @@ func doUpdateILMStep() test.TestStep {
 				return errors.Wrapf(err, "Failed to get ILM")
 			}
 			assert.True(t, condition.IsStatusConditionPresentAndEqual(ilm.Status.Conditions, IndexLifecyclePolicyCondition, metav1.ConditionTrue))
-			assert.True(t, condition.IsStatusConditionPresentAndEqual(ilm.Status.Conditions, common.ReadyCondition, metav1.ConditionTrue))
+			assert.True(t, condition.IsStatusConditionPresentAndEqual(ilm.Status.Conditions, common.ReadyCondition.String(), metav1.ConditionTrue))
 			assert.True(t, ilm.Status.Sync)
 
 			return nil

@@ -15,7 +15,23 @@ spec:
     singular: metricbeat
   scope: Namespaced
   versions:
-  - name: v1
+  - additionalPrinterColumns:
+    - description: Phase
+      jsonPath: .status.phase
+      name: Phase
+      type: string
+    - description: Is on error
+      jsonPath: .status.isOnError
+      name: Error
+      type: boolean
+    - description: health
+      jsonPath: .status.conditions[?(@.type=='Ready')].status
+      name: Ready
+      type: string
+    - jsonPath: .metadata.creationTimestamp
+      name: Age
+      type: date
+    name: v1
     schema:
       openAPIV3Schema:
         properties:
@@ -5119,6 +5135,8 @@ spec:
                 type: array
               isOnError:
                 type: boolean
+              lastErrorMessage:
+                type: string
               phase:
                 type: string
             type: object

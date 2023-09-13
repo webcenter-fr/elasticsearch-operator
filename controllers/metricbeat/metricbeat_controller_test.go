@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/disaster37/k8s-objectmatcher/patch"
+	"github.com/disaster37/operator-sdk-extra/pkg/controller"
 	"github.com/disaster37/operator-sdk-extra/pkg/test"
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
@@ -144,7 +145,7 @@ queue.type: persisted
 
 				// In envtest, no kubelet
 				// So the Metricbeat condition never set as true
-				if condition.FindStatusCondition(mb.Status.Conditions, MetricbeatCondition.String()) != nil && condition.FindStatusCondition(mb.Status.Conditions, MetricbeatCondition.String()).Reason != "Initialize" {
+				if condition.FindStatusCondition(mb.Status.Conditions, controller.ReadyCondition.String()) != nil && condition.FindStatusCondition(mb.Status.Conditions, controller.ReadyCondition.String()).Reason != "Initialize" {
 					return nil
 				}
 
@@ -213,8 +214,8 @@ queue.type: persisted
 			assert.NotEmpty(t, sts.Annotations[patch.LastAppliedConfig])
 
 			// Status must be update
-			assert.NotEmpty(t, mb.Status.Phase)
-			assert.False(t, *mb.Status.IsError)
+			assert.NotEmpty(t, mb.Status.PhaseName)
+			assert.False(t, *mb.Status.IsOnError)
 
 			return nil
 		},
@@ -267,7 +268,7 @@ func doUpdateMetricbeatStep() test.TestStep {
 
 				// In envtest, no kubelet
 				// So the Metricbeat condition never set as true
-				if lastVersion != mb.ResourceVersion && (mb.Status.Phase == MetricbeatPhaseStarting.String()) {
+				if lastVersion != mb.ResourceVersion && (mb.Status.PhaseName == controller.StartingPhase) {
 					return nil
 				}
 
@@ -343,8 +344,8 @@ func doUpdateMetricbeatStep() test.TestStep {
 			assert.Equal(t, "fu", sts.Labels["test"])
 
 			// Status must be update
-			assert.NotEmpty(t, mb.Status.Phase)
-			assert.False(t, *mb.Status.IsError)
+			assert.NotEmpty(t, mb.Status.PhaseName)
+			assert.False(t, *mb.Status.IsOnError)
 
 			return nil
 		},

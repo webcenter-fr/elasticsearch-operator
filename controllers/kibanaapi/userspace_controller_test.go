@@ -220,7 +220,7 @@ func doCreateUserSpaceStep() test.TestStep {
 				t.Fatalf("Failed to get kibana user space: %s", err.Error())
 			}
 			assert.True(t, condition.IsStatusConditionPresentAndEqual(space.Status.Conditions, UserSpaceCondition, metav1.ConditionTrue))
-			assert.True(t, condition.IsStatusConditionPresentAndEqual(space.Status.Conditions, common.ReadyCondition, metav1.ConditionTrue))
+			assert.True(t, condition.IsStatusConditionPresentAndEqual(space.Status.Conditions, common.ReadyCondition.String(), metav1.ConditionTrue))
 			assert.True(t, space.Status.Sync)
 
 			return nil
@@ -292,7 +292,7 @@ func doCreateUserSpaceWithObjectsStep() test.TestStep {
 			}
 			assert.True(t, isCopyObject)
 			assert.True(t, condition.IsStatusConditionPresentAndEqual(space.Status.Conditions, UserSpaceCondition, metav1.ConditionTrue))
-			assert.True(t, condition.IsStatusConditionPresentAndEqual(space.Status.Conditions, common.ReadyCondition, metav1.ConditionTrue))
+			assert.True(t, condition.IsStatusConditionPresentAndEqual(space.Status.Conditions, common.ReadyCondition.String(), metav1.ConditionTrue))
 			assert.True(t, space.Status.Sync)
 
 			return nil
@@ -338,7 +338,7 @@ func doUpdateUserSpaceStep() test.TestStep {
 				t.Fatalf("Failed to get kibana user space: %s", err.Error())
 			}
 			assert.True(t, condition.IsStatusConditionPresentAndEqual(space.Status.Conditions, UserSpaceCondition, metav1.ConditionTrue))
-			assert.True(t, condition.IsStatusConditionPresentAndEqual(space.Status.Conditions, common.ReadyCondition, metav1.ConditionTrue))
+			assert.True(t, condition.IsStatusConditionPresentAndEqual(space.Status.Conditions, common.ReadyCondition.String(), metav1.ConditionTrue))
 			assert.True(t, space.Status.Sync)
 
 			return nil

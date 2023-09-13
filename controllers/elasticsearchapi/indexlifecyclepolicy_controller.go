@@ -109,9 +109,9 @@ func (r *IndexLifecyclePolicyReconciler) Configure(ctx context.Context, req ctrl
 		})
 	}
 
-	if condition.FindStatusCondition(ilm.Status.Conditions, common.ReadyCondition) == nil {
+	if condition.FindStatusCondition(ilm.Status.Conditions, common.ReadyCondition.String()) == nil {
 		condition.SetStatusCondition(&ilm.Status.Conditions, metav1.Condition{
-			Type:   common.ReadyCondition,
+			Type:   common.ReadyCondition.String(),
 			Status: metav1.ConditionFalse,
 			Reason: "Initialize",
 		})
@@ -274,7 +274,7 @@ func (r *IndexLifecyclePolicyReconciler) OnError(ctx context.Context, resource c
 	})
 
 	condition.SetStatusCondition(&ilm.Status.Conditions, metav1.Condition{
-		Type:   common.ReadyCondition,
+		Type:   common.ReadyCondition.String(),
 		Status: metav1.ConditionFalse,
 		Reason: "Error",
 	})
@@ -288,9 +288,9 @@ func (r *IndexLifecyclePolicyReconciler) OnSuccess(ctx context.Context, resource
 
 	ilm.Status.Sync = true
 
-	if condition.IsStatusConditionPresentAndEqual(ilm.Status.Conditions, common.ReadyCondition, metav1.ConditionFalse) {
+	if condition.IsStatusConditionPresentAndEqual(ilm.Status.Conditions, common.ReadyCondition.String(), metav1.ConditionFalse) {
 		condition.SetStatusCondition(&ilm.Status.Conditions, metav1.Condition{
-			Type:   common.ReadyCondition,
+			Type:   common.ReadyCondition.String(),
 			Reason: "Available",
 			Status: metav1.ConditionTrue,
 		})

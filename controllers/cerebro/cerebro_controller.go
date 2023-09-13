@@ -22,7 +22,10 @@ import (
 	"time"
 
 	"emperror.dev/errors"
+	"github.com/disaster37/operator-sdk-extra/pkg/apis/shared"
 	"github.com/disaster37/operator-sdk-extra/pkg/controller"
+	"github.com/disaster37/operator-sdk-extra/pkg/object"
+	"github.com/sirupsen/logrus"
 	cerebrocrd "github.com/webcenter-fr/elasticsearch-operator/apis/cerebro/v1"
 	"github.com/webcenter-fr/elasticsearch-operator/controllers/common"
 	appv1 "k8s.io/api/apps/v1"
@@ -32,10 +35,8 @@ import (
 	condition "k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/fields"
-	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
-	"k8s.io/utils/ptr"
-	"k8s.io/utils/strings"
+	"k8s.io/client-go/tools/record"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/handler"
@@ -43,31 +44,47 @@ import (
 )
 
 const (
-	CerebroFinalizer                          = "cerebro.k8s.webcenter.fr/finalizer"
-	CerebroCondition     common.ConditionName = "CerebroReady"
-	CerebroPhaseRunning  common.PhaseName     = "running"
-	CerebroPhaseStarting common.PhaseName     = "starting"
+	name      string               = "cerebro"
+	finalizer shared.FinalizerName = "cerebro.k8s.webcenter.fr/finalizer"
 )
 
-// CerebroReconciler reconciles a Cerebro object
+// CerebroReconciler reconciles a Cerebro objectFHost
 type CerebroReconciler struct {
-	common.Controller
-	client.Client
-	Scheme *runtime.Scheme
-	name   string
+	controller.Controller
+	controller.MultiPhaseReconcilerAction
+	controller.MultiPhaseReconciler
+	controller.BaseReconciler
+	name string
 }
 
-func NewCerebroReconciler(client client.Client, scheme *runtime.Scheme) *CerebroReconciler {
+func NewCerebroReconciler(client client.Client, logger *logrus.Entry, recorder record.EventRecorder) (multiPhaseReconciler controller.Controller) {
 
-	r := &CerebroReconciler{
-		Client: client,
-		Scheme: scheme,
-		name:   "cerebro",
+	multiPhaseReconciler = &CerebroReconciler{
+		Controller: controller.NewBasicController(),
+		MultiPhaseReconcilerAction: controller.NewBasicMultiPhaseReconcilerAction(
+			client,
+			controller.ReadyCondition,
+			logger,
+			recorder,
+		),
+		MultiPhaseReconciler: controller.NewBasicMultiPhaseReconciler(
+			client,
+			name,
+			finalizer,
+			logger,
+			recorder,
+		),
+		BaseReconciler: controller.BaseReconciler{
+			Client:   client,
+			Recorder: recorder,
+			Log:      logger,
+		},
+		name: name,
 	}
 
-	common.ControllerMetrics.WithLabelValues(r.name).Add(0)
+	common.ControllerMetrics.WithLabelValues(name).Add(0)
 
-	return r
+	return multiPhaseReconciler
 }
 
 //+kubebuilder:rbac:groups=cerebro.k8s.webcenter.fr,resources=cerebroes,verbs=get;list;watch;create;update;patch;delete
@@ -92,28 +109,45 @@ func NewCerebroReconciler(client client.Client, scheme *runtime.Scheme) *Cerebro
 // For more details, check Reconcile and its Result here:
 // - https://pkg.go.dev/sigs.k8s.io/controller-runtime@v0.13.0/pkg/reconcile
 func (r *CerebroReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
-	reconciler, err := controller.NewStdK8sReconciler(r.Client, CerebroFinalizer, r.GetReconciler(), r.GetLogger(), r.GetRecorder())
-	if err != nil {
-		return ctrl.Result{}, err
-	}
-
 	cb := &cerebrocrd.Cerebro{}
 	data := map[string]any{}
 
-	applicationSecretReconciler := NewApplicationSecretReconciler(r.Client, r.Scheme, r.GetRecorder(), r.GetLogger())
-	configMapReconciler := NewConfiMapReconciler(r.Client, r.Scheme, r.GetRecorder(), r.GetLogger())
-	serviceReconciler := NewServiceReconciler(r.Client, r.Scheme, r.GetRecorder(), r.GetLogger())
-	deploymentReconciler := NewDeploymentReconciler(r.Client, r.Scheme, r.GetRecorder(), r.GetLogger())
-	ingressReconciler := NewIngressReconciler(r.Client, r.Scheme, r.GetRecorder(), r.GetLogger())
-	loadBalancerReconciler := NewLoadBalancerReconciler(r.Client, r.Scheme, r.GetRecorder(), r.GetLogger())
-
-	return reconciler.Reconcile(ctx, req, cb, data,
-		applicationSecretReconciler,
-		configMapReconciler,
-		serviceReconciler,
-		deploymentReconciler,
-		ingressReconciler,
-		loadBalancerReconciler,
+	return r.MultiPhaseReconciler.Reconcile(
+		ctx,
+		req,
+		cb,
+		data,
+		r,
+		newApplicationSecretReconciler(
+			r.Client,
+			r.Log,
+			r.Recorder,
+		),
+		newConfiMapReconciler(
+			r.Client,
+			r.Log,
+			r.Recorder,
+		),
+		newServiceReconciler(
+			r.Client,
+			r.Log,
+			r.Recorder,
+		),
+		newDeploymentReconciler(
+			r.Client,
+			r.Log,
+			r.Recorder,
+		),
+		newIngressReconciler(
+			r.Client,
+			r.Log,
+			r.Recorder,
+		),
+		newLoadBalancerReconciler(
+			r.Client,
+			r.Log,
+			r.Recorder,
+		),
 	)
 }
 
@@ -227,62 +261,17 @@ func watchSecret(c client.Client) handler.MapFunc {
 	}
 }
 
-func (h *CerebroReconciler) Configure(ctx context.Context, req ctrl.Request, resource client.Object) (res ctrl.Result, err error) {
-	o := resource.(*cerebrocrd.Cerebro)
-
-	o.Status.IsError = ptr.To[bool](false)
-
-	// Init condition status if not exist
-	if condition.FindStatusCondition(o.Status.Conditions, CerebroCondition.String()) == nil {
-		condition.SetStatusCondition(&o.Status.Conditions, metav1.Condition{
-			Type:   CerebroCondition.String(),
-			Status: metav1.ConditionFalse,
-			Reason: "Initialize",
-		})
-	}
-
-	if condition.FindStatusCondition(o.Status.Conditions, common.ReadyCondition) == nil {
-		condition.SetStatusCondition(&o.Status.Conditions, metav1.Condition{
-			Type:   common.ReadyCondition,
-			Status: metav1.ConditionFalse,
-			Reason: "Initialize",
-		})
-	}
-
-	return res, nil
-}
-func (h *CerebroReconciler) Read(ctx context.Context, r client.Object, data map[string]any) (res ctrl.Result, err error) {
-	return
-}
-
-func (h *CerebroReconciler) Delete(ctx context.Context, r client.Object, data map[string]any) (err error) {
+func (h *CerebroReconciler) Delete(ctx context.Context, o object.MultiPhaseObject, data map[string]any) (err error) {
 	common.ControllerMetrics.WithLabelValues(h.name).Dec()
-	return
+	return h.MultiPhaseReconcilerAction.Delete(ctx, o, data)
 }
-func (h *CerebroReconciler) OnError(ctx context.Context, r client.Object, data map[string]any, currentErr error) (res ctrl.Result, err error) {
-	o := r.(*cerebrocrd.Cerebro)
 
-	o.Status.IsError = ptr.To[bool](true)
-
-	condition.SetStatusCondition(&o.Status.Conditions, metav1.Condition{
-		Type:    CerebroCondition.String(),
-		Status:  metav1.ConditionFalse,
-		Reason:  "Failed",
-		Message: strings.ShortenString(err.Error(), common.ShortenError),
-	})
-
-	condition.SetStatusCondition(&o.Status.Conditions, metav1.Condition{
-		Type:   common.ReadyCondition,
-		Status: metav1.ConditionFalse,
-		Reason: "Error",
-	})
-
+func (h *CerebroReconciler) OnError(ctx context.Context, o object.MultiPhaseObject, data map[string]any, currentErr error) (res ctrl.Result, err error) {
 	common.TotalErrors.Inc()
-	h.GetLogger().Error(currentErr)
-
-	return res, errors.Errorf("Error on %s controller", h.name)
+	return h.MultiPhaseReconcilerAction.OnError(ctx, o, data, currentErr)
 }
-func (h *CerebroReconciler) OnSuccess(ctx context.Context, r client.Object, data map[string]any) (res ctrl.Result, err error) {
+
+func (h *CerebroReconciler) OnSuccess(ctx context.Context, r object.MultiPhaseObject, data map[string]any) (res ctrl.Result, err error) {
 	o := r.(*cerebrocrd.Cerebro)
 
 	// Check adeployment is ready
@@ -301,46 +290,26 @@ func (h *CerebroReconciler) OnSuccess(ctx context.Context, r client.Object, data
 	}
 
 	if isReady {
-		if !condition.IsStatusConditionPresentAndEqual(o.Status.Conditions, CerebroCondition.String(), metav1.ConditionTrue) {
+		if !condition.IsStatusConditionPresentAndEqual(o.Status.Conditions, controller.ReadyCondition.String(), metav1.ConditionTrue) {
 			condition.SetStatusCondition(&o.Status.Conditions, metav1.Condition{
-				Type:   CerebroCondition.String(),
+				Type:   controller.ReadyCondition.String(),
 				Status: metav1.ConditionTrue,
 				Reason: "Ready",
 			})
 		}
 
-		if o.Status.Phase != CerebroPhaseRunning.String() {
-			o.Status.Phase = CerebroPhaseRunning.String()
-		}
-
-		if condition.IsStatusConditionPresentAndEqual(o.Status.Conditions, common.ReadyCondition, metav1.ConditionFalse) {
-			condition.SetStatusCondition(&o.Status.Conditions, metav1.Condition{
-				Type:   common.ReadyCondition,
-				Reason: "Available",
-				Status: metav1.ConditionTrue,
-			})
-		}
+		o.Status.PhaseName = controller.RunningPhase
 
 	} else {
-		if condition.IsStatusConditionPresentAndEqual(o.Status.Conditions, CerebroCondition.String(), metav1.ConditionTrue) || (condition.FindStatusCondition(o.Status.Conditions, CerebroCondition.String()).Reason != "NotReady") {
+		if condition.IsStatusConditionPresentAndEqual(o.Status.Conditions, controller.ReadyCondition.String(), metav1.ConditionTrue) || (condition.FindStatusCondition(o.Status.Conditions, controller.ReadyCondition.String()).Reason != "NotReady") {
 			condition.SetStatusCondition(&o.Status.Conditions, metav1.Condition{
-				Type:   CerebroCondition.String(),
+				Type:   controller.ReadyCondition.String(),
 				Status: metav1.ConditionFalse,
 				Reason: "NotReady",
 			})
 		}
 
-		if o.Status.Phase != CerebroPhaseStarting.String() {
-			o.Status.Phase = CerebroPhaseStarting.String()
-		}
-
-		if condition.IsStatusConditionPresentAndEqual(o.Status.Conditions, common.ReadyCondition, metav1.ConditionTrue) || (condition.FindStatusCondition(o.Status.Conditions, common.ReadyCondition).Reason != "NotReady") {
-			condition.SetStatusCondition(&o.Status.Conditions, metav1.Condition{
-				Type:   common.ReadyCondition,
-				Reason: "NotReady",
-				Status: metav1.ConditionFalse,
-			})
-		}
+		o.Status.PhaseName = controller.StartingPhase
 
 		// Requeued to check if status change
 		res.RequeueAfter = time.Second * 30
@@ -353,10 +322,6 @@ func (h *CerebroReconciler) OnSuccess(ctx context.Context, r client.Object, data
 	o.Status.Url = url
 
 	return res, nil
-}
-
-func (h *CerebroReconciler) Name() string {
-	return "cerebro"
 }
 
 // computeCerebroUrl permit to get the public cerebro url to put it on status

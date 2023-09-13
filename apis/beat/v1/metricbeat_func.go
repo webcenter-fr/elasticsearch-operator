@@ -4,9 +4,15 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/disaster37/operator-sdk-extra/pkg/object"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 )
+
+// GetStatus implement the object.MultiPhaseObject
+func (h *Metricbeat) GetStatus() object.MultiPhaseObjectStatus {
+	return &h.Status
+}
 
 // IsPersistence return true if persistence is enabled
 func (h *Metricbeat) IsPersistence() bool {

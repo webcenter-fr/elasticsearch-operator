@@ -137,8 +137,14 @@ spec:
                   type: object
                 type: array
               isOnError:
-                description: IsError is true if controller is stuck on Error
+                description: IsOnError is true if controller is stuck on Error
                 type: boolean
+              lastErrorMessage:
+                description: LastErrorMessage is the current error message
+                type: string
+              phase:
+                description: Phase is the current phase
+                type: string
             type: object
         type: object
     served: true

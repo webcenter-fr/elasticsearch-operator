@@ -191,56 +191,31 @@ func main() {
 		os.Exit(1)
 	}
 
-	kibanaController := kibanacontrollers.NewKibanaReconciler(mgr.GetClient(), mgr.GetScheme())
-	kibanaController.SetLogger(log.WithFields(logrus.Fields{
-		"type": "KibanaController",
-	}))
-	kibanaController.SetRecorder(mgr.GetEventRecorderFor("kibana-controller"))
-	kibanaController.SetReconciler(kibanaController)
+	kibanaController := kibanacontrollers.NewKibanaReconciler(mgr.GetClient(), logrus.NewEntry(log), mgr.GetEventRecorderFor("kibana-controller"))
 	if err = kibanaController.SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "Kibana")
 		os.Exit(1)
 	}
 
-	logstashController := logstashcontrollers.NewLogstashReconciler(mgr.GetClient(), mgr.GetScheme())
-	logstashController.SetLogger(log.WithFields(logrus.Fields{
-		"type": "LogstashController",
-	}))
-	logstashController.SetRecorder(mgr.GetEventRecorderFor("logstash-controller"))
-	logstashController.SetReconciler(logstashController)
+	logstashController := logstashcontrollers.NewLogstashReconciler(mgr.GetClient(), logrus.NewEntry(log), mgr.GetEventRecorderFor("logstash-controller"))
 	if err = logstashController.SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "Logstash")
 		os.Exit(1)
 	}
 
-	filebeatController := filebeatcontrollers.NewFilebeatReconciler(mgr.GetClient(), mgr.GetScheme())
-	filebeatController.SetLogger(log.WithFields(logrus.Fields{
-		"type": "FilebeatController",
-	}))
-	filebeatController.SetRecorder(mgr.GetEventRecorderFor("filebeat-controller"))
-	filebeatController.SetReconciler(filebeatController)
+	filebeatController := filebeatcontrollers.NewFilebeatReconciler(mgr.GetClient(), logrus.NewEntry(log), mgr.GetEventRecorderFor("filebeat-controller"))
 	if err = filebeatController.SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "Filebeat")
 		os.Exit(1)
 	}
 
-	metricbeatController := metricbeatcontrollers.NewMetricbeatReconciler(mgr.GetClient(), mgr.GetScheme())
-	metricbeatController.SetLogger(log.WithFields(logrus.Fields{
-		"type": "MetricbeatController",
-	}))
-	metricbeatController.SetRecorder(mgr.GetEventRecorderFor("metricbeat-controller"))
-	metricbeatController.SetReconciler(metricbeatController)
+	metricbeatController := metricbeatcontrollers.NewMetricbeatReconciler(mgr.GetClient(), logrus.NewEntry(log), mgr.GetEventRecorderFor("metricbeat-controller"))
 	if err = metricbeatController.SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "Metricbeat")
 		os.Exit(1)
 	}
 
-	cerebroController := cerebrocontrollers.NewCerebroReconciler(mgr.GetClient(), mgr.GetScheme())
-	cerebroController.SetLogger(log.WithFields(logrus.Fields{
-		"type": "CerebroController",
-	}))
-	cerebroController.SetRecorder(mgr.GetEventRecorderFor("cerebro-controller"))
-	cerebroController.SetReconciler(cerebroController)
+	cerebroController := cerebrocontrollers.NewCerebroReconciler(mgr.GetClient(), logrus.NewEntry(log), mgr.GetEventRecorderFor("cerebro-controller"))
 	if err = cerebroController.SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "Cerebro")
 		os.Exit(1)

@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/disaster37/k8s-objectmatcher/patch"
+	"github.com/disaster37/operator-sdk-extra/pkg/controller"
 	"github.com/disaster37/operator-sdk-extra/pkg/test"
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
@@ -94,7 +95,7 @@ func doCreateCerebroStep() test.TestStep {
 
 				// In envtest, no kubelet
 				// So the condition never set as true
-				if condition.FindStatusCondition(cb.Status.Conditions, CerebroCondition.String()) != nil && condition.FindStatusCondition(cb.Status.Conditions, CerebroCondition.String()).Reason != "Initialize" {
+				if condition.FindStatusCondition(cb.Status.Conditions, controller.ReadyCondition.String()) != nil && condition.FindStatusCondition(cb.Status.Conditions, controller.ReadyCondition.String()).Reason != "Initialize" {
 					return nil
 				}
 
@@ -155,9 +156,9 @@ func doCreateCerebroStep() test.TestStep {
 			assert.NotEmpty(t, dpl.Annotations[patch.LastAppliedConfig])
 
 			// Status must be update
-			assert.NotEmpty(t, cb.Status.Phase)
+			assert.NotEmpty(t, cb.Status.PhaseName)
 			assert.NotEmpty(t, cb.Status.Url)
-			assert.False(t, *cb.Status.IsError)
+			assert.False(t, *cb.Status.IsOnError)
 
 			return nil
 		},
@@ -210,7 +211,7 @@ func doUpdateCerebroStep() test.TestStep {
 
 				// In envtest, no kubelet
 				// So the condition never set as true
-				if lastVersion != cb.ResourceVersion && (cb.Status.Phase == CerebroPhaseStarting.String()) {
+				if lastVersion != cb.ResourceVersion && (cb.Status.PhaseName == controller.StartingPhase) {
 					return nil
 				}
 
@@ -277,9 +278,9 @@ func doUpdateCerebroStep() test.TestStep {
 			assert.Equal(t, "fu", dpl.Labels["test"])
 
 			// Status must be update
-			assert.NotEmpty(t, cb.Status.Phase)
+			assert.NotEmpty(t, cb.Status.PhaseName)
 			assert.NotEmpty(t, cb.Status.Url)
-			assert.False(t, *cb.Status.IsError)
+			assert.False(t, *cb.Status.IsOnError)
 
 			return nil
 		},

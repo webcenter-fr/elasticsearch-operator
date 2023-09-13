@@ -177,7 +177,7 @@ func doCreateLogstashPipelineStep() test.TestStep {
 				t.Fatalf("Failed to get kibana logstash pipeline: %s", err.Error())
 			}
 			assert.True(t, condition.IsStatusConditionPresentAndEqual(pipeline.Status.Conditions, LogstashPipelineCondition, metav1.ConditionTrue))
-			assert.True(t, condition.IsStatusConditionPresentAndEqual(pipeline.Status.Conditions, common.ReadyCondition, metav1.ConditionTrue))
+			assert.True(t, condition.IsStatusConditionPresentAndEqual(pipeline.Status.Conditions, common.ReadyCondition.String(), metav1.ConditionTrue))
 			assert.True(t, pipeline.Status.Sync)
 
 			return nil
@@ -223,7 +223,7 @@ func doUpdateLogstashPipelineStep() test.TestStep {
 				t.Fatalf("Failed to get kibana logstash pipeline: %s", err.Error())
 			}
 			assert.True(t, condition.IsStatusConditionPresentAndEqual(pipeline.Status.Conditions, LogstashPipelineCondition, metav1.ConditionTrue))
-			assert.True(t, condition.IsStatusConditionPresentAndEqual(pipeline.Status.Conditions, common.ReadyCondition, metav1.ConditionTrue))
+			assert.True(t, condition.IsStatusConditionPresentAndEqual(pipeline.Status.Conditions, common.ReadyCondition.String(), metav1.ConditionTrue))
 			assert.True(t, pipeline.Status.Sync)
 
 			return nil

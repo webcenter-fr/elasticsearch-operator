@@ -240,7 +240,7 @@ func doCreateSLMStep() test.TestStep {
 				t.Fatalf("Failed to get SLM: %s", err.Error())
 			}
 			assert.True(t, condition.IsStatusConditionPresentAndEqual(slm.Status.Conditions, SnapshotLifecyclePolicyCondition, metav1.ConditionTrue))
-			assert.True(t, condition.IsStatusConditionPresentAndEqual(slm.Status.Conditions, common.ReadyCondition, metav1.ConditionTrue))
+			assert.True(t, condition.IsStatusConditionPresentAndEqual(slm.Status.Conditions, common.ReadyCondition.String(), metav1.ConditionTrue))
 			assert.True(t, slm.Status.Sync)
 
 			return nil
@@ -286,7 +286,7 @@ func doUpdateSLMStep() test.TestStep {
 				t.Fatalf("Failed to get SLM: %s", err.Error())
 			}
 			assert.True(t, condition.IsStatusConditionPresentAndEqual(slm.Status.Conditions, SnapshotLifecyclePolicyCondition, metav1.ConditionTrue))
-			assert.True(t, condition.IsStatusConditionPresentAndEqual(slm.Status.Conditions, common.ReadyCondition, metav1.ConditionTrue))
+			assert.True(t, condition.IsStatusConditionPresentAndEqual(slm.Status.Conditions, common.ReadyCondition.String(), metav1.ConditionTrue))
 			assert.True(t, slm.Status.Sync)
 
 			return nil

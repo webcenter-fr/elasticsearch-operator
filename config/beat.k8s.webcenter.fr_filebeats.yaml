@@ -16,7 +16,7 @@ spec:
   scope: Namespaced
   versions:
   - additionalPrinterColumns:
-    - description: Deployment status
+    - description: Phase
       jsonPath: .status.phase
       name: Phase
       type: string
@@ -24,6 +24,10 @@ spec:
       jsonPath: .status.isOnError
       name: Error
       type: boolean
+    - description: health
+      jsonPath: .status.conditions[?(@.type=='Ready')].status
+      name: Ready
+      type: string
     - jsonPath: .metadata.creationTimestamp
       name: Age
       type: date
@@ -13062,10 +13066,13 @@ spec:
                   type: object
                 type: array
               isOnError:
-                description: IsError is true if controller is stuck on Error
+                description: IsOnError is true if controller is stuck on Error
                 type: boolean
+              lastErrorMessage:
+                description: LastErrorMessage is the current error message
+                type: string
               phase:
-                description: Phase is the current deployment phase
+                description: Phase is the current phase
                 type: string
             type: object
         type: object

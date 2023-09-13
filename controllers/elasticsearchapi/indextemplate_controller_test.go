@@ -172,7 +172,7 @@ func doCreateIndexTemplateStep() test.TestStep {
 				t.Fatalf("Failed to get index template: %s", err.Error())
 			}
 			assert.True(t, condition.IsStatusConditionPresentAndEqual(template.Status.Conditions, IndexTemplateCondition, metav1.ConditionTrue))
-			assert.True(t, condition.IsStatusConditionPresentAndEqual(template.Status.Conditions, common.ReadyCondition, metav1.ConditionTrue))
+			assert.True(t, condition.IsStatusConditionPresentAndEqual(template.Status.Conditions, common.ReadyCondition.String(), metav1.ConditionTrue))
 			assert.True(t, template.Status.Sync)
 
 			return nil
@@ -218,7 +218,7 @@ func doUpdateIndexTemplateStep() test.TestStep {
 				t.Fatalf("Failed to get index template: %s", err.Error())
 			}
 			assert.True(t, condition.IsStatusConditionPresentAndEqual(template.Status.Conditions, IndexTemplateCondition, metav1.ConditionTrue))
-			assert.True(t, condition.IsStatusConditionPresentAndEqual(template.Status.Conditions, common.ReadyCondition, metav1.ConditionTrue))
+			assert.True(t, condition.IsStatusConditionPresentAndEqual(template.Status.Conditions, common.ReadyCondition.String(), metav1.ConditionTrue))
 			assert.True(t, template.Status.Sync)
 
 			return nil

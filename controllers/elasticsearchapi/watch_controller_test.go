@@ -252,7 +252,7 @@ func doCreateWatcherStep() test.TestStep {
 				t.Fatalf("Failed to get Watch: %s", err.Error())
 			}
 			assert.True(t, condition.IsStatusConditionPresentAndEqual(watch.Status.Conditions, WatchCondition, metav1.ConditionTrue))
-			assert.True(t, condition.IsStatusConditionPresentAndEqual(watch.Status.Conditions, common.ReadyCondition, metav1.ConditionTrue))
+			assert.True(t, condition.IsStatusConditionPresentAndEqual(watch.Status.Conditions, common.ReadyCondition.String(), metav1.ConditionTrue))
 			assert.True(t, watch.Status.Sync)
 
 			return nil
@@ -304,7 +304,7 @@ func doUpdateWatcherStep() test.TestStep {
 				t.Fatalf("Failed to get Watch: %s", err.Error())
 			}
 			assert.True(t, condition.IsStatusConditionPresentAndEqual(watch.Status.Conditions, WatchCondition, metav1.ConditionTrue))
-			assert.True(t, condition.IsStatusConditionPresentAndEqual(watch.Status.Conditions, common.ReadyCondition, metav1.ConditionTrue))
+			assert.True(t, condition.IsStatusConditionPresentAndEqual(watch.Status.Conditions, common.ReadyCondition.String(), metav1.ConditionTrue))
 			assert.True(t, watch.Status.Sync)
 
 			return nil

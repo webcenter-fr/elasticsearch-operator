@@ -184,7 +184,7 @@ func doCreateSnapshotRepositoryStep() test.TestStep {
 				t.Fatalf("Failed to get Snapshot repository: %s", err.Error())
 			}
 			assert.True(t, condition.IsStatusConditionPresentAndEqual(repo.Status.Conditions, SnapshotRepositoryCondition, metav1.ConditionTrue))
-			assert.True(t, condition.IsStatusConditionPresentAndEqual(repo.Status.Conditions, common.ReadyCondition, metav1.ConditionTrue))
+			assert.True(t, condition.IsStatusConditionPresentAndEqual(repo.Status.Conditions, common.ReadyCondition.String(), metav1.ConditionTrue))
 			assert.True(t, repo.Status.Sync)
 
 			return nil
@@ -234,7 +234,7 @@ func doUpdateSnapshotRepositoryStep() test.TestStep {
 				t.Fatalf("Failed to get Snapshot repository: %s", err.Error())
 			}
 			assert.True(t, condition.IsStatusConditionPresentAndEqual(repo.Status.Conditions, SnapshotRepositoryCondition, metav1.ConditionTrue))
-			assert.True(t, condition.IsStatusConditionPresentAndEqual(repo.Status.Conditions, common.ReadyCondition, metav1.ConditionTrue))
+			assert.True(t, condition.IsStatusConditionPresentAndEqual(repo.Status.Conditions, common.ReadyCondition.String(), metav1.ConditionTrue))
 			assert.True(t, repo.Status.Sync)
 
 			return nil

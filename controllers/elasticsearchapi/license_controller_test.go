@@ -201,7 +201,7 @@ func doEnableBasicLicenseStep() test.TestStep {
 			assert.Empty(t, license.Status.LicenseChecksum)
 			assert.Equal(t, "basic", license.Status.LicenseType)
 			assert.True(t, condition.IsStatusConditionPresentAndEqual(license.Status.Conditions, LicenseCondition, metav1.ConditionTrue))
-			assert.True(t, condition.IsStatusConditionPresentAndEqual(license.Status.Conditions, common.ReadyCondition, metav1.ConditionTrue))
+			assert.True(t, condition.IsStatusConditionPresentAndEqual(license.Status.Conditions, common.ReadyCondition.String(), metav1.ConditionTrue))
 			assert.True(t, license.Status.Sync)
 
 			return nil
@@ -328,7 +328,7 @@ func doUpdateToEnterpriseLicenseStep() test.TestStep {
 			assert.NotEmpty(t, license.Status.LicenseChecksum)
 			assert.Equal(t, "gold", license.Status.LicenseType)
 			assert.True(t, condition.IsStatusConditionPresentAndEqual(license.Status.Conditions, LicenseCondition, metav1.ConditionTrue))
-			assert.True(t, condition.IsStatusConditionPresentAndEqual(license.Status.Conditions, common.ReadyCondition, metav1.ConditionTrue))
+			assert.True(t, condition.IsStatusConditionPresentAndEqual(license.Status.Conditions, common.ReadyCondition.String(), metav1.ConditionTrue))
 			assert.True(t, license.Status.Sync)
 
 			return nil
@@ -398,7 +398,7 @@ func doUpdateEnterpriseLicenseStep() test.TestStep {
 			assert.NotEqual(t, data["licenseChecksum"], license.Status.LicenseChecksum)
 			assert.Equal(t, "gold", license.Status.LicenseType)
 			assert.True(t, condition.IsStatusConditionPresentAndEqual(license.Status.Conditions, LicenseCondition, metav1.ConditionTrue))
-			assert.True(t, condition.IsStatusConditionPresentAndEqual(license.Status.Conditions, common.ReadyCondition, metav1.ConditionTrue))
+			assert.True(t, condition.IsStatusConditionPresentAndEqual(license.Status.Conditions, common.ReadyCondition.String(), metav1.ConditionTrue))
 			assert.True(t, license.Status.Sync)
 
 			return nil

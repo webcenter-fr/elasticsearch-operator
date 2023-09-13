@@ -140,9 +140,9 @@ func (r *LicenseReconciler) Configure(ctx context.Context, req ctrl.Request, res
 		})
 	}
 
-	if condition.FindStatusCondition(license.Status.Conditions, common.ReadyCondition) == nil {
+	if condition.FindStatusCondition(license.Status.Conditions, common.ReadyCondition.String()) == nil {
 		condition.SetStatusCondition(&license.Status.Conditions, metav1.Condition{
-			Type:   common.ReadyCondition,
+			Type:   common.ReadyCondition.String(),
 			Status: metav1.ConditionFalse,
 			Reason: "Initialize",
 		})
@@ -351,7 +351,7 @@ func (r *LicenseReconciler) OnError(ctx context.Context, resource client.Object,
 	})
 
 	condition.SetStatusCondition(&license.Status.Conditions, metav1.Condition{
-		Type:   common.ReadyCondition,
+		Type:   common.ReadyCondition.String(),
 		Status: metav1.ConditionFalse,
 		Reason: "Error",
 	})
@@ -365,9 +365,9 @@ func (r *LicenseReconciler) OnSuccess(ctx context.Context, resource client.Objec
 
 	license.Status.Sync = true
 
-	if condition.IsStatusConditionPresentAndEqual(license.Status.Conditions, common.ReadyCondition, metav1.ConditionFalse) {
+	if condition.IsStatusConditionPresentAndEqual(license.Status.Conditions, common.ReadyCondition.String(), metav1.ConditionFalse) {
 		condition.SetStatusCondition(&license.Status.Conditions, metav1.Condition{
-			Type:   common.ReadyCondition,
+			Type:   common.ReadyCondition.String(),
 			Reason: "Available",
 			Status: metav1.ConditionTrue,
 		})

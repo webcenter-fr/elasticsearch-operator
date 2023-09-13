@@ -147,12 +147,11 @@ func (t *MetricbeatControllerTestSuite) SetupSuite() {
 		panic(err)
 	}
 
-	metricbeatReconciler := NewMetricbeatReconciler(k8sClient, scheme.Scheme)
-	metricbeatReconciler.SetLogger(logrus.WithFields(logrus.Fields{
-		"type": "MetricbeatController",
-	}))
-	metricbeatReconciler.SetRecorder(k8sManager.GetEventRecorderFor("metricbeat-controller"))
-	metricbeatReconciler.SetReconciler(metricbeatReconciler)
+	metricbeatReconciler := NewMetricbeatReconciler(
+		k8sClient,
+		logrus.NewEntry(logrus.StandardLogger()),
+		k8sManager.GetEventRecorderFor("metricbeat-controller"),
+	)
 	if err = metricbeatReconciler.SetupWithManager(k8sManager); err != nil {
 		panic(err)
 	}

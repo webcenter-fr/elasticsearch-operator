@@ -4,9 +4,15 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/disaster37/operator-sdk-extra/pkg/object"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 )
+
+// GetStatus implement the object.MultiPhaseObject
+func (h *Filebeat) GetStatus() object.MultiPhaseObjectStatus {
+	return &h.Status
+}
 
 // IsPrometheusMonitoring return true if Prometheus monitoring is enabled
 func (h *Filebeat) IsPrometheusMonitoring() bool {

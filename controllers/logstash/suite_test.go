@@ -148,12 +148,11 @@ func (t *LogstashControllerTestSuite) SetupSuite() {
 		panic(err)
 	}
 
-	logstashReconciler := NewLogstashReconciler(k8sClient, scheme.Scheme)
-	logstashReconciler.SetLogger(logrus.WithFields(logrus.Fields{
-		"type": "LogstashController",
-	}))
-	logstashReconciler.SetRecorder(k8sManager.GetEventRecorderFor("logstash-controller"))
-	logstashReconciler.SetReconciler(logstashReconciler)
+	logstashReconciler := NewLogstashReconciler(
+		k8sClient,
+		logrus.NewEntry(logrus.StandardLogger()),
+		k8sManager.GetEventRecorderFor("logstash-controller"),
+	)
 	if err = logstashReconciler.SetupWithManager(k8sManager); err != nil {
 		panic(err)
 	}

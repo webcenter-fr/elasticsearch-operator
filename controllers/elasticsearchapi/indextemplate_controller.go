@@ -108,9 +108,9 @@ func (r *IndexTemplateReconciler) Configure(ctx context.Context, req ctrl.Reques
 		})
 	}
 
-	if condition.FindStatusCondition(it.Status.Conditions, common.ReadyCondition) == nil {
+	if condition.FindStatusCondition(it.Status.Conditions, common.ReadyCondition.String()) == nil {
 		condition.SetStatusCondition(&it.Status.Conditions, metav1.Condition{
-			Type:   common.ReadyCondition,
+			Type:   common.ReadyCondition.String(),
 			Status: metav1.ConditionFalse,
 			Reason: "Initialize",
 		})
@@ -273,7 +273,7 @@ func (r *IndexTemplateReconciler) OnError(ctx context.Context, resource client.O
 	})
 
 	condition.SetStatusCondition(&it.Status.Conditions, metav1.Condition{
-		Type:   common.ReadyCondition,
+		Type:   common.ReadyCondition.String(),
 		Status: metav1.ConditionFalse,
 		Reason: "Error",
 	})
@@ -287,9 +287,9 @@ func (r *IndexTemplateReconciler) OnSuccess(ctx context.Context, resource client
 
 	it.Status.Sync = true
 
-	if condition.IsStatusConditionPresentAndEqual(it.Status.Conditions, common.ReadyCondition, metav1.ConditionFalse) {
+	if condition.IsStatusConditionPresentAndEqual(it.Status.Conditions, common.ReadyCondition.String(), metav1.ConditionFalse) {
 		condition.SetStatusCondition(&it.Status.Conditions, metav1.Condition{
-			Type:   common.ReadyCondition,
+			Type:   common.ReadyCondition.String(),
 			Reason: "Available",
 			Status: metav1.ConditionTrue,
 		})

@@ -147,12 +147,11 @@ func (t *FilebeatControllerTestSuite) SetupSuite() {
 		panic(err)
 	}
 
-	filebeatReconciler := NewFilebeatReconciler(k8sClient, scheme.Scheme)
-	filebeatReconciler.SetLogger(logrus.WithFields(logrus.Fields{
-		"type": "FilebeatController",
-	}))
-	filebeatReconciler.SetRecorder(k8sManager.GetEventRecorderFor("filebeat-controller"))
-	filebeatReconciler.SetReconciler(filebeatReconciler)
+	filebeatReconciler := NewFilebeatReconciler(
+		k8sClient,
+		logrus.NewEntry(logrus.StandardLogger()),
+		k8sManager.GetEventRecorderFor("filebeat-controller"),
+	)
 	if err = filebeatReconciler.SetupWithManager(k8sManager); err != nil {
 		panic(err)
 	}

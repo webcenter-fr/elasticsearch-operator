@@ -109,9 +109,9 @@ func (r *SnapshotRepositoryReconciler) Configure(ctx context.Context, req ctrl.R
 		})
 	}
 
-	if condition.FindStatusCondition(sr.Status.Conditions, common.ReadyCondition) == nil {
+	if condition.FindStatusCondition(sr.Status.Conditions, common.ReadyCondition.String()) == nil {
 		condition.SetStatusCondition(&sr.Status.Conditions, metav1.Condition{
-			Type:   common.ReadyCondition,
+			Type:   common.ReadyCondition.String(),
 			Status: metav1.ConditionFalse,
 			Reason: "Initialize",
 		})
@@ -284,7 +284,7 @@ func (r *SnapshotRepositoryReconciler) OnError(ctx context.Context, resource cli
 	})
 
 	condition.SetStatusCondition(&sr.Status.Conditions, metav1.Condition{
-		Type:   common.ReadyCondition,
+		Type:   common.ReadyCondition.String(),
 		Status: metav1.ConditionFalse,
 		Reason: "Error",
 	})
@@ -298,9 +298,9 @@ func (r *SnapshotRepositoryReconciler) OnSuccess(ctx context.Context, resource c
 
 	sr.Status.Sync = true
 
-	if condition.IsStatusConditionPresentAndEqual(sr.Status.Conditions, common.ReadyCondition, metav1.ConditionFalse) {
+	if condition.IsStatusConditionPresentAndEqual(sr.Status.Conditions, common.ReadyCondition.String(), metav1.ConditionFalse) {
 		condition.SetStatusCondition(&sr.Status.Conditions, metav1.Condition{
-			Type:   common.ReadyCondition,
+			Type:   common.ReadyCondition.String(),
 			Reason: "Available",
 			Status: metav1.ConditionTrue,
 		})

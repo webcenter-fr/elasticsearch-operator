@@ -132,12 +132,7 @@ func (t *KibanaControllerTestSuite) SetupSuite() {
 		panic(err)
 	}
 
-	kibanaReconciler := NewKibanaReconciler(k8sClient, scheme.Scheme)
-	kibanaReconciler.SetLogger(logrus.WithFields(logrus.Fields{
-		"type": "kibanaController",
-	}))
-	kibanaReconciler.SetRecorder(k8sManager.GetEventRecorderFor("kibana-controller"))
-	kibanaReconciler.SetReconciler(kibanaReconciler)
+	kibanaReconciler := NewKibanaReconciler(k8sClient, logrus.NewEntry(logrus.StandardLogger()), k8sManager.GetEventRecorderFor("kibana-controller"))
 	if err = kibanaReconciler.SetupWithManager(k8sManager); err != nil {
 		panic(err)
 	}

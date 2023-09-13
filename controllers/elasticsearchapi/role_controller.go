@@ -107,9 +107,9 @@ func (r *RoleReconciler) Configure(ctx context.Context, req ctrl.Request, resour
 		})
 	}
 
-	if condition.FindStatusCondition(role.Status.Conditions, common.ReadyCondition) == nil {
+	if condition.FindStatusCondition(role.Status.Conditions, common.ReadyCondition.String()) == nil {
 		condition.SetStatusCondition(&role.Status.Conditions, metav1.Condition{
-			Type:   common.ReadyCondition,
+			Type:   common.ReadyCondition.String(),
 			Status: metav1.ConditionFalse,
 			Reason: "Initialize",
 		})
@@ -272,7 +272,7 @@ func (r *RoleReconciler) OnError(ctx context.Context, resource client.Object, da
 	})
 
 	condition.SetStatusCondition(&role.Status.Conditions, metav1.Condition{
-		Type:   common.ReadyCondition,
+		Type:   common.ReadyCondition.String(),
 		Status: metav1.ConditionFalse,
 		Reason: "Error",
 	})
@@ -286,9 +286,9 @@ func (r *RoleReconciler) OnSuccess(ctx context.Context, resource client.Object, 
 
 	role.Status.Sync = true
 
-	if condition.IsStatusConditionPresentAndEqual(role.Status.Conditions, common.ReadyCondition, metav1.ConditionFalse) {
+	if condition.IsStatusConditionPresentAndEqual(role.Status.Conditions, common.ReadyCondition.String(), metav1.ConditionFalse) {
 		condition.SetStatusCondition(&role.Status.Conditions, metav1.Condition{
-			Type:   common.ReadyCondition,
+			Type:   common.ReadyCondition.String(),
 			Reason: "Available",
 			Status: metav1.ConditionTrue,
 		})

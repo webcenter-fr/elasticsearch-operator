@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/disaster37/k8s-objectmatcher/patch"
+	"github.com/disaster37/operator-sdk-extra/pkg/controller"
 	"github.com/disaster37/operator-sdk-extra/pkg/test"
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
@@ -172,7 +173,7 @@ queue.type: persisted
 
 				// In envtest, no kubelet
 				// So the Filebeat condition never set as true
-				if condition.FindStatusCondition(fb.Status.Conditions, FilebeatCondition.String()) != nil && condition.FindStatusCondition(fb.Status.Conditions, FilebeatCondition.String()).Reason != "Initialize" {
+				if condition.FindStatusCondition(fb.Status.Conditions, controller.ReadyCondition.String()) != nil && condition.FindStatusCondition(fb.Status.Conditions, controller.ReadyCondition.String()).Reason != "Initialize" {
 					return nil
 				}
 
@@ -257,8 +258,8 @@ queue.type: persisted
 			assert.NotEmpty(t, sts.Annotations[patch.LastAppliedConfig])
 
 			// Status must be update
-			assert.NotEmpty(t, fb.Status.Phase)
-			assert.False(t, *fb.Status.IsError)
+			assert.NotEmpty(t, fb.Status.PhaseName)
+			assert.False(t, *fb.Status.IsOnError)
 
 			return nil
 		},
@@ -312,7 +313,7 @@ func doUpdateFilebeatStep() test.TestStep {
 
 				// In envtest, no kubelet
 				// So the Filebeat condition never set as true
-				if lastVersion != fb.ResourceVersion && (fb.Status.Phase == FilebeatPhaseStarting.String()) {
+				if lastVersion != fb.ResourceVersion && (fb.Status.PhaseName == controller.StartingPhase) {
 					return nil
 				}
 
@@ -406,8 +407,8 @@ func doUpdateFilebeatStep() test.TestStep {
 			assert.Equal(t, "fu", sts.Labels["test"])
 
 			// Status must be update
-			assert.NotEmpty(t, fb.Status.Phase)
-			assert.False(t, *fb.Status.IsError)
+			assert.NotEmpty(t, fb.Status.PhaseName)
+			assert.False(t, *fb.Status.IsOnError)
 
 			return nil
 		},

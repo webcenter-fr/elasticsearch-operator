@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/disaster37/k8s-objectmatcher/patch"
+	"github.com/disaster37/operator-sdk-extra/pkg/controller"
 	"github.com/disaster37/operator-sdk-extra/pkg/test"
 	monitoringv1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1"
 	"github.com/sirupsen/logrus"
@@ -157,7 +158,7 @@ func doCreateKibanaStep() test.TestStep {
 
 				// In envtest, no kubelet
 				// So the Kibana condition never set as true
-				if condition.FindStatusCondition(kb.Status.Conditions, KibanaCondition.String()) != nil && condition.FindStatusCondition(kb.Status.Conditions, KibanaCondition.String()).Reason != "Initialize" {
+				if condition.FindStatusCondition(kb.Status.Conditions, controller.ReadyCondition.String()) != nil && condition.FindStatusCondition(kb.Status.Conditions, controller.ReadyCondition.String()).Reason != "Initialize" {
 					return nil
 				}
 
@@ -268,9 +269,9 @@ func doCreateKibanaStep() test.TestStep {
 			assert.NotEmpty(t, pm.Annotations[patch.LastAppliedConfig])
 
 			// Status must be update
-			assert.NotEmpty(t, kb.Status.Phase)
+			assert.NotEmpty(t, kb.Status.PhaseName)
 			assert.NotEmpty(t, kb.Status.Url)
-			assert.False(t, *kb.Status.IsError)
+			assert.False(t, *kb.Status.IsOnError)
 
 			return nil
 		},
@@ -326,7 +327,7 @@ func doUpdateKibanaStep() test.TestStep {
 
 				// In envtest, no kubelet
 				// So the Kibana condition never set as true
-				if lastVersion != kb.ResourceVersion && (kb.Status.Phase == KibanaPhaseStarting.String()) {
+				if lastVersion != kb.ResourceVersion && (kb.Status.PhaseName == controller.StartingPhase) {
 					return nil
 				}
 
@@ -448,9 +449,9 @@ func doUpdateKibanaStep() test.TestStep {
 			assert.NotEmpty(t, pm.Annotations[patch.LastAppliedConfig])
 
 			// Status must be update
-			assert.NotEmpty(t, kb.Status.Phase)
+			assert.NotEmpty(t, kb.Status.PhaseName)
 			assert.NotEmpty(t, kb.Status.Url)
-			assert.False(t, *kb.Status.IsError)
+			assert.False(t, *kb.Status.IsOnError)
 
 			return nil
 		},

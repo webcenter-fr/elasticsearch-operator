@@ -4,9 +4,15 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/disaster37/operator-sdk-extra/pkg/object"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 )
+
+// GetStatus implement the object.MultiPhaseObject
+func (h *Kibana) GetStatus() object.MultiPhaseObjectStatus {
+	return &h.Status
+}
 
 // IsSelfManagedSecretForTls return true if the operator manage the certificates for TLS
 // It return false if secret is provided
