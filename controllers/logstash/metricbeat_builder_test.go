@@ -30,7 +30,7 @@ func TestBuildMetricbeat(t *testing.T) {
 		Spec: logstashcrd.LogstashSpec{},
 	}
 
-	mbs, err = buildMetricbeat(o)
+	mbs, err = buildMetricbeats(o)
 	assert.NoError(t, err)
 	assert.Empty(t, mbs)
 
@@ -49,7 +49,7 @@ func TestBuildMetricbeat(t *testing.T) {
 		},
 	}
 
-	mbs, err = buildMetricbeat(o)
+	mbs, err = buildMetricbeats(o)
 	assert.NoError(t, err)
 	assert.Empty(t, mbs)
 
@@ -77,7 +77,7 @@ func TestBuildMetricbeat(t *testing.T) {
 		},
 	}
 
-	mbs, err = buildMetricbeat(o)
+	mbs, err = buildMetricbeats(o)
 	assert.NoError(t, err)
 	test.EqualFromYamlFile(t, "testdata/metricbeat_default.yaml", &mbs[0], test.CleanApi)
 
@@ -117,7 +117,7 @@ func TestBuildMetricbeat(t *testing.T) {
 		},
 	}
 
-	mbs, err = buildMetricbeat(o)
+	mbs, err = buildMetricbeats(o)
 	assert.NoError(t, err)
 	test.EqualFromYamlFile(t, "testdata/metricbeat_all_set.yaml", &mbs[0], test.CleanApi)
 }

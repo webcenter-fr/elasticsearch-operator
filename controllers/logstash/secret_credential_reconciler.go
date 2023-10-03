@@ -91,7 +91,7 @@ func (r *credentialReconciler) Read(ctx context.Context, resource object.MultiPh
 	}
 
 	// Generate expected secret
-	expectedSecretCredentials, err := buildCredentialSecret(o, sEs)
+	expectedSecretCredentials, err := buildCredentialSecrets(o, sEs)
 	if err != nil {
 		return read, res, errors.Wrapf(err, "Error when generate secret %s", GetSecretNameForCredentials(o))
 	}

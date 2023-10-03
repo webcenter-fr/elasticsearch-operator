@@ -28,7 +28,7 @@ func TestBuildPodDisruptionBudget(t *testing.T) {
 		Spec: logstashcrd.LogstashSpec{},
 	}
 
-	pdbs, err = buildPodDisruptionBudget(o)
+	pdbs, err = buildPodDisruptionBudgets(o)
 	assert.NoError(t, err)
 	assert.Empty(t, pdbs)
 
@@ -45,7 +45,7 @@ func TestBuildPodDisruptionBudget(t *testing.T) {
 		},
 	}
 
-	pdbs, err = buildPodDisruptionBudget(o)
+	pdbs, err = buildPodDisruptionBudgets(o)
 	assert.NoError(t, err)
 	test.EqualFromYamlFile(t, "testdata/pdb_default.yaml", &pdbs[0], test.CleanApi)
 
@@ -66,7 +66,7 @@ func TestBuildPodDisruptionBudget(t *testing.T) {
 		},
 	}
 
-	pdbs, err = buildPodDisruptionBudget(o)
+	pdbs, err = buildPodDisruptionBudgets(o)
 	assert.NoError(t, err)
 	test.EqualFromYamlFile(t, "testdata/pdb_with_global_spec.yaml", &pdbs[0], test.CleanApi)
 

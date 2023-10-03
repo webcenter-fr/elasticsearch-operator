@@ -20,7 +20,7 @@ import (
 )
 
 // GenerateStatefullset permit to generate statefullset
-func buildStatefulset(mb *beatcrd.Metricbeat, es *elasticsearchcrd.Elasticsearch, secretsChecksum []corev1.Secret, configMapsChecksum []corev1.ConfigMap) (statefullsets []appv1.StatefulSet, err error) {
+func buildStatefulsets(mb *beatcrd.Metricbeat, es *elasticsearchcrd.Elasticsearch, secretsChecksum []corev1.Secret, configMapsChecksum []corev1.ConfigMap) (statefullsets []appv1.StatefulSet, err error) {
 
 	statefullsets = make([]appv1.StatefulSet, 0, 1)
 	checksumAnnotations := map[string]string{}

@@ -30,7 +30,7 @@ func TestBuildNetworkPolicies(t *testing.T) {
 		Spec: logstashcrd.LogstashSpec{},
 	}
 
-	nps, err = buildNetworkPolicy(o, nil)
+	nps, err = buildNetworkPolicies(o, nil)
 
 	assert.NoError(t, err)
 	assert.Empty(t, nps)
@@ -69,7 +69,7 @@ func TestBuildNetworkPolicies(t *testing.T) {
 			},
 		},
 	}
-	nps, err = buildNetworkPolicy(o, oList)
+	nps, err = buildNetworkPolicies(o, oList)
 
 	assert.NoError(t, err)
 	test.EqualFromYamlFile(t, "testdata/networkpolicy_referer.yml", &nps[0], test.CleanApi)

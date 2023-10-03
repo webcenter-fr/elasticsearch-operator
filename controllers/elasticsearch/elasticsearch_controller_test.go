@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/disaster37/k8s-objectmatcher/patch"
+	"github.com/disaster37/operator-sdk-extra/pkg/controller"
 	"github.com/disaster37/operator-sdk-extra/pkg/test"
 	monitoringv1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1"
 	"github.com/sirupsen/logrus"
@@ -142,7 +143,7 @@ func doCreateElasticsearchStep() test.TestStep {
 
 				// In envtest, no kubelet
 				// So the Elasticsearch condition never set as true
-				if condition.FindStatusCondition(es.Status.Conditions, ElasticsearchCondition.String()) != nil && condition.FindStatusCondition(es.Status.Conditions, ElasticsearchCondition.String()).Reason != "Initialize" {
+				if condition.FindStatusCondition(es.Status.Conditions, controller.ReadyCondition.String()) != nil && condition.FindStatusCondition(es.Status.Conditions, controller.ReadyCondition.String()).Reason != "Initialize" {
 					return nil
 				}
 
@@ -317,10 +318,10 @@ func doCreateElasticsearchStep() test.TestStep {
 
 			// Status must be update
 			assert.NotEmpty(t, es.Status.Health)
-			assert.NotEmpty(t, es.Status.Phase)
+			assert.NotEmpty(t, es.Status.PhaseName)
 			assert.NotEmpty(t, es.Status.Url)
 			assert.NotNil(t, es.Status.CredentialsRef)
-			assert.False(t, *es.Status.IsError)
+			assert.False(t, *es.Status.IsOnError)
 
 			return nil
 		},
@@ -379,7 +380,7 @@ func doUpdateElasticsearchStep() test.TestStep {
 
 				// In envtest, no kubelet
 				// So the Elasticsearch condition never set as true
-				if lastVersion != es.ResourceVersion && (es.Status.Phase == ElasticsearchPhaseStarting.String()) {
+				if lastVersion != es.ResourceVersion && (es.Status.PhaseName == controller.StartingPhase) {
 					return nil
 				}
 
@@ -572,10 +573,10 @@ func doUpdateElasticsearchStep() test.TestStep {
 
 			// Status must be update
 			assert.NotEmpty(t, es.Status.Health)
-			assert.NotEmpty(t, es.Status.Phase)
+			assert.NotEmpty(t, es.Status.PhaseName)
 			assert.NotEmpty(t, es.Status.Url)
 			assert.NotNil(t, es.Status.CredentialsRef)
-			assert.False(t, *es.Status.IsError)
+			assert.False(t, *es.Status.IsOnError)
 
 			return nil
 		},
@@ -638,7 +639,7 @@ func doUpdateElasticsearchIncreaseNodeGroupStep() test.TestStep {
 
 				// In envtest, no kubelet
 				// So the Elasticsearch condition never set as true
-				if lastVersion != es.ResourceVersion && (es.Status.Phase == ElasticsearchPhaseStarting.String()) {
+				if lastVersion != es.ResourceVersion && (es.Status.PhaseName == controller.StartingPhase) {
 					return nil
 				}
 
@@ -813,10 +814,10 @@ func doUpdateElasticsearchIncreaseNodeGroupStep() test.TestStep {
 
 			// Status must be update
 			assert.NotEmpty(t, es.Status.Health)
-			assert.NotEmpty(t, es.Status.Phase)
+			assert.NotEmpty(t, es.Status.PhaseName)
 			assert.NotEmpty(t, es.Status.Url)
 			assert.NotNil(t, es.Status.CredentialsRef)
-			assert.False(t, *es.Status.IsError)
+			assert.False(t, *es.Status.IsOnError)
 
 			return nil
 		},
@@ -877,7 +878,7 @@ func doUpdateElasticsearchDecreaseNodeGroupStep() test.TestStep {
 
 				// In envtest, no kubelet
 				// So the Elasticsearch condition never set as true
-				if lastVersion != es.ResourceVersion && (es.Status.Phase == ElasticsearchPhaseStarting.String()) {
+				if lastVersion != es.ResourceVersion && (es.Status.PhaseName == controller.StartingPhase) {
 					return nil
 				}
 
@@ -1111,10 +1112,10 @@ func doUpdateElasticsearchDecreaseNodeGroupStep() test.TestStep {
 
 			// Status must be update
 			assert.NotEmpty(t, es.Status.Health)
-			assert.NotEmpty(t, es.Status.Phase)
+			assert.NotEmpty(t, es.Status.PhaseName)
 			assert.NotEmpty(t, es.Status.Url)
 			assert.NotNil(t, es.Status.CredentialsRef)
-			assert.False(t, *es.Status.IsError)
+			assert.False(t, *es.Status.IsOnError)
 
 			return nil
 		},
@@ -1190,7 +1191,7 @@ func doUpdateElasticsearchAddLicenseStep() test.TestStep {
 
 				// In envtest, no kubelet
 				// So the Elasticsearch condition never set as true
-				if lastVersion != es.ResourceVersion && (es.Status.Phase == ElasticsearchPhaseStarting.String()) {
+				if lastVersion != es.ResourceVersion && (es.Status.PhaseName == controller.StartingPhase) {
 					return nil
 				}
 
@@ -1431,10 +1432,10 @@ func doUpdateElasticsearchAddLicenseStep() test.TestStep {
 
 			// Status must be update
 			assert.NotEmpty(t, es.Status.Health)
-			assert.NotEmpty(t, es.Status.Phase)
+			assert.NotEmpty(t, es.Status.PhaseName)
 			assert.NotEmpty(t, es.Status.Url)
 			assert.NotNil(t, es.Status.CredentialsRef)
-			assert.False(t, *es.Status.IsError)
+			assert.False(t, *es.Status.IsOnError)
 
 			return nil
 		},

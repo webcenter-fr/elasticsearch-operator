@@ -12,7 +12,7 @@ import (
 )
 
 // BuildMetricbeat permit to generate metricbeat
-func buildMetricbeat(ls *logstashcrd.Logstash) (metricbeats []beatcrd.Metricbeat, err error) {
+func buildMetricbeats(ls *logstashcrd.Logstash) (metricbeats []beatcrd.Metricbeat, err error) {
 
 	if !ls.IsMetricbeatMonitoring() {
 		return nil, nil

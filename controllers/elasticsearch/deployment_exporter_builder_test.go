@@ -1,0 +1,100 @@
+package elasticsearch
+
+import (
+	"testing"
+
+	"github.com/stretchr/testify/assert"
+	elasticsearchcrd "github.com/webcenter-fr/elasticsearch-operator/apis/elasticsearch/v1"
+	"github.com/webcenter-fr/elasticsearch-operator/pkg/test"
+	appv1 "k8s.io/api/apps/v1"
+	v1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/resource"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+)
+
+func TestBuildDeploymentExporter(t *testing.T) {
+	var (
+		err  error
+		o    *elasticsearchcrd.Elasticsearch
+		dpls []appv1.Deployment
+	)
+
+	// With default values
+	o = &elasticsearchcrd.Elasticsearch{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: "default",
+			Name:      "test",
+		},
+		Spec: elasticsearchcrd.ElasticsearchSpec{},
+	}
+	dpls, err = buildDeploymentExporters(o)
+	assert.NoError(t, err)
+	assert.Empty(t, dpls)
+
+	// When prometheus monitoring is disabled
+	o = &elasticsearchcrd.Elasticsearch{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: "default",
+			Name:      "test",
+		},
+		Spec: elasticsearchcrd.ElasticsearchSpec{
+			Monitoring: elasticsearchcrd.ElasticsearchMonitoringSpec{
+				Prometheus: &elasticsearchcrd.ElasticsearchPrometheusSpec{
+					Enabled: false,
+				},
+			},
+		},
+	}
+	dpls, err = buildDeploymentExporters(o)
+	assert.NoError(t, err)
+	assert.Empty(t, dpls)
+
+	// When prometheus monitoring is enabled
+	o = &elasticsearchcrd.Elasticsearch{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: "default",
+			Name:      "test",
+		},
+		Spec: elasticsearchcrd.ElasticsearchSpec{
+			Monitoring: elasticsearchcrd.ElasticsearchMonitoringSpec{
+				Prometheus: &elasticsearchcrd.ElasticsearchPrometheusSpec{
+					Enabled: true,
+				},
+			},
+		},
+	}
+	dpls, err = buildDeploymentExporters(o)
+
+	assert.NoError(t, err)
+	test.EqualFromYamlFile(t, "testdata/deployment_exporter.yml", &dpls[0], test.CleanApi)
+
+	// When prometheus monitoring is enabled and set image version and requirements
+	o = &elasticsearchcrd.Elasticsearch{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: "default",
+			Name:      "test",
+		},
+		Spec: elasticsearchcrd.ElasticsearchSpec{
+			Monitoring: elasticsearchcrd.ElasticsearchMonitoringSpec{
+				Prometheus: &elasticsearchcrd.ElasticsearchPrometheusSpec{
+					Enabled: true,
+					Version: "v1.6.0",
+					Resources: &v1.ResourceRequirements{
+						Requests: v1.ResourceList{
+							v1.ResourceCPU:    resource.MustParse("500m"),
+							v1.ResourceMemory: resource.MustParse("512Mi"),
+						},
+						Limits: v1.ResourceList{
+							v1.ResourceCPU:    resource.MustParse("1000m"),
+							v1.ResourceMemory: resource.MustParse("1024Mi"),
+						},
+					},
+				},
+			},
+		},
+	}
+	dpls, err = buildDeploymentExporters(o)
+
+	assert.NoError(t, err)
+	test.EqualFromYamlFile(t, "testdata/deployment_exporter_resources.yml", &dpls[0], test.CleanApi)
+}

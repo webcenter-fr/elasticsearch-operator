@@ -173,15 +173,11 @@ func (r *tlsReconciler) Diff(ctx context.Context, resource object.MultiPhaseObje
 			if isUpdated {
 				secretToUpdate = append(secretToUpdate, sApiPki)
 			} else {
-				err = ctrl.SetControllerReference(o, sApiPki, r.Scheme())
-				if err != nil {
-					return diff, res, errors.Wrap(err, "Error when set as owner reference")
-				}
 				secretToCreate = append(secretToCreate, sApiPki)
 			}
 
 			// Generate API certificate
-			tmpApi, err := BuildTlsSecret(o, apiRootCA)
+			tmpApi, err := buildTlsSecret(o, apiRootCA)
 			if err != nil {
 				return diff, res, errors.Wrap(err, "Error when generate certificate")
 			}
@@ -192,10 +188,6 @@ func (r *tlsReconciler) Diff(ctx context.Context, resource object.MultiPhaseObje
 			if isUpdated {
 				secretToUpdate = append(secretToUpdate, sApi)
 			} else {
-				err = ctrl.SetControllerReference(o, sApi, r.Scheme())
-				if err != nil {
-					return diff, res, errors.Wrap(err, "Error when set as owner reference")
-				}
 				secretToCreate = append(secretToCreate, sApi)
 			}
 		}
@@ -253,14 +245,10 @@ func (r *tlsReconciler) Diff(ctx context.Context, resource object.MultiPhaseObje
 			if isUpdated {
 				secretToUpdate = append(secretToUpdate, sApiPki)
 			} else {
-				err = ctrl.SetControllerReference(o, sApiPki, r.Scheme())
-				if err != nil {
-					return diff, res, errors.Wrap(err, "Error when set as owner reference")
-				}
 				secretToCreate = append(secretToCreate, sApiPki)
 			}
 
-			tmpApi, err := BuildTlsSecret(o, apiRootCA)
+			tmpApi, err := buildTlsSecret(o, apiRootCA)
 			if err != nil {
 				return diff, res, errors.Wrap(err, "Error when renew certificate")
 			}
@@ -272,10 +260,6 @@ func (r *tlsReconciler) Diff(ctx context.Context, resource object.MultiPhaseObje
 			if isUpdated {
 				secretToUpdate = append(secretToUpdate, sApi)
 			} else {
-				err = ctrl.SetControllerReference(o, sApi, r.Scheme())
-				if err != nil {
-					return diff, res, errors.Wrap(err, "Error when set as owner reference")
-				}
 				secretToCreate = append(secretToCreate, sApi)
 			}
 		}

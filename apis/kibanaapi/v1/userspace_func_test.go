@@ -8,7 +8,7 @@ import (
 	"k8s.io/utils/ptr"
 )
 
-func TestGetUserSpaceID(t *testing.T) {
+func TestUserSpaceGetExternalName(t *testing.T) {
 	var o *UserSpace
 
 	// When ID is set
@@ -22,7 +22,7 @@ func TestGetUserSpaceID(t *testing.T) {
 		},
 	}
 
-	assert.Equal(t, "test2", o.GetUserSpaceID())
+	assert.Equal(t, "test2", o.GetExternalName())
 
 	// When ID isn't set
 	o = &UserSpace{
@@ -33,7 +33,7 @@ func TestGetUserSpaceID(t *testing.T) {
 		Spec: UserSpaceSpec{},
 	}
 
-	assert.Equal(t, "test", o.GetUserSpaceID())
+	assert.Equal(t, "test", o.GetExternalName())
 }
 
 func TestIsIncludeReference(t *testing.T) {

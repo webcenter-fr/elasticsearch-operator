@@ -95,7 +95,7 @@ func (r *caElasticsearchReconciler) Read(ctx context.Context, resource object.Mu
 	}
 
 	// Generate expected secret
-	expectedSecretCAElasticsearchs, err := buildCAElasticsearchSecret(o, sEs)
+	expectedSecretCAElasticsearchs, err := buildCAElasticsearchSecrets(o, sEs)
 	if err != nil {
 		return read, res, errors.Wrapf(err, "Error when generate secret %s", GetSecretNameForCAElasticsearch(o))
 	}

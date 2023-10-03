@@ -23,6 +23,7 @@ import (
 
 	// Import all Kubernetes client auth plugins (e.g. Azure, GCP, OIDC, etc.)
 	// to ensure that exec-entrypoint and run can make use of them.
+	"github.com/disaster37/operator-sdk-extra/pkg/controller"
 	monitoringv1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1"
 	"github.com/sirupsen/logrus"
 	beatcrd "github.com/webcenter-fr/elasticsearch-operator/apis/beat/v1"
@@ -169,23 +170,24 @@ func main() {
 	}
 
 	// Add indexers
-	elasticsearchcrd.MustSetUpIndex(mgr)
-	kibanacrd.MustSetUpIndex(mgr)
-	logstashcrd.MustSetUpIndex(mgr)
-	beatcrd.MustSetUpIndexForFilebeat(mgr)
-	beatcrd.MustSetUpIndexForMetricbeat(mgr)
-	cerebrocrd.MustSetUpIndexCerebro(mgr)
-	cerebrocrd.MustSetUpIndexHost(mgr)
-	elasticsearchapicrd.MustSetUpIndex(mgr)
-	kibanaapicrd.MustSetUpIndex(mgr)
+	// Add indexers
+	if err = controller.SetupIndexerWithManager(
+		mgr,
+		elasticsearchcrd.SetupElasticsearchIndexer,
+		kibanacrd.SetupKibanaIndexer,
+		logstashcrd.SetupLogstashIndexer,
+		beatcrd.SetupFilebeatIndexer,
+		beatcrd.SetupMetricbeatIndexer,
+		cerebrocrd.SetupCerebroIndexer,
+		cerebrocrd.SetupHostIndexer,
+		elasticsearchapicrd.SetupLicenceIndexer,
+		elasticsearchapicrd.SetupUserIndexexer,
+	); err != nil {
+		panic(err)
+	}
 
 	// Init controllers
-	elasticsearchController := elasticsearchcontrollers.NewElasticsearchReconciler(mgr.GetClient(), mgr.GetScheme())
-	elasticsearchController.SetLogger(log.WithFields(logrus.Fields{
-		"type": "ElasticsearchController",
-	}))
-	elasticsearchController.SetRecorder(mgr.GetEventRecorderFor("elasticsearch-controller"))
-	elasticsearchController.SetReconciler(elasticsearchController)
+	elasticsearchController := elasticsearchcontrollers.NewElasticsearchReconciler(mgr.GetClient(), logrus.NewEntry(log), mgr.GetEventRecorderFor("elasticsearch-controller"))
 	if err = elasticsearchController.SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "Elasticsearch")
 		os.Exit(1)

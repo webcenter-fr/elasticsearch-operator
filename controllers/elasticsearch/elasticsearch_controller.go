@@ -26,7 +26,9 @@ import (
 
 	"emperror.dev/errors"
 	eshandler "github.com/disaster37/es-handler/v8"
+	"github.com/disaster37/operator-sdk-extra/pkg/apis/shared"
 	"github.com/disaster37/operator-sdk-extra/pkg/controller"
+	"github.com/disaster37/operator-sdk-extra/pkg/object"
 	"github.com/elastic/elastic-transport-go/v8/elastictransport"
 	elastic "github.com/elastic/go-elasticsearch/v8"
 	"github.com/sirupsen/logrus"
@@ -42,44 +44,58 @@ import (
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	condition "k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/fields"
 	"k8s.io/apimachinery/pkg/labels"
-	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/client-go/tools/record"
 	"k8s.io/utils/ptr"
-	"k8s.io/utils/strings"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/handler"
-	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
 
 const (
-	ElasticsearchFinalizer                          = "elasticsearch.k8s.webcenter.fr/finalizer"
-	ElasticsearchCondition     common.ConditionName = "ElasticsearchReady"
-	ElasticsearchPhaseRunning  common.PhaseName     = "running"
-	ElasticsearchPhaseStarting common.PhaseName     = "starting"
+	name                   string               = "elasticsearch"
+	elasticsearchFinalizer shared.FinalizerName = "elasticsearch.k8s.webcenter.fr/finalizer"
 )
 
 // ElasticsearchReconciler reconciles a Elasticsearch object
 type ElasticsearchReconciler struct {
-	common.Controller
-	client.Client
-	Scheme *runtime.Scheme
-	name   string
+	controller.Controller
+	controller.MultiPhaseReconcilerAction
+	controller.MultiPhaseReconciler
+	controller.BaseReconciler
+	name string
 }
 
-func NewElasticsearchReconciler(client client.Client, scheme *runtime.Scheme) *ElasticsearchReconciler {
+// NewElasticsearchReconciler is the default constructor for Elasticsearch controller
+func NewElasticsearchReconciler(client client.Client, logger *logrus.Entry, recorder record.EventRecorder) (multiPhaseReconciler controller.Controller) {
 
-	r := &ElasticsearchReconciler{
-		Client: client,
-		Scheme: scheme,
-		name:   "elasticsearch",
+	multiPhaseReconciler = &ElasticsearchReconciler{
+		Controller: controller.NewBasicController(),
+		MultiPhaseReconcilerAction: controller.NewBasicMultiPhaseReconcilerAction(
+			client,
+			controller.ReadyCondition,
+			logger,
+			recorder,
+		),
+		MultiPhaseReconciler: controller.NewBasicMultiPhaseReconciler(
+			client,
+			name,
+			elasticsearchFinalizer,
+			logger,
+			recorder,
+		),
+		BaseReconciler: controller.BaseReconciler{
+			Client:   client,
+			Recorder: recorder,
+			Log:      logger,
+		},
+		name: name,
 	}
 
-	common.ControllerMetrics.WithLabelValues(r.name).Add(0)
+	common.ControllerMetrics.WithLabelValues(name).Add(0)
 
-	return r
+	return multiPhaseReconciler
 }
 
 //+kubebuilder:rbac:groups=elasticsearch.k8s.webcenter.fr,resources=elasticsearches,verbs=get;list;watch;create;update;patch;delete
@@ -110,44 +126,85 @@ func NewElasticsearchReconciler(client client.Client, scheme *runtime.Scheme) *E
 // For more details, check Reconcile and its Result here:
 // - https://pkg.go.dev/sigs.k8s.io/controller-runtime@v0.12.2/pkg/reconcile
 func (r *ElasticsearchReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
-	reconciler, err := controller.NewStdK8sReconciler(r.Client, ElasticsearchFinalizer, r.GetReconciler(), r.GetLogger(), r.GetRecorder())
-	if err != nil {
-		return ctrl.Result{}, err
-	}
-
 	es := &elasticsearchcrd.Elasticsearch{}
 	data := map[string]any{}
 
-	tlsReconsiler := NewTlsReconciler(r.Client, r.Scheme, r.GetRecorder(), r.GetLogger())
-	configmapReconciler := NewConfiMapReconciler(r.Client, r.Scheme, r.GetRecorder(), r.GetLogger())
-	serviceReconciler := NewServiceReconciler(r.Client, r.Scheme, r.GetRecorder(), r.GetLogger())
-	ingressReconciler := NewIngressReconciler(r.Client, r.Scheme, r.GetRecorder(), r.GetLogger())
-	loadBalancerReconciler := NewLoadBalancerReconciler(r.Client, r.Scheme, r.GetRecorder(), r.GetLogger())
-	pdbReconciler := NewPdbReconciler(r.Client, r.Scheme, r.GetRecorder(), r.GetLogger())
-	networkPolicyReconciler := NewNetworkPolicyReconciler(r.Client, r.Scheme, r.GetRecorder(), r.GetLogger())
-	credentialReconciler := NewCredentialReconciler(r.Client, r.Scheme, r.GetRecorder(), r.GetLogger())
-	statefulsetReconciler := NewStatefulsetReconciler(r.Client, r.Scheme, r.GetRecorder(), r.GetLogger())
-	userReconciler := NewSystemUserReconciler(r.Client, r.Scheme, r.GetRecorder(), r.GetLogger())
-	licenseReconciler := NewLicenseReconciler(r.Client, r.Scheme, r.GetRecorder(), r.GetLogger())
-	exporterReconciler := NewExporterReconciler(r.Client, r.Scheme, r.GetRecorder(), r.GetLogger())
-	podMonitorReconciler := NewPodMonitorReconciler(r.Client, r.Scheme, r.GetRecorder(), r.GetLogger())
-	metricbeatReconciler := NewMetricbeatReconciler(r.Client, r.Scheme, r.GetRecorder(), r.GetLogger())
-
-	return reconciler.Reconcile(ctx, req, es, data,
-		tlsReconsiler,
-		credentialReconciler,
-		configmapReconciler,
-		serviceReconciler,
-		pdbReconciler,
-		networkPolicyReconciler,
-		statefulsetReconciler,
-		ingressReconciler,
-		loadBalancerReconciler,
-		userReconciler,
-		licenseReconciler,
-		metricbeatReconciler,
-		exporterReconciler,
-		podMonitorReconciler,
+	return r.MultiPhaseReconciler.Reconcile(
+		ctx,
+		req,
+		es,
+		data,
+		r,
+		newTlsReconciler(
+			r.Client,
+			r.Log,
+			r.Recorder,
+		),
+		newCredentialReconciler(
+			r.Client,
+			r.Log,
+			r.Recorder,
+		),
+		newConfiMapReconciler(
+			r.Client,
+			r.Log,
+			r.Recorder,
+		),
+		newServiceReconciler(
+			r.Client,
+			r.Log,
+			r.Recorder,
+		),
+		newPdbReconciler(
+			r.Client,
+			r.Log,
+			r.Recorder,
+		),
+		newNetworkPolicyReconciler(
+			r.Client,
+			r.Log,
+			r.Recorder,
+		),
+		newStatefulsetReconciler(
+			r.Client,
+			r.Log,
+			r.Recorder,
+		),
+		newIngressReconciler(
+			r.Client,
+			r.Log,
+			r.Recorder,
+		),
+		newLoadBalancerReconciler(
+			r.Client,
+			r.Log,
+			r.Recorder,
+		),
+		newSystemUserReconciler(
+			r.Client,
+			r.Log,
+			r.Recorder,
+		),
+		newLicenseReconciler(
+			r.Client,
+			r.Log,
+			r.Recorder,
+		),
+		newMetricbeatReconciler(
+			r.Client,
+			r.Log,
+			r.Recorder,
+		),
+		newExporterReconciler(
+			r.Client,
+			r.Log,
+			r.Recorder,
+		),
+		newPodMonitorReconciler(
+			r.Client,
+			r.Log,
+			r.Recorder,
+		),
 	)
 }
 
@@ -173,290 +230,47 @@ func (h *ElasticsearchReconciler) SetupWithManager(mgr ctrl.Manager) error {
 		Complete(h)
 }
 
-// watchElasticsearch permit to update if ElasticsearchRef change
-func watchElasticsearchMonitoring(c client.Client) handler.MapFunc {
-	return func(ctx context.Context, a client.Object) []reconcile.Request {
-		var (
-			listElasticsearchs *elasticsearchcrd.ElasticsearchList
-			fs                 fields.Selector
-		)
-
-		reconcileRequests := make([]reconcile.Request, 0)
-
-		// ElasticsearchRef
-		listElasticsearchs = &elasticsearchcrd.ElasticsearchList{}
-		fs = fields.ParseSelectorOrDie(fmt.Sprintf("spec.monitoring.metricbeat.elasticsearchRef.managed.fullname=%s/%s", a.GetNamespace(), a.GetName()))
-		if err := c.List(context.Background(), listElasticsearchs, &client.ListOptions{FieldSelector: fs}); err != nil {
-			panic(err)
-		}
-		for _, k := range listElasticsearchs.Items {
-			reconcileRequests = append(reconcileRequests, reconcile.Request{NamespacedName: types.NamespacedName{Name: k.Name, Namespace: k.Namespace}})
-		}
-
-		return reconcileRequests
-
-	}
-}
-
-// watchConfigMap permit to update if configMapRef change
-func watchConfigMap(c client.Client) handler.MapFunc {
-	return func(ctx context.Context, a client.Object) []reconcile.Request {
-		var (
-			listElasticsearch *elasticsearchcrd.ElasticsearchList
-			fs                fields.Selector
-		)
-
-		reconcileRequests := make([]reconcile.Request, 0)
-
-		// Additional volumes configMap
-		listElasticsearch = &elasticsearchcrd.ElasticsearchList{}
-		fs = fields.ParseSelectorOrDie(fmt.Sprintf("spec.globalNodeGroup.additionalVolumes.configMap.name=%s", a.GetName()))
-		// Get all elasticsearch linked with secret
-		if err := c.List(context.Background(), listElasticsearch, &client.ListOptions{Namespace: a.GetNamespace(), FieldSelector: fs}); err != nil {
-			panic(err)
-		}
-		for _, e := range listElasticsearch.Items {
-			reconcileRequests = append(reconcileRequests, reconcile.Request{NamespacedName: types.NamespacedName{Name: e.Name, Namespace: e.Namespace}})
-		}
-
-		// Env of type configMap
-		listElasticsearch = &elasticsearchcrd.ElasticsearchList{}
-		fs = fields.ParseSelectorOrDie(fmt.Sprintf("spec.statefulset.env.valueFrom.configMapKeyRef.name=%s", a.GetName()))
-		// Get all elasticsearch linked with secret
-		if err := c.List(context.Background(), listElasticsearch, &client.ListOptions{Namespace: a.GetNamespace(), FieldSelector: fs}); err != nil {
-			panic(err)
-		}
-		for _, e := range listElasticsearch.Items {
-			reconcileRequests = append(reconcileRequests, reconcile.Request{NamespacedName: types.NamespacedName{Name: e.Name, Namespace: e.Namespace}})
-		}
-
-		// EnvFrom of type configMap
-		listElasticsearch = &elasticsearchcrd.ElasticsearchList{}
-		fs = fields.ParseSelectorOrDie(fmt.Sprintf("spec.statefulset.envFrom.configMapRef.name=%s", a.GetName()))
-		// Get all elasticsearch linked with secret
-		if err := c.List(context.Background(), listElasticsearch, &client.ListOptions{Namespace: a.GetNamespace(), FieldSelector: fs}); err != nil {
-			panic(err)
-		}
-		for _, e := range listElasticsearch.Items {
-			reconcileRequests = append(reconcileRequests, reconcile.Request{NamespacedName: types.NamespacedName{Name: e.Name, Namespace: e.Namespace}})
-		}
-
-		return reconcileRequests
-
-	}
-}
-
-// watchSecret permit to update elasticsearch if secretRef change
-func watchSecret(c client.Client) handler.MapFunc {
-	return func(ctx context.Context, a client.Object) []reconcile.Request {
-		var (
-			listElasticsearch *elasticsearchcrd.ElasticsearchList
-			fs                fields.Selector
-		)
-
-		reconcileRequests := make([]reconcile.Request, 0)
-
-		// License secret
-		listElasticsearch = &elasticsearchcrd.ElasticsearchList{}
-		fs = fields.ParseSelectorOrDie(fmt.Sprintf("spec.licenseSecretRef.name=%s", a.GetName()))
-		// Get all elasticsearch linked with secret
-		if err := c.List(context.Background(), listElasticsearch, &client.ListOptions{Namespace: a.GetNamespace(), FieldSelector: fs}); err != nil {
-			panic(err)
-		}
-		for _, e := range listElasticsearch.Items {
-			reconcileRequests = append(reconcileRequests, reconcile.Request{NamespacedName: types.NamespacedName{Name: e.Name, Namespace: e.Namespace}})
-		}
-
-		// Keystore secret
-		listElasticsearch = &elasticsearchcrd.ElasticsearchList{}
-		fs = fields.ParseSelectorOrDie(fmt.Sprintf("spec.globalNodeGroup.keystoreSecretRef.name=%s", a.GetName()))
-		// Get all elasticsearch linked with secret
-		if err := c.List(context.Background(), listElasticsearch, &client.ListOptions{Namespace: a.GetNamespace(), FieldSelector: fs}); err != nil {
-			panic(err)
-		}
-		for _, e := range listElasticsearch.Items {
-			reconcileRequests = append(reconcileRequests, reconcile.Request{NamespacedName: types.NamespacedName{Name: e.Name, Namespace: e.Namespace}})
-		}
-
-		// TLS secret
-		listElasticsearch = &elasticsearchcrd.ElasticsearchList{}
-		fs = fields.ParseSelectorOrDie(fmt.Sprintf("spec.tls.certificateSecretRef.name=%s", a.GetName()))
-		// Get all elasticsearch linked with secret
-		if err := c.List(context.Background(), listElasticsearch, &client.ListOptions{Namespace: a.GetNamespace(), FieldSelector: fs}); err != nil {
-			panic(err)
-		}
-		for _, e := range listElasticsearch.Items {
-			reconcileRequests = append(reconcileRequests, reconcile.Request{NamespacedName: types.NamespacedName{Name: e.Name, Namespace: e.Namespace}})
-		}
-
-		// Additional volumes secrets
-		listElasticsearch = &elasticsearchcrd.ElasticsearchList{}
-		fs = fields.ParseSelectorOrDie(fmt.Sprintf("spec.globalNodeGroup.additionalVolumes.secret.secretName=%s", a.GetName()))
-		// Get all elasticsearch linked with secret
-		if err := c.List(context.Background(), listElasticsearch, &client.ListOptions{Namespace: a.GetNamespace(), FieldSelector: fs}); err != nil {
-			panic(err)
-		}
-		for _, e := range listElasticsearch.Items {
-			reconcileRequests = append(reconcileRequests, reconcile.Request{NamespacedName: types.NamespacedName{Name: e.Name, Namespace: e.Namespace}})
-		}
-
-		// Env of type secrets
-		listElasticsearch = &elasticsearchcrd.ElasticsearchList{}
-		fs = fields.ParseSelectorOrDie(fmt.Sprintf("spec.statefulset.env.valueFrom.secretKeyRef.name=%s", a.GetName()))
-		// Get all elasticsearch linked with secret
-		if err := c.List(context.Background(), listElasticsearch, &client.ListOptions{Namespace: a.GetNamespace(), FieldSelector: fs}); err != nil {
-			panic(err)
-		}
-		for _, e := range listElasticsearch.Items {
-			reconcileRequests = append(reconcileRequests, reconcile.Request{NamespacedName: types.NamespacedName{Name: e.Name, Namespace: e.Namespace}})
-		}
-
-		// EnvFrom of type secrets
-		listElasticsearch = &elasticsearchcrd.ElasticsearchList{}
-		fs = fields.ParseSelectorOrDie(fmt.Sprintf("spec.statefulset.envFrom.secretRef.name=%s", a.GetName()))
-		// Get all elasticsearch linked with secret
-		if err := c.List(context.Background(), listElasticsearch, &client.ListOptions{Namespace: a.GetNamespace(), FieldSelector: fs}); err != nil {
-			panic(err)
-		}
-		for _, e := range listElasticsearch.Items {
-			reconcileRequests = append(reconcileRequests, reconcile.Request{NamespacedName: types.NamespacedName{Name: e.Name, Namespace: e.Namespace}})
-		}
-
-		// Elasticsearch API cert secret when external
-		listElasticsearch = &elasticsearchcrd.ElasticsearchList{}
-		fs = fields.ParseSelectorOrDie(fmt.Sprintf("spec.monitoring.metricbeat.elasticsearchRef.elasticsearchCASecretRef.name=%s", a.GetName()))
-		if err := c.List(context.Background(), listElasticsearch, &client.ListOptions{Namespace: a.GetNamespace(), FieldSelector: fs}); err != nil {
-			panic(err)
-		}
-		for _, k := range listElasticsearch.Items {
-			reconcileRequests = append(reconcileRequests, reconcile.Request{NamespacedName: types.NamespacedName{Name: k.Name, Namespace: k.Namespace}})
-		}
-
-		// Elasticsearch credentials when external
-		listElasticsearch = &elasticsearchcrd.ElasticsearchList{}
-		fs = fields.ParseSelectorOrDie(fmt.Sprintf("spec.monitoring.metricbeat.elasticsearchRef.external.secretRef.name=%s", a.GetName()))
-		if err := c.List(context.Background(), listElasticsearch, &client.ListOptions{Namespace: a.GetNamespace(), FieldSelector: fs}); err != nil {
-			panic(err)
-		}
-		for _, k := range listElasticsearch.Items {
-			reconcileRequests = append(reconcileRequests, reconcile.Request{NamespacedName: types.NamespacedName{Name: k.Name, Namespace: k.Namespace}})
-		}
-
-		return reconcileRequests
-	}
-}
-
-// watchHost permit to update networkpolicy to allow cerebro access on Elasticsearch
-func watchHost(c client.Client) handler.MapFunc {
-	return func(ctx context.Context, a client.Object) []reconcile.Request {
-		var (
-			listHosts *cerebrocrd.HostList
-			fs        fields.Selector
-		)
-
-		o := a.(*cerebrocrd.Host)
-
-		reconcileRequests := make([]reconcile.Request, 0)
-
-		// ElasticsearchRef
-		listHosts = &cerebrocrd.HostList{}
-		fs = fields.ParseSelectorOrDie(fmt.Sprintf("spec.elasticsearchRef=%s", o.Spec.ElasticsearchRef))
-		if err := c.List(context.Background(), listHosts, &client.ListOptions{Namespace: a.GetNamespace(), FieldSelector: fs}); err != nil {
-			panic(err)
-		}
-		for _, k := range listHosts.Items {
-			reconcileRequests = append(reconcileRequests, reconcile.Request{NamespacedName: types.NamespacedName{Name: k.Spec.ElasticsearchRef, Namespace: k.Namespace}})
-		}
-
-		return reconcileRequests
-	}
-}
-
-func (h *ElasticsearchReconciler) Configure(ctx context.Context, req ctrl.Request, resource client.Object) (res ctrl.Result, err error) {
+func (h *ElasticsearchReconciler) Configure(ctx context.Context, req ctrl.Request, resource object.MultiPhaseObject) (res ctrl.Result, err error) {
 	o := resource.(*elasticsearchcrd.Elasticsearch)
-
-	o.Status.IsError = ptr.To[bool](false)
 
 	if o.Status.IsBootstrapping == nil {
 		o.Status.IsBootstrapping = ptr.To[bool](false)
 	}
 
-	// Init condition status if not exist
-	if condition.FindStatusCondition(o.Status.Conditions, ElasticsearchCondition.String()) == nil {
-		condition.SetStatusCondition(&o.Status.Conditions, metav1.Condition{
-			Type:   ElasticsearchCondition.String(),
-			Status: metav1.ConditionFalse,
-			Reason: "Initialize",
-		})
-	}
-
-	if condition.FindStatusCondition(o.Status.Conditions, common.ReadyCondition.String()) == nil {
-		condition.SetStatusCondition(&o.Status.Conditions, metav1.Condition{
-			Type:   common.ReadyCondition.String(),
-			Status: metav1.ConditionFalse,
-			Reason: "Initialize",
-		})
-	}
-
 	// Get Elasticsearch health
 	// Not blocking way, cluster can be unreachable
-	esHandler, err := h.getElasticsearchHandler(ctx, o, h.GetLogger())
+	esHandler, err := h.getElasticsearchHandler(ctx, o, h.Log)
 	if err != nil {
-		h.GetLogger().Warnf("Error when get elasticsearch client: %s", err.Error())
-		o.Status.Health = "Unreachable"
-
-		return res, nil
-	}
-
-	if esHandler == nil {
+		h.Log.Warnf("Error when get elasticsearch client: %s", err.Error())
 		o.Status.Health = "Unreachable"
 	} else {
-		health, err := esHandler.ClusterHealth()
-		if err != nil {
-			h.GetLogger().Warnf("Error when get elasticsearch health: %s", err.Error())
+		if esHandler == nil {
 			o.Status.Health = "Unreachable"
-			return res, nil
-		}
-
-		if o.Status.Health != health.Status {
-			o.Status.Health = health.Status
+		} else {
+			health, err := esHandler.ClusterHealth()
+			if err != nil {
+				h.Log.Warnf("Error when get elasticsearch health: %s", err.Error())
+				o.Status.Health = "Unreachable"
+			} else {
+				o.Status.Health = health.Status
+			}
 		}
 	}
 
-	return res, nil
-}
-func (h *ElasticsearchReconciler) Read(ctx context.Context, r client.Object, data map[string]any) (res ctrl.Result, err error) {
-	return
+	return h.MultiPhaseReconcilerAction.Configure(ctx, req, o)
 }
 
-func (h *ElasticsearchReconciler) Delete(ctx context.Context, r client.Object, data map[string]any) (err error) {
+func (h *ElasticsearchReconciler) Delete(ctx context.Context, o object.MultiPhaseObject, data map[string]any) (err error) {
 	common.ControllerMetrics.WithLabelValues(h.name).Dec()
-	return
+	return h.MultiPhaseReconcilerAction.Delete(ctx, o, data)
 }
-func (h *ElasticsearchReconciler) OnError(ctx context.Context, r client.Object, data map[string]any, currentErr error) (res ctrl.Result, err error) {
-	o := r.(*elasticsearchcrd.Elasticsearch)
 
-	o.Status.IsError = ptr.To[bool](true)
-
-	condition.SetStatusCondition(&o.Status.Conditions, metav1.Condition{
-		Type:    ElasticsearchCondition.String(),
-		Status:  metav1.ConditionFalse,
-		Reason:  "Failed",
-		Message: strings.ShortenString(err.Error(), common.ShortenError),
-	})
-
-	condition.SetStatusCondition(&o.Status.Conditions, metav1.Condition{
-		Type:   common.ReadyCondition.String(),
-		Status: metav1.ConditionFalse,
-		Reason: "Error",
-	})
-
+func (h *ElasticsearchReconciler) OnError(ctx context.Context, o object.MultiPhaseObject, data map[string]any, currentErr error) (res ctrl.Result, err error) {
 	common.TotalErrors.Inc()
-	h.GetLogger().Error(currentErr)
-
-	return res, errors.Errorf("Error on %s controller", h.name)
+	return h.MultiPhaseReconcilerAction.OnError(ctx, o, data, currentErr)
 }
-func (h *ElasticsearchReconciler) OnSuccess(ctx context.Context, r client.Object, data map[string]any) (res ctrl.Result, err error) {
+
+func (h *ElasticsearchReconciler) OnSuccess(ctx context.Context, r object.MultiPhaseObject, data map[string]any) (res ctrl.Result, err error) {
 	o := r.(*elasticsearchcrd.Elasticsearch)
 
 	// Check all statefulsets are ready to change Phase status and set main condition to true
@@ -487,25 +301,15 @@ loopStatefulset:
 	}
 
 	if isReady {
-		if !condition.IsStatusConditionPresentAndEqual(o.Status.Conditions, ElasticsearchCondition.String(), metav1.ConditionTrue) {
+		if !condition.IsStatusConditionPresentAndEqual(o.Status.Conditions, controller.ReadyCondition.String(), metav1.ConditionTrue) {
 			condition.SetStatusCondition(&o.Status.Conditions, metav1.Condition{
-				Type:   ElasticsearchCondition.String(),
+				Type:   controller.ReadyCondition.String(),
 				Status: metav1.ConditionTrue,
 				Reason: "Ready",
 			})
 		}
 
-		if o.Status.Phase != ElasticsearchPhaseRunning.String() {
-			o.Status.Phase = ElasticsearchPhaseRunning.String()
-		}
-
-		if condition.IsStatusConditionPresentAndEqual(o.Status.Conditions, common.ReadyCondition.String(), metav1.ConditionFalse) {
-			condition.SetStatusCondition(&o.Status.Conditions, metav1.Condition{
-				Type:   common.ReadyCondition.String(),
-				Reason: "Available",
-				Status: metav1.ConditionTrue,
-			})
-		}
+		o.Status.PhaseName = controller.RunningPhase
 
 		if !o.IsBoostrapping() {
 			o.Status.IsBootstrapping = ptr.To[bool](true)
@@ -513,25 +317,15 @@ loopStatefulset:
 
 	} else {
 
-		if condition.IsStatusConditionPresentAndEqual(o.Status.Conditions, ElasticsearchCondition.String(), metav1.ConditionTrue) || (condition.FindStatusCondition(o.Status.Conditions, ElasticsearchCondition.String()).Reason != "NotReady") {
+		if condition.IsStatusConditionPresentAndEqual(o.Status.Conditions, controller.ReadyCondition.String(), metav1.ConditionTrue) || (condition.FindStatusCondition(o.Status.Conditions, controller.ReadyCondition.String()).Reason != "NotReady") {
 			condition.SetStatusCondition(&o.Status.Conditions, metav1.Condition{
-				Type:   ElasticsearchCondition.String(),
+				Type:   controller.ReadyCondition.String(),
 				Status: metav1.ConditionFalse,
 				Reason: "NotReady",
 			})
 		}
 
-		if condition.IsStatusConditionPresentAndEqual(o.Status.Conditions, common.ReadyCondition.String(), metav1.ConditionTrue) || (condition.FindStatusCondition(o.Status.Conditions, common.ReadyCondition.String()).Reason != "NotReady") {
-			condition.SetStatusCondition(&o.Status.Conditions, metav1.Condition{
-				Type:   common.ReadyCondition.String(),
-				Reason: "NotReady",
-				Status: metav1.ConditionFalse,
-			})
-		}
-
-		if o.Status.Phase != ElasticsearchPhaseStarting.String() {
-			o.Status.Phase = ElasticsearchPhaseStarting.String()
-		}
+		o.Status.PhaseName = controller.StartingPhase
 
 		// Requeued to check if status change
 		res.RequeueAfter = time.Second * 30
@@ -548,10 +342,6 @@ loopStatefulset:
 	o.Status.Url = url
 
 	return res, nil
-}
-
-func (h *ElasticsearchReconciler) Name() string {
-	return "elasticsearch"
 }
 
 // computeElasticsearchUrl permit to get the public Elasticsearch url to put it on status

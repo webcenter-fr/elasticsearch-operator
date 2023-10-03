@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"emperror.dev/errors"
+	"github.com/disaster37/k8s-objectmatcher/patch"
 	"github.com/disaster37/operator-sdk-extra/pkg/apis/shared"
 	"github.com/disaster37/operator-sdk-extra/pkg/controller"
 	"github.com/disaster37/operator-sdk-extra/pkg/helper"
@@ -245,4 +246,10 @@ func (r *statefulsetReconciler) Read(ctx context.Context, resource object.MultiP
 	read.SetExpectedObjects(helper.ToSliceOfObject(expectedSts))
 
 	return read, res, nil
+}
+
+func (r *statefulsetReconciler) GetIgnoresDiff() []patch.CalculateOption {
+	return []patch.CalculateOption{
+		patch.IgnoreVolumeClaimTemplateTypeMetaAndStatus(),
+	}
 }

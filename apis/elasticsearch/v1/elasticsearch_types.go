@@ -17,6 +17,7 @@ limitations under the License.
 package v1
 
 import (
+	"github.com/disaster37/operator-sdk-extra/pkg/apis"
 	"github.com/webcenter-fr/elasticsearch-operator/apis/shared"
 	corev1 "k8s.io/api/core/v1"
 	networkingv1 "k8s.io/api/networking/v1"
@@ -459,13 +460,7 @@ type ElasticsearchStatus struct {
 	// INSERT ADDITIONAL STATUS FIELD - define observed state of cluster
 	// Important: Run "make" to regenerate code after modifying this file
 
-	// Phase is the current cluster deployment phase
-	// +operator-sdk:csv:customresourcedefinitions:type=status
-	Phase string `json:"phase,omitempty"`
-
-	// IsError is true if controller is stuck on Error
-	// +operator-sdk:csv:customresourcedefinitions:type=status
-	IsError *bool `json:"isOnError,omitempty"`
+	apis.BasicMultiPhaseObjectStatus `json:",inline"`
 
 	// IsBootstrapping is true when the cluster is bootstraping
 	// +operator-sdk:csv:customresourcedefinitions:type=status
@@ -482,10 +477,6 @@ type ElasticsearchStatus struct {
 	// Health is the cluster health
 	// +operator-sdk:csv:customresourcedefinitions:type=status
 	Health string `json:"health,omitempty"`
-
-	// List of conditions
-	// +operator-sdk:csv:customresourcedefinitions:type=status
-	Conditions []metav1.Condition `json:"conditions,omitempty"`
 }
 
 //+kubebuilder:object:root=true
@@ -496,9 +487,10 @@ type ElasticsearchStatus struct {
 // +operator-sdk:csv:customresourcedefinitions:resources={{Ingress,networking.k8s.io/v1},{ConfigMap,v1},{Service,v1},{Secret,v1},{Deployment,apps/v1},{StatefulSet,apps/v1},{License,elasticsearchapi.k8s.webcenter.fr/v1},{NetworkPolicy,networking.k8s.io/v1},{PodDisruptionBudget,policy/v1},{PodMonitor,monitoring.coreos.com/v1},{User,elasticsearchapi.k8s.webcenter.fr/v1},{Metricbeat,beat.k8s.webcenter.fr/v1}}
 // +kubebuilder:printcolumn:name="URL",type="string",JSONPath=".status.url"
 // +kubebuilder:printcolumn:name="CredentialsRef",type="string",JSONPath=".status.credentialsRef.name"
-// +kubebuilder:printcolumn:name="Phase",type="string",JSONPath=".status.phase",description="Cluster deployment status"
-// +kubebuilder:printcolumn:name="Error",type="boolean",JSONPath=".status.isOnError",description="Is on error"
 // +kubebuilder:printcolumn:name="Health",type="string",JSONPath=".status.health",description="Cluster health"
+// +kubebuilder:printcolumn:name="Phase",type="string",JSONPath=".status.phase",description="Phase"
+// +kubebuilder:printcolumn:name="Error",type="boolean",JSONPath=".status.isOnError",description="Is on error"
+// +kubebuilder:printcolumn:name="Ready",type="string",JSONPath=".status.conditions[?(@.type=='Ready')].status",description="health"
 // +kubebuilder:printcolumn:name="Age",type="date",JSONPath=".metadata.creationTimestamp"
 type Elasticsearch struct {
 	metav1.TypeMeta   `json:",inline"`

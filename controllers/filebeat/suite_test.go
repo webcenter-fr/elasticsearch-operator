@@ -21,6 +21,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/disaster37/operator-sdk-extra/pkg/controller"
 	monitoringv1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1"
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/suite"
@@ -127,31 +128,29 @@ func (t *FilebeatControllerTestSuite) SetupSuite() {
 	t.k8sClient = k8sClient
 
 	// Add indexers
-	elasticsearchcrd.MustSetUpIndex(k8sManager)
-	kibanacrd.MustSetUpIndex(k8sManager)
-	logstashcrd.MustSetUpIndex(k8sManager)
-	beatcrd.MustSetUpIndexForFilebeat(k8sManager)
-	beatcrd.MustSetUpIndexForMetricbeat(k8sManager)
-	cerebrocrd.MustSetUpIndexCerebro(k8sManager)
-	cerebrocrd.MustSetUpIndexHost(k8sManager)
-	kibanaapicrd.MustSetUpIndex(k8sManager)
+	// Add indexers
+	if err = controller.SetupIndexerWithManager(
+		k8sManager,
+		elasticsearchcrd.SetupElasticsearchIndexer,
+		kibanacrd.SetupKibanaIndexer,
+		logstashcrd.SetupLogstashIndexer,
+		beatcrd.SetupFilebeatIndexer,
+		beatcrd.SetupMetricbeatIndexer,
+		cerebrocrd.SetupCerebroIndexer,
+		cerebrocrd.SetupHostIndexer,
+		elasticsearchapicrd.SetupLicenceIndexer,
+		elasticsearchapicrd.SetupUserIndexexer,
+	); err != nil {
+		panic(err)
+	}
 
 	// Init controllers
-	elasticsearchReconciler := elasticsearchcontrollers.NewElasticsearchReconciler(k8sClient, scheme.Scheme)
-	elasticsearchReconciler.SetLogger(logrus.WithFields(logrus.Fields{
-		"type": "elasticsearchController",
-	}))
-	elasticsearchReconciler.SetRecorder(k8sManager.GetEventRecorderFor("elasticsearch-controller"))
-	elasticsearchReconciler.SetReconciler(elasticsearchReconciler)
+	elasticsearchReconciler := elasticsearchcontrollers.NewElasticsearchReconciler(k8sClient, logrus.NewEntry(logrus.StandardLogger()), k8sManager.GetEventRecorderFor("elasticsearch-controller"))
 	if err = elasticsearchReconciler.SetupWithManager(k8sManager); err != nil {
 		panic(err)
 	}
 
-	filebeatReconciler := NewFilebeatReconciler(
-		k8sClient,
-		logrus.NewEntry(logrus.StandardLogger()),
-		k8sManager.GetEventRecorderFor("filebeat-controller"),
-	)
+	filebeatReconciler := NewFilebeatReconciler(k8sClient, logrus.NewEntry(logrus.StandardLogger()), k8sManager.GetEventRecorderFor("filebeat-controller"))
 	if err = filebeatReconciler.SetupWithManager(k8sManager); err != nil {
 		panic(err)
 	}

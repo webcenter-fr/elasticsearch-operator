@@ -10,7 +10,7 @@ import (
 )
 
 // GeneratePodDisruptionBudget permit to generate pod disruption budgets
-func buildPodDisruptionBudget(ls *logstashcrd.Logstash) (pdbs []policyv1.PodDisruptionBudget, err error) {
+func buildPodDisruptionBudgets(ls *logstashcrd.Logstash) (pdbs []policyv1.PodDisruptionBudget, err error) {
 
 	if !ls.IsPdb() {
 		return nil, nil

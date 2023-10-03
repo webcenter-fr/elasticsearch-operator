@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"emperror.dev/errors"
+	"github.com/disaster37/k8s-objectmatcher/patch"
 	"github.com/disaster37/operator-sdk-extra/pkg/apis/shared"
 	"github.com/disaster37/operator-sdk-extra/pkg/controller"
 	"github.com/disaster37/operator-sdk-extra/pkg/helper"
@@ -70,4 +71,10 @@ func (r *pdbReconciler) Read(ctx context.Context, resource object.MultiPhaseObje
 	read.SetExpectedObjects(helper.ToSliceOfObject(expectedPdbs))
 
 	return read, res, nil
+}
+
+func (r *pdbReconciler) GetIgnoresDiff() []patch.CalculateOption {
+	return []patch.CalculateOption{
+		patch.IgnorePDBSelector(),
+	}
 }

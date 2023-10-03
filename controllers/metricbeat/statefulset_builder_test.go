@@ -51,7 +51,7 @@ func TestBuildStatefulset(t *testing.T) {
 		Spec: elasticsearchcrd.ElasticsearchSpec{},
 	}
 
-	sts, err = buildStatefulset(o, es, nil, nil)
+	sts, err = buildStatefulsets(o, es, nil, nil)
 	assert.NoError(t, err)
 	test.EqualFromYamlFile(t, "testdata/statefulset_default_elasticsearch.yml", &sts[0], test.CleanApi)
 
@@ -78,7 +78,7 @@ func TestBuildStatefulset(t *testing.T) {
 		},
 	}
 
-	sts, err = buildStatefulset(o, nil, nil, nil)
+	sts, err = buildStatefulsets(o, nil, nil, nil)
 	assert.NoError(t, err)
 	test.EqualFromYamlFile(t, "testdata/statefulset_default_with_external_es.yml", &sts[0], test.CleanApi)
 
@@ -119,7 +119,7 @@ func TestBuildStatefulset(t *testing.T) {
 		},
 	}
 
-	sts, err = buildStatefulset(o, nil, extraSecrets, nil)
+	sts, err = buildStatefulsets(o, nil, extraSecrets, nil)
 	assert.NoError(t, err)
 	test.EqualFromYamlFile(t, "testdata/statefulset_custom_ca_es_with_external_es.yml", &sts[0], test.CleanApi)
 
@@ -260,7 +260,7 @@ func TestBuildStatefulset(t *testing.T) {
 		},
 	}
 
-	sts, err = buildStatefulset(o, es, extraSecrets, extraConfigMaps)
+	sts, err = buildStatefulsets(o, es, extraSecrets, extraConfigMaps)
 	assert.NoError(t, err)
 	test.EqualFromYamlFile(t, "testdata/statefulset_complet.yml", &sts[0], test.CleanApi)
 }

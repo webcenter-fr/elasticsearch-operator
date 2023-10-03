@@ -6,11 +6,10 @@ import (
 	"time"
 
 	"emperror.dev/errors"
+	"github.com/disaster37/generic-objectmatcher/patch"
 	"github.com/disaster37/go-kibana-rest/v8/kbapi"
 	"github.com/disaster37/kb-handler/v8/mocks"
-	"github.com/disaster37/kb-handler/v8/patch"
 	"github.com/disaster37/operator-sdk-extra/pkg/test"
-	"github.com/golang/mock/gomock"
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
 	kibanaapicrd "github.com/webcenter-fr/elasticsearch-operator/apis/kibanaapi/v1"
@@ -18,6 +17,7 @@ import (
 	"github.com/webcenter-fr/elasticsearch-operator/controllers/common"
 	localhelper "github.com/webcenter-fr/elasticsearch-operator/pkg/helper"
 	localtest "github.com/webcenter-fr/elasticsearch-operator/pkg/test"
+	"go.uber.org/mock/gomock"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	condition "k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -176,9 +176,8 @@ func doCreateLogstashPipelineStep() test.TestStep {
 			if err != nil || isTimeout {
 				t.Fatalf("Failed to get kibana logstash pipeline: %s", err.Error())
 			}
-			assert.True(t, condition.IsStatusConditionPresentAndEqual(pipeline.Status.Conditions, LogstashPipelineCondition, metav1.ConditionTrue))
 			assert.True(t, condition.IsStatusConditionPresentAndEqual(pipeline.Status.Conditions, common.ReadyCondition.String(), metav1.ConditionTrue))
-			assert.True(t, pipeline.Status.Sync)
+			assert.True(t, *pipeline.Status.IsSync)
 
 			return nil
 		},
@@ -222,9 +221,8 @@ func doUpdateLogstashPipelineStep() test.TestStep {
 			if err != nil || isTimeout {
 				t.Fatalf("Failed to get kibana logstash pipeline: %s", err.Error())
 			}
-			assert.True(t, condition.IsStatusConditionPresentAndEqual(pipeline.Status.Conditions, LogstashPipelineCondition, metav1.ConditionTrue))
 			assert.True(t, condition.IsStatusConditionPresentAndEqual(pipeline.Status.Conditions, common.ReadyCondition.String(), metav1.ConditionTrue))
-			assert.True(t, pipeline.Status.Sync)
+			assert.True(t, *pipeline.Status.IsSync)
 
 			return nil
 		},

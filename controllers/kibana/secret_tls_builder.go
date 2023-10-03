@@ -76,7 +76,7 @@ func buildPkiSecret(o *kibanacrd.Kibana) (sPki *corev1.Secret, rootCA *goca.CA, 
 }
 
 // BuildTlsSecret generate the secret that store the http certificates
-func BuildTlsSecret(o *kibanacrd.Kibana, rootCA *goca.CA) (s *corev1.Secret, err error) {
+func buildTlsSecret(o *kibanacrd.Kibana, rootCA *goca.CA) (s *corev1.Secret, err error) {
 
 	if !o.IsTlsEnabled() || !o.IsSelfManagedSecretForTls() {
 		return nil, nil

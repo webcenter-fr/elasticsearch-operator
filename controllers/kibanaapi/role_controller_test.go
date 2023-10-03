@@ -6,11 +6,10 @@ import (
 	"time"
 
 	"emperror.dev/errors"
+	"github.com/disaster37/generic-objectmatcher/patch"
 	"github.com/disaster37/go-kibana-rest/v8/kbapi"
 	"github.com/disaster37/kb-handler/v8/mocks"
-	"github.com/disaster37/kb-handler/v8/patch"
 	"github.com/disaster37/operator-sdk-extra/pkg/test"
-	"github.com/golang/mock/gomock"
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
 	kibanaapicrd "github.com/webcenter-fr/elasticsearch-operator/apis/kibanaapi/v1"
@@ -18,6 +17,7 @@ import (
 	"github.com/webcenter-fr/elasticsearch-operator/controllers/common"
 	localhelper "github.com/webcenter-fr/elasticsearch-operator/pkg/helper"
 	localtest "github.com/webcenter-fr/elasticsearch-operator/pkg/test"
+	"go.uber.org/mock/gomock"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	condition "k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -108,7 +108,7 @@ func doMockRole(mockKB *mocks.MockKibanaHandler) func(stepName *string, data map
 				}
 			}
 
-			return nil, nil
+			return &patch.PatchResult{}, nil
 
 		})
 
@@ -183,9 +183,8 @@ func doCreateRoleStep() test.TestStep {
 			if err != nil || isTimeout {
 				t.Fatalf("Failed to get kibana role: %s", err.Error())
 			}
-			assert.True(t, condition.IsStatusConditionPresentAndEqual(role.Status.Conditions, RoleCondition, metav1.ConditionTrue))
 			assert.True(t, condition.IsStatusConditionPresentAndEqual(role.Status.Conditions, common.ReadyCondition.String(), metav1.ConditionTrue))
-			assert.True(t, role.Status.Sync)
+			assert.True(t, *role.Status.IsSync)
 
 			return nil
 		},
@@ -229,9 +228,8 @@ func doUpdateRoleStep() test.TestStep {
 			if err != nil || isTimeout {
 				t.Fatalf("Failed to get kibana role: %s", err.Error())
 			}
-			assert.True(t, condition.IsStatusConditionPresentAndEqual(role.Status.Conditions, RoleCondition, metav1.ConditionTrue))
 			assert.True(t, condition.IsStatusConditionPresentAndEqual(role.Status.Conditions, common.ReadyCondition.String(), metav1.ConditionTrue))
-			assert.True(t, role.Status.Sync)
+			assert.True(t, *role.Status.IsSync)
 
 			return nil
 		},

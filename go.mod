@@ -8,12 +8,13 @@ require (
 	github.com/codingsince1985/checksum v1.3.0
 	github.com/davecgh/go-spew v1.1.1
 	github.com/disaster37/es-handler/v8 v8.1.3-0.20230609084243-2fd1dddecf73
+	github.com/disaster37/generic-objectmatcher v1.0.2
 	github.com/disaster37/go-kibana-rest/v8 v8.5.0
 	github.com/disaster37/goca v1.0.4
 	github.com/disaster37/k8s-objectmatcher v1.8.2
 	github.com/disaster37/k8sbuilder v1.0.1
-	github.com/disaster37/kb-handler/v8 v8.0.1
-	github.com/disaster37/operator-sdk-extra v0.1.3-0.20230907132523-c6a7a36b120f
+	github.com/disaster37/kb-handler/v8 v8.0.4
+	github.com/disaster37/operator-sdk-extra v0.1.3-0.20231003150329-6ccff3a3b5c2
 	github.com/elastic/elastic-transport-go/v8 v8.3.0
 	github.com/elastic/go-elasticsearch/v8 v8.9.0
 	github.com/elastic/go-ucfg v0.8.6
@@ -29,6 +30,7 @@ require (
 	github.com/sirupsen/logrus v1.9.3
 	github.com/stretchr/testify v1.8.4
 	github.com/thoas/go-funk v0.9.3
+	go.uber.org/mock v0.3.0
 	go.uber.org/zap v1.25.0
 	golang.org/x/crypto v0.13.0
 	golang.org/x/text v0.13.0

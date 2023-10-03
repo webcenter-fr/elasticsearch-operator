@@ -26,7 +26,7 @@ func TestBuildCredentialSecret(t *testing.T) {
 		Spec: logstashcrd.LogstashSpec{},
 	}
 
-	secrets, err = buildCredentialSecret(o, nil)
+	secrets, err = buildCredentialSecrets(o, nil)
 	assert.NoError(t, err)
 	assert.Empty(t, secrets)
 
@@ -54,7 +54,7 @@ func TestBuildCredentialSecret(t *testing.T) {
 		},
 	}
 
-	secrets, err = buildCredentialSecret(o, esSecret)
+	secrets, err = buildCredentialSecrets(o, esSecret)
 	assert.NoError(t, err)
 	assert.NotEmpty(t, secrets)
 	assert.Equal(t, "test-credential-ls", secrets[0].Name)

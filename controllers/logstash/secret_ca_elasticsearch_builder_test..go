@@ -26,7 +26,7 @@ func TestBuildCAElasticsearchSecret(t *testing.T) {
 		Spec: logstashcrd.LogstashSpec{},
 	}
 
-	secrets, err = buildCAElasticsearchSecret(o, nil)
+	secrets, err = buildCAElasticsearchSecrets(o, nil)
 	assert.NoError(t, err)
 	assert.Empty(t, secrets)
 
@@ -53,7 +53,7 @@ func TestBuildCAElasticsearchSecret(t *testing.T) {
 		},
 	}
 
-	secrets, err = buildCAElasticsearchSecret(o, esSecret)
+	secrets, err = buildCAElasticsearchSecrets(o, esSecret)
 	assert.NoError(t, err)
 	assert.NotEmpty(t, secrets)
 	assert.Equal(t, "test-ca-es-ls", secrets[0].Name)

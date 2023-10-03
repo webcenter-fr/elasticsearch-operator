@@ -7,7 +7,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-func TestGetLogstashPipelineName(t *testing.T) {
+func TestLogstashPipelineGetExternalName(t *testing.T) {
 	var o *LogstashPipeline
 
 	// When name is set
@@ -21,7 +21,7 @@ func TestGetLogstashPipelineName(t *testing.T) {
 		},
 	}
 
-	assert.Equal(t, "test2", o.GetPipelineName())
+	assert.Equal(t, "test2", o.GetExternalName())
 
 	// When name isn't set
 	o = &LogstashPipeline{
@@ -32,5 +32,5 @@ func TestGetLogstashPipelineName(t *testing.T) {
 		Spec: LogstashPipelineSpec{},
 	}
 
-	assert.Equal(t, "test", o.GetPipelineName())
+	assert.Equal(t, "test", o.GetExternalName())
 }

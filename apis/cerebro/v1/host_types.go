@@ -64,7 +64,9 @@ type HostStatus struct {
 
 // Host is the Schema for the hosts API
 // +operator-sdk:csv:customresourcedefinitions:resources={{none,none}}
+// +kubebuilder:printcolumn:name="Phase",type="string",JSONPath=".status.phase",description="Phase"
 // +kubebuilder:printcolumn:name="Error",type="boolean",JSONPath=".status.isOnError",description="Is on error"
+// +kubebuilder:printcolumn:name="Ready",type="string",JSONPath=".status.conditions[?(@.type=='Ready')].status",description="health"
 // +kubebuilder:printcolumn:name="Age",type="date",JSONPath=".metadata.creationTimestamp"
 type Host struct {
 	metav1.TypeMeta   `json:",inline"`

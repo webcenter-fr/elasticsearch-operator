@@ -3,6 +3,7 @@ package v1
 import (
 	"testing"
 
+	"github.com/disaster37/operator-sdk-extra/pkg/apis"
 	"github.com/stretchr/testify/assert"
 	"github.com/webcenter-fr/elasticsearch-operator/apis/shared"
 	corev1 "k8s.io/api/core/v1"
@@ -10,6 +11,23 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/utils/ptr"
 )
+
+func TestGetStatus(t *testing.T) {
+	status := KibanaStatus{
+		BasicMultiPhaseObjectStatus: apis.BasicMultiPhaseObjectStatus{
+			PhaseName: "test",
+		},
+	}
+	o := &Kibana{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: "default",
+			Name:      "test",
+		},
+		Status: status,
+	}
+
+	assert.Equal(t, &status, o.GetStatus())
+}
 
 func TestIsSelfManagedSecretForTls(t *testing.T) {
 	var o *Kibana

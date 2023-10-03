@@ -81,7 +81,7 @@ func (r *networkPolicyReconciler) Read(ctx context.Context, resource object.Mult
 	}
 
 	// Generate expected network policy
-	expectedNps, err := buildNetworkPolicy(o, oList)
+	expectedNps, err := buildNetworkPolicies(o, oList)
 	if err != nil {
 		return read, res, errors.Wrap(err, "Error when generate network policy")
 	}

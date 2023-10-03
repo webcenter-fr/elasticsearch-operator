@@ -7,7 +7,7 @@ import (
 )
 
 // BuildCAElasticsearchSecret permit to build CA secret from Elasticsearch ApiPKI
-func buildCAElasticsearchSecret(ls *logstashcrd.Logstash, secretCaElasticsearch *corev1.Secret) (secrets []corev1.Secret, err error) {
+func buildCAElasticsearchSecrets(ls *logstashcrd.Logstash, secretCaElasticsearch *corev1.Secret) (secrets []corev1.Secret, err error) {
 
 	if secretCaElasticsearch == nil {
 		return nil, nil

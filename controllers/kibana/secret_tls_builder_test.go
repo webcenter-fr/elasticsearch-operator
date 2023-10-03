@@ -158,7 +158,7 @@ func TestBuildTlsSecret(t *testing.T) {
 		},
 	}
 
-	s, err = BuildTlsSecret(o, ca)
+	s, err = buildTlsSecret(o, ca)
 	assert.NoError(t, err)
 	assert.Nil(t, s)
 
@@ -178,7 +178,7 @@ func TestBuildTlsSecret(t *testing.T) {
 		},
 	}
 
-	s, err = BuildTlsSecret(o, ca)
+	s, err = buildTlsSecret(o, ca)
 	assert.NoError(t, err)
 	assert.Nil(t, s)
 
@@ -195,7 +195,7 @@ func TestBuildTlsSecret(t *testing.T) {
 		},
 	}
 
-	s, err = BuildTlsSecret(o, ca)
+	s, err = buildTlsSecret(o, ca)
 	assert.NoError(t, err)
 	assert.NotNil(t, s)
 	assert.Equal(t, s.Name, "test-tls-kb")

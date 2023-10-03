@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/disaster37/es-handler/v8/mocks"
+	"github.com/disaster37/operator-sdk-extra/pkg/controller"
 	"github.com/disaster37/operator-sdk-extra/pkg/mock"
 	"github.com/golang/mock/gomock"
 	"github.com/sirupsen/logrus"
@@ -113,15 +114,20 @@ func (t *ElasticsearchapiControllerTestSuite) SetupSuite() {
 	t.k8sClient = k8sClient
 
 	// Add indexers
-	elasticsearchapicrd.MustSetUpIndex(k8sManager)
-	elasticsearchcrd.MustSetUpIndex(k8sManager)
-	kibanacrd.MustSetUpIndex(k8sManager)
-	logstashcrd.MustSetUpIndex(k8sManager)
-	beatcrd.MustSetUpIndexForFilebeat(k8sManager)
-	beatcrd.MustSetUpIndexForMetricbeat(k8sManager)
-	cerebrocrd.MustSetUpIndexCerebro(k8sManager)
-	cerebrocrd.MustSetUpIndexHost(k8sManager)
-	kibanaapicrd.MustSetUpIndex(k8sManager)
+	if err = controller.SetupIndexerWithManager(
+		k8sManager,
+		elasticsearchcrd.SetupElasticsearchIndexer,
+		kibanacrd.SetupKibanaIndexer,
+		logstashcrd.SetupLogstashIndexer,
+		beatcrd.SetupFilebeatIndexer,
+		beatcrd.SetupMetricbeatIndexer,
+		cerebrocrd.SetupCerebroIndexer,
+		cerebrocrd.SetupHostIndexer,
+		elasticsearchapicrd.SetupLicenceIndexer,
+		elasticsearchapicrd.SetupUserIndexexer,
+	); err != nil {
+		panic(err)
+	}
 
 	// Init controllers
 	userReconciler := NewUserReconciler(k8sClient, scheme.Scheme)

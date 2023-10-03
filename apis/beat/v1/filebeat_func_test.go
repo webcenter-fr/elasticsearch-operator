@@ -3,12 +3,30 @@ package v1
 import (
 	"testing"
 
+	"github.com/disaster37/operator-sdk-extra/pkg/apis"
 	"github.com/stretchr/testify/assert"
 	"github.com/webcenter-fr/elasticsearch-operator/apis/shared"
 	v1 "k8s.io/api/core/v1"
 	policyv1 "k8s.io/api/policy/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
+
+func TestFilebeatGetStatus(t *testing.T) {
+	status := FilebeatStatus{
+		BasicMultiPhaseObjectStatus: apis.BasicMultiPhaseObjectStatus{
+			PhaseName: "test",
+		},
+	}
+	o := &Filebeat{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: "default",
+			Name:      "test",
+		},
+		Status: status,
+	}
+
+	assert.Equal(t, &status, o.GetStatus())
+}
 
 func TestFilebeatIsPrometheusMonitoring(t *testing.T) {
 	var o *Filebeat

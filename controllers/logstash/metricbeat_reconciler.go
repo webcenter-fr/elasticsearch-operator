@@ -63,7 +63,7 @@ func (r *metricbeatReconciler) Read(ctx context.Context, resource object.MultiPh
 	}
 
 	// Generate expected metricbeat
-	expectedMetricbeats, err := buildMetricbeat(o)
+	expectedMetricbeats, err := buildMetricbeats(o)
 	if err != nil {
 		return read, res, errors.Wrap(err, "Error when generate metricbeat")
 	}
