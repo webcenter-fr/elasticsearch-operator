@@ -3,12 +3,13 @@ package logstash
 import (
 	"testing"
 
+	"github.com/disaster37/operator-sdk-extra/pkg/test"
 	"github.com/stretchr/testify/assert"
 	logstashcrd "github.com/webcenter-fr/elasticsearch-operator/apis/logstash/v1"
 	"github.com/webcenter-fr/elasticsearch-operator/apis/shared"
-	"github.com/webcenter-fr/elasticsearch-operator/pkg/test"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/client-go/kubernetes/scheme"
 )
 
 func TestBuildConfigMaps(t *testing.T) {
@@ -61,7 +62,7 @@ node.value2: test`,
 	configMaps, err = buildConfigMaps(o)
 	assert.NoError(t, err)
 	assert.Equal(t, 1, len(configMaps))
-	test.EqualFromYamlFile(t, "testdata/configmap_config.yml", &configMaps[0], test.CleanApi)
+	test.EqualFromYamlFile[*corev1.ConfigMap](t, "testdata/configmap_config.yml", &configMaps[0], scheme.Scheme)
 
 	// When pipeline
 	o = &logstashcrd.Logstash{
@@ -90,7 +91,7 @@ node.value2: test`,
 	configMaps, err = buildConfigMaps(o)
 	assert.NoError(t, err)
 	assert.Equal(t, 1, len(configMaps))
-	test.EqualFromYamlFile(t, "testdata/configmap_pipeline.yml", &configMaps[0], test.CleanApi)
+	test.EqualFromYamlFile[*corev1.ConfigMap](t, "testdata/configmap_pipeline.yml", &configMaps[0], scheme.Scheme)
 
 	// When pattern
 	o = &logstashcrd.Logstash{
@@ -119,6 +120,6 @@ node.value2: test`,
 	configMaps, err = buildConfigMaps(o)
 	assert.NoError(t, err)
 	assert.Equal(t, 1, len(configMaps))
-	test.EqualFromYamlFile(t, "testdata/configmap_pattern.yml", &configMaps[0], test.CleanApi)
+	test.EqualFromYamlFile[*corev1.ConfigMap](t, "testdata/configmap_pattern.yml", &configMaps[0], scheme.Scheme)
 
 }

@@ -4,11 +4,12 @@ import (
 	"os"
 	"testing"
 
+	"github.com/disaster37/operator-sdk-extra/pkg/test"
 	"github.com/stretchr/testify/assert"
 	kibanacrd "github.com/webcenter-fr/elasticsearch-operator/apis/kibana/v1"
-	"github.com/webcenter-fr/elasticsearch-operator/pkg/test"
 	networkingv1 "k8s.io/api/networking/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/client-go/kubernetes/scheme"
 )
 
 func TestBuildNetworkPolicies(t *testing.T) {
@@ -31,7 +32,7 @@ func TestBuildNetworkPolicies(t *testing.T) {
 
 	assert.NoError(t, err)
 	assert.Equal(t, 1, len(np))
-	test.EqualFromYamlFile(t, "testdata/networkpolicy_not_in_pod.yml", &np[0], test.CleanApi)
+	test.EqualFromYamlFile[*networkingv1.NetworkPolicy](t, "testdata/networkpolicy_not_in_pod.yml", &np[0], scheme.Scheme)
 
 	// When in pod
 	os.Setenv("POD_NAME", "test")
@@ -48,5 +49,5 @@ func TestBuildNetworkPolicies(t *testing.T) {
 
 	assert.NoError(t, err)
 	assert.Equal(t, 1, len(np))
-	test.EqualFromYamlFile(t, "testdata/networkpolicy_in_pod.yml", &np[0], test.CleanApi)
+	test.EqualFromYamlFile[*networkingv1.NetworkPolicy](t, "testdata/networkpolicy_in_pod.yml", &np[0], scheme.Scheme)
 }

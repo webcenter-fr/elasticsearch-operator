@@ -3,13 +3,15 @@ package kibana
 import (
 	"testing"
 
+	"github.com/disaster37/operator-sdk-extra/pkg/test"
 	"github.com/stretchr/testify/assert"
 	elasticsearchcrd "github.com/webcenter-fr/elasticsearch-operator/apis/elasticsearch/v1"
 	kibanacrd "github.com/webcenter-fr/elasticsearch-operator/apis/kibana/v1"
 	"github.com/webcenter-fr/elasticsearch-operator/apis/shared"
-	"github.com/webcenter-fr/elasticsearch-operator/pkg/test"
+	corev1 "k8s.io/api/core/v1"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/utils/ptr"
 )
 
@@ -59,7 +61,7 @@ node.value2: test`,
 
 	configMaps, err := buildConfigMaps(o, es)
 	assert.NoError(t, err)
-	test.EqualFromYamlFile(t, "testdata/configmap_default.yml", &configMaps[0], test.CleanApi)
+	test.EqualFromYamlFile[*corev1.ConfigMap](t, "testdata/configmap_default.yml", &configMaps[0], scheme.Scheme)
 
 	// When TLS is disabled
 	o = &kibanacrd.Kibana{
@@ -103,7 +105,7 @@ node.value2: test`,
 
 	configMaps, err = buildConfigMaps(o, es)
 	assert.NoError(t, err)
-	test.EqualFromYamlFile(t, "testdata/configmap_tls_disabled.yml", &configMaps[0], test.CleanApi)
+	test.EqualFromYamlFile[*corev1.ConfigMap](t, "testdata/configmap_tls_disabled.yml", &configMaps[0], scheme.Scheme)
 
 	// When external elasticsearch with custom CA elasticsearch
 	o = &kibanacrd.Kibana{
@@ -136,7 +138,7 @@ node.value2: test`,
 
 	configMaps, err = buildConfigMaps(o, nil)
 	assert.NoError(t, err)
-	test.EqualFromYamlFile(t, "testdata/configmap_external_es_custom_ca_es.yml", &configMaps[0], test.CleanApi)
+	test.EqualFromYamlFile[*corev1.ConfigMap](t, "testdata/configmap_external_es_custom_ca_es.yml", &configMaps[0], scheme.Scheme)
 
 	// When managed elasticsearch with custom CA elasticsearch
 	o = &kibanacrd.Kibana{
@@ -169,6 +171,6 @@ node.value2: test`,
 
 	configMaps, err = buildConfigMaps(o, nil)
 	assert.NoError(t, err)
-	test.EqualFromYamlFile(t, "testdata/configmap_managed_es_custom_ca_es.yml", &configMaps[0], test.CleanApi)
+	test.EqualFromYamlFile[*corev1.ConfigMap](t, "testdata/configmap_managed_es_custom_ca_es.yml", &configMaps[0], scheme.Scheme)
 
 }

@@ -3,12 +3,13 @@ package cerebro
 import (
 	"testing"
 
+	"github.com/disaster37/operator-sdk-extra/pkg/test"
 	"github.com/stretchr/testify/assert"
 	cerebrocrd "github.com/webcenter-fr/elasticsearch-operator/apis/cerebro/v1"
 	elasticsearchcrd "github.com/webcenter-fr/elasticsearch-operator/apis/elasticsearch/v1"
-	"github.com/webcenter-fr/elasticsearch-operator/pkg/test"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/client-go/kubernetes/scheme"
 )
 
 func TestBuildConfigMap(t *testing.T) {
@@ -42,7 +43,7 @@ func TestBuildConfigMap(t *testing.T) {
 
 	configMaps, err = buildConfigMaps(o, nil)
 	assert.NoError(t, err)
-	test.EqualFromYamlFile(t, "testdata/configmap_default.yml", &configMaps[0], test.CleanApi)
+	test.EqualFromYamlFile[*corev1.ConfigMap](t, "testdata/configmap_default.yml", &configMaps[0], scheme.Scheme)
 
 	// When some elasticsearch targets
 	o = &cerebrocrd.Cerebro{
@@ -75,5 +76,5 @@ func TestBuildConfigMap(t *testing.T) {
 	configMaps, err = buildConfigMaps(o, esList)
 
 	assert.NoError(t, err)
-	test.EqualFromYamlFile(t, "testdata/configmap_elasticsearch_targets.yml", &configMaps[0], test.CleanApi)
+	test.EqualFromYamlFile[*corev1.ConfigMap](t, "testdata/configmap_elasticsearch_targets.yml", &configMaps[0], scheme.Scheme)
 }

@@ -3,12 +3,13 @@ package logstash
 import (
 	"testing"
 
+	"github.com/disaster37/operator-sdk-extra/pkg/test"
 	"github.com/stretchr/testify/assert"
 	logstashcrd "github.com/webcenter-fr/elasticsearch-operator/apis/logstash/v1"
-	"github.com/webcenter-fr/elasticsearch-operator/pkg/test"
 	v1 "k8s.io/api/core/v1"
 	networkingv1 "k8s.io/api/networking/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/client-go/kubernetes/scheme"
 )
 
 func TestBuildIngresses(t *testing.T) {
@@ -81,7 +82,7 @@ func TestBuildIngresses(t *testing.T) {
 
 	assert.NoError(t, err)
 	assert.Equal(t, 1, len(ingresses))
-	test.EqualFromYamlFile(t, "testdata/ingress_default.yml", &ingresses[0], test.CleanApi)
+	test.EqualFromYamlFile[*networkingv1.Ingress](t, "testdata/ingress_default.yml", &ingresses[0], scheme.Scheme)
 
 	// When ingress is defined for each logstash instance
 	o = &logstashcrd.Logstash{
@@ -135,5 +136,5 @@ func TestBuildIngresses(t *testing.T) {
 
 	assert.NoError(t, err)
 	assert.Equal(t, 1, len(ingresses))
-	test.EqualFromYamlFile(t, "testdata/ingress_pod.yml", &ingresses[0], test.CleanApi)
+	test.EqualFromYamlFile[*networkingv1.Ingress](t, "testdata/ingress_pod.yml", &ingresses[0], scheme.Scheme)
 }

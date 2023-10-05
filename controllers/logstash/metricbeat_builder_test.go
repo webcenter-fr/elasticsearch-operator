@@ -3,14 +3,15 @@ package logstash
 import (
 	"testing"
 
+	"github.com/disaster37/operator-sdk-extra/pkg/test"
 	"github.com/stretchr/testify/assert"
 	beatcrd "github.com/webcenter-fr/elasticsearch-operator/apis/beat/v1"
 	logstashcrd "github.com/webcenter-fr/elasticsearch-operator/apis/logstash/v1"
 	"github.com/webcenter-fr/elasticsearch-operator/apis/shared"
-	"github.com/webcenter-fr/elasticsearch-operator/pkg/test"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/client-go/kubernetes/scheme"
 )
 
 func TestBuildMetricbeat(t *testing.T) {
@@ -20,6 +21,9 @@ func TestBuildMetricbeat(t *testing.T) {
 		mbs []beatcrd.Metricbeat
 		o   *logstashcrd.Logstash
 	)
+
+	sch := scheme.Scheme
+	beatcrd.AddToScheme(sch)
 
 	// With default values
 	o = &logstashcrd.Logstash{
@@ -79,7 +83,7 @@ func TestBuildMetricbeat(t *testing.T) {
 
 	mbs, err = buildMetricbeats(o)
 	assert.NoError(t, err)
-	test.EqualFromYamlFile(t, "testdata/metricbeat_default.yaml", &mbs[0], test.CleanApi)
+	test.EqualFromYamlFile[*beatcrd.Metricbeat](t, "testdata/metricbeat_default.yaml", &mbs[0], sch)
 
 	// When metricbeat is enabled with all set
 	o = &logstashcrd.Logstash{
@@ -119,5 +123,5 @@ func TestBuildMetricbeat(t *testing.T) {
 
 	mbs, err = buildMetricbeats(o)
 	assert.NoError(t, err)
-	test.EqualFromYamlFile(t, "testdata/metricbeat_all_set.yaml", &mbs[0], test.CleanApi)
+	test.EqualFromYamlFile[*beatcrd.Metricbeat](t, "testdata/metricbeat_all_set.yaml", &mbs[0], sch)
 }

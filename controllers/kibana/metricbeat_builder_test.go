@@ -3,14 +3,15 @@ package kibana
 import (
 	"testing"
 
+	"github.com/disaster37/operator-sdk-extra/pkg/test"
 	"github.com/stretchr/testify/assert"
 	beatcrd "github.com/webcenter-fr/elasticsearch-operator/apis/beat/v1"
 	kibanacrd "github.com/webcenter-fr/elasticsearch-operator/apis/kibana/v1"
 	"github.com/webcenter-fr/elasticsearch-operator/apis/shared"
-	"github.com/webcenter-fr/elasticsearch-operator/pkg/test"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/utils/ptr"
 )
 
@@ -21,6 +22,9 @@ func TestBuildMetricbeat(t *testing.T) {
 		mbs []beatcrd.Metricbeat
 		o   *kibanacrd.Kibana
 	)
+
+	sch := scheme.Scheme
+	beatcrd.AddToScheme(sch)
 
 	// With default values
 	o = &kibanacrd.Kibana{
@@ -80,7 +84,7 @@ func TestBuildMetricbeat(t *testing.T) {
 
 	mbs, err = buildMetricbeats(o)
 	assert.NoError(t, err)
-	test.EqualFromYamlFile(t, "testdata/metricbeat_default.yaml", &mbs[0], test.CleanApi)
+	test.EqualFromYamlFile[*beatcrd.Metricbeat](t, "testdata/metricbeat_default.yaml", &mbs[0], sch)
 
 	// When metricbeat is enabled with all set
 	o = &kibanacrd.Kibana{
@@ -120,7 +124,7 @@ func TestBuildMetricbeat(t *testing.T) {
 
 	mbs, err = buildMetricbeats(o)
 	assert.NoError(t, err)
-	test.EqualFromYamlFile(t, "testdata/metricbeat_all_set.yaml", &mbs[0], test.CleanApi)
+	test.EqualFromYamlFile[*beatcrd.Metricbeat](t, "testdata/metricbeat_all_set.yaml", &mbs[0], sch)
 
 	// When metricbeat is enabled and tls is disabled
 	o = &kibanacrd.Kibana{
@@ -151,5 +155,5 @@ func TestBuildMetricbeat(t *testing.T) {
 
 	mbs, err = buildMetricbeats(o)
 	assert.NoError(t, err)
-	test.EqualFromYamlFile(t, "testdata/metricbeat_tls_disabled.yaml", &mbs[0], test.CleanApi)
+	test.EqualFromYamlFile[*beatcrd.Metricbeat](t, "testdata/metricbeat_tls_disabled.yaml", &mbs[0], sch)
 }

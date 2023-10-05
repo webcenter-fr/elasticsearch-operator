@@ -3,13 +3,14 @@ package cerebro
 import (
 	"testing"
 
+	"github.com/disaster37/operator-sdk-extra/pkg/test"
 	"github.com/stretchr/testify/assert"
 	cerebrocrd "github.com/webcenter-fr/elasticsearch-operator/apis/cerebro/v1"
-	"github.com/webcenter-fr/elasticsearch-operator/pkg/test"
 	appv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/client-go/kubernetes/scheme"
 )
 
 func TestBuildDeployment(t *testing.T) {
@@ -37,7 +38,7 @@ func TestBuildDeployment(t *testing.T) {
 
 	dpls, err = buildDeployments(o, nil, nil)
 	assert.NoError(t, err)
-	test.EqualFromYamlFile(t, "testdata/deployment_default.yml", &dpls[0], test.CleanApi)
+	test.EqualFromYamlFile[*appv1.Deployment](t, "testdata/deployment_default.yml", &dpls[0], scheme.Scheme)
 
 	// With complexe sample
 	o = &cerebrocrd.Cerebro{
@@ -111,5 +112,5 @@ func TestBuildDeployment(t *testing.T) {
 
 	dpls, err = buildDeployments(o, checksumSecrets, checksumCms)
 	assert.NoError(t, err)
-	test.EqualFromYamlFile(t, "testdata/deployment_complet.yml", &dpls[0], test.CleanApi)
+	test.EqualFromYamlFile[*appv1.Deployment](t, "testdata/deployment_complet.yml", &dpls[0], scheme.Scheme)
 }

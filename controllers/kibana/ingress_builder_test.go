@@ -3,12 +3,13 @@ package kibana
 import (
 	"testing"
 
+	"github.com/disaster37/operator-sdk-extra/pkg/test"
 	"github.com/stretchr/testify/assert"
 	kibanacrd "github.com/webcenter-fr/elasticsearch-operator/apis/kibana/v1"
-	"github.com/webcenter-fr/elasticsearch-operator/pkg/test"
 	v1 "k8s.io/api/core/v1"
 	networkingv1 "k8s.io/api/networking/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/utils/ptr"
 )
 
@@ -67,7 +68,7 @@ func TestBuildIngress(t *testing.T) {
 	i, err = buildIngresses(o)
 
 	assert.NoError(t, err)
-	test.EqualFromYamlFile(t, "testdata/ingress_without_target.yml", &i[0], test.CleanApi)
+	test.EqualFromYamlFile[*networkingv1.Ingress](t, "testdata/ingress_without_target.yml", &i[0], scheme.Scheme)
 
 	// When ingress is enabled and specify all options
 	o = &kibanacrd.Kibana{
@@ -105,5 +106,5 @@ func TestBuildIngress(t *testing.T) {
 	i, err = buildIngresses(o)
 
 	assert.NoError(t, err)
-	test.EqualFromYamlFile(t, "testdata/ingress_with_all_options.yml", &i[0], test.CleanApi)
+	test.EqualFromYamlFile[*networkingv1.Ingress](t, "testdata/ingress_with_all_options.yml", &i[0], scheme.Scheme)
 }

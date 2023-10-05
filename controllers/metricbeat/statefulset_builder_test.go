@@ -3,15 +3,16 @@ package metricbeat
 import (
 	"testing"
 
+	"github.com/disaster37/operator-sdk-extra/pkg/test"
 	"github.com/stretchr/testify/assert"
 	beatcrd "github.com/webcenter-fr/elasticsearch-operator/apis/beat/v1"
 	elasticsearchcrd "github.com/webcenter-fr/elasticsearch-operator/apis/elasticsearch/v1"
 	"github.com/webcenter-fr/elasticsearch-operator/apis/shared"
-	"github.com/webcenter-fr/elasticsearch-operator/pkg/test"
 	appv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/utils/ptr"
 )
 
@@ -53,7 +54,7 @@ func TestBuildStatefulset(t *testing.T) {
 
 	sts, err = buildStatefulsets(o, es, nil, nil)
 	assert.NoError(t, err)
-	test.EqualFromYamlFile(t, "testdata/statefulset_default_elasticsearch.yml", &sts[0], test.CleanApi)
+	test.EqualFromYamlFile[*appv1.StatefulSet](t, "testdata/statefulset_default_elasticsearch.yml", &sts[0], scheme.Scheme)
 
 	// With default values and external elasticsearch
 	o = &beatcrd.Metricbeat{
@@ -80,7 +81,7 @@ func TestBuildStatefulset(t *testing.T) {
 
 	sts, err = buildStatefulsets(o, nil, nil, nil)
 	assert.NoError(t, err)
-	test.EqualFromYamlFile(t, "testdata/statefulset_default_with_external_es.yml", &sts[0], test.CleanApi)
+	test.EqualFromYamlFile[*appv1.StatefulSet](t, "testdata/statefulset_default_with_external_es.yml", &sts[0], scheme.Scheme)
 
 	// With default values and external elasticsearch and custom CA Elasticsearch
 	o = &beatcrd.Metricbeat{
@@ -121,7 +122,7 @@ func TestBuildStatefulset(t *testing.T) {
 
 	sts, err = buildStatefulsets(o, nil, extraSecrets, nil)
 	assert.NoError(t, err)
-	test.EqualFromYamlFile(t, "testdata/statefulset_custom_ca_es_with_external_es.yml", &sts[0], test.CleanApi)
+	test.EqualFromYamlFile[*appv1.StatefulSet](t, "testdata/statefulset_custom_ca_es_with_external_es.yml", &sts[0], scheme.Scheme)
 
 	// With complexe sample
 	o = &beatcrd.Metricbeat{
@@ -262,5 +263,5 @@ func TestBuildStatefulset(t *testing.T) {
 
 	sts, err = buildStatefulsets(o, es, extraSecrets, extraConfigMaps)
 	assert.NoError(t, err)
-	test.EqualFromYamlFile(t, "testdata/statefulset_complet.yml", &sts[0], test.CleanApi)
+	test.EqualFromYamlFile[*appv1.StatefulSet](t, "testdata/statefulset_complet.yml", &sts[0], scheme.Scheme)
 }

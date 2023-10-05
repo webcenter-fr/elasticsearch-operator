@@ -3,11 +3,12 @@ package elasticsearch
 import (
 	"testing"
 
+	"github.com/disaster37/operator-sdk-extra/pkg/test"
 	monitoringv1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1"
 	"github.com/stretchr/testify/assert"
 	elasticsearchcrd "github.com/webcenter-fr/elasticsearch-operator/apis/elasticsearch/v1"
-	"github.com/webcenter-fr/elasticsearch-operator/pkg/test"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/client-go/kubernetes/scheme"
 )
 
 func TestBuildPodMonitor(t *testing.T) {
@@ -16,6 +17,9 @@ func TestBuildPodMonitor(t *testing.T) {
 		o   *elasticsearchcrd.Elasticsearch
 		pms []monitoringv1.PodMonitor
 	)
+
+	sch := scheme.Scheme
+	monitoringv1.AddToScheme(sch)
 
 	// With default values
 	o = &elasticsearchcrd.Elasticsearch{
@@ -63,6 +67,6 @@ func TestBuildPodMonitor(t *testing.T) {
 	}
 	pms, err = buildPodMonitors(o)
 	assert.NoError(t, err)
-	test.EqualFromYamlFile(t, "testdata/podmonitor.yml", &pms[0], test.CleanApi)
+	test.EqualFromYamlFile[*monitoringv1.PodMonitor](t, "testdata/podmonitor.yml", &pms[0], sch)
 
 }

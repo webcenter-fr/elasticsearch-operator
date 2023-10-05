@@ -3,12 +3,13 @@ package elasticsearch
 import (
 	"testing"
 
+	"github.com/disaster37/operator-sdk-extra/pkg/test"
 	"github.com/stretchr/testify/assert"
 	elasticsearchcrd "github.com/webcenter-fr/elasticsearch-operator/apis/elasticsearch/v1"
 	elasticsearchapicrd "github.com/webcenter-fr/elasticsearch-operator/apis/elasticsearchapi/v1"
-	"github.com/webcenter-fr/elasticsearch-operator/pkg/test"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/client-go/kubernetes/scheme"
 )
 
 func TestBuildLicense(t *testing.T) {
@@ -18,6 +19,8 @@ func TestBuildLicense(t *testing.T) {
 		s        *corev1.Secret
 		licenses []elasticsearchapicrd.License
 	)
+	sch := scheme.Scheme
+	elasticsearchapicrd.AddToScheme(sch)
 
 	// Normal
 	o = &elasticsearchcrd.Elasticsearch{
@@ -44,7 +47,7 @@ func TestBuildLicense(t *testing.T) {
 
 	licenses, err := buildLicenses(o, s)
 	assert.NoError(t, err)
-	test.EqualFromYamlFile(t, "testdata/license.yml", &licenses[0], test.CleanApi)
+	test.EqualFromYamlFile[*elasticsearchapicrd.License](t, "testdata/license.yml", &licenses[0], sch)
 
 	// When no license is expected
 	o = &elasticsearchcrd.Elasticsearch{

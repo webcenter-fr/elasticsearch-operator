@@ -4,13 +4,14 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/disaster37/operator-sdk-extra/pkg/test"
 	"github.com/stretchr/testify/assert"
 	elasticsearchcrd "github.com/webcenter-fr/elasticsearch-operator/apis/elasticsearch/v1"
-	"github.com/webcenter-fr/elasticsearch-operator/pkg/test"
 	appv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/utils/ptr"
 )
 
@@ -47,7 +48,7 @@ func TestBuildStatefulset(t *testing.T) {
 
 	sts, err = buildStatefulsets(o, nil, nil)
 	assert.NoError(t, err)
-	test.EqualFromYamlFile(t, "testdata/statefullset-all.yml", &sts[0], test.CleanApi)
+	test.EqualFromYamlFile[*appv1.StatefulSet](t, "testdata/statefullset-all.yml", &sts[0], scheme.Scheme)
 
 	// With complex config
 	o = &elasticsearchcrd.Elasticsearch{
@@ -226,9 +227,9 @@ func TestBuildStatefulset(t *testing.T) {
 
 	sts, err = buildStatefulsets(o, extraSecrets, extraConfigMaps)
 	assert.NoError(t, err)
-	test.EqualFromYamlFile(t, "testdata/statefullset-master.yml", &sts[0], test.CleanApi)
-	test.EqualFromYamlFile(t, "testdata/statefullset-data.yml", &sts[1], test.CleanApi)
-	test.EqualFromYamlFile(t, "testdata/statefullset-client.yml", &sts[2], test.CleanApi)
+	test.EqualFromYamlFile[*appv1.StatefulSet](t, "testdata/statefullset-master.yml", &sts[0], scheme.Scheme)
+	test.EqualFromYamlFile[*appv1.StatefulSet](t, "testdata/statefullset-data.yml", &sts[1], scheme.Scheme)
+	test.EqualFromYamlFile[*appv1.StatefulSet](t, "testdata/statefullset-client.yml", &sts[2], scheme.Scheme)
 
 	// When secret for certificates is set
 	o = &elasticsearchcrd.Elasticsearch{
@@ -299,7 +300,7 @@ func TestBuildStatefulset(t *testing.T) {
 
 	sts, err = buildStatefulsets(o, extraSecrets, extraConfigMaps)
 	assert.NoError(t, err)
-	test.EqualFromYamlFile(t, "testdata/statefullset-all-external-tls.yml", &sts[0], test.CleanApi)
+	test.EqualFromYamlFile[*appv1.StatefulSet](t, "testdata/statefullset-all-external-tls.yml", &sts[0], scheme.Scheme)
 }
 
 func TestComputeJavaOpts(t *testing.T) {

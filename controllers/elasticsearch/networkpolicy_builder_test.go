@@ -4,14 +4,15 @@ import (
 	"os"
 	"testing"
 
+	"github.com/disaster37/operator-sdk-extra/pkg/test"
 	"github.com/stretchr/testify/assert"
 	beatcrd "github.com/webcenter-fr/elasticsearch-operator/apis/beat/v1"
 	elasticsearchcrd "github.com/webcenter-fr/elasticsearch-operator/apis/elasticsearch/v1"
 	kibanacrd "github.com/webcenter-fr/elasticsearch-operator/apis/kibana/v1"
 	logstashcrd "github.com/webcenter-fr/elasticsearch-operator/apis/logstash/v1"
-	"github.com/webcenter-fr/elasticsearch-operator/pkg/test"
 	networkingv1 "k8s.io/api/networking/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/client-go/kubernetes/scheme"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -35,7 +36,7 @@ func TestBuildNetworkPolicy(t *testing.T) {
 	nps, err = buildNetworkPolicies(o, nil)
 
 	assert.NoError(t, err)
-	test.EqualFromYamlFile(t, "testdata/networkpolicy_not_in_pod.yml", &nps[0], test.CleanApi)
+	test.EqualFromYamlFile[*networkingv1.NetworkPolicy](t, "testdata/networkpolicy_not_in_pod.yml", &nps[0], scheme.Scheme)
 
 	// When in pod
 	os.Setenv("POD_NAME", "test")
@@ -51,7 +52,7 @@ func TestBuildNetworkPolicy(t *testing.T) {
 	nps, err = buildNetworkPolicies(o, nil)
 
 	assert.NoError(t, err)
-	test.EqualFromYamlFile(t, "testdata/networkpolicy_in_pod.yml", &nps[0], test.CleanApi)
+	test.EqualFromYamlFile[*networkingv1.NetworkPolicy](t, "testdata/networkpolicy_in_pod.yml", &nps[0], scheme.Scheme)
 
 	// When in pod and external referers
 	os.Setenv("POD_NAME", "test")
@@ -107,6 +108,6 @@ func TestBuildNetworkPolicy(t *testing.T) {
 	nps, err = buildNetworkPolicies(o, oList)
 
 	assert.NoError(t, err)
-	test.EqualFromYamlFile(t, "testdata/networkpolicy_referer.yml", &nps[0], test.CleanApi)
+	test.EqualFromYamlFile[*networkingv1.NetworkPolicy](t, "testdata/networkpolicy_referer.yml", &nps[0], scheme.Scheme)
 
 }

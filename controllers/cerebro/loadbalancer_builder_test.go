@@ -3,11 +3,12 @@ package cerebro
 import (
 	"testing"
 
+	"github.com/disaster37/operator-sdk-extra/pkg/test"
 	"github.com/stretchr/testify/assert"
 	cerebrocrd "github.com/webcenter-fr/elasticsearch-operator/apis/cerebro/v1"
-	"github.com/webcenter-fr/elasticsearch-operator/pkg/test"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/client-go/kubernetes/scheme"
 )
 
 func TestBuildLoadbalancer(t *testing.T) {
@@ -67,6 +68,6 @@ func TestBuildLoadbalancer(t *testing.T) {
 
 	services, err = buildLoadbalancers(o)
 	assert.NoError(t, err)
-	test.EqualFromYamlFile(t, "testdata/loadbalancer_without_target.yaml", &services[0], test.CleanApi)
+	test.EqualFromYamlFile[*corev1.Service](t, "testdata/loadbalancer_without_target.yaml", &services[0], scheme.Scheme)
 
 }
