@@ -10,14 +10,17 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-func TestBuildComponentTemplate(t *testing.T) {
+func TestComponentTemplateBuild(t *testing.T) {
 
 	var (
 		o          *elasticsearchapicrd.ComponentTemplate
 		ct         *olivere.IndicesGetComponentTemplate
 		expectedCt *olivere.IndicesGetComponentTemplate
 		err        error
+		client     *componentTemplateApiClient
 	)
+
+	client = &componentTemplateApiClient{}
 
 	// With minimal parameters
 	o = &elasticsearchapicrd.ComponentTemplate{
@@ -42,7 +45,7 @@ func TestBuildComponentTemplate(t *testing.T) {
 		},
 	}
 
-	ct, err = BuildComponentTemplate(o)
+	ct, err = client.Build(o)
 	assert.NoError(t, err)
 	assert.Equal(t, expectedCt, ct)
 
@@ -88,7 +91,7 @@ func TestBuildComponentTemplate(t *testing.T) {
 		},
 	}
 
-	ct, err = BuildComponentTemplate(o)
+	ct, err = client.Build(o)
 	assert.NoError(t, err)
 	assert.Equal(t, expectedCt, ct)
 

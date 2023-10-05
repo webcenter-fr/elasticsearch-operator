@@ -10,7 +10,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-func TestBuildSnapshotLifecyclePolicy(t *testing.T) {
+func TestSnapshotLifecyclePolicyBuild(t *testing.T) {
 
 	var (
 		o           *elasticsearchapicrd.SnapshotLifecyclePolicy
@@ -18,6 +18,8 @@ func TestBuildSnapshotLifecyclePolicy(t *testing.T) {
 		expectedSLM *eshandler.SnapshotLifecyclePolicySpec
 		err         error
 	)
+
+	client := &snapshotLifecyclePolicyApiClient{}
 
 	// Normal case
 	o = &elasticsearchapicrd.SnapshotLifecyclePolicy{
@@ -59,7 +61,7 @@ func TestBuildSnapshotLifecyclePolicy(t *testing.T) {
 		},
 	}
 
-	slm, err = BuildSnapshotLifecyclePolicy(o)
+	slm, err = client.Build(o)
 	assert.NoError(t, err)
 	assert.Equal(t, expectedSLM, slm)
 
@@ -113,7 +115,7 @@ func TestBuildSnapshotLifecyclePolicy(t *testing.T) {
 		},
 	}
 
-	slm, err = BuildSnapshotLifecyclePolicy(o)
+	slm, err = client.Build(o)
 	assert.NoError(t, err)
 	assert.Equal(t, expectedSLM, slm)
 

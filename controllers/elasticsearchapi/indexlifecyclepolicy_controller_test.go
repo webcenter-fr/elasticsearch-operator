@@ -8,7 +8,7 @@ import (
 
 	"emperror.dev/errors"
 	"github.com/disaster37/es-handler/v8/mocks"
-	"github.com/disaster37/es-handler/v8/patch"
+	"github.com/disaster37/generic-objectmatcher/patch"
 	"github.com/disaster37/operator-sdk-extra/pkg/test"
 	"github.com/golang/mock/gomock"
 	olivere "github.com/olivere/elastic/v7"
@@ -267,9 +267,8 @@ func doCreateILMStep() test.TestStep {
 			if err != nil || isTimeout {
 				t.Fatalf("Failed to get ILM: %s", err.Error())
 			}
-			assert.True(t, condition.IsStatusConditionPresentAndEqual(ilm.Status.Conditions, IndexLifecyclePolicyCondition, metav1.ConditionTrue))
 			assert.True(t, condition.IsStatusConditionPresentAndEqual(ilm.Status.Conditions, common.ReadyCondition.String(), metav1.ConditionTrue))
-			assert.True(t, ilm.Status.Sync)
+			assert.True(t, *ilm.Status.IsSync)
 
 			return nil
 		},
@@ -335,9 +334,8 @@ func doUpdateILMStep() test.TestStep {
 			if err != nil || isTimeout {
 				return errors.Wrapf(err, "Failed to get ILM")
 			}
-			assert.True(t, condition.IsStatusConditionPresentAndEqual(ilm.Status.Conditions, IndexLifecyclePolicyCondition, metav1.ConditionTrue))
 			assert.True(t, condition.IsStatusConditionPresentAndEqual(ilm.Status.Conditions, common.ReadyCondition.String(), metav1.ConditionTrue))
-			assert.True(t, ilm.Status.Sync)
+			assert.True(t, *ilm.Status.IsSync)
 
 			return nil
 		},

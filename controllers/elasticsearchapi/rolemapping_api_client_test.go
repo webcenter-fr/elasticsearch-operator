@@ -10,7 +10,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-func TestBuildRoleMapping(t *testing.T) {
+func TestRoleMappingBuild(t *testing.T) {
 
 	var (
 		o          *elasticsearchapicrd.RoleMapping
@@ -18,6 +18,8 @@ func TestBuildRoleMapping(t *testing.T) {
 		expectedRm *olivere.XPackSecurityRoleMapping
 		err        error
 	)
+
+	client := &roleMappingApiClient{}
 
 	// With minimal info
 	o = &elasticsearchapicrd.RoleMapping{
@@ -76,7 +78,7 @@ func TestBuildRoleMapping(t *testing.T) {
 		Metadata: map[string]any{},
 	}
 
-	rm, err = BuildRoleMapping(o)
+	rm, err = client.Build(o)
 	assert.NoError(t, err)
 	assert.Equal(t, expectedRm, rm)
 
@@ -144,7 +146,7 @@ func TestBuildRoleMapping(t *testing.T) {
 		},
 	}
 
-	rm, err = BuildRoleMapping(o)
+	rm, err = client.Build(o)
 	assert.NoError(t, err)
 	assert.Equal(t, expectedRm, rm)
 

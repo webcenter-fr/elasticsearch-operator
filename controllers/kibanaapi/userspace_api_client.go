@@ -33,21 +33,21 @@ func (h *userSpaceApiClient) Build(o *kibanaapicrd.UserSpace) (space *kbapi.Kiba
 
 }
 
-func (h *userSpaceApiClient) Get(name string) (object *kbapi.KibanaSpace, err error) {
-	return h.client.UserSpaceGet(name)
+func (h *userSpaceApiClient) Get(o *kibanaapicrd.UserSpace) (object *kbapi.KibanaSpace, err error) {
+	return h.client.UserSpaceGet(o.GetExternalName())
 }
 
-func (h *userSpaceApiClient) Create(object *kbapi.KibanaSpace) (err error) {
+func (h *userSpaceApiClient) Create(object *kbapi.KibanaSpace, o *kibanaapicrd.UserSpace) (err error) {
 	return h.client.UserSpaceCreate(object)
 }
 
-func (h *userSpaceApiClient) Update(object *kbapi.KibanaSpace) (err error) {
+func (h *userSpaceApiClient) Update(object *kbapi.KibanaSpace, o *kibanaapicrd.UserSpace) (err error) {
 	return h.client.UserSpaceUpdate(object)
 
 }
 
-func (h *userSpaceApiClient) Delete(name string) (err error) {
-	return h.client.UserSpaceDelete(name)
+func (h *userSpaceApiClient) Delete(o *kibanaapicrd.UserSpace) (err error) {
+	return h.client.UserSpaceDelete(o.GetExternalName())
 
 }
 

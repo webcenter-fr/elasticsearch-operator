@@ -7,14 +7,14 @@ require (
 	emperror.dev/errors v0.8.1
 	github.com/codingsince1985/checksum v1.3.0
 	github.com/davecgh/go-spew v1.1.1
-	github.com/disaster37/es-handler/v8 v8.1.3-0.20230609084243-2fd1dddecf73
+	github.com/disaster37/es-handler/v8 v8.1.3
 	github.com/disaster37/generic-objectmatcher v1.0.2
 	github.com/disaster37/go-kibana-rest/v8 v8.5.0
 	github.com/disaster37/goca v1.0.4
 	github.com/disaster37/k8s-objectmatcher v1.8.2
 	github.com/disaster37/k8sbuilder v1.0.1
 	github.com/disaster37/kb-handler/v8 v8.0.4
-	github.com/disaster37/operator-sdk-extra v0.1.3-0.20231003150329-6ccff3a3b5c2
+	github.com/disaster37/operator-sdk-extra v0.1.3-0.20231004094513-2aa6a80a5f17
 	github.com/elastic/elastic-transport-go/v8 v8.3.0
 	github.com/elastic/go-elasticsearch/v8 v8.9.0
 	github.com/elastic/go-ucfg v0.8.6

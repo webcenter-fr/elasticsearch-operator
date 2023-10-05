@@ -9,6 +9,16 @@ import (
 	"k8s.io/utils/ptr"
 )
 
+func TestLicenseGetExternalName(t *testing.T) {
+	o := &License{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: "test",
+		},
+	}
+
+	assert.Equal(t, "test", o.GetExternalName())
+}
+
 func TestIsBasicLicense(t *testing.T) {
 	var o *License
 

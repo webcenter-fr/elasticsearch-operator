@@ -189,7 +189,7 @@ func doEnableBasicLicenseStep() test.TestStep {
 				if err := c.Get(context.Background(), key, license); err != nil {
 					t.Fatal(err)
 				}
-				if !condition.IsStatusConditionPresentAndEqual(license.Status.Conditions, LicenseCondition, metav1.ConditionTrue) {
+				if !condition.IsStatusConditionPresentAndEqual(license.Status.Conditions, common.ReadyCondition.String(), metav1.ConditionTrue) {
 					return errors.New("Not yet created")
 				}
 				return nil
@@ -198,11 +198,9 @@ func doEnableBasicLicenseStep() test.TestStep {
 				t.Fatalf("Failed to get License: %s", err.Error())
 			}
 			assert.Empty(t, license.Status.ExpireAt)
-			assert.Empty(t, license.Status.LicenseChecksum)
 			assert.Equal(t, "basic", license.Status.LicenseType)
-			assert.True(t, condition.IsStatusConditionPresentAndEqual(license.Status.Conditions, LicenseCondition, metav1.ConditionTrue))
 			assert.True(t, condition.IsStatusConditionPresentAndEqual(license.Status.Conditions, common.ReadyCondition.String(), metav1.ConditionTrue))
-			assert.True(t, license.Status.Sync)
+			assert.True(t, *license.Status.IsSync)
 
 			return nil
 		},
@@ -229,7 +227,7 @@ func doDeleteBasicLicenseStep() test.TestStep {
 		},
 		Check: func(t *testing.T, c client.Client, key types.NamespacedName, o client.Object, data map[string]any) (err error) {
 			license := &elasticsearchapicrd.License{}
-			isDeleted := true
+			isDeleted := false
 
 			isTimeout, err := localtest.RunWithTimeout(func() error {
 				if err = c.Get(context.Background(), key, license); err != nil {
@@ -316,7 +314,7 @@ func doUpdateToEnterpriseLicenseStep() test.TestStep {
 				if err := c.Get(context.Background(), key, license); err != nil {
 					t.Fatal(err)
 				}
-				if !condition.IsStatusConditionPresentAndEqual(license.Status.Conditions, LicenseCondition, metav1.ConditionTrue) {
+				if !condition.IsStatusConditionPresentAndEqual(license.Status.Conditions, common.ReadyCondition.String(), metav1.ConditionTrue) {
 					return errors.New("Not yet created")
 				}
 				return nil
@@ -325,11 +323,9 @@ func doUpdateToEnterpriseLicenseStep() test.TestStep {
 				t.Fatalf("Failed to get License: %s", err.Error())
 			}
 			assert.NotEmpty(t, license.Status.ExpireAt)
-			assert.NotEmpty(t, license.Status.LicenseChecksum)
 			assert.Equal(t, "gold", license.Status.LicenseType)
-			assert.True(t, condition.IsStatusConditionPresentAndEqual(license.Status.Conditions, LicenseCondition, metav1.ConditionTrue))
 			assert.True(t, condition.IsStatusConditionPresentAndEqual(license.Status.Conditions, common.ReadyCondition.String(), metav1.ConditionTrue))
-			assert.True(t, license.Status.Sync)
+			assert.True(t, *license.Status.IsSync)
 
 			return nil
 		},
@@ -345,8 +341,6 @@ func doUpdateEnterpriseLicenseStep() test.TestStep {
 			if o == nil {
 				return errors.New("License is null")
 			}
-			license := o.(*elasticsearchapicrd.License)
-			data["licenseChecksum"] = license.Status.LicenseChecksum
 
 			secret := &core.Secret{}
 
@@ -395,11 +389,9 @@ func doUpdateEnterpriseLicenseStep() test.TestStep {
 				t.Fatalf("Failed to get License: %s", err.Error())
 			}
 			assert.NotEmpty(t, license.Status.ExpireAt)
-			assert.NotEqual(t, data["licenseChecksum"], license.Status.LicenseChecksum)
 			assert.Equal(t, "gold", license.Status.LicenseType)
-			assert.True(t, condition.IsStatusConditionPresentAndEqual(license.Status.Conditions, LicenseCondition, metav1.ConditionTrue))
 			assert.True(t, condition.IsStatusConditionPresentAndEqual(license.Status.Conditions, common.ReadyCondition.String(), metav1.ConditionTrue))
-			assert.True(t, license.Status.Sync)
+			assert.True(t, *license.Status.IsSync)
 
 			return nil
 		},

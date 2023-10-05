@@ -9,13 +9,15 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-func TestBuildUser(t *testing.T) {
+func TestUserBuild(t *testing.T) {
 	var (
 		o            *elasticsearchapicrd.User
 		user         *olivere.XPackSecurityPutUserRequest
 		expectedUser *olivere.XPackSecurityPutUserRequest
 		err          error
 	)
+
+	client := &userApiClient{}
 
 	// When no metadata
 	o = &elasticsearchapicrd.User{
@@ -44,7 +46,7 @@ func TestBuildUser(t *testing.T) {
 		PasswordHash: "hash",
 	}
 
-	user, err = BuildUser(o)
+	user, err = client.Build(o)
 
 	assert.NoError(t, err)
 	assert.Equal(t, expectedUser, user)
@@ -80,7 +82,7 @@ func TestBuildUser(t *testing.T) {
 		},
 	}
 
-	user, err = BuildUser(o)
+	user, err = client.Build(o)
 
 	assert.NoError(t, err)
 	assert.Equal(t, expectedUser, user)

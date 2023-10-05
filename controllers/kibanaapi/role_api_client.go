@@ -86,21 +86,21 @@ func (h *roleApiClient) Build(o *kibanaapicrd.Role) (role *kbapi.KibanaRole, err
 
 }
 
-func (h *roleApiClient) Get(name string) (object *kbapi.KibanaRole, err error) {
-	return h.client.RoleGet(name)
+func (h *roleApiClient) Get(o *kibanaapicrd.Role) (object *kbapi.KibanaRole, err error) {
+	return h.client.RoleGet(o.GetExternalName())
 }
 
-func (h *roleApiClient) Create(object *kbapi.KibanaRole) (err error) {
+func (h *roleApiClient) Create(object *kbapi.KibanaRole, o *kibanaapicrd.Role) (err error) {
 	return h.client.RoleUpdate(object)
 }
 
-func (h *roleApiClient) Update(object *kbapi.KibanaRole) (err error) {
+func (h *roleApiClient) Update(object *kbapi.KibanaRole, o *kibanaapicrd.Role) (err error) {
 	return h.client.RoleUpdate(object)
 
 }
 
-func (h *roleApiClient) Delete(name string) (err error) {
-	return h.client.RoleDelete(name)
+func (h *roleApiClient) Delete(o *kibanaapicrd.Role) (err error) {
+	return h.client.RoleDelete(o.GetExternalName())
 
 }
 

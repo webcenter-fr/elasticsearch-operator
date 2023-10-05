@@ -7,7 +7,7 @@ import (
 
 	"emperror.dev/errors"
 	"github.com/disaster37/es-handler/v8/mocks"
-	"github.com/disaster37/es-handler/v8/patch"
+	"github.com/disaster37/generic-objectmatcher/patch"
 	"github.com/disaster37/operator-sdk-extra/pkg/test"
 	"github.com/golang/mock/gomock"
 	olivere "github.com/olivere/elastic/v7"
@@ -199,9 +199,8 @@ func doCreateUserStep() test.TestStep {
 			if err != nil || isTimeout {
 				t.Fatalf("Failed to get user: %s", err.Error())
 			}
-			assert.True(t, condition.IsStatusConditionPresentAndEqual(user.Status.Conditions, UserCondition, metav1.ConditionTrue))
 			assert.True(t, condition.IsStatusConditionPresentAndEqual(user.Status.Conditions, common.ReadyCondition.String(), metav1.ConditionTrue))
-			assert.True(t, user.Status.Sync)
+			assert.True(t, *user.Status.IsSync)
 
 			return nil
 		},
@@ -245,9 +244,8 @@ func doUpdateUserStep() test.TestStep {
 			if err != nil || isTimeout {
 				t.Fatalf("Failed to get User: %s", err.Error())
 			}
-			assert.True(t, condition.IsStatusConditionPresentAndEqual(user.Status.Conditions, UserCondition, metav1.ConditionTrue))
 			assert.True(t, condition.IsStatusConditionPresentAndEqual(user.Status.Conditions, common.ReadyCondition.String(), metav1.ConditionTrue))
-			assert.True(t, user.Status.Sync)
+			assert.True(t, *user.Status.IsSync)
 
 			return nil
 		},
@@ -291,9 +289,8 @@ func doUpdateUserPasswordHashStep() test.TestStep {
 			if err != nil || isTimeout {
 				t.Fatalf("Failed to get User: %s", err.Error())
 			}
-			assert.True(t, condition.IsStatusConditionPresentAndEqual(user.Status.Conditions, UserCondition, metav1.ConditionTrue))
 			assert.True(t, condition.IsStatusConditionPresentAndEqual(user.Status.Conditions, common.ReadyCondition.String(), metav1.ConditionTrue))
-			assert.True(t, user.Status.Sync)
+			assert.True(t, *user.Status.IsSync)
 
 			return nil
 		},

@@ -10,7 +10,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-func TestBuildWatch(t *testing.T) {
+func TestWatchBuild(t *testing.T) {
 
 	var (
 		o             *elasticsearchapicrd.Watch
@@ -18,6 +18,8 @@ func TestBuildWatch(t *testing.T) {
 		expectedWatch *olivere.XPackWatch
 		err           error
 	)
+
+	client := &watchApiClient{}
 
 	// With minimal parameters
 	o = &elasticsearchapicrd.Watch{
@@ -81,7 +83,7 @@ func TestBuildWatch(t *testing.T) {
 		},
 	}
 
-	watch, err = BuildWatch(o)
+	watch, err = client.Build(o)
 	assert.NoError(t, err)
 	assert.Equal(t, expectedWatch, watch)
 
@@ -163,7 +165,7 @@ func TestBuildWatch(t *testing.T) {
 		},
 	}
 
-	watch, err = BuildWatch(o)
+	watch, err = client.Build(o)
 	assert.NoError(t, err)
 	assert.Equal(t, expectedWatch, watch)
 

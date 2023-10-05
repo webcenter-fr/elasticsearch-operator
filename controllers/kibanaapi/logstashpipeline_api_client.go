@@ -41,21 +41,21 @@ func (h *logstashPipelineApiClient) Build(o *kibanaapicrd.LogstashPipeline) (pip
 
 }
 
-func (h *logstashPipelineApiClient) Get(name string) (object *kbapi.LogstashPipeline, err error) {
-	return h.client.LogstashPipelineGet(name)
+func (h *logstashPipelineApiClient) Get(o *kibanaapicrd.LogstashPipeline) (object *kbapi.LogstashPipeline, err error) {
+	return h.client.LogstashPipelineGet(o.GetExternalName())
 }
 
-func (h *logstashPipelineApiClient) Create(object *kbapi.LogstashPipeline) (err error) {
+func (h *logstashPipelineApiClient) Create(object *kbapi.LogstashPipeline, o *kibanaapicrd.LogstashPipeline) (err error) {
 	return h.client.LogstashPipelineUpdate(object)
 }
 
-func (h *logstashPipelineApiClient) Update(object *kbapi.LogstashPipeline) (err error) {
+func (h *logstashPipelineApiClient) Update(object *kbapi.LogstashPipeline, o *kibanaapicrd.LogstashPipeline) (err error) {
 	return h.client.LogstashPipelineUpdate(object)
 
 }
 
-func (h *logstashPipelineApiClient) Delete(name string) (err error) {
-	return h.client.LogstashPipelineDelete(name)
+func (h *logstashPipelineApiClient) Delete(o *kibanaapicrd.LogstashPipeline) (err error) {
+	return h.client.LogstashPipelineDelete(o.GetGenerateName())
 
 }
 

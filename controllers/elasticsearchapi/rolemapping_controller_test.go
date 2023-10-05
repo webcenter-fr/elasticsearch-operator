@@ -7,7 +7,7 @@ import (
 
 	"emperror.dev/errors"
 	"github.com/disaster37/es-handler/v8/mocks"
-	"github.com/disaster37/es-handler/v8/patch"
+	"github.com/disaster37/generic-objectmatcher/patch"
 	"github.com/disaster37/operator-sdk-extra/pkg/test"
 	"github.com/golang/mock/gomock"
 	olivere "github.com/olivere/elastic/v7"
@@ -186,9 +186,8 @@ func doCreateRoleMappingStep() test.TestStep {
 			if err != nil || isTimeout {
 				t.Fatalf("Failed to get role mapping: %s", err.Error())
 			}
-			assert.True(t, condition.IsStatusConditionPresentAndEqual(rm.Status.Conditions, RoleMappingCondition, metav1.ConditionTrue))
 			assert.True(t, condition.IsStatusConditionPresentAndEqual(rm.Status.Conditions, common.ReadyCondition.String(), metav1.ConditionTrue))
-			assert.True(t, rm.Status.Sync)
+			assert.True(t, *rm.Status.IsSync)
 
 			return nil
 		},
@@ -232,9 +231,8 @@ func doUpdateRoleMappingStep() test.TestStep {
 			if err != nil || isTimeout {
 				t.Fatalf("Failed to get role mapping: %s", err.Error())
 			}
-			assert.True(t, condition.IsStatusConditionPresentAndEqual(rm.Status.Conditions, RoleMappingCondition, metav1.ConditionTrue))
 			assert.True(t, condition.IsStatusConditionPresentAndEqual(rm.Status.Conditions, common.ReadyCondition.String(), metav1.ConditionTrue))
-			assert.True(t, rm.Status.Sync)
+			assert.True(t, *rm.Status.IsSync)
 
 			return nil
 		},

@@ -7,7 +7,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-func TestGetSnapshotRepositoryName(t *testing.T) {
+func TestSnapshotRepositoryExternalName(t *testing.T) {
 	var o *SnapshotRepository
 
 	// When name is set
@@ -21,7 +21,7 @@ func TestGetSnapshotRepositoryName(t *testing.T) {
 		},
 	}
 
-	assert.Equal(t, "test2", o.GetSnapshotRepositoryName())
+	assert.Equal(t, "test2", o.GetExternalName())
 
 	// When name isn't set
 	o = &SnapshotRepository{
@@ -32,5 +32,5 @@ func TestGetSnapshotRepositoryName(t *testing.T) {
 		Spec: SnapshotRepositorySpec{},
 	}
 
-	assert.Equal(t, "test", o.GetSnapshotRepositoryName())
+	assert.Equal(t, "test", o.GetExternalName())
 }

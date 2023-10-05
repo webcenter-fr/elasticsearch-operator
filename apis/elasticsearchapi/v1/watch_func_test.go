@@ -7,7 +7,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-func TestGetWatchName(t *testing.T) {
+func TestWatchGetExternalName(t *testing.T) {
 	var o *Watch
 
 	// When name is set
@@ -21,7 +21,7 @@ func TestGetWatchName(t *testing.T) {
 		},
 	}
 
-	assert.Equal(t, "test2", o.GetWatchName())
+	assert.Equal(t, "test2", o.GetExternalName())
 
 	// When name isn't set
 	o = &Watch{
@@ -32,5 +32,5 @@ func TestGetWatchName(t *testing.T) {
 		Spec: WatchSpec{},
 	}
 
-	assert.Equal(t, "test", o.GetWatchName())
+	assert.Equal(t, "test", o.GetExternalName())
 }

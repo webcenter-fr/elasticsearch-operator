@@ -15,14 +15,22 @@ spec:
   scope: Namespaced
   versions:
   - additionalPrinterColumns:
-    - jsonPath: .status.sync
-      name: Sync
-      type: boolean
     - jsonPath: .status.licenseType
       name: Type
       type: string
     - jsonPath: .status.expireAt
       name: expireAt
+      type: string
+    - jsonPath: .status.isSync
+      name: Sync
+      type: boolean
+    - description: Is on error
+      jsonPath: .status.isOnError
+      name: Error
+      type: boolean
+    - description: health
+      jsonPath: .status.conditions[?(@.type=='Ready')].status
+      name: Ready
       type: string
     - jsonPath: .metadata.creationTimestamp
       name: Age
@@ -126,14 +134,18 @@ spec:
                 type: array
               expireAt:
                 type: string
+              isOnError:
+                type: boolean
+              isSync:
+                type: boolean
+              lastAppliedConfiguration:
+                type: string
+              lastErrorMessage:
+                type: string
               licenseChecksum:
                 type: string
               licenseType:
                 type: string
-              sync:
-                type: boolean
-            required:
-            - sync
             type: object
         type: object
     served: true

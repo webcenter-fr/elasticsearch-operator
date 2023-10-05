@@ -7,7 +7,7 @@ import (
 
 	"emperror.dev/errors"
 	"github.com/disaster37/es-handler/v8/mocks"
-	"github.com/disaster37/es-handler/v8/patch"
+	"github.com/disaster37/generic-objectmatcher/patch"
 	"github.com/disaster37/operator-sdk-extra/pkg/test"
 	"github.com/golang/mock/gomock"
 	olivere "github.com/olivere/elastic/v7"
@@ -234,7 +234,7 @@ func doCreateWatcherStep() test.TestStep {
 		},
 		Check: func(t *testing.T, c client.Client, key types.NamespacedName, o client.Object, data map[string]any) (err error) {
 			watch := &elasticsearchapicrd.Watch{}
-			isCreated := true
+			isCreated := false
 
 			isTimeout, err := localtest.RunWithTimeout(func() error {
 				if err := c.Get(context.Background(), key, watch); err != nil {
@@ -251,9 +251,8 @@ func doCreateWatcherStep() test.TestStep {
 			if err != nil || isTimeout {
 				t.Fatalf("Failed to get Watch: %s", err.Error())
 			}
-			assert.True(t, condition.IsStatusConditionPresentAndEqual(watch.Status.Conditions, WatchCondition, metav1.ConditionTrue))
 			assert.True(t, condition.IsStatusConditionPresentAndEqual(watch.Status.Conditions, common.ReadyCondition.String(), metav1.ConditionTrue))
-			assert.True(t, watch.Status.Sync)
+			assert.True(t, *watch.Status.IsSync)
 
 			return nil
 		},
@@ -286,7 +285,7 @@ func doUpdateWatcherStep() test.TestStep {
 		},
 		Check: func(t *testing.T, c client.Client, key types.NamespacedName, o client.Object, data map[string]any) (err error) {
 			watch := &elasticsearchapicrd.Watch{}
-			isUpdated := true
+			isUpdated := false
 
 			isTimeout, err := localtest.RunWithTimeout(func() error {
 				if err := c.Get(context.Background(), key, watch); err != nil {
@@ -303,9 +302,8 @@ func doUpdateWatcherStep() test.TestStep {
 			if err != nil || isTimeout {
 				t.Fatalf("Failed to get Watch: %s", err.Error())
 			}
-			assert.True(t, condition.IsStatusConditionPresentAndEqual(watch.Status.Conditions, WatchCondition, metav1.ConditionTrue))
 			assert.True(t, condition.IsStatusConditionPresentAndEqual(watch.Status.Conditions, common.ReadyCondition.String(), metav1.ConditionTrue))
-			assert.True(t, watch.Status.Sync)
+			assert.True(t, *watch.Status.IsSync)
 
 			return nil
 		},
@@ -333,7 +331,7 @@ func doDeleteWatcherStep() test.TestStep {
 		},
 		Check: func(t *testing.T, c client.Client, key types.NamespacedName, o client.Object, data map[string]any) (err error) {
 			watch := &elasticsearchapicrd.Watch{}
-			isDeleted := true
+			isDeleted := false
 
 			isTimeout, err := localtest.RunWithTimeout(func() error {
 				if err = c.Get(context.Background(), key, watch); err != nil {

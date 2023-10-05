@@ -1,8 +1,15 @@
 package v1
 
-// GetIndexTemplateName return the index template name
+import "github.com/disaster37/operator-sdk-extra/pkg/object"
+
+// GetStatus return the status object
+func (o *IndexTemplate) GetStatus() object.RemoteObjectStatus {
+	return &o.Status
+}
+
+// GetExternalName return the index template name
 // If name is empty, it use the ressource name
-func (o *IndexTemplate) GetIndexTemplateName() string {
+func (o *IndexTemplate) GetExternalName() string {
 	if o.Spec.Name == "" {
 		return o.Name
 	}

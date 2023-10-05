@@ -10,7 +10,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-func TestBuildRole(t *testing.T) {
+func TestRoleBuild(t *testing.T) {
 
 	var (
 		o            *elasticsearchapicrd.Role
@@ -18,6 +18,8 @@ func TestBuildRole(t *testing.T) {
 		expectedRole *eshandler.XPackSecurityRole
 		err          error
 	)
+
+	client := &roleApiClient{}
 
 	// Normal case
 	o = &elasticsearchapicrd.Role{
@@ -65,7 +67,7 @@ func TestBuildRole(t *testing.T) {
 		},
 	}
 
-	role, err = BuildRole(o)
+	role, err = client.Build(o)
 	assert.NoError(t, err)
 	assert.Equal(t, expectedRole, role)
 
@@ -186,7 +188,7 @@ func TestBuildRole(t *testing.T) {
 		},
 	}
 
-	role, err = BuildRole(o)
+	role, err = client.Build(o)
 	assert.NoError(t, err)
 	assert.Equal(t, expectedRole, role)
 

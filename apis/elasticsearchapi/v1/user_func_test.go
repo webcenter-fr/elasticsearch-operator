@@ -54,7 +54,7 @@ func TestIsProtected(t *testing.T) {
 
 }
 
-func TestGetUsername(t *testing.T) {
+func TestGetExternalName(t *testing.T) {
 	var o *User
 
 	// When Username is set
@@ -69,7 +69,7 @@ func TestGetUsername(t *testing.T) {
 		},
 	}
 
-	assert.Equal(t, "test2", o.GetUsername())
+	assert.Equal(t, "test2", o.GetExternalName())
 
 	// When Username isn't set
 	o = &User{
@@ -82,5 +82,5 @@ func TestGetUsername(t *testing.T) {
 		},
 	}
 
-	assert.Equal(t, "test", o.GetUsername())
+	assert.Equal(t, "test", o.GetExternalName())
 }

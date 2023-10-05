@@ -10,7 +10,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-func TestBuildIndexTemplate(t *testing.T) {
+func TestIndexTemplateBuild(t *testing.T) {
 
 	var (
 		o          *elasticsearchapicrd.IndexTemplate
@@ -18,6 +18,8 @@ func TestBuildIndexTemplate(t *testing.T) {
 		expectedIt *olivere.IndicesGetIndexTemplate
 		err        error
 	)
+
+	client := &indexTemplateApiClient{}
 
 	// With minimal parameters
 	o = &elasticsearchapicrd.IndexTemplate{
@@ -39,7 +41,7 @@ func TestBuildIndexTemplate(t *testing.T) {
 		IndexPatterns: []string{"*"},
 	}
 
-	it, err = BuildIndexTemplate(o)
+	it, err = client.Build(o)
 	assert.NoError(t, err)
 	assert.Equal(t, expectedIt, it)
 
@@ -103,7 +105,7 @@ func TestBuildIndexTemplate(t *testing.T) {
 		},
 	}
 
-	it, err = BuildIndexTemplate(o)
+	it, err = client.Build(o)
 	assert.NoError(t, err)
 	assert.Equal(t, expectedIt, it)
 

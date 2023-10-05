@@ -4,11 +4,23 @@ import (
 	"encoding/json"
 
 	eshandler "github.com/disaster37/es-handler/v8"
+	"github.com/disaster37/generic-objectmatcher/patch"
+	"github.com/disaster37/operator-sdk-extra/pkg/controller"
 	elasticsearchapicrd "github.com/webcenter-fr/elasticsearch-operator/apis/elasticsearchapi/v1"
 )
 
-// BuildRole permit to build role
-func BuildRole(o *elasticsearchapicrd.Role) (role *eshandler.XPackSecurityRole, err error) {
+type roleApiClient struct {
+	controller.BasicRemoteExternalReconciler[*elasticsearchapicrd.Role, *eshandler.XPackSecurityRole]
+	client eshandler.ElasticsearchHandler
+}
+
+func newRoleApiClient(client eshandler.ElasticsearchHandler) controller.RemoteExternalReconciler[*elasticsearchapicrd.Role, *eshandler.XPackSecurityRole] {
+	return &roleApiClient{
+		client: client,
+	}
+}
+
+func (h *roleApiClient) Build(o *elasticsearchapicrd.Role) (role *eshandler.XPackSecurityRole, err error) {
 
 	role = &eshandler.XPackSecurityRole{
 		Cluster: o.Spec.Cluster,
@@ -71,4 +83,26 @@ func BuildRole(o *elasticsearchapicrd.Role) (role *eshandler.XPackSecurityRole, 
 	}
 
 	return role, nil
+}
+
+func (h *roleApiClient) Get(o *elasticsearchapicrd.Role) (object *eshandler.XPackSecurityRole, err error) {
+	return h.client.RoleGet(o.GetExternalName())
+}
+
+func (h *roleApiClient) Create(object *eshandler.XPackSecurityRole, o *elasticsearchapicrd.Role) (err error) {
+	return h.client.RoleUpdate(o.GetExternalName(), object)
+}
+
+func (h *roleApiClient) Update(object *eshandler.XPackSecurityRole, o *elasticsearchapicrd.Role) (err error) {
+	return h.client.RoleUpdate(o.GetExternalName(), object)
+
+}
+
+func (h *roleApiClient) Delete(o *elasticsearchapicrd.Role) (err error) {
+	return h.client.RoleDelete(o.GetExternalName())
+
+}
+
+func (h *roleApiClient) Diff(currentOject *eshandler.XPackSecurityRole, expectedObject *eshandler.XPackSecurityRole, originalObject *eshandler.XPackSecurityRole, ignoresDiff ...patch.CalculateOption) (patchResult *patch.PatchResult, err error) {
+	return h.client.RoleDiff(currentOject, expectedObject, originalObject)
 }
