@@ -10,7 +10,6 @@ import (
 
 	"emperror.dev/errors"
 	eshandler "github.com/disaster37/es-handler/v8"
-	"github.com/disaster37/operator-sdk-extra/pkg/controller"
 	"github.com/elastic/elastic-transport-go/v8/elastictransport"
 	elastic "github.com/elastic/go-elasticsearch/v8"
 	"github.com/sirupsen/logrus"
@@ -20,28 +19,8 @@ import (
 	core "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/types"
-	"k8s.io/client-go/tools/record"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
-
-type Reconciler struct {
-	recorder   record.EventRecorder
-	log        *logrus.Entry
-	reconciler controller.Reconciler
-	client.Client
-}
-
-func (r *Reconciler) SetLogger(log *logrus.Entry) {
-	r.log = log
-}
-
-func (r *Reconciler) SetRecorder(recorder record.EventRecorder) {
-	r.recorder = recorder
-}
-
-func (r *Reconciler) SetReconciler(reconciler controller.Reconciler) {
-	r.reconciler = reconciler
-}
 
 func GetElasticsearchHandler(ctx context.Context, o client.Object, esRef shared.ElasticsearchRef, client client.Client, log *logrus.Entry) (esHandler eshandler.ElasticsearchHandler, err error) {
 

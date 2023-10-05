@@ -18,7 +18,6 @@ import (
 	elasticsearchapicrd "github.com/webcenter-fr/elasticsearch-operator/apis/elasticsearchapi/v1"
 	"github.com/webcenter-fr/elasticsearch-operator/apis/shared"
 	localhelper "github.com/webcenter-fr/elasticsearch-operator/pkg/helper"
-	localtest "github.com/webcenter-fr/elasticsearch-operator/pkg/test"
 	appv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	networkingv1 "k8s.io/api/networking/v1"
@@ -136,7 +135,7 @@ func doCreateElasticsearchStep() test.TestStep {
 				metricbeat *beatcrd.Metricbeat
 			)
 
-			isTimeout, err := localtest.RunWithTimeout(func() error {
+			isTimeout, err := test.RunWithTimeout(func() error {
 				if err := c.Get(context.Background(), key, es); err != nil {
 					t.Fatal("Elasticsearch not found")
 				}
@@ -373,7 +372,7 @@ func doUpdateElasticsearchStep() test.TestStep {
 
 			lastVersion := data["lastVersion"].(string)
 
-			isTimeout, err := localtest.RunWithTimeout(func() error {
+			isTimeout, err := test.RunWithTimeout(func() error {
 				if err := c.Get(context.Background(), key, es); err != nil {
 					t.Fatal("Elasticsearch not found")
 				}
@@ -632,7 +631,7 @@ func doUpdateElasticsearchIncreaseNodeGroupStep() test.TestStep {
 
 			lastVersion := data["lastVersion"].(string)
 
-			isTimeout, err := localtest.RunWithTimeout(func() error {
+			isTimeout, err := test.RunWithTimeout(func() error {
 				if err := c.Get(context.Background(), key, es); err != nil {
 					t.Fatal("Elasticsearch not found")
 				}
@@ -871,7 +870,7 @@ func doUpdateElasticsearchDecreaseNodeGroupStep() test.TestStep {
 			lastVersion := data["lastVersion"].(string)
 			oldES := data["oldES"].(*elasticsearchcrd.Elasticsearch)
 
-			isTimeout, err := localtest.RunWithTimeout(func() error {
+			isTimeout, err := test.RunWithTimeout(func() error {
 				if err := c.Get(context.Background(), key, es); err != nil {
 					t.Fatal("Elasticsearch not found")
 				}
@@ -1184,7 +1183,7 @@ func doUpdateElasticsearchAddLicenseStep() test.TestStep {
 			lastVersion := data["lastVersion"].(string)
 			oldES := data["oldES"].(*elasticsearchcrd.Elasticsearch)
 
-			isTimeout, err := localtest.RunWithTimeout(func() error {
+			isTimeout, err := test.RunWithTimeout(func() error {
 				if err := c.Get(context.Background(), key, es); err != nil {
 					t.Fatal("Elasticsearch not found")
 				}

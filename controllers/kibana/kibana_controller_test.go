@@ -16,7 +16,6 @@ import (
 	kibanacrd "github.com/webcenter-fr/elasticsearch-operator/apis/kibana/v1"
 	"github.com/webcenter-fr/elasticsearch-operator/apis/shared"
 	localhelper "github.com/webcenter-fr/elasticsearch-operator/pkg/helper"
-	localtest "github.com/webcenter-fr/elasticsearch-operator/pkg/test"
 	appv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	networkingv1 "k8s.io/api/networking/v1"
@@ -77,7 +76,7 @@ func doCreateKibanaStep() test.TestStep {
 				return err
 			}
 
-			isTimeout, err := localtest.RunWithTimeout(func() error {
+			isTimeout, err := test.RunWithTimeout(func() error {
 				if err := c.Get(context.Background(), key, es); err != nil {
 					return err
 				}
@@ -150,7 +149,7 @@ func doCreateKibanaStep() test.TestStep {
 				pm  *monitoringv1.PodMonitor
 			)
 
-			isTimeout, err := localtest.RunWithTimeout(func() error {
+			isTimeout, err := test.RunWithTimeout(func() error {
 				if err := c.Get(context.Background(), key, kb); err != nil {
 					t.Fatal("Kibana not found")
 				}
@@ -319,7 +318,7 @@ func doUpdateKibanaStep() test.TestStep {
 
 			lastVersion := data["lastVersion"].(string)
 
-			isTimeout, err := localtest.RunWithTimeout(func() error {
+			isTimeout, err := test.RunWithTimeout(func() error {
 				if err := c.Get(context.Background(), key, kb); err != nil {
 					t.Fatal("Kibana not found")
 				}

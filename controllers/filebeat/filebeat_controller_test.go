@@ -15,7 +15,6 @@ import (
 	elasticsearchcrd "github.com/webcenter-fr/elasticsearch-operator/apis/elasticsearch/v1"
 	"github.com/webcenter-fr/elasticsearch-operator/apis/shared"
 	localhelper "github.com/webcenter-fr/elasticsearch-operator/pkg/helper"
-	localtest "github.com/webcenter-fr/elasticsearch-operator/pkg/test"
 	appv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	networkingv1 "k8s.io/api/networking/v1"
@@ -76,7 +75,7 @@ func doCreateFilebeatStep() test.TestStep {
 				return err
 			}
 
-			isTimeout, err := localtest.RunWithTimeout(func() error {
+			isTimeout, err := test.RunWithTimeout(func() error {
 				if err := c.Get(context.Background(), key, es); err != nil {
 					return err
 				}
@@ -165,7 +164,7 @@ queue.type: persisted
 				sts *appv1.StatefulSet
 			)
 
-			isTimeout, err := localtest.RunWithTimeout(func() error {
+			isTimeout, err := test.RunWithTimeout(func() error {
 				if err := c.Get(context.Background(), key, fb); err != nil {
 					t.Fatal("Filebeat not found")
 				}
@@ -305,7 +304,7 @@ func doUpdateFilebeatStep() test.TestStep {
 
 			lastVersion := data["lastVersion"].(string)
 
-			isTimeout, err := localtest.RunWithTimeout(func() error {
+			isTimeout, err := test.RunWithTimeout(func() error {
 				if err := c.Get(context.Background(), key, fb); err != nil {
 					t.Fatal("Filebeat not found")
 				}

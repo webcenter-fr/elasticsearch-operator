@@ -15,7 +15,6 @@ import (
 	elasticsearchcrd "github.com/webcenter-fr/elasticsearch-operator/apis/elasticsearch/v1"
 	"github.com/webcenter-fr/elasticsearch-operator/apis/shared"
 	localhelper "github.com/webcenter-fr/elasticsearch-operator/pkg/helper"
-	localtest "github.com/webcenter-fr/elasticsearch-operator/pkg/test"
 	appv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	policyv1 "k8s.io/api/policy/v1"
@@ -75,7 +74,7 @@ func doCreateMetricbeatStep() test.TestStep {
 				return err
 			}
 
-			isTimeout, err := localtest.RunWithTimeout(func() error {
+			isTimeout, err := test.RunWithTimeout(func() error {
 				if err := c.Get(context.Background(), key, es); err != nil {
 					return err
 				}
@@ -137,7 +136,7 @@ queue.type: persisted
 				sts *appv1.StatefulSet
 			)
 
-			isTimeout, err := localtest.RunWithTimeout(func() error {
+			isTimeout, err := test.RunWithTimeout(func() error {
 				if err := c.Get(context.Background(), key, mb); err != nil {
 					t.Fatal("Metricbeat not found")
 				}
@@ -260,7 +259,7 @@ func doUpdateMetricbeatStep() test.TestStep {
 
 			lastVersion := data["lastVersion"].(string)
 
-			isTimeout, err := localtest.RunWithTimeout(func() error {
+			isTimeout, err := test.RunWithTimeout(func() error {
 				if err := c.Get(context.Background(), key, mb); err != nil {
 					t.Fatal("Metricbeat not found")
 				}

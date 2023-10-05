@@ -11,7 +11,6 @@ import (
 	"emperror.dev/errors"
 	"github.com/disaster37/go-kibana-rest/v8"
 	kbhandler "github.com/disaster37/kb-handler/v8"
-	"github.com/disaster37/operator-sdk-extra/pkg/controller"
 	"github.com/sirupsen/logrus"
 	"github.com/webcenter-fr/elasticsearch-operator/apis/shared"
 	"github.com/webcenter-fr/elasticsearch-operator/controllers/common"
@@ -20,28 +19,8 @@ import (
 	core "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/types"
-	"k8s.io/client-go/tools/record"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
-
-type Reconciler struct {
-	recorder   record.EventRecorder
-	log        *logrus.Entry
-	reconciler controller.Reconciler
-	client.Client
-}
-
-func (r *Reconciler) SetLogger(log *logrus.Entry) {
-	r.log = log
-}
-
-func (r *Reconciler) SetRecorder(recorder record.EventRecorder) {
-	r.recorder = recorder
-}
-
-func (r *Reconciler) SetReconciler(reconciler controller.Reconciler) {
-	r.reconciler = reconciler
-}
 
 func GetKibanaHandler(ctx context.Context, o client.Object, kbRef shared.KibanaRef, client client.Client, log *logrus.Entry) (kbHandler kbhandler.KibanaHandler, err error) {
 

@@ -9,14 +9,13 @@ import (
 	"github.com/disaster37/generic-objectmatcher/patch"
 	"github.com/disaster37/go-kibana-rest/v8/kbapi"
 	"github.com/disaster37/kb-handler/v8/mocks"
+	"github.com/disaster37/operator-sdk-extra/pkg/controller"
 	"github.com/disaster37/operator-sdk-extra/pkg/test"
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
 	kibanaapicrd "github.com/webcenter-fr/elasticsearch-operator/apis/kibanaapi/v1"
 	"github.com/webcenter-fr/elasticsearch-operator/apis/shared"
-	"github.com/webcenter-fr/elasticsearch-operator/controllers/common"
 	localhelper "github.com/webcenter-fr/elasticsearch-operator/pkg/helper"
-	localtest "github.com/webcenter-fr/elasticsearch-operator/pkg/test"
 	"go.uber.org/mock/gomock"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	condition "k8s.io/apimachinery/pkg/api/meta"
@@ -204,7 +203,7 @@ func doCreateUserSpaceStep() test.TestStep {
 			space := &kibanaapicrd.UserSpace{}
 			isCreated := false
 
-			isTimeout, err := localtest.RunWithTimeout(func() error {
+			isTimeout, err := test.RunWithTimeout(func() error {
 				if err := c.Get(context.Background(), key, space); err != nil {
 					t.Fatal(err)
 				}
@@ -219,7 +218,7 @@ func doCreateUserSpaceStep() test.TestStep {
 			if err != nil || isTimeout {
 				t.Fatalf("Failed to get kibana user space: %s", err.Error())
 			}
-			assert.True(t, condition.IsStatusConditionPresentAndEqual(space.Status.Conditions, common.ReadyCondition.String(), metav1.ConditionTrue))
+			assert.True(t, condition.IsStatusConditionPresentAndEqual(space.Status.Conditions, controller.ReadyCondition.String(), metav1.ConditionTrue))
 			assert.True(t, *space.Status.IsSync)
 
 			return nil
@@ -269,7 +268,7 @@ func doCreateUserSpaceWithObjectsStep() test.TestStep {
 			space := &kibanaapicrd.UserSpace{}
 			isCreated := false
 
-			isTimeout, err := localtest.RunWithTimeout(func() error {
+			isTimeout, err := test.RunWithTimeout(func() error {
 				if err := c.Get(context.Background(), key, space); err != nil {
 					t.Fatal(err)
 				}
@@ -290,7 +289,7 @@ func doCreateUserSpaceWithObjectsStep() test.TestStep {
 				isCopyObject = b.(bool)
 			}
 			assert.True(t, isCopyObject)
-			assert.True(t, condition.IsStatusConditionPresentAndEqual(space.Status.Conditions, common.ReadyCondition.String(), metav1.ConditionTrue))
+			assert.True(t, condition.IsStatusConditionPresentAndEqual(space.Status.Conditions, controller.ReadyCondition.String(), metav1.ConditionTrue))
 			assert.True(t, *space.Status.IsSync)
 
 			return nil
@@ -320,7 +319,7 @@ func doUpdateUserSpaceStep() test.TestStep {
 			space := &kibanaapicrd.UserSpace{}
 			isUpdated := false
 
-			isTimeout, err := localtest.RunWithTimeout(func() error {
+			isTimeout, err := test.RunWithTimeout(func() error {
 				if err := c.Get(context.Background(), key, space); err != nil {
 					t.Fatal(err)
 				}
@@ -335,7 +334,7 @@ func doUpdateUserSpaceStep() test.TestStep {
 			if err != nil || isTimeout {
 				t.Fatalf("Failed to get kibana user space: %s", err.Error())
 			}
-			assert.True(t, condition.IsStatusConditionPresentAndEqual(space.Status.Conditions, common.ReadyCondition.String(), metav1.ConditionTrue))
+			assert.True(t, condition.IsStatusConditionPresentAndEqual(space.Status.Conditions, controller.ReadyCondition.String(), metav1.ConditionTrue))
 			assert.True(t, *space.Status.IsSync)
 
 			return nil
@@ -365,7 +364,7 @@ func doDeleteUserSpaceStep() test.TestStep {
 			space := &kibanaapicrd.UserSpace{}
 			isDeleted := false
 
-			isTimeout, err := localtest.RunWithTimeout(func() error {
+			isTimeout, err := test.RunWithTimeout(func() error {
 				if err = c.Get(context.Background(), key, space); err != nil {
 					if k8serrors.IsNotFound(err) {
 						isDeleted = true

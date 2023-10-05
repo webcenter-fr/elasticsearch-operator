@@ -13,7 +13,6 @@ import (
 	"github.com/stretchr/testify/assert"
 	cerebrocrd "github.com/webcenter-fr/elasticsearch-operator/apis/cerebro/v1"
 	localhelper "github.com/webcenter-fr/elasticsearch-operator/pkg/helper"
-	localtest "github.com/webcenter-fr/elasticsearch-operator/pkg/test"
 	appv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	networkingv1 "k8s.io/api/networking/v1"
@@ -88,7 +87,7 @@ func doCreateCerebroStep() test.TestStep {
 				dpl *appv1.Deployment
 			)
 
-			isTimeout, err := localtest.RunWithTimeout(func() error {
+			isTimeout, err := test.RunWithTimeout(func() error {
 				if err := c.Get(context.Background(), key, cb); err != nil {
 					t.Fatal("Cerebro not found")
 				}
@@ -204,7 +203,7 @@ func doUpdateCerebroStep() test.TestStep {
 
 			lastVersion := data["lastVersion"].(string)
 
-			isTimeout, err := localtest.RunWithTimeout(func() error {
+			isTimeout, err := test.RunWithTimeout(func() error {
 				if err := c.Get(context.Background(), key, cb); err != nil {
 					t.Fatal("Cerebro not found")
 				}

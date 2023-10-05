@@ -8,6 +8,7 @@ import (
 	"emperror.dev/errors"
 	"github.com/disaster37/es-handler/v8/mocks"
 	"github.com/disaster37/generic-objectmatcher/patch"
+	"github.com/disaster37/operator-sdk-extra/pkg/controller"
 	"github.com/disaster37/operator-sdk-extra/pkg/test"
 	"github.com/golang/mock/gomock"
 	olivere "github.com/olivere/elastic/v7"
@@ -15,9 +16,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	elasticsearchapicrd "github.com/webcenter-fr/elasticsearch-operator/apis/elasticsearchapi/v1"
 	"github.com/webcenter-fr/elasticsearch-operator/apis/shared"
-	"github.com/webcenter-fr/elasticsearch-operator/controllers/common"
 	localhelper "github.com/webcenter-fr/elasticsearch-operator/pkg/helper"
-	localtest "github.com/webcenter-fr/elasticsearch-operator/pkg/test"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	condition "k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -166,7 +165,7 @@ func doCreateComponentTemplateStep() test.TestStep {
 			ct := &elasticsearchapicrd.ComponentTemplate{}
 			isCreated := false
 
-			isTimeout, err := localtest.RunWithTimeout(func() error {
+			isTimeout, err := test.RunWithTimeout(func() error {
 				if err := c.Get(context.Background(), key, ct); err != nil {
 					t.Fatal(err)
 				}
@@ -182,7 +181,7 @@ func doCreateComponentTemplateStep() test.TestStep {
 			if err != nil || isTimeout {
 				t.Fatalf("Failed to get component template: %s", err.Error())
 			}
-			assert.True(t, condition.IsStatusConditionPresentAndEqual(ct.Status.Conditions, common.ReadyCondition.String(), metav1.ConditionTrue))
+			assert.True(t, condition.IsStatusConditionPresentAndEqual(ct.Status.Conditions, controller.ReadyCondition.String(), metav1.ConditionTrue))
 			assert.True(t, *ct.Status.IsSync)
 
 			return nil
@@ -214,7 +213,7 @@ func doUpdateComponentTemplateStep() test.TestStep {
 			ct := &elasticsearchapicrd.ComponentTemplate{}
 			isUpdated := false
 
-			isTimeout, err := localtest.RunWithTimeout(func() error {
+			isTimeout, err := test.RunWithTimeout(func() error {
 				if err := c.Get(context.Background(), key, ct); err != nil {
 					t.Fatal(err)
 				}
@@ -229,7 +228,7 @@ func doUpdateComponentTemplateStep() test.TestStep {
 			if err != nil || isTimeout {
 				t.Fatalf("Failed to get component template: %s", err.Error())
 			}
-			assert.True(t, condition.IsStatusConditionPresentAndEqual(ct.Status.Conditions, common.ReadyCondition.String(), metav1.ConditionTrue))
+			assert.True(t, condition.IsStatusConditionPresentAndEqual(ct.Status.Conditions, controller.ReadyCondition.String(), metav1.ConditionTrue))
 			assert.True(t, *ct.Status.IsSync)
 
 			return nil
@@ -259,7 +258,7 @@ func doDeleteComponentTemplateStep() test.TestStep {
 			ct := &elasticsearchapicrd.ComponentTemplate{}
 			isDeleted := false
 
-			isTimeout, err := localtest.RunWithTimeout(func() error {
+			isTimeout, err := test.RunWithTimeout(func() error {
 				if err = c.Get(context.Background(), key, ct); err != nil {
 					if k8serrors.IsNotFound(err) {
 						isDeleted = true

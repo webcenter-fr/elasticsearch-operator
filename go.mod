@@ -14,7 +14,7 @@ require (
 	github.com/disaster37/k8s-objectmatcher v1.8.2
 	github.com/disaster37/k8sbuilder v1.0.1
 	github.com/disaster37/kb-handler/v8 v8.0.4
-	github.com/disaster37/operator-sdk-extra v0.1.3-0.20231004094513-2aa6a80a5f17
+	github.com/disaster37/operator-sdk-extra v0.1.3-0.20231005150641-9a8a6420d78d
 	github.com/elastic/elastic-transport-go/v8 v8.3.0
 	github.com/elastic/go-elasticsearch/v8 v8.9.0
 	github.com/elastic/go-ucfg v0.8.6

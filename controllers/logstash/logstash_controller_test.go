@@ -14,9 +14,7 @@ import (
 	elasticsearchcrd "github.com/webcenter-fr/elasticsearch-operator/apis/elasticsearch/v1"
 	logstashcrd "github.com/webcenter-fr/elasticsearch-operator/apis/logstash/v1"
 	sharedcrd "github.com/webcenter-fr/elasticsearch-operator/apis/shared"
-	"github.com/webcenter-fr/elasticsearch-operator/controllers/common"
 	localhelper "github.com/webcenter-fr/elasticsearch-operator/pkg/helper"
-	localtest "github.com/webcenter-fr/elasticsearch-operator/pkg/test"
 	appv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	networkingv1 "k8s.io/api/networking/v1"
@@ -77,7 +75,7 @@ func doCreateLogstashStep() test.TestStep {
 				return err
 			}
 
-			isTimeout, err := localtest.RunWithTimeout(func() error {
+			isTimeout, err := test.RunWithTimeout(func() error {
 				if err := c.Get(context.Background(), key, es); err != nil {
 					return err
 				}
@@ -169,14 +167,14 @@ queue.type: persisted
 				sts *appv1.StatefulSet
 			)
 
-			isTimeout, err := localtest.RunWithTimeout(func() error {
+			isTimeout, err := test.RunWithTimeout(func() error {
 				if err := c.Get(context.Background(), key, ls); err != nil {
 					t.Fatal("Logstash not found")
 				}
 
 				// In envtest, no kubelet
 				// So the Logstash condition never set as true
-				if condition.FindStatusCondition(ls.Status.Conditions, common.ReadyCondition.String()) != nil && condition.FindStatusCondition(ls.Status.Conditions, common.ReadyCondition.String()).Reason != "Initialize" {
+				if condition.FindStatusCondition(ls.Status.Conditions, controller.ReadyCondition.String()) != nil && condition.FindStatusCondition(ls.Status.Conditions, controller.ReadyCondition.String()).Reason != "Initialize" {
 					return nil
 				}
 
@@ -316,7 +314,7 @@ func doUpdateLogstashStep() test.TestStep {
 
 			lastVersion := data["lastVersion"].(string)
 
-			isTimeout, err := localtest.RunWithTimeout(func() error {
+			isTimeout, err := test.RunWithTimeout(func() error {
 				if err := c.Get(context.Background(), key, ls); err != nil {
 					t.Fatal("Logstash not found")
 				}
