@@ -8,11 +8,12 @@ import (
 	"emperror.dev/errors"
 	"github.com/codingsince1985/checksum"
 	"github.com/disaster37/k8sbuilder"
+	"github.com/disaster37/operator-sdk-extra/pkg/helper"
 	"github.com/elastic/go-ucfg"
 	elasticsearchcrd "github.com/webcenter-fr/elasticsearch-operator/apis/elasticsearch/v1"
 	kibanacrd "github.com/webcenter-fr/elasticsearch-operator/apis/kibana/v1"
 	"github.com/webcenter-fr/elasticsearch-operator/controllers/elasticsearch"
-	"github.com/webcenter-fr/elasticsearch-operator/pkg/helper"
+	localhelper "github.com/webcenter-fr/elasticsearch-operator/pkg/helper"
 	appv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -779,7 +780,7 @@ func computeProbePath(cm *corev1.ConfigMap) (path string, err error) {
 		return "/app/kibana", nil
 	}
 
-	path, err = helper.GetSetting("server.basePath", []byte(cm.Data["kibana.yml"]))
+	path, err = localhelper.GetSetting("server.basePath", []byte(cm.Data["kibana.yml"]))
 	if ucfg.ErrMissing == err {
 		return "/app/kibana", nil
 	}

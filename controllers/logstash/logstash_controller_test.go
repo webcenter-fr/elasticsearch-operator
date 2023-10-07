@@ -8,13 +8,13 @@ import (
 
 	"github.com/disaster37/k8s-objectmatcher/patch"
 	"github.com/disaster37/operator-sdk-extra/pkg/controller"
+	"github.com/disaster37/operator-sdk-extra/pkg/helper"
 	"github.com/disaster37/operator-sdk-extra/pkg/test"
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
 	elasticsearchcrd "github.com/webcenter-fr/elasticsearch-operator/apis/elasticsearch/v1"
 	logstashcrd "github.com/webcenter-fr/elasticsearch-operator/apis/logstash/v1"
 	sharedcrd "github.com/webcenter-fr/elasticsearch-operator/apis/shared"
-	localhelper "github.com/webcenter-fr/elasticsearch-operator/pkg/helper"
 	appv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	networkingv1 "k8s.io/api/networking/v1"
@@ -27,7 +27,7 @@ import (
 
 func (t *LogstashControllerTestSuite) TestLogstashController() {
 	key := types.NamespacedName{
-		Name:      "t-ls-" + localhelper.RandomString(10),
+		Name:      "t-ls-" + helper.RandomString(10),
 		Namespace: "default",
 	}
 	ls := &logstashcrd.Logstash{}

@@ -14,7 +14,6 @@ import (
 	"github.com/disaster37/operator-sdk-extra/pkg/object"
 	"github.com/sirupsen/logrus"
 	elasticsearchcrd "github.com/webcenter-fr/elasticsearch-operator/apis/elasticsearch/v1"
-	helperdiff "github.com/webcenter-fr/elasticsearch-operator/pkg/helper"
 	localhelper "github.com/webcenter-fr/elasticsearch-operator/pkg/helper"
 	appv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -293,7 +292,7 @@ func (r *statefulsetReconciler) Diff(ctx context.Context, resource object.MultiP
 				}
 
 				// Remove items found
-				copyCurrentStatefulsets = helperdiff.DeleteItemFromSlice(copyCurrentStatefulsets, i).([]client.Object)
+				copyCurrentStatefulsets = helper.DeleteItemFromSlice(copyCurrentStatefulsets, i).([]client.Object)
 
 				break
 			}

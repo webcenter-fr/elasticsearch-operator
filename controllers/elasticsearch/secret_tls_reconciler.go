@@ -529,7 +529,7 @@ func (r *tlsReconciler) Diff(ctx context.Context, resource object.MultiPhaseObje
 
 		// Append new CA with others CA and change sequence to propagate it on pod (rolling restart)
 		sTransport.Data["ca.crt"] = []byte(fmt.Sprintf("%s\n%s", string(sTransport.Data["ca.crt"]), transportRootCA.GetCertificate()))
-		sTransport.Annotations[fmt.Sprintf("%s/sequence", elasticsearchcrd.ElasticsearchAnnotationKey)] = localhelper.RandomString(64)
+		sTransport.Annotations[fmt.Sprintf("%s/sequence", elasticsearchcrd.ElasticsearchAnnotationKey)] = helper.RandomString(64)
 		secretToUpdate = append(secretToUpdate, sTransport)
 
 		// API PKI
@@ -548,7 +548,7 @@ func (r *tlsReconciler) Diff(ctx context.Context, resource object.MultiPhaseObje
 
 			// Append new CA with others CA and change sequence to propagate it on pod (rolling restart)
 			sApi.Data["ca.crt"] = []byte(fmt.Sprintf("%s\n%s", string(sApi.Data["ca.crt"]), apiRootCA.GetCertificate()))
-			sApi.Annotations[fmt.Sprintf("%s/sequence", elasticsearchcrd.ElasticsearchAnnotationKey)] = localhelper.RandomString(64)
+			sApi.Annotations[fmt.Sprintf("%s/sequence", elasticsearchcrd.ElasticsearchAnnotationKey)] = helper.RandomString(64)
 			secretToUpdate = append(secretToUpdate, sApi)
 		}
 

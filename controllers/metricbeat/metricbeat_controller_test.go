@@ -8,13 +8,13 @@ import (
 
 	"github.com/disaster37/k8s-objectmatcher/patch"
 	"github.com/disaster37/operator-sdk-extra/pkg/controller"
+	"github.com/disaster37/operator-sdk-extra/pkg/helper"
 	"github.com/disaster37/operator-sdk-extra/pkg/test"
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
 	beatcrd "github.com/webcenter-fr/elasticsearch-operator/apis/beat/v1"
 	elasticsearchcrd "github.com/webcenter-fr/elasticsearch-operator/apis/elasticsearch/v1"
 	"github.com/webcenter-fr/elasticsearch-operator/apis/shared"
-	localhelper "github.com/webcenter-fr/elasticsearch-operator/pkg/helper"
 	appv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	policyv1 "k8s.io/api/policy/v1"
@@ -26,7 +26,7 @@ import (
 
 func (t *MetricbeatControllerTestSuite) TestMetricbeatController() {
 	key := types.NamespacedName{
-		Name:      "t-mb-" + localhelper.RandomString(10),
+		Name:      "t-mb-" + helper.RandomString(10),
 		Namespace: "default",
 	}
 	fb := &beatcrd.Metricbeat{}

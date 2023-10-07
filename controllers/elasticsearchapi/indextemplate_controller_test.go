@@ -9,6 +9,7 @@ import (
 	"github.com/disaster37/es-handler/v8/mocks"
 	"github.com/disaster37/generic-objectmatcher/patch"
 	"github.com/disaster37/operator-sdk-extra/pkg/controller"
+	"github.com/disaster37/operator-sdk-extra/pkg/helper"
 	"github.com/disaster37/operator-sdk-extra/pkg/test"
 	"github.com/golang/mock/gomock"
 	olivere "github.com/olivere/elastic/v7"
@@ -16,7 +17,6 @@ import (
 	"github.com/stretchr/testify/assert"
 	elasticsearchapicrd "github.com/webcenter-fr/elasticsearch-operator/apis/elasticsearchapi/v1"
 	"github.com/webcenter-fr/elasticsearch-operator/apis/shared"
-	localhelper "github.com/webcenter-fr/elasticsearch-operator/pkg/helper"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	condition "k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -26,7 +26,7 @@ import (
 
 func (t *ElasticsearchapiControllerTestSuite) TestIndexTemplateReconciler() {
 	key := types.NamespacedName{
-		Name:      "t-indextemplate-" + localhelper.RandomString(10),
+		Name:      "t-indextemplate-" + helper.RandomString(10),
 		Namespace: "default",
 	}
 	it := &elasticsearchapicrd.IndexTemplate{}

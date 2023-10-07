@@ -8,11 +8,11 @@ import (
 
 	"github.com/disaster37/k8s-objectmatcher/patch"
 	"github.com/disaster37/operator-sdk-extra/pkg/controller"
+	"github.com/disaster37/operator-sdk-extra/pkg/helper"
 	"github.com/disaster37/operator-sdk-extra/pkg/test"
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
 	cerebrocrd "github.com/webcenter-fr/elasticsearch-operator/apis/cerebro/v1"
-	localhelper "github.com/webcenter-fr/elasticsearch-operator/pkg/helper"
 	appv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	networkingv1 "k8s.io/api/networking/v1"
@@ -24,7 +24,7 @@ import (
 
 func (t *CerebroControllerTestSuite) TestCerebroController() {
 	key := types.NamespacedName{
-		Name:      "t-cb-" + localhelper.RandomString(10),
+		Name:      "t-cb-" + helper.RandomString(10),
 		Namespace: "default",
 	}
 	cb := &cerebrocrd.Cerebro{}

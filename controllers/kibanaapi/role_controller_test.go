@@ -10,12 +10,12 @@ import (
 	"github.com/disaster37/go-kibana-rest/v8/kbapi"
 	"github.com/disaster37/kb-handler/v8/mocks"
 	"github.com/disaster37/operator-sdk-extra/pkg/controller"
+	"github.com/disaster37/operator-sdk-extra/pkg/helper"
 	"github.com/disaster37/operator-sdk-extra/pkg/test"
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
 	kibanaapicrd "github.com/webcenter-fr/elasticsearch-operator/apis/kibanaapi/v1"
 	"github.com/webcenter-fr/elasticsearch-operator/apis/shared"
-	localhelper "github.com/webcenter-fr/elasticsearch-operator/pkg/helper"
 	"go.uber.org/mock/gomock"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	condition "k8s.io/apimachinery/pkg/api/meta"
@@ -26,7 +26,7 @@ import (
 
 func (t *KibanaapiControllerTestSuite) TestKibanaRoleReconciler() {
 	key := types.NamespacedName{
-		Name:      "t-role-" + localhelper.RandomString(10),
+		Name:      "t-role-" + helper.RandomString(10),
 		Namespace: "default",
 	}
 	role := &kibanaapicrd.Role{}
