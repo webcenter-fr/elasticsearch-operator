@@ -17,6 +17,7 @@ import (
 	"context"
 
 	"github.com/disaster37/go-kibana-rest/v8/kbapi"
+	kbhandler "github.com/disaster37/kb-handler/v8"
 	"github.com/disaster37/operator-sdk-extra/pkg/controller"
 	"github.com/sirupsen/logrus"
 	kibanaapicrd "github.com/webcenter-fr/elasticsearch-operator/apis/kibanaapi/v1"
@@ -33,8 +34,8 @@ const (
 // UserSpaceReconciler reconciles a user space object
 type UserSpaceReconciler struct {
 	controller.Controller
-	controller.RemoteReconciler[*kibanaapicrd.UserSpace, *kbapi.KibanaSpace]
-	reconcilerAction controller.RemoteReconcilerAction[*kibanaapicrd.UserSpace, *kbapi.KibanaSpace]
+	controller.RemoteReconciler[*kibanaapicrd.UserSpace, *kbapi.KibanaSpace, kbhandler.KibanaHandler]
+	reconcilerAction controller.RemoteReconcilerAction[*kibanaapicrd.UserSpace, *kbapi.KibanaSpace, kbhandler.KibanaHandler]
 	name             string
 }
 
@@ -42,7 +43,7 @@ func NewUserSpaceReconciler(client client.Client, logger *logrus.Entry, recorder
 
 	r := &UserSpaceReconciler{
 		Controller: controller.NewBasicController(),
-		RemoteReconciler: controller.NewBasicRemoteReconciler[*kibanaapicrd.UserSpace, *kbapi.KibanaSpace](
+		RemoteReconciler: controller.NewBasicRemoteReconciler[*kibanaapicrd.UserSpace, *kbapi.KibanaSpace, kbhandler.KibanaHandler](
 			client,
 			userSpaceName,
 			"space.kibanaapi.k8s.webcenter.fr/finalizer",

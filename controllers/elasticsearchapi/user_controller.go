@@ -17,6 +17,7 @@ import (
 	"context"
 	"fmt"
 
+	eshandler "github.com/disaster37/es-handler/v8"
 	"github.com/disaster37/operator-sdk-extra/pkg/controller"
 	olivere "github.com/olivere/elastic/v7"
 	"github.com/sirupsen/logrus"
@@ -39,8 +40,8 @@ const (
 // UserReconciler reconciles a User object
 type UserReconciler struct {
 	controller.Controller
-	controller.RemoteReconciler[*elasticsearchapicrd.User, *olivere.XPackSecurityPutUserRequest]
-	reconcilerAction controller.RemoteReconcilerAction[*elasticsearchapicrd.User, *olivere.XPackSecurityPutUserRequest]
+	controller.RemoteReconciler[*elasticsearchapicrd.User, *olivere.XPackSecurityPutUserRequest, eshandler.ElasticsearchHandler]
+	reconcilerAction controller.RemoteReconcilerAction[*elasticsearchapicrd.User, *olivere.XPackSecurityPutUserRequest, eshandler.ElasticsearchHandler]
 	controller.BaseReconciler
 	name string
 }
@@ -49,7 +50,7 @@ func NewUserReconciler(client client.Client, logger *logrus.Entry, recorder reco
 
 	r := &UserReconciler{
 		Controller: controller.NewBasicController(),
-		RemoteReconciler: controller.NewBasicRemoteReconciler[*elasticsearchapicrd.User, *olivere.XPackSecurityPutUserRequest](
+		RemoteReconciler: controller.NewBasicRemoteReconciler[*elasticsearchapicrd.User, *olivere.XPackSecurityPutUserRequest, eshandler.ElasticsearchHandler](
 			client,
 			userName,
 			"user.elasticsearchapi.k8s.webcenter.fr/finalizer",

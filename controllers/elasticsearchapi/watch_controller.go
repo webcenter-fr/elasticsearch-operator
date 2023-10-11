@@ -16,6 +16,7 @@ package elasticsearchapi
 import (
 	"context"
 
+	eshandler "github.com/disaster37/es-handler/v8"
 	"github.com/disaster37/operator-sdk-extra/pkg/controller"
 	olivere "github.com/olivere/elastic/v7"
 	"github.com/sirupsen/logrus"
@@ -33,8 +34,8 @@ const (
 // WatchReconciler reconciles a Watch object
 type WatchReconciler struct {
 	controller.Controller
-	controller.RemoteReconciler[*elasticsearchapicrd.Watch, *olivere.XPackWatch]
-	reconcilerAction controller.RemoteReconcilerAction[*elasticsearchapicrd.Watch, *olivere.XPackWatch]
+	controller.RemoteReconciler[*elasticsearchapicrd.Watch, *olivere.XPackWatch, eshandler.ElasticsearchHandler]
+	reconcilerAction controller.RemoteReconcilerAction[*elasticsearchapicrd.Watch, *olivere.XPackWatch, eshandler.ElasticsearchHandler]
 	name             string
 }
 
@@ -42,7 +43,7 @@ func NewWatchReconciler(client client.Client, logger *logrus.Entry, recorder rec
 
 	r := &WatchReconciler{
 		Controller: controller.NewBasicController(),
-		RemoteReconciler: controller.NewBasicRemoteReconciler[*elasticsearchapicrd.Watch, *olivere.XPackWatch](
+		RemoteReconciler: controller.NewBasicRemoteReconciler[*elasticsearchapicrd.Watch, *olivere.XPackWatch, eshandler.ElasticsearchHandler](
 			client,
 			watchName,
 			"watch.elasticsearchapi.k8s.webcenter.fr/finalizer",

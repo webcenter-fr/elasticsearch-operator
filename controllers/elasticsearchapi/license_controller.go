@@ -17,6 +17,7 @@ import (
 	"context"
 	"fmt"
 
+	eshandler "github.com/disaster37/es-handler/v8"
 	"github.com/disaster37/operator-sdk-extra/pkg/controller"
 	olivere "github.com/olivere/elastic/v7"
 	"github.com/sirupsen/logrus"
@@ -40,8 +41,8 @@ const (
 type LicenseReconciler struct {
 	controller.BaseReconciler
 	controller.Controller
-	controller.RemoteReconciler[*elasticsearchapicrd.License, *olivere.XPackInfoLicense]
-	reconcilerAction controller.RemoteReconcilerAction[*elasticsearchapicrd.License, *olivere.XPackInfoLicense]
+	controller.RemoteReconciler[*elasticsearchapicrd.License, *olivere.XPackInfoLicense, eshandler.ElasticsearchHandler]
+	reconcilerAction controller.RemoteReconcilerAction[*elasticsearchapicrd.License, *olivere.XPackInfoLicense, eshandler.ElasticsearchHandler]
 	name             string
 }
 
@@ -49,7 +50,7 @@ func NewLicenseReconciler(client client.Client, logger *logrus.Entry, recorder r
 
 	r := &LicenseReconciler{
 		Controller: controller.NewBasicController(),
-		RemoteReconciler: controller.NewBasicRemoteReconciler[*elasticsearchapicrd.License, *olivere.XPackInfoLicense](
+		RemoteReconciler: controller.NewBasicRemoteReconciler[*elasticsearchapicrd.License, *olivere.XPackInfoLicense, eshandler.ElasticsearchHandler](
 			client,
 			licenseName,
 			"license.elasticsearchapi.k8s.webcenter.fr/finalizer",

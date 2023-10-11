@@ -12,13 +12,12 @@ import (
 )
 
 type indexLifecyclePolicyApiClient struct {
-	controller.BasicRemoteExternalReconciler[*elasticsearchapicrd.IndexLifecyclePolicy, *olivere.XPackIlmGetLifecycleResponse]
-	client eshandler.ElasticsearchHandler
+	*controller.BasicRemoteExternalReconciler[*elasticsearchapicrd.IndexLifecyclePolicy, *olivere.XPackIlmGetLifecycleResponse, eshandler.ElasticsearchHandler]
 }
 
-func newIndexLifecyclePolicyApiClient(client eshandler.ElasticsearchHandler) controller.RemoteExternalReconciler[*elasticsearchapicrd.IndexLifecyclePolicy, *olivere.XPackIlmGetLifecycleResponse] {
+func newIndexLifecyclePolicyApiClient(client eshandler.ElasticsearchHandler) controller.RemoteExternalReconciler[*elasticsearchapicrd.IndexLifecyclePolicy, *olivere.XPackIlmGetLifecycleResponse, eshandler.ElasticsearchHandler] {
 	return &indexLifecyclePolicyApiClient{
-		client: client,
+		BasicRemoteExternalReconciler: controller.NewBasicRemoteExternalReconciler[*elasticsearchapicrd.IndexLifecyclePolicy, *olivere.XPackIlmGetLifecycleResponse, eshandler.ElasticsearchHandler](client),
 	}
 }
 
@@ -37,23 +36,23 @@ func (h *indexLifecyclePolicyApiClient) Build(o *elasticsearchapicrd.IndexLifecy
 }
 
 func (h *indexLifecyclePolicyApiClient) Get(o *elasticsearchapicrd.IndexLifecyclePolicy) (object *olivere.XPackIlmGetLifecycleResponse, err error) {
-	return h.client.ILMGet(o.GetExternalName())
+	return h.Client().ILMGet(o.GetExternalName())
 }
 
 func (h *indexLifecyclePolicyApiClient) Create(object *olivere.XPackIlmGetLifecycleResponse, o *elasticsearchapicrd.IndexLifecyclePolicy) (err error) {
-	return h.client.ILMUpdate(o.GetExternalName(), object)
+	return h.Client().ILMUpdate(o.GetExternalName(), object)
 }
 
 func (h *indexLifecyclePolicyApiClient) Update(object *olivere.XPackIlmGetLifecycleResponse, o *elasticsearchapicrd.IndexLifecyclePolicy) (err error) {
-	return h.client.ILMUpdate(o.GetExternalName(), object)
+	return h.Client().ILMUpdate(o.GetExternalName(), object)
 
 }
 
 func (h *indexLifecyclePolicyApiClient) Delete(o *elasticsearchapicrd.IndexLifecyclePolicy) (err error) {
-	return h.client.ILMDelete(o.GetExternalName())
+	return h.Client().ILMDelete(o.GetExternalName())
 
 }
 
 func (h *indexLifecyclePolicyApiClient) Diff(currentOject *olivere.XPackIlmGetLifecycleResponse, expectedObject *olivere.XPackIlmGetLifecycleResponse, originalObject *olivere.XPackIlmGetLifecycleResponse, ignoresDiff ...patch.CalculateOption) (patchResult *patch.PatchResult, err error) {
-	return h.client.ILMDiff(currentOject, expectedObject, originalObject)
+	return h.Client().ILMDiff(currentOject, expectedObject, originalObject)
 }

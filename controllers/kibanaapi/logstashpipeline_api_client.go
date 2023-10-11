@@ -11,13 +11,12 @@ import (
 )
 
 type logstashPipelineApiClient struct {
-	controller.BasicRemoteExternalReconciler[*kibanaapicrd.LogstashPipeline, *kbapi.LogstashPipeline]
-	client kbhandler.KibanaHandler
+	*controller.BasicRemoteExternalReconciler[*kibanaapicrd.LogstashPipeline, *kbapi.LogstashPipeline, kbhandler.KibanaHandler]
 }
 
-func newLogstashPipelineApiClient(client kbhandler.KibanaHandler) controller.RemoteExternalReconciler[*kibanaapicrd.LogstashPipeline, *kbapi.LogstashPipeline] {
+func newLogstashPipelineApiClient(client kbhandler.KibanaHandler) controller.RemoteExternalReconciler[*kibanaapicrd.LogstashPipeline, *kbapi.LogstashPipeline, kbhandler.KibanaHandler] {
 	return &logstashPipelineApiClient{
-		client: client,
+		BasicRemoteExternalReconciler: controller.NewBasicRemoteExternalReconciler[*kibanaapicrd.LogstashPipeline, *kbapi.LogstashPipeline, kbhandler.KibanaHandler](client),
 	}
 }
 
@@ -42,23 +41,23 @@ func (h *logstashPipelineApiClient) Build(o *kibanaapicrd.LogstashPipeline) (pip
 }
 
 func (h *logstashPipelineApiClient) Get(o *kibanaapicrd.LogstashPipeline) (object *kbapi.LogstashPipeline, err error) {
-	return h.client.LogstashPipelineGet(o.GetExternalName())
+	return h.Client().LogstashPipelineGet(o.GetExternalName())
 }
 
 func (h *logstashPipelineApiClient) Create(object *kbapi.LogstashPipeline, o *kibanaapicrd.LogstashPipeline) (err error) {
-	return h.client.LogstashPipelineUpdate(object)
+	return h.Client().LogstashPipelineUpdate(object)
 }
 
 func (h *logstashPipelineApiClient) Update(object *kbapi.LogstashPipeline, o *kibanaapicrd.LogstashPipeline) (err error) {
-	return h.client.LogstashPipelineUpdate(object)
+	return h.Client().LogstashPipelineUpdate(object)
 
 }
 
 func (h *logstashPipelineApiClient) Delete(o *kibanaapicrd.LogstashPipeline) (err error) {
-	return h.client.LogstashPipelineDelete(o.GetGenerateName())
+	return h.Client().LogstashPipelineDelete(o.GetGenerateName())
 
 }
 
 func (h *logstashPipelineApiClient) Diff(currentOject *kbapi.LogstashPipeline, expectedObject *kbapi.LogstashPipeline, originalObject *kbapi.LogstashPipeline, ignoresDiff ...patch.CalculateOption) (patchResult *patch.PatchResult, err error) {
-	return h.client.LogstashPipelineDiff(currentOject, expectedObject, originalObject)
+	return h.Client().LogstashPipelineDiff(currentOject, expectedObject, originalObject)
 }

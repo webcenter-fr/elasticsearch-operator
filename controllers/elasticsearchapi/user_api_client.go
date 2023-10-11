@@ -11,13 +11,12 @@ import (
 )
 
 type userApiClient struct {
-	controller.BasicRemoteExternalReconciler[*elasticsearchapicrd.User, *olivere.XPackSecurityPutUserRequest]
-	client eshandler.ElasticsearchHandler
+	*controller.BasicRemoteExternalReconciler[*elasticsearchapicrd.User, *olivere.XPackSecurityPutUserRequest, eshandler.ElasticsearchHandler]
 }
 
-func newUserApiClient(client eshandler.ElasticsearchHandler) controller.RemoteExternalReconciler[*elasticsearchapicrd.User, *olivere.XPackSecurityPutUserRequest] {
+func newUserApiClient(client eshandler.ElasticsearchHandler) controller.RemoteExternalReconciler[*elasticsearchapicrd.User, *olivere.XPackSecurityPutUserRequest, eshandler.ElasticsearchHandler] {
 	return &userApiClient{
-		client: client,
+		BasicRemoteExternalReconciler: controller.NewBasicRemoteExternalReconciler[*elasticsearchapicrd.User, *olivere.XPackSecurityPutUserRequest, eshandler.ElasticsearchHandler](client),
 	}
 }
 
@@ -43,7 +42,7 @@ func (h *userApiClient) Build(o *elasticsearchapicrd.User) (user *olivere.XPackS
 }
 
 func (h *userApiClient) Get(o *elasticsearchapicrd.User) (object *olivere.XPackSecurityPutUserRequest, err error) {
-	u, err := h.client.UserGet(o.GetExternalName())
+	u, err := h.Client().UserGet(o.GetExternalName())
 	if err != nil {
 		return nil, err
 	}
@@ -65,19 +64,19 @@ func (h *userApiClient) Get(o *elasticsearchapicrd.User) (object *olivere.XPackS
 }
 
 func (h *userApiClient) Create(object *olivere.XPackSecurityPutUserRequest, o *elasticsearchapicrd.User) (err error) {
-	return h.client.UserCreate(o.GetExternalName(), object)
+	return h.Client().UserCreate(o.GetExternalName(), object)
 }
 
 func (h *userApiClient) Update(object *olivere.XPackSecurityPutUserRequest, o *elasticsearchapicrd.User) (err error) {
-	return h.client.UserUpdate(o.GetExternalName(), object, o.IsProtected())
+	return h.Client().UserUpdate(o.GetExternalName(), object, o.IsProtected())
 
 }
 
 func (h *userApiClient) Delete(o *elasticsearchapicrd.User) (err error) {
-	return h.client.UserDelete(o.GetExternalName())
+	return h.Client().UserDelete(o.GetExternalName())
 
 }
 
 func (h *userApiClient) Diff(currentOject *olivere.XPackSecurityPutUserRequest, expectedObject *olivere.XPackSecurityPutUserRequest, originalObject *olivere.XPackSecurityPutUserRequest, ignoresDiff ...patch.CalculateOption) (patchResult *patch.PatchResult, err error) {
-	return h.client.UserDiff(currentOject, expectedObject, originalObject)
+	return h.Client().UserDiff(currentOject, expectedObject, originalObject)
 }

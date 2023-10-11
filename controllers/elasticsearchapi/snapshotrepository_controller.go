@@ -16,6 +16,7 @@ package elasticsearchapi
 import (
 	"context"
 
+	eshandler "github.com/disaster37/es-handler/v8"
 	"github.com/disaster37/operator-sdk-extra/pkg/controller"
 	olivere "github.com/olivere/elastic/v7"
 	"github.com/sirupsen/logrus"
@@ -33,8 +34,8 @@ const (
 // SnapshotRepositoryReconciler reconciles a SnapshotRepository object
 type SnapshotRepositoryReconciler struct {
 	controller.Controller
-	controller.RemoteReconciler[*elasticsearchapicrd.SnapshotRepository, *olivere.SnapshotRepositoryMetaData]
-	reconcilerAction controller.RemoteReconcilerAction[*elasticsearchapicrd.SnapshotRepository, *olivere.SnapshotRepositoryMetaData]
+	controller.RemoteReconciler[*elasticsearchapicrd.SnapshotRepository, *olivere.SnapshotRepositoryMetaData, eshandler.ElasticsearchHandler]
+	reconcilerAction controller.RemoteReconcilerAction[*elasticsearchapicrd.SnapshotRepository, *olivere.SnapshotRepositoryMetaData, eshandler.ElasticsearchHandler]
 	name             string
 }
 
@@ -42,7 +43,7 @@ func NewSnapshotRepositoryReconciler(client client.Client, logger *logrus.Entry,
 
 	r := &SnapshotRepositoryReconciler{
 		Controller: controller.NewBasicController(),
-		RemoteReconciler: controller.NewBasicRemoteReconciler[*elasticsearchapicrd.SnapshotRepository, *olivere.SnapshotRepositoryMetaData](
+		RemoteReconciler: controller.NewBasicRemoteReconciler[*elasticsearchapicrd.SnapshotRepository, *olivere.SnapshotRepositoryMetaData, eshandler.ElasticsearchHandler](
 			client,
 			snapshotRepositoryName,
 			"snapshotrepository.elasticsearchapi.k8s.webcenter.fr/finalizer",

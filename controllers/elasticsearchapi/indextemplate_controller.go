@@ -16,6 +16,7 @@ package elasticsearchapi
 import (
 	"context"
 
+	eshandler "github.com/disaster37/es-handler/v8"
 	"github.com/disaster37/operator-sdk-extra/pkg/controller"
 	olivere "github.com/olivere/elastic/v7"
 	"github.com/sirupsen/logrus"
@@ -33,8 +34,8 @@ const (
 // IndexTemplateReconciler reconciles a index template object
 type IndexTemplateReconciler struct {
 	controller.Controller
-	controller.RemoteReconciler[*elasticsearchapicrd.IndexTemplate, *olivere.IndicesGetIndexTemplate]
-	reconcilerAction controller.RemoteReconcilerAction[*elasticsearchapicrd.IndexTemplate, *olivere.IndicesGetIndexTemplate]
+	controller.RemoteReconciler[*elasticsearchapicrd.IndexTemplate, *olivere.IndicesGetIndexTemplate, eshandler.ElasticsearchHandler]
+	reconcilerAction controller.RemoteReconcilerAction[*elasticsearchapicrd.IndexTemplate, *olivere.IndicesGetIndexTemplate, eshandler.ElasticsearchHandler]
 	name             string
 }
 
@@ -42,7 +43,7 @@ func NewIndexTemplateReconciler(client client.Client, logger *logrus.Entry, reco
 
 	r := &IndexTemplateReconciler{
 		Controller: controller.NewBasicController(),
-		RemoteReconciler: controller.NewBasicRemoteReconciler[*elasticsearchapicrd.IndexTemplate, *olivere.IndicesGetIndexTemplate](
+		RemoteReconciler: controller.NewBasicRemoteReconciler[*elasticsearchapicrd.IndexTemplate, *olivere.IndicesGetIndexTemplate, eshandler.ElasticsearchHandler](
 			client,
 			indexTemplateName,
 			"indextemplate.elasticsearchapi.k8s.webcenter.fr/finalizer",

@@ -12,13 +12,12 @@ import (
 )
 
 type watchApiClient struct {
-	controller.BasicRemoteExternalReconciler[*elasticsearchapicrd.Watch, *olivere.XPackWatch]
-	client eshandler.ElasticsearchHandler
+	*controller.BasicRemoteExternalReconciler[*elasticsearchapicrd.Watch, *olivere.XPackWatch, eshandler.ElasticsearchHandler]
 }
 
-func newWatchApiClient(client eshandler.ElasticsearchHandler) controller.RemoteExternalReconciler[*elasticsearchapicrd.Watch, *olivere.XPackWatch] {
+func newWatchApiClient(client eshandler.ElasticsearchHandler) controller.RemoteExternalReconciler[*elasticsearchapicrd.Watch, *olivere.XPackWatch, eshandler.ElasticsearchHandler] {
 	return &watchApiClient{
-		client: client,
+		BasicRemoteExternalReconciler: controller.NewBasicRemoteExternalReconciler[*elasticsearchapicrd.Watch, *olivere.XPackWatch, eshandler.ElasticsearchHandler](client),
 	}
 }
 
@@ -81,23 +80,23 @@ func (h *watchApiClient) Build(o *elasticsearchapicrd.Watch) (watch *olivere.XPa
 }
 
 func (h *watchApiClient) Get(o *elasticsearchapicrd.Watch) (object *olivere.XPackWatch, err error) {
-	return h.client.WatchGet(o.GetExternalName())
+	return h.Client().WatchGet(o.GetExternalName())
 }
 
 func (h *watchApiClient) Create(object *olivere.XPackWatch, o *elasticsearchapicrd.Watch) (err error) {
-	return h.client.WatchUpdate(o.GetExternalName(), object)
+	return h.Client().WatchUpdate(o.GetExternalName(), object)
 }
 
 func (h *watchApiClient) Update(object *olivere.XPackWatch, o *elasticsearchapicrd.Watch) (err error) {
-	return h.client.WatchUpdate(o.GetExternalName(), object)
+	return h.Client().WatchUpdate(o.GetExternalName(), object)
 
 }
 
 func (h *watchApiClient) Delete(o *elasticsearchapicrd.Watch) (err error) {
-	return h.client.WatchDelete(o.GetExternalName())
+	return h.Client().WatchDelete(o.GetExternalName())
 
 }
 
 func (h *watchApiClient) Diff(currentOject *olivere.XPackWatch, expectedObject *olivere.XPackWatch, originalObject *olivere.XPackWatch, ignoresDiff ...patch.CalculateOption) (patchResult *patch.PatchResult, err error) {
-	return h.client.WatchDiff(currentOject, expectedObject, originalObject)
+	return h.Client().WatchDiff(currentOject, expectedObject, originalObject)
 }

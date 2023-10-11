@@ -4,6 +4,7 @@ import (
 	"context"
 	"time"
 
+	eshandler "github.com/disaster37/es-handler/v8"
 	"github.com/disaster37/operator-sdk-extra/pkg/controller"
 	"github.com/disaster37/operator-sdk-extra/pkg/object"
 	olivere "github.com/olivere/elastic/v7"
@@ -15,13 +16,13 @@ import (
 )
 
 type indexLifecyclePolicyReconciler struct {
-	controller.RemoteReconcilerAction[*elasticsearchapicrd.IndexLifecyclePolicy, *olivere.XPackIlmGetLifecycleResponse]
+	controller.RemoteReconcilerAction[*elasticsearchapicrd.IndexLifecyclePolicy, *olivere.XPackIlmGetLifecycleResponse, eshandler.ElasticsearchHandler]
 	controller.BaseReconciler
 }
 
-func newIndexLifecyclePolicyReconciler(client client.Client, logger *logrus.Entry, recorder record.EventRecorder) controller.RemoteReconcilerAction[*elasticsearchapicrd.IndexLifecyclePolicy, *olivere.XPackIlmGetLifecycleResponse] {
+func newIndexLifecyclePolicyReconciler(client client.Client, logger *logrus.Entry, recorder record.EventRecorder) controller.RemoteReconcilerAction[*elasticsearchapicrd.IndexLifecyclePolicy, *olivere.XPackIlmGetLifecycleResponse, eshandler.ElasticsearchHandler] {
 	return &indexLifecyclePolicyReconciler{
-		RemoteReconcilerAction: controller.NewRemoteReconcilerAction[*elasticsearchapicrd.IndexLifecyclePolicy, *olivere.XPackIlmGetLifecycleResponse](
+		RemoteReconcilerAction: controller.NewRemoteReconcilerAction[*elasticsearchapicrd.IndexLifecyclePolicy, *olivere.XPackIlmGetLifecycleResponse, eshandler.ElasticsearchHandler](
 			client,
 			logger,
 			recorder,
@@ -34,7 +35,7 @@ func newIndexLifecyclePolicyReconciler(client client.Client, logger *logrus.Entr
 	}
 }
 
-func (h *indexLifecyclePolicyReconciler) GetRemoteHandler(ctx context.Context, req ctrl.Request, o object.RemoteObject) (handler controller.RemoteExternalReconciler[*elasticsearchapicrd.IndexLifecyclePolicy, *olivere.XPackIlmGetLifecycleResponse], res ctrl.Result, err error) {
+func (h *indexLifecyclePolicyReconciler) GetRemoteHandler(ctx context.Context, req ctrl.Request, o object.RemoteObject) (handler controller.RemoteExternalReconciler[*elasticsearchapicrd.IndexLifecyclePolicy, *olivere.XPackIlmGetLifecycleResponse, eshandler.ElasticsearchHandler], res ctrl.Result, err error) {
 	ilm := o.(*elasticsearchapicrd.IndexLifecyclePolicy)
 	esClient, err := GetElasticsearchHandler(ctx, ilm, ilm.Spec.ElasticsearchRef, h.BaseReconciler.Client, h.BaseReconciler.Log)
 	if err != nil && ilm.DeletionTimestamp.IsZero() {

@@ -33,8 +33,8 @@ const (
 // RoleReconciler reconciles a Role object
 type RoleReconciler struct {
 	controller.Controller
-	controller.RemoteReconciler[*elasticsearchapicrd.Role, *eshandler.XPackSecurityRole]
-	reconcilerAction controller.RemoteReconcilerAction[*elasticsearchapicrd.Role, *eshandler.XPackSecurityRole]
+	controller.RemoteReconciler[*elasticsearchapicrd.Role, *eshandler.XPackSecurityRole, eshandler.ElasticsearchHandler]
+	reconcilerAction controller.RemoteReconcilerAction[*elasticsearchapicrd.Role, *eshandler.XPackSecurityRole, eshandler.ElasticsearchHandler]
 	name             string
 }
 
@@ -42,7 +42,7 @@ func NewRoleReconciler(client client.Client, logger *logrus.Entry, recorder reco
 
 	r := &RoleReconciler{
 		Controller: controller.NewBasicController(),
-		RemoteReconciler: controller.NewBasicRemoteReconciler[*elasticsearchapicrd.Role, *eshandler.XPackSecurityRole](
+		RemoteReconciler: controller.NewBasicRemoteReconciler[*elasticsearchapicrd.Role, *eshandler.XPackSecurityRole, eshandler.ElasticsearchHandler](
 			client,
 			roleName,
 			"role.elasticsearchapi.k8s.webcenter.fr/finalizer",

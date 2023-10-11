@@ -16,6 +16,7 @@ package elasticsearchapi
 import (
 	"context"
 
+	eshandler "github.com/disaster37/es-handler/v8"
 	"github.com/disaster37/operator-sdk-extra/pkg/controller"
 	olivere "github.com/olivere/elastic/v7"
 	"github.com/sirupsen/logrus"
@@ -33,8 +34,8 @@ const (
 // ComponentTemplateReconciler reconciles a component template object
 type ComponentTemplateReconciler struct {
 	controller.Controller
-	controller.RemoteReconciler[*elasticsearchapicrd.ComponentTemplate, *olivere.IndicesGetComponentTemplate]
-	reconcilerAction controller.RemoteReconcilerAction[*elasticsearchapicrd.ComponentTemplate, *olivere.IndicesGetComponentTemplate]
+	controller.RemoteReconciler[*elasticsearchapicrd.ComponentTemplate, *olivere.IndicesGetComponentTemplate, eshandler.ElasticsearchHandler]
+	reconcilerAction controller.RemoteReconcilerAction[*elasticsearchapicrd.ComponentTemplate, *olivere.IndicesGetComponentTemplate, eshandler.ElasticsearchHandler]
 	name             string
 }
 
@@ -42,7 +43,7 @@ func NewComponentTemplateReconciler(client client.Client, logger *logrus.Entry, 
 
 	r := &ComponentTemplateReconciler{
 		Controller: controller.NewBasicController(),
-		RemoteReconciler: controller.NewBasicRemoteReconciler[*elasticsearchapicrd.ComponentTemplate, *olivere.IndicesGetComponentTemplate](
+		RemoteReconciler: controller.NewBasicRemoteReconciler[*elasticsearchapicrd.ComponentTemplate, *olivere.IndicesGetComponentTemplate, eshandler.ElasticsearchHandler](
 			client,
 			componentTemplateName,
 			"componenttemplate.elasticsearchapi.k8s.webcenter.fr/finalizer",

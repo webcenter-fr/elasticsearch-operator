@@ -11,13 +11,12 @@ import (
 )
 
 type componentTemplateApiClient struct {
-	controller.BasicRemoteExternalReconciler[*elasticsearchapicrd.ComponentTemplate, *olivere.IndicesGetComponentTemplate]
-	client eshandler.ElasticsearchHandler
+	*controller.BasicRemoteExternalReconciler[*elasticsearchapicrd.ComponentTemplate, *olivere.IndicesGetComponentTemplate, eshandler.ElasticsearchHandler]
 }
 
-func newComponentTemplateApiClient(client eshandler.ElasticsearchHandler) controller.RemoteExternalReconciler[*elasticsearchapicrd.ComponentTemplate, *olivere.IndicesGetComponentTemplate] {
+func newComponentTemplateApiClient(client eshandler.ElasticsearchHandler) controller.RemoteExternalReconciler[*elasticsearchapicrd.ComponentTemplate, *olivere.IndicesGetComponentTemplate, eshandler.ElasticsearchHandler] {
 	return &componentTemplateApiClient{
-		client: client,
+		BasicRemoteExternalReconciler: controller.NewBasicRemoteExternalReconciler[*elasticsearchapicrd.ComponentTemplate, *olivere.IndicesGetComponentTemplate, eshandler.ElasticsearchHandler](client),
 	}
 }
 
@@ -59,23 +58,23 @@ func (h *componentTemplateApiClient) Build(o *elasticsearchapicrd.ComponentTempl
 }
 
 func (h *componentTemplateApiClient) Get(o *elasticsearchapicrd.ComponentTemplate) (object *olivere.IndicesGetComponentTemplate, err error) {
-	return h.client.ComponentTemplateGet(o.GetExternalName())
+	return h.Client().ComponentTemplateGet(o.GetExternalName())
 }
 
 func (h *componentTemplateApiClient) Create(object *olivere.IndicesGetComponentTemplate, o *elasticsearchapicrd.ComponentTemplate) (err error) {
-	return h.client.ComponentTemplateUpdate(o.GetExternalName(), object)
+	return h.Client().ComponentTemplateUpdate(o.GetExternalName(), object)
 }
 
 func (h *componentTemplateApiClient) Update(object *olivere.IndicesGetComponentTemplate, o *elasticsearchapicrd.ComponentTemplate) (err error) {
-	return h.client.ComponentTemplateUpdate(o.GetExternalName(), object)
+	return h.Client().ComponentTemplateUpdate(o.GetExternalName(), object)
 
 }
 
 func (h *componentTemplateApiClient) Delete(o *elasticsearchapicrd.ComponentTemplate) (err error) {
-	return h.client.ComponentTemplateDelete(o.GetExternalName())
+	return h.Client().ComponentTemplateDelete(o.GetExternalName())
 
 }
 
 func (h *componentTemplateApiClient) Diff(currentOject *olivere.IndicesGetComponentTemplate, expectedObject *olivere.IndicesGetComponentTemplate, originalObject *olivere.IndicesGetComponentTemplate, ignoresDiff ...patch.CalculateOption) (patchResult *patch.PatchResult, err error) {
-	return h.client.ComponentTemplateDiff(currentOject, expectedObject, originalObject)
+	return h.Client().ComponentTemplateDiff(currentOject, expectedObject, originalObject)
 }

@@ -11,13 +11,12 @@ import (
 )
 
 type roleMappingApiClient struct {
-	controller.BasicRemoteExternalReconciler[*elasticsearchapicrd.RoleMapping, *olivere.XPackSecurityRoleMapping]
-	client eshandler.ElasticsearchHandler
+	*controller.BasicRemoteExternalReconciler[*elasticsearchapicrd.RoleMapping, *olivere.XPackSecurityRoleMapping, eshandler.ElasticsearchHandler]
 }
 
-func newRoleMappingApiClient(client eshandler.ElasticsearchHandler) controller.RemoteExternalReconciler[*elasticsearchapicrd.RoleMapping, *olivere.XPackSecurityRoleMapping] {
+func newRoleMappingApiClient(client eshandler.ElasticsearchHandler) controller.RemoteExternalReconciler[*elasticsearchapicrd.RoleMapping, *olivere.XPackSecurityRoleMapping, eshandler.ElasticsearchHandler] {
 	return &roleMappingApiClient{
-		client: client,
+		BasicRemoteExternalReconciler: controller.NewBasicRemoteExternalReconciler[*elasticsearchapicrd.RoleMapping, *olivere.XPackSecurityRoleMapping, eshandler.ElasticsearchHandler](client),
 	}
 }
 
@@ -46,23 +45,23 @@ func (h *roleMappingApiClient) Build(o *elasticsearchapicrd.RoleMapping) (rm *ol
 }
 
 func (h *roleMappingApiClient) Get(o *elasticsearchapicrd.RoleMapping) (object *olivere.XPackSecurityRoleMapping, err error) {
-	return h.client.RoleMappingGet(o.GetExternalName())
+	return h.Client().RoleMappingGet(o.GetExternalName())
 }
 
 func (h *roleMappingApiClient) Create(object *olivere.XPackSecurityRoleMapping, o *elasticsearchapicrd.RoleMapping) (err error) {
-	return h.client.RoleMappingUpdate(o.GetExternalName(), object)
+	return h.Client().RoleMappingUpdate(o.GetExternalName(), object)
 }
 
 func (h *roleMappingApiClient) Update(object *olivere.XPackSecurityRoleMapping, o *elasticsearchapicrd.RoleMapping) (err error) {
-	return h.client.RoleMappingUpdate(o.GetExternalName(), object)
+	return h.Client().RoleMappingUpdate(o.GetExternalName(), object)
 
 }
 
 func (h *roleMappingApiClient) Delete(o *elasticsearchapicrd.RoleMapping) (err error) {
-	return h.client.RoleMappingDelete(o.GetExternalName())
+	return h.Client().RoleMappingDelete(o.GetExternalName())
 
 }
 
 func (h *roleMappingApiClient) Diff(currentOject *olivere.XPackSecurityRoleMapping, expectedObject *olivere.XPackSecurityRoleMapping, originalObject *olivere.XPackSecurityRoleMapping, ignoresDiff ...patch.CalculateOption) (patchResult *patch.PatchResult, err error) {
-	return h.client.RoleMappingDiff(currentOject, expectedObject, originalObject)
+	return h.Client().RoleMappingDiff(currentOject, expectedObject, originalObject)
 }

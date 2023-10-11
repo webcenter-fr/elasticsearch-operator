@@ -9,13 +9,12 @@ import (
 )
 
 type userSpaceApiClient struct {
-	controller.BasicRemoteExternalReconciler[*kibanaapicrd.UserSpace, *kbapi.KibanaSpace]
-	client kbhandler.KibanaHandler
+	*controller.BasicRemoteExternalReconciler[*kibanaapicrd.UserSpace, *kbapi.KibanaSpace, kbhandler.KibanaHandler]
 }
 
-func newUserSpaceApiClient(client kbhandler.KibanaHandler) controller.RemoteExternalReconciler[*kibanaapicrd.UserSpace, *kbapi.KibanaSpace] {
+func newUserSpaceApiClient(client kbhandler.KibanaHandler) controller.RemoteExternalReconciler[*kibanaapicrd.UserSpace, *kbapi.KibanaSpace, kbhandler.KibanaHandler] {
 	return &userSpaceApiClient{
-		client: client,
+		BasicRemoteExternalReconciler: controller.NewBasicRemoteExternalReconciler[*kibanaapicrd.UserSpace, *kbapi.KibanaSpace, kbhandler.KibanaHandler](client),
 	}
 }
 
@@ -34,27 +33,23 @@ func (h *userSpaceApiClient) Build(o *kibanaapicrd.UserSpace) (space *kbapi.Kiba
 }
 
 func (h *userSpaceApiClient) Get(o *kibanaapicrd.UserSpace) (object *kbapi.KibanaSpace, err error) {
-	return h.client.UserSpaceGet(o.GetExternalName())
+	return h.Client().UserSpaceGet(o.GetExternalName())
 }
 
 func (h *userSpaceApiClient) Create(object *kbapi.KibanaSpace, o *kibanaapicrd.UserSpace) (err error) {
-	return h.client.UserSpaceCreate(object)
+	return h.Client().UserSpaceCreate(object)
 }
 
 func (h *userSpaceApiClient) Update(object *kbapi.KibanaSpace, o *kibanaapicrd.UserSpace) (err error) {
-	return h.client.UserSpaceUpdate(object)
+	return h.Client().UserSpaceUpdate(object)
 
 }
 
 func (h *userSpaceApiClient) Delete(o *kibanaapicrd.UserSpace) (err error) {
-	return h.client.UserSpaceDelete(o.GetExternalName())
+	return h.Client().UserSpaceDelete(o.GetExternalName())
 
 }
 
 func (h *userSpaceApiClient) Diff(currentOject *kbapi.KibanaSpace, expectedObject *kbapi.KibanaSpace, originalObject *kbapi.KibanaSpace, ignoresDiff ...patch.CalculateOption) (patchResult *patch.PatchResult, err error) {
-	return h.client.UserSpaceDiff(currentOject, expectedObject, originalObject)
-}
-
-func (h *userSpaceApiClient) Custom(f func(handler any) error) (err error) {
-	return f(h.client)
+	return h.Client().UserSpaceDiff(currentOject, expectedObject, originalObject)
 }

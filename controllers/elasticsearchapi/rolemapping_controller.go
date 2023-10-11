@@ -16,6 +16,7 @@ package elasticsearchapi
 import (
 	"context"
 
+	eshandler "github.com/disaster37/es-handler/v8"
 	"github.com/disaster37/operator-sdk-extra/pkg/controller"
 	olivere "github.com/olivere/elastic/v7"
 	"github.com/sirupsen/logrus"
@@ -33,8 +34,8 @@ const (
 // RoleMappingReconciler reconciles a RoleMapping object
 type RoleMappingReconciler struct {
 	controller.Controller
-	controller.RemoteReconciler[*elasticsearchapicrd.RoleMapping, *olivere.XPackSecurityRoleMapping]
-	reconcilerAction controller.RemoteReconcilerAction[*elasticsearchapicrd.RoleMapping, *olivere.XPackSecurityRoleMapping]
+	controller.RemoteReconciler[*elasticsearchapicrd.RoleMapping, *olivere.XPackSecurityRoleMapping, eshandler.ElasticsearchHandler]
+	reconcilerAction controller.RemoteReconcilerAction[*elasticsearchapicrd.RoleMapping, *olivere.XPackSecurityRoleMapping, eshandler.ElasticsearchHandler]
 	name             string
 }
 
@@ -42,7 +43,7 @@ func NewRoleMappingReconciler(client client.Client, logger *logrus.Entry, record
 
 	r := &RoleMappingReconciler{
 		Controller: controller.NewBasicController(),
-		RemoteReconciler: controller.NewBasicRemoteReconciler[*elasticsearchapicrd.RoleMapping, *olivere.XPackSecurityRoleMapping](
+		RemoteReconciler: controller.NewBasicRemoteReconciler[*elasticsearchapicrd.RoleMapping, *olivere.XPackSecurityRoleMapping, eshandler.ElasticsearchHandler](
 			client,
 			roleMappingName,
 			"rolemapping.elasticsearchapi.k8s.webcenter.fr/finalizer",

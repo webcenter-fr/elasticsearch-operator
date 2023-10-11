@@ -4,6 +4,7 @@ import (
 	"context"
 	"time"
 
+	eshandler "github.com/disaster37/es-handler/v8"
 	"github.com/disaster37/operator-sdk-extra/pkg/controller"
 	"github.com/disaster37/operator-sdk-extra/pkg/object"
 	olivere "github.com/olivere/elastic/v7"
@@ -15,13 +16,13 @@ import (
 )
 
 type snapshotRepositoryReconciler struct {
-	controller.RemoteReconcilerAction[*elasticsearchapicrd.SnapshotRepository, *olivere.SnapshotRepositoryMetaData]
+	controller.RemoteReconcilerAction[*elasticsearchapicrd.SnapshotRepository, *olivere.SnapshotRepositoryMetaData, eshandler.ElasticsearchHandler]
 	controller.BaseReconciler
 }
 
-func newSnapshotRepositoryReconciler(client client.Client, logger *logrus.Entry, recorder record.EventRecorder) controller.RemoteReconcilerAction[*elasticsearchapicrd.SnapshotRepository, *olivere.SnapshotRepositoryMetaData] {
+func newSnapshotRepositoryReconciler(client client.Client, logger *logrus.Entry, recorder record.EventRecorder) controller.RemoteReconcilerAction[*elasticsearchapicrd.SnapshotRepository, *olivere.SnapshotRepositoryMetaData, eshandler.ElasticsearchHandler] {
 	return &snapshotRepositoryReconciler{
-		RemoteReconcilerAction: controller.NewRemoteReconcilerAction[*elasticsearchapicrd.SnapshotRepository, *olivere.SnapshotRepositoryMetaData](
+		RemoteReconcilerAction: controller.NewRemoteReconcilerAction[*elasticsearchapicrd.SnapshotRepository, *olivere.SnapshotRepositoryMetaData, eshandler.ElasticsearchHandler](
 			client,
 			logger,
 			recorder,
@@ -34,7 +35,7 @@ func newSnapshotRepositoryReconciler(client client.Client, logger *logrus.Entry,
 	}
 }
 
-func (h *snapshotRepositoryReconciler) GetRemoteHandler(ctx context.Context, req ctrl.Request, o object.RemoteObject) (handler controller.RemoteExternalReconciler[*elasticsearchapicrd.SnapshotRepository, *olivere.SnapshotRepositoryMetaData], res ctrl.Result, err error) {
+func (h *snapshotRepositoryReconciler) GetRemoteHandler(ctx context.Context, req ctrl.Request, o object.RemoteObject) (handler controller.RemoteExternalReconciler[*elasticsearchapicrd.SnapshotRepository, *olivere.SnapshotRepositoryMetaData, eshandler.ElasticsearchHandler], res ctrl.Result, err error) {
 	sr := o.(*elasticsearchapicrd.SnapshotRepository)
 	esClient, err := GetElasticsearchHandler(ctx, sr, sr.Spec.ElasticsearchRef, h.BaseReconciler.Client, h.BaseReconciler.Log)
 	if err != nil && sr.DeletionTimestamp.IsZero() {

@@ -4,6 +4,7 @@ import (
 	"context"
 	"time"
 
+	eshandler "github.com/disaster37/es-handler/v8"
 	"github.com/disaster37/operator-sdk-extra/pkg/controller"
 	"github.com/disaster37/operator-sdk-extra/pkg/object"
 	olivere "github.com/olivere/elastic/v7"
@@ -15,13 +16,13 @@ import (
 )
 
 type indexTemplateReconciler struct {
-	controller.RemoteReconcilerAction[*elasticsearchapicrd.IndexTemplate, *olivere.IndicesGetIndexTemplate]
+	controller.RemoteReconcilerAction[*elasticsearchapicrd.IndexTemplate, *olivere.IndicesGetIndexTemplate, eshandler.ElasticsearchHandler]
 	controller.BaseReconciler
 }
 
-func newIndexTemplateReconcilerclient(client client.Client, logger *logrus.Entry, recorder record.EventRecorder) controller.RemoteReconcilerAction[*elasticsearchapicrd.IndexTemplate, *olivere.IndicesGetIndexTemplate] {
+func newIndexTemplateReconcilerclient(client client.Client, logger *logrus.Entry, recorder record.EventRecorder) controller.RemoteReconcilerAction[*elasticsearchapicrd.IndexTemplate, *olivere.IndicesGetIndexTemplate, eshandler.ElasticsearchHandler] {
 	return &indexTemplateReconciler{
-		RemoteReconcilerAction: controller.NewRemoteReconcilerAction[*elasticsearchapicrd.IndexTemplate, *olivere.IndicesGetIndexTemplate](
+		RemoteReconcilerAction: controller.NewRemoteReconcilerAction[*elasticsearchapicrd.IndexTemplate, *olivere.IndicesGetIndexTemplate, eshandler.ElasticsearchHandler](
 			client,
 			logger,
 			recorder,
@@ -34,7 +35,7 @@ func newIndexTemplateReconcilerclient(client client.Client, logger *logrus.Entry
 	}
 }
 
-func (h *indexTemplateReconciler) GetRemoteHandler(ctx context.Context, req ctrl.Request, o object.RemoteObject) (handler controller.RemoteExternalReconciler[*elasticsearchapicrd.IndexTemplate, *olivere.IndicesGetIndexTemplate], res ctrl.Result, err error) {
+func (h *indexTemplateReconciler) GetRemoteHandler(ctx context.Context, req ctrl.Request, o object.RemoteObject) (handler controller.RemoteExternalReconciler[*elasticsearchapicrd.IndexTemplate, *olivere.IndicesGetIndexTemplate, eshandler.ElasticsearchHandler], res ctrl.Result, err error) {
 	it := o.(*elasticsearchapicrd.IndexTemplate)
 	esClient, err := GetElasticsearchHandler(ctx, it, it.Spec.ElasticsearchRef, h.BaseReconciler.Client, h.BaseReconciler.Log)
 	if err != nil && it.DeletionTimestamp.IsZero() {

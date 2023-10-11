@@ -8,13 +8,12 @@ import (
 )
 
 type snapshotLifecyclePolicyApiClient struct {
-	controller.BasicRemoteExternalReconciler[*elasticsearchapicrd.SnapshotLifecyclePolicy, *eshandler.SnapshotLifecyclePolicySpec]
-	client eshandler.ElasticsearchHandler
+	*controller.BasicRemoteExternalReconciler[*elasticsearchapicrd.SnapshotLifecyclePolicy, *eshandler.SnapshotLifecyclePolicySpec, eshandler.ElasticsearchHandler]
 }
 
-func newSnapshotLifecyclePolicyApiClient(client eshandler.ElasticsearchHandler) controller.RemoteExternalReconciler[*elasticsearchapicrd.SnapshotLifecyclePolicy, *eshandler.SnapshotLifecyclePolicySpec] {
+func newSnapshotLifecyclePolicyApiClient(client eshandler.ElasticsearchHandler) controller.RemoteExternalReconciler[*elasticsearchapicrd.SnapshotLifecyclePolicy, *eshandler.SnapshotLifecyclePolicySpec, eshandler.ElasticsearchHandler] {
 	return &snapshotLifecyclePolicyApiClient{
-		client: client,
+		BasicRemoteExternalReconciler: controller.NewBasicRemoteExternalReconciler[*elasticsearchapicrd.SnapshotLifecyclePolicy, *eshandler.SnapshotLifecyclePolicySpec, eshandler.ElasticsearchHandler](client),
 	}
 }
 
@@ -47,27 +46,23 @@ func (h *snapshotLifecyclePolicyApiClient) Build(o *elasticsearchapicrd.Snapshot
 }
 
 func (h *snapshotLifecyclePolicyApiClient) Get(o *elasticsearchapicrd.SnapshotLifecyclePolicy) (object *eshandler.SnapshotLifecyclePolicySpec, err error) {
-	return h.client.SLMGet(o.GetExternalName())
+	return h.Client().SLMGet(o.GetExternalName())
 }
 
 func (h *snapshotLifecyclePolicyApiClient) Create(object *eshandler.SnapshotLifecyclePolicySpec, o *elasticsearchapicrd.SnapshotLifecyclePolicy) (err error) {
-	return h.client.SLMUpdate(o.GetExternalName(), object)
+	return h.Client().SLMUpdate(o.GetExternalName(), object)
 }
 
 func (h *snapshotLifecyclePolicyApiClient) Update(object *eshandler.SnapshotLifecyclePolicySpec, o *elasticsearchapicrd.SnapshotLifecyclePolicy) (err error) {
-	return h.client.SLMUpdate(o.GetExternalName(), object)
+	return h.Client().SLMUpdate(o.GetExternalName(), object)
 
 }
 
 func (h *snapshotLifecyclePolicyApiClient) Delete(o *elasticsearchapicrd.SnapshotLifecyclePolicy) (err error) {
-	return h.client.SLMDelete(o.GetExternalName())
+	return h.Client().SLMDelete(o.GetExternalName())
 
 }
 
 func (h *snapshotLifecyclePolicyApiClient) Diff(currentOject *eshandler.SnapshotLifecyclePolicySpec, expectedObject *eshandler.SnapshotLifecyclePolicySpec, originalObject *eshandler.SnapshotLifecyclePolicySpec, ignoresDiff ...patch.CalculateOption) (patchResult *patch.PatchResult, err error) {
-	return h.client.SLMDiff(currentOject, expectedObject, originalObject)
-}
-
-func (h *snapshotLifecyclePolicyApiClient) Custom(f func(handler any) error) (err error) {
-	return f(h.client)
+	return h.Client().SLMDiff(currentOject, expectedObject, originalObject)
 }

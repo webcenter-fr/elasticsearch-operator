@@ -11,13 +11,12 @@ import (
 )
 
 type roleApiClient struct {
-	controller.BasicRemoteExternalReconciler[*kibanaapicrd.Role, *kbapi.KibanaRole]
-	client kbhandler.KibanaHandler
+	*controller.BasicRemoteExternalReconciler[*kibanaapicrd.Role, *kbapi.KibanaRole, kbhandler.KibanaHandler]
 }
 
-func newRoleApiClient(client kbhandler.KibanaHandler) controller.RemoteExternalReconciler[*kibanaapicrd.Role, *kbapi.KibanaRole] {
+func newRoleApiClient(client kbhandler.KibanaHandler) controller.RemoteExternalReconciler[*kibanaapicrd.Role, *kbapi.KibanaRole, kbhandler.KibanaHandler] {
 	return &roleApiClient{
-		client: client,
+		BasicRemoteExternalReconciler: controller.NewBasicRemoteExternalReconciler[*kibanaapicrd.Role, *kbapi.KibanaRole, kbhandler.KibanaHandler](client),
 	}
 }
 
@@ -87,25 +86,25 @@ func (h *roleApiClient) Build(o *kibanaapicrd.Role) (role *kbapi.KibanaRole, err
 }
 
 func (h *roleApiClient) Get(o *kibanaapicrd.Role) (object *kbapi.KibanaRole, err error) {
-	return h.client.RoleGet(o.GetExternalName())
+	return h.Client().RoleGet(o.GetExternalName())
 }
 
 func (h *roleApiClient) Create(object *kbapi.KibanaRole, o *kibanaapicrd.Role) (err error) {
-	return h.client.RoleUpdate(object)
+	return h.Client().RoleUpdate(object)
 }
 
 func (h *roleApiClient) Update(object *kbapi.KibanaRole, o *kibanaapicrd.Role) (err error) {
-	return h.client.RoleUpdate(object)
+	return h.Client().RoleUpdate(object)
 
 }
 
 func (h *roleApiClient) Delete(o *kibanaapicrd.Role) (err error) {
-	return h.client.RoleDelete(o.GetExternalName())
+	return h.Client().RoleDelete(o.GetExternalName())
 
 }
 
 func (h *roleApiClient) Diff(currentOject *kbapi.KibanaRole, expectedObject *kbapi.KibanaRole, originalObject *kbapi.KibanaRole, ignoresDiff ...patch.CalculateOption) (patchResult *patch.PatchResult, err error) {
-	patchResult, err = h.client.RoleDiff(currentOject, expectedObject, originalObject)
+	patchResult, err = h.Client().RoleDiff(currentOject, expectedObject, originalObject)
 
 	if err == nil && patchResult == nil {
 		panic("The kbhandler return nil patchresult and nil error")

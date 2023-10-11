@@ -142,8 +142,6 @@ spec:
                 type: string
               lastErrorMessage:
                 type: string
-              licenseChecksum:
-                type: string
               licenseType:
                 type: string
             type: object

@@ -33,8 +33,8 @@ const (
 // SnapshotLifecyclePolicyReconciler reconciles a SnapshotLifecyclePolicy object
 type SnapshotLifecyclePolicyReconciler struct {
 	controller.Controller
-	controller.RemoteReconciler[*elasticsearchapicrd.SnapshotLifecyclePolicy, *eshandler.SnapshotLifecyclePolicySpec]
-	reconcilerAction controller.RemoteReconcilerAction[*elasticsearchapicrd.SnapshotLifecyclePolicy, *eshandler.SnapshotLifecyclePolicySpec]
+	controller.RemoteReconciler[*elasticsearchapicrd.SnapshotLifecyclePolicy, *eshandler.SnapshotLifecyclePolicySpec, eshandler.ElasticsearchHandler]
+	reconcilerAction controller.RemoteReconcilerAction[*elasticsearchapicrd.SnapshotLifecyclePolicy, *eshandler.SnapshotLifecyclePolicySpec, eshandler.ElasticsearchHandler]
 	name             string
 }
 
@@ -42,7 +42,7 @@ func NewSnapshotLifecyclePolicyReconciler(client client.Client, logger *logrus.E
 
 	r := &SnapshotLifecyclePolicyReconciler{
 		Controller: controller.NewBasicController(),
-		RemoteReconciler: controller.NewBasicRemoteReconciler[*elasticsearchapicrd.SnapshotLifecyclePolicy, *eshandler.SnapshotLifecyclePolicySpec](
+		RemoteReconciler: controller.NewBasicRemoteReconciler[*elasticsearchapicrd.SnapshotLifecyclePolicy, *eshandler.SnapshotLifecyclePolicySpec, eshandler.ElasticsearchHandler](
 			client,
 			snapshotLifecyclePolicyName,
 			"slm.elasticsearchapi.k8s.webcenter.fr/finalizer",

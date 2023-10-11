@@ -12,13 +12,12 @@ import (
 )
 
 type snapshotRepositoryApiClient struct {
-	controller.BasicRemoteExternalReconciler[*elasticsearchapicrd.SnapshotRepository, *olivere.SnapshotRepositoryMetaData]
-	client eshandler.ElasticsearchHandler
+	*controller.BasicRemoteExternalReconciler[*elasticsearchapicrd.SnapshotRepository, *olivere.SnapshotRepositoryMetaData, eshandler.ElasticsearchHandler]
 }
 
-func newSnapshotRepositoryApiClient(client eshandler.ElasticsearchHandler) controller.RemoteExternalReconciler[*elasticsearchapicrd.SnapshotRepository, *olivere.SnapshotRepositoryMetaData] {
+func newSnapshotRepositoryApiClient(client eshandler.ElasticsearchHandler) controller.RemoteExternalReconciler[*elasticsearchapicrd.SnapshotRepository, *olivere.SnapshotRepositoryMetaData, eshandler.ElasticsearchHandler] {
 	return &snapshotRepositoryApiClient{
-		client: client,
+		BasicRemoteExternalReconciler: controller.NewBasicRemoteExternalReconciler[*elasticsearchapicrd.SnapshotRepository, *olivere.SnapshotRepositoryMetaData, eshandler.ElasticsearchHandler](client),
 	}
 }
 
@@ -41,23 +40,23 @@ func (h *snapshotRepositoryApiClient) Build(o *elasticsearchapicrd.SnapshotRepos
 }
 
 func (h *snapshotRepositoryApiClient) Get(o *elasticsearchapicrd.SnapshotRepository) (object *olivere.SnapshotRepositoryMetaData, err error) {
-	return h.client.SnapshotRepositoryGet(o.GetExternalName())
+	return h.Client().SnapshotRepositoryGet(o.GetExternalName())
 }
 
 func (h *snapshotRepositoryApiClient) Create(object *olivere.SnapshotRepositoryMetaData, o *elasticsearchapicrd.SnapshotRepository) (err error) {
-	return h.client.SnapshotRepositoryUpdate(o.GetExternalName(), object)
+	return h.Client().SnapshotRepositoryUpdate(o.GetExternalName(), object)
 }
 
 func (h *snapshotRepositoryApiClient) Update(object *olivere.SnapshotRepositoryMetaData, o *elasticsearchapicrd.SnapshotRepository) (err error) {
-	return h.client.SnapshotRepositoryUpdate(o.GetExternalName(), object)
+	return h.Client().SnapshotRepositoryUpdate(o.GetExternalName(), object)
 
 }
 
 func (h *snapshotRepositoryApiClient) Delete(o *elasticsearchapicrd.SnapshotRepository) (err error) {
-	return h.client.SnapshotRepositoryDelete(o.GetExternalName())
+	return h.Client().SnapshotRepositoryDelete(o.GetExternalName())
 
 }
 
 func (h *snapshotRepositoryApiClient) Diff(currentOject *olivere.SnapshotRepositoryMetaData, expectedObject *olivere.SnapshotRepositoryMetaData, originalObject *olivere.SnapshotRepositoryMetaData, ignoresDiff ...patch.CalculateOption) (patchResult *patch.PatchResult, err error) {
-	return h.client.SnapshotRepositoryDiff(currentOject, expectedObject, originalObject)
+	return h.Client().SnapshotRepositoryDiff(currentOject, expectedObject, originalObject)
 }

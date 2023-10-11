@@ -11,13 +11,12 @@ import (
 )
 
 type indexTemplateApiClient struct {
-	controller.BasicRemoteExternalReconciler[*elasticsearchapicrd.IndexTemplate, *olivere.IndicesGetIndexTemplate]
-	client eshandler.ElasticsearchHandler
+	*controller.BasicRemoteExternalReconciler[*elasticsearchapicrd.IndexTemplate, *olivere.IndicesGetIndexTemplate, eshandler.ElasticsearchHandler]
 }
 
-func newIndexTemplateApiClient(client eshandler.ElasticsearchHandler) controller.RemoteExternalReconciler[*elasticsearchapicrd.IndexTemplate, *olivere.IndicesGetIndexTemplate] {
+func newIndexTemplateApiClient(client eshandler.ElasticsearchHandler) controller.RemoteExternalReconciler[*elasticsearchapicrd.IndexTemplate, *olivere.IndicesGetIndexTemplate, eshandler.ElasticsearchHandler] {
 	return &indexTemplateApiClient{
-		client: client,
+		BasicRemoteExternalReconciler: controller.NewBasicRemoteExternalReconciler[*elasticsearchapicrd.IndexTemplate, *olivere.IndicesGetIndexTemplate, eshandler.ElasticsearchHandler](client),
 	}
 }
 
@@ -77,23 +76,23 @@ func (h *indexTemplateApiClient) Build(o *elasticsearchapicrd.IndexTemplate) (in
 }
 
 func (h *indexTemplateApiClient) Get(o *elasticsearchapicrd.IndexTemplate) (object *olivere.IndicesGetIndexTemplate, err error) {
-	return h.client.IndexTemplateGet(o.GetExternalName())
+	return h.Client().IndexTemplateGet(o.GetExternalName())
 }
 
 func (h *indexTemplateApiClient) Create(object *olivere.IndicesGetIndexTemplate, o *elasticsearchapicrd.IndexTemplate) (err error) {
-	return h.client.IndexTemplateUpdate(o.GetExternalName(), object)
+	return h.Client().IndexTemplateUpdate(o.GetExternalName(), object)
 }
 
 func (h *indexTemplateApiClient) Update(object *olivere.IndicesGetIndexTemplate, o *elasticsearchapicrd.IndexTemplate) (err error) {
-	return h.client.IndexTemplateUpdate(o.GetExternalName(), object)
+	return h.Client().IndexTemplateUpdate(o.GetExternalName(), object)
 
 }
 
 func (h *indexTemplateApiClient) Delete(o *elasticsearchapicrd.IndexTemplate) (err error) {
-	return h.client.IndexTemplateDelete(o.GetExternalName())
+	return h.Client().IndexTemplateDelete(o.GetExternalName())
 
 }
 
 func (h *indexTemplateApiClient) Diff(currentOject *olivere.IndicesGetIndexTemplate, expectedObject *olivere.IndicesGetIndexTemplate, originalObject *olivere.IndicesGetIndexTemplate, ignoresDiff ...patch.CalculateOption) (patchResult *patch.PatchResult, err error) {
-	return h.client.IndexTemplateDiff(currentOject, expectedObject, originalObject)
+	return h.Client().IndexTemplateDiff(currentOject, expectedObject, originalObject)
 }

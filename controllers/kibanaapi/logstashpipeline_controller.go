@@ -17,6 +17,7 @@ import (
 	"context"
 
 	"github.com/disaster37/go-kibana-rest/v8/kbapi"
+	kbhandler "github.com/disaster37/kb-handler/v8"
 	"github.com/disaster37/operator-sdk-extra/pkg/controller"
 	"github.com/sirupsen/logrus"
 	kibanaapicrd "github.com/webcenter-fr/elasticsearch-operator/apis/kibanaapi/v1"
@@ -33,8 +34,8 @@ const (
 // LogstashPipelineReconciler reconciles a Logstash pipeline object
 type LogstashPipelineReconciler struct {
 	controller.Controller
-	controller.RemoteReconciler[*kibanaapicrd.LogstashPipeline, *kbapi.LogstashPipeline]
-	reconcilerAction controller.RemoteReconcilerAction[*kibanaapicrd.LogstashPipeline, *kbapi.LogstashPipeline]
+	controller.RemoteReconciler[*kibanaapicrd.LogstashPipeline, *kbapi.LogstashPipeline, kbhandler.KibanaHandler]
+	reconcilerAction controller.RemoteReconcilerAction[*kibanaapicrd.LogstashPipeline, *kbapi.LogstashPipeline, kbhandler.KibanaHandler]
 	name             string
 }
 
@@ -42,7 +43,7 @@ func NewLogstashPipelineReconciler(client client.Client, logger *logrus.Entry, r
 
 	r := &LogstashPipelineReconciler{
 		Controller: controller.NewBasicController(),
-		RemoteReconciler: controller.NewBasicRemoteReconciler[*kibanaapicrd.LogstashPipeline, *kbapi.LogstashPipeline](
+		RemoteReconciler: controller.NewBasicRemoteReconciler[*kibanaapicrd.LogstashPipeline, *kbapi.LogstashPipeline, kbhandler.KibanaHandler](
 			client,
 			logstashPipelineName,
 			"pipeline.kibanaapi.k8s.webcenter.fr/finalizer",

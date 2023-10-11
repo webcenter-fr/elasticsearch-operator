@@ -10,13 +10,12 @@ import (
 )
 
 type roleApiClient struct {
-	controller.BasicRemoteExternalReconciler[*elasticsearchapicrd.Role, *eshandler.XPackSecurityRole]
-	client eshandler.ElasticsearchHandler
+	*controller.BasicRemoteExternalReconciler[*elasticsearchapicrd.Role, *eshandler.XPackSecurityRole, eshandler.ElasticsearchHandler]
 }
 
-func newRoleApiClient(client eshandler.ElasticsearchHandler) controller.RemoteExternalReconciler[*elasticsearchapicrd.Role, *eshandler.XPackSecurityRole] {
+func newRoleApiClient(client eshandler.ElasticsearchHandler) controller.RemoteExternalReconciler[*elasticsearchapicrd.Role, *eshandler.XPackSecurityRole, eshandler.ElasticsearchHandler] {
 	return &roleApiClient{
-		client: client,
+		BasicRemoteExternalReconciler: controller.NewBasicRemoteExternalReconciler[*elasticsearchapicrd.Role, *eshandler.XPackSecurityRole, eshandler.ElasticsearchHandler](client),
 	}
 }
 
@@ -86,23 +85,23 @@ func (h *roleApiClient) Build(o *elasticsearchapicrd.Role) (role *eshandler.XPac
 }
 
 func (h *roleApiClient) Get(o *elasticsearchapicrd.Role) (object *eshandler.XPackSecurityRole, err error) {
-	return h.client.RoleGet(o.GetExternalName())
+	return h.Client().RoleGet(o.GetExternalName())
 }
 
 func (h *roleApiClient) Create(object *eshandler.XPackSecurityRole, o *elasticsearchapicrd.Role) (err error) {
-	return h.client.RoleUpdate(o.GetExternalName(), object)
+	return h.Client().RoleUpdate(o.GetExternalName(), object)
 }
 
 func (h *roleApiClient) Update(object *eshandler.XPackSecurityRole, o *elasticsearchapicrd.Role) (err error) {
-	return h.client.RoleUpdate(o.GetExternalName(), object)
+	return h.Client().RoleUpdate(o.GetExternalName(), object)
 
 }
 
 func (h *roleApiClient) Delete(o *elasticsearchapicrd.Role) (err error) {
-	return h.client.RoleDelete(o.GetExternalName())
+	return h.Client().RoleDelete(o.GetExternalName())
 
 }
 
 func (h *roleApiClient) Diff(currentOject *eshandler.XPackSecurityRole, expectedObject *eshandler.XPackSecurityRole, originalObject *eshandler.XPackSecurityRole, ignoresDiff ...patch.CalculateOption) (patchResult *patch.PatchResult, err error) {
-	return h.client.RoleDiff(currentOject, expectedObject, originalObject)
+	return h.Client().RoleDiff(currentOject, expectedObject, originalObject)
 }
