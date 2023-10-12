@@ -238,5 +238,7 @@ func (h *LogstashReconciler) OnSuccess(ctx context.Context, r object.MultiPhaseO
 		res.RequeueAfter = time.Second * 30
 	}
 
+	o.Status.SetIsOnError(false)
+
 	return res, nil
 }

@@ -260,6 +260,7 @@ func (h *KibanaReconciler) OnSuccess(ctx context.Context, r object.MultiPhaseObj
 		return res, err
 	}
 	o.Status.Url = url
+	o.Status.SetIsOnError(false)
 
 	return res, nil
 }

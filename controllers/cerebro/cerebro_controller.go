@@ -224,6 +224,8 @@ func (h *CerebroReconciler) OnSuccess(ctx context.Context, r object.MultiPhaseOb
 	}
 	o.Status.Url = url
 
+	o.Status.SetIsOnError(false)
+
 	return res, nil
 }
 

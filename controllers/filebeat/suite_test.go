@@ -51,7 +51,7 @@ type FilebeatControllerTestSuite struct {
 	cfg       *rest.Config
 }
 
-func TestControllerSuite(t *testing.T) {
+func TestFilebeatControllerSuite(t *testing.T) {
 	suite.Run(t, new(FilebeatControllerTestSuite))
 }
 

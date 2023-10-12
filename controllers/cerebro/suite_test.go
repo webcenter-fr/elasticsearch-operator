@@ -35,7 +35,7 @@ type CerebroControllerTestSuite struct {
 	cfg       *rest.Config
 }
 
-func TestControllerSuite(t *testing.T) {
+func TestCerebroControllerSuite(t *testing.T) {
 	suite.Run(t, new(CerebroControllerTestSuite))
 }
 

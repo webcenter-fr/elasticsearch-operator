@@ -35,7 +35,7 @@ type KibanaControllerTestSuite struct {
 	cfg       *rest.Config
 }
 
-func TestControllerSuite(t *testing.T) {
+func TestKibanaControllerSuite(t *testing.T) {
 	suite.Run(t, new(KibanaControllerTestSuite))
 }
 

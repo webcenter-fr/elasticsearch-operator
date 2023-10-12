@@ -51,7 +51,7 @@ type LogstashControllerTestSuite struct {
 	cfg       *rest.Config
 }
 
-func TestControllerSuite(t *testing.T) {
+func TestLogstashControllerSuite(t *testing.T) {
 	suite.Run(t, new(LogstashControllerTestSuite))
 }
 

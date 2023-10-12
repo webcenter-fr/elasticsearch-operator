@@ -216,5 +216,7 @@ func (h *MetricbeatReconciler) OnSuccess(ctx context.Context, r object.MultiPhas
 		res.RequeueAfter = time.Second * 30
 	}
 
+	o.Status.SetIsOnError(false)
+
 	return res, nil
 }

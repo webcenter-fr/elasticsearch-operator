@@ -233,8 +233,6 @@ func (h *ElasticsearchReconciler) SetupWithManager(mgr ctrl.Manager) error {
 func (h *ElasticsearchReconciler) Configure(ctx context.Context, req ctrl.Request, resource object.MultiPhaseObject) (res ctrl.Result, err error) {
 	o := resource.(*elasticsearchcrd.Elasticsearch)
 
-	o.Status.IsOnError = ptr.To[bool](false)
-
 	if o.Status.IsBootstrapping == nil {
 		o.Status.IsBootstrapping = ptr.To[bool](false)
 	}
@@ -342,6 +340,7 @@ loopStatefulset:
 		return res, err
 	}
 	o.Status.Url = url
+	o.Status.SetIsOnError(false)
 
 	return res, nil
 }

@@ -51,7 +51,7 @@ type MetricbeatControllerTestSuite struct {
 	cfg       *rest.Config
 }
 
-func TestControllerSuite(t *testing.T) {
+func TestMetricbeatControllerSuite(t *testing.T) {
 	suite.Run(t, new(MetricbeatControllerTestSuite))
 }
 
