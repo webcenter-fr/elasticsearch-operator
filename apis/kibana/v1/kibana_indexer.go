@@ -8,7 +8,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 )
 
-// MustSetUpIndex setup indexer for kibana
+// SetupKibanaIndexer setup indexer for kibana
 func SetupKibanaIndexer(k8sManager manager.Manager) (err error) {
 	if err = k8sManager.GetFieldIndexer().IndexField(context.Background(), &Kibana{}, "spec.tls.certificateSecretRef.name", func(o client.Object) []string {
 		p := o.(*Kibana)

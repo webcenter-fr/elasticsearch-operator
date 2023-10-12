@@ -55,11 +55,6 @@ func doMockSLM(mockES *mocks.MockElasticsearchHandler) func(stepName *string, da
 				Type: "url",
 			}, nil
 		})
-		/*
-			mockES.EXPECT().SnapshotRepositoryGet(gomock.Any()).AnyTimes().Return(&olivere.SnapshotRepositoryMetaData{
-				Type: "url",
-			}, nil)
-		*/
 
 		mockES.EXPECT().SLMGet(gomock.Any()).AnyTimes().DoAndReturn(func(name string) (*eshandler.SnapshotLifecyclePolicySpec, error) {
 

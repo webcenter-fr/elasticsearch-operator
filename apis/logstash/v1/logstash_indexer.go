@@ -8,7 +8,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 )
 
-// MustSetUpIndex setup indexer for Logstash
+// SetupLogstashIndexer setup indexer for Logstash
 func SetupLogstashIndexer(k8sManager manager.Manager) (err error) {
 	// Add indexers on Logstash to track secret change
 	if err = k8sManager.GetFieldIndexer().IndexField(context.Background(), &Logstash{}, "spec.keystoreSecretRef.name", func(o client.Object) []string {
