@@ -20,7 +20,9 @@ func TestBuildLicense(t *testing.T) {
 		licenses []elasticsearchapicrd.License
 	)
 	sch := scheme.Scheme
-	elasticsearchapicrd.AddToScheme(sch)
+	if err := elasticsearchapicrd.AddToScheme(sch); err != nil {
+		panic(err)
+	}
 
 	// Normal
 	o = &elasticsearchcrd.Elasticsearch{

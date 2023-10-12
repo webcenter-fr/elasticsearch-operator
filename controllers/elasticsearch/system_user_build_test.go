@@ -20,7 +20,9 @@ func TestBuildUserSystem(t *testing.T) {
 		users []elasticsearchapicrd.User
 	)
 	sch := scheme.Scheme
-	elasticsearchapicrd.AddToScheme(sch)
+	if err := elasticsearchapicrd.AddToScheme(sch); err != nil {
+		panic(err)
+	}
 
 	// Normal
 	o = &elasticsearchcrd.Elasticsearch{

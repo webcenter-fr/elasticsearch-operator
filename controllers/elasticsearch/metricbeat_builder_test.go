@@ -24,7 +24,9 @@ func TestBuildMetricbeat(t *testing.T) {
 	)
 
 	sch := scheme.Scheme
-	beatcrd.AddToScheme(sch)
+	if err := beatcrd.AddToScheme(sch); err != nil {
+		panic(err)
+	}
 
 	// With default values
 	o = &elasticsearchcrd.Elasticsearch{

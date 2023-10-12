@@ -37,7 +37,7 @@ func TestIndexLifecyclePolicyBuild(t *testing.T) {
 		},
 	}
 
-	ilm, err = client.Build(o)
+	_, err = client.Build(o)
 	assert.Error(t, err)
 
 	// With all parameters

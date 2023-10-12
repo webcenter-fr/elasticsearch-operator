@@ -19,7 +19,9 @@ func TestBuildPodMonitor(t *testing.T) {
 	)
 
 	sch := scheme.Scheme
-	monitoringv1.AddToScheme(sch)
+	if err := monitoringv1.AddToScheme(sch); err != nil {
+		panic(err)
+	}
 
 	// With default values
 	o = &kibanacrd.Kibana{
