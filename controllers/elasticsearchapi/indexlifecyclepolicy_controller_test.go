@@ -8,17 +8,16 @@ import (
 
 	"emperror.dev/errors"
 	"github.com/disaster37/es-handler/v8/mocks"
-	"github.com/disaster37/es-handler/v8/patch"
+	"github.com/disaster37/generic-objectmatcher/patch"
+	"github.com/disaster37/operator-sdk-extra/pkg/controller"
+	"github.com/disaster37/operator-sdk-extra/pkg/helper"
 	"github.com/disaster37/operator-sdk-extra/pkg/test"
-	"github.com/golang/mock/gomock"
 	olivere "github.com/olivere/elastic/v7"
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
 	elasticsearchapicrd "github.com/webcenter-fr/elasticsearch-operator/apis/elasticsearchapi/v1"
 	"github.com/webcenter-fr/elasticsearch-operator/apis/shared"
-	"github.com/webcenter-fr/elasticsearch-operator/controllers/common"
-	localhelper "github.com/webcenter-fr/elasticsearch-operator/pkg/helper"
-	localtest "github.com/webcenter-fr/elasticsearch-operator/pkg/test"
+	"go.uber.org/mock/gomock"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	condition "k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -28,7 +27,7 @@ import (
 
 func (t *ElasticsearchapiControllerTestSuite) TestIndexLifecyclePolicyReconciler() {
 	key := types.NamespacedName{
-		Name:      "t-ilm-" + localhelper.RandomString(10),
+		Name:      "t-ilm-" + helper.RandomString(10),
 		Namespace: "default",
 	}
 	ilm := &elasticsearchapicrd.IndexLifecyclePolicy{}
@@ -252,7 +251,7 @@ func doCreateILMStep() test.TestStep {
 			ilm := &elasticsearchapicrd.IndexLifecyclePolicy{}
 			isCreated := false
 
-			isTimeout, err := localtest.RunWithTimeout(func() error {
+			isTimeout, err := test.RunWithTimeout(func() error {
 				if err := c.Get(context.Background(), key, ilm); err != nil {
 					t.Fatal("ILM object not found")
 				}
@@ -267,9 +266,8 @@ func doCreateILMStep() test.TestStep {
 			if err != nil || isTimeout {
 				t.Fatalf("Failed to get ILM: %s", err.Error())
 			}
-			assert.True(t, condition.IsStatusConditionPresentAndEqual(ilm.Status.Conditions, IndexLifecyclePolicyCondition, metav1.ConditionTrue))
-			assert.True(t, condition.IsStatusConditionPresentAndEqual(ilm.Status.Conditions, common.ReadyCondition, metav1.ConditionTrue))
-			assert.True(t, ilm.Status.Sync)
+			assert.True(t, condition.IsStatusConditionPresentAndEqual(ilm.Status.Conditions, controller.ReadyCondition.String(), metav1.ConditionTrue))
+			assert.True(t, *ilm.Status.IsSync)
 
 			return nil
 		},
@@ -319,7 +317,7 @@ func doUpdateILMStep() test.TestStep {
 			ilm := &elasticsearchapicrd.IndexLifecyclePolicy{}
 			isUpdated := false
 
-			isTimeout, err := localtest.RunWithTimeout(func() error {
+			isTimeout, err := test.RunWithTimeout(func() error {
 				if err := c.Get(context.Background(), key, ilm); err != nil {
 					t.Fatal(err)
 				}
@@ -335,9 +333,8 @@ func doUpdateILMStep() test.TestStep {
 			if err != nil || isTimeout {
 				return errors.Wrapf(err, "Failed to get ILM")
 			}
-			assert.True(t, condition.IsStatusConditionPresentAndEqual(ilm.Status.Conditions, IndexLifecyclePolicyCondition, metav1.ConditionTrue))
-			assert.True(t, condition.IsStatusConditionPresentAndEqual(ilm.Status.Conditions, common.ReadyCondition, metav1.ConditionTrue))
-			assert.True(t, ilm.Status.Sync)
+			assert.True(t, condition.IsStatusConditionPresentAndEqual(ilm.Status.Conditions, controller.ReadyCondition.String(), metav1.ConditionTrue))
+			assert.True(t, *ilm.Status.IsSync)
 
 			return nil
 		},
@@ -366,7 +363,7 @@ func doDeleteILMStep() test.TestStep {
 			ilm := &elasticsearchapicrd.IndexLifecyclePolicy{}
 			isDeleted := false
 
-			isTimeout, err := localtest.RunWithTimeout(func() error {
+			isTimeout, err := test.RunWithTimeout(func() error {
 				if err = c.Get(context.Background(), key, ilm); err != nil {
 					if k8serrors.IsNotFound(err) {
 						isDeleted = true

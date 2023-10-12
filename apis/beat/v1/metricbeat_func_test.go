@@ -3,11 +3,29 @@ package v1
 import (
 	"testing"
 
+	"github.com/disaster37/operator-sdk-extra/pkg/apis"
 	"github.com/stretchr/testify/assert"
 	v1 "k8s.io/api/core/v1"
 	policyv1 "k8s.io/api/policy/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
+
+func TestMetricbeatGetStatus(t *testing.T) {
+	status := MetricbeatStatus{
+		BasicMultiPhaseObjectStatus: apis.BasicMultiPhaseObjectStatus{
+			PhaseName: "test",
+		},
+	}
+	o := &Metricbeat{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: "default",
+			Name:      "test",
+		},
+		Status: status,
+	}
+
+	assert.Equal(t, &status, o.GetStatus())
+}
 
 func TestMetricbeatIsPersistence(t *testing.T) {
 	var o *Metricbeat

@@ -7,17 +7,16 @@ import (
 
 	"emperror.dev/errors"
 	"github.com/disaster37/es-handler/v8/mocks"
-	"github.com/disaster37/es-handler/v8/patch"
+	"github.com/disaster37/generic-objectmatcher/patch"
+	"github.com/disaster37/operator-sdk-extra/pkg/controller"
+	"github.com/disaster37/operator-sdk-extra/pkg/helper"
 	"github.com/disaster37/operator-sdk-extra/pkg/test"
-	"github.com/golang/mock/gomock"
 	olivere "github.com/olivere/elastic/v7"
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
 	elasticsearchapicrd "github.com/webcenter-fr/elasticsearch-operator/apis/elasticsearchapi/v1"
 	"github.com/webcenter-fr/elasticsearch-operator/apis/shared"
-	"github.com/webcenter-fr/elasticsearch-operator/controllers/common"
-	localhelper "github.com/webcenter-fr/elasticsearch-operator/pkg/helper"
-	localtest "github.com/webcenter-fr/elasticsearch-operator/pkg/test"
+	"go.uber.org/mock/gomock"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	condition "k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -27,7 +26,7 @@ import (
 
 func (t *ElasticsearchapiControllerTestSuite) TestIndexTemplateReconciler() {
 	key := types.NamespacedName{
-		Name:      "t-indextemplate-" + localhelper.RandomString(10),
+		Name:      "t-indextemplate-" + helper.RandomString(10),
 		Namespace: "default",
 	}
 	it := &elasticsearchapicrd.IndexTemplate{}
@@ -156,7 +155,7 @@ func doCreateIndexTemplateStep() test.TestStep {
 			template := &elasticsearchapicrd.IndexTemplate{}
 			isCreated := false
 
-			isTimeout, err := localtest.RunWithTimeout(func() error {
+			isTimeout, err := test.RunWithTimeout(func() error {
 				if err := c.Get(context.Background(), key, template); err != nil {
 					t.Fatal(err)
 				}
@@ -171,9 +170,8 @@ func doCreateIndexTemplateStep() test.TestStep {
 			if err != nil || isTimeout {
 				t.Fatalf("Failed to get index template: %s", err.Error())
 			}
-			assert.True(t, condition.IsStatusConditionPresentAndEqual(template.Status.Conditions, IndexTemplateCondition, metav1.ConditionTrue))
-			assert.True(t, condition.IsStatusConditionPresentAndEqual(template.Status.Conditions, common.ReadyCondition, metav1.ConditionTrue))
-			assert.True(t, template.Status.Sync)
+			assert.True(t, condition.IsStatusConditionPresentAndEqual(template.Status.Conditions, controller.ReadyCondition.String(), metav1.ConditionTrue))
+			assert.True(t, *template.Status.IsSync)
 
 			return nil
 		},
@@ -202,7 +200,7 @@ func doUpdateIndexTemplateStep() test.TestStep {
 			template := &elasticsearchapicrd.IndexTemplate{}
 			isUpdated := false
 
-			isTimeout, err := localtest.RunWithTimeout(func() error {
+			isTimeout, err := test.RunWithTimeout(func() error {
 				if err := c.Get(context.Background(), key, template); err != nil {
 					t.Fatal(err)
 				}
@@ -217,9 +215,8 @@ func doUpdateIndexTemplateStep() test.TestStep {
 			if err != nil || isTimeout {
 				t.Fatalf("Failed to get index template: %s", err.Error())
 			}
-			assert.True(t, condition.IsStatusConditionPresentAndEqual(template.Status.Conditions, IndexTemplateCondition, metav1.ConditionTrue))
-			assert.True(t, condition.IsStatusConditionPresentAndEqual(template.Status.Conditions, common.ReadyCondition, metav1.ConditionTrue))
-			assert.True(t, template.Status.Sync)
+			assert.True(t, condition.IsStatusConditionPresentAndEqual(template.Status.Conditions, controller.ReadyCondition.String(), metav1.ConditionTrue))
+			assert.True(t, *template.Status.IsSync)
 
 			return nil
 		},
@@ -248,7 +245,7 @@ func doDeleteIndexTemplateStep() test.TestStep {
 			template := &elasticsearchapicrd.IndexTemplate{}
 			isDeleted := false
 
-			isTimeout, err := localtest.RunWithTimeout(func() error {
+			isTimeout, err := test.RunWithTimeout(func() error {
 				if err = c.Get(context.Background(), key, template); err != nil {
 					if k8serrors.IsNotFound(err) {
 						isDeleted = true

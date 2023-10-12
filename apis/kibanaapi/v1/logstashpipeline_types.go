@@ -17,6 +17,7 @@ limitations under the License.
 package v1
 
 import (
+	"github.com/disaster37/operator-sdk-extra/pkg/apis"
 	"github.com/webcenter-fr/elasticsearch-operator/apis/shared"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -61,17 +62,7 @@ type LogstashPipelineStatus struct {
 	// INSERT ADDITIONAL STATUS FIELD - define observed state of cluster
 	// Important: Run "make" to regenerate code after modifying this file
 
-	// List of conditions
-	// +operator-sdk:csv:customresourcedefinitions:type=status
-	Conditions []metav1.Condition `json:"conditions,omitempty"`
-
-	// Sync
-	// +operator-sdk:csv:customresourcedefinitions:type=status
-	Sync bool `json:"sync,omitempty"`
-
-	// OriginalObject is the original object used on 3 way diff merge
-	// +operator-sdk:csv:customresourcedefinitions:type=status
-	OriginalObject string `json:"originalObject,omitempty"`
+	apis.BasicRemoteObjectStatus `json:",inline"`
 }
 
 //+kubebuilder:object:root=true
@@ -80,7 +71,9 @@ type LogstashPipelineStatus struct {
 
 // LogstashPipeline is the Schema for the logstashpipelines API
 // +operator-sdk:csv:customresourcedefinitions:resources={{None,None,None}}
-// +kubebuilder:printcolumn:name="Sync",type="boolean",JSONPath=".status.sync"
+// +kubebuilder:printcolumn:name="Sync",type="boolean",JSONPath=".status.isSync"
+// +kubebuilder:printcolumn:name="Error",type="boolean",JSONPath=".status.isOnError",description="Is on error"
+// +kubebuilder:printcolumn:name="Ready",type="string",JSONPath=".status.conditions[?(@.type=='Ready')].status",description="health"
 // +kubebuilder:printcolumn:name="Age",type="date",JSONPath=".metadata.creationTimestamp"
 type LogstashPipeline struct {
 	metav1.TypeMeta   `json:",inline"`

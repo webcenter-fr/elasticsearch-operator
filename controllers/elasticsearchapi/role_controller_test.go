@@ -8,16 +8,15 @@ import (
 	"emperror.dev/errors"
 	eshandler "github.com/disaster37/es-handler/v8"
 	"github.com/disaster37/es-handler/v8/mocks"
-	"github.com/disaster37/es-handler/v8/patch"
+	"github.com/disaster37/generic-objectmatcher/patch"
+	"github.com/disaster37/operator-sdk-extra/pkg/controller"
+	"github.com/disaster37/operator-sdk-extra/pkg/helper"
 	"github.com/disaster37/operator-sdk-extra/pkg/test"
-	"github.com/golang/mock/gomock"
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
 	elasticsearchapicrd "github.com/webcenter-fr/elasticsearch-operator/apis/elasticsearchapi/v1"
 	"github.com/webcenter-fr/elasticsearch-operator/apis/shared"
-	"github.com/webcenter-fr/elasticsearch-operator/controllers/common"
-	localhelper "github.com/webcenter-fr/elasticsearch-operator/pkg/helper"
-	localtest "github.com/webcenter-fr/elasticsearch-operator/pkg/test"
+	"go.uber.org/mock/gomock"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	condition "k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -27,7 +26,7 @@ import (
 
 func (t *ElasticsearchapiControllerTestSuite) TestRoleReconciler() {
 	key := types.NamespacedName{
-		Name:      "t-role-" + localhelper.RandomString(10),
+		Name:      "t-role-" + helper.RandomString(10),
 		Namespace: "default",
 	}
 	role := &elasticsearchapicrd.Role{}
@@ -155,7 +154,7 @@ func doCreateRoleStep() test.TestStep {
 			role := &elasticsearchapicrd.Role{}
 			isCreated := false
 
-			isTimeout, err := localtest.RunWithTimeout(func() error {
+			isTimeout, err := test.RunWithTimeout(func() error {
 				if err := c.Get(context.Background(), key, role); err != nil {
 					t.Fatal(err)
 				}
@@ -170,9 +169,8 @@ func doCreateRoleStep() test.TestStep {
 			if err != nil || isTimeout {
 				t.Fatalf("Failed to get elasticsearch role: %s", err.Error())
 			}
-			assert.True(t, condition.IsStatusConditionPresentAndEqual(role.Status.Conditions, RoleCondition, metav1.ConditionTrue))
-			assert.True(t, condition.IsStatusConditionPresentAndEqual(role.Status.Conditions, common.ReadyCondition, metav1.ConditionTrue))
-			assert.True(t, role.Status.Sync)
+			assert.True(t, condition.IsStatusConditionPresentAndEqual(role.Status.Conditions, controller.ReadyCondition.String(), metav1.ConditionTrue))
+			assert.True(t, *role.Status.IsSync)
 
 			return nil
 		},
@@ -201,7 +199,7 @@ func doUpdateRoleStep() test.TestStep {
 			role := &elasticsearchapicrd.Role{}
 			isUpdated := false
 
-			isTimeout, err := localtest.RunWithTimeout(func() error {
+			isTimeout, err := test.RunWithTimeout(func() error {
 				if err := c.Get(context.Background(), key, role); err != nil {
 					t.Fatal(err)
 				}
@@ -216,9 +214,8 @@ func doUpdateRoleStep() test.TestStep {
 			if err != nil || isTimeout {
 				t.Fatalf("Failed to get elasticsearch role: %s", err.Error())
 			}
-			assert.True(t, condition.IsStatusConditionPresentAndEqual(role.Status.Conditions, RoleCondition, metav1.ConditionTrue))
-			assert.True(t, condition.IsStatusConditionPresentAndEqual(role.Status.Conditions, common.ReadyCondition, metav1.ConditionTrue))
-			assert.True(t, role.Status.Sync)
+			assert.True(t, condition.IsStatusConditionPresentAndEqual(role.Status.Conditions, controller.ReadyCondition.String(), metav1.ConditionTrue))
+			assert.True(t, *role.Status.IsSync)
 
 			return nil
 		},
@@ -247,7 +244,7 @@ func doDeleteRoleStep() test.TestStep {
 			role := &elasticsearchapicrd.Role{}
 			isDeleted := false
 
-			isTimeout, err := localtest.RunWithTimeout(func() error {
+			isTimeout, err := test.RunWithTimeout(func() error {
 				if err = c.Get(context.Background(), key, role); err != nil {
 					if k8serrors.IsNotFound(err) {
 						isDeleted = true

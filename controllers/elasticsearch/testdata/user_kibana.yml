@@ -1,4 +1,4 @@
-apiVersion: elasticsearchapi.k8s.webcenter.fr/v1alpha1
+apiVersion: elasticsearchapi.k8s.webcenter.fr/v1
 kind: User
 metadata:
   namespace: default

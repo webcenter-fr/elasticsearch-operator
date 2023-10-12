@@ -7,7 +7,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-func TestGetIndexLifecyclePolicyName(t *testing.T) {
+func TestIndexLifecyclePolicyGetExternalName(t *testing.T) {
 	var o *IndexLifecyclePolicy
 
 	// When name is set
@@ -21,7 +21,7 @@ func TestGetIndexLifecyclePolicyName(t *testing.T) {
 		},
 	}
 
-	assert.Equal(t, "test2", o.GetIndexLifecyclePolicyName())
+	assert.Equal(t, "test2", o.GetExternalName())
 
 	// When name isn't set
 	o = &IndexLifecyclePolicy{
@@ -32,5 +32,5 @@ func TestGetIndexLifecyclePolicyName(t *testing.T) {
 		Spec: IndexLifecyclePolicySpec{},
 	}
 
-	assert.Equal(t, "test", o.GetIndexLifecyclePolicyName())
+	assert.Equal(t, "test", o.GetExternalName())
 }

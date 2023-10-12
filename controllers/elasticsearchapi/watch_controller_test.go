@@ -7,17 +7,16 @@ import (
 
 	"emperror.dev/errors"
 	"github.com/disaster37/es-handler/v8/mocks"
-	"github.com/disaster37/es-handler/v8/patch"
+	"github.com/disaster37/generic-objectmatcher/patch"
+	"github.com/disaster37/operator-sdk-extra/pkg/controller"
+	"github.com/disaster37/operator-sdk-extra/pkg/helper"
 	"github.com/disaster37/operator-sdk-extra/pkg/test"
-	"github.com/golang/mock/gomock"
 	olivere "github.com/olivere/elastic/v7"
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
 	elasticsearchapicrd "github.com/webcenter-fr/elasticsearch-operator/apis/elasticsearchapi/v1"
 	"github.com/webcenter-fr/elasticsearch-operator/apis/shared"
-	"github.com/webcenter-fr/elasticsearch-operator/controllers/common"
-	localhelper "github.com/webcenter-fr/elasticsearch-operator/pkg/helper"
-	localtest "github.com/webcenter-fr/elasticsearch-operator/pkg/test"
+	"go.uber.org/mock/gomock"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	condition "k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -27,7 +26,7 @@ import (
 
 func (t *ElasticsearchapiControllerTestSuite) TestWatchReconciler() {
 	key := types.NamespacedName{
-		Name:      "t-watch-" + localhelper.RandomString(10),
+		Name:      "t-watch-" + helper.RandomString(10),
 		Namespace: "default",
 	}
 	watch := &elasticsearchapicrd.Watch{}
@@ -234,9 +233,9 @@ func doCreateWatcherStep() test.TestStep {
 		},
 		Check: func(t *testing.T, c client.Client, key types.NamespacedName, o client.Object, data map[string]any) (err error) {
 			watch := &elasticsearchapicrd.Watch{}
-			isCreated := true
+			isCreated := false
 
-			isTimeout, err := localtest.RunWithTimeout(func() error {
+			isTimeout, err := test.RunWithTimeout(func() error {
 				if err := c.Get(context.Background(), key, watch); err != nil {
 					t.Fatal(err)
 				}
@@ -251,9 +250,8 @@ func doCreateWatcherStep() test.TestStep {
 			if err != nil || isTimeout {
 				t.Fatalf("Failed to get Watch: %s", err.Error())
 			}
-			assert.True(t, condition.IsStatusConditionPresentAndEqual(watch.Status.Conditions, WatchCondition, metav1.ConditionTrue))
-			assert.True(t, condition.IsStatusConditionPresentAndEqual(watch.Status.Conditions, common.ReadyCondition, metav1.ConditionTrue))
-			assert.True(t, watch.Status.Sync)
+			assert.True(t, condition.IsStatusConditionPresentAndEqual(watch.Status.Conditions, controller.ReadyCondition.String(), metav1.ConditionTrue))
+			assert.True(t, *watch.Status.IsSync)
 
 			return nil
 		},
@@ -286,9 +284,9 @@ func doUpdateWatcherStep() test.TestStep {
 		},
 		Check: func(t *testing.T, c client.Client, key types.NamespacedName, o client.Object, data map[string]any) (err error) {
 			watch := &elasticsearchapicrd.Watch{}
-			isUpdated := true
+			isUpdated := false
 
-			isTimeout, err := localtest.RunWithTimeout(func() error {
+			isTimeout, err := test.RunWithTimeout(func() error {
 				if err := c.Get(context.Background(), key, watch); err != nil {
 					t.Fatal(err)
 				}
@@ -303,9 +301,8 @@ func doUpdateWatcherStep() test.TestStep {
 			if err != nil || isTimeout {
 				t.Fatalf("Failed to get Watch: %s", err.Error())
 			}
-			assert.True(t, condition.IsStatusConditionPresentAndEqual(watch.Status.Conditions, WatchCondition, metav1.ConditionTrue))
-			assert.True(t, condition.IsStatusConditionPresentAndEqual(watch.Status.Conditions, common.ReadyCondition, metav1.ConditionTrue))
-			assert.True(t, watch.Status.Sync)
+			assert.True(t, condition.IsStatusConditionPresentAndEqual(watch.Status.Conditions, controller.ReadyCondition.String(), metav1.ConditionTrue))
+			assert.True(t, *watch.Status.IsSync)
 
 			return nil
 		},
@@ -333,9 +330,9 @@ func doDeleteWatcherStep() test.TestStep {
 		},
 		Check: func(t *testing.T, c client.Client, key types.NamespacedName, o client.Object, data map[string]any) (err error) {
 			watch := &elasticsearchapicrd.Watch{}
-			isDeleted := true
+			isDeleted := false
 
-			isTimeout, err := localtest.RunWithTimeout(func() error {
+			isTimeout, err := test.RunWithTimeout(func() error {
 				if err = c.Get(context.Background(), key, watch); err != nil {
 					if k8serrors.IsNotFound(err) {
 						isDeleted = true

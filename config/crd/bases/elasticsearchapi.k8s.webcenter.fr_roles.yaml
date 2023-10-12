@@ -3,8 +3,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.11.1
-  creationTimestamp: null
+    controller-gen.kubebuilder.io/version: v0.13.0
   name: roles.elasticsearchapi.k8s.webcenter.fr
 spec:
   group: elasticsearchapi.k8s.webcenter.fr
@@ -16,9 +15,17 @@ spec:
   scope: Namespaced
   versions:
   - additionalPrinterColumns:
-    - jsonPath: .status.sync
+    - jsonPath: .status.isSync
       name: Sync
       type: boolean
+    - description: Is on error
+      jsonPath: .status.isOnError
+      name: Error
+      type: boolean
+    - description: health
+      jsonPath: .status.conditions[?(@.type=='Ready')].status
+      name: Ready
+      type: string
     - jsonPath: .metadata.creationTimestamp
       name: Age
       type: date
@@ -166,10 +173,14 @@ spec:
                   - type
                   type: object
                 type: array
-              originalObject:
-                type: string
-              sync:
+              isOnError:
                 type: boolean
+              isSync:
+                type: boolean
+              lastAppliedConfiguration:
+                type: string
+              lastErrorMessage:
+                type: string
             type: object
         type: object
     served: true

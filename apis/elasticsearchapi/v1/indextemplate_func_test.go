@@ -21,7 +21,7 @@ func TestGetIndexTemplateName(t *testing.T) {
 		},
 	}
 
-	assert.Equal(t, "test2", o.GetIndexTemplateName())
+	assert.Equal(t, "test2", o.GetExternalName())
 
 	// When name isn't set
 	o = &IndexTemplate{
@@ -32,7 +32,7 @@ func TestGetIndexTemplateName(t *testing.T) {
 		Spec: IndexTemplateSpec{},
 	}
 
-	assert.Equal(t, "test", o.GetIndexTemplateName())
+	assert.Equal(t, "test", o.GetExternalName())
 }
 
 func TestIndexIsRawTemplate(t *testing.T) {

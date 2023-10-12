@@ -15,44 +15,47 @@ package elasticsearchapi
 
 import (
 	"context"
-	"time"
 
-	"emperror.dev/errors"
 	eshandler "github.com/disaster37/es-handler/v8"
 	"github.com/disaster37/operator-sdk-extra/pkg/controller"
-	"github.com/disaster37/operator-sdk-extra/pkg/helper"
 	olivere "github.com/olivere/elastic/v7"
+	"github.com/sirupsen/logrus"
 	elasticsearchapicrd "github.com/webcenter-fr/elasticsearch-operator/apis/elasticsearchapi/v1"
 	"github.com/webcenter-fr/elasticsearch-operator/controllers/common"
-	localhelper "github.com/webcenter-fr/elasticsearch-operator/pkg/helper"
-	core "k8s.io/api/core/v1"
-	condition "k8s.io/apimachinery/pkg/api/meta"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/utils/strings"
+	"k8s.io/client-go/tools/record"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 const (
-	ComponentTemplateFinalizer = "componenttemplate.elasticsearchapi.k8s.webcenter.fr/finalizer"
-	ComponentTemplateCondition = "ComponentTemplate"
+	componentTemplateName = "componentTemplate"
 )
 
 // ComponentTemplateReconciler reconciles a component template object
 type ComponentTemplateReconciler struct {
-	Reconciler
-	client.Client
-	Scheme *runtime.Scheme
-	name   string
+	controller.Controller
+	controller.RemoteReconciler[*elasticsearchapicrd.ComponentTemplate, *olivere.IndicesGetComponentTemplate, eshandler.ElasticsearchHandler]
+	reconcilerAction controller.RemoteReconcilerAction[*elasticsearchapicrd.ComponentTemplate, *olivere.IndicesGetComponentTemplate, eshandler.ElasticsearchHandler]
+	name             string
 }
 
-func NewComponentTemplateReconciler(client client.Client, scheme *runtime.Scheme) *ComponentTemplateReconciler {
+func NewComponentTemplateReconciler(client client.Client, logger *logrus.Entry, recorder record.EventRecorder) controller.Controller {
 
 	r := &ComponentTemplateReconciler{
-		Client: client,
-		Scheme: scheme,
-		name:   "componentTemplate",
+		Controller: controller.NewBasicController(),
+		RemoteReconciler: controller.NewBasicRemoteReconciler[*elasticsearchapicrd.ComponentTemplate, *olivere.IndicesGetComponentTemplate, eshandler.ElasticsearchHandler](
+			client,
+			componentTemplateName,
+			"componenttemplate.elasticsearchapi.k8s.webcenter.fr/finalizer",
+			logger,
+			recorder,
+		),
+		reconcilerAction: newComponentTemplateReconciler(
+			client,
+			logger,
+			recorder,
+		),
+		name: componentTemplateName,
 	}
 
 	common.ControllerMetrics.WithLabelValues(r.name).Add(0)
@@ -76,16 +79,16 @@ func NewComponentTemplateReconciler(client client.Client, scheme *runtime.Scheme
 // For more details, check Reconcile and its Result here:
 // - https://pkg.go.dev/sigs.k8s.io/controller-runtime@v0.11.0/pkg/reconcile
 func (r *ComponentTemplateReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
-
-	reconciler, err := controller.NewStdReconciler(r.Client, ComponentTemplateFinalizer, r.reconciler, r.log, r.recorder)
-	if err != nil {
-		return ctrl.Result{}, err
-	}
-
 	ct := &elasticsearchapicrd.ComponentTemplate{}
 	data := map[string]any{}
 
-	return reconciler.Reconcile(ctx, req, ct, data)
+	return r.RemoteReconciler.Reconcile(
+		ctx,
+		req,
+		ct,
+		data,
+		r.reconcilerAction,
+	)
 }
 
 // SetupWithManager sets up the controller with the Manager.
@@ -93,247 +96,4 @@ func (r *ComponentTemplateReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&elasticsearchapicrd.ComponentTemplate{}).
 		Complete(r)
-}
-
-// Configure permit to init Elasticsearch handler
-func (r *ComponentTemplateReconciler) Configure(ctx context.Context, req ctrl.Request, resource client.Object) (meta any, err error) {
-	ct := resource.(*elasticsearchapicrd.ComponentTemplate)
-
-	// Init condition status if not exist
-	if condition.FindStatusCondition(ct.Status.Conditions, ComponentTemplateCondition) == nil {
-		condition.SetStatusCondition(&ct.Status.Conditions, metav1.Condition{
-			Type:   ComponentTemplateCondition,
-			Status: metav1.ConditionFalse,
-			Reason: "Initialize",
-		})
-	}
-
-	if condition.FindStatusCondition(ct.Status.Conditions, common.ReadyCondition) == nil {
-		condition.SetStatusCondition(&ct.Status.Conditions, metav1.Condition{
-			Type:   common.ReadyCondition,
-			Status: metav1.ConditionFalse,
-			Reason: "Initialize",
-		})
-	}
-
-	// Get elasticsearch handler / client
-	meta, err = GetElasticsearchHandler(ctx, ct, ct.Spec.ElasticsearchRef, r.Client, r.log)
-	if err != nil && ct.DeletionTimestamp.IsZero() {
-		return nil, err
-	}
-
-	return meta, nil
-}
-
-// Read permit to get current component template
-func (r *ComponentTemplateReconciler) Read(ctx context.Context, resource client.Object, data map[string]any, meta any) (res ctrl.Result, err error) {
-	ct := resource.(*elasticsearchapicrd.ComponentTemplate)
-
-	// esHandler can be empty when Elasticsearch cluster not yet ready or cluster is deleted
-	if meta == nil {
-		// reschedule if ressource not being on delete phase
-		if ct.DeletionTimestamp.IsZero() {
-			return ctrl.Result{RequeueAfter: 30 * time.Second}, nil
-		}
-
-		return res, nil
-	}
-
-	esHandler := meta.(eshandler.ElasticsearchHandler)
-
-	// Read component template from Elasticsearch
-	currentComponent, err := esHandler.ComponentTemplateGet(ct.GetComponentTemplateName())
-	if err != nil {
-		return res, errors.Wrap(err, "Unable to get component template from Elasticsearch")
-	}
-	data["current"] = currentComponent
-
-	// Generate expected component
-	expectedComponent, err := BuildComponentTemplate(ct)
-	if err != nil {
-		return res, errors.Wrap(err, "Error when generate expected component")
-	}
-	data["expected"] = expectedComponent
-
-	return res, nil
-}
-
-// Create add new component template
-func (r *ComponentTemplateReconciler) Create(ctx context.Context, resource client.Object, data map[string]interface{}, meta interface{}) (res ctrl.Result, err error) {
-
-	esHandler := meta.(eshandler.ElasticsearchHandler)
-	ct := resource.(*elasticsearchapicrd.ComponentTemplate)
-
-	// Create policy on Elasticsearch
-	expectedComponent, err := BuildComponentTemplate(ct)
-	if err != nil {
-		return res, errors.Wrap(err, "Error when convert current component template to expected component template")
-	}
-
-	if err = esHandler.ComponentTemplateUpdate(ct.GetComponentTemplateName(), expectedComponent); err != nil {
-		return res, errors.Wrap(err, "Error when update component template")
-	}
-
-	return res, nil
-}
-
-// Update permit to update current component template from Elasticsearch
-func (r *ComponentTemplateReconciler) Update(ctx context.Context, resource client.Object, data map[string]interface{}, meta interface{}) (res ctrl.Result, err error) {
-	return r.Create(ctx, resource, data, meta)
-}
-
-// Delete permit to delete component template from Elasticsearch
-func (r *ComponentTemplateReconciler) Delete(ctx context.Context, resource client.Object, data map[string]interface{}, meta interface{}) (err error) {
-	// Skip, ressource must be deleted and cluster not ready. Maybee cluster is already deleted
-	if meta == nil {
-		return nil
-	}
-
-	esHandler := meta.(eshandler.ElasticsearchHandler)
-	ct := resource.(*elasticsearchapicrd.ComponentTemplate)
-
-	if err = esHandler.ComponentTemplateDelete(ct.GetComponentTemplateName()); err != nil {
-		return errors.Wrap(err, "Error when delete elasticsearch component template")
-	}
-
-	return nil
-
-}
-
-// Diff permit to check if diff between actual and expected component template exist
-func (r *ComponentTemplateReconciler) Diff(resource client.Object, data map[string]interface{}, meta interface{}) (diff controller.Diff, err error) {
-	esHandler := meta.(eshandler.ElasticsearchHandler)
-	ct := resource.(*elasticsearchapicrd.ComponentTemplate)
-	var d any
-
-	d, err = helper.Get(data, "current")
-	if err != nil {
-		return diff, err
-	}
-	currentComponent := d.(*olivere.IndicesGetComponentTemplate)
-
-	d, err = helper.Get(data, "expected")
-	if err != nil {
-		return diff, err
-	}
-	expectedComponent := d.(*olivere.IndicesGetComponentTemplate)
-
-	var originalComponent *olivere.IndicesGetComponentTemplate
-	if ct.Status.OriginalObject != "" {
-		originalComponent = &olivere.IndicesGetComponentTemplate{}
-		if err = localhelper.UnZipBase64Decode(ct.Status.OriginalObject, originalComponent); err != nil {
-			return diff, err
-		}
-	}
-
-	diff = controller.Diff{
-		NeedCreate: false,
-		NeedUpdate: false,
-	}
-
-	if currentComponent == nil {
-		diff.NeedCreate = true
-		diff.Diff = "Component template not exist"
-
-		if err = localhelper.SetLastOriginal(ct, expectedComponent); err != nil {
-			return diff, err
-		}
-
-		return diff, nil
-	}
-
-	differ, err := esHandler.ComponentTemplateDiff(currentComponent, expectedComponent, originalComponent)
-	if err != nil {
-		return diff, err
-	}
-
-	if !differ.IsEmpty() {
-		diff.NeedUpdate = true
-		diff.Diff = string(differ.Patch)
-
-		if err = localhelper.SetLastOriginal(ct, expectedComponent); err != nil {
-			return diff, err
-		}
-
-		return diff, nil
-	}
-
-	return
-}
-
-// OnError permit to set status condition on the right state and record error
-func (r *ComponentTemplateReconciler) OnError(ctx context.Context, resource client.Object, data map[string]any, meta any, err error) {
-	ct := resource.(*elasticsearchapicrd.ComponentTemplate)
-
-	r.log.Error(err)
-
-	condition.SetStatusCondition(&ct.Status.Conditions, metav1.Condition{
-		Type:    ComponentTemplateCondition,
-		Status:  metav1.ConditionFalse,
-		Reason:  "Failed",
-		Message: strings.ShortenString(err.Error(), common.ShortenError),
-	})
-
-	condition.SetStatusCondition(&ct.Status.Conditions, metav1.Condition{
-		Type:   common.ReadyCondition,
-		Status: metav1.ConditionFalse,
-		Reason: "Error",
-	})
-
-	ct.Status.Sync = false
-}
-
-// OnSuccess permit to set status condition on the right state is everithink is good
-func (r *ComponentTemplateReconciler) OnSuccess(ctx context.Context, resource client.Object, data map[string]any, meta any, diff controller.Diff) (err error) {
-	ct := resource.(*elasticsearchapicrd.ComponentTemplate)
-
-	ct.Status.Sync = true
-
-	if condition.IsStatusConditionPresentAndEqual(ct.Status.Conditions, common.ReadyCondition, metav1.ConditionFalse) {
-		condition.SetStatusCondition(&ct.Status.Conditions, metav1.Condition{
-			Type:   common.ReadyCondition,
-			Reason: "Available",
-			Status: metav1.ConditionTrue,
-		})
-	}
-
-	if diff.NeedCreate {
-		condition.SetStatusCondition(&ct.Status.Conditions, metav1.Condition{
-			Type:    ComponentTemplateCondition,
-			Status:  metav1.ConditionTrue,
-			Reason:  "Success",
-			Message: "Component template successfully created",
-		})
-
-		r.recorder.Event(resource, core.EventTypeNormal, "Completed", "Component template successfully created")
-
-		return nil
-	}
-
-	if diff.NeedUpdate {
-		condition.SetStatusCondition(&ct.Status.Conditions, metav1.Condition{
-			Type:    ComponentTemplateCondition,
-			Status:  metav1.ConditionTrue,
-			Reason:  "Success",
-			Message: "Component template successfully updated",
-		})
-
-		r.recorder.Event(resource, core.EventTypeNormal, "Completed", "Component template successfully updated")
-
-		return nil
-	}
-
-	// Update condition status if needed
-	if condition.IsStatusConditionPresentAndEqual(ct.Status.Conditions, ComponentTemplateCondition, metav1.ConditionFalse) {
-		condition.SetStatusCondition(&ct.Status.Conditions, metav1.Condition{
-			Type:    ComponentTemplateCondition,
-			Reason:  "Success",
-			Status:  metav1.ConditionTrue,
-			Message: "Component template already set",
-		})
-
-		r.recorder.Event(resource, core.EventTypeNormal, "Completed", "Component template already set")
-	}
-
-	return nil
 }

@@ -17,6 +17,7 @@ limitations under the License.
 package v1
 
 import (
+	"github.com/disaster37/operator-sdk-extra/pkg/apis"
 	"github.com/webcenter-fr/elasticsearch-operator/apis/shared"
 	corev1 "k8s.io/api/core/v1"
 	policyv1 "k8s.io/api/policy/v1"
@@ -184,17 +185,7 @@ type MetricbeatStatus struct {
 	// INSERT ADDITIONAL STATUS FIELD - define observed state of cluster
 	// Important: Run "make" to regenerate code after modifying this file
 
-	// Phase is the current deployment phase
-	// +operator-sdk:csv:customresourcedefinitions:type=status
-	Phase string `json:"phase,omitempty"`
-
-	// IsError is true if controller is stuck on Error
-	// +operator-sdk:csv:customresourcedefinitions:type=status
-	IsError *bool `json:"isOnError,omitempty"`
-
-	// List of conditions
-	// +operator-sdk:csv:customresourcedefinitions:type=status
-	Conditions []metav1.Condition `json:"conditions,omitempty"`
+	apis.BasicMultiPhaseObjectStatus `json:",inline"`
 }
 
 //+kubebuilder:object:root=true
@@ -202,6 +193,11 @@ type MetricbeatStatus struct {
 //+kubebuilder:storageversion
 
 // Metricbeat is the Schema for the metricbeats API
+// +operator-sdk:csv:customresourcedefinitions:resources={{Ingress,networking.k8s.io/v1},{ConfigMap,v1},{Service,v1},{Secret,v1},{StatefulSet,apps/v1},{NetworkPolicy,networking.k8s.io/v1},{PodDisruptionBudget,policy/v1}}
+// +kubebuilder:printcolumn:name="Phase",type="string",JSONPath=".status.phase",description="Phase"
+// +kubebuilder:printcolumn:name="Error",type="boolean",JSONPath=".status.isOnError",description="Is on error"
+// +kubebuilder:printcolumn:name="Ready",type="string",JSONPath=".status.conditions[?(@.type=='Ready')].status",description="health"
+// +kubebuilder:printcolumn:name="Age",type="date",JSONPath=".metadata.creationTimestamp"
 type Metricbeat struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`

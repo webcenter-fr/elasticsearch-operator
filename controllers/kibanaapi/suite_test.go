@@ -1,13 +1,17 @@
 package kibanaapi
 
 import (
+	"context"
 	"path/filepath"
 	"testing"
 	"time"
 
+	"github.com/disaster37/go-kibana-rest/v8/kbapi"
+	kbhandler "github.com/disaster37/kb-handler/v8"
 	"github.com/disaster37/kb-handler/v8/mocks"
+	"github.com/disaster37/operator-sdk-extra/pkg/controller"
 	"github.com/disaster37/operator-sdk-extra/pkg/mock"
-	"github.com/golang/mock/gomock"
+	"github.com/disaster37/operator-sdk-extra/pkg/object"
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/suite"
 	beatcrd "github.com/webcenter-fr/elasticsearch-operator/apis/beat/v1"
@@ -17,6 +21,7 @@ import (
 	kibanacrd "github.com/webcenter-fr/elasticsearch-operator/apis/kibana/v1"
 	kibanaapicrd "github.com/webcenter-fr/elasticsearch-operator/apis/kibanaapi/v1"
 	logstashcrd "github.com/webcenter-fr/elasticsearch-operator/apis/logstash/v1"
+	"go.uber.org/mock/gomock"
 	"k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/rest"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -24,6 +29,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/envtest"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
+	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 	//+kubebuilder:scaffold:imports
 	//+kubebuilder:scaffold:imports
 )
@@ -113,44 +119,64 @@ func (t *KibanaapiControllerTestSuite) SetupSuite() {
 	t.k8sClient = k8sClient
 
 	// Add indexers
-	kibanaapicrd.MustSetUpIndex(k8sManager)
-	elasticsearchapicrd.MustSetUpIndex(k8sManager)
-	elasticsearchcrd.MustSetUpIndex(k8sManager)
-	kibanacrd.MustSetUpIndex(k8sManager)
-	logstashcrd.MustSetUpIndex(k8sManager)
-	beatcrd.MustSetUpIndexForFilebeat(k8sManager)
-	beatcrd.MustSetUpIndexForMetricbeat(k8sManager)
-	cerebrocrd.MustSetUpIndexCerebro(k8sManager)
-	cerebrocrd.MustSetUpIndexHost(k8sManager)
+	if err = controller.SetupIndexerWithManager(
+		k8sManager,
+		elasticsearchcrd.SetupElasticsearchIndexer,
+		kibanacrd.SetupKibanaIndexer,
+		logstashcrd.SetupLogstashIndexer,
+		beatcrd.SetupFilebeatIndexer,
+		beatcrd.SetupMetricbeatIndexer,
+		cerebrocrd.SetupCerebroIndexer,
+		cerebrocrd.SetupHostIndexer,
+		elasticsearchapicrd.SetupLicenceIndexer,
+		elasticsearchapicrd.SetupUserIndexexer,
+	); err != nil {
+		panic(err)
+	}
 
 	// Init controllers
 
-	roleReconciler := NewRoleReconciler(k8sClient, scheme.Scheme)
-	roleReconciler.SetLogger(logrus.WithFields(logrus.Fields{
-		"type": "kibanaRoleController",
-	}))
-	roleReconciler.SetRecorder(k8sManager.GetEventRecorderFor("kibana-role-controller"))
-	roleReconciler.SetReconciler(mock.NewMockReconciler(roleReconciler, t.mockKibanaHandler))
+	roleReconciler := NewRoleReconciler(
+		k8sClient,
+		logrus.NewEntry(logrus.StandardLogger()),
+		k8sManager.GetEventRecorderFor("kibana-role-controller"),
+	)
+	roleReconciler.(*RoleReconciler).reconcilerAction = mock.NewMockRemoteReconcilerAction[*kibanaapicrd.Role, *kbapi.KibanaRole, kbhandler.KibanaHandler](
+		roleReconciler.(*RoleReconciler).reconcilerAction,
+		func(ctx context.Context, req reconcile.Request, o object.RemoteObject) (handler controller.RemoteExternalReconciler[*kibanaapicrd.Role, *kbapi.KibanaRole, kbhandler.KibanaHandler], res reconcile.Result, err error) {
+			return newRoleApiClient(t.mockKibanaHandler), res, nil
+		},
+	)
 	if err = roleReconciler.SetupWithManager(k8sManager); err != nil {
 		panic(err)
 	}
 
-	spaceReconciler := NewUserSpaceReconciler(k8sClient, scheme.Scheme)
-	spaceReconciler.SetLogger(logrus.WithFields(logrus.Fields{
-		"type": "kibanaUserSpaceController",
-	}))
-	spaceReconciler.SetRecorder(k8sManager.GetEventRecorderFor("kibana-user-space-controller"))
-	spaceReconciler.SetReconciler(mock.NewMockReconciler(spaceReconciler, t.mockKibanaHandler))
+	spaceReconciler := NewUserSpaceReconciler(
+		k8sClient,
+		logrus.NewEntry(logrus.StandardLogger()),
+		k8sManager.GetEventRecorderFor("kibana-user-space-controller"),
+	)
+	spaceReconciler.(*UserSpaceReconciler).reconcilerAction = mock.NewMockRemoteReconcilerAction[*kibanaapicrd.UserSpace, *kbapi.KibanaSpace, kbhandler.KibanaHandler](
+		spaceReconciler.(*UserSpaceReconciler).reconcilerAction,
+		func(ctx context.Context, req reconcile.Request, o object.RemoteObject) (handler controller.RemoteExternalReconciler[*kibanaapicrd.UserSpace, *kbapi.KibanaSpace, kbhandler.KibanaHandler], res reconcile.Result, err error) {
+			return newUserSpaceApiClient(t.mockKibanaHandler), res, nil
+		},
+	)
 	if err = spaceReconciler.SetupWithManager(k8sManager); err != nil {
 		panic(err)
 	}
 
-	pipelineReconciler := NewLogstashPipelineReconciler(k8sClient, scheme.Scheme)
-	pipelineReconciler.SetLogger(logrus.WithFields(logrus.Fields{
-		"type": "kibanaLogstashPipelineController",
-	}))
-	pipelineReconciler.SetRecorder(k8sManager.GetEventRecorderFor("kibana-logstash-pipeline-controller"))
-	pipelineReconciler.SetReconciler(mock.NewMockReconciler(pipelineReconciler, t.mockKibanaHandler))
+	pipelineReconciler := NewLogstashPipelineReconciler(
+		k8sClient,
+		logrus.NewEntry(logrus.StandardLogger()),
+		k8sManager.GetEventRecorderFor("kibana-logstash-pipeline-controller"),
+	)
+	pipelineReconciler.(*LogstashPipelineReconciler).reconcilerAction = mock.NewMockRemoteReconcilerAction[*kibanaapicrd.LogstashPipeline, *kbapi.LogstashPipeline, kbhandler.KibanaHandler](
+		pipelineReconciler.(*LogstashPipelineReconciler).reconcilerAction,
+		func(ctx context.Context, req reconcile.Request, o object.RemoteObject) (handler controller.RemoteExternalReconciler[*kibanaapicrd.LogstashPipeline, *kbapi.LogstashPipeline, kbhandler.KibanaHandler], res reconcile.Result, err error) {
+			return newLogstashPipelineApiClient(t.mockKibanaHandler), res, nil
+		},
+	)
 	if err = pipelineReconciler.SetupWithManager(k8sManager); err != nil {
 		panic(err)
 	}

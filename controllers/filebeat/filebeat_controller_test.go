@@ -7,15 +7,14 @@ import (
 	"time"
 
 	"github.com/disaster37/k8s-objectmatcher/patch"
+	"github.com/disaster37/operator-sdk-extra/pkg/controller"
+	"github.com/disaster37/operator-sdk-extra/pkg/helper"
 	"github.com/disaster37/operator-sdk-extra/pkg/test"
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
 	beatcrd "github.com/webcenter-fr/elasticsearch-operator/apis/beat/v1"
 	elasticsearchcrd "github.com/webcenter-fr/elasticsearch-operator/apis/elasticsearch/v1"
 	"github.com/webcenter-fr/elasticsearch-operator/apis/shared"
-	elasticsearchcontrollers "github.com/webcenter-fr/elasticsearch-operator/controllers/elasticsearch"
-	localhelper "github.com/webcenter-fr/elasticsearch-operator/pkg/helper"
-	localtest "github.com/webcenter-fr/elasticsearch-operator/pkg/test"
 	appv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	networkingv1 "k8s.io/api/networking/v1"
@@ -28,7 +27,7 @@ import (
 
 func (t *FilebeatControllerTestSuite) TestFilebeatController() {
 	key := types.NamespacedName{
-		Name:      "t-fb-" + localhelper.RandomString(10),
+		Name:      "t-fb-" + helper.RandomString(10),
 		Namespace: "default",
 	}
 	fb := &beatcrd.Filebeat{}
@@ -76,14 +75,14 @@ func doCreateFilebeatStep() test.TestStep {
 				return err
 			}
 
-			isTimeout, err := localtest.RunWithTimeout(func() error {
+			isTimeout, err := test.RunWithTimeout(func() error {
 				if err := c.Get(context.Background(), key, es); err != nil {
 					return err
 				}
 
 				// In envtest, no kubelet
 				// So the Elasticsearch condition never set as true
-				if condition.FindStatusCondition(es.Status.Conditions, elasticsearchcontrollers.ElasticsearchCondition.String()) != nil && condition.FindStatusCondition(es.Status.Conditions, elasticsearchcontrollers.ElasticsearchCondition.String()).Reason != "Initialize" {
+				if condition.FindStatusCondition(es.Status.Conditions, controller.ReadyCondition.String()) != nil && condition.FindStatusCondition(es.Status.Conditions, controller.ReadyCondition.String()).Reason != "Initialize" {
 					return nil
 				}
 
@@ -165,14 +164,14 @@ queue.type: persisted
 				sts *appv1.StatefulSet
 			)
 
-			isTimeout, err := localtest.RunWithTimeout(func() error {
+			isTimeout, err := test.RunWithTimeout(func() error {
 				if err := c.Get(context.Background(), key, fb); err != nil {
 					t.Fatal("Filebeat not found")
 				}
 
 				// In envtest, no kubelet
 				// So the Filebeat condition never set as true
-				if condition.FindStatusCondition(fb.Status.Conditions, FilebeatCondition.String()) != nil && condition.FindStatusCondition(fb.Status.Conditions, FilebeatCondition.String()).Reason != "Initialize" {
+				if condition.FindStatusCondition(fb.Status.Conditions, controller.ReadyCondition.String()) != nil && condition.FindStatusCondition(fb.Status.Conditions, controller.ReadyCondition.String()).Reason != "Initialize" {
 					return nil
 				}
 
@@ -257,8 +256,8 @@ queue.type: persisted
 			assert.NotEmpty(t, sts.Annotations[patch.LastAppliedConfig])
 
 			// Status must be update
-			assert.NotEmpty(t, fb.Status.Phase)
-			assert.False(t, *fb.Status.IsError)
+			assert.NotEmpty(t, fb.Status.PhaseName)
+			assert.False(t, *fb.Status.IsOnError)
 
 			return nil
 		},
@@ -305,14 +304,14 @@ func doUpdateFilebeatStep() test.TestStep {
 
 			lastVersion := data["lastVersion"].(string)
 
-			isTimeout, err := localtest.RunWithTimeout(func() error {
+			isTimeout, err := test.RunWithTimeout(func() error {
 				if err := c.Get(context.Background(), key, fb); err != nil {
 					t.Fatal("Filebeat not found")
 				}
 
 				// In envtest, no kubelet
 				// So the Filebeat condition never set as true
-				if lastVersion != fb.ResourceVersion && (fb.Status.Phase == FilebeatPhaseStarting.String()) {
+				if lastVersion != fb.ResourceVersion && (fb.Status.PhaseName == controller.StartingPhase) {
 					return nil
 				}
 
@@ -406,8 +405,8 @@ func doUpdateFilebeatStep() test.TestStep {
 			assert.Equal(t, "fu", sts.Labels["test"])
 
 			// Status must be update
-			assert.NotEmpty(t, fb.Status.Phase)
-			assert.False(t, *fb.Status.IsError)
+			assert.NotEmpty(t, fb.Status.PhaseName)
+			assert.False(t, *fb.Status.IsOnError)
 
 			return nil
 		},

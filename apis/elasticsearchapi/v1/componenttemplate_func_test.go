@@ -7,7 +7,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-func TestGetComponentTemplateName(t *testing.T) {
+func TestComponentTemplateGetExternalName(t *testing.T) {
 	var o *ComponentTemplate
 
 	// When name is set
@@ -21,7 +21,7 @@ func TestGetComponentTemplateName(t *testing.T) {
 		},
 	}
 
-	assert.Equal(t, "test2", o.GetComponentTemplateName())
+	assert.Equal(t, "test2", o.GetExternalName())
 
 	// When name isn't set
 	o = &ComponentTemplate{
@@ -32,7 +32,7 @@ func TestGetComponentTemplateName(t *testing.T) {
 		Spec: ComponentTemplateSpec{},
 	}
 
-	assert.Equal(t, "test", o.GetComponentTemplateName())
+	assert.Equal(t, "test", o.GetExternalName())
 }
 
 func TestIsRawTemplate(t *testing.T) {

@@ -7,6 +7,8 @@ import (
 	"time"
 
 	"github.com/disaster37/k8s-objectmatcher/patch"
+	"github.com/disaster37/operator-sdk-extra/pkg/controller"
+	"github.com/disaster37/operator-sdk-extra/pkg/helper"
 	"github.com/disaster37/operator-sdk-extra/pkg/test"
 	monitoringv1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1"
 	"github.com/sirupsen/logrus"
@@ -14,9 +16,6 @@ import (
 	elasticsearchcrd "github.com/webcenter-fr/elasticsearch-operator/apis/elasticsearch/v1"
 	kibanacrd "github.com/webcenter-fr/elasticsearch-operator/apis/kibana/v1"
 	"github.com/webcenter-fr/elasticsearch-operator/apis/shared"
-	elasticsearchcontrollers "github.com/webcenter-fr/elasticsearch-operator/controllers/elasticsearch"
-	localhelper "github.com/webcenter-fr/elasticsearch-operator/pkg/helper"
-	localtest "github.com/webcenter-fr/elasticsearch-operator/pkg/test"
 	appv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	networkingv1 "k8s.io/api/networking/v1"
@@ -29,7 +28,7 @@ import (
 
 func (t *KibanaControllerTestSuite) TestKibanaController() {
 	key := types.NamespacedName{
-		Name:      "t-kb-" + localhelper.RandomString(10),
+		Name:      "t-kb-" + helper.RandomString(10),
 		Namespace: "default",
 	}
 	kb := &kibanacrd.Kibana{}
@@ -77,14 +76,14 @@ func doCreateKibanaStep() test.TestStep {
 				return err
 			}
 
-			isTimeout, err := localtest.RunWithTimeout(func() error {
+			isTimeout, err := test.RunWithTimeout(func() error {
 				if err := c.Get(context.Background(), key, es); err != nil {
 					return err
 				}
 
 				// In envtest, no kubelet
 				// So the Elasticsearch condition never set as true
-				if condition.FindStatusCondition(es.Status.Conditions, elasticsearchcontrollers.ElasticsearchCondition.String()) != nil && condition.FindStatusCondition(es.Status.Conditions, elasticsearchcontrollers.ElasticsearchCondition.String()).Reason != "Initialize" {
+				if condition.FindStatusCondition(es.Status.Conditions, controller.ReadyCondition.String()) != nil && condition.FindStatusCondition(es.Status.Conditions, controller.ReadyCondition.String()).Reason != "Initialize" {
 					return nil
 				}
 
@@ -150,14 +149,14 @@ func doCreateKibanaStep() test.TestStep {
 				pm  *monitoringv1.PodMonitor
 			)
 
-			isTimeout, err := localtest.RunWithTimeout(func() error {
+			isTimeout, err := test.RunWithTimeout(func() error {
 				if err := c.Get(context.Background(), key, kb); err != nil {
 					t.Fatal("Kibana not found")
 				}
 
 				// In envtest, no kubelet
 				// So the Kibana condition never set as true
-				if condition.FindStatusCondition(kb.Status.Conditions, KibanaCondition.String()) != nil && condition.FindStatusCondition(kb.Status.Conditions, KibanaCondition.String()).Reason != "Initialize" {
+				if condition.FindStatusCondition(kb.Status.Conditions, controller.ReadyCondition.String()) != nil && condition.FindStatusCondition(kb.Status.Conditions, controller.ReadyCondition.String()).Reason != "Initialize" {
 					return nil
 				}
 
@@ -268,9 +267,9 @@ func doCreateKibanaStep() test.TestStep {
 			assert.NotEmpty(t, pm.Annotations[patch.LastAppliedConfig])
 
 			// Status must be update
-			assert.NotEmpty(t, kb.Status.Phase)
+			assert.NotEmpty(t, kb.Status.PhaseName)
 			assert.NotEmpty(t, kb.Status.Url)
-			assert.False(t, *kb.Status.IsError)
+			assert.False(t, *kb.Status.IsOnError)
 
 			return nil
 		},
@@ -319,14 +318,14 @@ func doUpdateKibanaStep() test.TestStep {
 
 			lastVersion := data["lastVersion"].(string)
 
-			isTimeout, err := localtest.RunWithTimeout(func() error {
+			isTimeout, err := test.RunWithTimeout(func() error {
 				if err := c.Get(context.Background(), key, kb); err != nil {
 					t.Fatal("Kibana not found")
 				}
 
 				// In envtest, no kubelet
 				// So the Kibana condition never set as true
-				if lastVersion != kb.ResourceVersion && (kb.Status.Phase == KibanaPhaseStarting.String()) {
+				if lastVersion != kb.ResourceVersion && (kb.Status.PhaseName == controller.StartingPhase) {
 					return nil
 				}
 
@@ -448,9 +447,9 @@ func doUpdateKibanaStep() test.TestStep {
 			assert.NotEmpty(t, pm.Annotations[patch.LastAppliedConfig])
 
 			// Status must be update
-			assert.NotEmpty(t, kb.Status.Phase)
+			assert.NotEmpty(t, kb.Status.PhaseName)
 			assert.NotEmpty(t, kb.Status.Url)
-			assert.False(t, *kb.Status.IsError)
+			assert.False(t, *kb.Status.IsOnError)
 
 			return nil
 		},

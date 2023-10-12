@@ -7,12 +7,12 @@ import (
 	"time"
 
 	"github.com/disaster37/k8s-objectmatcher/patch"
+	"github.com/disaster37/operator-sdk-extra/pkg/controller"
+	"github.com/disaster37/operator-sdk-extra/pkg/helper"
 	"github.com/disaster37/operator-sdk-extra/pkg/test"
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
 	cerebrocrd "github.com/webcenter-fr/elasticsearch-operator/apis/cerebro/v1"
-	localhelper "github.com/webcenter-fr/elasticsearch-operator/pkg/helper"
-	localtest "github.com/webcenter-fr/elasticsearch-operator/pkg/test"
 	appv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	networkingv1 "k8s.io/api/networking/v1"
@@ -24,7 +24,7 @@ import (
 
 func (t *CerebroControllerTestSuite) TestCerebroController() {
 	key := types.NamespacedName{
-		Name:      "t-cb-" + localhelper.RandomString(10),
+		Name:      "t-cb-" + helper.RandomString(10),
 		Namespace: "default",
 	}
 	cb := &cerebrocrd.Cerebro{}
@@ -87,14 +87,14 @@ func doCreateCerebroStep() test.TestStep {
 				dpl *appv1.Deployment
 			)
 
-			isTimeout, err := localtest.RunWithTimeout(func() error {
+			isTimeout, err := test.RunWithTimeout(func() error {
 				if err := c.Get(context.Background(), key, cb); err != nil {
 					t.Fatal("Cerebro not found")
 				}
 
 				// In envtest, no kubelet
 				// So the condition never set as true
-				if condition.FindStatusCondition(cb.Status.Conditions, CerebroCondition.String()) != nil && condition.FindStatusCondition(cb.Status.Conditions, CerebroCondition.String()).Reason != "Initialize" {
+				if condition.FindStatusCondition(cb.Status.Conditions, controller.ReadyCondition.String()) != nil && condition.FindStatusCondition(cb.Status.Conditions, controller.ReadyCondition.String()).Reason != "Initialize" {
 					return nil
 				}
 
@@ -155,9 +155,9 @@ func doCreateCerebroStep() test.TestStep {
 			assert.NotEmpty(t, dpl.Annotations[patch.LastAppliedConfig])
 
 			// Status must be update
-			assert.NotEmpty(t, cb.Status.Phase)
+			assert.NotEmpty(t, cb.Status.PhaseName)
 			assert.NotEmpty(t, cb.Status.Url)
-			assert.False(t, *cb.Status.IsError)
+			assert.False(t, *cb.Status.IsOnError)
 
 			return nil
 		},
@@ -203,14 +203,14 @@ func doUpdateCerebroStep() test.TestStep {
 
 			lastVersion := data["lastVersion"].(string)
 
-			isTimeout, err := localtest.RunWithTimeout(func() error {
+			isTimeout, err := test.RunWithTimeout(func() error {
 				if err := c.Get(context.Background(), key, cb); err != nil {
 					t.Fatal("Cerebro not found")
 				}
 
 				// In envtest, no kubelet
 				// So the condition never set as true
-				if lastVersion != cb.ResourceVersion && (cb.Status.Phase == CerebroPhaseStarting.String()) {
+				if lastVersion != cb.ResourceVersion && (cb.Status.PhaseName == controller.StartingPhase) {
 					return nil
 				}
 
@@ -277,9 +277,9 @@ func doUpdateCerebroStep() test.TestStep {
 			assert.Equal(t, "fu", dpl.Labels["test"])
 
 			// Status must be update
-			assert.NotEmpty(t, cb.Status.Phase)
+			assert.NotEmpty(t, cb.Status.PhaseName)
 			assert.NotEmpty(t, cb.Status.Url)
-			assert.False(t, *cb.Status.IsError)
+			assert.False(t, *cb.Status.IsOnError)
 
 			return nil
 		},

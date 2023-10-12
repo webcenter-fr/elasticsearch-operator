@@ -7,17 +7,16 @@ import (
 
 	"emperror.dev/errors"
 	"github.com/disaster37/es-handler/v8/mocks"
-	"github.com/disaster37/es-handler/v8/patch"
+	"github.com/disaster37/generic-objectmatcher/patch"
+	"github.com/disaster37/operator-sdk-extra/pkg/controller"
+	"github.com/disaster37/operator-sdk-extra/pkg/helper"
 	"github.com/disaster37/operator-sdk-extra/pkg/test"
-	"github.com/golang/mock/gomock"
 	olivere "github.com/olivere/elastic/v7"
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
 	elasticsearchapicrd "github.com/webcenter-fr/elasticsearch-operator/apis/elasticsearchapi/v1"
 	"github.com/webcenter-fr/elasticsearch-operator/apis/shared"
-	"github.com/webcenter-fr/elasticsearch-operator/controllers/common"
-	localhelper "github.com/webcenter-fr/elasticsearch-operator/pkg/helper"
-	localtest "github.com/webcenter-fr/elasticsearch-operator/pkg/test"
+	"go.uber.org/mock/gomock"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	condition "k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -27,7 +26,7 @@ import (
 
 func (t *ElasticsearchapiControllerTestSuite) TestUserReconciler() {
 	key := types.NamespacedName{
-		Name:      "t-user-" + localhelper.RandomString(10),
+		Name:      "t-user-" + helper.RandomString(10),
 		Namespace: "default",
 	}
 	user := &elasticsearchapicrd.User{}
@@ -184,7 +183,7 @@ func doCreateUserStep() test.TestStep {
 			user := &elasticsearchapicrd.User{}
 			isCreated := false
 
-			isTimeout, err := localtest.RunWithTimeout(func() error {
+			isTimeout, err := test.RunWithTimeout(func() error {
 				if err := c.Get(context.Background(), key, user); err != nil {
 					t.Fatal(err)
 				}
@@ -199,9 +198,8 @@ func doCreateUserStep() test.TestStep {
 			if err != nil || isTimeout {
 				t.Fatalf("Failed to get user: %s", err.Error())
 			}
-			assert.True(t, condition.IsStatusConditionPresentAndEqual(user.Status.Conditions, UserCondition, metav1.ConditionTrue))
-			assert.True(t, condition.IsStatusConditionPresentAndEqual(user.Status.Conditions, common.ReadyCondition, metav1.ConditionTrue))
-			assert.True(t, user.Status.Sync)
+			assert.True(t, condition.IsStatusConditionPresentAndEqual(user.Status.Conditions, controller.ReadyCondition.String(), metav1.ConditionTrue))
+			assert.True(t, *user.Status.IsSync)
 
 			return nil
 		},
@@ -230,7 +228,7 @@ func doUpdateUserStep() test.TestStep {
 			user := &elasticsearchapicrd.User{}
 			isUpdated := false
 
-			isTimeout, err := localtest.RunWithTimeout(func() error {
+			isTimeout, err := test.RunWithTimeout(func() error {
 				if err := c.Get(context.Background(), key, user); err != nil {
 					t.Fatal(err)
 				}
@@ -245,9 +243,8 @@ func doUpdateUserStep() test.TestStep {
 			if err != nil || isTimeout {
 				t.Fatalf("Failed to get User: %s", err.Error())
 			}
-			assert.True(t, condition.IsStatusConditionPresentAndEqual(user.Status.Conditions, UserCondition, metav1.ConditionTrue))
-			assert.True(t, condition.IsStatusConditionPresentAndEqual(user.Status.Conditions, common.ReadyCondition, metav1.ConditionTrue))
-			assert.True(t, user.Status.Sync)
+			assert.True(t, condition.IsStatusConditionPresentAndEqual(user.Status.Conditions, controller.ReadyCondition.String(), metav1.ConditionTrue))
+			assert.True(t, *user.Status.IsSync)
 
 			return nil
 		},
@@ -276,7 +273,7 @@ func doUpdateUserPasswordHashStep() test.TestStep {
 			user := &elasticsearchapicrd.User{}
 			isUpdated := false
 
-			isTimeout, err := localtest.RunWithTimeout(func() error {
+			isTimeout, err := test.RunWithTimeout(func() error {
 				if err := c.Get(context.Background(), key, user); err != nil {
 					t.Fatal(err)
 				}
@@ -291,9 +288,8 @@ func doUpdateUserPasswordHashStep() test.TestStep {
 			if err != nil || isTimeout {
 				t.Fatalf("Failed to get User: %s", err.Error())
 			}
-			assert.True(t, condition.IsStatusConditionPresentAndEqual(user.Status.Conditions, UserCondition, metav1.ConditionTrue))
-			assert.True(t, condition.IsStatusConditionPresentAndEqual(user.Status.Conditions, common.ReadyCondition, metav1.ConditionTrue))
-			assert.True(t, user.Status.Sync)
+			assert.True(t, condition.IsStatusConditionPresentAndEqual(user.Status.Conditions, controller.ReadyCondition.String(), metav1.ConditionTrue))
+			assert.True(t, *user.Status.IsSync)
 
 			return nil
 		},
@@ -322,7 +318,7 @@ func doDeleteUserStep() test.TestStep {
 			user := &elasticsearchapicrd.User{}
 			isDeleted := false
 
-			isTimeout, err := localtest.RunWithTimeout(func() error {
+			isTimeout, err := test.RunWithTimeout(func() error {
 				if err = c.Get(context.Background(), key, user); err != nil {
 					if k8serrors.IsNotFound(err) {
 						isDeleted = true

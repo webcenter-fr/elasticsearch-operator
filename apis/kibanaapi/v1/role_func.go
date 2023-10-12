@@ -1,8 +1,15 @@
 package v1
 
-// GetRoleName return the role name
+import "github.com/disaster37/operator-sdk-extra/pkg/object"
+
+// GetStatus return the status object
+func (o *Role) GetStatus() object.RemoteObjectStatus {
+	return &o.Status
+}
+
+// GetExternalName return the role name
 // If name is empty, it use the ressource name
-func (o *Role) GetRoleName() string {
+func (o *Role) GetExternalName() string {
 	if o.Spec.Name == "" {
 		return o.Name
 	}

@@ -1,8 +1,15 @@
 package v1
 
-// GetUserSpaceID return the user space ID
+import "github.com/disaster37/operator-sdk-extra/pkg/object"
+
+// GetStatus return the status object
+func (o *UserSpace) GetStatus() object.RemoteObjectStatus {
+	return &o.Status
+}
+
+// GetExternalName return the user space ID
 // If name is empty, it use the ressource name
-func (o *UserSpace) GetUserSpaceID() string {
+func (o *UserSpace) GetExternalName() string {
 	if o.Spec.ID == "" {
 		return o.Name
 	}

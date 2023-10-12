@@ -7,16 +7,15 @@ import (
 
 	"emperror.dev/errors"
 	"github.com/disaster37/es-handler/v8/mocks"
+	"github.com/disaster37/operator-sdk-extra/pkg/controller"
+	"github.com/disaster37/operator-sdk-extra/pkg/helper"
 	"github.com/disaster37/operator-sdk-extra/pkg/test"
-	"github.com/golang/mock/gomock"
 	olivere "github.com/olivere/elastic/v7"
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
 	elasticsearchapicrd "github.com/webcenter-fr/elasticsearch-operator/apis/elasticsearchapi/v1"
 	"github.com/webcenter-fr/elasticsearch-operator/apis/shared"
-	"github.com/webcenter-fr/elasticsearch-operator/controllers/common"
-	localhelper "github.com/webcenter-fr/elasticsearch-operator/pkg/helper"
-	localtest "github.com/webcenter-fr/elasticsearch-operator/pkg/test"
+	"go.uber.org/mock/gomock"
 	core "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	condition "k8s.io/apimachinery/pkg/api/meta"
@@ -28,7 +27,7 @@ import (
 
 func (t *ElasticsearchapiControllerTestSuite) TestLicenseReconciler() {
 	key := types.NamespacedName{
-		Name:      "t-license-" + localhelper.RandomString(10),
+		Name:      "t-license-" + helper.RandomString(10),
 		Namespace: "default",
 	}
 	license := &elasticsearchapicrd.License{}
@@ -185,11 +184,11 @@ func doEnableBasicLicenseStep() test.TestStep {
 		Check: func(t *testing.T, c client.Client, key types.NamespacedName, o client.Object, data map[string]any) (err error) {
 			license := &elasticsearchapicrd.License{}
 
-			isTimeout, err := localtest.RunWithTimeout(func() error {
+			isTimeout, err := test.RunWithTimeout(func() error {
 				if err := c.Get(context.Background(), key, license); err != nil {
 					t.Fatal(err)
 				}
-				if !condition.IsStatusConditionPresentAndEqual(license.Status.Conditions, LicenseCondition, metav1.ConditionTrue) {
+				if !condition.IsStatusConditionPresentAndEqual(license.Status.Conditions, controller.ReadyCondition.String(), metav1.ConditionTrue) {
 					return errors.New("Not yet created")
 				}
 				return nil
@@ -198,11 +197,9 @@ func doEnableBasicLicenseStep() test.TestStep {
 				t.Fatalf("Failed to get License: %s", err.Error())
 			}
 			assert.Empty(t, license.Status.ExpireAt)
-			assert.Empty(t, license.Status.LicenseChecksum)
 			assert.Equal(t, "basic", license.Status.LicenseType)
-			assert.True(t, condition.IsStatusConditionPresentAndEqual(license.Status.Conditions, LicenseCondition, metav1.ConditionTrue))
-			assert.True(t, condition.IsStatusConditionPresentAndEqual(license.Status.Conditions, common.ReadyCondition, metav1.ConditionTrue))
-			assert.True(t, license.Status.Sync)
+			assert.True(t, condition.IsStatusConditionPresentAndEqual(license.Status.Conditions, controller.ReadyCondition.String(), metav1.ConditionTrue))
+			assert.True(t, *license.Status.IsSync)
 
 			return nil
 		},
@@ -229,9 +226,9 @@ func doDeleteBasicLicenseStep() test.TestStep {
 		},
 		Check: func(t *testing.T, c client.Client, key types.NamespacedName, o client.Object, data map[string]any) (err error) {
 			license := &elasticsearchapicrd.License{}
-			isDeleted := true
+			isDeleted := false
 
-			isTimeout, err := localtest.RunWithTimeout(func() error {
+			isTimeout, err := test.RunWithTimeout(func() error {
 				if err = c.Get(context.Background(), key, license); err != nil {
 					if k8serrors.IsNotFound(err) {
 						isDeleted = true
@@ -312,11 +309,11 @@ func doUpdateToEnterpriseLicenseStep() test.TestStep {
 		Check: func(t *testing.T, c client.Client, key types.NamespacedName, o client.Object, data map[string]any) (err error) {
 			license := &elasticsearchapicrd.License{}
 
-			isTimeout, err := localtest.RunWithTimeout(func() error {
+			isTimeout, err := test.RunWithTimeout(func() error {
 				if err := c.Get(context.Background(), key, license); err != nil {
 					t.Fatal(err)
 				}
-				if !condition.IsStatusConditionPresentAndEqual(license.Status.Conditions, LicenseCondition, metav1.ConditionTrue) {
+				if !condition.IsStatusConditionPresentAndEqual(license.Status.Conditions, controller.ReadyCondition.String(), metav1.ConditionTrue) {
 					return errors.New("Not yet created")
 				}
 				return nil
@@ -325,11 +322,9 @@ func doUpdateToEnterpriseLicenseStep() test.TestStep {
 				t.Fatalf("Failed to get License: %s", err.Error())
 			}
 			assert.NotEmpty(t, license.Status.ExpireAt)
-			assert.NotEmpty(t, license.Status.LicenseChecksum)
 			assert.Equal(t, "gold", license.Status.LicenseType)
-			assert.True(t, condition.IsStatusConditionPresentAndEqual(license.Status.Conditions, LicenseCondition, metav1.ConditionTrue))
-			assert.True(t, condition.IsStatusConditionPresentAndEqual(license.Status.Conditions, common.ReadyCondition, metav1.ConditionTrue))
-			assert.True(t, license.Status.Sync)
+			assert.True(t, condition.IsStatusConditionPresentAndEqual(license.Status.Conditions, controller.ReadyCondition.String(), metav1.ConditionTrue))
+			assert.True(t, *license.Status.IsSync)
 
 			return nil
 		},
@@ -345,8 +340,6 @@ func doUpdateEnterpriseLicenseStep() test.TestStep {
 			if o == nil {
 				return errors.New("License is null")
 			}
-			license := o.(*elasticsearchapicrd.License)
-			data["licenseChecksum"] = license.Status.LicenseChecksum
 
 			secret := &core.Secret{}
 
@@ -379,7 +372,7 @@ func doUpdateEnterpriseLicenseStep() test.TestStep {
 			license := &elasticsearchapicrd.License{}
 			isUpdated := false
 
-			isTimeout, err := localtest.RunWithTimeout(func() error {
+			isTimeout, err := test.RunWithTimeout(func() error {
 				if err := c.Get(context.Background(), key, license); err != nil {
 					t.Fatal(err)
 				}
@@ -395,11 +388,9 @@ func doUpdateEnterpriseLicenseStep() test.TestStep {
 				t.Fatalf("Failed to get License: %s", err.Error())
 			}
 			assert.NotEmpty(t, license.Status.ExpireAt)
-			assert.NotEqual(t, data["licenseChecksum"], license.Status.LicenseChecksum)
 			assert.Equal(t, "gold", license.Status.LicenseType)
-			assert.True(t, condition.IsStatusConditionPresentAndEqual(license.Status.Conditions, LicenseCondition, metav1.ConditionTrue))
-			assert.True(t, condition.IsStatusConditionPresentAndEqual(license.Status.Conditions, common.ReadyCondition, metav1.ConditionTrue))
-			assert.True(t, license.Status.Sync)
+			assert.True(t, condition.IsStatusConditionPresentAndEqual(license.Status.Conditions, controller.ReadyCondition.String(), metav1.ConditionTrue))
+			assert.True(t, *license.Status.IsSync)
 
 			return nil
 		},
@@ -428,7 +419,7 @@ func doDeleteEnterpriseLicenseStep() test.TestStep {
 			license := &elasticsearchapicrd.License{}
 			isDeleted := false
 
-			isTimeout, err := localtest.RunWithTimeout(func() error {
+			isTimeout, err := test.RunWithTimeout(func() error {
 				if err = c.Get(context.Background(), key, license); err != nil {
 					if k8serrors.IsNotFound(err) {
 						isDeleted = true

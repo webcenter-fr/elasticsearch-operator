@@ -7,15 +7,14 @@ import (
 	"time"
 
 	"github.com/disaster37/k8s-objectmatcher/patch"
+	"github.com/disaster37/operator-sdk-extra/pkg/controller"
+	"github.com/disaster37/operator-sdk-extra/pkg/helper"
 	"github.com/disaster37/operator-sdk-extra/pkg/test"
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
 	beatcrd "github.com/webcenter-fr/elasticsearch-operator/apis/beat/v1"
 	elasticsearchcrd "github.com/webcenter-fr/elasticsearch-operator/apis/elasticsearch/v1"
 	"github.com/webcenter-fr/elasticsearch-operator/apis/shared"
-	elasticsearchcontrollers "github.com/webcenter-fr/elasticsearch-operator/controllers/elasticsearch"
-	localhelper "github.com/webcenter-fr/elasticsearch-operator/pkg/helper"
-	localtest "github.com/webcenter-fr/elasticsearch-operator/pkg/test"
 	appv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	policyv1 "k8s.io/api/policy/v1"
@@ -27,7 +26,7 @@ import (
 
 func (t *MetricbeatControllerTestSuite) TestMetricbeatController() {
 	key := types.NamespacedName{
-		Name:      "t-mb-" + localhelper.RandomString(10),
+		Name:      "t-mb-" + helper.RandomString(10),
 		Namespace: "default",
 	}
 	fb := &beatcrd.Metricbeat{}
@@ -75,14 +74,14 @@ func doCreateMetricbeatStep() test.TestStep {
 				return err
 			}
 
-			isTimeout, err := localtest.RunWithTimeout(func() error {
+			isTimeout, err := test.RunWithTimeout(func() error {
 				if err := c.Get(context.Background(), key, es); err != nil {
 					return err
 				}
 
 				// In envtest, no kubelet
 				// So the Elasticsearch condition never set as true
-				if condition.FindStatusCondition(es.Status.Conditions, elasticsearchcontrollers.ElasticsearchCondition.String()) != nil && condition.FindStatusCondition(es.Status.Conditions, elasticsearchcontrollers.ElasticsearchCondition.String()).Reason != "Initialize" {
+				if condition.FindStatusCondition(es.Status.Conditions, controller.ReadyCondition.String()) != nil && condition.FindStatusCondition(es.Status.Conditions, controller.ReadyCondition.String()).Reason != "Initialize" {
 					return nil
 				}
 
@@ -137,14 +136,14 @@ queue.type: persisted
 				sts *appv1.StatefulSet
 			)
 
-			isTimeout, err := localtest.RunWithTimeout(func() error {
+			isTimeout, err := test.RunWithTimeout(func() error {
 				if err := c.Get(context.Background(), key, mb); err != nil {
 					t.Fatal("Metricbeat not found")
 				}
 
 				// In envtest, no kubelet
 				// So the Metricbeat condition never set as true
-				if condition.FindStatusCondition(mb.Status.Conditions, MetricbeatCondition.String()) != nil && condition.FindStatusCondition(mb.Status.Conditions, MetricbeatCondition.String()).Reason != "Initialize" {
+				if condition.FindStatusCondition(mb.Status.Conditions, controller.ReadyCondition.String()) != nil && condition.FindStatusCondition(mb.Status.Conditions, controller.ReadyCondition.String()).Reason != "Initialize" {
 					return nil
 				}
 
@@ -213,8 +212,8 @@ queue.type: persisted
 			assert.NotEmpty(t, sts.Annotations[patch.LastAppliedConfig])
 
 			// Status must be update
-			assert.NotEmpty(t, mb.Status.Phase)
-			assert.False(t, *mb.Status.IsError)
+			assert.NotEmpty(t, mb.Status.PhaseName)
+			assert.False(t, *mb.Status.IsOnError)
 
 			return nil
 		},
@@ -260,14 +259,14 @@ func doUpdateMetricbeatStep() test.TestStep {
 
 			lastVersion := data["lastVersion"].(string)
 
-			isTimeout, err := localtest.RunWithTimeout(func() error {
+			isTimeout, err := test.RunWithTimeout(func() error {
 				if err := c.Get(context.Background(), key, mb); err != nil {
 					t.Fatal("Metricbeat not found")
 				}
 
 				// In envtest, no kubelet
 				// So the Metricbeat condition never set as true
-				if lastVersion != mb.ResourceVersion && (mb.Status.Phase == MetricbeatPhaseStarting.String()) {
+				if lastVersion != mb.ResourceVersion && (mb.Status.PhaseName == controller.StartingPhase) {
 					return nil
 				}
 
@@ -343,8 +342,8 @@ func doUpdateMetricbeatStep() test.TestStep {
 			assert.Equal(t, "fu", sts.Labels["test"])
 
 			// Status must be update
-			assert.NotEmpty(t, mb.Status.Phase)
-			assert.False(t, *mb.Status.IsError)
+			assert.NotEmpty(t, mb.Status.PhaseName)
+			assert.False(t, *mb.Status.IsOnError)
 
 			return nil
 		},

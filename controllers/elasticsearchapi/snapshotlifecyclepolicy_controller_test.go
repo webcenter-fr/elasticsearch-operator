@@ -9,17 +9,16 @@ import (
 	"emperror.dev/errors"
 	eshandler "github.com/disaster37/es-handler/v8"
 	"github.com/disaster37/es-handler/v8/mocks"
-	"github.com/disaster37/es-handler/v8/patch"
+	"github.com/disaster37/generic-objectmatcher/patch"
+	"github.com/disaster37/operator-sdk-extra/pkg/controller"
+	"github.com/disaster37/operator-sdk-extra/pkg/helper"
 	"github.com/disaster37/operator-sdk-extra/pkg/test"
-	"github.com/golang/mock/gomock"
 	olivere "github.com/olivere/elastic/v7"
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
 	elasticsearchapicrd "github.com/webcenter-fr/elasticsearch-operator/apis/elasticsearchapi/v1"
 	"github.com/webcenter-fr/elasticsearch-operator/apis/shared"
-	"github.com/webcenter-fr/elasticsearch-operator/controllers/common"
-	localhelper "github.com/webcenter-fr/elasticsearch-operator/pkg/helper"
-	localtest "github.com/webcenter-fr/elasticsearch-operator/pkg/test"
+	"go.uber.org/mock/gomock"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	condition "k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -29,7 +28,7 @@ import (
 
 func (t *ElasticsearchapiControllerTestSuite) TestSnapshotLifecyclePolicyReconciler() {
 	key := types.NamespacedName{
-		Name:      "t-slm-" + localhelper.RandomString(10),
+		Name:      "t-slm-" + helper.RandomString(10),
 		Namespace: "default",
 	}
 	slm := &elasticsearchapicrd.SnapshotLifecyclePolicy{}
@@ -51,9 +50,11 @@ func doMockSLM(mockES *mocks.MockElasticsearchHandler) func(stepName *string, da
 		isCreated := false
 		isUpdated := false
 
-		mockES.EXPECT().SnapshotRepositoryGet(gomock.Any()).AnyTimes().Return(&olivere.SnapshotRepositoryMetaData{
-			Type: "url",
-		}, nil)
+		mockES.EXPECT().SnapshotRepositoryGet(gomock.Eq("my_repository")).AnyTimes().DoAndReturn(func(name string) (*olivere.SnapshotRepositoryMetaData, error) {
+			return &olivere.SnapshotRepositoryMetaData{
+				Type: "url",
+			}, nil
+		})
 
 		mockES.EXPECT().SLMGet(gomock.Any()).AnyTimes().DoAndReturn(func(name string) (*eshandler.SnapshotLifecyclePolicySpec, error) {
 
@@ -222,9 +223,9 @@ func doCreateSLMStep() test.TestStep {
 		},
 		Check: func(t *testing.T, c client.Client, key types.NamespacedName, o client.Object, data map[string]any) (err error) {
 			slm := &elasticsearchapicrd.SnapshotLifecyclePolicy{}
-			isCreated := true
+			isCreated := false
 
-			isTimeout, err := localtest.RunWithTimeout(func() error {
+			isTimeout, err := test.RunWithTimeout(func() error {
 				if err := c.Get(context.Background(), key, slm); err != nil {
 					t.Fatal(err)
 				}
@@ -239,9 +240,9 @@ func doCreateSLMStep() test.TestStep {
 			if err != nil || isTimeout {
 				t.Fatalf("Failed to get SLM: %s", err.Error())
 			}
-			assert.True(t, condition.IsStatusConditionPresentAndEqual(slm.Status.Conditions, SnapshotLifecyclePolicyCondition, metav1.ConditionTrue))
-			assert.True(t, condition.IsStatusConditionPresentAndEqual(slm.Status.Conditions, common.ReadyCondition, metav1.ConditionTrue))
-			assert.True(t, slm.Status.Sync)
+
+			assert.True(t, condition.IsStatusConditionPresentAndEqual(slm.Status.Conditions, controller.ReadyCondition.String(), metav1.ConditionTrue))
+			assert.True(t, *slm.Status.IsSync)
 
 			return nil
 		},
@@ -268,9 +269,9 @@ func doUpdateSLMStep() test.TestStep {
 		},
 		Check: func(t *testing.T, c client.Client, key types.NamespacedName, o client.Object, data map[string]any) (err error) {
 			slm := &elasticsearchapicrd.SnapshotLifecyclePolicy{}
-			isUpdated := true
+			isUpdated := false
 
-			isTimeout, err := localtest.RunWithTimeout(func() error {
+			isTimeout, err := test.RunWithTimeout(func() error {
 				if err := c.Get(context.Background(), key, slm); err != nil {
 					t.Fatal(err)
 				}
@@ -285,9 +286,8 @@ func doUpdateSLMStep() test.TestStep {
 			if err != nil || isTimeout {
 				t.Fatalf("Failed to get SLM: %s", err.Error())
 			}
-			assert.True(t, condition.IsStatusConditionPresentAndEqual(slm.Status.Conditions, SnapshotLifecyclePolicyCondition, metav1.ConditionTrue))
-			assert.True(t, condition.IsStatusConditionPresentAndEqual(slm.Status.Conditions, common.ReadyCondition, metav1.ConditionTrue))
-			assert.True(t, slm.Status.Sync)
+			assert.True(t, condition.IsStatusConditionPresentAndEqual(slm.Status.Conditions, controller.ReadyCondition.String(), metav1.ConditionTrue))
+			assert.True(t, *slm.Status.IsSync)
 
 			return nil
 		},
@@ -313,9 +313,9 @@ func doDeleteSLMStep() test.TestStep {
 		},
 		Check: func(t *testing.T, c client.Client, key types.NamespacedName, o client.Object, data map[string]any) (err error) {
 			slm := &elasticsearchapicrd.SnapshotLifecyclePolicy{}
-			isDeleted := true
+			isDeleted := false
 
-			isTimeout, err := localtest.RunWithTimeout(func() error {
+			isTimeout, err := test.RunWithTimeout(func() error {
 				if err = c.Get(context.Background(), key, slm); err != nil {
 					if k8serrors.IsNotFound(err) {
 						isDeleted = true

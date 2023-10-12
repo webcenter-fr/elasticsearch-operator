@@ -7,7 +7,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-func TestGetRoleMappingName(t *testing.T) {
+func TestRoleMappingGetExternalName(t *testing.T) {
 	var o *RoleMapping
 
 	// When name is set
@@ -21,7 +21,7 @@ func TestGetRoleMappingName(t *testing.T) {
 		},
 	}
 
-	assert.Equal(t, "test2", o.GetRoleMappingName())
+	assert.Equal(t, "test2", o.GetExternalName())
 
 	// When name isn't set
 	o = &RoleMapping{
@@ -32,5 +32,5 @@ func TestGetRoleMappingName(t *testing.T) {
 		Spec: RoleMappingSpec{},
 	}
 
-	assert.Equal(t, "test", o.GetRoleMappingName())
+	assert.Equal(t, "test", o.GetExternalName())
 }

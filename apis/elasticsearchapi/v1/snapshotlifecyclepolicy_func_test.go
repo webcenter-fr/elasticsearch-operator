@@ -7,7 +7,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-func TestGetSnapshotLifecyclePolicyName(t *testing.T) {
+func TestSnapshotLifecyclePolicyGetExternalName(t *testing.T) {
 	var o *SnapshotLifecyclePolicy
 
 	// When name is set
@@ -21,7 +21,7 @@ func TestGetSnapshotLifecyclePolicyName(t *testing.T) {
 		},
 	}
 
-	assert.Equal(t, "test2", o.GetSnapshotLifecyclePolicyName())
+	assert.Equal(t, "test2", o.GetExternalName())
 
 	// When name isn't set
 	o = &SnapshotLifecyclePolicy{
@@ -32,5 +32,5 @@ func TestGetSnapshotLifecyclePolicyName(t *testing.T) {
 		Spec: SnapshotLifecyclePolicySpec{},
 	}
 
-	assert.Equal(t, "test", o.GetSnapshotLifecyclePolicyName())
+	assert.Equal(t, "test", o.GetExternalName())
 }

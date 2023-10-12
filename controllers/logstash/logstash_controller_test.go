@@ -7,15 +7,14 @@ import (
 	"time"
 
 	"github.com/disaster37/k8s-objectmatcher/patch"
+	"github.com/disaster37/operator-sdk-extra/pkg/controller"
+	"github.com/disaster37/operator-sdk-extra/pkg/helper"
 	"github.com/disaster37/operator-sdk-extra/pkg/test"
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
 	elasticsearchcrd "github.com/webcenter-fr/elasticsearch-operator/apis/elasticsearch/v1"
 	logstashcrd "github.com/webcenter-fr/elasticsearch-operator/apis/logstash/v1"
-	"github.com/webcenter-fr/elasticsearch-operator/apis/shared"
-	elasticsearchcontrollers "github.com/webcenter-fr/elasticsearch-operator/controllers/elasticsearch"
-	localhelper "github.com/webcenter-fr/elasticsearch-operator/pkg/helper"
-	localtest "github.com/webcenter-fr/elasticsearch-operator/pkg/test"
+	sharedcrd "github.com/webcenter-fr/elasticsearch-operator/apis/shared"
 	appv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	networkingv1 "k8s.io/api/networking/v1"
@@ -28,7 +27,7 @@ import (
 
 func (t *LogstashControllerTestSuite) TestLogstashController() {
 	key := types.NamespacedName{
-		Name:      "t-ls-" + localhelper.RandomString(10),
+		Name:      "t-ls-" + helper.RandomString(10),
 		Namespace: "default",
 	}
 	ls := &logstashcrd.Logstash{}
@@ -76,14 +75,14 @@ func doCreateLogstashStep() test.TestStep {
 				return err
 			}
 
-			isTimeout, err := localtest.RunWithTimeout(func() error {
+			isTimeout, err := test.RunWithTimeout(func() error {
 				if err := c.Get(context.Background(), key, es); err != nil {
 					return err
 				}
 
 				// In envtest, no kubelet
 				// So the Elasticsearch condition never set as true
-				if condition.FindStatusCondition(es.Status.Conditions, elasticsearchcontrollers.ElasticsearchCondition.String()) != nil && condition.FindStatusCondition(es.Status.Conditions, elasticsearchcontrollers.ElasticsearchCondition.String()).Reason != "Initialize" {
+				if condition.FindStatusCondition(es.Status.Conditions, controller.ReadyCondition.String()) != nil && condition.FindStatusCondition(es.Status.Conditions, controller.ReadyCondition.String()).Reason != "Initialize" {
 					return nil
 				}
 
@@ -103,8 +102,8 @@ func doCreateLogstashStep() test.TestStep {
 				},
 				Spec: logstashcrd.LogstashSpec{
 					Version: "8.6.0",
-					ElasticsearchRef: shared.ElasticsearchRef{
-						ManagedElasticsearchRef: &shared.ElasticsearchManagedRef{
+					ElasticsearchRef: sharedcrd.ElasticsearchRef{
+						ManagedElasticsearchRef: &sharedcrd.ElasticsearchManagedRef{
 							Name: es.Name,
 						},
 					},
@@ -168,14 +167,14 @@ queue.type: persisted
 				sts *appv1.StatefulSet
 			)
 
-			isTimeout, err := localtest.RunWithTimeout(func() error {
+			isTimeout, err := test.RunWithTimeout(func() error {
 				if err := c.Get(context.Background(), key, ls); err != nil {
 					t.Fatal("Logstash not found")
 				}
 
 				// In envtest, no kubelet
 				// So the Logstash condition never set as true
-				if condition.FindStatusCondition(ls.Status.Conditions, LogstashCondition.String()) != nil && condition.FindStatusCondition(ls.Status.Conditions, LogstashCondition.String()).Reason != "Initialize" {
+				if condition.FindStatusCondition(ls.Status.Conditions, controller.ReadyCondition.String()) != nil && condition.FindStatusCondition(ls.Status.Conditions, controller.ReadyCondition.String()).Reason != "Initialize" {
 					return nil
 				}
 
@@ -267,8 +266,8 @@ queue.type: persisted
 			assert.NotEmpty(t, sts.Annotations[patch.LastAppliedConfig])
 
 			// Status must be update
-			assert.NotEmpty(t, ls.Status.Phase)
-			assert.False(t, *ls.Status.IsError)
+			assert.NotEmpty(t, ls.Status.PhaseName)
+			assert.False(t, *ls.Status.IsOnError)
 
 			return nil
 		},
@@ -315,14 +314,14 @@ func doUpdateLogstashStep() test.TestStep {
 
 			lastVersion := data["lastVersion"].(string)
 
-			isTimeout, err := localtest.RunWithTimeout(func() error {
+			isTimeout, err := test.RunWithTimeout(func() error {
 				if err := c.Get(context.Background(), key, ls); err != nil {
 					t.Fatal("Logstash not found")
 				}
 
 				// In envtest, no kubelet
 				// So the Logstash condition never set as true
-				if lastVersion != ls.ResourceVersion && (ls.Status.Phase == LogstashPhaseStarting.String()) {
+				if lastVersion != ls.ResourceVersion && (ls.Status.PhaseName == controller.StartingPhase) {
 					return nil
 				}
 
@@ -424,8 +423,8 @@ func doUpdateLogstashStep() test.TestStep {
 			assert.Equal(t, "fu", sts.Labels["test"])
 
 			// Status must be update
-			assert.NotEmpty(t, ls.Status.Phase)
-			assert.False(t, *ls.Status.IsError)
+			assert.NotEmpty(t, ls.Status.PhaseName)
+			assert.False(t, *ls.Status.IsOnError)
 
 			return nil
 		},

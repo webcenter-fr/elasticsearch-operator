@@ -14,6 +14,7 @@ limitations under the License.
 package v1
 
 import (
+	"github.com/disaster37/operator-sdk-extra/pkg/apis"
 	"github.com/webcenter-fr/elasticsearch-operator/apis/shared"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -55,17 +56,7 @@ type LicenseStatus struct {
 	// +operator-sdk:csv:customresourcedefinitions:type=status
 	ExpireAt string `json:"expireAt,omitempty"`
 
-	// LicenseChecksum is the checksum of the current license
-	// +operator-sdk:csv:customresourcedefinitions:type=status
-	LicenseChecksum string `json:"licenseChecksum,omitempty"`
-
-	// List of conditions
-	// +operator-sdk:csv:customresourcedefinitions:type=status
-	Conditions []metav1.Condition `json:"conditions,omitempty"`
-
-	// Sync
-	// +operator-sdk:csv:customresourcedefinitions:type=status
-	Sync bool `json:"sync"`
+	apis.BasicRemoteObjectStatus `json:",inline"`
 }
 
 //+kubebuilder:object:root=true
@@ -74,9 +65,11 @@ type LicenseStatus struct {
 
 // License is the Schema for the licenses API
 // +operator-sdk:csv:customresourcedefinitions:resources={{None,None,None}}
-// +kubebuilder:printcolumn:name="Sync",type="boolean",JSONPath=".status.sync"
 // +kubebuilder:printcolumn:name="Type",type="string",JSONPath=".status.licenseType"
 // +kubebuilder:printcolumn:name="expireAt",type="string",JSONPath=".status.expireAt"
+// +kubebuilder:printcolumn:name="Sync",type="boolean",JSONPath=".status.isSync"
+// +kubebuilder:printcolumn:name="Error",type="boolean",JSONPath=".status.isOnError",description="Is on error"
+// +kubebuilder:printcolumn:name="Ready",type="string",JSONPath=".status.conditions[?(@.type=='Ready')].status",description="health"
 // +kubebuilder:printcolumn:name="Age",type="date",JSONPath=".metadata.creationTimestamp"
 type License struct {
 	metav1.TypeMeta   `json:",inline"`

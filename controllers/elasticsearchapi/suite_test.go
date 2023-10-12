@@ -1,13 +1,17 @@
 package elasticsearchapi
 
 import (
+	"context"
 	"path/filepath"
 	"testing"
 	"time"
 
+	eshandler "github.com/disaster37/es-handler/v8"
 	"github.com/disaster37/es-handler/v8/mocks"
+	"github.com/disaster37/operator-sdk-extra/pkg/controller"
 	"github.com/disaster37/operator-sdk-extra/pkg/mock"
-	"github.com/golang/mock/gomock"
+	"github.com/disaster37/operator-sdk-extra/pkg/object"
+	olivere "github.com/olivere/elastic/v7"
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/suite"
 	beatcrd "github.com/webcenter-fr/elasticsearch-operator/apis/beat/v1"
@@ -17,6 +21,7 @@ import (
 	kibanacrd "github.com/webcenter-fr/elasticsearch-operator/apis/kibana/v1"
 	kibanaapicrd "github.com/webcenter-fr/elasticsearch-operator/apis/kibanaapi/v1"
 	logstashcrd "github.com/webcenter-fr/elasticsearch-operator/apis/logstash/v1"
+	"go.uber.org/mock/gomock"
 	"k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/rest"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -24,6 +29,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/envtest"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
+	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 	//+kubebuilder:scaffold:imports
 	//+kubebuilder:scaffold:imports
 )
@@ -113,113 +119,169 @@ func (t *ElasticsearchapiControllerTestSuite) SetupSuite() {
 	t.k8sClient = k8sClient
 
 	// Add indexers
-	elasticsearchapicrd.MustSetUpIndex(k8sManager)
-	elasticsearchcrd.MustSetUpIndex(k8sManager)
-	kibanacrd.MustSetUpIndex(k8sManager)
-	logstashcrd.MustSetUpIndex(k8sManager)
-	beatcrd.MustSetUpIndexForFilebeat(k8sManager)
-	beatcrd.MustSetUpIndexForMetricbeat(k8sManager)
-	cerebrocrd.MustSetUpIndexCerebro(k8sManager)
-	cerebrocrd.MustSetUpIndexHost(k8sManager)
-	kibanaapicrd.MustSetUpIndex(k8sManager)
+	if err = controller.SetupIndexerWithManager(
+		k8sManager,
+		elasticsearchcrd.SetupElasticsearchIndexer,
+		kibanacrd.SetupKibanaIndexer,
+		logstashcrd.SetupLogstashIndexer,
+		beatcrd.SetupFilebeatIndexer,
+		beatcrd.SetupMetricbeatIndexer,
+		cerebrocrd.SetupCerebroIndexer,
+		cerebrocrd.SetupHostIndexer,
+		elasticsearchapicrd.SetupLicenceIndexer,
+		elasticsearchapicrd.SetupUserIndexexer,
+	); err != nil {
+		panic(err)
+	}
 
 	// Init controllers
-	userReconciler := NewUserReconciler(k8sClient, scheme.Scheme)
-	userReconciler.SetLogger(logrus.WithFields(logrus.Fields{
-		"type": "elasticsearchUserController",
-	}))
-	userReconciler.SetRecorder(k8sManager.GetEventRecorderFor("elasticsearch-user-controller"))
-	userReconciler.SetReconciler(mock.NewMockReconciler(userReconciler, t.mockElasticsearchHandler))
+
+	userReconciler := NewUserReconciler(
+		k8sClient,
+		logrus.NewEntry(logrus.StandardLogger()),
+		k8sManager.GetEventRecorderFor("elasticsearch-user-controller"),
+	)
+	userReconciler.(*UserReconciler).reconcilerAction = mock.NewMockRemoteReconcilerAction[*elasticsearchapicrd.User, *olivere.XPackSecurityPutUserRequest, eshandler.ElasticsearchHandler](
+		userReconciler.(*UserReconciler).reconcilerAction,
+		func(ctx context.Context, req reconcile.Request, o object.RemoteObject) (handler controller.RemoteExternalReconciler[*elasticsearchapicrd.User, *olivere.XPackSecurityPutUserRequest, eshandler.ElasticsearchHandler], res reconcile.Result, err error) {
+			return newUserApiClient(t.mockElasticsearchHandler), res, nil
+		},
+	)
 	if err = userReconciler.SetupWithManager(k8sManager); err != nil {
 		panic(err)
 	}
 
-	licenseReconciler := NewLicenseReconciler(k8sClient, scheme.Scheme)
-	licenseReconciler.SetLogger(logrus.WithFields(logrus.Fields{
-		"type": "elasticsearchLicenseController",
-	}))
-	licenseReconciler.SetRecorder(k8sManager.GetEventRecorderFor("elasticsearch-license-controller"))
-	licenseReconciler.SetReconciler(mock.NewMockReconciler(licenseReconciler, t.mockElasticsearchHandler))
+	licenseReconciler := NewLicenseReconciler(
+		k8sClient,
+		logrus.NewEntry(logrus.StandardLogger()),
+		k8sManager.GetEventRecorderFor("elasticsearch-license-controller"),
+	)
+	licenseReconciler.(*LicenseReconciler).reconcilerAction = mock.NewMockRemoteReconcilerAction[*elasticsearchapicrd.License, *olivere.XPackInfoLicense, eshandler.ElasticsearchHandler](
+		licenseReconciler.(*LicenseReconciler).reconcilerAction,
+		func(ctx context.Context, req reconcile.Request, o object.RemoteObject) (handler controller.RemoteExternalReconciler[*elasticsearchapicrd.License, *olivere.XPackInfoLicense, eshandler.ElasticsearchHandler], res reconcile.Result, err error) {
+			return newLicenseApiClient(t.mockElasticsearchHandler), res, nil
+		},
+	)
 	if err = licenseReconciler.SetupWithManager(k8sManager); err != nil {
 		panic(err)
 	}
 
-	roleReconciler := NewRoleReconciler(k8sClient, scheme.Scheme)
-	roleReconciler.SetLogger(logrus.WithFields(logrus.Fields{
-		"type": "elasticsearchRoleController",
-	}))
-	roleReconciler.SetRecorder(k8sManager.GetEventRecorderFor("elasticsearch-role-controller"))
-	roleReconciler.SetReconciler(mock.NewMockReconciler(roleReconciler, t.mockElasticsearchHandler))
+	roleReconciler := NewRoleReconciler(
+		k8sClient,
+		logrus.NewEntry(logrus.StandardLogger()),
+		k8sManager.GetEventRecorderFor("elasticsearch-role-controller"),
+	)
+	roleReconciler.(*RoleReconciler).reconcilerAction = mock.NewMockRemoteReconcilerAction[*elasticsearchapicrd.Role, *eshandler.XPackSecurityRole, eshandler.ElasticsearchHandler](
+		roleReconciler.(*RoleReconciler).reconcilerAction,
+		func(ctx context.Context, req reconcile.Request, o object.RemoteObject) (handler controller.RemoteExternalReconciler[*elasticsearchapicrd.Role, *eshandler.XPackSecurityRole, eshandler.ElasticsearchHandler], res reconcile.Result, err error) {
+			return newRoleApiClient(t.mockElasticsearchHandler), res, nil
+		},
+	)
 	if err = roleReconciler.SetupWithManager(k8sManager); err != nil {
 		panic(err)
 	}
 
-	roleMappingReconciler := NewRoleMappingReconciler(k8sClient, scheme.Scheme)
-	roleMappingReconciler.SetLogger(logrus.WithFields(logrus.Fields{
-		"type": "elasticsearchRoleMappingController",
-	}))
-	roleMappingReconciler.SetRecorder(k8sManager.GetEventRecorderFor("elasticsearch-rolemapping-controller"))
-	roleMappingReconciler.SetReconciler(mock.NewMockReconciler(roleMappingReconciler, t.mockElasticsearchHandler))
+	roleMappingReconciler := NewRoleMappingReconciler(
+		k8sClient,
+		logrus.NewEntry(logrus.StandardLogger()),
+		k8sManager.GetEventRecorderFor("elasticsearch-rolemapping-controller"),
+	)
+	roleMappingReconciler.(*RoleMappingReconciler).reconcilerAction = mock.NewMockRemoteReconcilerAction[*elasticsearchapicrd.RoleMapping, *olivere.XPackSecurityRoleMapping, eshandler.ElasticsearchHandler](
+		roleMappingReconciler.(*RoleMappingReconciler).reconcilerAction,
+		func(ctx context.Context, req reconcile.Request, o object.RemoteObject) (handler controller.RemoteExternalReconciler[*elasticsearchapicrd.RoleMapping, *olivere.XPackSecurityRoleMapping, eshandler.ElasticsearchHandler], res reconcile.Result, err error) {
+			return newRoleMappingApiClient(t.mockElasticsearchHandler), res, nil
+		},
+	)
 	if err = roleMappingReconciler.SetupWithManager(k8sManager); err != nil {
 		panic(err)
 	}
 
-	ilmReconciler := NewIndexLifecyclePolicyReconciler(k8sClient, scheme.Scheme)
-	ilmReconciler.SetLogger(logrus.WithFields(logrus.Fields{
-		"type": "elasticsearchIndexLifecyclePolicyController",
-	}))
-	ilmReconciler.SetRecorder(k8sManager.GetEventRecorderFor("elasticsearch-indexlifecyclepolicy-controller"))
-	ilmReconciler.SetReconciler(mock.NewMockReconciler(ilmReconciler, t.mockElasticsearchHandler))
+	ilmReconciler := NewIndexLifecyclePolicyReconciler(
+		k8sClient,
+		logrus.NewEntry(logrus.StandardLogger()),
+		k8sManager.GetEventRecorderFor("elasticsearch-indexlifecyclepolicy-controller"),
+	)
+	ilmReconciler.(*IndexLifecyclePolicyReconciler).reconcilerAction = mock.NewMockRemoteReconcilerAction[*elasticsearchapicrd.IndexLifecyclePolicy, *olivere.XPackIlmGetLifecycleResponse, eshandler.ElasticsearchHandler](
+		ilmReconciler.(*IndexLifecyclePolicyReconciler).reconcilerAction,
+		func(ctx context.Context, req reconcile.Request, o object.RemoteObject) (handler controller.RemoteExternalReconciler[*elasticsearchapicrd.IndexLifecyclePolicy, *olivere.XPackIlmGetLifecycleResponse, eshandler.ElasticsearchHandler], res reconcile.Result, err error) {
+			return newIndexLifecyclePolicyApiClient(t.mockElasticsearchHandler), res, nil
+		},
+	)
 	if err = ilmReconciler.SetupWithManager(k8sManager); err != nil {
 		panic(err)
 	}
 
-	slmReconciler := NewSnapshotLifecyclePolicyReconciler(k8sClient, scheme.Scheme)
-	slmReconciler.SetLogger(logrus.WithFields(logrus.Fields{
-		"type": "elasticsearchSnapshotLifecyclePolicyController",
-	}))
-	slmReconciler.SetRecorder(k8sManager.GetEventRecorderFor("elasticsearch-snapshotlifecyclepolicy-controller"))
-	slmReconciler.SetReconciler(mock.NewMockReconciler(slmReconciler, t.mockElasticsearchHandler))
+	slmReconciler := NewSnapshotLifecyclePolicyReconciler(
+		k8sClient,
+		logrus.NewEntry(logrus.StandardLogger()),
+		k8sManager.GetEventRecorderFor("elasticsearch-snapshotlifecyclepolicy-controller"),
+	)
+	slmReconciler.(*SnapshotLifecyclePolicyReconciler).reconcilerAction = mock.NewMockRemoteReconcilerAction[*elasticsearchapicrd.SnapshotLifecyclePolicy, *eshandler.SnapshotLifecyclePolicySpec, eshandler.ElasticsearchHandler](
+		slmReconciler.(*SnapshotLifecyclePolicyReconciler).reconcilerAction,
+		func(ctx context.Context, req reconcile.Request, o object.RemoteObject) (handler controller.RemoteExternalReconciler[*elasticsearchapicrd.SnapshotLifecyclePolicy, *eshandler.SnapshotLifecyclePolicySpec, eshandler.ElasticsearchHandler], res reconcile.Result, err error) {
+			return newSnapshotLifecyclePolicyApiClient(t.mockElasticsearchHandler), res, nil
+		},
+	)
 	if err = slmReconciler.SetupWithManager(k8sManager); err != nil {
 		panic(err)
 	}
 
-	snapshotRepositoryReconciler := NewSnapshotRepositoryReconciler(k8sClient, scheme.Scheme)
-	snapshotRepositoryReconciler.SetLogger(logrus.WithFields(logrus.Fields{
-		"type": "elasticsearchSnapshotRepositoryController",
-	}))
-	snapshotRepositoryReconciler.SetRecorder(k8sManager.GetEventRecorderFor("elasticsearch-snapshotrepository-controller"))
-	snapshotRepositoryReconciler.SetReconciler(mock.NewMockReconciler(snapshotRepositoryReconciler, t.mockElasticsearchHandler))
+	snapshotRepositoryReconciler := NewSnapshotRepositoryReconciler(
+		k8sClient,
+		logrus.NewEntry(logrus.StandardLogger()),
+		k8sManager.GetEventRecorderFor("elasticsearch-snapshotrepository-controller"),
+	)
+	snapshotRepositoryReconciler.(*SnapshotRepositoryReconciler).reconcilerAction = mock.NewMockRemoteReconcilerAction[*elasticsearchapicrd.SnapshotRepository, *olivere.SnapshotRepositoryMetaData, eshandler.ElasticsearchHandler](
+		snapshotRepositoryReconciler.(*SnapshotRepositoryReconciler).reconcilerAction,
+		func(ctx context.Context, req reconcile.Request, o object.RemoteObject) (handler controller.RemoteExternalReconciler[*elasticsearchapicrd.SnapshotRepository, *olivere.SnapshotRepositoryMetaData, eshandler.ElasticsearchHandler], res reconcile.Result, err error) {
+			return newSnapshotRepositoryApiClient(t.mockElasticsearchHandler), res, nil
+		},
+	)
 	if err = snapshotRepositoryReconciler.SetupWithManager(k8sManager); err != nil {
 		panic(err)
 	}
 
-	componentTemplateReconciler := NewComponentTemplateReconciler(k8sClient, scheme.Scheme)
-	componentTemplateReconciler.SetLogger(logrus.WithFields(logrus.Fields{
-		"type": "elasticsearchComponentTemplateController",
-	}))
-	componentTemplateReconciler.SetRecorder(k8sManager.GetEventRecorderFor("elasticsearch-componenttemplate-controller"))
-	componentTemplateReconciler.SetReconciler(mock.NewMockReconciler(componentTemplateReconciler, t.mockElasticsearchHandler))
+	componentTemplateReconciler := NewComponentTemplateReconciler(
+		k8sClient,
+		logrus.NewEntry(logrus.StandardLogger()),
+		k8sManager.GetEventRecorderFor("elasticsearch-componenttemplate-controller"),
+	)
+	componentTemplateReconciler.(*ComponentTemplateReconciler).reconcilerAction = mock.NewMockRemoteReconcilerAction[*elasticsearchapicrd.ComponentTemplate, *olivere.IndicesGetComponentTemplate, eshandler.ElasticsearchHandler](
+		componentTemplateReconciler.(*ComponentTemplateReconciler).reconcilerAction,
+		func(ctx context.Context, req reconcile.Request, o object.RemoteObject) (handler controller.RemoteExternalReconciler[*elasticsearchapicrd.ComponentTemplate, *olivere.IndicesGetComponentTemplate, eshandler.ElasticsearchHandler], res reconcile.Result, err error) {
+			return newComponentTemplateApiClient(t.mockElasticsearchHandler), res, nil
+		},
+	)
 	if err = componentTemplateReconciler.SetupWithManager(k8sManager); err != nil {
 		panic(err)
 	}
 
-	indexTemplateReconciler := NewIndexTemplateReconciler(k8sClient, scheme.Scheme)
-	indexTemplateReconciler.SetLogger(logrus.WithFields(logrus.Fields{
-		"type": "elasticsearchIndexTemplateController",
-	}))
-	indexTemplateReconciler.SetRecorder(k8sManager.GetEventRecorderFor("elasticsearch-indextemplate-controller"))
-	indexTemplateReconciler.SetReconciler(mock.NewMockReconciler(indexTemplateReconciler, t.mockElasticsearchHandler))
+	indexTemplateReconciler := NewIndexTemplateReconciler(
+		k8sClient,
+		logrus.NewEntry(logrus.StandardLogger()),
+		k8sManager.GetEventRecorderFor("elasticsearch-indextemplate-controller"),
+	)
+	indexTemplateReconciler.(*IndexTemplateReconciler).reconcilerAction = mock.NewMockRemoteReconcilerAction[*elasticsearchapicrd.IndexTemplate, *olivere.IndicesGetIndexTemplate, eshandler.ElasticsearchHandler](
+		indexTemplateReconciler.(*IndexTemplateReconciler).reconcilerAction,
+		func(ctx context.Context, req reconcile.Request, o object.RemoteObject) (handler controller.RemoteExternalReconciler[*elasticsearchapicrd.IndexTemplate, *olivere.IndicesGetIndexTemplate, eshandler.ElasticsearchHandler], res reconcile.Result, err error) {
+			return newIndexTemplateApiClient(t.mockElasticsearchHandler), res, nil
+		},
+	)
 	if err = indexTemplateReconciler.SetupWithManager(k8sManager); err != nil {
 		panic(err)
 	}
 
-	watchReconciler := NewWatchReconciler(k8sClient, scheme.Scheme)
-	watchReconciler.SetLogger(logrus.WithFields(logrus.Fields{
-		"type": "elasticsearchWatchController",
-	}))
-	watchReconciler.SetRecorder(k8sManager.GetEventRecorderFor("elasticsearch-watch-controller"))
-	watchReconciler.SetReconciler(mock.NewMockReconciler(watchReconciler, t.mockElasticsearchHandler))
+	watchReconciler := NewWatchReconciler(
+		k8sClient,
+		logrus.NewEntry(logrus.StandardLogger()),
+		k8sManager.GetEventRecorderFor("elasticsearch-watch-controller"),
+	)
+	watchReconciler.(*WatchReconciler).reconcilerAction = mock.NewMockRemoteReconcilerAction[*elasticsearchapicrd.Watch, *olivere.XPackWatch, eshandler.ElasticsearchHandler](
+		watchReconciler.(*WatchReconciler).reconcilerAction,
+		func(ctx context.Context, req reconcile.Request, o object.RemoteObject) (handler controller.RemoteExternalReconciler[*elasticsearchapicrd.Watch, *olivere.XPackWatch, eshandler.ElasticsearchHandler], res reconcile.Result, err error) {
+			return newWatchApiClient(t.mockElasticsearchHandler), res, nil
+		},
+	)
 	if err = watchReconciler.SetupWithManager(k8sManager); err != nil {
 		panic(err)
 	}

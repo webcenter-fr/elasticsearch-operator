@@ -23,6 +23,8 @@ import (
 
 	"emperror.dev/errors"
 	"github.com/disaster37/operator-sdk-extra/pkg/controller"
+	"github.com/disaster37/operator-sdk-extra/pkg/object"
+	"github.com/sirupsen/logrus"
 	beatcrd "github.com/webcenter-fr/elasticsearch-operator/apis/beat/v1"
 	elasticsearchcrd "github.com/webcenter-fr/elasticsearch-operator/apis/elasticsearch/v1"
 	kibanacrd "github.com/webcenter-fr/elasticsearch-operator/apis/kibana/v1"
@@ -34,43 +36,54 @@ import (
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	condition "k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/fields"
-	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
-	"k8s.io/utils/ptr"
-	"k8s.io/utils/strings"
+	"k8s.io/client-go/tools/record"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/handler"
-	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
 
 const (
-	KibanaFinalizer                          = "kibana.k8s.webcenter.fr/finalizer"
-	KibanaCondition     common.ConditionName = "KibanaReady"
-	KibanaPhaseRunning  common.PhaseName     = "running"
-	KibanaPhaseStarting common.PhaseName     = "starting"
+	name string = "kibana"
 )
 
 // KibanaReconciler reconciles a Kibana object
 type KibanaReconciler struct {
-	common.Controller
-	client.Client
-	Scheme *runtime.Scheme
-	name   string
+	controller.Controller
+	controller.MultiPhaseReconcilerAction
+	controller.MultiPhaseReconciler
+	controller.BaseReconciler
+	name string
 }
 
-func NewKibanaReconciler(client client.Client, scheme *runtime.Scheme) *KibanaReconciler {
+func NewKibanaReconciler(client client.Client, logger *logrus.Entry, recorder record.EventRecorder) (multiPhaseReconciler controller.Controller) {
 
-	r := &KibanaReconciler{
-		Client: client,
-		Scheme: scheme,
-		name:   "kibana",
+	multiPhaseReconciler = &KibanaReconciler{
+		Controller: controller.NewBasicController(),
+		MultiPhaseReconcilerAction: controller.NewBasicMultiPhaseReconcilerAction(
+			client,
+			controller.ReadyCondition,
+			logger,
+			recorder,
+		),
+		MultiPhaseReconciler: controller.NewBasicMultiPhaseReconciler(
+			client,
+			name,
+			"kibana.k8s.webcenter.fr/finalizer",
+			logger,
+			recorder,
+		),
+		BaseReconciler: controller.BaseReconciler{
+			Client:   client,
+			Recorder: recorder,
+			Log:      logger,
+		},
+		name: name,
 	}
 
-	common.ControllerMetrics.WithLabelValues(r.name).Add(0)
+	common.ControllerMetrics.WithLabelValues(name).Add(0)
 
-	return r
+	return multiPhaseReconciler
 }
 
 //+kubebuilder:rbac:groups=kibana.k8s.webcenter.fr,resources=kibanas,verbs=get;list;watch;create;update;patch;delete
@@ -98,40 +111,75 @@ func NewKibanaReconciler(client client.Client, scheme *runtime.Scheme) *KibanaRe
 // For more details, check Reconcile and its Result here:
 // - https://pkg.go.dev/sigs.k8s.io/controller-runtime@v0.12.2/pkg/reconcile
 func (r *KibanaReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
-	reconciler, err := controller.NewStdK8sReconciler(r.Client, KibanaFinalizer, r.GetReconciler(), r.GetLogger(), r.GetRecorder())
-	if err != nil {
-		return ctrl.Result{}, err
-	}
-
 	kb := &kibanacrd.Kibana{}
 	data := map[string]any{}
 
-	tlsReconciler := NewTlsReconciler(r.Client, r.Scheme, r.GetRecorder(), r.GetLogger())
-	caElasticsearchReconciler := NewCAElasticsearchReconciler(r.Client, r.Scheme, r.GetRecorder(), r.GetLogger())
-	credentialReconciler := NewCredentialReconciler(r.Client, r.Scheme, r.GetRecorder(), r.GetLogger())
-	configMapReconciler := NewConfiMapReconciler(r.Client, r.Scheme, r.GetRecorder(), r.GetLogger())
-	serviceReconciler := NewServiceReconciler(r.Client, r.Scheme, r.GetRecorder(), r.GetLogger())
-	pdbReconciler := NewPdbReconciler(r.Client, r.Scheme, r.GetRecorder(), r.GetLogger())
-	deploymentReconciler := NewDeploymentReconciler(r.Client, r.Scheme, r.GetRecorder(), r.GetLogger())
-	ingressReconciler := NewIngressReconciler(r.Client, r.Scheme, r.GetRecorder(), r.GetLogger())
-	loadBalancerReconciler := NewLoadBalancerReconciler(r.Client, r.Scheme, r.GetRecorder(), r.GetLogger())
-	networkPolicyReconciler := NewNetworkPolicyReconciler(r.Client, r.Scheme, r.GetRecorder(), r.GetLogger())
-	podMonitorReconciler := NewPodMonitorReconciler(r.Client, r.Scheme, r.GetRecorder(), r.GetLogger())
-	metricbeatReconsiler := NewMetricbeatReconciler(r.Client, r.Scheme, r.GetRecorder(), r.GetLogger())
-
-	return reconciler.Reconcile(ctx, req, kb, data,
-		tlsReconciler,
-		caElasticsearchReconciler,
-		credentialReconciler,
-		configMapReconciler,
-		serviceReconciler,
-		pdbReconciler,
-		networkPolicyReconciler,
-		deploymentReconciler,
-		ingressReconciler,
-		loadBalancerReconciler,
-		podMonitorReconciler,
-		metricbeatReconsiler,
+	return r.MultiPhaseReconciler.Reconcile(
+		ctx,
+		req,
+		kb,
+		data,
+		r,
+		newTlsReconciler(
+			r.Client,
+			r.Log,
+			r.Recorder,
+		),
+		newCAElasticsearchReconciler(
+			r.Client,
+			r.Log,
+			r.Recorder,
+		),
+		newCredentialReconciler(
+			r.Client,
+			r.Log,
+			r.Recorder,
+		),
+		newConfiMapReconciler(
+			r.Client,
+			r.Log,
+			r.Recorder,
+		),
+		newServiceReconciler(
+			r.Client,
+			r.Log,
+			r.Recorder,
+		),
+		newPdbReconciler(
+			r.Client,
+			r.Log,
+			r.Recorder,
+		),
+		newNetworkPolicyReconciler(
+			r.Client,
+			r.Log,
+			r.Recorder,
+		),
+		newDeploymentReconciler(
+			r.Client,
+			r.Log,
+			r.Recorder,
+		),
+		newIngressReconciler(
+			r.Client,
+			r.Log,
+			r.Recorder,
+		),
+		newLoadBalancerReconciler(
+			r.Client,
+			r.Log,
+			r.Recorder,
+		),
+		newPodMonitorReconciler(
+			r.Client,
+			r.Log,
+			r.Recorder,
+		),
+		newMetricbeatReconciler(
+			r.Client,
+			r.Log,
+			r.Recorder,
+		),
 	)
 }
 
@@ -153,198 +201,17 @@ func (h *KibanaReconciler) SetupWithManager(mgr ctrl.Manager) error {
 		Complete(h)
 }
 
-// watchElasticsearch permit to update if ElasticsearchRef change
-func watchElasticsearch(c client.Client) handler.MapFunc {
-	return func(ctx context.Context, a client.Object) []reconcile.Request {
-		var (
-			listKibanas *kibanacrd.KibanaList
-			fs          fields.Selector
-		)
-
-		reconcileRequests := make([]reconcile.Request, 0)
-
-		// ElasticsearchRef
-		listKibanas = &kibanacrd.KibanaList{}
-		fs = fields.ParseSelectorOrDie(fmt.Sprintf("spec.elasticsearchRef.managed.fullname=%s/%s", a.GetNamespace(), a.GetName()))
-		if err := c.List(context.Background(), listKibanas, &client.ListOptions{FieldSelector: fs}); err != nil {
-			panic(err)
-		}
-		for _, k := range listKibanas.Items {
-			reconcileRequests = append(reconcileRequests, reconcile.Request{NamespacedName: types.NamespacedName{Name: k.Name, Namespace: k.Namespace}})
-		}
-
-		return reconcileRequests
-
-	}
-}
-
-// watchConfigMap permit to update if configMapRef change
-func watchConfigMap(c client.Client) handler.MapFunc {
-	return func(ctx context.Context, a client.Object) []reconcile.Request {
-		var (
-			listKibanas *kibanacrd.KibanaList
-			fs          fields.Selector
-		)
-
-		reconcileRequests := make([]reconcile.Request, 0)
-
-		// Env of type configMap
-		listKibanas = &kibanacrd.KibanaList{}
-		fs = fields.ParseSelectorOrDie(fmt.Sprintf("spec.deployment.env.valueFrom.configMapKeyRef.name=%s", a.GetName()))
-		if err := c.List(context.Background(), listKibanas, &client.ListOptions{Namespace: a.GetNamespace(), FieldSelector: fs}); err != nil {
-			panic(err)
-		}
-		for _, k := range listKibanas.Items {
-			reconcileRequests = append(reconcileRequests, reconcile.Request{NamespacedName: types.NamespacedName{Name: k.Name, Namespace: k.Namespace}})
-		}
-
-		// EnvFrom of type configMap
-		listKibanas = &kibanacrd.KibanaList{}
-		fs = fields.ParseSelectorOrDie(fmt.Sprintf("spec.deployment.envFrom.configMapRef.name=%s", a.GetName()))
-		if err := c.List(context.Background(), listKibanas, &client.ListOptions{Namespace: a.GetNamespace(), FieldSelector: fs}); err != nil {
-			panic(err)
-		}
-		for _, k := range listKibanas.Items {
-			reconcileRequests = append(reconcileRequests, reconcile.Request{NamespacedName: types.NamespacedName{Name: k.Name, Namespace: k.Namespace}})
-		}
-
-		return reconcileRequests
-
-	}
-}
-
-// watchSecret permit to update Kibana if secretRef change
-func watchSecret(c client.Client) handler.MapFunc {
-	return func(ctx context.Context, a client.Object) []reconcile.Request {
-		var (
-			listKibanas *kibanacrd.KibanaList
-			fs          fields.Selector
-		)
-
-		reconcileRequests := make([]reconcile.Request, 0)
-
-		// Keystore secret
-		listKibanas = &kibanacrd.KibanaList{}
-		fs = fields.ParseSelectorOrDie(fmt.Sprintf("spec.keystoreSecretRef.name=%s", a.GetName()))
-		// Get all kibana linked with secret
-		if err := c.List(context.Background(), listKibanas, &client.ListOptions{Namespace: a.GetNamespace(), FieldSelector: fs}); err != nil {
-			panic(err)
-		}
-		for _, k := range listKibanas.Items {
-			reconcileRequests = append(reconcileRequests, reconcile.Request{NamespacedName: types.NamespacedName{Name: k.Name, Namespace: k.Namespace}})
-		}
-
-		// external TLS secret
-		listKibanas = &kibanacrd.KibanaList{}
-		fs = fields.ParseSelectorOrDie(fmt.Sprintf("spec.tls.certificateSecretRef.name=%s", a.GetName()))
-		// Get all kibana linked with secret
-		if err := c.List(context.Background(), listKibanas, &client.ListOptions{Namespace: a.GetNamespace(), FieldSelector: fs}); err != nil {
-			panic(err)
-		}
-		for _, k := range listKibanas.Items {
-			reconcileRequests = append(reconcileRequests, reconcile.Request{NamespacedName: types.NamespacedName{Name: k.Name, Namespace: k.Namespace}})
-		}
-
-		// Elasticsearch API cert secret when external
-		listKibanas = &kibanacrd.KibanaList{}
-		fs = fields.ParseSelectorOrDie(fmt.Sprintf("spec.elasticsearchRef.elasticsearchCASecretRef.name=%s", a.GetName()))
-		if err := c.List(context.Background(), listKibanas, &client.ListOptions{Namespace: a.GetNamespace(), FieldSelector: fs}); err != nil {
-			panic(err)
-		}
-		for _, k := range listKibanas.Items {
-			reconcileRequests = append(reconcileRequests, reconcile.Request{NamespacedName: types.NamespacedName{Name: k.Name, Namespace: k.Namespace}})
-		}
-
-		// Elasticsearch credentials when external
-		listKibanas = &kibanacrd.KibanaList{}
-		fs = fields.ParseSelectorOrDie(fmt.Sprintf("spec.elasticsearchRef.external.secretRef.name=%s", a.GetName()))
-		if err := c.List(context.Background(), listKibanas, &client.ListOptions{Namespace: a.GetNamespace(), FieldSelector: fs}); err != nil {
-			panic(err)
-		}
-		for _, k := range listKibanas.Items {
-			reconcileRequests = append(reconcileRequests, reconcile.Request{NamespacedName: types.NamespacedName{Name: k.Name, Namespace: k.Namespace}})
-		}
-
-		// Env of type secrets
-		listKibanas = &kibanacrd.KibanaList{}
-		fs = fields.ParseSelectorOrDie(fmt.Sprintf("spec.deployment.env.valueFrom.secretKeyRef.name=%s", a.GetName()))
-		if err := c.List(context.Background(), listKibanas, &client.ListOptions{Namespace: a.GetNamespace(), FieldSelector: fs}); err != nil {
-			panic(err)
-		}
-		for _, k := range listKibanas.Items {
-			reconcileRequests = append(reconcileRequests, reconcile.Request{NamespacedName: types.NamespacedName{Name: k.Name, Namespace: k.Namespace}})
-		}
-
-		// EnvFrom of type secrets
-		listKibanas = &kibanacrd.KibanaList{}
-		fs = fields.ParseSelectorOrDie(fmt.Sprintf("spec.deployment.envFrom.secretRef.name=%s", a.GetName()))
-		if err := c.List(context.Background(), listKibanas, &client.ListOptions{Namespace: a.GetNamespace(), FieldSelector: fs}); err != nil {
-			panic(err)
-		}
-		for _, k := range listKibanas.Items {
-			reconcileRequests = append(reconcileRequests, reconcile.Request{NamespacedName: types.NamespacedName{Name: k.Name, Namespace: k.Namespace}})
-		}
-
-		return reconcileRequests
-	}
-}
-
-func (h *KibanaReconciler) Configure(ctx context.Context, req ctrl.Request, resource client.Object) (res ctrl.Result, err error) {
-	o := resource.(*kibanacrd.Kibana)
-
-	o.Status.IsError = ptr.To[bool](false)
-
-	// Init condition status if not exist
-	if condition.FindStatusCondition(o.Status.Conditions, KibanaCondition.String()) == nil {
-		condition.SetStatusCondition(&o.Status.Conditions, metav1.Condition{
-			Type:   KibanaCondition.String(),
-			Status: metav1.ConditionFalse,
-			Reason: "Initialize",
-		})
-	}
-
-	if condition.FindStatusCondition(o.Status.Conditions, common.ReadyCondition) == nil {
-		condition.SetStatusCondition(&o.Status.Conditions, metav1.Condition{
-			Type:   common.ReadyCondition,
-			Status: metav1.ConditionFalse,
-			Reason: "Initialize",
-		})
-	}
-
-	return res, nil
-}
-func (h *KibanaReconciler) Read(ctx context.Context, r client.Object, data map[string]any) (res ctrl.Result, err error) {
-	return
-}
-
-func (h *KibanaReconciler) Delete(ctx context.Context, r client.Object, data map[string]any) (err error) {
+func (h *KibanaReconciler) Delete(ctx context.Context, o object.MultiPhaseObject, data map[string]any) (err error) {
 	common.ControllerMetrics.WithLabelValues(h.name).Dec()
-	return
+	return h.MultiPhaseReconcilerAction.Delete(ctx, o, data)
 }
-func (h *KibanaReconciler) OnError(ctx context.Context, r client.Object, data map[string]any, currentErr error) (res ctrl.Result, err error) {
-	o := r.(*kibanacrd.Kibana)
 
-	o.Status.IsError = ptr.To[bool](true)
-
-	condition.SetStatusCondition(&o.Status.Conditions, metav1.Condition{
-		Type:    KibanaCondition.String(),
-		Status:  metav1.ConditionFalse,
-		Reason:  "Failed",
-		Message: strings.ShortenString(err.Error(), common.ShortenError),
-	})
-
-	condition.SetStatusCondition(&o.Status.Conditions, metav1.Condition{
-		Type:   common.ReadyCondition,
-		Status: metav1.ConditionFalse,
-		Reason: "Error",
-	})
-
+func (h *KibanaReconciler) OnError(ctx context.Context, o object.MultiPhaseObject, data map[string]any, currentErr error) (res ctrl.Result, err error) {
 	common.TotalErrors.Inc()
-	h.GetLogger().Error(currentErr)
-
-	return res, errors.Errorf("Error on %s controller", h.name)
+	return h.MultiPhaseReconcilerAction.OnError(ctx, o, data, currentErr)
 }
-func (h *KibanaReconciler) OnSuccess(ctx context.Context, r client.Object, data map[string]any) (res ctrl.Result, err error) {
+
+func (h *KibanaReconciler) OnSuccess(ctx context.Context, r object.MultiPhaseObject, data map[string]any) (res ctrl.Result, err error) {
 	o := r.(*kibanacrd.Kibana)
 
 	// Check adeployment is ready
@@ -363,46 +230,26 @@ func (h *KibanaReconciler) OnSuccess(ctx context.Context, r client.Object, data 
 	}
 
 	if isReady {
-		if !condition.IsStatusConditionPresentAndEqual(o.Status.Conditions, KibanaCondition.String(), metav1.ConditionTrue) {
+		if !condition.IsStatusConditionPresentAndEqual(o.Status.Conditions, controller.ReadyCondition.String(), metav1.ConditionTrue) {
 			condition.SetStatusCondition(&o.Status.Conditions, metav1.Condition{
-				Type:   KibanaCondition.String(),
+				Type:   controller.ReadyCondition.String(),
 				Status: metav1.ConditionTrue,
 				Reason: "Ready",
 			})
 		}
 
-		if o.Status.Phase != KibanaPhaseRunning.String() {
-			o.Status.Phase = KibanaPhaseRunning.String()
-		}
-
-		if condition.IsStatusConditionPresentAndEqual(o.Status.Conditions, common.ReadyCondition, metav1.ConditionFalse) {
-			condition.SetStatusCondition(&o.Status.Conditions, metav1.Condition{
-				Type:   common.ReadyCondition,
-				Reason: "Available",
-				Status: metav1.ConditionTrue,
-			})
-		}
+		o.Status.PhaseName = controller.RunningPhase
 
 	} else {
-		if condition.IsStatusConditionPresentAndEqual(o.Status.Conditions, KibanaCondition.String(), metav1.ConditionTrue) || (condition.FindStatusCondition(o.Status.Conditions, KibanaCondition.String()).Reason != "NotReady") {
+		if condition.IsStatusConditionPresentAndEqual(o.Status.Conditions, controller.ReadyCondition.String(), metav1.ConditionTrue) || (condition.FindStatusCondition(o.Status.Conditions, controller.ReadyCondition.String()).Reason != "NotReady") {
 			condition.SetStatusCondition(&o.Status.Conditions, metav1.Condition{
-				Type:   KibanaCondition.String(),
+				Type:   controller.ReadyCondition.String(),
 				Status: metav1.ConditionFalse,
 				Reason: "NotReady",
 			})
 		}
 
-		if o.Status.Phase != KibanaPhaseStarting.String() {
-			o.Status.Phase = KibanaPhaseStarting.String()
-		}
-
-		if condition.IsStatusConditionPresentAndEqual(o.Status.Conditions, common.ReadyCondition, metav1.ConditionTrue) || (condition.FindStatusCondition(o.Status.Conditions, common.ReadyCondition).Reason != "NotReady") {
-			condition.SetStatusCondition(&o.Status.Conditions, metav1.Condition{
-				Type:   common.ReadyCondition,
-				Reason: "NotReady",
-				Status: metav1.ConditionFalse,
-			})
-		}
+		o.Status.PhaseName = controller.StartingPhase
 
 		// Requeued to check if status change
 		res.RequeueAfter = time.Second * 30
@@ -413,12 +260,9 @@ func (h *KibanaReconciler) OnSuccess(ctx context.Context, r client.Object, data 
 		return res, err
 	}
 	o.Status.Url = url
+	o.Status.SetIsOnError(false)
 
 	return res, nil
-}
-
-func (h *KibanaReconciler) Name() string {
-	return "kibana"
 }
 
 // computeKibanaUrl permit to get the public Kibana url to put it on status
