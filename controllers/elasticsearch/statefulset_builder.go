@@ -612,7 +612,8 @@ fi
 # Set right
 echo "Set right"
 chown -R elasticsearch:elasticsearch /mnt/config
-chown -v elasticsearch:elasticsearch /mnt/data
+chown elasticsearch:elasticsearch /mnt/data
+chmod 775 /mnt/data
 
 `)
 		for _, plugin := range es.Spec.PluginsList {
