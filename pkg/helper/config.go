@@ -75,6 +75,11 @@ func MergeSettings(m1, m2 map[string]string) (res map[string]string, err error) 
 }
 
 func GetSetting(key string, config []byte) (value string, err error) {
+
+	if key == "" {
+		return "", errors.New("You must provide key")
+	}
+
 	if len(config) == 0 {
 		return "", nil
 	}

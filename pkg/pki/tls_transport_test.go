@@ -27,4 +27,14 @@ func TestTransportPKI(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equal(t, ca, ca2)
 
+	// When errors
+	_, err = LoadRootCATransport(nil, nil, nil, nil, nil)
+	assert.Error(t, err)
+
+	_, err = NewNodeTLS("", ca, testLogEntry)
+	assert.Error(t, err)
+
+	_, err = NewNodeTLS("test", nil, testLogEntry)
+	assert.Error(t, err)
+
 }

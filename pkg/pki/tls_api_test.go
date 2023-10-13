@@ -26,4 +26,15 @@ func TestApiPKI(t *testing.T) {
 	ca2, err := LoadRootCAApi([]byte(ca.GetPrivateKey()), []byte(ca.GetPublicKey()), []byte(ca.GetCertificate()), []byte(ca.GetCRL()), testLogEntry)
 	assert.NoError(t, err)
 	assert.Equal(t, ca, ca2)
+
+	// When error
+	_, err = LoadRootCAApi(nil, nil, nil, nil, nil)
+	assert.Error(t, err)
+
+	_, err = NewApiTls("", []string{"elasticsearch.test.local"}, []string{"10.0.0.1"}, ca, testLogEntry)
+	assert.Error(t, err)
+
+	_, err = NewApiTls("test", nil, nil, nil, testLogEntry)
+	assert.Error(t, err)
+
 }
