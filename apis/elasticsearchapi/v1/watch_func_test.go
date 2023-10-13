@@ -3,9 +3,27 @@ package v1
 import (
 	"testing"
 
+	"github.com/disaster37/operator-sdk-extra/pkg/apis"
 	"github.com/stretchr/testify/assert"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
+
+func TestWatchGetStatus(t *testing.T) {
+	status := WatchStatus{
+		BasicRemoteObjectStatus: apis.BasicRemoteObjectStatus{
+			LastAppliedConfiguration: "test",
+		},
+	}
+	o := &Watch{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: "default",
+			Name:      "test",
+		},
+		Status: status,
+	}
+
+	assert.Equal(t, &status, o.GetStatus())
+}
 
 func TestWatchGetExternalName(t *testing.T) {
 	var o *Watch

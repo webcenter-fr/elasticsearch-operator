@@ -47,6 +47,7 @@ func TestIsIngressEnabled(t *testing.T) {
 
 	// When ingress is enabled
 	o.Spec.Endpoint.Ingress.Enabled = true
+	assert.True(t, o.IsIngressEnabled())
 
 }
 

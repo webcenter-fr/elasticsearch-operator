@@ -3,11 +3,29 @@ package v1
 import (
 	"testing"
 
+	"github.com/disaster37/operator-sdk-extra/pkg/apis"
 	"github.com/stretchr/testify/assert"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/utils/ptr"
 )
+
+func TestLicenseGetStatus(t *testing.T) {
+	status := LicenseStatus{
+		BasicRemoteObjectStatus: apis.BasicRemoteObjectStatus{
+			LastAppliedConfiguration: "test",
+		},
+	}
+	o := &License{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: "default",
+			Name:      "test",
+		},
+		Status: status,
+	}
+
+	assert.Equal(t, &status, o.GetStatus())
+}
 
 func TestLicenseGetExternalName(t *testing.T) {
 	o := &License{
