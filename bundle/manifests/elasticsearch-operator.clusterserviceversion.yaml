@@ -936,7 +936,7 @@ metadata:
         }
       ]
     capabilities: Basic Install
-    createdAt: "2023-08-29T16:33:08Z"
+    createdAt: "2023-10-13T07:50:54Z"
     operators.operatorframework.io/builder: operator-sdk-v1.31.0
     operators.operatorframework.io/project_layout: go.kubebuilder.io/v3
   name: elasticsearch-operator.v0.0.27
@@ -993,16 +993,6 @@ spec:
       - description: Settings is the component setting
         displayName: Settings
         path: settings
-      statusDescriptors:
-      - description: List of conditions
-        displayName: Conditions
-        path: conditions
-      - description: OriginalObject is the original object used on 3 way diff merge
-        displayName: Original Object
-        path: originalObject
-      - description: Sync
-        displayName: Sync
-        path: sync
       version: v1
     - description: ComponentTemplate is the Schema for the componenttemplates API
       displayName: Component Template
@@ -1381,9 +1371,6 @@ spec:
         displayName: Version
         path: version
       statusDescriptors:
-      - description: List of conditions
-        displayName: Conditions
-        path: conditions
       - description: CredentialsRef is the secret that store the credentials to access
           on Elasticsearch
         displayName: Credentials Ref
@@ -1394,12 +1381,6 @@ spec:
       - description: IsBootstrapping is true when the cluster is bootstraping
         displayName: Is Bootstrapping
         path: isBootstrapping
-      - description: IsError is true if controller is stuck on Error
-        displayName: Is Error
-        path: isOnError
-      - description: Phase is the current cluster deployment phase
-        displayName: Phase
-        path: phase
       - description: Url is the Elasticsearch endpoint
         displayName: Url
         path: url
@@ -1985,16 +1966,6 @@ spec:
       - description: Version is the Filebeat version to use Default is use the latest
         displayName: Version
         path: version
-      statusDescriptors:
-      - description: List of conditions
-        displayName: Conditions
-        path: conditions
-      - description: IsError is true if controller is stuck on Error
-        displayName: Is Error
-        path: isOnError
-      - description: Phase is the current deployment phase
-        displayName: Phase
-        path: phase
       version: v1
     - description: Filebeat is the Schema for the filebeats API
       displayName: Filebeat
@@ -2269,13 +2240,6 @@ spec:
       - description: ElasticsearchRef is the Elasticsearch cluster to enroll on
         displayName: Elasticsearch Ref
         path: elasticsearchRef
-      statusDescriptors:
-      - description: List of conditions
-        displayName: Conditions
-        path: conditions
-      - description: IsError is true if controller is stuck on Error
-        displayName: Is Error
-        path: isOnError
       version: v1
     - description: Host is the Schema for the hosts API
       displayName: Host
@@ -2339,16 +2303,6 @@ spec:
       - description: Policy is the raw policy on JSON
         displayName: Policy
         path: policy
-      statusDescriptors:
-      - description: List of conditions
-        displayName: Conditions
-        path: conditions
-      - description: OriginalObject is the original object used on 3 way diff merge
-        displayName: Original Object
-        path: originalObject
-      - description: Sync
-        displayName: Sync
-        path: sync
       version: v1
     - description: IndexLifecyclePolicy is the Schema for the indexlifecyclepolicies
         API
@@ -2457,16 +2411,6 @@ spec:
       - description: The version
         displayName: Version
         path: version
-      statusDescriptors:
-      - description: List of conditions
-        displayName: Conditions
-        path: conditions
-      - description: OriginalObject is the original object used on 3 way diff merge
-        displayName: Original Object
-        path: originalObject
-      - description: Health
-        displayName: Sync
-        path: sync
       version: v1
     - description: IndexTemplate is the Schema for the indextemplates API
       displayName: Index Template
@@ -2766,15 +2710,6 @@ spec:
         displayName: Version
         path: version
       statusDescriptors:
-      - description: List of conditions
-        displayName: Conditions
-        path: conditions
-      - description: IsError is true if controller is stuck on Error
-        displayName: Is Error
-        path: isOnError
-      - description: Phase is the current deployment phase
-        displayName: Phase
-        path: phase
       - description: Url is the Kibana endpoint
         displayName: Url
         path: url
@@ -3045,21 +2980,12 @@ spec:
         displayName: Secret Ref
         path: secretRef
       statusDescriptors:
-      - description: List of conditions
-        displayName: Conditions
-        path: conditions
       - description: ExpireAt is the expiration date
         displayName: Expire At
         path: expireAt
-      - description: LicenseChecksum is the checksum of the current license
-        displayName: License Checksum
-        path: licenseChecksum
       - description: LicenseType is the license type
         displayName: License Type
         path: licenseType
-      - description: Sync
-        displayName: Sync
-        path: sync
       version: v1
     - description: License is the Schema for the licenses API
       displayName: License
@@ -3338,16 +3264,6 @@ spec:
       - description: Version is the logstash version to use Default is use the latest
         displayName: Version
         path: version
-      statusDescriptors:
-      - description: List of conditions
-        displayName: Conditions
-        path: conditions
-      - description: IsError is true if controller is stuck on Error
-        displayName: Is Error
-        path: isOnError
-      - description: Phase is the current deployment phase
-        displayName: Phase
-        path: phase
       version: v1
     - description: Logstash is the Schema for the logstashes API
       displayName: Logstash
@@ -3623,16 +3539,6 @@ spec:
       - description: Settings is the pipeline settings It's a JSON string
         displayName: Settings
         path: settings
-      statusDescriptors:
-      - description: List of conditions
-        displayName: Conditions
-        path: conditions
-      - description: OriginalObject is the original object used on 3 way diff merge
-        displayName: Original Object
-        path: originalObject
-      - description: Sync
-        displayName: Sync
-        path: sync
       version: v1
     - description: LogstashPipeline is the Schema for the logstashpipelines API
       displayName: Logstash Pipeline
@@ -3688,6 +3594,28 @@ spec:
       displayName: Metricbeat
       kind: Metricbeat
       name: metricbeats.beat.k8s.webcenter.fr
+      resources:
+      - kind: ConfigMap
+        name: ""
+        version: v1
+      - kind: Ingress
+        name: ""
+        version: networking.k8s.io/v1
+      - kind: NetworkPolicy
+        name: ""
+        version: networking.k8s.io/v1
+      - kind: PodDisruptionBudget
+        name: ""
+        version: policy/v1
+      - kind: Secret
+        name: ""
+        version: v1
+      - kind: Service
+        name: ""
+        version: v1
+      - kind: StatefulSet
+        name: ""
+        version: apps/v1
       specDescriptors:
       - description: Config is the Metricbeat config The key is the file stored on
           metricbeat
@@ -3791,16 +3719,6 @@ spec:
       - description: Version is the Metricbeat version to use Default is use the latest
         displayName: Version
         path: version
-      statusDescriptors:
-      - description: List of conditions
-        displayName: Conditions
-        path: conditions
-      - description: IsError is true if controller is stuck on Error
-        displayName: Is Error
-        path: isOnError
-      - description: Phase is the current deployment phase
-        displayName: Phase
-        path: phase
       version: v1
     - description: Metricbeat is the Schema for the metricbeats API
       displayName: Metricbeat
@@ -3962,16 +3880,6 @@ spec:
       - description: Rules is the mapping rules JSON string
         displayName: Rules
         path: rules
-      statusDescriptors:
-      - description: List of conditions
-        displayName: Conditions
-        path: conditions
-      - description: OriginalObject is the original object used on 3 way diff merge
-        displayName: Original Object
-        path: originalObject
-      - description: Sync
-        displayName: Sync
-        path: sync
       version: v1
     - description: RoleMapping is the Schema for the rolemappings API
       displayName: Role Mapping
@@ -4030,10 +3938,6 @@ spec:
       displayName: Role
       kind: Role
       name: roles.elasticsearchapi.k8s.webcenter.fr
-      resources:
-      - kind: None
-        name: None
-        version: None
       specDescriptors:
       - description: Applications is the list of application privilege
         displayName: Applications
@@ -4099,16 +4003,6 @@ spec:
       - description: TransientMetadata JSON string
         displayName: Transient Metadata
         path: transientMetadata
-      statusDescriptors:
-      - description: List of conditions
-        displayName: Conditions
-        path: conditions
-      - description: OriginalObject is the original object used on 3 way diff merge
-        displayName: Original Object
-        path: originalObject
-      - description: Sync
-        displayName: Sync
-        path: sync
       version: v1
     - description: Role is the Schema for the roles API
       displayName: Role
@@ -4262,16 +4156,6 @@ spec:
       - description: TransientMedata
         displayName: Transient Medata
         path: transient_metadata
-      statusDescriptors:
-      - description: List of conditions
-        displayName: Conditions
-        path: conditions
-      - description: OriginalObject is the original object used on 3 way diff merge
-        displayName: Original Object
-        path: originalObject
-      - description: Sync
-        displayName: Sync
-        path: sync
       version: v1
     - description: Role is the Schema for the roles API
       displayName: Role
@@ -4430,16 +4314,6 @@ spec:
           policy name If empty, it use the ressource name
         displayName: Snapshot Lifecycle Policy Name
         path: snapshotLifecyclePolicyName
-      statusDescriptors:
-      - description: List of conditions
-        displayName: Conditions
-        path: conditions
-      - description: OriginalObject is the original object used on 3 way diff merge
-        displayName: Original Object
-        path: originalObject
-      - description: Sync
-        displayName: Sync
-        path: sync
       version: v1
     - description: SnapshotLifecyclePolicy is the Schema for the snapshotlifecyclepolicies
         API
@@ -4562,16 +4436,6 @@ spec:
       - description: Type the Snapshot repository type
         displayName: Type
         path: type
-      statusDescriptors:
-      - description: List of conditions
-        displayName: Conditions
-        path: conditions
-      - description: OriginalObject is the original object used on 3 way diff merge
-        displayName: Original Object
-        path: originalObject
-      - description: Sync
-        displayName: Sync
-        path: sync
       version: v1
     - description: SnapshotRepository is the Schema for the snapshotrepositories API
       displayName: Snapshot Repository
@@ -4680,18 +4544,9 @@ spec:
         displayName: Username
         path: username
       statusDescriptors:
-      - description: List of conditions
-        displayName: Conditions
-        path: conditions
-      - description: OriginalObject is the original object used on 3 way diff merge
-        displayName: Original Object
-        path: originalObject
       - description: PasswordHash is the current password hash
         displayName: Password Hash
         path: passwordHash
-      - description: Sync
-        displayName: Sync
-        path: sync
       version: v1
     - description: User is the Schema for the users API
       displayName: User
@@ -4843,16 +4698,6 @@ spec:
           to true
         displayName: Overwrite
         path: userSpaceCopies[0].overwrite
-      statusDescriptors:
-      - description: List of conditions
-        displayName: Conditions
-        path: conditions
-      - description: OriginalObject is the original object used on 3 way diff merge
-        displayName: Original Object
-        path: originalObject
-      - description: Sync
-        displayName: Sync
-        path: sync
       version: v1
     - description: UserSpace is the Schema for the userspaces API
       displayName: User Space
@@ -4994,16 +4839,6 @@ spec:
       - description: Trigger JSON string
         displayName: Trigger
         path: trigger
-      statusDescriptors:
-      - description: List of conditions
-        displayName: Conditions
-        path: conditions
-      - description: OriginalObject is the original object used on 3 way diff merge
-        displayName: Original Object
-        path: originalObject
-      - description: Sync
-        displayName: Sync
-        path: sync
       version: v1
     - description: Watch is the Schema for the watches API
       displayName: Watch
@@ -5206,58 +5041,6 @@ spec:
           - beat.k8s.webcenter.fr
           resources:
           - metricbeats/status
-          verbs:
-          - get
-          - patch
-          - update
-        - apiGroups:
-          - cerebro.k8s.webcenter.fr
-          resources:
-          - cerebroes
-          verbs:
-          - create
-          - delete
-          - get
-          - list
-          - patch
-          - update
-          - watch
-        - apiGroups:
-          - cerebro.k8s.webcenter.fr
-          resources:
-          - cerebroes/finalizers
-          verbs:
-          - update
-        - apiGroups:
-          - cerebro.k8s.webcenter.fr
-          resources:
-          - cerebroes/status
-          verbs:
-          - get
-          - patch
-          - update
-        - apiGroups:
-          - cerebro.k8s.webcenter.fr
-          resources:
-          - hosts
-          verbs:
-          - create
-          - delete
-          - get
-          - list
-          - patch
-          - update
-          - watch
-        - apiGroups:
-          - cerebro.k8s.webcenter.fr
-          resources:
-          - hosts/finalizers
-          verbs:
-          - update
-        - apiGroups:
-          - cerebro.k8s.webcenter.fr
-          resources:
-          - hosts/status
           verbs:
           - get
           - patch

@@ -2,7 +2,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.11.1
+    controller-gen.kubebuilder.io/version: v0.13.0
   creationTimestamp: null
   name: licenses.elasticsearchapi.k8s.webcenter.fr
 spec:
@@ -15,14 +15,22 @@ spec:
   scope: Namespaced
   versions:
   - additionalPrinterColumns:
-    - jsonPath: .status.sync
-      name: Sync
-      type: boolean
     - jsonPath: .status.licenseType
       name: Type
       type: string
     - jsonPath: .status.expireAt
       name: expireAt
+      type: string
+    - jsonPath: .status.isSync
+      name: Sync
+      type: boolean
+    - description: Is on error
+      jsonPath: .status.isOnError
+      name: Error
+      type: boolean
+    - description: health
+      jsonPath: .status.conditions[?(@.type=='Ready')].status
+      name: Ready
       type: string
     - jsonPath: .metadata.creationTimestamp
       name: Age
@@ -126,14 +134,16 @@ spec:
                 type: array
               expireAt:
                 type: string
-              licenseChecksum:
+              isOnError:
+                type: boolean
+              isSync:
+                type: boolean
+              lastAppliedConfiguration:
+                type: string
+              lastErrorMessage:
                 type: string
               licenseType:
                 type: string
-              sync:
-                type: boolean
-            required:
-            - sync
             type: object
         type: object
     served: true

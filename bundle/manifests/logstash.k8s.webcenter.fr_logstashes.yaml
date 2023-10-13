@@ -2,7 +2,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.11.1
+    controller-gen.kubebuilder.io/version: v0.13.0
   creationTimestamp: null
   name: logstashes.logstash.k8s.webcenter.fr
 spec:
@@ -15,7 +15,7 @@ spec:
   scope: Namespaced
   versions:
   - additionalPrinterColumns:
-    - description: Deployment status
+    - description: Phase
       jsonPath: .status.phase
       name: Phase
       type: string
@@ -23,6 +23,10 @@ spec:
       jsonPath: .status.isOnError
       name: Error
       type: boolean
+    - description: health
+      jsonPath: .status.conditions[?(@.type=='Ready')].status
+      name: Ready
+      type: string
     - jsonPath: .metadata.creationTimestamp
       name: Age
       type: date
@@ -238,6 +242,23 @@ spec:
                             volumeClaimTemplate:
                               properties:
                                 metadata:
+                                  properties:
+                                    annotations:
+                                      additionalProperties:
+                                        type: string
+                                      type: object
+                                    finalizers:
+                                      items:
+                                        type: string
+                                      type: array
+                                    labels:
+                                      additionalProperties:
+                                        type: string
+                                      type: object
+                                    name:
+                                      type: string
+                                    namespace:
+                                      type: string
                                   type: object
                                 spec:
                                   properties:
@@ -1103,6 +1124,23 @@ spec:
                               volumeClaimTemplate:
                                 properties:
                                   metadata:
+                                    properties:
+                                      annotations:
+                                        additionalProperties:
+                                          type: string
+                                        type: object
+                                      finalizers:
+                                        items:
+                                          type: string
+                                        type: array
+                                      labels:
+                                        additionalProperties:
+                                          type: string
+                                        type: object
+                                      name:
+                                        type: string
+                                      namespace:
+                                        type: string
                                     type: object
                                   spec:
                                     properties:
@@ -1753,6 +1791,23 @@ spec:
                   podTemplate:
                     properties:
                       metadata:
+                        properties:
+                          annotations:
+                            additionalProperties:
+                              type: string
+                            type: object
+                          finalizers:
+                            items:
+                              type: string
+                            type: array
+                          labels:
+                            additionalProperties:
+                              type: string
+                            type: object
+                          name:
+                            type: string
+                          namespace:
+                            type: string
                         type: object
                       spec:
                         properties:
@@ -4459,6 +4514,23 @@ spec:
                                     volumeClaimTemplate:
                                       properties:
                                         metadata:
+                                          properties:
+                                            annotations:
+                                              additionalProperties:
+                                                type: string
+                                              type: object
+                                            finalizers:
+                                              items:
+                                                type: string
+                                              type: array
+                                            labels:
+                                              additionalProperties:
+                                                type: string
+                                              type: object
+                                            name:
+                                              type: string
+                                            namespace:
+                                              type: string
                                           type: object
                                         spec:
                                           properties:
@@ -5491,6 +5563,8 @@ spec:
                 type: array
               isOnError:
                 type: boolean
+              lastErrorMessage:
+                type: string
               phase:
                 type: string
             type: object
@@ -5723,6 +5797,23 @@ spec:
                             volumeClaimTemplate:
                               properties:
                                 metadata:
+                                  properties:
+                                    annotations:
+                                      additionalProperties:
+                                        type: string
+                                      type: object
+                                    finalizers:
+                                      items:
+                                        type: string
+                                      type: array
+                                    labels:
+                                      additionalProperties:
+                                        type: string
+                                      type: object
+                                    name:
+                                      type: string
+                                    namespace:
+                                      type: string
                                   type: object
                                 spec:
                                   properties:
@@ -6588,6 +6679,23 @@ spec:
                               volumeClaimTemplate:
                                 properties:
                                   metadata:
+                                    properties:
+                                      annotations:
+                                        additionalProperties:
+                                          type: string
+                                        type: object
+                                      finalizers:
+                                        items:
+                                          type: string
+                                        type: array
+                                      labels:
+                                        additionalProperties:
+                                          type: string
+                                        type: object
+                                      name:
+                                        type: string
+                                      namespace:
+                                        type: string
                                     type: object
                                   spec:
                                     properties:
@@ -7238,6 +7346,23 @@ spec:
                   podTemplate:
                     properties:
                       metadata:
+                        properties:
+                          annotations:
+                            additionalProperties:
+                              type: string
+                            type: object
+                          finalizers:
+                            items:
+                              type: string
+                            type: array
+                          labels:
+                            additionalProperties:
+                              type: string
+                            type: object
+                          name:
+                            type: string
+                          namespace:
+                            type: string
                         type: object
                       spec:
                         properties:
@@ -9944,6 +10069,23 @@ spec:
                                     volumeClaimTemplate:
                                       properties:
                                         metadata:
+                                          properties:
+                                            annotations:
+                                              additionalProperties:
+                                                type: string
+                                              type: object
+                                            finalizers:
+                                              items:
+                                                type: string
+                                              type: array
+                                            labels:
+                                              additionalProperties:
+                                                type: string
+                                              type: object
+                                            name:
+                                              type: string
+                                            namespace:
+                                              type: string
                                           type: object
                                         spec:
                                           properties:
