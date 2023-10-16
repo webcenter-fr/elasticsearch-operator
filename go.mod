@@ -18,7 +18,7 @@ require (
 	github.com/elastic/elastic-transport-go/v8 v8.3.0
 	github.com/elastic/go-elasticsearch/v8 v8.9.0
 	github.com/elastic/go-ucfg v0.8.6
-	github.com/google/go-cmp v0.5.9
+	github.com/google/go-cmp v0.6.0
 	github.com/olivere/elastic/v7 v7.0.32
 	github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring v0.67.1
 	github.com/prometheus/client_golang v1.16.0
