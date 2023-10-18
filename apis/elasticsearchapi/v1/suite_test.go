@@ -5,6 +5,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/disaster37/operator-sdk-extra/pkg/controller"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/suite"
 	"k8s.io/client-go/kubernetes/scheme"
@@ -12,14 +14,13 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/envtest"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
-	"sigs.k8s.io/controller-runtime/pkg/manager"
 )
 
 var testEnv *envtest.Environment
 
 type TestSuite struct {
 	suite.Suite
-	k8sManager manager.Manager
+	k8sClient client.Client
 }
 
 func TestBeatApiSuite(t *testing.T) {
@@ -65,7 +66,23 @@ func (t *TestSuite) SetupSuite() {
 	if err != nil {
 		panic(err)
 	}
-	t.k8sManager = k8sManager
+	k8sClient := k8sManager.GetClient()
+	t.k8sClient = k8sClient
+
+	if err := controller.SetupIndexerWithManager(
+		k8sManager,
+		SetupLicenceIndexer,
+		SetupUserIndexexer,
+	); err != nil {
+		panic(err)
+	}
+
+	go func() {
+		err = k8sManager.Start(ctrl.SetupSignalHandler())
+		if err != nil {
+			panic(err)
+		}
+	}()
 }
 
 func (t *TestSuite) TearDownSuite() {
