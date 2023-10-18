@@ -43,6 +43,9 @@ func (t *TestSuite) TestSetupElasticsearchIndexer() {
 				KeystoreSecretRef: &corev1.LocalObjectReference{
 					Name: "test",
 				},
+				CacertsSecretRef: &corev1.LocalObjectReference{
+					Name: "test",
+				},
 				AdditionalVolumes: []ElasticsearchVolumeSpec{
 					{
 						Name: "config",

@@ -271,6 +271,12 @@ spec:
               cp /mnt/keystore/elasticsearch.keystore /mnt/config
             fi
 
+            # Move cacerts
+            if [ -f /mnt/cacerts/cacerts ]; then
+              echo "Move cacerts"
+              cp /mnt/cacerts/cacerts /usr/share/elasticsearch/jdk/lib/security/cacerts
+            fi
+
             # Set right
             echo "Set right"
             chown -R elasticsearch:elasticsearch /mnt/config
@@ -326,6 +332,8 @@ spec:
             mountPath: /mnt/plugins
           - name: keystore
             mountPath: /mnt/keystore
+          - name: cacerts
+            mountPath: /mnt/cacerts
         securityContext:
           runAsUser: 0
         resources:
@@ -353,6 +361,8 @@ spec:
           path: /snapshot
           server: nfsserver
       - name: keystore
+        emptyDir: {}
+      - name: cacerts
         emptyDir: {}
       - name: elasticsearch-keystore
         secret:

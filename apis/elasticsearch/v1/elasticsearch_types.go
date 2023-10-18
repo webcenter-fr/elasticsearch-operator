@@ -307,6 +307,12 @@ type ElasticsearchGlobalNodeGroupSpec struct {
 	// +optional
 	KeystoreSecretRef *corev1.LocalObjectReference `json:"keystoreSecretRef,omitempty"`
 
+	// CacertsSecretRef is the secret that store custom CA to import on cacerts
+	// It usefull to access on onpremise S3 service to store snaoshot and more
+	// +operator-sdk:csv:customresourcedefinitions:type=spec
+	// +optional
+	CacertsSecretRef *corev1.LocalObjectReference `json:"caSecretRef,omitempty"`
+
 	// Labels permit to set labels on containers
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
 	// +optional

@@ -115,6 +115,18 @@ func GetSecretNameForKeystore(elasticsearch *elasticsearchcrd.Elasticsearch) (se
 	return ""
 }
 
+// GetSecretNameForCacerts permit to get the secret name that store the custom ca to ibject on Java cacerts
+// It will inject each certificate file on cacerts
+// It return empty string if not secret provided
+func GetSecretNameForCacerts(elasticsearch *elasticsearchcrd.Elasticsearch) (secretName string) {
+
+	if elasticsearch.Spec.GlobalNodeGroup.CacertsSecretRef != nil {
+		return elasticsearch.Spec.GlobalNodeGroup.CacertsSecretRef.Name
+	}
+
+	return ""
+}
+
 // GetGlobalServiceName permit to get the global service name
 func GetGlobalServiceName(elasticsearch *elasticsearchcrd.Elasticsearch) (serviceName string) {
 	return fmt.Sprintf("%s-es", elasticsearch.Name)

@@ -45,6 +45,7 @@ func (t *ElasticsearchControllerTestSuite) TestElasticsearchController() {
 		doUpdateElasticsearchIncreaseNodeGroupStep(),
 		doUpdateElasticsearchDecreaseNodeGroupStep(),
 		doUpdateElasticsearchAddLicenseStep(),
+		doUpdateElasticsearchAddKeystoreStep(),
 		doDeleteElasticsearchStep(),
 	}
 
@@ -1428,6 +1429,99 @@ func doUpdateElasticsearchAddLicenseStep() test.TestStep {
 			}
 			assert.NotEmpty(t, metricbeat.OwnerReferences)
 			assert.NotEmpty(t, metricbeat.Annotations[patch.LastAppliedConfig])
+
+			// Status must be update
+			assert.NotEmpty(t, es.Status.Health)
+			assert.NotEmpty(t, es.Status.PhaseName)
+			assert.NotEmpty(t, es.Status.Url)
+			assert.NotNil(t, es.Status.CredentialsRef)
+			assert.False(t, *es.Status.IsOnError)
+
+			return nil
+		},
+	}
+}
+
+func doUpdateElasticsearchAddKeystoreStep() test.TestStep {
+	return test.TestStep{
+		Name: "update",
+		Do: func(c client.Client, key types.NamespacedName, o client.Object, data map[string]any) (err error) {
+			logrus.Infof("=== Add keystore and cacerts on Elasticsearch cluster %s/%s ===", key.Namespace, key.Name)
+
+			if o == nil {
+				return errors.New("Elasticsearch is null")
+			}
+			es := o.(*elasticsearchcrd.Elasticsearch)
+
+			data["lastVersion"] = es.ResourceVersion
+			// Add secret that contain keysyore secret
+			s := &corev1.Secret{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "keystore",
+					Namespace: es.Namespace,
+				},
+				Type: corev1.SecretTypeOpaque,
+				Data: map[string][]byte{
+					"s3.client.default.access_key": []byte(`access_key`),
+					"s3.client.default.secret_key": []byte(`secret_key`),
+				},
+			}
+			if err = c.Create(context.Background(), s); err != nil {
+				return err
+			}
+
+			// Add secret that contain keysyore secret
+			s = &corev1.Secret{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "custom-ca",
+					Namespace: es.Namespace,
+				},
+				Type: corev1.SecretTypeOpaque,
+				Data: map[string][]byte{
+					"custom-ca.crt": []byte(`my-cert`),
+				},
+			}
+			if err = c.Create(context.Background(), s); err != nil {
+				return err
+			}
+
+			es.Spec.GlobalNodeGroup.KeystoreSecretRef = &corev1.LocalObjectReference{
+				Name: "keystore",
+			}
+			es.Spec.GlobalNodeGroup.CacertsSecretRef = &corev1.LocalObjectReference{
+				Name: "custom-ca",
+			}
+
+			if err = c.Update(context.Background(), es); err != nil {
+				return err
+			}
+
+			time.Sleep(5 * time.Second)
+
+			return nil
+		},
+		Check: func(t *testing.T, c client.Client, key types.NamespacedName, o client.Object, data map[string]any) (err error) {
+			es := &elasticsearchcrd.Elasticsearch{}
+
+			lastVersion := data["lastVersion"].(string)
+
+			isTimeout, err := test.RunWithTimeout(func() error {
+				if err := c.Get(context.Background(), key, es); err != nil {
+					t.Fatal("Elasticsearch not found")
+				}
+
+				// In envtest, no kubelet
+				// So the Elasticsearch condition never set as true
+				if lastVersion != es.ResourceVersion && (es.Status.PhaseName == controller.StartingPhase) {
+					return nil
+				}
+
+				return errors.New("Not yet updated")
+
+			}, time.Second*30, time.Second*1)
+			if err != nil || isTimeout {
+				t.Fatalf("All Elasticsearch step upgrading not finished: %s", err.Error())
+			}
 
 			// Status must be update
 			assert.NotEmpty(t, es.Status.Health)
