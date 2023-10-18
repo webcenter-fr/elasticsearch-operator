@@ -21,6 +21,12 @@ spec:
     metadata:
       annotations:
         kubectl.kubernetes.io/default-container: manager
+        co.elastic.logs.manager/multiline.match: after
+        co.elastic.logs.manager/multiline.negate: "true"
+        co.elastic.logs.manager/multiline.pattern: ^\{
+        co.elastic.logs.manager/multiline.timeout: 5s
+        co.elastic.logs.manager/processors.0.decode_json_fields: '{"fields": ["message"],"target": "operator.elasticsearch", "add_error_key": true, "max_depth": 10}'
+        co.elastic.logs.manager/processors.1.add_fields: '{"target": "", "fields":{"event": {"dataset": "elasticsearch-operator"}}}'
       labels:
         control-plane: elastic-operator
         elasticsearch-operator.k8s.webcenter.fr: "true"
@@ -54,7 +60,9 @@ spec:
               apiVersion: v1
               fieldPath: metadata.namespace
         - name: LOG_LEVEL
-          value: "DEBUG"
+          value: "INFO"
+        - name: LOG_FORMATTER
+          value: "json"
         securityContext:
           allowPrivilegeEscalation: false
           capabilities:
