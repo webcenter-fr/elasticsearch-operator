@@ -93,6 +93,19 @@ func (r *statefulsetReconciler) Read(ctx context.Context, resource object.MultiP
 		secretsChecksum = append(secretsChecksum, *s)
 	}
 
+	// Read cacerts secret if needed
+	if o.Spec.GlobalNodeGroup.CacertsSecretRef != nil && o.Spec.GlobalNodeGroup.CacertsSecretRef.Name != "" {
+		if err = r.Client.Get(ctx, types.NamespacedName{Namespace: o.Namespace, Name: o.Spec.GlobalNodeGroup.CacertsSecretRef.Name}, s); err != nil {
+			if !k8serrors.IsNotFound(err) {
+				return read, res, errors.Wrapf(err, "Error when read secret %s", o.Spec.GlobalNodeGroup.CacertsSecretRef.Name)
+			}
+			r.Log.Warnf("Secret %s not yet exist, try again later", o.Spec.GlobalNodeGroup.CacertsSecretRef.Name)
+			return read, ctrl.Result{RequeueAfter: 30 * time.Second}, nil
+		}
+
+		secretsChecksum = append(secretsChecksum, *s)
+	}
+
 	// Read API certificate secret if needed
 	if o.IsTlsApiEnabled() {
 		if o.IsSelfManagedSecretForTlsApi() {

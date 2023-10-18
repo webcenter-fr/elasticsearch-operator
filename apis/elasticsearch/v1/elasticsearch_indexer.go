@@ -41,6 +41,16 @@ func SetupElasticsearchIndexer(k8sManager manager.Manager) (err error) {
 		return err
 	}
 
+	if err = k8sManager.GetFieldIndexer().IndexField(context.Background(), &Elasticsearch{}, "spec.globalNodeGroup.cacertsSecretRef.name", func(o client.Object) []string {
+		p := o.(*Elasticsearch)
+		if p.Spec.GlobalNodeGroup.CacertsSecretRef != nil {
+			return []string{p.Spec.GlobalNodeGroup.CacertsSecretRef.Name}
+		}
+		return []string{}
+	}); err != nil {
+		return err
+	}
+
 	if err = k8sManager.GetFieldIndexer().IndexField(context.Background(), &Elasticsearch{}, "spec.globalNodeGroup.additionalVolumes.configMap.name", func(o client.Object) []string {
 		p := o.(*Elasticsearch)
 		volumeNames := make([]string, 0, len(p.Spec.GlobalNodeGroup.AdditionalVolumes))

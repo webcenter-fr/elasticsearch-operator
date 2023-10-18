@@ -506,6 +506,41 @@ cp -a /usr/share/elasticsearch/config/elasticsearch.keystore /mnt/keystore/
 
 			ptb.WithInitContainers([]corev1.Container{*kcb.Container()}, k8sbuilder.Merge)
 		}
+		if es.Spec.GlobalNodeGroup.CacertsSecretRef != nil {
+			tcb := k8sbuilder.NewContainerBuilder().WithContainer(&corev1.Container{
+				Name:            "init-cacerts",
+				Image:           GetContainerImage(es),
+				ImagePullPolicy: es.Spec.ImagePullPolicy,
+				VolumeMounts: []corev1.VolumeMount{
+					{
+						Name:      "cacerts",
+						MountPath: "/mnt/cacerts",
+					},
+					{
+						Name:      "elasticsearch-cacerts",
+						MountPath: "/mnt/cacertsSecrets",
+					},
+				},
+				Command: []string{
+					"/bin/bash",
+					"-c",
+					`#!/usr/bin/env bash
+set -euo pipefail
+
+for i in /mnt/cacertsSecrets/*; do
+    key=$(basename $i)
+    echo "Import certificat $i with name $key"
+	/usr/share/elasticsearch/jdk/bin/keytool -importcert -alias $key -keystore /usr/share/elasticsearch/jdk/lib/security/cacerts -storepass changeit -file $i
+done
+
+cp -a /usr/share/elasticsearch/jdk/lib/security/cacerts /mnt/cacerts/
+`,
+				},
+			})
+			tcb.WithResource(es.Spec.GlobalNodeGroup.InitContainerResources)
+
+			ptb.WithInitContainers([]corev1.Container{*tcb.Container()}, k8sbuilder.Merge)
+		}
 		ccb := k8sbuilder.NewContainerBuilder().WithContainer(&corev1.Container{
 			Name:            "init-filesystem",
 			Image:           GetContainerImage(es),
@@ -569,6 +604,10 @@ cp -a /usr/share/elasticsearch/config/elasticsearch.keystore /mnt/keystore/
 					MountPath: "/mnt/keystore",
 				},
 				{
+					Name:      "cacerts",
+					MountPath: "/mnt/cacerts",
+				},
+				{
 					Name:      "elasticsearch-data",
 					MountPath: "/mnt/data",
 				},
@@ -607,6 +646,12 @@ cp /mnt/certs/node/${POD_NAME}.key /mnt/config/transport-cert/
 if [ -f /mnt/keystore/elasticsearch.keystore ]; then
   echo "Move keystore"
   cp /mnt/keystore/elasticsearch.keystore /mnt/config
+fi
+
+# Move cacerts
+if [ -f /mnt/cacerts/cacerts ]; then
+  echo "Move cacerts"
+  cp /mnt/cacerts/cacerts /usr/share/elasticsearch/jdk/lib/security/cacerts
 fi
 
 # Set right
@@ -691,6 +736,12 @@ fi
 				},
 			},
 			{
+				Name: "cacerts",
+				VolumeSource: corev1.VolumeSource{
+					EmptyDir: &corev1.EmptyDirVolumeSource{},
+				},
+			},
+			{
 				Name: "config",
 				VolumeSource: corev1.VolumeSource{
 					EmptyDir: &corev1.EmptyDirVolumeSource{},
@@ -718,6 +769,18 @@ fi
 					VolumeSource: corev1.VolumeSource{
 						Secret: &corev1.SecretVolumeSource{
 							SecretName: GetSecretNameForKeystore(es),
+						},
+					},
+				},
+			}, k8sbuilder.Merge)
+		}
+		if GetSecretNameForCacerts(es) != "" {
+			ptb.WithVolumes([]corev1.Volume{
+				{
+					Name: "elasticsearch-cacerts",
+					VolumeSource: corev1.VolumeSource{
+						Secret: &corev1.SecretVolumeSource{
+							SecretName: GetSecretNameForCacerts(es),
 						},
 					},
 				},

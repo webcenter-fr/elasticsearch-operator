@@ -673,3 +673,65 @@ func TestGetBootstrappingConfigMapName(t *testing.T) {
 
 	assert.Equal(t, "test-bootstrapping-es", GetBootstrappingConfigMapName(o))
 }
+
+func TestGetSecretNameForKeystore(t *testing.T) {
+
+	// When no keystore
+	o := &elasticsearchcrd.Elasticsearch{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: "default",
+			Name:      "test",
+		},
+		Spec: elasticsearchcrd.ElasticsearchSpec{},
+	}
+
+	assert.Equal(t, "", GetSecretNameForKeystore(o))
+
+	// When keystore
+	o = &elasticsearchcrd.Elasticsearch{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: "default",
+			Name:      "test",
+		},
+		Spec: elasticsearchcrd.ElasticsearchSpec{
+			GlobalNodeGroup: elasticsearchcrd.ElasticsearchGlobalNodeGroupSpec{
+				KeystoreSecretRef: &v1.LocalObjectReference{
+					Name: "test",
+				},
+			},
+		},
+	}
+
+	assert.Equal(t, "test", GetSecretNameForKeystore(o))
+}
+
+func TestGetSecretNameForCacerts(t *testing.T) {
+
+	// When no cacerts
+	o := &elasticsearchcrd.Elasticsearch{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: "default",
+			Name:      "test",
+		},
+		Spec: elasticsearchcrd.ElasticsearchSpec{},
+	}
+
+	assert.Equal(t, "", GetSecretNameForCacerts(o))
+
+	// When keystore
+	o = &elasticsearchcrd.Elasticsearch{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: "default",
+			Name:      "test",
+		},
+		Spec: elasticsearchcrd.ElasticsearchSpec{
+			GlobalNodeGroup: elasticsearchcrd.ElasticsearchGlobalNodeGroupSpec{
+				CacertsSecretRef: &v1.LocalObjectReference{
+					Name: "test",
+				},
+			},
+		},
+	}
+
+	assert.Equal(t, "test", GetSecretNameForCacerts(o))
+}
