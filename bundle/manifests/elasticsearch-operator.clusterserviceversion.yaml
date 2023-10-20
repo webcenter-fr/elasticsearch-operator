@@ -936,10 +936,10 @@ metadata:
         }
       ]
     capabilities: Basic Install
-    createdAt: "2023-10-13T07:50:54Z"
+    createdAt: "2023-10-20T08:33:54Z"
     operators.operatorframework.io/builder: operator-sdk-v1.31.0
     operators.operatorframework.io/project_layout: go.kubebuilder.io/v3
-  name: elasticsearch-operator.v0.0.27
+  name: elasticsearch-operator.v0.0.31
   namespace: placeholder
 spec:
   apiservicedefinitions: {}
@@ -1156,6 +1156,11 @@ spec:
       - description: Type permit to set anti affinity as soft or hard
         displayName: Type
         path: globalNodeGroup.antiAffinity.type
+      - description: CacertsSecretRef is the secret that store custom CA to import
+          on cacerts It usefull to access on onpremise S3 service to store snaoshot
+          and more
+        displayName: Cacerts Secret Ref
+        path: globalNodeGroup.caSecretRef
       - description: Config is the Elasticsearch config dedicated for this node groups
           like roles The key is the file stored on elasticsearch/config
         displayName: Config
@@ -5046,6 +5051,58 @@ spec:
           - patch
           - update
         - apiGroups:
+          - cerebro.k8s.webcenter.fr
+          resources:
+          - cerebroes
+          verbs:
+          - create
+          - delete
+          - get
+          - list
+          - patch
+          - update
+          - watch
+        - apiGroups:
+          - cerebro.k8s.webcenter.fr
+          resources:
+          - cerebroes/finalizers
+          verbs:
+          - update
+        - apiGroups:
+          - cerebro.k8s.webcenter.fr
+          resources:
+          - cerebroes/status
+          verbs:
+          - get
+          - patch
+          - update
+        - apiGroups:
+          - cerebro.k8s.webcenter.fr
+          resources:
+          - hosts
+          verbs:
+          - create
+          - delete
+          - get
+          - list
+          - patch
+          - update
+          - watch
+        - apiGroups:
+          - cerebro.k8s.webcenter.fr
+          resources:
+          - hosts/finalizers
+          verbs:
+          - update
+        - apiGroups:
+          - cerebro.k8s.webcenter.fr
+          resources:
+          - hosts/status
+          verbs:
+          - get
+          - patch
+          - update
+        - apiGroups:
           - elasticsearch.k8s.webcenter.fr
           resources:
           - elasticsearches
@@ -5535,6 +5592,15 @@ spec:
           template:
             metadata:
               annotations:
+                co.elastic.logs.manager/multiline.match: after
+                co.elastic.logs.manager/multiline.negate: "true"
+                co.elastic.logs.manager/multiline.pattern: ^\{
+                co.elastic.logs.manager/multiline.timeout: 5s
+                co.elastic.logs.manager/processors.0.decode_json_fields: '{"fields":
+                  ["message"],"target": "operator.elasticsearch", "add_error_key":
+                  true, "max_depth": 10}'
+                co.elastic.logs.manager/processors.1.add_fields: '{"target": "", "fields":{"event":
+                  {"dataset": "elasticsearch-operator"}}}'
                 kubectl.kubernetes.io/default-container: manager
               labels:
                 control-plane: elastic-operator
@@ -5583,8 +5649,10 @@ spec:
                       apiVersion: v1
                       fieldPath: metadata.namespace
                 - name: LOG_LEVEL
-                  value: DEBUG
-                image: quay.io/webcenter/elasticsearch-operator:0.0.27
+                  value: INFO
+                - name: LOG_FORMATTER
+                  value: json
+                image: quay.io/webcenter/elasticsearch-operator:0.0.31
                 livenessProbe:
                   httpGet:
                     path: /healthz
@@ -5674,5 +5742,5 @@ spec:
   provider:
     name: webcenter.fr
     url: https://github.com/webcenter-fr/elasticsearch-operator
-  replaces: elasticsearch-operator.v0.0.26
-  version: 0.0.27
+  replaces: elasticsearch-operator.v0.0.30
+  version: 0.0.31

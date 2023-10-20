@@ -3,8 +3,8 @@
 # To re-generate a bundle for another specific version without changing the standard setup, you can:
 # - use the VERSION as arg of the bundle target (e.g make bundle VERSION=0.0.2)
 # - use environment variables to overwrite this value (e.g export VERSION=0.0.2)
-VERSION ?= 0.0.27
-PREVIOUS_VERSION ?= 0.0.26
+VERSION ?= 0.0.31
+PREVIOUS_VERSION ?= 0.0.30
 
 # CHANNELS define the bundle channels used in the bundle.
 # Add a new line here if you would like to change its default config. (E.g CHANNELS = "candidate,fast,stable")
@@ -88,11 +88,11 @@ help: ## Display this help.
 
 .PHONY: manifests
 manifests: controller-gen ## Generate WebhookConfiguration, ClusterRole and CustomResourceDefinition objects.
-	$(CONTROLLER_GEN) rbac:roleName=elastic-operator crd:generateEmbeddedObjectMeta=true,maxDescLen=0 webhook paths="./apis/..." output:crd:artifacts:config=config/crd/bases 
+	$(CONTROLLER_GEN) rbac:roleName=elastic-operator crd:generateEmbeddedObjectMeta=true,maxDescLen=0 webhook paths="./..." output:crd:artifacts:config=config/crd/bases 
 
 .PHONY: generate
 generate: controller-gen ## Generate code containing DeepCopy, DeepCopyInto, and DeepCopyObject method implementations.
-	$(CONTROLLER_GEN) object:headerFile="hack/boilerplate.go.txt" paths="./apis/..."
+	$(CONTROLLER_GEN) object:headerFile="hack/boilerplate.go.txt" paths="./..."
 
 .PHONY: fmt
 fmt: ## Run go fmt against code.
@@ -125,7 +125,7 @@ build: generate fmt vet ## Build manager binary.
 
 .PHONY: run
 run: manifests generate fmt vet ## Run a controller from your host.
-	LOG_LEVEL=debug go run .
+	LOG_LEVEL=debug LOG_FORMATTER=json go run .
 
 .PHONY: install-sample
 install-sample: manifests kustomize ## Install samples

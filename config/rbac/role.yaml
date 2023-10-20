@@ -2,7 +2,6 @@
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
-  creationTimestamp: null
   name: elastic-operator
 rules:
 - apiGroups:
@@ -133,6 +132,58 @@ rules:
   - beat.k8s.webcenter.fr
   resources:
   - metricbeats/status
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
+  - cerebro.k8s.webcenter.fr
+  resources:
+  - cerebroes
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - cerebro.k8s.webcenter.fr
+  resources:
+  - cerebroes/finalizers
+  verbs:
+  - update
+- apiGroups:
+  - cerebro.k8s.webcenter.fr
+  resources:
+  - cerebroes/status
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
+  - cerebro.k8s.webcenter.fr
+  resources:
+  - hosts
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - cerebro.k8s.webcenter.fr
+  resources:
+  - hosts/finalizers
+  verbs:
+  - update
+- apiGroups:
+  - cerebro.k8s.webcenter.fr
+  resources:
+  - hosts/status
   verbs:
   - get
   - patch

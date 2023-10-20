@@ -137,6 +137,11 @@ func (in *ElasticsearchGlobalNodeGroupSpec) DeepCopyInto(out *ElasticsearchGloba
 		*out = new(corev1.LocalObjectReference)
 		**out = **in
 	}
+	if in.CacertsSecretRef != nil {
+		in, out := &in.CacertsSecretRef, &out.CacertsSecretRef
+		*out = new(corev1.LocalObjectReference)
+		**out = **in
+	}
 	if in.Labels != nil {
 		in, out := &in.Labels, &out.Labels
 		*out = make(map[string]string, len(*in))

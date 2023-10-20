@@ -6,11 +6,11 @@ import (
 	"time"
 
 	"github.com/disaster37/operator-sdk-extra/pkg/controller"
-	"sigs.k8s.io/controller-runtime/pkg/client"
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/suite"
 	"k8s.io/client-go/kubernetes/scheme"
 	ctrl "sigs.k8s.io/controller-runtime"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/envtest"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"

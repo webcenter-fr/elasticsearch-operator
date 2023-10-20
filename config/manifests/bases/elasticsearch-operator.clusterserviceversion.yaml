@@ -4,7 +4,7 @@ metadata:
   annotations:
     alm-examples: '[]'
     capabilities: Basic Install
-  name: elasticsearch-operator.v0.0.27
+  name: elasticsearch-operator.v0.0.31
   namespace: placeholder
 spec:
   apiservicedefinitions: {}
@@ -2435,6 +2435,11 @@ spec:
       - description: Type permit to set anti affinity as soft or hard
         displayName: Type
         path: globalNodeGroup.antiAffinity.type
+      - description: CacertsSecretRef is the secret that store custom CA to import
+          on cacerts It usefull to access on onpremise S3 service to store snaoshot
+          and more
+        displayName: Cacerts Secret Ref
+        path: globalNodeGroup.caSecretRef
       - description: Config is the Elasticsearch config dedicated for this node groups
           like roles The key is the file stored on elasticsearch/config
         displayName: Config
@@ -4224,5 +4229,5 @@ spec:
   provider:
     name: webcenter.fr
     url: https://github.com/webcenter-fr/elasticsearch-operator
-  replaces: elasticsearch-operator.v0.0.26
-  version: 0.0.27
+  replaces: elasticsearch-operator.v0.0.30
+  version: 0.0.31

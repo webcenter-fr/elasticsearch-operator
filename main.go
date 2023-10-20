@@ -91,6 +91,7 @@ func main() {
 	opts := zap.Options{
 		Development: true,
 		Level:       helper.GetZapLogLevelFromEnv(),
+		Encoder:     helper.GetZapFormatterFromDev(),
 	}
 	opts.BindFlags(flag.CommandLine)
 	flag.Parse()
@@ -99,6 +100,14 @@ func main() {
 	log := logrus.New()
 	log.SetLevel(helper.GetLogrusLogLevelFromEnv())
 	log.SetFormatter(helper.GetLogrusFormatterFromEnv())
+
+	// Log panics error and exit
+	defer func() {
+		if r := recover(); r != nil {
+			log.Errorf("Panic: %v", r)
+			os.Exit(1)
+		}
+	}()
 
 	var cacheNamespaces map[string]cache.Config
 	watchNamespace, err := helper.GetWatchNamespaceFromEnv()

@@ -952,6 +952,12 @@ spec:
                     required:
                     - type
                     type: object
+                  caSecretRef:
+                    properties:
+                      name:
+                        type: string
+                    type: object
+                    x-kubernetes-map-type: atomic
                   config:
                     additionalProperties:
                       type: string
