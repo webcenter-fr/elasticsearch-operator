@@ -14,7 +14,7 @@ require (
 	github.com/disaster37/k8s-objectmatcher v1.8.2
 	github.com/disaster37/k8sbuilder v1.0.1
 	github.com/disaster37/kb-handler/v8 v8.0.4
-	github.com/disaster37/operator-sdk-extra v0.1.3-0.20231020093826-828ae11bdbc6
+	github.com/disaster37/operator-sdk-extra v0.1.3
 	github.com/elastic/elastic-transport-go/v8 v8.3.0
 	github.com/elastic/go-elasticsearch/v8 v8.9.0
 	github.com/elastic/go-ucfg v0.8.6
@@ -30,6 +30,7 @@ require (
 	golang.org/x/crypto v0.13.0
 	gopkg.in/yaml.v3 v3.0.1
 	k8s.io/api v0.28.2
+	k8s.io/apiextensions-apiserver v0.28.0
 	k8s.io/apimachinery v0.28.2
 	k8s.io/client-go v0.28.2
 	k8s.io/utils v0.0.0-20230726121419-3b25d923346b
@@ -89,7 +90,6 @@ require (
 	google.golang.org/protobuf v1.30.0 // indirect
 	gopkg.in/inf.v0 v0.9.1 // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect
-	k8s.io/apiextensions-apiserver v0.28.0 // indirect
 	k8s.io/cli-runtime v0.28.2 // indirect
 	k8s.io/component-base v0.28.2 // indirect
 	k8s.io/klog/v2 v2.100.1 // indirect

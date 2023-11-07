@@ -164,6 +164,7 @@ type CerebroDeploymentSpec struct {
 	// It usefull to add some extra properties on pod spec
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
 	// +optional
+	// +kubebuilder:pruning:PreserveUnknownFields
 	PodTemplate *corev1.PodTemplateSpec `json:"podTemplate,omitempty"`
 
 	// Node permit to set extra option on Node process

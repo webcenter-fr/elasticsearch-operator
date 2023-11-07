@@ -74,3 +74,41 @@ patchesStrategicMerge:
 # the following config is for teaching kustomize how to do kustomization for CRDs.
 configurations:
 - kustomizeconfig.yaml
+
+patchesJson6902:
+- target:
+    group: apiextensions.k8s.io
+    version: v1
+    kind: CustomResourceDefinition
+    name: filebeats.beat.k8s.webcenter.fr
+  path: patches/filebeat-patches.yaml
+- target:
+    group: apiextensions.k8s.io
+    version: v1
+    kind: CustomResourceDefinition
+    name: metricbeats.beat.k8s.webcenter.fr
+  path: patches/metricbeat-patches.yaml
+- target:
+    group: apiextensions.k8s.io
+    version: v1
+    kind: CustomResourceDefinition
+    name: cerebroes.cerebro.k8s.webcenter.fr
+  path: patches/cerebro-patches.yaml
+- target:
+    group: apiextensions.k8s.io
+    version: v1
+    kind: CustomResourceDefinition
+    name: elasticsearches.elasticsearch.k8s.webcenter.fr
+  path: patches/elasticsearch-patches.yaml
+- target:
+    group: apiextensions.k8s.io
+    version: v1
+    kind: CustomResourceDefinition
+    name: kibanas.kibana.k8s.webcenter.fr
+  path: patches/kibana-patches.yaml
+- target:
+    group: apiextensions.k8s.io
+    version: v1
+    kind: CustomResourceDefinition
+    name: logstashes.logstash.k8s.webcenter.fr
+  path: patches/logstash-patches.yaml
