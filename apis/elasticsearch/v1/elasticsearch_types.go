@@ -288,6 +288,7 @@ type ElasticsearchGlobalNodeGroupSpec struct {
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
 	// +kubebuilder:validation:Optional
 	// +optional
+	// +kubebuilder:pruning:PreserveUnknownFields
 	PodTemplate *corev1.PodTemplateSpec `json:"podTemplate,omitempty"`
 
 	// Jvm permit to set extra option on JVM like memory or proxy to download plugins
@@ -408,6 +409,7 @@ type ElasticsearchNodeGroupSpec struct {
 	// It usefull to add some extra properties on pod spec
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
 	// +optional
+	// +kubebuilder:pruning:PreserveUnknownFields
 	PodTemplate *corev1.PodTemplateSpec `json:"podTemplate,omitempty"`
 
 	// PodDisruptionBudget is the pod disruption budget policy
