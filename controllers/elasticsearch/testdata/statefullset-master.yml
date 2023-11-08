@@ -252,12 +252,14 @@ spec:
             for i in /mnt/cacertsSecrets/*; do
                 key=$(basename $i)
                 echo "Import certificat $i with name $key"
-                keytool -import -trustcacerts -cacerts -noprompt -alias $key -storepass changeit -file $i
+                /usr/share/elasticsearch/jdk/bin/keytool -import -trustcacerts -cacerts -noprompt -alias $key -storepass changeit -file $i
             done
 
             cp -a /usr/share/elasticsearch/jdk/lib/security/* /mnt/cacerts/
         image: docker.elastic.co/elasticsearch/elasticsearch:2.3.0
         name: init-cacerts
+        securityContext:
+          runAsUser: 0
         resources:
           limits:
             cpu: 300m

@@ -520,6 +520,9 @@ cp -a /usr/share/elasticsearch/config/elasticsearch.keystore /mnt/keystore/
 				Name:            "init-cacerts",
 				Image:           GetContainerImage(es),
 				ImagePullPolicy: es.Spec.ImagePullPolicy,
+				SecurityContext: &corev1.SecurityContext{
+					RunAsUser: ptr.To[int64](0),
+				},
 				VolumeMounts: []corev1.VolumeMount{
 					{
 						Name:      "cacerts",
@@ -539,7 +542,7 @@ set -euo pipefail
 for i in /mnt/cacertsSecrets/*; do
     key=$(basename $i)
     echo "Import certificat $i with name $key"
-    keytool -import -trustcacerts -cacerts -noprompt -alias $key -storepass changeit -file $i
+    /usr/share/elasticsearch/jdk/bin/keytool -import -trustcacerts -cacerts -noprompt -alias $key -storepass changeit -file $i
 done
 
 cp -a /usr/share/elasticsearch/jdk/lib/security/* /mnt/cacerts/

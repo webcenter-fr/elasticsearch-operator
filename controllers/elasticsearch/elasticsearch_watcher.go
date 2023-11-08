@@ -118,6 +118,17 @@ func watchSecret(c client.Client) handler.MapFunc {
 			reconcileRequests = append(reconcileRequests, reconcile.Request{NamespacedName: types.NamespacedName{Name: e.Name, Namespace: e.Namespace}})
 		}
 
+		// cacerts secret
+		listElasticsearch = &elasticsearchcrd.ElasticsearchList{}
+		fs = fields.ParseSelectorOrDie(fmt.Sprintf("spec.globalNodeGroup.cacertsSecretRef.name=%s", a.GetName()))
+		// Get all elasticsearch linked with secret
+		if err := c.List(context.Background(), listElasticsearch, &client.ListOptions{Namespace: a.GetNamespace(), FieldSelector: fs}); err != nil {
+			panic(err)
+		}
+		for _, e := range listElasticsearch.Items {
+			reconcileRequests = append(reconcileRequests, reconcile.Request{NamespacedName: types.NamespacedName{Name: e.Name, Namespace: e.Namespace}})
+		}
+
 		// TLS secret
 		listElasticsearch = &elasticsearchcrd.ElasticsearchList{}
 		fs = fields.ParseSelectorOrDie(fmt.Sprintf("spec.tls.certificateSecretRef.name=%s", a.GetName()))
