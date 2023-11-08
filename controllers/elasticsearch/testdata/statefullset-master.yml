@@ -188,6 +188,8 @@ spec:
           name: config
         - mountPath: /usr/share/elasticsearch/plugins
           name: plugin
+        - mountPath: /usr/share/elasticsearch/jdk/lib/security
+          name: cacerts
       initContainers:
       - command:
         - sysctl
@@ -246,6 +248,34 @@ spec:
         - |
             #!/usr/bin/env bash
             set -euo pipefail
+
+            for i in /mnt/cacertsSecrets/*; do
+                key=$(basename $i)
+                echo "Import certificat $i with name $key"
+                keytool -import -trustcacerts -cacerts -noprompt -alias $key -storepass changeit -file $i
+            done
+
+            cp -a /usr/share/elasticsearch/jdk/lib/security/* /mnt/cacerts/
+        image: docker.elastic.co/elasticsearch/elasticsearch:2.3.0
+        name: init-cacerts
+        resources:
+          limits:
+            cpu: 300m
+            memory: 500Mi
+          requests:
+            cpu: 100m
+            memory: 100Mi
+        volumeMounts:
+          - name: cacerts
+            mountPath: /mnt/cacerts
+          - name: elasticsearch-cacerts
+            mountPath: /mnt/cacertsSecrets
+      - command:
+        - /bin/bash
+        - -c
+        - |
+            #!/usr/bin/env bash
+            set -euo pipefail
             
             # Move original config
             echo "Move original elasticsearch configs"
@@ -269,12 +299,6 @@ spec:
             if [ -f /mnt/keystore/elasticsearch.keystore ]; then
               echo "Move keystore"
               cp /mnt/keystore/elasticsearch.keystore /mnt/config
-            fi
-
-            # Move cacerts
-            if [ -f /mnt/cacerts/cacerts ]; then
-              echo "Move cacerts"
-              cp /mnt/cacerts/cacerts /usr/share/elasticsearch/jdk/lib/security/cacerts
             fi
 
             # Set right
@@ -332,8 +356,6 @@ spec:
             mountPath: /mnt/plugins
           - name: keystore
             mountPath: /mnt/keystore
-          - name: cacerts
-            mountPath: /mnt/cacerts
         securityContext:
           runAsUser: 0
         resources:
@@ -367,6 +389,9 @@ spec:
       - name: elasticsearch-keystore
         secret:
           secretName: elasticsearch-security
+      - name: elasticsearch-cacerts
+        secret:
+          secretName: custom-ca
       - name: config
         emptyDir: {}
       - name: plugin

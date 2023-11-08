@@ -218,12 +218,6 @@ spec:
               cp /mnt/keystore/elasticsearch.keystore /mnt/config
             fi
 
-            # Move cacerts
-            if [ -f /mnt/cacerts/cacerts ]; then
-              echo "Move cacerts"
-              cp /mnt/cacerts/cacerts /usr/share/elasticsearch/jdk/lib/security/cacerts
-            fi
-
             # Set right
             echo "Set right"
             chown -R elasticsearch:elasticsearch /mnt/config
@@ -271,8 +265,6 @@ spec:
             subPath: elasticsearch.yml
           - name: keystore
             mountPath: /mnt/keystore
-          - name: cacerts
-            mountPath: /mnt/cacerts
           - mountPath: /mnt/data
             name: elasticsearch-data
         securityContext:

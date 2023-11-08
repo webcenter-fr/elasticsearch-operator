@@ -90,6 +90,9 @@ func TestBuildStatefulset(t *testing.T) {
 				KeystoreSecretRef: &corev1.LocalObjectReference{
 					Name: "elasticsearch-security",
 				},
+				CacertsSecretRef: &corev1.LocalObjectReference{
+					Name: "custom-ca",
+				},
 				AntiAffinity: &elasticsearchcrd.ElasticsearchAntiAffinitySpec{
 					TopologyKey: "rack",
 					Type:        "hard",

@@ -320,6 +320,15 @@ func buildStatefulsets(es *elasticsearchcrd.Elasticsearch, secretsChecksum []cor
 			}, k8sbuilder.Merge)
 		}
 
+		if es.Spec.GlobalNodeGroup.CacertsSecretRef != nil {
+			cb.WithVolumeMount([]corev1.VolumeMount{
+				{
+					Name:      "cacerts",
+					MountPath: "/usr/share/elasticsearch/jdk/lib/security",
+				},
+			}, k8sbuilder.Merge)
+		}
+
 		// Compute liveness
 		cb.WithLivenessProbe(&corev1.Probe{
 			TimeoutSeconds:   5,
@@ -530,10 +539,10 @@ set -euo pipefail
 for i in /mnt/cacertsSecrets/*; do
     key=$(basename $i)
     echo "Import certificat $i with name $key"
-	/usr/share/elasticsearch/jdk/bin/keytool -importcert -alias $key -keystore /usr/share/elasticsearch/jdk/lib/security/cacerts -storepass changeit -file $i
+    keytool -import -trustcacerts -cacerts -noprompt -alias $key -storepass changeit -file $i
 done
 
-cp -a /usr/share/elasticsearch/jdk/lib/security/cacerts /mnt/cacerts/
+cp -a /usr/share/elasticsearch/jdk/lib/security/* /mnt/cacerts/
 `,
 				},
 			})
@@ -604,10 +613,6 @@ cp -a /usr/share/elasticsearch/jdk/lib/security/cacerts /mnt/cacerts/
 					MountPath: "/mnt/keystore",
 				},
 				{
-					Name:      "cacerts",
-					MountPath: "/mnt/cacerts",
-				},
-				{
 					Name:      "elasticsearch-data",
 					MountPath: "/mnt/data",
 				},
@@ -646,12 +651,6 @@ cp /mnt/certs/node/${POD_NAME}.key /mnt/config/transport-cert/
 if [ -f /mnt/keystore/elasticsearch.keystore ]; then
   echo "Move keystore"
   cp /mnt/keystore/elasticsearch.keystore /mnt/config
-fi
-
-# Move cacerts
-if [ -f /mnt/cacerts/cacerts ]; then
-  echo "Move cacerts"
-  cp /mnt/cacerts/cacerts /usr/share/elasticsearch/jdk/lib/security/cacerts
 fi
 
 # Set right
