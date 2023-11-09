@@ -10,7 +10,7 @@ You can use the following global setting:
   - **volumeSource** (object / required): The pod volume source. Read the [official doc to know the properties](https://kubernetes.io/fr/docs/concepts/storage/volumes/)
 - **antiAffinity** (object): The pod anti affinity to use. Hard or soft and the key to use to compute it.
   - **type**: The anti affinity type. Default to `soft`
-  - **topologyKey**: The toplogy key to use to compute anti affinity. Default to `topology.kubernetes.io/zone`.
+  - **topologyKey**: The toplogy key to use to compute anti affinity. Default to `kubernetes.io/hostname`.
 - **podDisruptionBudget** (object): The pod disruption budget to use. Default it allow to lost one pod per node groups. The selector is automatically set. Read the [official doc to know the properties](https://kubernetes.io/docs/tasks/run-application/configure-pdb/)
 - **initContainerResources** (object): The default resources for all init containers. Default is empty. Read the [official doc to know the properties](https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/)
 - **podTemplate** (object): The pod template to merge with the Elasticsearch pod template. Default is empty. Read the [official doc to know the properties](https://kubernetes.io/docs/concepts/workloads/pods/)

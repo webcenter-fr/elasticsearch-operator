@@ -422,6 +422,7 @@ type ElasticsearchNodeGroupSpec struct {
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
 	// +optional
 	// +kubebuilder:default=green
+	// +kubebuilder:validation:Enum=green,yellow,red
 	WaitClusterStatus string `json:"waitClusterStatus,omitempty"`
 }
 
