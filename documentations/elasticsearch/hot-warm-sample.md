@@ -41,6 +41,7 @@ spec:
       host: elasticsearch-cluster-prd.domain.local
       secretRef:
         name: es-tls
+      targetNodeGroupName: client
   globalNodeGroup:
     additionalVolumes:
       - mountPath: /mnt/snapshot
