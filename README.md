@@ -80,25 +80,6 @@ You can read complete documentation per sub section
   - [Monitoring settings](documentations/elasticsearch/monitoring-settings.md)
   - [License settings](documentations/elasticsearch/license-settings.md)
 
-  - [Add Elasticsearch settings](documentations/elasticsearch/add-elasticsearch-settings.md)
-  - [Add license](documentations/elasticsearch/add-license.md)
-  - [Set VM max map count](documentations/elasticsearch/add-vm_max_map_count.md)
-  - [Monitor Elasticsearch](documentations/elasticsearch/monitor-elasticsearch.md)
-  - [Configure TLS](documentations/elasticsearch/configure-tls.md)
-  - [Configure endpoint (ingress or load balancer)](documentations/elasticsearch/configure-endpoint.md)
-  - [Persistent data](documentations/elasticsearch/persistent-data.md)
-  - [Add additional volumes](documentations/elasticsearch/add-additional-volumes.md)
-  - [COnfigure anti affinity](documentations/elasticsearch/configure-anti-affinity.md)
-  - [Add labels / annotations](documentations/elasticsearch/add-labels-annotations.md)
-  - [Configure resources](documentations/elasticsearch/configure-resssources.md)
-  - [Add environment variables](documentations/elasticsearch/add-environment-variable.md)
-  - [Add secrets on keystore](documentations/elasticsearch/add-secrets-keystore.md)
-  - [Add ca certs on cacerts](documentations/elasticsearch/add-custom-ca.md)
-  - [Add Elasticsearch plugins](documentations/elasticsearch/add-plugins.md)
-  
-  - [Configure version and custom image](documentations/elasticsearch/configure-image.md)
-  - [Deploy monitoring cluster](documentations/elasticsearch/deploy-monitoring-cluster.md)
-
 
 ## Manage Elasticsearch cluster
 

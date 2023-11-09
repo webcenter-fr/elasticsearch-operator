@@ -19,7 +19,7 @@ type MetricbeatMonitoringSpec struct {
 	// Resources permit to set resources on metricbeat
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
 	// +optional
-	Resources *corev1.ResourceRequirements `json:"initContainerResources,omitempty"`
+	Resources *corev1.ResourceRequirements `json:"resources,omitempty"`
 
 	// RefreshPeriod permit to set the time to collect data
 	// Defaullt to  `10s`
