@@ -18,6 +18,7 @@ Some infos:
 apiVersion: elasticsearch.k8s.webcenter.fr/v1
 kind: Elasticsearch
 metadata:
+  labels:
     socle: cluster-dev
   name: elasticsearch
   namespace: cluster-dev

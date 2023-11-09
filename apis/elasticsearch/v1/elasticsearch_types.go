@@ -453,6 +453,9 @@ type ElasticsearchAntiAffinitySpec struct {
 
 	// Type permit to set anti affinity as soft or hard
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
+	// +kubebuilder:validation:Enum=soft,hard
+	// +kubebuilder:default=soft
+	// +optional
 	Type string `json:"type"`
 
 	// TopologyKey is the topology key to use

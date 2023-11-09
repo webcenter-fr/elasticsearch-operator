@@ -65,10 +65,13 @@ To do that, you need to set:
   - Monitoring to monitor elasticsearch from prometheus/graphana or with dedicated Elasticsearch/kibana cluster
   - Generate automatically system passwords
 
-You can read sub section of the doc:
+You can read some samples:
   - [Single node cluster sample](documentations/elasticsearch/single-node-sample.md)
   - [Hot / warm cluster sample](documentations/elasticsearch/hot-warm-sample.md)
   - [Monitoring cluster sample](documentations/elasticsearch/monitoring-sample.md)
+
+
+You can read complete documentation per sub section
   - [Main settings](documentations/elasticsearch/main-settings.md)
   - [Global settings share between node groups](documentations/elasticsearch/global-settings.md)
   - [Node group settings](documentations/elasticsearch/node-group-settings.md)
