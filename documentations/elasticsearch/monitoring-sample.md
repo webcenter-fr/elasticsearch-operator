@@ -7,8 +7,11 @@ Some infos:
 - It will be accessible by ingress with https://elasticsearch-cluster-monitoring.domain.local
 - It use platinium license to get Active directory auth
 - It inject some secrets on java keystore
+- It will deploy kibana and it will be accessbile by ingress on https://kibana-cluster-monitoring.domain.local
 
 > we need to create some resources here (secret) because of we use platinium license and we use Active directory auth
+
+## Elasticsearch
 
 **elasticsearch.yaml**:
 ```yaml
@@ -154,4 +157,74 @@ metadata:
 type: Opaque
 data:
   license: ++++++++
+```
+
+## Kibana
+
+**kibana.yaml**:
+```yaml
+apiVersion: kibana.k8s.webcenter.fr/v1
+kind: Kibana
+metadata:
+  labels:
+    socle: cluster-monitoring
+  name: kibana
+  namespace: cluster-monitoring
+spec:
+  config:
+    kibana.yml: |
+      elasticsearch.requestTimeout: 300000
+      unifiedSearch.autocomplete.valueSuggestions.timeout: 3000
+      xpack.reporting.roles.enabled: false
+      monitoring.kibana.collection.enabled: false
+      monitoring.ui.ccs.enabled: false
+  deployment:
+    initContainerResources:
+      limits:
+        cpu: 500m
+        memory: 256Mi
+      requests:
+        cpu: 25m
+        memory: 64Mi
+    node: '--max-old-space-size=2048'
+    replicas: 1
+    resources:
+      limits:
+        cpu: '1'
+        memory: 1Gi
+      requests:
+        cpu: 250m
+        memory: 512Mi
+  elasticsearchRef:
+    managed:
+      name: elasticsearch
+  endpoint:
+    ingress:
+      annotations:
+        nginx.ingress.kubernetes.io/proxy-body-size: 4G
+        nginx.ingress.kubernetes.io/proxy-connect-timeout: '600'
+        nginx.ingress.kubernetes.io/proxy-read-timeout: '600'
+        nginx.ingress.kubernetes.io/proxy-send-timeout: '600'
+        nginx.ingress.kubernetes.io/ssl-redirect: 'true'
+      enabled: true
+      host: kibana-cluster-monitoring.domain.local
+      secretRef:
+        name: kb-tls
+  keystoreSecretRef:
+    name: kibana-keystore
+  version: 8.7.1
+```
+
+**kibana-keystore-secret.yaml**:
+```yaml
+apiVersion: v1
+kind: Secret
+metadata:
+  name: kibana-keystore
+  namespace: cluster-monitoring
+type: Opaque
+data:
+  xpack.encryptedSavedObjects.encryptionKey: ++++++++
+  xpack.reporting.encryptionKey: ++++++++
+  xpack.security.encryptionKey: ++++++++
 ```
