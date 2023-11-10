@@ -460,10 +460,10 @@ type ElasticsearchAntiAffinitySpec struct {
 	Type string `json:"type"`
 
 	// TopologyKey is the topology key to use
-	// Default to topology.kubernetes.io/zone
+	// Default to kubernetes.io/hostname
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
 	// +optional
-	// +kubebuilder:default=topology.kubernetes.io/zone
+	// +kubebuilder:default=kubernetes.io/hostname
 	TopologyKey string `json:"topologyKey,omitempty"`
 }
 

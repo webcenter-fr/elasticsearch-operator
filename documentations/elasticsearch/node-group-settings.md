@@ -93,6 +93,9 @@ spec:
       config:
         elasticsearch.yml: |
           node.attr.data: "warm"
+      antiAffinity:
+        topologyKey: topology.kubernetes.io/zone
+        type: hard
     - name: client
       persistence:
         volumeClaim:

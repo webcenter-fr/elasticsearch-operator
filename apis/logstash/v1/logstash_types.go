@@ -302,13 +302,15 @@ type LogstashAntiAffinitySpec struct {
 
 	// Type permit to set anti affinity as soft or hard
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
+	// +kubebuilder:validation:Enum=soft,hard
+	// +kubebuilder:default=soft
 	Type string `json:"type"`
 
 	// TopologyKey is the topology key to use
-	// Default to topology.kubernetes.io/zone
+	// Default to kubernetes.io/hostname
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
 	// +optional
-	// +kubebuilder:default=topology.kubernetes.io/zone
+	// +kubebuilder:default=kubernetes.io/hostname
 	TopologyKey string `json:"topologyKey,omitempty"`
 }
 

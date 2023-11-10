@@ -127,7 +127,6 @@ You can read complete documentation per sub section
   - [Main settings](documentations/logstash/main-settings.md)
   - [Deployment settings](documentations/logstash/deployment-settings.md)
   - [Endpoint settings](documentations/logstash/endpoint-settings.md)
-  - [TLS settings](documentations/logstash/tls-settings.md)
   - [Monitoring settings](documentations/logstash/monitoring-settings.md)
 
 ## Deploy Filebeat
