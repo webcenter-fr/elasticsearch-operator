@@ -1,44 +1,29 @@
-# Monitoring settings for Elasticsearch
+# Monitoring settings for Kibana
 
-It's a good idea to monitor performance and health of your Elasticsearch cluster. You have 2 way to that:
-  - Use kubernetes tools: You monitor Elasticsearch from Prometheus / Graphana. Metrics exposed by Elasticsearch expoter pod
+It's a good idea to monitor performance and health of your Kibana instances. You have 2 way to that:
+  - Use kubernetes tools: You monitor Kibana from Prometheus / Graphana. Metrics exposed by Kibana expoter. It use a Kibana plugin.
   - Use Elastic tools: You deploy dedicated Elasticsearch / kibana for monitor. Metrics is collected and send by metricbeat.
 
-## Monitor cluster with Prometheus / Graphana
+## Monitor with Prometheus / Graphana
 
 To use it, you need to have deployed Prometheus / Graphana stack on your kubernetes cluster with prometheus operator (to handle podMonitor resource).
 
 You can use the following setting:
 - **enabled** (boolean): Set to true to enable prometheus monitoring
-- **image** (string): Prometheus exporter image to use. Default to `quay.io/prometheuscommunity/elasticsearch-exporter`
-- **imagePullPolicy** (string): The image pull policy. Default to `IfNotPresent`
-- **imagePullSecrets** (string): The image pull secrets to use. Default to `empty`
-- **version** (string): The image version to use. Default to `latest`
-- **resources** (object): The resources to set on exposter pod. Default to `{"requests": {"cpu": "25m", "memory": "64Mi"}, "limits: {"cpu": "100m", "memory": "512Mi"}}`. Read the [official doc to know the properties](https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/)
+- **url** (string): Prometheus exporter plugin. Default to `https://github.com/pjhampton/kibana-prometheus-exporter/releases`
 
-**elasticsearch.yaml**:
+**kibana.yaml**:
 ```yaml
-apiVersion: elasticsearch.k8s.webcenter.fr/v1
-kind: Elasticsearch
+apiVersion: kibana.k8s.webcenter.fr/v1
+kind: Kibana
 metadata:
-  name: elasticsearch
+  name: kibana
   namespace: cluster-dev
 spec:
   monitoring:
     prometheus:
       enabled: true
-      image: quay.io/prometheuscommunity/elasticsearch-exporter
-      imagePullPolicy: Always
-      imagePullSecrets:
-      - name: pull-secret
-      version: latest
-      resources:
-        limits:
-          cpu: '1'
-          memory: 1Gi
-        requests:
-          cpu: '300m'
-          memory: 256Mi
+      url: https://github.com/pjhampton/kibana-prometheus-exporter/releases/download/8.6.0/kibanaPrometheusExporter-8.6.0.zip
 ```
 
 ## Monitor cluster with Elastic tools
@@ -69,6 +54,8 @@ You can use the following setting:
 apiVersion: elasticsearch.k8s.webcenter.fr/v1
 kind: Elasticsearch
 metadata:
+  labels:
+    socle: cluster-dev
   name: elasticsearch
   namespace: cluster-dev
 spec:
