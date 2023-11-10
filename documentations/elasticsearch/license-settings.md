@@ -17,3 +17,16 @@ spec:
   licenseSecretRef:
     name: elasticsearch-license
 ```
+
+
+**elasticsearch-license-secret.yaml**:
+```yaml
+apiVersion: v1
+kind: Secret
+metadata:
+  name: elasticsearch-license
+  namespace: cluster-dev
+type: Opaque
+data:
+  license: ++++++++
+```

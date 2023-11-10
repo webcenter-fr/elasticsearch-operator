@@ -43,3 +43,17 @@ spec:
     certificateSecretRef:
       name: certificat-secret
 ```
+
+**certificat-secret.yaml**:
+```yaml
+apiVersion: v1
+kind: Secret
+metadata:
+  name: certificat-secret
+  namespace: cluster-dev
+type: Opaque
+data:
+  ca.crt: ++++++++
+  tls.crt: ++++++++
+  tls.key: ++++++++
+```

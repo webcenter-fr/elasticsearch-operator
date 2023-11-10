@@ -126,3 +126,55 @@ spec:
       - name: LDAP_USERNAME
         value: ldap_user
 ```
+
+**pvc-elasticsearch-snapshot.yaml**:
+```yaml
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: pvc-elasticsearch-snapshot
+  namespace: cluster-dev
+spec:
+  accessModes:
+    - ReadWriteMany
+  resources:
+    requests:
+      storage: 10Gi
+  storageClassName: nfs-client
+```
+
+**elasticsearch-keystore-secret.yaml**:
+```yaml
+apiVersion: v1
+kind: Secret
+metadata:
+  name: elasticsearch-keystore
+  namespace: cluster-dev
+type: Opaque
+data:
+  xpack.security.authc.realms.active_directory.active_directory.secure_bind_password: ++++++++
+```
+
+**custom-ca-secret.yaml**:
+```yaml
+apiVersion: v1
+kind: Secret
+metadata:
+  name: custom-ca
+  namespace: cluster-dev
+type: Opaque
+data:
+  custom-ca.crt: ++++++++
+```
+
+**elasticsearch-env-secret.yaml**:
+```yaml
+apiVersion: v1
+kind: Secret
+metadata:
+  name: elasticsearch-env
+  namespace: cluster-dev
+type: Opaque
+data:
+  ELASTICSEARCH_LDAP_USER: ++++++++
+```
