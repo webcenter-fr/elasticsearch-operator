@@ -1,11 +1,11 @@
-# Main settings to deploy Elasticsearch
+# Main settings to deploy Kibana
 
 You can use the following main setting to deploy Kibana:
 - **image** (string): Kibana image to use. Default to `docker.elastic.co/kibana/kibana`
 - **imagePullPolicy** (string): The image pull policy. Default to `IfNotPresent`
 - **imagePullSecrets** (string): The image pull secrets to use. Default to `empty`
 - **version** (string): The image version to use. Default to `latest`
-- **pluginsList** (slice of string): The list of plugins to install on runtime (just before run Kiban). Use it for test purpose. For production, please build custom image to embedded your plugins. Default to `empty`.
+- **pluginsList** (slice of string): The list of plugins to install on runtime (just before run Kibana). Use it for test purpose. For production, please build custom image to embedded your plugins. Default to `empty`.
 - **config** (map of string): Each key is the file store on config folder. Each value is the file contend. It permit to set kibana.yml settings. Default is `empty`.
 - **keystoreSecretRef** (object): The secrets to inject on keystore on runtime. Each keys / values is injected on Java Keystore. Default to `empty`.
 - **elasticsearchRef** (object): The Elasticsearch cluster ref

@@ -8,8 +8,7 @@ import (
 )
 
 const (
-	defaultImage            = "docker.elastic.co/logstash/logstash"
-	defaultPrometheusPlugin = "https://github.com/pjhampton/kibana-prometheus-exporter/releases/download/%s/kibanaPrometheusExporter-%s.zip"
+	defaultImage = "docker.elastic.co/logstash/logstash"
 )
 
 // GetConfigMapConfigName permit to get the configMap name that store the config
@@ -120,19 +119,6 @@ func GetSecretNameForCredentials(ls *logstashcrd.Logstash) (secretName string) {
 // GetNetworkPolicyName return the name for network policy
 func GetNetworkPolicyName(ls *logstashcrd.Logstash) string {
 	return fmt.Sprintf("%s-allow-ls", ls.Name)
-}
-
-// GetExporterUrl permit to get the URL to download plugin for prometheus exporter
-func GetExporterUrl(ls *logstashcrd.Logstash) string {
-	if ls.Spec.Monitoring.Prometheus != nil && ls.Spec.Monitoring.Prometheus.Url != "" {
-		return ls.Spec.Monitoring.Prometheus.Url
-	}
-
-	if ls.Spec.Version != "" && ls.Spec.Version != "latest" {
-		return fmt.Sprintf(defaultPrometheusPlugin, ls.Spec.Version, ls.Spec.Version)
-	}
-
-	return fmt.Sprintf(defaultPrometheusPlugin, "8.6.0", "8.6.0")
 }
 
 // GetPodMonitorName return the name for podMonitor

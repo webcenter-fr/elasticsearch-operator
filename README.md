@@ -110,6 +110,26 @@ You can read complete documentation per sub section
 
 ## Deploy Logstash
 
+To deploy Logstash, you need to set a custom resource of type `Logstash`.
+To do that, you need to set:
+  - main settings: Logstash version, Elasticsearch ref, etc.
+  - deployment settings
+  - endpoint to access on Kibana
+  - TLS to encrypt network
+  - Monitoring to monitor Logstash from prometheus/graphana or with dedicated Elasticsearch/kibana cluster
+
+You can read some samples:
+  - [Logstash with Elasticsearch cluster managed by Operator](documentations/kibana/logstash-with-managed-cluster-sample.md)
+  - [Logstash with external Elasticsearch (not managed by Operator)](documentations/kibana/logstash-with-external-cluster-sample.md)
+
+
+You can read complete documentation per sub section
+  - [Main settings](documentations/logstash/main-settings.md)
+  - [Deployment settings](documentations/logstash/deployment-settings.md)
+  - [Endpoint settings](documentations/logstash/endpoint-settings.md)
+  - [TLS settings](documentations/logstash/tls-settings.md)
+  - [Monitoring settings](documentations/logstash/monitoring-settings.md)
+
 ## Deploy Filebeat
 
 ## Deploy Metricbeat

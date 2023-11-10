@@ -242,52 +242,6 @@ func TestGetNetworkPolicyName(t *testing.T) {
 	assert.Equal(t, "test-allow-ls", GetNetworkPolicyName(o))
 }
 
-func TestGetExporterUrl(t *testing.T) {
-	var o *logstashcrd.Logstash
-
-	// Default value
-	o = &logstashcrd.Logstash{
-		ObjectMeta: metav1.ObjectMeta{
-			Namespace: "default",
-			Name:      "test",
-		},
-		Spec: logstashcrd.LogstashSpec{},
-	}
-
-	assert.Equal(t, "https://github.com/pjhampton/kibana-prometheus-exporter/releases/download/8.6.0/kibanaPrometheusExporter-8.6.0.zip", GetExporterUrl(o))
-
-	// When version is set
-	o = &logstashcrd.Logstash{
-		ObjectMeta: metav1.ObjectMeta{
-			Namespace: "default",
-			Name:      "test",
-		},
-		Spec: logstashcrd.LogstashSpec{
-			Version: "8.0.0",
-		},
-	}
-
-	assert.Equal(t, "https://github.com/pjhampton/kibana-prometheus-exporter/releases/download/8.0.0/kibanaPrometheusExporter-8.0.0.zip", GetExporterUrl(o))
-
-	// When URL is set
-	o = &logstashcrd.Logstash{
-		ObjectMeta: metav1.ObjectMeta{
-			Namespace: "default",
-			Name:      "test",
-		},
-		Spec: logstashcrd.LogstashSpec{
-			Version: "8.0.0",
-			Monitoring: logstashcrd.LogstashMonitoringSpec{
-				Prometheus: &logstashcrd.LogstashPrometheusSpec{
-					Url: "fake",
-				},
-			},
-		},
-	}
-
-	assert.Equal(t, "fake", GetExporterUrl(o))
-}
-
 func TestGetPodMonitorName(t *testing.T) {
 	o := &logstashcrd.Logstash{
 		ObjectMeta: metav1.ObjectMeta{
