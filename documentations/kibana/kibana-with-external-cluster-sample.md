@@ -1,4 +1,4 @@
-# Kibana with managed cluster sample
+# Kibana with external cluster sample
 
 In this sample, we will deploy Kibana that use external Elasticsearch cluster (or cluster not manafed by this operator).
 
