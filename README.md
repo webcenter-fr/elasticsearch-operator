@@ -95,3 +95,6 @@ You can read complete documentation per sub section
 
 ## Deploy Cerebro
 
+## Design
+
+- [Elasticsearch reconciler design](documentations/design/elasticsearch_design.md)
