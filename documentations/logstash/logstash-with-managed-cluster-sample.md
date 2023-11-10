@@ -163,7 +163,6 @@ spec:
   elasticsearchRef:
     managed:
       name: elasticsearch
-      targetNodeGroup: client
   services:
     - name: beat
       spec:
