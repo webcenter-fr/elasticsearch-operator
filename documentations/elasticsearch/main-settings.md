@@ -29,3 +29,15 @@ spec:
   pluginsList:
     - 'analysis-icu'
 ```
+
+**my-pull-secret.yaml**:
+```yaml
+apiVersion: v1
+kind: Secret
+metadata:
+  name: my-pull-secret
+  namespace: cluster-dev
+type: kubernetes.io/dockerconfigjson
+data:
+  .dockerconfigjson: UmVhbGx5IHJlYWxseSByZWVlZWVlZWVlZWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWxsbGxsbGxsbGxsbGxsbGxsbGxsbGxsbGxsbGxsbGx5eXl5eXl5eXl5eXl5eXl5eXl5eSBsbGxsbGxsbGxsbGxsbG9vb29vb29vb29vb29vb29vb29vb29vb29vb25ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubmdnZ2dnZ2dnZ2dnZ2dnZ2dnZ2cgYXV0aCBrZXlzCg==
+```

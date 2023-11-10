@@ -57,10 +57,10 @@ spec:
 To deploy Elasticsearch cluster, you need to set a custom resource of type `Elasticsearch`.
 To do that, you need to set:
   - main settings: Elasticsearch version, cluster name
-  - global settings share between node groups: 
+  - global settings share between node groups
   - nodes groups settings: the topology of elasticsearch cluster
   - endpoint to access on Elasticsearch
-  - TLS to encrypt network andf trust nodes
+  - TLS to encrypt network and trust nodes
   - License if platinium or enterprise is needed
   - Monitoring to monitor elasticsearch from prometheus/graphana or with dedicated Elasticsearch/kibana cluster
   - Generate automatically system passwords
@@ -84,6 +84,27 @@ You can read complete documentation per sub section
 ## Manage Elasticsearch cluster
 
 ## Deploy Kibana
+
+To deploy Kibana, you need to set a custom resource of type `Kibana`.
+To do that, you need to set:
+  - main settings: Kibana version, Elasticsearch ref, etc.
+  - deployment settings
+  - endpoint to access on Kibana
+  - TLS to encrypt network
+  - Monitoring to monitor Kibana from prometheus/graphana or with dedicated Elasticsearch/kibana cluster
+
+You can read some samples:
+  - [Kibana with Elasticsearch cluster managed by Operator](documentations/kibana/kibana-with-managed-cluster-sample.md)
+  - [Kibana with external Elasticsearch (not managed by Operator)](documentations/kibana/kibana-with-external-cluster-sample.md)
+  - [Kibana for monitoring](documentations/kibana/kibana-for-monitoring-sample.md)
+
+
+You can read complete documentation per sub section
+  - [Main settings](documentations/kibana/main-settings.md)
+  - [Deployment settings](documentations/elasticsearch/deployment-settings.md)
+  - [Endpoint settings](documentations/elasticsearch/endpoint-settings.md)
+  - [TLS settings](documentations/elasticsearch/tls-settings.md)
+  - [Monitoring settings](documentations/elasticsearch/monitoring-settings.md)
 
 ## Manage Kibana
 

@@ -99,3 +99,28 @@ spec:
           cpu: '300m'
           memory: 256Mi
 ```
+
+**custom-ca-monitoring-secret.yaml**:
+```yaml
+apiVersion: v1
+kind: Secret
+metadata:
+  name: custom-ca-monitoring
+  namespace: cluster-dev
+type: Opaque
+data:
+  ca.crt: ++++++++
+```
+
+**monitoring-credentials.yaml**:
+```yaml
+apiVersion: v1
+kind: Secret
+metadata:
+  name: monitoring-credentials
+  namespace: cluster-dev
+type: Opaque
+data:
+  username: ++++++++
+  password: ++++++++
+```

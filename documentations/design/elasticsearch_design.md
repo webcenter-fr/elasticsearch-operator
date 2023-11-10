@@ -1,6 +1,6 @@
 # Elasticsearch design
 
-The operator doing the following step when it reconsil `Elasticsearch`:
+The operator doing the following step when it reconcile `Elasticsearch`:
 - Generate secret that store `admin` account. This account is used by operator, and so it never be change by external intervention.
 - Generate TLS certificates for internal communication. You can't custom it.
   Under the wood, it will generate internal PKI.
