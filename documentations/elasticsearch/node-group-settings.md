@@ -12,6 +12,8 @@ You can use the following setting for each node group:
 - **replicas** (number / required): The number of instances
 - **roles** (slice of string / required): The list of node roles
 - **persistence** (object): The persistent volume to use to store Elasticsearch data. Default is `emptyDir` (not peristent)
+  - **volumeClaim** (object): Use it if you should to use PVC. Read the [official doc to know the properties](https://kubernetes.io/docs/concepts/storage/persistent-volumes/)
+  - **volume** (object): Use it if you should to use existing volume or hostPath. Read the [official doc to know the properties](https://kubernetes.io/fr/docs/concepts/storage/volumes/)
 - **antiAffinity** (object): The pod anti affinity to use. Hard or soft and the key to use to compute it. Default is `soft` with the key `kubernetes.io/hostname`
   - **type**: The anti affinity type. Default to `soft`
   - **topologyKey**: The toplogy key to use to compute anti affinity. Default to `kubernetes.io/hostname`.
@@ -31,7 +33,15 @@ You can use the following setting for each node group:
 
 **elasticsearch.yaml**:
 ```yaml
-nodeGroups:
+apiVersion: elasticsearch.k8s.webcenter.fr/v1
+kind: Elasticsearch
+metadata:
+  labels:
+    socle: cluster-dev
+  name: elasticsearch
+  namespace: cluster-dev
+spec:
+  nodeGroups:
     - name: master
       persistence:
         volumeClaim:
@@ -120,4 +130,16 @@ nodeGroups:
       env:
         - name: LDAP_USERNAME
           value: ldap_user
+```
+
+**elasticsearch-env-secret.yaml**:
+```yaml
+apiVersion: v1
+kind: Secret
+metadata:
+  name: elasticsearch-env
+  namespace: cluster-dev
+type: Opaque
+data:
+  ELASTICSEARCH_LDAP_USER: ++++++++
 ```
