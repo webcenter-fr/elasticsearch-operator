@@ -119,8 +119,8 @@ To do that, you need to set:
   - Monitoring to monitor Logstash from prometheus/graphana or with dedicated Elasticsearch/kibana cluster
 
 You can read some samples:
-  - [Logstash with Elasticsearch cluster managed by Operator](documentations/kibana/logstash-with-managed-cluster-sample.md)
-  - [Logstash with external Elasticsearch (not managed by Operator)](documentations/kibana/logstash-with-external-cluster-sample.md)
+  - [Logstash with Elasticsearch cluster managed by Operator](documentations/logstash/logstash-with-managed-cluster-sample.md)
+  - [Logstash with external Elasticsearch (not managed by Operator)](documentations/logstash/logstash-with-external-cluster-sample.md)
 
 
 You can read complete documentation per sub section

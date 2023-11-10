@@ -1,30 +1,12 @@
-# Monitoring settings for Kibana
+# Monitoring settings for Logstash
 
-It's a good idea to monitor performance and health of your Kibana instances. You have 2 way to that:
+It's a good idea to monitor performance and health of your Logstash instances. You have 2 way to that:
   - Use kubernetes tools: You monitor Kibana from Prometheus / Graphana. Metrics exposed by Kibana expoter. It use a Kibana plugin.
   - Use Elastic tools: You deploy dedicated Elasticsearch / kibana for monitor. Metrics is collected and send by metricbeat.
 
 ## Monitor with Prometheus / Graphana
 
-To use it, you need to have deployed Prometheus / Graphana stack on your kubernetes cluster with prometheus operator (to handle podMonitor resource).
-
-You can use the following setting:
-- **enabled** (boolean): Set to true to enable prometheus monitoring
-- **url** (string): Prometheus exporter plugin. Default to `https://github.com/pjhampton/kibana-prometheus-exporter/releases`
-
-**kibana.yaml**:
-```yaml
-apiVersion: kibana.k8s.webcenter.fr/v1
-kind: Kibana
-metadata:
-  name: kibana
-  namespace: cluster-dev
-spec:
-  monitoring:
-    prometheus:
-      enabled: true
-      url: https://github.com/pjhampton/kibana-prometheus-exporter/releases/download/8.6.0/kibanaPrometheusExporter-8.6.0.zip
-```
+> It's not implemented
 
 ## Monitor cluster with Elastic tools
 
@@ -49,12 +31,12 @@ You can use the following setting:
 - **version** (string): The version of metricbeat to use. Default it use the same version of current Elasticsearch.
 
 
-**kibana.yaml**:
+**logstash.yaml**:
 ```yaml
-apiVersion: kibana.k8s.webcenter.fr/v1
-kind: Kibana
+apiVersion: logstash.k8s.webcenter.fr/v1
+kind: Logstash
 metadata:
-  name: kibana
+  name: logstash
   namespace: cluster-dev
 spec:
   monitoring:
