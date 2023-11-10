@@ -101,10 +101,10 @@ You can read some samples:
 
 You can read complete documentation per sub section
   - [Main settings](documentations/kibana/main-settings.md)
-  - [Deployment settings](documentations/elasticsearch/deployment-settings.md)
-  - [Endpoint settings](documentations/elasticsearch/endpoint-settings.md)
-  - [TLS settings](documentations/elasticsearch/tls-settings.md)
-  - [Monitoring settings](documentations/elasticsearch/monitoring-settings.md)
+  - [Deployment settings](documentations/kibana/deployment-settings.md)
+  - [Endpoint settings](documentations/kibana/endpoint-settings.md)
+  - [TLS settings](documentations/kibana/tls-settings.md)
+  - [Monitoring settings](documentations/kibana/monitoring-settings.md)
 
 ## Manage Kibana
 
