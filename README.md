@@ -96,7 +96,7 @@ To do that, you need to set:
 You can read some samples:
   - [Kibana with Elasticsearch cluster managed by Operator](documentations/kibana/kibana-with-managed-cluster-sample.md)
   - [Kibana with external Elasticsearch (not managed by Operator)](documentations/kibana/kibana-with-external-cluster-sample.md)
-  - [Kibana for monitoring](documentations/kibana/kibana-for-monitoring-sample.md)
+  - [Kibana for monitoring](documentations/elasticsearch/monitoring-sample.md)
 
 
 You can read complete documentation per sub section
