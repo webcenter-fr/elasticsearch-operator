@@ -16,7 +16,7 @@ require (
 	github.com/disaster37/kb-handler/v8 v8.0.4
 	github.com/disaster37/operator-sdk-extra v0.1.3
 	github.com/elastic/elastic-transport-go/v8 v8.3.0
-	github.com/elastic/go-elasticsearch/v8 v8.9.0
+	github.com/elastic/go-elasticsearch/v8 v8.11.0
 	github.com/elastic/go-ucfg v0.8.6
 	github.com/google/go-cmp v0.5.9
 	github.com/olivere/elastic/v7 v7.0.32
