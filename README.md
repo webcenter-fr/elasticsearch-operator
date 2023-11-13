@@ -177,8 +177,8 @@ To do that, you need to set:
   - Cerebro targets
 
 You can read some samples:
-  - [Cerebro sample with managed Elasticsearch](documentations/logstash/cerebro-sample.md)
-  - [Cerebro with external Elasticsearch (not managed by Operator)](documentations/logstash/logstash-with-external-cluster-sample.md)
+  - [Cerebro sample with managed Elasticsearch](documentations/cerebro/cerebro-with-managed-cluster-sample.md)
+  - [Cerebro with external Elasticsearch (not managed by Operator)](documentations/cerebro/cerebro-with-external-cluster-sample.md)
 
 
 You can read complete documentation per sub section
