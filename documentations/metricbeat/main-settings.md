@@ -1,58 +1,33 @@
-# Main settings to deploy Logstash
+# Main settings to deploy Metricbeat
 
-You can use the following main setting to deploy Logstash:
-- **image** (string): Logstash image to use. Default to `docker.elastic.co/logstash/logstash`
+You can use the following main setting to deploy Metricbeat:
+- **image** (string): Metricbeat image to use. Default to `docker.elastic.co/beats/metricbeat`
 - **imagePullPolicy** (string): The image pull policy. Default to `IfNotPresent`
 - **imagePullSecrets** (string): The image pull secrets to use. Default to `empty`
 - **version** (string): The image version to use. Default to `latest`
-- **pluginsList** (slice of string): The list of plugins to install on runtime (just before run Logstash). Use it for test purpose. For production, please build custom image to embedded your plugins. Default to `empty`.
-- **config** (map of string): Each key is the file store on config folder. Each value is the file contend. It permit to set logstash.yml settings. Default is `empty`.
-- **keystoreSecretRef** (object): The secrets to inject on keystore on runtime. Each keys / values is injected on Java Keystore. Default to `empty`.
+- **config** (map of string): Each key is the file store on metricbeat folder. Each value is the file contend. It permit to set metricbeat.yml settings. Default is `empty`.
 - **elasticsearchRef** (object): The Elasticsearch cluster ref
   - **managed** (object): Use it if cluster is deployed with this operator
     - **name** (string / required): The name of elasticsearch resource.
     - **namespace** (string): The namespace where cluster is deployed on. Not needed if is on same namespace.
-    - **targetNodeGroup** (string): The node group where Logstash connect on. Default is used all node groups.
+    - **targetNodeGroup** (string): The node group where Metricbeat connect on. Default is used all node groups.
   - **external** (object): Use it if cluster is not deployed with this operator.
     - **addresses** (slice of string): The list of IPs, DNS, URL to access on cluster
     - **secretRef** (object): The secret ref that store the credentials to connect on Elasticsearch. It need to contain the keys `username` and `password`
       - **name** (string / require): The secret name.
   - **elasticsearchCASecretRef** (object). It's the secret that store custom CA to connect on Elasticsearch cluster.
     - **name** (string / require): The secret name
-- **pipeline** (map of string): Each key is the file store on pipeline folder. Each value is the file contend. It permit to set your pipeline spec. Default is `empty`.
-- **pattern** (map of string): Each key is the file store on pattern folder. Each value is the file contend. It permit to set your custom grok patterns. Default is `empty`.
+- **module** (map of string): Each key is the file store on modules.d folder. Each value is the file contend. It permit to enable and configure modules. Default is `empty`.
 
 
-**logstash.yaml**:
+**metricbeat.yaml**:
 ```yaml
-apiVersion: logstash.k8s.webcenter.fr/v1
-kind: Logstash
+apiVersion: beat.k8s.webcenter.fr/v1
+kind: Metricbeat
 metadata:
-  name: logstash
+  name: metricbeat
   namespace: cluster-dev
 spec:
-  config:
-    logstash.yml: |
-      queue.type: persisted
-      log.format: json
-      dead_letter_queue.enable: true
-      monitoring.enabled: false
-      xpack.monitoring.enabled: false
-
-      # Custom config
-      pipeline.workers: 8
-      queue.max_bytes: 20gb
-
-      api.http.host: 0.0.0.0
-  pipeline:
-    log.yml: |
-      input { stdin { } }
-      output {
-        stdout { codec => rubydebug }
-      }
-  pattern:
-    postfix: |
-      POSTFIX_QUEUEID [0-9A-F]{10,11}
   elasticsearchRef:
     managed:
       name: elasticsearch
@@ -65,28 +40,28 @@ spec:
         name: elasticsearch-credentials
     elasticsearchCASecretRef:
       name: elasticsearch-custom-ca
-  image: docker.elastic.co/logstash/logstash
+  image: docker.elastic.co/beats/metricbeat
   imagePullPolicy: Always
   imagePullSecrets:
     - name: my-pull-secret
-  keystoreSecretRef:
-    name: logstash-keystore
-  pluginsList:
-    - 'logstash-input-github'
+  config:
+    metricbeat.yml: |
+      tags: ["service-X", "web-tier"]
+  module:
+    elasticsearch-xpack.yml: |
+      - module: elasticsearch
+        xpack.enabled: true
+        username: '${SOURCE_METRICBEAT_USERNAME}'
+        password: '${SOURCE_METRICBEAT_PASSWORD}'
+        ssl:
+          enable: true
+          certificate_authorities: '/usr/share/metricbeat/source-es-ca/ca.crt'
+          verification_mode: full
+        scope: cluster
+        period: 10s
+        hosts: https://elasticsearchcluster-dev.svc:9200
   version: 8.7.1
 
-```
-
-**logstash-keystore-secret.yaml**:
-```yaml
-apiVersion: v1
-kind: Secret
-metadata:
-  name: logstash-keystore
-  namespace: cluster-dev
-type: Opaque
-data:
-  key1: ++++++++
 ```
 
 **my-pull-secret.yaml**:
