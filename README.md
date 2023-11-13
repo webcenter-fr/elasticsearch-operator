@@ -169,6 +169,24 @@ You can read complete documentation per sub section
 
 ## Deploy Cerebro
 
+To deploy Cerebro, you need to set a custom resource of type `Cerebro`.
+To do that, you need to set:
+  - main settings: Cerebro version, etc.
+  - deployment settings
+  - endpoint to access on UI
+  - Cerebro targets
+
+You can read some samples:
+  - [Cerebro sample with managed Elasticsearch](documentations/logstash/cerebro-sample.md)
+  - [Cerebro with external Elasticsearch (not managed by Operator)](documentations/logstash/logstash-with-external-cluster-sample.md)
+
+
+You can read complete documentation per sub section
+  - [Main settings](documentations/cerebro/main-settings.md)
+  - [Deployment settings](documentations/cerebro/deployment-settings.md)
+  - [Endpoint settings](documentations/cerebro/endpoint-settings.md)
+  - [Targets Elasticsearch cluster](documentations/cerebro/targets-settings.md)
+
 ## Design
 
 - [Elasticsearch reconciler design](documentations/design/elasticsearch_design.md)
