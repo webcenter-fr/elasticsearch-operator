@@ -115,7 +115,6 @@ To do that, you need to set:
   - main settings: Logstash version, Elasticsearch ref, etc.
   - deployment settings
   - endpoint to access on Logstash API or inputs
-  - TLS to encrypt network
   - Monitoring to monitor Logstash from prometheus/graphana or with dedicated Elasticsearch/kibana cluster
 
 You can read some samples:
@@ -130,6 +129,27 @@ You can read complete documentation per sub section
   - [Monitoring settings](documentations/logstash/monitoring-settings.md)
 
 ## Deploy Filebeat
+
+To deploy Filebeat, you need to set a custom resource of type `Filebeat`.
+To do that, you need to set:
+  - main settings: Filebeat version, Elasticsearch ref, etc.
+  - deployment settings
+  - endpoint to access on Filebeat API or inputs
+  - Monitoring to monitor Filebeat from prometheus/graphana or with dedicated Elasticsearch/kibana cluster
+
+
+You can read some samples:
+  - [Filebeat with Elasticsearch cluster managed by Operator](documentations/filebeat/filebeat-with-managed-cluster-sample.md)
+  - [Filebeat with external Elasticsearch (not managed by Operator)](documentations/filebeat/filebeat-with-external-cluster-sample.md)
+  - [Filebeat with Logstash managed by Operator](documentations/filebeat/filebeat-with-managed-logstash-sample.md)
+  - [Filebeat with external Logstash (not managed by Operator)](documentations/filebeat/filebeat-with-external-logstash-sample.md)
+
+
+You can read complete documentation per sub section
+  - [Main settings](documentations/filebeat/main-settings.md)
+  - [Deployment settings](documentations/filebeat/deployment-settings.md)
+  - [Endpoint settings](documentations/filebeat/endpoint-settings.md)
+  - [Monitoring settings](documentations/filebeat/monitoring-settings.md)
 
 ## Deploy Metricbeat
 
