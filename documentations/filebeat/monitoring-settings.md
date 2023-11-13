@@ -1,7 +1,7 @@
-# Monitoring settings for Logstash
+# Monitoring settings for Filebeat
 
-It's a good idea to monitor performance and health of your Logstash instances. You have 2 way to that:
-  - Use kubernetes tools: You monitor Logstash from Prometheus / Graphana. Metrics exposed by Logstash exporter. It use a Kibana plugin.
+It's a good idea to monitor performance and health of your Filebeat instances. You have 2 way to that:
+  - Use kubernetes tools: You monitor Filebeat from Prometheus / Graphana. Metrics exposed by Filebeat exporter.
   - Use Elastic tools: You deploy dedicated Elasticsearch / kibana for monitor. Metrics is collected and send by metricbeat.
 
 ## Monitor with Prometheus / Graphana
@@ -31,12 +31,12 @@ You can use the following setting:
 - **version** (string): The version of metricbeat to use. Default it use the same version of current Elasticsearch.
 
 
-**logstash.yaml**:
+**filebeat.yaml**:
 ```yaml
-apiVersion: logstash.k8s.webcenter.fr/v1
-kind: Logstash
+apiVersion: beat.k8s.webcenter.fr/v1
+kind: Filebeat
 metadata:
-  name: logstash
+  name: filebeat
   namespace: cluster-dev
 spec:
   monitoring:
