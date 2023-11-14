@@ -108,6 +108,13 @@ You can read complete documentation per sub section
 
 ## Manage Kibana
 
+You can define some resources inside your kibana instance. The operator will use the Kibana API.
+
+You can use the following resources:
+  - [Logstash pipeline](documentations/kibanaapi/logstash-pipeline.md)
+  - [Role](documentations/kibanaapi/role.md)
+  - [User space](documentations/kibanaapi/user-space.md)
+
 ## Deploy Logstash
 
 To deploy Logstash, you need to set a custom resource of type `Logstash`.

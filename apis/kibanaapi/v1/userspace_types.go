@@ -95,13 +95,13 @@ type KibanaUserSpaceCopy struct {
 	// +optional
 	CreateNewCopies *bool `json:"createNewCopies,omitempty"`
 
-	// CreateNewCopies is set to true to create new copy of objects
+	// ForceUpdateWhenReconcile is set to true to force to sync objects each time the operator reconcile
 	// Default to false
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
 	// +optional
 	ForceUpdateWhenReconcile *bool `json:"forceUpdate,omitempty"`
 
-	// OriginUserSpace is the user space name from copy objects
+	// KibanaObjects is the list of object to copy
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
 	KibanaObjects []KibanaSpaceObjectParameter `json:"objects"`
 }

@@ -54,7 +54,7 @@ type RoleSpec struct {
 	// TransientMedata
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
 	// +optional
-	TransientMedata *KibanaRoleTransientMetadata `json:"transient_metadata,omitempty"`
+	TransientMedata *KibanaRoleTransientMetadata `json:"transientMetadata,omitempty"`
 
 	// Metadata is optional meta-data
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
@@ -64,6 +64,9 @@ type RoleSpec struct {
 }
 
 type KibanaRoleTransientMetadata struct {
+
+	// Enabled permit to enable transient metadata
+	// +operator-sdk:csv:customresourcedefinitions:type=spec
 	Enabled bool `json:"enabled,omitempty"`
 }
 
@@ -81,7 +84,7 @@ type KibanaRoleElasticsearch struct {
 	// RunAs is the privilege like users
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
 	// +optional
-	RunAs []string `json:"run_as,omitempty"`
+	RunAs []string `json:"runAs,omitempty"`
 }
 
 type KibanaRoleKibana struct {
