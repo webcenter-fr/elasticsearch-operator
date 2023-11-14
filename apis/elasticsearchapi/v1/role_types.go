@@ -121,6 +121,7 @@ type RoleSpecIndicesPermissions struct {
 	Query string `json:"query,omitempty"`
 
 	// Allow to manage restricted index
+	// Default to false
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
 	// +optional
 	AllowRestrictedIndices bool `json:"allowRestrictedIndices,omitempty"`

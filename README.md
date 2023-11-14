@@ -83,6 +83,20 @@ You can read complete documentation per sub section
 
 ## Manage Elasticsearch cluster
 
+You can define some resources inside your Elasticsearch cluster. The operator will use the Elasticsearch API.
+
+You can use the following resources:
+  - [Component template](documentations/elasticsearchapi/component-template.md)
+  - [Index template](documentations/elasticsearchapi/index-template.md)
+  - [Index lifecycle policy (ILM)](documentations/elasticsearchapi/index-lifecycle-policy.md)
+  - [License](documentations/elasticsearchapi/license.md)
+  - [User](documentations/elasticsearchapi/user.md)
+  - [Role](documentations/elasticsearchapi/role.md)
+  - [Role mapping](documentations/elasticsearchapi/role-mapping.md)
+  - [Snapshot lifecycle policy (SLM)](documentations/elasticsearchapi/snapshot-lifecycle-policy.md)
+  - [Snapshot repository](documentations/elasticsearchapi/snapshot-repository.md)
+  - [Watch](documentations/elasticsearchapi/watch.md)
+
 ## Deploy Kibana
 
 To deploy Kibana, you need to set a custom resource of type `Kibana`.
