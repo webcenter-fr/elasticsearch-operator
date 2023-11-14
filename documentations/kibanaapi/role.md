@@ -34,45 +34,45 @@ You can use the following properties:
 
 ## Sample With managed Kibana
 
-In this sample, we will create Logstash pipeline on managed Kibana.
+In this sample, we will create role on managed Kibana.
 
-**logstash-pipeline.yml**:
+**role.yml**:
 ```yaml
 apiVersion: kibanaapi.k8s.webcenter.fr/v1
-kind: LogstashPipeline
+kind: Role
 metadata:
-  name: logstashpipeline-sample
+  name: dev-read
   namespace: cluster-dev
 spec:
+  kibana:
+    - base:
+        - read
+      spaces:
+        - dev
+  name: space_dev_read
   kibanaRef:
     managed:
       name: kibana
-  description: 'my logstash pipeline'
-  settings: |
-    {
-      "queue.type": "persisted"
-    }
-  pipeline: |
-    input { 
-      stdin {} 
-    } 
-    output { 
-      stdout {} 
-    }
 ```
 
 ## Sample With external Kibana
 
-In this sample, we will create Logstash pipeline on external Kibana.
+In this sample, we will create role on external Kibana.
 
-**logstash-pipeline.yml**:
+**role.yml**:
 ```yaml
 apiVersion: kibanaapi.k8s.webcenter.fr/v1
-kind: LogstashPipeline
+kind: Role
 metadata:
-  name: logstashpipeline-sample
+  name: dev-read
   namespace: cluster-dev
 spec:
+  kibana:
+    - base:
+        - read
+      spaces:
+        - dev
+  name: space_dev_read
   kibanaRef:
     external:
       address: https://kibana-dev.domain.com
@@ -80,18 +80,6 @@ spec:
       name: custom-ca-kibana
     credentialSecretRef:
       name: kibana-credential
-  description: 'my logstash pipeline'
-  settings: |
-    {
-      "queue.type": "persisted"
-    }
-  pipeline: |
-    input { 
-      stdin {} 
-    } 
-    output { 
-      stdout {} 
-    }
 ```
 
 **custom-ca-kibana-secret.yaml**:
