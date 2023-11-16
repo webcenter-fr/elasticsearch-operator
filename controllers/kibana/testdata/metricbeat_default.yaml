@@ -22,6 +22,10 @@ spec:
           - stats
         period: 10s
         hosts: https://test-kb.default.svc:5601
+  config:
+    'metricbeat.yml': |-
+      setup.template.settings:
+        index.number_of_replicas: 0
   deployment:
     replicas: 1
     env:

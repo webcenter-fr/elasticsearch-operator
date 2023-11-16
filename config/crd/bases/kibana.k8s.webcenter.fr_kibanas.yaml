@@ -71,12 +71,16 @@ spec:
                     description: AntiAffinity permit to set anti affinity policy
                     properties:
                       topologyKey:
-                        default: topology.kubernetes.io/zone
+                        default: kubernetes.io/hostname
                         description: TopologyKey is the topology key to use Default
-                          to topology.kubernetes.io/zone
+                          to kubernetes.io/hostname
                         type: string
                       type:
+                        default: soft
                         description: Type permit to set anti affinity as soft or hard
+                        enum:
+                        - soft
+                        - hard
                         type: string
                     required:
                     - type
@@ -8820,7 +8824,12 @@ spec:
                   can be usefull to use internal registry or mirror
                 type: string
               imagePullPolicy:
+                default: IfNotPresent
                 description: ImagePullPolicy is the image pull policy to use
+                enum:
+                - Always
+                - Never
+                - IfNotPresent
                 type: string
               imagePullSecrets:
                 description: ImagePullSecrets is the image pull secrets to use
@@ -8924,7 +8933,19 @@ spec:
                         description: Enabled permit to enable Metricbeat monitoring
                           It will deploy metricbeat to collect metric Default to false
                         type: boolean
-                      initContainerResources:
+                      numberOfReplicas:
+                        default: 0
+                        description: NumberOfReplica is the number of replica to set
+                          on metricbeat setting when it create templates Default is
+                          set to 0
+                        format: int64
+                        type: integer
+                      refreshPeriod:
+                        default: 10s
+                        description: RefreshPeriod permit to set the time to collect
+                          data Defaullt to  `10s`
+                        type: string
+                      resources:
                         description: Resources permit to set resources on metricbeat
                         properties:
                           claims:
@@ -8973,11 +8994,6 @@ spec:
                               Requests cannot exceed Limits. More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/'
                             type: object
                         type: object
-                      refreshPeriod:
-                        default: 10s
-                        description: RefreshPeriod permit to set the time to collect
-                          data Defaullt to  `10s`
-                        type: string
                       version:
                         description: Version is the Metricbeat version to use Default
                           it use the same version of the product that it monitor

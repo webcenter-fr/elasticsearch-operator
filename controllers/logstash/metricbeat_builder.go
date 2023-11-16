@@ -56,6 +56,9 @@ func buildMetricbeats(ls *logstashcrd.Logstash) (metricbeats []beatcrd.Metricbea
 			Module: map[string]string{
 				"logstash-xpack.yml": sb.String(),
 			},
+			Config: map[string]string{
+				"metricbeat.yml": fmt.Sprintf("setup.template.settings:\n  index.number_of_replicas: %d", ls.Spec.Monitoring.Metricbeat.NumberOfReplica),
+			},
 			Deployment: beatcrd.MetricbeatDeploymentSpec{
 				Replicas: 1,
 				Env: []corev1.EnvVar{

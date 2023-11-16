@@ -16,7 +16,7 @@ type ImageSpec struct {
 	// ImagePullPolicy is the image pull policy to use
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
 	// +kubebuilder:default=IfNotPresent
-	// +kubebuilder:validation:Enum=Always,Never,IfNotPresent
+	// +kubebuilder:validation:Enum=Always;Never;IfNotPresent
 	// +optional
 	ImagePullPolicy corev1.PullPolicy `json:"imagePullPolicy,omitempty"`
 

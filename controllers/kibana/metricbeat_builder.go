@@ -80,6 +80,9 @@ func buildMetricbeats(kb *kibanacrd.Kibana) (mbs []beatcrd.Metricbeat, err error
 			Module: map[string]string{
 				"kibana-xpack.yml": sb.String(),
 			},
+			Config: map[string]string{
+				"metricbeat.yml": fmt.Sprintf("setup.template.settings:\n  index.number_of_replicas: %d", kb.Spec.Monitoring.Metricbeat.NumberOfReplica),
+			},
 			Deployment: beatcrd.MetricbeatDeploymentSpec{
 				Replicas: 1,
 				Env: []corev1.EnvVar{

@@ -1731,12 +1731,16 @@ spec:
                     description: AntiAffinity permit to set anti affinity policy
                     properties:
                       topologyKey:
-                        default: topology.kubernetes.io/zone
+                        default: kubernetes.io/hostname
                         description: TopologyKey is the topology key to use Default
-                          to topology.kubernetes.io/zone
+                          to kubernetes.io/hostname
                         type: string
                       type:
+                        default: soft
                         description: Type permit to set anti affinity as soft or hard
+                        enum:
+                        - soft
+                        - hard
                         type: string
                     required:
                     - type
@@ -4109,7 +4113,12 @@ spec:
                   can be usefull to use internal registry or mirror
                 type: string
               imagePullPolicy:
+                default: IfNotPresent
                 description: ImagePullPolicy is the image pull policy to use
+                enum:
+                - Always
+                - Never
+                - IfNotPresent
                 type: string
               imagePullSecrets:
                 description: ImagePullSecrets is the image pull secrets to use

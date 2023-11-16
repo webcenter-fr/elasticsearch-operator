@@ -54,6 +54,9 @@ func buildMetricbeats(fb *beatcrd.Filebeat) (metricbeats []beatcrd.Metricbeat, e
 			Module: map[string]string{
 				"beat-xpack.yml": sb.String(),
 			},
+			Config: map[string]string{
+				"metricbeat.yml": fmt.Sprintf("setup.template.settings:\n  index.number_of_replicas: %d", fb.Spec.Monitoring.Metricbeat.NumberOfReplica),
+			},
 			Deployment: beatcrd.MetricbeatDeploymentSpec{
 				Replicas: 1,
 				Env: []corev1.EnvVar{

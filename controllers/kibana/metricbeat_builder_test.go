@@ -116,6 +116,7 @@ func TestBuildMetricbeat(t *testing.T) {
 							corev1.ResourceMemory: resource.MustParse("300Mi"),
 						},
 					},
+					NumberOfReplica: 1,
 				},
 			},
 			Deployment: kibanacrd.KibanaDeploymentSpec{

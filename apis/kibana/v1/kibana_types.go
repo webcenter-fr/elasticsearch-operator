@@ -305,7 +305,7 @@ type KibanaAntiAffinitySpec struct {
 
 	// Type permit to set anti affinity as soft or hard
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
-	// +kubebuilder:validation:Enum=soft,hard
+	// +kubebuilder:validation:Enum=soft;hard
 	// +kubebuilder:default=soft
 	Type string `json:"type"`
 

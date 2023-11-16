@@ -21,6 +21,10 @@ spec:
         scope: cluster
         period: 10s
         hosts: https://test-es.default.svc:9200
+  config:
+    'metricbeat.yml': |-
+      setup.template.settings:
+        index.number_of_replicas: 0
   deployment:
     replicas: 1
     env:
