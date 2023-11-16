@@ -123,5 +123,7 @@ metadata:
 spec:
   cerebroRef:
     name: cerebro
-  elasticsearchRef: elasticsearch
+  elasticsearchRef:
+    managed:
+      name: elasticsearch
 ```
