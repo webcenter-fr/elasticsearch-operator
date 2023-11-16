@@ -33,4 +33,11 @@ type MetricbeatMonitoringSpec struct {
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
 	// +optional
 	Version string `json:"version,omitempty"`
+
+	// NumberOfReplica is the number of replica to set on metricbeat setting when it create templates
+	// Default is set to 0
+	// +operator-sdk:csv:customresourcedefinitions:type=spec
+	// +optional
+	// +kubebuilder:default=0
+	NumberOfReplica int64 `json:"numberOfReplicas,omitempty"`
 }

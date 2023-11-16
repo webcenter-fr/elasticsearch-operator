@@ -131,16 +131,16 @@ spec:
                         of objects Default to false
                       type: boolean
                     forceUpdate:
-                      description: CreateNewCopies is set to true to create new copy
-                        of objects Default to false
+                      description: ForceUpdateWhenReconcile is set to true to force
+                        to sync objects each time the operator reconcile Default to
+                        false
                       type: boolean
                     includeReferences:
                       description: IncludeReferences is set to true to copy all references
                         Default to true
                       type: boolean
                     objects:
-                      description: OriginUserSpace is the user space name from copy
-                        objects
+                      description: KibanaObjects is the list of object to copy
                       items:
                         properties:
                           id:

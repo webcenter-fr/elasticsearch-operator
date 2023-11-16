@@ -17,6 +17,10 @@ spec:
           - state
         period: 10s
         hosts: [http://test-fb-0.test-headless-fb.default.svc:5066]
+  config:
+    'metricbeat.yml': |-
+      setup.template.settings:
+        index.number_of_replicas: 0
   deployment:
     replicas: 1
     env:

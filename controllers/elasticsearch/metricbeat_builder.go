@@ -78,6 +78,9 @@ func buildMetricbeats(es *elasticsearchcrd.Elasticsearch) (mbs []beatcrd.Metricb
 			Module: map[string]string{
 				"elasticsearch-xpack.yml": sb.String(),
 			},
+			Config: map[string]string{
+				"metricbeat.yml": fmt.Sprintf("setup.template.settings:\n  index.number_of_replicas: %d", es.Spec.Monitoring.Metricbeat.NumberOfReplica),
+			},
 			Deployment: beatcrd.MetricbeatDeploymentSpec{
 				Replicas: 1,
 				Env: []corev1.EnvVar{

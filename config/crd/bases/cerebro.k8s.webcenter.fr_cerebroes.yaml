@@ -8596,7 +8596,12 @@ spec:
                   can be usefull to use internal registry or mirror
                 type: string
               imagePullPolicy:
+                default: IfNotPresent
                 description: ImagePullPolicy is the image pull policy to use
+                enum:
+                - Always
+                - Never
+                - IfNotPresent
                 type: string
               imagePullSecrets:
                 description: ImagePullSecrets is the image pull secrets to use

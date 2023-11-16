@@ -148,7 +148,7 @@ spec:
                     object
                   properties:
                     allowRestrictedIndices:
-                      description: Allow to manage restricted index
+                      description: Allow to manage restricted index Default to false
                       type: boolean
                     fieldSecurity:
                       description: FieldSecurity JSON string

@@ -82,7 +82,7 @@ spec:
                       - privileges
                       type: object
                     type: array
-                  run_as:
+                  runAs:
                     description: RunAs is the privilege like users
                     items:
                       type: string
@@ -169,10 +169,11 @@ spec:
                 description: Name is the role name If empty, it use the ressource
                   name
                 type: string
-              transient_metadata:
+              transientMetadata:
                 description: TransientMedata
                 properties:
                   enabled:
+                    description: Enabled permit to enable transient metadata
                     type: boolean
                 type: object
             required:

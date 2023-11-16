@@ -936,10 +936,10 @@ metadata:
         }
       ]
     capabilities: Basic Install
-    createdAt: "2023-11-08T13:50:45Z"
+    createdAt: "2023-11-16T13:02:38Z"
     operators.operatorframework.io/builder: operator-sdk-v1.31.0
     operators.operatorframework.io/project_layout: go.kubebuilder.io/v3
-  name: elasticsearch-operator.v0.0.38
+  name: elasticsearch-operator.v0.0.39
   namespace: placeholder
 spec:
   apiservicedefinitions: {}
@@ -1094,7 +1094,7 @@ spec:
       - description: AntiAffinity permit to set anti affinity policy
         displayName: Anti Affinity
         path: globalNodeGroup.antiAffinity
-      - description: TopologyKey is the topology key to use Default to topology.kubernetes.io/zone
+      - description: TopologyKey is the topology key to use Default to kubernetes.io/hostname
         displayName: Topology Key
         path: globalNodeGroup.antiAffinity.topologyKey
       - description: Type permit to set anti affinity as soft or hard
@@ -1166,13 +1166,17 @@ spec:
           metricbeat to collect metric Default to false
         displayName: Enabled
         path: monitoring.metricbeat.enabled
-      - description: Resources permit to set resources on metricbeat
-        displayName: Resources
-        path: monitoring.metricbeat.initContainerResources
+      - description: NumberOfReplica is the number of replica to set on metricbeat
+          setting when it create templates Default is set to 0
+        displayName: Number Of Replica
+        path: monitoring.metricbeat.numberOfReplicas
       - description: RefreshPeriod permit to set the time to collect data Defaullt
           to  `10s`
         displayName: Refresh Period
         path: monitoring.metricbeat.refreshPeriod
+      - description: Resources permit to set resources on metricbeat
+        displayName: Resources
+        path: monitoring.metricbeat.resources
       - description: Version is the Metricbeat version to use Default it use the same
           version of the product that it monitor
         displayName: Version
@@ -1212,7 +1216,7 @@ spec:
       - description: AntiAffinity permit to set anti affinity policy
         displayName: Anti Affinity
         path: nodeGroups[0].antiAffinity
-      - description: TopologyKey is the topology key to use Default to topology.kubernetes.io/zone
+      - description: TopologyKey is the topology key to use Default to kubernetes.io/hostname
         displayName: Topology Key
         path: nodeGroups[0].antiAffinity.topologyKey
       - description: Type permit to set anti affinity as soft or hard
@@ -1380,7 +1384,7 @@ spec:
       - description: AntiAffinity permit to set anti affinity policy
         displayName: Anti Affinity
         path: deployment.antiAffinity
-      - description: TopologyKey is the topology key to use Default to topology.kubernetes.io/zone
+      - description: TopologyKey is the topology key to use Default to kubernetes.io/hostname
         displayName: Topology Key
         path: deployment.antiAffinity.topologyKey
       - description: Type permit to set anti affinity as soft or hard
@@ -1535,13 +1539,17 @@ spec:
           metricbeat to collect metric Default to false
         displayName: Enabled
         path: monitoring.metricbeat.enabled
-      - description: Resources permit to set resources on metricbeat
-        displayName: Resources
-        path: monitoring.metricbeat.initContainerResources
+      - description: NumberOfReplica is the number of replica to set on metricbeat
+          setting when it create templates Default is set to 0
+        displayName: Number Of Replica
+        path: monitoring.metricbeat.numberOfReplicas
       - description: RefreshPeriod permit to set the time to collect data Defaullt
           to  `10s`
         displayName: Refresh Period
         path: monitoring.metricbeat.refreshPeriod
+      - description: Resources permit to set resources on metricbeat
+        displayName: Resources
+        path: monitoring.metricbeat.resources
       - description: Version is the Metricbeat version to use Default it use the same
           version of the product that it monitor
         displayName: Version
@@ -1742,7 +1750,7 @@ spec:
       - description: AntiAffinity permit to set anti affinity policy
         displayName: Anti Affinity
         path: deployment.antiAffinity
-      - description: TopologyKey is the topology key to use Default to topology.kubernetes.io/zone
+      - description: TopologyKey is the topology key to use Default to kubernetes.io/hostname
         displayName: Topology Key
         path: deployment.antiAffinity.topologyKey
       - description: Type permit to set anti affinity as soft or hard
@@ -1859,13 +1867,17 @@ spec:
           metricbeat to collect metric Default to false
         displayName: Enabled
         path: monitoring.metricbeat.enabled
-      - description: Resources permit to set resources on metricbeat
-        displayName: Resources
-        path: monitoring.metricbeat.initContainerResources
+      - description: NumberOfReplica is the number of replica to set on metricbeat
+          setting when it create templates Default is set to 0
+        displayName: Number Of Replica
+        path: monitoring.metricbeat.numberOfReplicas
       - description: RefreshPeriod permit to set the time to collect data Defaullt
           to  `10s`
         displayName: Refresh Period
         path: monitoring.metricbeat.refreshPeriod
+      - description: Resources permit to set resources on metricbeat
+        displayName: Resources
+        path: monitoring.metricbeat.resources
       - description: Version is the Metricbeat version to use Default it use the same
           version of the product that it monitor
         displayName: Version
@@ -2014,7 +2026,7 @@ spec:
       - description: AntiAffinity permit to set anti affinity policy
         displayName: Anti Affinity
         path: deployment.antiAffinity
-      - description: TopologyKey is the topology key to use Default to topology.kubernetes.io/zone
+      - description: TopologyKey is the topology key to use Default to kubernetes.io/hostname
         displayName: Topology Key
         path: deployment.antiAffinity.topologyKey
       - description: Type permit to set anti affinity as soft or hard
@@ -2140,13 +2152,17 @@ spec:
           metricbeat to collect metric Default to false
         displayName: Enabled
         path: monitoring.metricbeat.enabled
-      - description: Resources permit to set resources on metricbeat
-        displayName: Resources
-        path: monitoring.metricbeat.initContainerResources
+      - description: NumberOfReplica is the number of replica to set on metricbeat
+          setting when it create templates Default is set to 0
+        displayName: Number Of Replica
+        path: monitoring.metricbeat.numberOfReplicas
       - description: RefreshPeriod permit to set the time to collect data Defaullt
           to  `10s`
         displayName: Refresh Period
         path: monitoring.metricbeat.refreshPeriod
+      - description: Resources permit to set resources on metricbeat
+        displayName: Resources
+        path: monitoring.metricbeat.resources
       - description: Version is the Metricbeat version to use Default it use the same
           version of the product that it monitor
         displayName: Version
@@ -2284,7 +2300,7 @@ spec:
       - description: AntiAffinity permit to set anti affinity policy
         displayName: Anti Affinity
         path: deployment.antiAffinity
-      - description: TopologyKey is the topology key to use Default to topology.kubernetes.io/zone
+      - description: TopologyKey is the topology key to use Default to kubernetes.io/hostname
         displayName: Topology Key
         path: deployment.antiAffinity.topologyKey
       - description: Type permit to set anti affinity as soft or hard
@@ -2452,7 +2468,7 @@ spec:
       - description: Indices is the list of indices permissions
         displayName: Indices
         path: indices
-      - description: Allow to manage restricted index
+      - description: Allow to manage restricted index Default to false
         displayName: Allow Restricted Indices
         path: indices[0].allowRestrictedIndices
       - description: FieldSecurity JSON string
@@ -2512,7 +2528,7 @@ spec:
         path: elasticsearch.indices[0].query
       - description: RunAs is the privilege like users
         displayName: Run As
-        path: elasticsearch.run_as
+        path: elasticsearch.runAs
       - description: Kibana is the Kibana right
         displayName: Kibana
         path: kibana
@@ -2550,7 +2566,10 @@ spec:
         path: name
       - description: TransientMedata
         displayName: Transient Medata
-        path: transient_metadata
+        path: transientMetadata
+      - description: Enabled permit to enable transient metadata
+        displayName: Enabled
+        path: transientMetadata.enabled
       version: v1
     - description: SnapshotLifecyclePolicy is the Schema for the snapshotlifecyclepolicies
         API
@@ -2781,15 +2800,15 @@ spec:
           Default to false
         displayName: Create New Copies
         path: userSpaceCopies[0].createNewCopies
-      - description: CreateNewCopies is set to true to create new copy of objects
-          Default to false
+      - description: ForceUpdateWhenReconcile is set to true to force to sync objects
+          each time the operator reconcile Default to false
         displayName: Force Update When Reconcile
         path: userSpaceCopies[0].forceUpdate
       - description: IncludeReferences is set to true to copy all references Default
           to true
         displayName: Include References
         path: userSpaceCopies[0].includeReferences
-      - description: OriginUserSpace is the user space name from copy objects
+      - description: KibanaObjects is the list of object to copy
         displayName: Kibana Objects
         path: userSpaceCopies[0].objects
       - description: ID is the object to copy
@@ -3603,7 +3622,7 @@ spec:
                   value: INFO
                 - name: LOG_FORMATTER
                   value: json
-                image: quay.io/webcenter/elasticsearch-operator:0.0.38
+                image: quay.io/webcenter/elasticsearch-operator:0.0.39
                 livenessProbe:
                   httpGet:
                     path: /healthz
@@ -3693,5 +3712,5 @@ spec:
   provider:
     name: webcenter.fr
     url: https://github.com/webcenter-fr/elasticsearch-operator
-  replaces: elasticsearch-operator.v0.0.37
-  version: 0.0.38
+  replaces: elasticsearch-operator.v0.0.38
+  version: 0.0.39

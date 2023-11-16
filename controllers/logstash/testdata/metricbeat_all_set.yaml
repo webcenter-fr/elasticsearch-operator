@@ -20,6 +20,10 @@ spec:
           - node_stats
         period: 5s
         hosts: [http://test-ls-0.test-headless-ls.default.svc:9600, http://test-ls-1.test-headless-ls.default.svc:9600, http://test-ls-2.test-headless-ls.default.svc:9600]
+  config:
+    'metricbeat.yml': |-
+      setup.template.settings:
+        index.number_of_replicas: 1
   deployment:
     replicas: 1
     env:
