@@ -22,6 +22,13 @@ You can use the following main setting to deploy Logstash:
 - **pipeline** (map of string): Each key is the file store on pipeline folder. Each value is the file contend. It permit to set your pipeline spec. Default is `empty`.
 - **pattern** (map of string): Each key is the file store on pattern folder. Each value is the file contend. It permit to set your custom grok patterns. Default is `empty`.
 
+> The Logstash output is directly managed by your pipelines. So, the operator can configure output for you.
+> Moreover, you need to create a dedicated account for your Logstash Pipeline.
+
+The operator will only exposed the following environement variable that you can use on your pipeline:
+  - **ELASTICSEARCH_HOST**: The URL to connect on Elasticsearch
+  - **ELASTICSEARCH_CA_PATH**: The CA path needed by elasticsearch output plugin.
+
 
 **logstash.yaml**:
 ```yaml
