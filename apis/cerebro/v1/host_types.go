@@ -18,6 +18,7 @@ package v1
 
 import (
 	"github.com/disaster37/operator-sdk-extra/pkg/apis"
+	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -36,7 +37,7 @@ type HostSpec struct {
 
 	// ElasticsearchRef is the Elasticsearch cluster to enroll on
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
-	ElasticsearchRef string `json:"elasticsearchRef"`
+	ElasticsearchRef ElasticsearchRef `json:"elasticsearchRef"`
 }
 
 type HostCerebroRef struct {
@@ -48,6 +49,31 @@ type HostCerebroRef struct {
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
 	// +optional
 	Namespace string `json:"namespace,omitempty"`
+}
+
+type ElasticsearchRef struct {
+
+	// ManagedElasticsearchRef is the managed Elasticsearch cluster by operator
+	// +operator-sdk:csv:customresourcedefinitions:type=spec
+	// +optional
+	ManagedElasticsearchRef *corev1.LocalObjectReference `json:"managed,omitempty"`
+
+	// ExternalElasticsearchRef is the external Elasticsearch cluster not managed by operator
+	// +operator-sdk:csv:customresourcedefinitions:type=spec
+	// +optional
+	ExternalElasticsearchRef *ElasticsearchExternalRef `json:"external,omitempty"`
+}
+
+type ElasticsearchExternalRef struct {
+
+	// The cluster name to display on Cerabro
+	// +operator-sdk:csv:customresourcedefinitions:type=spec
+	// +optional
+	Name string `json:"name"`
+
+	// Address is the public URL to access on Elasticsearch
+	// +operator-sdk:csv:customresourcedefinitions:type=spec
+	Address string `json:"address"`
 }
 
 // HostStatus defines the observed state of Host

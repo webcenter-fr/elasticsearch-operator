@@ -362,7 +362,11 @@ func doAddHostStep() test.TestStep {
 						Name:      cb.Name,
 						Namespace: cb.Namespace,
 					},
-					ElasticsearchRef: key.Name,
+					ElasticsearchRef: cerebrocrd.ElasticsearchRef{
+						ManagedElasticsearchRef: &corev1.LocalObjectReference{
+							Name: key.Name,
+						},
+					},
 				},
 			}
 

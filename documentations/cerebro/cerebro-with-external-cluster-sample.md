@@ -1,6 +1,6 @@
 # Cerebro with external cluster sample
 
-In this sample, we will deploy Cerebro that target a remote Elasticsearch cluster.
+In this sample, we will deploy Cerebro and then we add `Host` resource that target a remote Elasticsearch cluster.
 
 **cerebro.yaml**:
 ```yaml
@@ -26,12 +26,20 @@ spec:
       secretRef:
         name: cerebro-tls
   version: 0.9.4
-  config:
-    application.conf: |
-      hosts = [
-            {
-                name = "elasticsearch-cluster-dev"
-                host = "https://elasticsearch-cluster-dev"
-            }
-      ]
+```
+
+**host.yaml**:
+```yaml
+apiVersion: cerebro.k8s.webcenter.fr/v1
+kind: Host
+metadata:
+  name: cerebro
+  namespace: cluster-dev
+spec:
+  cerebroRef:
+    name: cerebro
+  elasticsearchRef:
+    external:
+      name: cluster-dev
+      address: https://elasticsearch-cluster-dev
 ```

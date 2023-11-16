@@ -936,10 +936,10 @@ metadata:
         }
       ]
     capabilities: Basic Install
-    createdAt: "2023-11-16T13:02:38Z"
+    createdAt: "2023-11-16T14:41:36Z"
     operators.operatorframework.io/builder: operator-sdk-v1.31.0
     operators.operatorframework.io/project_layout: go.kubebuilder.io/v3
-  name: elasticsearch-operator.v0.0.39
+  name: elasticsearch-operator.v0.0.42
   namespace: placeholder
 spec:
   apiservicedefinitions: {}
@@ -1609,6 +1609,20 @@ spec:
       - description: ElasticsearchRef is the Elasticsearch cluster to enroll on
         displayName: Elasticsearch Ref
         path: elasticsearchRef
+      - description: ExternalElasticsearchRef is the external Elasticsearch cluster
+          not managed by operator
+        displayName: External Elasticsearch Ref
+        path: elasticsearchRef.external
+      - description: Address is the public URL to access on Elasticsearch
+        displayName: Address
+        path: elasticsearchRef.external.address
+      - description: The cluster name to display on Cerabro
+        displayName: Name
+        path: elasticsearchRef.external.name
+      - description: ManagedElasticsearchRef is the managed Elasticsearch cluster
+          by operator
+        displayName: Managed Elasticsearch Ref
+        path: elasticsearchRef.managed
       version: v1
     - description: IndexLifecyclePolicy is the Schema for the indexlifecyclepolicies
         API
@@ -3622,7 +3636,7 @@ spec:
                   value: INFO
                 - name: LOG_FORMATTER
                   value: json
-                image: quay.io/webcenter/elasticsearch-operator:0.0.39
+                image: quay.io/webcenter/elasticsearch-operator:0.0.42
                 livenessProbe:
                   httpGet:
                     path: /healthz
@@ -3712,5 +3726,5 @@ spec:
   provider:
     name: webcenter.fr
     url: https://github.com/webcenter-fr/elasticsearch-operator
-  replaces: elasticsearch-operator.v0.0.38
-  version: 0.0.39
+  replaces: elasticsearch-operator.v0.0.39
+  version: 0.0.42

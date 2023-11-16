@@ -41,7 +41,7 @@ func TestBuildConfigMap(t *testing.T) {
 		},
 	}
 
-	configMaps, err = buildConfigMaps(o, nil)
+	configMaps, err = buildConfigMaps(o, nil, nil)
 	assert.NoError(t, err)
 	test.EqualFromYamlFile[*corev1.ConfigMap](t, "testdata/configmap_default.yml", &configMaps[0], scheme.Scheme)
 
@@ -73,8 +73,33 @@ func TestBuildConfigMap(t *testing.T) {
 		},
 	}
 
-	configMaps, err = buildConfigMaps(o, esList)
+	configMaps, err = buildConfigMaps(o, esList, nil)
 
 	assert.NoError(t, err)
 	test.EqualFromYamlFile[*corev1.ConfigMap](t, "testdata/configmap_elasticsearch_targets.yml", &configMaps[0], scheme.Scheme)
+
+	// When some external
+	o = &cerebrocrd.Cerebro{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: "default",
+			Name:      "test",
+		},
+		Spec: cerebrocrd.CerebroSpec{},
+	}
+
+	esExternal := []cerebrocrd.ElasticsearchExternalRef{
+		{
+			Name:    "test1",
+			Address: "https://test1.domain.local",
+		},
+		{
+			Name:    "test2",
+			Address: "https://test2.domain.local",
+		},
+	}
+
+	configMaps, err = buildConfigMaps(o, nil, esExternal)
+
+	assert.NoError(t, err)
+	test.EqualFromYamlFile[*corev1.ConfigMap](t, "testdata/configmap_elasticsearch_external_targets.yml", &configMaps[0], scheme.Scheme)
 }
