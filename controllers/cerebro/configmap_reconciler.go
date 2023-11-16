@@ -57,6 +57,7 @@ func (r *configMapReconciler) Read(ctx context.Context, resource object.MultiPha
 	hostList := &cerebrocrd.HostList{}
 	var es *elasticsearchcrd.Elasticsearch
 	esList := make([]elasticsearchcrd.Elasticsearch, 0)
+	esExternalList := make([]cerebrocrd.ElasticsearchExternalRef, 0)
 
 	if err = r.Client.Get(ctx, types.NamespacedName{Namespace: o.Namespace, Name: GetConfigMapName(o)}, cm); err != nil {
 		if !k8serrors.IsNotFound(err) {
@@ -90,18 +91,23 @@ func (r *configMapReconciler) Read(ctx context.Context, resource object.MultiPha
 			}
 		}
 
-		es = &elasticsearchcrd.Elasticsearch{}
-		if err = r.Client.Get(ctx, types.NamespacedName{Namespace: host.Namespace, Name: host.Spec.ElasticsearchRef}, es); err != nil {
-			if !k8serrors.IsNotFound(err) {
-				return read, res, errors.Wrap(err, "Error when read elasticsearch")
+		if host.Spec.ElasticsearchRef.IsManaged() {
+			es = &elasticsearchcrd.Elasticsearch{}
+			if err = r.Client.Get(ctx, types.NamespacedName{Namespace: host.Namespace, Name: host.Spec.ElasticsearchRef.ManagedElasticsearchRef.Name}, es); err != nil {
+				if !k8serrors.IsNotFound(err) {
+					return read, res, errors.Wrap(err, "Error when read elasticsearch")
+				}
+			} else {
+				esList = append(esList, *es)
 			}
-		} else {
-			esList = append(esList, *es)
+		} else if host.Spec.ElasticsearchRef.IsExternal() {
+			esExternalList = append(esExternalList, *host.Spec.ElasticsearchRef.ExternalElasticsearchRef)
 		}
+
 	}
 
 	// Generate expected node group configmaps
-	expectedCms, err := buildConfigMaps(o, esList)
+	expectedCms, err := buildConfigMaps(o, esList, esExternalList)
 	if err != nil {
 		return read, res, errors.Wrap(err, "Error when generate config maps")
 	}

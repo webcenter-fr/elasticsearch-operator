@@ -104,7 +104,7 @@ func TestBuildDeployment(t *testing.T) {
 		},
 	}
 
-	cms, err := buildConfigMaps(o, nil)
+	cms, err := buildConfigMaps(o, nil, nil)
 	if err != nil {
 		t.Fatal(err.Error())
 	}

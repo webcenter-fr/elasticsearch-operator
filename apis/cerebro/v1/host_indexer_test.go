@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/stretchr/testify/assert"
+	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -20,7 +21,11 @@ func (t *TestSuite) TestSetupHostIndexer() {
 				Name:      "test",
 				Namespace: "default",
 			},
-			ElasticsearchRef: "test",
+			ElasticsearchRef: ElasticsearchRef{
+				ManagedElasticsearchRef: &v1.LocalObjectReference{
+					Name: "test",
+				},
+			},
 		},
 	}
 

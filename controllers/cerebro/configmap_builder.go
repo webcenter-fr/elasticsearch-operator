@@ -14,7 +14,7 @@ import (
 )
 
 // BuildConfigMap permit to generate config map
-func buildConfigMaps(cb *cerebrocrd.Cerebro, esList []elasticsearchcrd.Elasticsearch) (configMaps []corev1.ConfigMap, err error) {
+func buildConfigMaps(cb *cerebrocrd.Cerebro, esList []elasticsearchcrd.Elasticsearch, externalList []cerebrocrd.ElasticsearchExternalRef) (configMaps []corev1.ConfigMap, err error) {
 	var (
 		expectedConfig map[string]string
 		name           string
@@ -57,16 +57,22 @@ auth = {
 }
 `)
 
-	if len(esList) > 0 {
+	if len(esList) > 0 || len(externalList) > 0 {
 		config.WriteString("hosts = [\n")
-		hosts := make([]string, 0, len(esList))
+		hosts := make([]string, 0, len(esList)+len(externalList))
 
+		// Compute managed hosts
 		for _, es := range esList {
 			name = es.Name
 			if es.Spec.ClusterName != "" {
 				name = es.Spec.ClusterName
 			}
 			hosts = append(hosts, fmt.Sprintf("  {\n    name = \"%s\"\n    host = \"%s\"\n  }", name, elasticsearchcontrollers.GetPublicUrl(&es, "", false)))
+		}
+
+		// Compute not managed hosts
+		for _, externalRef := range externalList {
+			hosts = append(hosts, fmt.Sprintf("  {\n    name = \"%s\"\n    host = \"%s\"\n  }", externalRef.Name, externalRef.Address))
 		}
 
 		config.WriteString(strings.Join(hosts, ",\n"))

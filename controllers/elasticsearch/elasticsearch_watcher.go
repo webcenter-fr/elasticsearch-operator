@@ -200,23 +200,13 @@ func watchSecret(c client.Client) handler.MapFunc {
 // watchHost permit to update networkpolicy to allow cerebro access on Elasticsearch
 func watchHost(c client.Client) handler.MapFunc {
 	return func(ctx context.Context, a client.Object) []reconcile.Request {
-		var (
-			listHosts *cerebrocrd.HostList
-			fs        fields.Selector
-		)
 
 		o := a.(*cerebrocrd.Host)
 
 		reconcileRequests := make([]reconcile.Request, 0)
 
-		// ElasticsearchRef
-		listHosts = &cerebrocrd.HostList{}
-		fs = fields.ParseSelectorOrDie(fmt.Sprintf("spec.elasticsearchRef=%s", o.Spec.ElasticsearchRef))
-		if err := c.List(context.Background(), listHosts, &client.ListOptions{Namespace: a.GetNamespace(), FieldSelector: fs}); err != nil {
-			panic(err)
-		}
-		for _, k := range listHosts.Items {
-			reconcileRequests = append(reconcileRequests, reconcile.Request{NamespacedName: types.NamespacedName{Name: k.Spec.ElasticsearchRef, Namespace: k.Namespace}})
+		if o.Spec.ElasticsearchRef.IsManaged() {
+			reconcileRequests = append(reconcileRequests, reconcile.Request{NamespacedName: types.NamespacedName{Name: o.Spec.ElasticsearchRef.ManagedElasticsearchRef.Name, Namespace: o.Namespace}})
 		}
 
 		return reconcileRequests

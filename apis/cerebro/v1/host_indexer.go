@@ -32,7 +32,12 @@ func SetupHostIndexer(k8sManager manager.Manager) (err error) {
 	if err = k8sManager.GetFieldIndexer().IndexField(context.Background(), &Host{}, "spec.elasticsearchRef", func(o client.Object) []string {
 		p := o.(*Host)
 
-		return []string{p.Spec.ElasticsearchRef}
+		if p.Spec.ElasticsearchRef.IsManaged() {
+			return []string{p.Spec.ElasticsearchRef.ManagedElasticsearchRef.Name}
+		}
+
+		return []string{}
+
 	}); err != nil {
 		return err
 	}

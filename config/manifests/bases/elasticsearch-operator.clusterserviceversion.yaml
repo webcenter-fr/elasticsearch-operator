@@ -4,7 +4,7 @@ metadata:
   annotations:
     alm-examples: '[]'
     capabilities: Basic Install
-  name: elasticsearch-operator.v0.0.39
+  name: elasticsearch-operator.v0.0.42
   namespace: placeholder
 spec:
   apiservicedefinitions: {}
@@ -2944,6 +2944,20 @@ spec:
       - description: ElasticsearchRef is the Elasticsearch cluster to enroll on
         displayName: Elasticsearch Ref
         path: elasticsearchRef
+      - description: ExternalElasticsearchRef is the external Elasticsearch cluster
+          not managed by operator
+        displayName: External Elasticsearch Ref
+        path: elasticsearchRef.external
+      - description: Address is the public URL to access on Elasticsearch
+        displayName: Address
+        path: elasticsearchRef.external.address
+      - description: The cluster name to display on Cerabro
+        displayName: Name
+        path: elasticsearchRef.external.name
+      - description: ManagedElasticsearchRef is the managed Elasticsearch cluster
+          by operator
+        displayName: Managed Elasticsearch Ref
+        path: elasticsearchRef.managed
       version: v1
     - description: IndexLifecyclePolicy is the Schema for the indexlifecyclepolicies
         API
@@ -4248,5 +4262,5 @@ spec:
   provider:
     name: webcenter.fr
     url: https://github.com/webcenter-fr/elasticsearch-operator
-  replaces: elasticsearch-operator.v0.0.38
-  version: 0.0.39
+  replaces: elasticsearch-operator.v0.0.39
+  version: 0.0.42
