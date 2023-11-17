@@ -57,6 +57,16 @@ spec:
             fieldRef:
               apiVersion: v1
               fieldPath: metadata.namespace
+        - name: ELASTICSEARCH_USERNAME
+          valueFrom:
+            secretKeyRef:
+              name: es-credential
+              key: username
+        - name: ELASTICSEARCH_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: es-credential
+              key: password
         - name: ELASTICSEARCH_CA_PATH
           value: /usr/share/filebeat/config/es-ca/ca.crt
         - name: ELASTICSEARCH_HOST

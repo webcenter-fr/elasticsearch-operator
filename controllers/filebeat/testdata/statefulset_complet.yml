@@ -62,6 +62,16 @@ spec:
           value: /usr/share/filebeat/config/es-ca/ca.crt
         - name: ELASTICSEARCH_HOST
           value: https://test-es.default.svc:9200
+        - name: ELASTICSEARCH_USERNAME
+          valueFrom:
+            secretKeyRef:
+              name: es-credential
+              key: username
+        - name: ELASTICSEARCH_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: es-credential
+              key: password
         - name: env1
           value: value1
         envFrom:

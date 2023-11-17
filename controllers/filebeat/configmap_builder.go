@@ -1,6 +1,7 @@
 package filebeat
 
 import (
+	"fmt"
 	"strings"
 
 	"emperror.dev/errors"
@@ -12,7 +13,7 @@ import (
 )
 
 // BuildConfigMap permit to generate config maps
-func buildConfigMaps(fb *beatcrd.Filebeat, es *elasticsearchcrd.Elasticsearch) (configMaps []corev1.ConfigMap, err error) {
+func buildConfigMaps(fb *beatcrd.Filebeat, es *elasticsearchcrd.Elasticsearch, logstashCASecret *corev1.Secret) (configMaps []corev1.ConfigMap, err error) {
 
 	configMaps = make([]corev1.ConfigMap, 0, 1)
 	var cm *corev1.ConfigMap
@@ -32,7 +33,7 @@ filebeat.config.modules:
 
 	// Logstash output
 	if fb.Spec.LogstashRef.IsExternal() || fb.Spec.LogstashRef.IsManaged() {
-		if fb.Spec.LogstashRef.LogstashCaSecretRef == nil {
+		if logstashCASecret == nil {
 			filebeatConf.WriteString(`
 output.logstash:
   hosts: '${LOGSTASH_HOST}'
@@ -45,8 +46,11 @@ output.logstash:
   loadbalance: true
   ssl:
     enable: true
-    certificate_authorities: '${LOGSTASH_CA_PATH}'
+    certificate_authorities:
 `)
+			for certificateName, _ := range logstashCASecret.Data {
+				filebeatConf.WriteString(fmt.Sprintf("      - /usr/share/filebeat/ls-ca/%s", certificateName))
+			}
 		}
 
 	}
@@ -57,6 +61,8 @@ output.logstash:
 			filebeatConf.WriteString(`
 output.elasticsearch:
   hosts: '${ELASTICSEARCH_HOST}'
+  username: '${ELASTICSEARCH_USERNAME}'
+  password: '${ELASTICSEARCH_PASSWORD}'
   ssl:
     enable: true
     certificate_authorities: '${ELASTICSEARCH_CA_PATH}'
@@ -66,6 +72,8 @@ output.elasticsearch:
 			filebeatConf.WriteString(`
 output.elasticsearch:
   hosts: '${ELASTICSEARCH_HOST}'
+  username: '${ELASTICSEARCH_USERNAME}'
+  password: '${ELASTICSEARCH_PASSWORD}'
 `)
 		}
 	}

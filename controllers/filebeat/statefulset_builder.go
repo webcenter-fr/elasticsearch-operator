@@ -24,11 +24,16 @@ import (
 // GenerateStatefullset permit to generate statefullset
 func buildStatefulsets(fb *beatcrd.Filebeat, es *elasticsearchcrd.Elasticsearch, ls *logstashcrd.Logstash, secretsChecksum []corev1.Secret, configMapsChecksum []corev1.ConfigMap) (statefullsets []appv1.StatefulSet, err error) {
 
+	// Check the secretRef is set when use Elasticsearch output
+	if (fb.Spec.ElasticsearchRef.IsManaged() || fb.Spec.ElasticsearchRef.IsExternal()) && fb.Spec.ElasticsearchRef.SecretRef == nil {
+		return nil, errors.New("You must set the secretRef when you use ElasticsearchRef")
+	}
+
 	statefullsets = make([]appv1.StatefulSet, 0, 1)
 	checksumAnnotations := map[string]string{}
 
 	// Generate confimaps to know what file to mount
-	configMaps, err := buildConfigMaps(fb, es)
+	configMaps, err := buildConfigMaps(fb, es, nil)
 	if err != nil {
 		return nil, errors.Wrap(err, "Error when generate configMaps")
 	}
@@ -141,12 +146,30 @@ func buildStatefulsets(fb *beatcrd.Filebeat, es *elasticsearchcrd.Elasticsearch,
 		}, k8sbuilder.Merge)
 	}
 
-	// Inject Logstash CA path if provided
-	if fb.Spec.LogstashRef.LogstashCaSecretRef != nil {
+	// Inject Elasticsearch credentials if provided
+	if fb.Spec.ElasticsearchRef.IsManaged() || fb.Spec.ElasticsearchRef.IsExternal() {
 		cb.WithEnv([]corev1.EnvVar{
 			{
-				Name:  "LOGSTASH_CA_PATH",
-				Value: "/usr/share/filebeat/config/ls-ca/ca.crt",
+				Name: "ELASTICSEARCH_USERNAME",
+				ValueFrom: &corev1.EnvVarSource{
+					SecretKeyRef: &corev1.SecretKeySelector{
+						LocalObjectReference: corev1.LocalObjectReference{
+							Name: fb.Spec.ElasticsearchRef.SecretRef.Name,
+						},
+						Key: "username",
+					},
+				},
+			},
+			{
+				Name: "ELASTICSEARCH_PASSWORD",
+				ValueFrom: &corev1.EnvVarSource{
+					SecretKeyRef: &corev1.SecretKeySelector{
+						LocalObjectReference: corev1.LocalObjectReference{
+							Name: fb.Spec.ElasticsearchRef.SecretRef.Name,
+						},
+						Key: "password",
+					},
+				},
 			},
 		}, k8sbuilder.Merge)
 	}

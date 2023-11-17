@@ -63,7 +63,10 @@ func GetElasticsearchHandler(ctx context.Context, o client.Object, esRef shared.
 		}
 
 	} else if esRef.IsExternal() {
-		secretName = esRef.ExternalElasticsearchRef.SecretRef.Name
+		if esRef.SecretRef == nil {
+			return nil, errors.New("You must set the secretRef when you use external Elasticsearch")
+		}
+		secretName = esRef.SecretRef.Name
 		hosts = esRef.ExternalElasticsearchRef.Addresses
 
 		secretNS = types.NamespacedName{

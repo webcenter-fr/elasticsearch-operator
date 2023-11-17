@@ -94,6 +94,21 @@ func doCreateFilebeatStep() test.TestStep {
 				return err
 			}
 
+			// Create secret that store credential to connect on Elasticsearch
+			secret := &corev1.Secret{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      key.Name,
+					Namespace: key.Namespace,
+				},
+				StringData: map[string]string{
+					"username": "filebeat",
+					"password": "strong password",
+				},
+			}
+			if err = c.Create(context.Background(), secret); err != nil {
+				return err
+			}
+
 			pathType := networkingv1.PathTypePrefix
 			fb := &beatcrd.Filebeat{
 				ObjectMeta: metav1.ObjectMeta{
@@ -105,6 +120,9 @@ func doCreateFilebeatStep() test.TestStep {
 					ElasticsearchRef: shared.ElasticsearchRef{
 						ManagedElasticsearchRef: &shared.ElasticsearchManagedRef{
 							Name: es.Name,
+						},
+						SecretRef: &corev1.LocalObjectReference{
+							Name: key.Name,
 						},
 					},
 					Deployment: beatcrd.FilebeatDeploymentSpec{

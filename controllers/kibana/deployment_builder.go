@@ -25,6 +25,11 @@ import (
 // BuildDeployment permit to generate deployment for Kibana
 func buildDeployments(kb *kibanacrd.Kibana, es *elasticsearchcrd.Elasticsearch, secretsChecksum []corev1.Secret, configMapsChecksum []corev1.ConfigMap) (dpls []appv1.Deployment, err error) {
 
+	// Check the secretRef is set when use external Elasticsearch
+	if kb.Spec.ElasticsearchRef.IsExternal() && kb.Spec.ElasticsearchRef.SecretRef == nil {
+		return nil, errors.New("You must set the secretRef when you use external Elasticsearch")
+	}
+
 	dpls = make([]appv1.Deployment, 0, 1)
 
 	checksumAnnotations := map[string]string{}
@@ -193,7 +198,7 @@ func buildDeployments(kb *kibanacrd.Kibana, es *elasticsearchcrd.Elasticsearch, 
 				ValueFrom: &corev1.EnvVarSource{
 					SecretKeyRef: &corev1.SecretKeySelector{
 						LocalObjectReference: corev1.LocalObjectReference{
-							Name: kb.Spec.ElasticsearchRef.ExternalElasticsearchRef.SecretRef.Name,
+							Name: kb.Spec.ElasticsearchRef.SecretRef.Name,
 						},
 						Key: "username",
 					},
@@ -204,7 +209,7 @@ func buildDeployments(kb *kibanacrd.Kibana, es *elasticsearchcrd.Elasticsearch, 
 				ValueFrom: &corev1.EnvVarSource{
 					SecretKeyRef: &corev1.SecretKeySelector{
 						LocalObjectReference: corev1.LocalObjectReference{
-							Name: kb.Spec.ElasticsearchRef.ExternalElasticsearchRef.SecretRef.Name,
+							Name: kb.Spec.ElasticsearchRef.SecretRef.Name,
 						},
 						Key: "password",
 					},

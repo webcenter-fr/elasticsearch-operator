@@ -40,7 +40,7 @@ You can use the following setting:
     - **targetNodeGroup** (string): The node group where to stream metrics. Default is used all node groups.
   - **external** (object): Use it if monitoring cluster is not deployed with this operator.
     - **addresses** (slice of string): The list of IPs, DNS, URL to access on monitoring Elasticseatch cluster
-    - **secretRef** (object): The secret ref that store the credentials to write metrics on Elasticsearch from metricbeat. It need to contain the keys `username` and `password`
+  - **secretRef** (object): The secret ref that store the credentials to write metrics on Elasticsearch from metricbeat. It need to contain the keys `username` and `password`. It only used for external Elasticsearch.
       - **name** (string / require): The secret name.
   - **elasticsearchCASecretRef** (object). It's the secret that store custom CA to connect on monitoring Elasticsearch cluster.
     - **name** (string / require): The secret name
@@ -68,8 +68,8 @@ spec:
         external:
           addresses:
             - https://cluster-monitoring.domain.local
-          secretRef:
-            name: monitoring-credentials
+        secretRef:
+          name: monitoring-credentials
         elasticsearchCASecretRef:
           name: custom-ca-monitoring
       resources:

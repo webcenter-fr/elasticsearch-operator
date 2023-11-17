@@ -8441,20 +8441,8 @@ spec:
                         items:
                           type: string
                         type: array
-                      secretRef:
-                        description: SecretName is the secret that contain the setting
-                          to connect on Elasticsearch that is not managed by ECK.
-                          It need to contain the keys `username` and `password`.
-                        properties:
-                          name:
-                            description: 'Name of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
-                              TODO: Add other useful fields. apiVersion, kind, uid?'
-                            type: string
-                        type: object
-                        x-kubernetes-map-type: atomic
                     required:
                     - addresses
-                    - secretRef
                     type: object
                   managed:
                     description: ManagedElasticsearchRef is the managed Elasticsearch
@@ -8477,6 +8465,17 @@ spec:
                     required:
                     - name
                     type: object
+                  secretRef:
+                    description: SecretName is the secret that contain the setting
+                      to connect on Elasticsearch. It can be auto computed for managed
+                      Elasticsearch. It need to contain the keys `username` and `password`.
+                    properties:
+                      name:
+                        description: 'Name of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                          TODO: Add other useful fields. apiVersion, kind, uid?'
+                        type: string
+                    type: object
+                    x-kubernetes-map-type: atomic
                 type: object
               endpoint:
                 description: Endpoint permit to set endpoints to access on Kibana
@@ -8888,23 +8887,8 @@ spec:
                                 items:
                                   type: string
                                 type: array
-                              secretRef:
-                                description: SecretName is the secret that contain
-                                  the setting to connect on Elasticsearch that is
-                                  not managed by ECK. It need to contain the keys
-                                  `username` and `password`.
-                                properties:
-                                  name:
-                                    description: 'Name of the referent. More info:
-                                      https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
-                                      TODO: Add other useful fields. apiVersion, kind,
-                                      uid?'
-                                    type: string
-                                type: object
-                                x-kubernetes-map-type: atomic
                             required:
                             - addresses
-                            - secretRef
                             type: object
                           managed:
                             description: ManagedElasticsearchRef is the managed Elasticsearch
@@ -8927,6 +8911,19 @@ spec:
                             required:
                             - name
                             type: object
+                          secretRef:
+                            description: SecretName is the secret that contain the
+                              setting to connect on Elasticsearch. It can be auto
+                              computed for managed Elasticsearch. It need to contain
+                              the keys `username` and `password`.
+                            properties:
+                              name:
+                                description: 'Name of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                                  TODO: Add other useful fields. apiVersion, kind,
+                                  uid?'
+                                type: string
+                            type: object
+                            x-kubernetes-map-type: atomic
                         type: object
                       enabled:
                         default: false

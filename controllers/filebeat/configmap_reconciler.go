@@ -15,7 +15,9 @@ import (
 	elasticsearchcrd "github.com/webcenter-fr/elasticsearch-operator/apis/elasticsearch/v1"
 	"github.com/webcenter-fr/elasticsearch-operator/controllers/common"
 	corev1 "k8s.io/api/core/v1"
+	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/labels"
+	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/tools/record"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -52,7 +54,10 @@ func newConfiMapReconciler(client client.Client, logger *logrus.Entry, recorder 
 func (r *configMapReconciler) Read(ctx context.Context, resource object.MultiPhaseObject, data map[string]any) (read controller.MultiPhaseRead, res ctrl.Result, err error) {
 	o := resource.(*beatcrd.Filebeat)
 	cmList := &corev1.ConfigMapList{}
-	var es *elasticsearchcrd.Elasticsearch
+	var (
+		es               *elasticsearchcrd.Elasticsearch
+		logstashCASecret *corev1.Secret
+	)
 	read = controller.NewBasicMultiPhaseRead()
 
 	labelSelectors, err := labels.Parse(fmt.Sprintf("cluster=%s,%s=true", o.Name, beatcrd.FilebeatAnnotationKey))
@@ -78,8 +83,20 @@ func (r *configMapReconciler) Read(ctx context.Context, resource object.MultiPha
 		es = nil
 	}
 
+	// Read logstashCASecret
+	if (o.Spec.LogstashRef.IsExternal() || o.Spec.LogstashRef.IsManaged()) && o.Spec.LogstashRef.LogstashCaSecretRef != nil {
+		logstashCASecret = &corev1.Secret{}
+		if err = r.Client.Get(ctx, types.NamespacedName{Namespace: o.Namespace, Name: o.Spec.LogstashRef.LogstashCaSecretRef.Name}, logstashCASecret); err != nil {
+			if !k8serrors.IsNotFound(err) {
+				return read, res, errors.Wrapf(err, "Error when read logstashCASecret %s", o.Spec.LogstashRef.LogstashCaSecretRef.Name)
+			}
+			r.Log.Warnf("logstashCASecret %s not yet exist, try again later", o.Spec.LogstashRef.LogstashCaSecretRef.Name)
+			return read, ctrl.Result{RequeueAfter: 30 * time.Second}, nil
+		}
+	}
+
 	// Generate expected node group configmaps
-	expectedCms, err := buildConfigMaps(o, es)
+	expectedCms, err := buildConfigMaps(o, es, logstashCASecret)
 	if err != nil {
 		return read, res, errors.Wrap(err, "Error when generate config maps")
 	}

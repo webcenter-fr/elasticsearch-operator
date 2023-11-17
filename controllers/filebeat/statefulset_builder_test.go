@@ -40,6 +40,9 @@ func TestBuildStatefulset(t *testing.T) {
 				ManagedElasticsearchRef: &shared.ElasticsearchManagedRef{
 					Name: "test",
 				},
+				SecretRef: &corev1.LocalObjectReference{
+					Name: "es-credential",
+				},
 			},
 			Deployment: beatcrd.FilebeatDeploymentSpec{
 				Replicas: 1,
@@ -73,9 +76,9 @@ func TestBuildStatefulset(t *testing.T) {
 					Addresses: []string{
 						"https://es1:9200",
 					},
-					SecretRef: &corev1.LocalObjectReference{
-						Name: "es-credential",
-					},
+				},
+				SecretRef: &corev1.LocalObjectReference{
+					Name: "es-credential",
 				},
 			},
 		},
@@ -100,9 +103,9 @@ func TestBuildStatefulset(t *testing.T) {
 					Addresses: []string{
 						"https://es1:9200",
 					},
-					SecretRef: &corev1.LocalObjectReference{
-						Name: "es-credential",
-					},
+				},
+				SecretRef: &corev1.LocalObjectReference{
+					Name: "es-credential",
 				},
 				ElasticsearchCaSecretRef: &corev1.LocalObjectReference{
 					Name: "custom-ca-es",
@@ -232,6 +235,9 @@ func TestBuildStatefulset(t *testing.T) {
 			ElasticsearchRef: shared.ElasticsearchRef{
 				ManagedElasticsearchRef: &shared.ElasticsearchManagedRef{
 					Name: "test",
+				},
+				SecretRef: &corev1.LocalObjectReference{
+					Name: "es-credential",
 				},
 			},
 			Deployment: beatcrd.FilebeatDeploymentSpec{

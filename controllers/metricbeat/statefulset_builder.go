@@ -22,6 +22,11 @@ import (
 // GenerateStatefullset permit to generate statefullset
 func buildStatefulsets(mb *beatcrd.Metricbeat, es *elasticsearchcrd.Elasticsearch, secretsChecksum []corev1.Secret, configMapsChecksum []corev1.ConfigMap) (statefullsets []appv1.StatefulSet, err error) {
 
+	// Check that secretRef is set when use External Elasticsearch
+	if mb.Spec.ElasticsearchRef.IsExternal() && mb.Spec.ElasticsearchRef.SecretRef == nil {
+		return nil, errors.New("You must set the secretRef when you use external Elasticsearch")
+	}
+
 	statefullsets = make([]appv1.StatefulSet, 0, 1)
 	checksumAnnotations := map[string]string{}
 
@@ -145,7 +150,7 @@ func buildStatefulsets(mb *beatcrd.Metricbeat, es *elasticsearchcrd.Elasticsearc
 				ValueFrom: &corev1.EnvVarSource{
 					SecretKeyRef: &corev1.SecretKeySelector{
 						LocalObjectReference: corev1.LocalObjectReference{
-							Name: mb.Spec.ElasticsearchRef.ExternalElasticsearchRef.SecretRef.Name,
+							Name: mb.Spec.ElasticsearchRef.SecretRef.Name,
 						},
 						Key: "username",
 					},
@@ -156,7 +161,7 @@ func buildStatefulsets(mb *beatcrd.Metricbeat, es *elasticsearchcrd.Elasticsearc
 				ValueFrom: &corev1.EnvVarSource{
 					SecretKeyRef: &corev1.SecretKeySelector{
 						LocalObjectReference: corev1.LocalObjectReference{
-							Name: mb.Spec.ElasticsearchRef.ExternalElasticsearchRef.SecretRef.Name,
+							Name: mb.Spec.ElasticsearchRef.SecretRef.Name,
 						},
 						Key: "password",
 					},
