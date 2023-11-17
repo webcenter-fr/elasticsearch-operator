@@ -56,8 +56,6 @@ spec:
             fieldRef:
               apiVersion: v1
               fieldPath: metadata.namespace
-        - name: LOGSTASH_CA_PATH
-          value: /usr/share/filebeat/config/ls-ca/ca.crt
         - name: LOGSTASH_HOST
           value: 'test-beat-ls.default.svc:5002'
         image: docker.elastic.co/beats/filebeat:latest

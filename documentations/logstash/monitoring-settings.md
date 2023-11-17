@@ -22,8 +22,8 @@ You can use the following setting:
     - **targetNodeGroup** (string): The node group where to stream metrics. Default is used all node groups.
   - **external** (object): Use it if monitoring cluster is not deployed with this operator.
     - **addresses** (slice of string): The list of IPs, DNS, URL to access on monitoring Elasticseatch cluster
-    - **secretRef** (object): The secret ref that store the credentials to write metrics on Elasticsearch from metricbeat. It need to contain the keys `username` and `password`
-      - **name** (string / require): The secret name.
+  - **secretRef** (object): The secret ref that store the credentials to write metrics on Elasticsearch from metricbeat. It need to contain the keys `username` and `password`. It only used for external Elasticsearch.
+    - **name** (string / require): The secret name.
   - **elasticsearchCASecretRef** (object). It's the secret that store custom CA to connect on monitoring Elasticsearch cluster.
     - **name** (string / require): The secret name
 - **resources** (object): The resources to set on metricbeat pod. Default to `{"requests": {"cpu": "100m", "memory": "100Mi"}, "limits: {"cpu": "300m", "memory": "200Mi"}}`. Read the [official doc to know the properties](https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/)
@@ -50,8 +50,8 @@ spec:
         external:
           addresses:
             - https://cluster-monitoring.domain.local
-          secretRef:
-            name: monitoring-credentials
+        secretRef:
+          name: monitoring-credentials
         elasticsearchCASecretRef:
           name: custom-ca-monitoring
       resources:

@@ -185,7 +185,7 @@ func watchSecret(c client.Client) handler.MapFunc {
 
 		// Elasticsearch credentials when external
 		listElasticsearch = &elasticsearchcrd.ElasticsearchList{}
-		fs = fields.ParseSelectorOrDie(fmt.Sprintf("spec.monitoring.metricbeat.elasticsearchRef.external.secretRef.name=%s", a.GetName()))
+		fs = fields.ParseSelectorOrDie(fmt.Sprintf("spec.monitoring.metricbeat.elasticsearchRef.secretRef.name=%s", a.GetName()))
 		if err := c.List(context.Background(), listElasticsearch, &client.ListOptions{Namespace: a.GetNamespace(), FieldSelector: fs}); err != nil {
 			panic(err)
 		}

@@ -21,6 +21,12 @@ type ElasticsearchRef struct {
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
 	// +optional
 	ElasticsearchCaSecretRef *corev1.LocalObjectReference `json:"elasticsearchCASecretRef,omitempty"`
+
+	// SecretName is the secret that contain the setting to connect on Elasticsearch. It can be auto computed for managed Elasticsearch.
+	// It need to contain the keys `username` and `password`.
+	// +operator-sdk:csv:customresourcedefinitions:type=spec
+	// +optional
+	SecretRef *corev1.LocalObjectReference `json:"secretRef,omitempty"`
 }
 
 type ElasticsearchManagedRef struct {
@@ -47,11 +53,6 @@ type ElasticsearchExternalRef struct {
 	// Addresses is the list of Elasticsearch addresses
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
 	Addresses []string `json:"addresses"`
-
-	// SecretName is the secret that contain the setting to connect on Elasticsearch that is not managed by ECK.
-	// It need to contain the keys `username` and `password`.
-	// +operator-sdk:csv:customresourcedefinitions:type=spec
-	SecretRef *corev1.LocalObjectReference `json:"secretRef"`
 }
 
 // IsManaged permit to know if Elasticsearch is managed by operator

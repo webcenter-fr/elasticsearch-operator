@@ -21,7 +21,5 @@ data:
         logstash:
             hosts: ${LOGSTASH_HOST}
             loadbalance: true
-            ssl:
-                certificate_authorities: ${LOGSTASH_CA_PATH}
-                enable: true
+
     

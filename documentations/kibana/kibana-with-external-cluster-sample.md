@@ -41,8 +41,8 @@ spec:
     external:
       addresses:
         - https://elasticsearch-cluster-dev.domain.local
-      secretRef:
-        name: elasticsearch-credentials
+    secretRef:
+      name: elasticsearch-credentials
     elasticsearchCASecretRef:
       name: custom-ca-elasticsearch
   endpoint:

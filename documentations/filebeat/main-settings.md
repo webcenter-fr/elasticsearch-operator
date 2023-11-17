@@ -13,8 +13,8 @@ You can use the following main setting to deploy Filebeat:
     - **targetNodeGroup** (string): The node group where Metricbeat connect on. Default is used all node groups.
   - **external** (object): Use it if cluster is not deployed with this operator.
     - **addresses** (slice of string): The list of IPs, DNS, URL to access on cluster
-    - **secretRef** (object): The secret ref that store the credentials to connect on Elasticsearch. It need to contain the keys `username` and `password`
-      - **name** (string / require): The secret name.
+  - **secretRef** (object / require): The secret ref that store the credentials to connect on Elasticsearch. It need to contain the keys `username` and `password`.
+    - **name** (string / require): The secret name.
   - **elasticsearchCASecretRef** (object). It's the secret that store custom CA to connect on Elasticsearch cluster.
     - **name** (string / require): The secret name
 - **logstashRef** (object): The Logstash instance ref
@@ -87,8 +87,8 @@ spec:
     external:
       addresses:
         - https://cluster-dev.domain.local
-      secretRef:
-        name: elasticsearch-credentials
+    secretRef:
+      name: elasticsearch-credentials
     elasticsearchCASecretRef:
       name: elasticsearch-custom-ca
   image: docker.elastic.co/beats/filebeat

@@ -54,10 +54,10 @@ func SetupLogstashIndexer(k8sManager manager.Manager) (err error) {
 		return err
 	}
 
-	if err = k8sManager.GetFieldIndexer().IndexField(context.Background(), &Logstash{}, "spec.elasticsearchRef.external.secretRef.name", func(o client.Object) []string {
+	if err = k8sManager.GetFieldIndexer().IndexField(context.Background(), &Logstash{}, "spec.elasticsearchRef.secretRef.name", func(o client.Object) []string {
 		p := o.(*Logstash)
-		if p.Spec.ElasticsearchRef.IsExternal() && p.Spec.ElasticsearchRef.ExternalElasticsearchRef.SecretRef != nil {
-			return []string{p.Spec.ElasticsearchRef.ExternalElasticsearchRef.SecretRef.Name}
+		if p.Spec.ElasticsearchRef.SecretRef != nil {
+			return []string{p.Spec.ElasticsearchRef.SecretRef.Name}
 		}
 		return []string{}
 	}); err != nil {

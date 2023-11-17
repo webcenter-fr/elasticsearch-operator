@@ -26,7 +26,9 @@ data:
     output:
         elasticsearch:
             hosts: ${ELASTICSEARCH_HOST}
+            password: ${ELASTICSEARCH_PASSWORD}
             ssl:
                 certificate_authorities: ${ELASTICSEARCH_CA_PATH}
                 enable: true
+            username: ${ELASTICSEARCH_USERNAME}
     

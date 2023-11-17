@@ -206,10 +206,10 @@ func SetupElasticsearchIndexer(k8sManager manager.Manager) (err error) {
 		return err
 	}
 
-	if err = k8sManager.GetFieldIndexer().IndexField(context.Background(), &Elasticsearch{}, "spec.monitoring.metricbeat.elasticsearchRef.external.secretRef.name", func(o client.Object) []string {
+	if err = k8sManager.GetFieldIndexer().IndexField(context.Background(), &Elasticsearch{}, "spec.monitoring.metricbeat.elasticsearchRef.secretRef.name", func(o client.Object) []string {
 		p := o.(*Elasticsearch)
-		if p.IsMetricbeatMonitoring() && p.Spec.Monitoring.Metricbeat.ElasticsearchRef.IsExternal() && p.Spec.Monitoring.Metricbeat.ElasticsearchRef.ExternalElasticsearchRef.SecretRef != nil {
-			return []string{p.Spec.Monitoring.Metricbeat.ElasticsearchRef.ExternalElasticsearchRef.SecretRef.Name}
+		if p.IsMetricbeatMonitoring() && p.Spec.Monitoring.Metricbeat.ElasticsearchRef.IsExternal() && p.Spec.Monitoring.Metricbeat.ElasticsearchRef.SecretRef != nil {
+			return []string{p.Spec.Monitoring.Metricbeat.ElasticsearchRef.SecretRef.Name}
 		}
 		return []string{}
 	}); err != nil {

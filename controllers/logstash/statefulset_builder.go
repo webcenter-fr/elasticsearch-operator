@@ -147,6 +147,34 @@ func buildStatefulsets(ls *logstashcrd.Logstash, es *elasticsearchcrd.Elasticsea
 		}, k8sbuilder.Merge)
 	}
 
+	// Inject Elasticsearch credentials if provided
+	if ls.Spec.ElasticsearchRef.SecretRef != nil {
+		cb.WithEnv([]corev1.EnvVar{
+			{
+				Name: "ELASTICSEARCH_USERNAME",
+				ValueFrom: &corev1.EnvVarSource{
+					SecretKeyRef: &corev1.SecretKeySelector{
+						LocalObjectReference: corev1.LocalObjectReference{
+							Name: ls.Spec.ElasticsearchRef.SecretRef.Name,
+						},
+						Key: "username",
+					},
+				},
+			},
+			{
+				Name: "ELASTICSEARCH_PASSWORD",
+				ValueFrom: &corev1.EnvVarSource{
+					SecretKeyRef: &corev1.SecretKeySelector{
+						LocalObjectReference: corev1.LocalObjectReference{
+							Name: ls.Spec.ElasticsearchRef.SecretRef.Name,
+						},
+						Key: "password",
+					},
+				},
+			},
+		}, k8sbuilder.Merge)
+	}
+
 	// Compute ports
 	cb.WithPort(ls.Spec.Deployment.Ports, k8sbuilder.Merge).
 		WithPort([]corev1.ContainerPort{

@@ -163,6 +163,8 @@ spec:
   elasticsearchRef:
     managed:
       name: elasticsearch
+    secretRef:
+      name: elasticsearch-credentials
   services:
     - name: beat
       spec:
@@ -174,4 +176,17 @@ spec:
         type: ClusterIP
   version: 8.7.1
 
+```
+
+**elasticsearch-credentials.yaml**:
+```yaml
+apiVersion: v1
+kind: Secret
+metadata:
+  name: elasticsearch-credentials
+  namespace: cluster-dev
+type: Opaque
+data:
+  username: ++++++++
+  password: ++++++++
 ```

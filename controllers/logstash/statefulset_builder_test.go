@@ -71,9 +71,9 @@ func TestBuildStatefulset(t *testing.T) {
 					Addresses: []string{
 						"https://es1:9200",
 					},
-					SecretRef: &corev1.LocalObjectReference{
-						Name: "es-credential",
-					},
+				},
+				SecretRef: &corev1.LocalObjectReference{
+					Name: "es-credential",
 				},
 			},
 		},
@@ -98,12 +98,12 @@ func TestBuildStatefulset(t *testing.T) {
 					Addresses: []string{
 						"https://es1:9200",
 					},
-					SecretRef: &corev1.LocalObjectReference{
-						Name: "es-credential",
-					},
 				},
 				ElasticsearchCaSecretRef: &corev1.LocalObjectReference{
 					Name: "custom-ca-es",
+				},
+				SecretRef: &corev1.LocalObjectReference{
+					Name: "es-credential",
 				},
 			},
 		},
