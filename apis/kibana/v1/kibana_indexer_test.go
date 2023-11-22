@@ -26,7 +26,7 @@ func (t *TestSuite) TestSetupKibanaIndexer() {
 					Name: "test",
 				},
 			},
-			Tls: KibanaTlsSpec{
+			Tls: shared.TlsSpec{
 				CertificateSecretRef: &v1.LocalObjectReference{
 					Name: "test",
 				},

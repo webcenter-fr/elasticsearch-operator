@@ -21153,7 +21153,7 @@ spec:
                     x-kubernetes-map-type: atomic
                   enabled:
                     default: true
-                    description: Enabled permit to enabled TLS on API Default true
+                    description: Enabled permit to enabled TLS Default to false
                     type: boolean
                   keySize:
                     default: 2048

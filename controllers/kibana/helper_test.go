@@ -5,6 +5,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	kibanacrd "github.com/webcenter-fr/elasticsearch-operator/apis/kibana/v1"
+	"github.com/webcenter-fr/elasticsearch-operator/apis/shared"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/utils/ptr"
@@ -23,7 +24,7 @@ func TestGetSecretNameForTls(t *testing.T) {
 	assert.Equal(t, "test-tls-kb", GetSecretNameForTls(o))
 
 	// When specify TLS secret
-	o.Spec.Tls = kibanacrd.KibanaTlsSpec{
+	o.Spec.Tls = shared.TlsSpec{
 		CertificateSecretRef: &v1.LocalObjectReference{
 			Name: "my-secret",
 		},

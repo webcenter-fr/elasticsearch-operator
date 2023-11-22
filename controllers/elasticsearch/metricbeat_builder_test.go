@@ -153,7 +153,7 @@ func TestBuildMetricbeat(t *testing.T) {
 					},
 				},
 			},
-			Tls: elasticsearchcrd.ElasticsearchTlsSpec{
+			Tls: shared.TlsSpec{
 				Enabled: ptr.To[bool](false),
 			},
 			NodeGroups: []elasticsearchcrd.ElasticsearchNodeGroupSpec{

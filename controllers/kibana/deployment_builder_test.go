@@ -138,7 +138,7 @@ func TestBuildDeployment(t *testing.T) {
 			Deployment: kibanacrd.KibanaDeploymentSpec{
 				Replicas: 1,
 			},
-			Tls: kibanacrd.KibanaTlsSpec{
+			Tls: shared.TlsSpec{
 				CertificateSecretRef: &corev1.LocalObjectReference{
 					Name: "api-certificates",
 				},

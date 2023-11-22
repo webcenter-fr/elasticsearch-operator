@@ -147,7 +147,7 @@ func TestBuildMetricbeat(t *testing.T) {
 					},
 				},
 			},
-			Tls: kibanacrd.KibanaTlsSpec{
+			Tls: shared.TlsSpec{
 				Enabled: ptr.To[bool](false),
 			},
 			Deployment: kibanacrd.KibanaDeploymentSpec{

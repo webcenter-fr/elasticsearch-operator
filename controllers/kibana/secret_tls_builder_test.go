@@ -6,6 +6,7 @@ import (
 	"github.com/disaster37/goca"
 	"github.com/stretchr/testify/assert"
 	kibanacrd "github.com/webcenter-fr/elasticsearch-operator/apis/kibana/v1"
+	"github.com/webcenter-fr/elasticsearch-operator/apis/shared"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/utils/ptr"
@@ -58,7 +59,7 @@ func TestBuildPkiSecret(t *testing.T) {
 			Name:      "test",
 		},
 		Spec: kibanacrd.KibanaSpec{
-			Tls: kibanacrd.KibanaTlsSpec{
+			Tls: shared.TlsSpec{
 				Enabled: ptr.To[bool](true),
 			},
 		},
@@ -86,7 +87,7 @@ func TestBuildPkiSecret(t *testing.T) {
 			Name:      "test",
 		},
 		Spec: kibanacrd.KibanaSpec{
-			Tls: kibanacrd.KibanaTlsSpec{
+			Tls: shared.TlsSpec{
 				Enabled: ptr.To[bool](false),
 			},
 		},
@@ -104,7 +105,7 @@ func TestBuildPkiSecret(t *testing.T) {
 			Name:      "test",
 		},
 		Spec: kibanacrd.KibanaSpec{
-			Tls: kibanacrd.KibanaTlsSpec{
+			Tls: shared.TlsSpec{
 				Enabled: ptr.To[bool](true),
 				CertificateSecretRef: &corev1.LocalObjectReference{
 					Name: "test",
@@ -152,7 +153,7 @@ func TestBuildTlsSecret(t *testing.T) {
 			Name:      "test",
 		},
 		Spec: kibanacrd.KibanaSpec{
-			Tls: kibanacrd.KibanaTlsSpec{
+			Tls: shared.TlsSpec{
 				Enabled: ptr.To[bool](false),
 			},
 		},
@@ -169,7 +170,7 @@ func TestBuildTlsSecret(t *testing.T) {
 			Name:      "test",
 		},
 		Spec: kibanacrd.KibanaSpec{
-			Tls: kibanacrd.KibanaTlsSpec{
+			Tls: shared.TlsSpec{
 				Enabled: ptr.To[bool](true),
 				CertificateSecretRef: &corev1.LocalObjectReference{
 					Name: "test",
@@ -189,7 +190,7 @@ func TestBuildTlsSecret(t *testing.T) {
 			Name:      "test",
 		},
 		Spec: kibanacrd.KibanaSpec{
-			Tls: kibanacrd.KibanaTlsSpec{
+			Tls: shared.TlsSpec{
 				Enabled: ptr.To[bool](true),
 			},
 		},

@@ -21,7 +21,7 @@ func (t *TestSuite) TestSetupElasticsearchIndexer() {
 			LicenseSecretRef: &corev1.LocalObjectReference{
 				Name: "test",
 			},
-			Tls: ElasticsearchTlsSpec{
+			Tls: shared.TlsSpec{
 				CertificateSecretRef: &corev1.LocalObjectReference{
 					Name: "test",
 				},

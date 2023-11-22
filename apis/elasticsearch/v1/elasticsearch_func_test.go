@@ -50,7 +50,7 @@ func TestIsSelfManagedSecretForTlsApi(t *testing.T) {
 			Name:      "test",
 		},
 		Spec: ElasticsearchSpec{
-			Tls: ElasticsearchTlsSpec{
+			Tls: shared.TlsSpec{
 				Enabled: ptr.To[bool](true),
 			},
 		},
@@ -64,7 +64,7 @@ func TestIsSelfManagedSecretForTlsApi(t *testing.T) {
 			Name:      "test",
 		},
 		Spec: ElasticsearchSpec{
-			Tls: ElasticsearchTlsSpec{
+			Tls: shared.TlsSpec{
 				Enabled: ptr.To[bool](true),
 				CertificateSecretRef: &corev1.LocalObjectReference{
 					Name: "my-secret",
@@ -146,7 +146,7 @@ func TestIsTlsApiEnabled(t *testing.T) {
 			Name:      "test",
 		},
 		Spec: ElasticsearchSpec{
-			Tls: ElasticsearchTlsSpec{
+			Tls: shared.TlsSpec{
 				Enabled: ptr.To[bool](true),
 			},
 		},
@@ -160,7 +160,7 @@ func TestIsTlsApiEnabled(t *testing.T) {
 			Name:      "test",
 		},
 		Spec: ElasticsearchSpec{
-			Tls: ElasticsearchTlsSpec{
+			Tls: shared.TlsSpec{
 				Enabled: ptr.To[bool](false),
 			},
 		},

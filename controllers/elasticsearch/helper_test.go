@@ -152,7 +152,7 @@ func TestGetSecretNameForTlsApi(t *testing.T) {
 	assert.Equal(t, "test-tls-api-es", GetSecretNameForTlsApi(o))
 
 	// When specify TLS secret
-	o.Spec.Tls = elasticsearchcrd.ElasticsearchTlsSpec{
+	o.Spec.Tls = shared.TlsSpec{
 		CertificateSecretRef: &v1.LocalObjectReference{
 			Name: "my-secret",
 		},
@@ -590,7 +590,7 @@ func TestGetPublicUrl(t *testing.T) {
 			Name:      "test",
 		},
 		Spec: elasticsearchcrd.ElasticsearchSpec{
-			Tls: elasticsearchcrd.ElasticsearchTlsSpec{
+			Tls: shared.TlsSpec{
 				Enabled: ptr.To[bool](false),
 			},
 		},
@@ -616,7 +616,7 @@ func TestGetPublicUrl(t *testing.T) {
 			Name:      "test",
 		},
 		Spec: elasticsearchcrd.ElasticsearchSpec{
-			Tls: elasticsearchcrd.ElasticsearchTlsSpec{
+			Tls: shared.TlsSpec{
 				Enabled: ptr.To[bool](false),
 			},
 		},

@@ -53,7 +53,7 @@ node.value2: test`,
 			Name:      "test",
 		},
 		Spec: elasticsearchcrd.ElasticsearchSpec{
-			Tls: elasticsearchcrd.ElasticsearchTlsSpec{
+			Tls: shared.TlsSpec{
 				Enabled: ptr.To[bool](true),
 			},
 		},
@@ -81,7 +81,7 @@ node.value2: test`,
 					Name: "test",
 				},
 			},
-			Tls: kibanacrd.KibanaTlsSpec{
+			Tls: shared.TlsSpec{
 				Enabled: ptr.To[bool](false),
 			},
 			Config: map[string]string{
@@ -97,7 +97,7 @@ node.value2: test`,
 			Name:      "test",
 		},
 		Spec: elasticsearchcrd.ElasticsearchSpec{
-			Tls: elasticsearchcrd.ElasticsearchTlsSpec{
+			Tls: shared.TlsSpec{
 				Enabled: ptr.To[bool](false),
 			},
 		},

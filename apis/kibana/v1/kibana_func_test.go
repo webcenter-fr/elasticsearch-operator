@@ -49,7 +49,7 @@ func TestIsSelfManagedSecretForTls(t *testing.T) {
 			Name:      "test",
 		},
 		Spec: KibanaSpec{
-			Tls: KibanaTlsSpec{
+			Tls: shared.TlsSpec{
 				Enabled: ptr.To[bool](true),
 			},
 		},
@@ -63,7 +63,7 @@ func TestIsSelfManagedSecretForTls(t *testing.T) {
 			Name:      "test",
 		},
 		Spec: KibanaSpec{
-			Tls: KibanaTlsSpec{
+			Tls: shared.TlsSpec{
 				Enabled: ptr.To[bool](true),
 				CertificateSecretRef: &corev1.LocalObjectReference{
 					Name: "my-secret",
@@ -95,7 +95,7 @@ func TestIsTlsEnabled(t *testing.T) {
 			Name:      "test",
 		},
 		Spec: KibanaSpec{
-			Tls: KibanaTlsSpec{
+			Tls: shared.TlsSpec{
 				Enabled: ptr.To[bool](true),
 			},
 		},
@@ -109,7 +109,7 @@ func TestIsTlsEnabled(t *testing.T) {
 			Name:      "test",
 		},
 		Spec: KibanaSpec{
-			Tls: KibanaTlsSpec{
+			Tls: shared.TlsSpec{
 				Enabled: ptr.To[bool](false),
 			},
 		},
