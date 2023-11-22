@@ -210,104 +210,6 @@ func TestIsSetVMMaxMapCount(t *testing.T) {
 	assert.False(t, o.IsSetVMMaxMapCount())
 }
 
-func TestIsPrometheusMonitoring(t *testing.T) {
-	var o *Elasticsearch
-
-	// With default values
-	o = &Elasticsearch{
-		ObjectMeta: metav1.ObjectMeta{
-			Namespace: "default",
-			Name:      "test",
-		},
-		Spec: ElasticsearchSpec{},
-	}
-	assert.False(t, o.IsPrometheusMonitoring())
-
-	// When enabled
-	o = &Elasticsearch{
-		ObjectMeta: metav1.ObjectMeta{
-			Namespace: "default",
-			Name:      "test",
-		},
-		Spec: ElasticsearchSpec{
-			Monitoring: ElasticsearchMonitoringSpec{
-				Prometheus: &ElasticsearchPrometheusSpec{
-					Enabled: true,
-				},
-			},
-		},
-	}
-	assert.True(t, o.IsPrometheusMonitoring())
-
-	// When disabled
-	o = &Elasticsearch{
-		ObjectMeta: metav1.ObjectMeta{
-			Namespace: "default",
-			Name:      "test",
-		},
-		Spec: ElasticsearchSpec{
-			Monitoring: ElasticsearchMonitoringSpec{
-				Prometheus: &ElasticsearchPrometheusSpec{
-					Enabled: false,
-				},
-			},
-		},
-	}
-	assert.False(t, o.IsPrometheusMonitoring())
-}
-
-func TestIsMetricbeatMonitoring(t *testing.T) {
-	var o *Elasticsearch
-
-	// With default values
-	o = &Elasticsearch{
-		ObjectMeta: metav1.ObjectMeta{
-			Namespace: "default",
-			Name:      "test",
-		},
-		Spec: ElasticsearchSpec{},
-	}
-	assert.False(t, o.IsMetricbeatMonitoring())
-
-	// When enabled
-	o = &Elasticsearch{
-		ObjectMeta: metav1.ObjectMeta{
-			Namespace: "default",
-			Name:      "test",
-		},
-		Spec: ElasticsearchSpec{
-			Monitoring: ElasticsearchMonitoringSpec{
-				Metricbeat: &shared.MetricbeatMonitoringSpec{
-					Enabled: true,
-				},
-			},
-			NodeGroups: []ElasticsearchNodeGroupSpec{
-				{
-					Name:     "test",
-					Replicas: 1,
-				},
-			},
-		},
-	}
-	assert.True(t, o.IsMetricbeatMonitoring())
-
-	// When disabled
-	o = &Elasticsearch{
-		ObjectMeta: metav1.ObjectMeta{
-			Namespace: "default",
-			Name:      "test",
-		},
-		Spec: ElasticsearchSpec{
-			Monitoring: ElasticsearchMonitoringSpec{
-				Metricbeat: &shared.MetricbeatMonitoringSpec{
-					Enabled: false,
-				},
-			},
-		},
-	}
-	assert.False(t, o.IsMetricbeatMonitoring())
-}
-
 func TestIsPersistence(t *testing.T) {
 	var o *ElasticsearchNodeGroupSpec
 
@@ -420,4 +322,38 @@ func TestIsBootstrapping(t *testing.T) {
 	o.Status.IsBootstrapping = ptr.To[bool](true)
 	assert.True(t, o.IsBoostrapping())
 
+}
+
+func TestNumberOfReplicas(t *testing.T) {
+	// With default value
+	o := &Elasticsearch{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: "default",
+			Name:      "test",
+		},
+		Spec: ElasticsearchSpec{},
+	}
+	assert.Equal(t, int32(0), o.NumberOfReplicas())
+
+	// When multiple node groups
+	o = &Elasticsearch{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: "default",
+			Name:      "test",
+		},
+		Spec: ElasticsearchSpec{
+			NodeGroups: []ElasticsearchNodeGroupSpec{
+				{
+					Name:     "test1",
+					Replicas: 3,
+				},
+				{
+					Name:     "test2",
+					Replicas: 2,
+				},
+			},
+		},
+	}
+
+	assert.Equal(t, int32(5), o.NumberOfReplicas())
 }

@@ -243,8 +243,8 @@ func TestBuildDeployment(t *testing.T) {
 			Config: map[string]string{
 				"log4j.yaml": "my log4j",
 			},
-			Monitoring: kibanacrd.KibanaMonitoringSpec{
-				Prometheus: &kibanacrd.KibanaPrometheusSpec{
+			Monitoring: shared.MonitoringSpec{
+				Prometheus: &shared.MonitoringPrometheusSpec{
 					Enabled: true,
 				},
 			},

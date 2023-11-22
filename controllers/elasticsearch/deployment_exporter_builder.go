@@ -16,7 +16,7 @@ import (
 // BuildDeploymentExporter permit to generate deployment for exporter
 func buildDeploymentExporters(es *elasticsearchcrd.Elasticsearch) (dpls []appv1.Deployment, err error) {
 
-	if !es.IsPrometheusMonitoring() {
+	if !es.Spec.Monitoring.IsPrometheusMonitoring() {
 		return nil, nil
 	}
 

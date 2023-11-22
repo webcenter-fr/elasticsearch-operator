@@ -52,7 +52,7 @@ func (r *podMonitorReconciler) Read(ctx context.Context, resource object.MultiPh
 	read = controller.NewBasicMultiPhaseRead()
 
 	// Read current podMonitor if enabled
-	if o.IsPrometheusMonitoring() {
+	if o.Spec.Monitoring.IsPrometheusMonitoring() {
 		if err = r.Client.Get(ctx, types.NamespacedName{Namespace: o.Namespace, Name: GetPodMonitorName(o)}, pm); err != nil {
 			if !k8serrors.IsNotFound(err) {
 				return read, res, errors.Wrapf(err, "Error when read podMonitor")

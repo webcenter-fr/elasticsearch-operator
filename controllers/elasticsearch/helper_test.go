@@ -532,8 +532,8 @@ func TestGetExporterImage(t *testing.T) {
 			Name:      "test",
 		},
 		Spec: elasticsearchcrd.ElasticsearchSpec{
-			Monitoring: elasticsearchcrd.ElasticsearchMonitoringSpec{
-				Prometheus: &elasticsearchcrd.ElasticsearchPrometheusSpec{
+			Monitoring: shared.MonitoringSpec{
+				Prometheus: &shared.MonitoringPrometheusSpec{
 					ImageSpec: shared.ImageSpec{
 						Image: "toto",
 					},

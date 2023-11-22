@@ -9,7 +9,7 @@ import (
 // BuildPodMonitor permit to build pod monitor
 // It return nil if prometheus monitoring is disabled
 func buildPodMonitors(es *elasticsearchcrd.Elasticsearch) (podMonitors []monitoringv1.PodMonitor, err error) {
-	if !es.IsPrometheusMonitoring() {
+	if !es.Spec.Monitoring.IsPrometheusMonitoring() {
 		return nil, nil
 	}
 

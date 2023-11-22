@@ -26,8 +26,8 @@ func (t *TestSuite) TestSetupElasticsearchIndexer() {
 					Name: "test",
 				},
 			},
-			Monitoring: ElasticsearchMonitoringSpec{
-				Metricbeat: &shared.MetricbeatMonitoringSpec{
+			Monitoring: shared.MonitoringSpec{
+				Metricbeat: &shared.MonitoringMetricbeatSpec{
 					Enabled: true,
 					ElasticsearchRef: shared.ElasticsearchRef{
 						ManagedElasticsearchRef: &shared.ElasticsearchManagedRef{

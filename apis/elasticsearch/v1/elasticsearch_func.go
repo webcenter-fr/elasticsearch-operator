@@ -50,32 +50,6 @@ func (h *Elasticsearch) IsSetVMMaxMapCount() bool {
 	return true
 }
 
-// IsPrometheusMonitoring return true if Prometheus monitoring is enabled
-func (h *Elasticsearch) IsPrometheusMonitoring() bool {
-
-	if h.Spec.Monitoring.Prometheus != nil && h.Spec.Monitoring.Prometheus.Enabled {
-		return true
-	}
-
-	return false
-}
-
-// IsMetricbeatMonitoring return true if Metricbeat monitoring is enabled
-func (h *Elasticsearch) IsMetricbeatMonitoring() bool {
-
-	// compute the numbers of replica
-	nbReplica := int32(0)
-	for _, nodeGroup := range h.Spec.NodeGroups {
-		nbReplica += nodeGroup.Replicas
-	}
-
-	if h.Spec.Monitoring.Metricbeat != nil && h.Spec.Monitoring.Metricbeat.Enabled && nbReplica > 0 {
-		return true
-	}
-
-	return false
-}
-
 // IsPersistence return true if persistence is enabled
 func (h ElasticsearchNodeGroupSpec) IsPersistence() bool {
 	if h.Persistence != nil && (h.Persistence.Volume != nil || h.Persistence.VolumeClaimSpec != nil) {
@@ -101,4 +75,14 @@ func (h *Elasticsearch) IsBoostrapping() bool {
 	}
 
 	return true
+}
+
+// NumberOfReplicas permit to get the total of replicas
+func (h *Elasticsearch) NumberOfReplicas() int32 {
+	nbReplica := int32(0)
+	for _, nodeGroup := range h.Spec.NodeGroups {
+		nbReplica += nodeGroup.Replicas
+	}
+
+	return nbReplica
 }

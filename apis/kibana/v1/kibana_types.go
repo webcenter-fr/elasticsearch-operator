@@ -87,38 +87,7 @@ type KibanaSpec struct {
 	// Default, it not monitor cluster
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
 	// +optional
-	Monitoring KibanaMonitoringSpec `json:"monitoring,omitempty"`
-}
-
-type KibanaMonitoringSpec struct {
-
-	// Prometheus permit to monitor cluster with Prometheus and graphana (via exporter)
-	// +operator-sdk:csv:customresourcedefinitions:type=spec
-	// +optional
-	Prometheus *KibanaPrometheusSpec `json:"prometheus,omitempty"`
-
-	// Metricbeat permit to monitor cluster with metricbeat and to dedicated monitoring cluster
-	// +operator-sdk:csv:customresourcedefinitions:type=spec
-	// +optional
-	Metricbeat *shared.MetricbeatMonitoringSpec `json:"metricbeat,omitempty"`
-}
-
-type KibanaPrometheusSpec struct {
-
-	// Enabled permit to enable Prometheus monitoring
-	// It will deploy exporter for Kibana and add podMonitor policy
-	// Default to false
-	// +operator-sdk:csv:customresourcedefinitions:type=spec
-	// +optional
-	// +kubebuilder:default=false
-	Enabled bool `json:"enabled,omitempty"`
-
-	// Url is the plugin URL where to download exporter
-	// Default is use project https://github.com/pjhampton/kibana-prometheus-exporter
-	// If version is set to latest, it use arbitrary: https://github.com/pjhampton/kibana-prometheus-exporter/releases/download/8.6.0/kibanaPrometheusExporter-8.6.0.zip
-	// +operator-sdk:csv:customresourcedefinitions:type=spec
-	// +optional
-	Url string `json:"url,omitempty"`
+	Monitoring shared.MonitoringSpec `json:"monitoring,omitempty"`
 }
 
 type KibanaDeploymentSpec struct {

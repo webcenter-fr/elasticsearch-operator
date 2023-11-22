@@ -97,46 +97,9 @@ type ElasticsearchSpec struct {
 	// Default, it not monitor cluster
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
 	// +optional
-	Monitoring ElasticsearchMonitoringSpec `json:"monitoring,omitempty"`
+	Monitoring shared.MonitoringSpec `json:"monitoring,omitempty"`
 }
 
-type ElasticsearchMonitoringSpec struct {
-
-	// Prometheus permit to monitor cluster with Prometheus and graphana (via exporter)
-	// +operator-sdk:csv:customresourcedefinitions:type=spec
-	// +optional
-	Prometheus *ElasticsearchPrometheusSpec `json:"prometheus,omitempty"`
-
-	// Metricbeat permit to monitor cluster with metricbeat and to dedicated monitoring cluster
-	// +operator-sdk:csv:customresourcedefinitions:type=spec
-	// +optional
-	Metricbeat *shared.MetricbeatMonitoringSpec `json:"metricbeat,omitempty"`
-}
-
-type ElasticsearchPrometheusSpec struct {
-	shared.ImageSpec `json:",inline"`
-
-	// Enabled permit to enable Prometheus monitoring
-	// It will deploy exporter for Elasticsearch and add podMonitor policy
-	// Default to false
-	// +operator-sdk:csv:customresourcedefinitions:type=spec
-	// +optional
-	// +kubebuilder:default=false
-	Enabled bool `json:"enabled,omitempty"`
-
-	// Version is the exporter version to use
-	// Default is use the latest
-	// +operator-sdk:csv:customresourcedefinitions:type=spec
-	// +optional
-	// +kubebuilder:default=latest
-	Version string `json:"version,omitempty"`
-
-	// Resources permit to set ressources on Prometheus expporter container
-	// If not defined, it will use the default requirements
-	// +operator-sdk:csv:customresourcedefinitions:type=spec
-	// +optional
-	Resources *corev1.ResourceRequirements `json:"resources,omitempty"`
-}
 
 type ElasticsearchEndpointSpec struct {
 	// Ingress permit to set ingress settings

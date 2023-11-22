@@ -13,7 +13,7 @@ import (
 // BuildMetricbeat permit to generate metricbeat
 func buildMetricbeats(fb *beatcrd.Filebeat) (metricbeats []beatcrd.Metricbeat, err error) {
 
-	if !fb.IsMetricbeatMonitoring() {
+	if !fb.Spec.Monitoring.IsMetricbeatMonitoring(fb.Spec.Deployment.Replicas) {
 		return nil, nil
 	}
 

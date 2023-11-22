@@ -122,8 +122,8 @@ func doCreateKibanaStep() test.TestStep {
 					Deployment: kibanacrd.KibanaDeploymentSpec{
 						Replicas: 2,
 					},
-					Monitoring: kibanacrd.KibanaMonitoringSpec{
-						Prometheus: &kibanacrd.KibanaPrometheusSpec{
+					Monitoring: shared.MonitoringSpec{
+						Prometheus: &shared.MonitoringPrometheusSpec{
 							Enabled: true,
 						},
 					},

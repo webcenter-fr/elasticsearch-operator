@@ -14,7 +14,7 @@ import (
 // BuildMetricbeat permit to generate metricbeat
 func buildMetricbeats(kb *kibanacrd.Kibana) (mbs []beatcrd.Metricbeat, err error) {
 
-	if !kb.IsMetricbeatMonitoring() {
+	if !kb.Spec.Monitoring.IsMetricbeatMonitoring(kb.Spec.Deployment.Replicas) {
 		return nil, nil
 	}
 

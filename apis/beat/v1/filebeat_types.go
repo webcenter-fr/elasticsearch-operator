@@ -80,7 +80,7 @@ type FilebeatSpec struct {
 	// Default, it not monitor cluster
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
 	// +optional
-	Monitoring FilebeatMonitoringSpec `json:"monitoring,omitempty"`
+	Monitoring shared.MonitoringSpec `json:"monitoring,omitempty"`
 
 	// Ingresses permit to declare some ingresses
 	// The name is decorated with cluster name and so on
@@ -193,37 +193,6 @@ type FilebeatService struct {
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
 	// +optional
 	Annotations map[string]string `json:"annotations,omitempty"`
-}
-
-type FilebeatMonitoringSpec struct {
-
-	// Prometheus permit to monitor cluster with Prometheus and graphana (via exporter)
-	// +operator-sdk:csv:customresourcedefinitions:type=spec
-	// +optional
-	Prometheus *FilebeatPrometheusSpec `json:"prometheus,omitempty"`
-
-	// Metricbeat permit to monitor cluster with metricbeat and to dedicated monitoring cluster
-	// +operator-sdk:csv:customresourcedefinitions:type=spec
-	// +optional
-	Metricbeat *shared.MetricbeatMonitoringSpec `json:"metricbeat,omitempty"`
-}
-
-type FilebeatPrometheusSpec struct {
-
-	// Enabled permit to enable Prometheus monitoring
-	// It will deploy exporter for filebeat and add podMonitor policy
-	// Default to false
-	// +operator-sdk:csv:customresourcedefinitions:type=spec
-	// +optional
-	// +kubebuilder:default=false
-	Enabled bool `json:"enabled,omitempty"`
-
-	// Url is the plugin URL where to download exporter
-	// Default is use project https://github.com/pjhampton/kibana-prometheus-exporter
-	// If version is set to latest, it use arbitrary: https://github.com/pjhampton/kibana-prometheus-exporter/releases/download/8.6.0/kibanaPrometheusExporter-8.6.0.zip
-	// +operator-sdk:csv:customresourcedefinitions:type=spec
-	// +optional
-	Url string `json:"url,omitempty"`
 }
 
 type FilebeatDeploymentSpec struct {

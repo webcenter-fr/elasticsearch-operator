@@ -80,11 +80,11 @@ func doCreateElasticsearchStep() test.TestStep {
 							},
 						},
 					},
-					Monitoring: elasticsearchcrd.ElasticsearchMonitoringSpec{
-						Prometheus: &elasticsearchcrd.ElasticsearchPrometheusSpec{
+					Monitoring: shared.MonitoringSpec{
+						Prometheus: &shared.MonitoringPrometheusSpec{
 							Enabled: true,
 						},
-						Metricbeat: &shared.MetricbeatMonitoringSpec{
+						Metricbeat: &shared.MonitoringMetricbeatSpec{
 							Enabled: true,
 							ElasticsearchRef: shared.ElasticsearchRef{
 								ManagedElasticsearchRef: &shared.ElasticsearchManagedRef{

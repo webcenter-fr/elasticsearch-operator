@@ -301,8 +301,8 @@ func TestGetExporterUrl(t *testing.T) {
 		},
 		Spec: kibanacrd.KibanaSpec{
 			Version: "8.0.0",
-			Monitoring: kibanacrd.KibanaMonitoringSpec{
-				Prometheus: &kibanacrd.KibanaPrometheusSpec{
+			Monitoring: shared.MonitoringSpec{
+				Prometheus: &shared.MonitoringPrometheusSpec{
 					Url: "fake",
 				},
 			},

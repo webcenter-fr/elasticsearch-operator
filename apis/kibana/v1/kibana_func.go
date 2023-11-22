@@ -41,26 +41,6 @@ func (h *Kibana) IsLoadBalancerEnabled() bool {
 	return false
 }
 
-// IsPrometheusMonitoring return true if Prometheus monitoring is enabled
-func (h *Kibana) IsPrometheusMonitoring() bool {
-
-	if h.Spec.Monitoring.Prometheus != nil && h.Spec.Monitoring.Prometheus.Enabled {
-		return true
-	}
-
-	return false
-}
-
-// IsMetricbeatMonitoring return true if Metricbeat monitoring is enabled
-func (h *Kibana) IsMetricbeatMonitoring() bool {
-
-	if h.Spec.Monitoring.Metricbeat != nil && h.Spec.Monitoring.Metricbeat.Enabled && h.Spec.Deployment.Replicas > 0 {
-		return true
-	}
-
-	return false
-}
-
 // IsPdb return true if PDB is enabled
 func (h *Kibana) IsPdb() bool {
 	if h.Spec.Deployment.PodDisruptionBudgetSpec != nil || h.Spec.Deployment.Replicas > 1 {

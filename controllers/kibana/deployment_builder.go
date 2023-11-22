@@ -35,7 +35,7 @@ func buildDeployments(kb *kibanacrd.Kibana, es *elasticsearchcrd.Elasticsearch, 
 	checksumAnnotations := map[string]string{}
 
 	// Inject plugin for exporter Prometheus if needed
-	if kb.IsPrometheusMonitoring() {
+	if kb.Spec.Monitoring.IsPrometheusMonitoring() {
 		kb.Spec.PluginsList = append(kb.Spec.PluginsList, GetExporterUrl(kb))
 	}
 

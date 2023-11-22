@@ -14,7 +14,7 @@ import (
 // BuildMetricbeat permit to generate metricbeat
 func buildMetricbeats(es *elasticsearchcrd.Elasticsearch) (mbs []beatcrd.Metricbeat, err error) {
 
-	if !es.IsMetricbeatMonitoring() {
+	if !es.Spec.Monitoring.IsMetricbeatMonitoring(es.NumberOfReplicas()) {
 		return nil, nil
 	}
 

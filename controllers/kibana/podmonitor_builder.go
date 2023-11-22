@@ -10,7 +10,7 @@ import (
 // BuildPodMonitor permit to build pod monitor
 // It return nil if prometheus monitoring is disabled
 func buildPodMonitors(kb *kibanacrd.Kibana) (podMonitors []monitoringv1.PodMonitor, err error) {
-	if !kb.IsPrometheusMonitoring() {
+	if !kb.Spec.Monitoring.IsPrometheusMonitoring() {
 		return nil, nil
 	}
 	scheme := "https"

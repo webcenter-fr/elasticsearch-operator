@@ -14,7 +14,7 @@ import (
 // BuildMetricbeat permit to generate metricbeat
 func buildMetricbeats(ls *logstashcrd.Logstash) (metricbeats []beatcrd.Metricbeat, err error) {
 
-	if !ls.IsMetricbeatMonitoring() {
+	if !ls.Spec.Monitoring.IsMetricbeatMonitoring(ls.Spec.Deployment.Replicas) {
 		return nil, nil
 	}
 

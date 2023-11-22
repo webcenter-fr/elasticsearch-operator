@@ -48,8 +48,8 @@ func TestBuildMetricbeat(t *testing.T) {
 			Name:      "test",
 		},
 		Spec: kibanacrd.KibanaSpec{
-			Monitoring: kibanacrd.KibanaMonitoringSpec{
-				Metricbeat: &shared.MetricbeatMonitoringSpec{
+			Monitoring: shared.MonitoringSpec{
+				Metricbeat: &shared.MonitoringMetricbeatSpec{
 					Enabled: false,
 				},
 			},
@@ -67,8 +67,8 @@ func TestBuildMetricbeat(t *testing.T) {
 			Name:      "test",
 		},
 		Spec: kibanacrd.KibanaSpec{
-			Monitoring: kibanacrd.KibanaMonitoringSpec{
-				Metricbeat: &shared.MetricbeatMonitoringSpec{
+			Monitoring: shared.MonitoringSpec{
+				Metricbeat: &shared.MonitoringMetricbeatSpec{
 					Enabled: true,
 					ElasticsearchRef: shared.ElasticsearchRef{
 						ManagedElasticsearchRef: &shared.ElasticsearchManagedRef{
@@ -95,8 +95,8 @@ func TestBuildMetricbeat(t *testing.T) {
 			Name:      "test",
 		},
 		Spec: kibanacrd.KibanaSpec{
-			Monitoring: kibanacrd.KibanaMonitoringSpec{
-				Metricbeat: &shared.MetricbeatMonitoringSpec{
+			Monitoring: shared.MonitoringSpec{
+				Metricbeat: &shared.MonitoringMetricbeatSpec{
 					Enabled: true,
 					Version: "1.0.0",
 					ElasticsearchRef: shared.ElasticsearchRef{
@@ -136,8 +136,8 @@ func TestBuildMetricbeat(t *testing.T) {
 			Name:      "test",
 		},
 		Spec: kibanacrd.KibanaSpec{
-			Monitoring: kibanacrd.KibanaMonitoringSpec{
-				Metricbeat: &shared.MetricbeatMonitoringSpec{
+			Monitoring: shared.MonitoringSpec{
+				Metricbeat: &shared.MonitoringMetricbeatSpec{
 					Enabled: true,
 					ElasticsearchRef: shared.ElasticsearchRef{
 						ManagedElasticsearchRef: &shared.ElasticsearchManagedRef{
