@@ -48,7 +48,7 @@ output.logstash:
     enable: true
     certificate_authorities:
 `)
-			for certificateName, _ := range logstashCASecret.Data {
+			for certificateName := range logstashCASecret.Data {
 				filebeatConf.WriteString(fmt.Sprintf("      - /usr/share/filebeat/ls-ca/%s", certificateName))
 			}
 		}
