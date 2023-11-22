@@ -39,7 +39,7 @@ elasticsearch.ssl.certificateAuthorities:
 `
 	}
 
-	if kb.IsIngressEnabled() {
+	if kb.Spec.Endpoint.IsIngressEnabled() {
 		scheme := "https"
 		if !kb.IsTlsEnabled() && kb.Spec.Endpoint.Ingress.SecretRef == nil {
 			scheme = "http"

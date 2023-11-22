@@ -65,3 +65,21 @@ type EndpointIngressSpec struct {
 	// +optional
 	IngressSpec *networkingv1.IngressSpec `json:"ingressSpec,omitempty"`
 }
+
+// IsIngressEnabled return true if ingress is enabled
+func (h EndpointSpec) IsIngressEnabled() bool {
+	if h.Ingress != nil && h.Ingress.Enabled {
+		return true
+	}
+
+	return false
+}
+
+// IsLoadBalancerEnabled return true if LoadBalancer is enabled
+func (h EndpointSpec) IsLoadBalancerEnabled() bool {
+	if h.LoadBalancer != nil && h.LoadBalancer.Enabled {
+		return true
+	}
+
+	return false
+}

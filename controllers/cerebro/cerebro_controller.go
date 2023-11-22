@@ -236,7 +236,7 @@ func (h *CerebroReconciler) computeCerebroUrl(ctx context.Context, cb *cerebrocr
 		url    string
 	)
 
-	if cb.IsIngressEnabled() {
+	if cb.Spec.Endpoint.IsIngressEnabled() {
 		url = cb.Spec.Endpoint.Ingress.Host
 
 		if cb.Spec.Endpoint.Ingress.SecretRef != nil {
@@ -244,7 +244,7 @@ func (h *CerebroReconciler) computeCerebroUrl(ctx context.Context, cb *cerebrocr
 		} else {
 			scheme = "http"
 		}
-	} else if cb.IsLoadBalancerEnabled() {
+	} else if cb.Spec.Endpoint.IsLoadBalancerEnabled() {
 		// Need to get lb service to get IP and port
 		service := &corev1.Service{}
 		if err = h.Client.Get(ctx, types.NamespacedName{Namespace: cb.Namespace, Name: GetLoadBalancerName(cb)}, service); err != nil {

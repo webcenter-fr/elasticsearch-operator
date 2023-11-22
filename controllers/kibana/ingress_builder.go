@@ -12,7 +12,7 @@ import (
 // It return error if ingress spec is not provided
 // It return nil if ingress is disabled
 func buildIngresses(kb *kibanacrd.Kibana) (ingresses []networkingv1.Ingress, err error) {
-	if !kb.IsIngressEnabled() {
+	if !kb.Spec.Endpoint.IsIngressEnabled() {
 		return nil, nil
 	}
 
