@@ -6,6 +6,7 @@ import (
 	"github.com/disaster37/operator-sdk-extra/pkg/test"
 	"github.com/stretchr/testify/assert"
 	elasticsearchcrd "github.com/webcenter-fr/elasticsearch-operator/apis/elasticsearch/v1"
+	"github.com/webcenter-fr/elasticsearch-operator/apis/shared"
 	v1 "k8s.io/api/core/v1"
 	networkingv1 "k8s.io/api/networking/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -41,7 +42,9 @@ func TestBuildIngress(t *testing.T) {
 		Spec: elasticsearchcrd.ElasticsearchSpec{
 			Endpoint: elasticsearchcrd.ElasticsearchEndpointSpec{
 				Ingress: &elasticsearchcrd.ElasticsearchIngressSpec{
-					Enabled: false,
+					EndpointIngressSpec: shared.EndpointIngressSpec{
+						Enabled: false,
+					},
 				},
 			},
 		},
@@ -59,9 +62,11 @@ func TestBuildIngress(t *testing.T) {
 		Spec: elasticsearchcrd.ElasticsearchSpec{
 			Endpoint: elasticsearchcrd.ElasticsearchEndpointSpec{
 				Ingress: &elasticsearchcrd.ElasticsearchIngressSpec{
-					Enabled:             true,
+					EndpointIngressSpec: shared.EndpointIngressSpec{
+						Enabled: true,
+						Host:    "my-test.cluster.local",
+					},
 					TargetNodeGroupName: "master",
-					Host:                "my-test.cluster.local",
 				},
 			},
 			NodeGroups: []elasticsearchcrd.ElasticsearchNodeGroupSpec{
@@ -90,8 +95,10 @@ func TestBuildIngress(t *testing.T) {
 		Spec: elasticsearchcrd.ElasticsearchSpec{
 			Endpoint: elasticsearchcrd.ElasticsearchEndpointSpec{
 				Ingress: &elasticsearchcrd.ElasticsearchIngressSpec{
-					Enabled: true,
-					Host:    "my-test.cluster.local",
+					EndpointIngressSpec: shared.EndpointIngressSpec{
+						Enabled: true,
+						Host:    "my-test.cluster.local",
+					},
 				},
 			},
 			NodeGroups: []elasticsearchcrd.ElasticsearchNodeGroupSpec{
@@ -126,21 +133,23 @@ func TestBuildIngress(t *testing.T) {
 		Spec: elasticsearchcrd.ElasticsearchSpec{
 			Endpoint: elasticsearchcrd.ElasticsearchEndpointSpec{
 				Ingress: &elasticsearchcrd.ElasticsearchIngressSpec{
-					Enabled:             true,
+					EndpointIngressSpec: shared.EndpointIngressSpec{
+						Enabled: true,
+						Host:    "my-test.cluster.local",
+						SecretRef: &v1.LocalObjectReference{
+							Name: "my-secret",
+						},
+						Labels: map[string]string{
+							"ingressLabel": "ingressLabel",
+						},
+						Annotations: map[string]string{
+							"annotationLabel": "annotationLabel",
+						},
+						IngressSpec: &networkingv1.IngressSpec{
+							IngressClassName: ptr.To[string]("toto"),
+						},
+					},
 					TargetNodeGroupName: "master",
-					Host:                "my-test.cluster.local",
-					SecretRef: &v1.LocalObjectReference{
-						Name: "my-secret",
-					},
-					Labels: map[string]string{
-						"ingressLabel": "ingressLabel",
-					},
-					Annotations: map[string]string{
-						"annotationLabel": "annotationLabel",
-					},
-					IngressSpec: &networkingv1.IngressSpec{
-						IngressClassName: ptr.To[string]("toto"),
-					},
 				},
 			},
 			NodeGroups: []elasticsearchcrd.ElasticsearchNodeGroupSpec{
@@ -170,9 +179,11 @@ func TestBuildIngress(t *testing.T) {
 		Spec: elasticsearchcrd.ElasticsearchSpec{
 			Endpoint: elasticsearchcrd.ElasticsearchEndpointSpec{
 				Ingress: &elasticsearchcrd.ElasticsearchIngressSpec{
-					Enabled:             true,
+					EndpointIngressSpec: shared.EndpointIngressSpec{
+						Enabled: true,
+						Host:    "my-test.cluster.local",
+					},
 					TargetNodeGroupName: "master",
-					Host:                "my-test.cluster.local",
 				},
 			},
 			NodeGroups: []elasticsearchcrd.ElasticsearchNodeGroupSpec{

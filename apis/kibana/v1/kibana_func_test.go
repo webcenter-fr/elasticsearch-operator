@@ -130,8 +130,8 @@ func TestIsIngressEnabled(t *testing.T) {
 	assert.False(t, o.IsIngressEnabled())
 
 	// When Ingress is specified but disabled
-	o.Spec.Endpoint = KibanaEndpointSpec{
-		Ingress: &KibanaIngressSpec{
+	o.Spec.Endpoint = shared.EndpointSpec{
+		Ingress: &shared.EndpointIngressSpec{
 			Enabled: false,
 		},
 	}
@@ -155,8 +155,8 @@ func TestIsLoadBalancerEnabled(t *testing.T) {
 	assert.False(t, o.IsLoadBalancerEnabled())
 
 	// When Load balancer is specified but disabled
-	o.Spec.Endpoint = KibanaEndpointSpec{
-		LoadBalancer: &KibanaLoadBalancerSpec{
+	o.Spec.Endpoint = shared.EndpointSpec{
+		LoadBalancer: &shared.EndpointLoadBalancerSpec{
 			Enabled: false,
 		},
 	}

@@ -91,7 +91,9 @@ func TestIsIngressEnabled(t *testing.T) {
 	// When Ingress is specified but disabled
 	o.Spec.Endpoint = ElasticsearchEndpointSpec{
 		Ingress: &ElasticsearchIngressSpec{
-			Enabled: false,
+			EndpointIngressSpec: shared.EndpointIngressSpec{
+				Enabled: false,
+			},
 		},
 	}
 	assert.False(t, o.IsIngressEnabled())
@@ -116,7 +118,9 @@ func TestIsLoadBalancerEnabled(t *testing.T) {
 	// When Load balancer is specified but disabled
 	o.Spec.Endpoint = ElasticsearchEndpointSpec{
 		LoadBalancer: &ElasticsearchLoadBalancerSpec{
-			Enabled: false,
+			EndpointLoadBalancerSpec: shared.EndpointLoadBalancerSpec{
+				Enabled: false,
+			},
 		},
 	}
 	assert.False(t, o.IsLoadBalancerEnabled())

@@ -15,6 +15,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	cerebrocrd "github.com/webcenter-fr/elasticsearch-operator/apis/cerebro/v1"
 	elasticsearchcrd "github.com/webcenter-fr/elasticsearch-operator/apis/elasticsearch/v1"
+	"github.com/webcenter-fr/elasticsearch-operator/apis/shared"
 	appv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	networkingv1 "k8s.io/api/networking/v1"
@@ -56,15 +57,15 @@ func doCreateCerebroStep() test.TestStep {
 				},
 				Spec: cerebrocrd.CerebroSpec{
 					Version: "0.9.4",
-					Endpoint: cerebrocrd.CerebroEndpointSpec{
-						Ingress: &cerebrocrd.CerebroIngressSpec{
+					Endpoint: shared.EndpointSpec{
+						Ingress: &shared.EndpointIngressSpec{
 							Enabled: true,
 							Host:    "test.cluster.local",
 							SecretRef: &corev1.LocalObjectReference{
 								Name: "test-tls",
 							},
 						},
-						LoadBalancer: &cerebrocrd.CerebroLoadBalancerSpec{
+						LoadBalancer: &shared.EndpointLoadBalancerSpec{
 							Enabled: true,
 						},
 					},

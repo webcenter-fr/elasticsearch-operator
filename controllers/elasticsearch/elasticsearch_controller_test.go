@@ -66,14 +66,18 @@ func doCreateElasticsearchStep() test.TestStep {
 				Spec: elasticsearchcrd.ElasticsearchSpec{
 					Endpoint: elasticsearchcrd.ElasticsearchEndpointSpec{
 						Ingress: &elasticsearchcrd.ElasticsearchIngressSpec{
-							Enabled: true,
-							Host:    "test.cluster.local",
-							SecretRef: &corev1.LocalObjectReference{
-								Name: "test-tls",
+							EndpointIngressSpec: shared.EndpointIngressSpec{
+								Enabled: true,
+								Host:    "test.cluster.local",
+								SecretRef: &corev1.LocalObjectReference{
+									Name: "test-tls",
+								},
 							},
 						},
 						LoadBalancer: &elasticsearchcrd.ElasticsearchLoadBalancerSpec{
-							Enabled: true,
+							EndpointLoadBalancerSpec: shared.EndpointLoadBalancerSpec{
+								Enabled: true,
+							},
 						},
 					},
 					Monitoring: elasticsearchcrd.ElasticsearchMonitoringSpec{

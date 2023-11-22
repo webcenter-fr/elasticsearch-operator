@@ -6,6 +6,7 @@ import (
 	"github.com/disaster37/operator-sdk-extra/pkg/test"
 	"github.com/stretchr/testify/assert"
 	elasticsearchcrd "github.com/webcenter-fr/elasticsearch-operator/apis/elasticsearch/v1"
+	"github.com/webcenter-fr/elasticsearch-operator/apis/shared"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes/scheme"
@@ -41,7 +42,9 @@ func TestBuildLoadbalancer(t *testing.T) {
 		Spec: elasticsearchcrd.ElasticsearchSpec{
 			Endpoint: elasticsearchcrd.ElasticsearchEndpointSpec{
 				LoadBalancer: &elasticsearchcrd.ElasticsearchLoadBalancerSpec{
-					Enabled: false,
+					EndpointLoadBalancerSpec: shared.EndpointLoadBalancerSpec{
+						Enabled: false,
+					},
 				},
 			},
 		},
@@ -70,7 +73,9 @@ func TestBuildLoadbalancer(t *testing.T) {
 			},
 			Endpoint: elasticsearchcrd.ElasticsearchEndpointSpec{
 				LoadBalancer: &elasticsearchcrd.ElasticsearchLoadBalancerSpec{
-					Enabled:             true,
+					EndpointLoadBalancerSpec: shared.EndpointLoadBalancerSpec{
+						Enabled: true,
+					},
 					TargetNodeGroupName: "master",
 				},
 			},
@@ -100,7 +105,9 @@ func TestBuildLoadbalancer(t *testing.T) {
 			},
 			Endpoint: elasticsearchcrd.ElasticsearchEndpointSpec{
 				LoadBalancer: &elasticsearchcrd.ElasticsearchLoadBalancerSpec{
-					Enabled: true,
+					EndpointLoadBalancerSpec: shared.EndpointLoadBalancerSpec{
+						Enabled: true,
+					},
 				},
 			},
 		},
@@ -125,7 +132,9 @@ func TestBuildLoadbalancer(t *testing.T) {
 			},
 			Endpoint: elasticsearchcrd.ElasticsearchEndpointSpec{
 				LoadBalancer: &elasticsearchcrd.ElasticsearchLoadBalancerSpec{
-					Enabled:             true,
+					EndpointLoadBalancerSpec: shared.EndpointLoadBalancerSpec{
+						Enabled: true,
+					},
 					TargetNodeGroupName: "master",
 				},
 			},

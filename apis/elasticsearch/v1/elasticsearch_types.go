@@ -20,7 +20,6 @@ import (
 	"github.com/disaster37/operator-sdk-extra/pkg/apis"
 	"github.com/webcenter-fr/elasticsearch-operator/apis/shared"
 	corev1 "k8s.io/api/core/v1"
-	networkingv1 "k8s.io/api/networking/v1"
 	policyv1 "k8s.io/api/policy/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -152,13 +151,7 @@ type ElasticsearchEndpointSpec struct {
 }
 
 type ElasticsearchLoadBalancerSpec struct {
-	// Enabled permit to enabled / disabled load balancer
-	// Cloud provider need to support it
-	// Default to false
-	// +operator-sdk:csv:customresourcedefinitions:type=spec
-	// +optional
-	// +kubebuilder:default=false
-	Enabled bool `json:"enabled,omitempty"`
+	shared.EndpointLoadBalancerSpec `json:",inline"`
 
 	// TargetNodeGroupName permit to define if specific node group is responsible to receive external access, like ingest nodes
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
@@ -167,42 +160,12 @@ type ElasticsearchLoadBalancerSpec struct {
 }
 
 type ElasticsearchIngressSpec struct {
-
-	// Enabled permit to enabled / disabled ingress
-	// Default to false
-	// +operator-sdk:csv:customresourcedefinitions:type=spec
-	// +optional
-	// +kubebuilder:default=false
-	Enabled bool `json:"enabled,omitempty"`
+	shared.EndpointIngressSpec `json:",inline"`
 
 	// TargetNodeGroupName permit to define if specific node group is responsible to receive external access, like ingest nodes
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
 	// +optional
 	TargetNodeGroupName string `json:"targetNodeGroupName,omitempty"`
-
-	// Host is the hostname to access on Elasticsearch
-	// +operator-sdk:csv:customresourcedefinitions:type=spec
-	Host string `json:"host"`
-
-	// SecretRef is the secret ref that store certificates
-	// +operator-sdk:csv:customresourcedefinitions:type=spec
-	// +optional
-	SecretRef *corev1.LocalObjectReference `json:"secretRef,omitempty"`
-
-	// Labels to set in ingress
-	// +operator-sdk:csv:customresourcedefinitions:type=spec
-	// +optional
-	Labels map[string]string `json:"labels,omitempty"`
-
-	// Annotations to set in ingress
-	// +operator-sdk:csv:customresourcedefinitions:type=spec
-	// +optional
-	Annotations map[string]string `json:"annotations,omitempty"`
-
-	// IngressSpec it merge with expected ingress spec
-	// +operator-sdk:csv:customresourcedefinitions:type=spec
-	// +optional
-	IngressSpec *networkingv1.IngressSpec `json:"ingressSpec,omitempty"`
 }
 
 type ElasticsearchGlobalNodeGroupSpec struct {

@@ -5,6 +5,7 @@ import (
 
 	"github.com/disaster37/operator-sdk-extra/pkg/apis"
 	"github.com/stretchr/testify/assert"
+	"github.com/webcenter-fr/elasticsearch-operator/apis/shared"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -38,8 +39,8 @@ func TestIsIngressEnabled(t *testing.T) {
 	assert.False(t, o.IsIngressEnabled())
 
 	// When Ingress is specified but disabled
-	o.Spec.Endpoint = CerebroEndpointSpec{
-		Ingress: &CerebroIngressSpec{
+	o.Spec.Endpoint = shared.EndpointSpec{
+		Ingress: &shared.EndpointIngressSpec{
 			Enabled: false,
 		},
 	}
@@ -63,8 +64,8 @@ func TestIsLoadBalancerEnabled(t *testing.T) {
 	assert.False(t, o.IsLoadBalancerEnabled())
 
 	// When Load balancer is specified but disabled
-	o.Spec.Endpoint = CerebroEndpointSpec{
-		LoadBalancer: &CerebroLoadBalancerSpec{
+	o.Spec.Endpoint = shared.EndpointSpec{
+		LoadBalancer: &shared.EndpointLoadBalancerSpec{
 			Enabled: false,
 		},
 	}

@@ -20,7 +20,6 @@ import (
 	"github.com/disaster37/operator-sdk-extra/pkg/apis"
 	"github.com/webcenter-fr/elasticsearch-operator/apis/shared"
 	corev1 "k8s.io/api/core/v1"
-	networkingv1 "k8s.io/api/networking/v1"
 	policyv1 "k8s.io/api/policy/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -61,7 +60,7 @@ type KibanaSpec struct {
 	// You can set ingress and / or load balancer
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
 	// +optional
-	Endpoint KibanaEndpointSpec `json:"endpoint,omitempty"`
+	Endpoint shared.EndpointSpec `json:"endpoint,omitempty"`
 
 	// Config is the Kibana config
 	// The key is the file stored on kibana/config
@@ -120,62 +119,6 @@ type KibanaPrometheusSpec struct {
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
 	// +optional
 	Url string `json:"url,omitempty"`
-}
-
-type KibanaEndpointSpec struct {
-	// Ingress permit to set ingress settings
-	// +operator-sdk:csv:customresourcedefinitions:type=spec
-	// +optional
-	Ingress *KibanaIngressSpec `json:"ingress,omitempty"`
-
-	// Load balancer permit to set load balancer settings
-	// +operator-sdk:csv:customresourcedefinitions:type=spec
-	// +optional
-	LoadBalancer *KibanaLoadBalancerSpec `json:"loadBalancer,omitempty"`
-}
-
-type KibanaLoadBalancerSpec struct {
-	// Enabled permit to enabled / disabled load balancer
-	// Cloud provider need to support it
-	// Default to false
-	// +operator-sdk:csv:customresourcedefinitions:type=spec
-	// +optional
-	// +kubebuilder:default=false
-	Enabled bool `json:"enabled,omitempty"`
-}
-
-type KibanaIngressSpec struct {
-
-	// Enabled permit to enabled / disabled ingress
-	// Default to false
-	// +operator-sdk:csv:customresourcedefinitions:type=spec
-	// +optional
-	// +kubebuilder:default=false
-	Enabled bool `json:"enabled,omitempty"`
-
-	// Host is the hostname to access on Kibana
-	// +operator-sdk:csv:customresourcedefinitions:type=spec
-	Host string `json:"host"`
-
-	// SecretRef is the secret ref that store certificates
-	// +operator-sdk:csv:customresourcedefinitions:type=spec
-	// +optional
-	SecretRef *corev1.LocalObjectReference `json:"secretRef,omitempty"`
-
-	// Labels to set in ingress
-	// +operator-sdk:csv:customresourcedefinitions:type=spec
-	// +optional
-	Labels map[string]string `json:"labels,omitempty"`
-
-	// Annotations to set in ingress
-	// +operator-sdk:csv:customresourcedefinitions:type=spec
-	// +optional
-	Annotations map[string]string `json:"annotations,omitempty"`
-
-	// IngressSpec it merge with expected ingress spec
-	// +operator-sdk:csv:customresourcedefinitions:type=spec
-	// +optional
-	IngressSpec *networkingv1.IngressSpec `json:"ingressSpec,omitempty"`
 }
 
 type KibanaDeploymentSpec struct {

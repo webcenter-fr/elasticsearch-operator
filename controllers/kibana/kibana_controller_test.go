@@ -102,15 +102,15 @@ func doCreateKibanaStep() test.TestStep {
 				},
 				Spec: kibanacrd.KibanaSpec{
 					Version: "8.6.0",
-					Endpoint: kibanacrd.KibanaEndpointSpec{
-						Ingress: &kibanacrd.KibanaIngressSpec{
+					Endpoint: shared.EndpointSpec{
+						Ingress: &shared.EndpointIngressSpec{
 							Enabled: true,
 							Host:    "test.cluster.local",
 							SecretRef: &corev1.LocalObjectReference{
 								Name: "test-tls",
 							},
 						},
-						LoadBalancer: &kibanacrd.KibanaLoadBalancerSpec{
+						LoadBalancer: &shared.EndpointLoadBalancerSpec{
 							Enabled: true,
 						},
 					},

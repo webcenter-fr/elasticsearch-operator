@@ -6,6 +6,7 @@ import (
 	"github.com/disaster37/operator-sdk-extra/pkg/test"
 	"github.com/stretchr/testify/assert"
 	kibanacrd "github.com/webcenter-fr/elasticsearch-operator/apis/kibana/v1"
+	"github.com/webcenter-fr/elasticsearch-operator/apis/shared"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes/scheme"
@@ -39,8 +40,8 @@ func TestBuildLoadbalancer(t *testing.T) {
 			Name:      "test",
 		},
 		Spec: kibanacrd.KibanaSpec{
-			Endpoint: kibanacrd.KibanaEndpointSpec{
-				LoadBalancer: &kibanacrd.KibanaLoadBalancerSpec{
+			Endpoint: shared.EndpointSpec{
+				LoadBalancer: &shared.EndpointLoadBalancerSpec{
 					Enabled: false,
 				},
 			},
@@ -58,8 +59,8 @@ func TestBuildLoadbalancer(t *testing.T) {
 			Name:      "test",
 		},
 		Spec: kibanacrd.KibanaSpec{
-			Endpoint: kibanacrd.KibanaEndpointSpec{
-				LoadBalancer: &kibanacrd.KibanaLoadBalancerSpec{
+			Endpoint: shared.EndpointSpec{
+				LoadBalancer: &shared.EndpointLoadBalancerSpec{
 					Enabled: true,
 				},
 			},
