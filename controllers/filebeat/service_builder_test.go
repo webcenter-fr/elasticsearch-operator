@@ -44,7 +44,7 @@ func TestBuildServicees(t *testing.T) {
 			Name:      "test",
 		},
 		Spec: beatcrd.FilebeatSpec{
-			Services: []beatcrd.FilebeatService{
+			Services: []shared.Service{
 				{
 					Name: "my-service",
 					Labels: map[string]string{

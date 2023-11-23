@@ -45,7 +45,7 @@ func TestBuildServices(t *testing.T) {
 			Name:      "test",
 		},
 		Spec: logstashcrd.LogstashSpec{
-			Services: []logstashcrd.LogstashService{
+			Services: []shared.Service{
 				{
 					Name: "my-service",
 					Labels: map[string]string{

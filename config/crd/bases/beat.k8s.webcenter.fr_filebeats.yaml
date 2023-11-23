@@ -12090,6 +12090,7 @@ spec:
                 description: Ingresses permit to declare some ingresses The name is
                   decorated with cluster name and so on
                 items:
+                  description: Ingress permit to set ingress
                   properties:
                     annotations:
                       additionalProperties:
@@ -12712,6 +12713,7 @@ spec:
                 description: Services permit to declare some services The name is
                   decorated with cluster name and so on
                 items:
+                  description: Service permit to set service
                   properties:
                     annotations:
                       additionalProperties:
