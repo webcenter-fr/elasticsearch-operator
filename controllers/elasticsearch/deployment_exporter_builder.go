@@ -32,7 +32,7 @@ func buildDeploymentExporters(es *elasticsearchcrd.Elasticsearch) (dpls []appv1.
 
 	// Command and arguments
 	scheme := "https"
-	if !es.IsTlsApiEnabled() {
+	if !es.Spec.Tls.IsTlsEnabled() {
 		scheme = "http"
 	}
 

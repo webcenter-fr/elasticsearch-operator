@@ -76,7 +76,7 @@ func GetKibanaHandler(ctx context.Context, o client.Object, kbRef shared.KibanaR
 		}
 
 		// Compute URL
-		if kb.IsTlsEnabled() {
+		if kb.Spec.Tls.IsTlsEnabled() {
 			url = fmt.Sprintf("https://%s.%s.svc:5601", kibanacontrollers.GetServiceName(kb), kb.Namespace)
 			selfSignedCertificate = true
 		} else {

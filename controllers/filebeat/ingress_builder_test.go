@@ -6,6 +6,7 @@ import (
 	"github.com/disaster37/operator-sdk-extra/pkg/test"
 	"github.com/stretchr/testify/assert"
 	beatcrd "github.com/webcenter-fr/elasticsearch-operator/apis/beat/v1"
+	"github.com/webcenter-fr/elasticsearch-operator/apis/shared"
 	v1 "k8s.io/api/core/v1"
 	networkingv1 "k8s.io/api/networking/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -40,7 +41,7 @@ func TestBuildIngresses(t *testing.T) {
 			Name:      "test",
 		},
 		Spec: beatcrd.FilebeatSpec{
-			Ingresses: []beatcrd.FilebeatIngress{
+			Ingresses: []shared.Ingress{
 				{
 					Name: "my-ingress",
 					Labels: map[string]string{

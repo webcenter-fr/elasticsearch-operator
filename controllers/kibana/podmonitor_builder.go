@@ -14,7 +14,7 @@ func buildPodMonitors(kb *kibanacrd.Kibana) (podMonitors []monitoringv1.PodMonit
 		return nil, nil
 	}
 	scheme := "https"
-	if !kb.IsTlsEnabled() {
+	if !kb.Spec.Tls.IsTlsEnabled() {
 		scheme = "http"
 	}
 

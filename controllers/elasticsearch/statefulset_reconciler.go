@@ -107,8 +107,8 @@ func (r *statefulsetReconciler) Read(ctx context.Context, resource object.MultiP
 	}
 
 	// Read API certificate secret if needed
-	if o.IsTlsApiEnabled() {
-		if o.IsSelfManagedSecretForTlsApi() {
+	if o.Spec.Tls.IsTlsEnabled() {
+		if o.Spec.Tls.IsSelfManagedSecretForTls() {
 			if err = r.Client.Get(ctx, types.NamespacedName{Namespace: o.Namespace, Name: GetSecretNameForTlsApi(o)}, s); err != nil {
 				if !k8serrors.IsNotFound(err) {
 					return read, res, errors.Wrapf(err, "Error when read secret %s", GetSecretNameForTlsApi(o))

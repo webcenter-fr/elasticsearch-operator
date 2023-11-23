@@ -22,7 +22,7 @@ func buildMetricbeats(es *elasticsearchcrd.Elasticsearch) (mbs []beatcrd.Metricb
 
 	var sb strings.Builder
 
-	if es.IsTlsApiEnabled() {
+	if es.Spec.Tls.IsTlsEnabled() {
 		sb.WriteString(`- module: elasticsearch
   xpack.enabled: true
   username: '${SOURCE_METRICBEAT_USERNAME}'
@@ -121,7 +121,7 @@ func buildMetricbeats(es *elasticsearchcrd.Elasticsearch) (mbs []beatcrd.Metricb
 	}
 
 	// Compute volumes
-	if es.IsTlsApiEnabled() {
+	if es.Spec.Tls.IsTlsEnabled() {
 		mb.Spec.Deployment.AdditionalVolumes = []beatcrd.MetricbeatVolumeSpec{
 			{
 				Name: "ca-source-elasticsearch",

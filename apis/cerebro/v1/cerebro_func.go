@@ -8,4 +8,3 @@ import (
 func (h *Cerebro) GetStatus() object.MultiPhaseObjectStatus {
 	return &h.Status
 }
-

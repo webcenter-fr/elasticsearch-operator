@@ -65,7 +65,7 @@ func (r *tlsReconciler) Read(ctx context.Context, resource object.MultiPhaseObje
 		secretName string
 	)
 
-	if o.IsTlsEnabled() && o.IsSelfManagedSecretForTls() {
+	if o.Spec.Tls.IsTlsEnabled() && o.Spec.Tls.IsSelfManagedSecretForTls() {
 		// Read API PKI secret
 		secretName = GetSecretNameForPki(o)
 		if err = r.Client.Get(ctx, types.NamespacedName{Namespace: o.Namespace, Name: secretName}, sApiPki); err != nil {
@@ -159,7 +159,7 @@ func (r *tlsReconciler) Diff(ctx context.Context, resource object.MultiPhaseObje
 		diff.AddDiff("Generate new certificates")
 
 		// Handle API certificates
-		if o.IsTlsEnabled() && o.IsSelfManagedSecretForTls() {
+		if o.Spec.Tls.IsTlsEnabled() && o.Spec.Tls.IsSelfManagedSecretForTls() {
 
 			// Generate API PKI
 			tmpApiPki, apiRootCA, err := buildPkiSecret(o)
@@ -202,7 +202,7 @@ func (r *tlsReconciler) Diff(ctx context.Context, resource object.MultiPhaseObje
 	// Check if certificates will expire
 	isRenew := false
 	certificates := map[string]x509.Certificate{}
-	if o.IsTlsEnabled() && o.IsSelfManagedSecretForTls() {
+	if o.Spec.Tls.IsTlsEnabled() && o.Spec.Tls.IsSelfManagedSecretForTls() {
 		if apiRootCA != nil {
 			certificates["apiPki"] = *apiRootCA.GoCertificate()
 		} else {
@@ -232,7 +232,7 @@ func (r *tlsReconciler) Diff(ctx context.Context, resource object.MultiPhaseObje
 	if isRenew {
 		r.Log.Debugf("Renew all certificates")
 
-		if o.IsTlsEnabled() && o.IsSelfManagedSecretForTls() {
+		if o.Spec.Tls.IsTlsEnabled() && o.Spec.Tls.IsSelfManagedSecretForTls() {
 			tmpApiPki, apiRootCA, err := buildPkiSecret(o)
 			if err != nil {
 				return diff, res, errors.Wrap(err, "Error when renew Pki")
@@ -273,7 +273,7 @@ func (r *tlsReconciler) Diff(ctx context.Context, resource object.MultiPhaseObje
 
 	// Check if labels or annotations need to bu upgraded
 	secrets := []*corev1.Secret{}
-	if o.IsTlsEnabled() && o.IsSelfManagedSecretForTls() {
+	if o.Spec.Tls.IsTlsEnabled() && o.Spec.Tls.IsSelfManagedSecretForTls() {
 		secrets = append(secrets, sApiPki, sApi)
 	}
 	for _, s := range secrets {

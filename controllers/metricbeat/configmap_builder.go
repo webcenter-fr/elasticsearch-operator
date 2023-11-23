@@ -31,7 +31,7 @@ metricbeat.config.modules:
 `)
 
 	// Elasticsearch output
-	if (mb.Spec.ElasticsearchRef.IsManaged() && es.IsTlsApiEnabled()) || (mb.Spec.ElasticsearchRef.IsExternal() && mb.Spec.ElasticsearchRef.ElasticsearchCaSecretRef != nil) {
+	if (mb.Spec.ElasticsearchRef.IsManaged() && es.Spec.Tls.IsTlsEnabled()) || (mb.Spec.ElasticsearchRef.IsExternal() && mb.Spec.ElasticsearchRef.ElasticsearchCaSecretRef != nil) {
 		metricbeatConf.WriteString(`
 output.elasticsearch:
   hosts: '${ELASTICSEARCH_HOST}'

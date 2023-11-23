@@ -85,7 +85,7 @@ func GetSecretNameForPkiTransport(elasticsearch *elasticsearchcrd.Elasticsearch)
 // It return the secret name as string
 func GetSecretNameForTlsApi(elasticsearch *elasticsearchcrd.Elasticsearch) (secretName string) {
 
-	if !elasticsearch.IsSelfManagedSecretForTlsApi() {
+	if !elasticsearch.Spec.Tls.IsSelfManagedSecretForTls() {
 		return elasticsearch.Spec.Tls.CertificateSecretRef.Name
 	}
 
@@ -242,7 +242,7 @@ func GetPublicUrl(es *elasticsearchcrd.Elasticsearch, targetNodeGroup string, ex
 	scheme := "https"
 
 	if !external {
-		if !es.IsTlsApiEnabled() {
+		if !es.Spec.Tls.IsTlsEnabled() {
 			scheme = "http"
 		}
 

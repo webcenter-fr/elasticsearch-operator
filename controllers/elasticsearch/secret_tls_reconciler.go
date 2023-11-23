@@ -155,7 +155,7 @@ func (r *tlsReconciler) Read(ctx context.Context, resource object.MultiPhaseObje
 		sTransport = nil
 	}
 
-	if o.IsTlsApiEnabled() && o.IsSelfManagedSecretForTlsApi() {
+	if o.Spec.Tls.IsTlsEnabled() && o.Spec.Tls.IsSelfManagedSecretForTls() {
 		// Read API PKI secret
 		secretName = GetSecretNameForPkiApi(o)
 		if err = r.Client.Get(ctx, types.NamespacedName{Namespace: o.Namespace, Name: secretName}, sApiPki); err != nil {
@@ -339,7 +339,7 @@ func (r *tlsReconciler) Diff(ctx context.Context, resource object.MultiPhaseObje
 
 	// Require API secret exist to allow pod start
 	// Not real blackout because of not need to restart all pod on same time
-	if o.IsTlsApiEnabled() && o.IsSelfManagedSecretForTlsApi() {
+	if o.Spec.Tls.IsTlsEnabled() && o.Spec.Tls.IsSelfManagedSecretForTls() {
 		isBad := false
 		if apiRootCA == nil {
 			// Generate API PKI
@@ -413,7 +413,7 @@ func (r *tlsReconciler) Diff(ctx context.Context, resource object.MultiPhaseObje
 
 		diff.AddDiff("Generate new transport certificates")
 
-		if o.IsTlsApiEnabled() && o.IsSelfManagedSecretForTlsApi() {
+		if o.Spec.Tls.IsTlsEnabled() && o.Spec.Tls.IsSelfManagedSecretForTls() {
 
 			// Generate API certificate
 			tmpApi, isUpdated, err := r.generateApiSecretCertificate(o, sApi, apiRootCA)
@@ -492,7 +492,7 @@ func (r *tlsReconciler) Diff(ctx context.Context, resource object.MultiPhaseObje
 		certificates[nodeName] = nodeCrt
 	}
 
-	if o.IsTlsApiEnabled() && o.IsSelfManagedSecretForTlsApi() {
+	if o.Spec.Tls.IsTlsEnabled() && o.Spec.Tls.IsSelfManagedSecretForTls() {
 		certificates["apiPki"] = *apiRootCA.GoCertificate()
 		certificates["apiCrt"] = *apiCrt
 	}
@@ -533,7 +533,7 @@ func (r *tlsReconciler) Diff(ctx context.Context, resource object.MultiPhaseObje
 		secretToUpdate = append(secretToUpdate, sTransport)
 
 		// API PKI
-		if o.IsTlsApiEnabled() && o.IsSelfManagedSecretForTlsApi() {
+		if o.Spec.Tls.IsTlsEnabled() && o.Spec.Tls.IsSelfManagedSecretForTls() {
 			// Generate API PKI
 			sApiPki, apiRootCA, isUpdated, err := r.generateAPISecretPki(o, sApiPki)
 			if err != nil {
@@ -599,7 +599,7 @@ func (r *tlsReconciler) Diff(ctx context.Context, resource object.MultiPhaseObje
 		// Not reconcile labels and annotation for transport secret if already updated on previous step
 		secrets = append(secrets, sTransport)
 	}
-	if o.IsTlsApiEnabled() && o.IsSelfManagedSecretForTlsApi() {
+	if o.Spec.Tls.IsTlsEnabled() && o.Spec.Tls.IsSelfManagedSecretForTls() {
 		secrets = append(secrets, sApiPki, sApi)
 	}
 	for _, s := range secrets {
@@ -942,7 +942,7 @@ func (r *tlsReconciler) generateAllSecretsCertificates(o *elasticsearchcrd.Elast
 	}
 
 	// Handle API certificates
-	if o.IsTlsApiEnabled() && o.IsSelfManagedSecretForTlsApi() {
+	if o.Spec.Tls.IsTlsEnabled() && o.Spec.Tls.IsSelfManagedSecretForTls() {
 
 		// Generate API PKI
 		sApiPki, apiRootCA, isUpdated, err := r.generateAPISecretPki(o, sApiPki)

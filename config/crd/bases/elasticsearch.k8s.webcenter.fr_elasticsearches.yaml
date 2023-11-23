@@ -82,7 +82,7 @@ spec:
                           Default to false
                         type: boolean
                       host:
-                        description: Host is the hostname to access on Elasticsearch
+                        description: Host is the hostname to access on
                         type: string
                       ingressSpec:
                         description: IngressSpec it merge with expected ingress spec
@@ -385,6 +385,8 @@ spec:
                         type: object
                       secretRef:
                         description: SecretRef is the secret ref that store certificates
+                          If secret not exist, it will use the default ingress certificate
+                          If secret is nil, it will disable TLS on ingress spec.
                         properties:
                           name:
                             description: 'Name of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
@@ -10548,8 +10550,8 @@ spec:
                       enabled:
                         default: false
                         description: Enabled permit to enable Prometheus monitoring
-                          It will deploy exporter for Elasticsearch and add podMonitor
-                          policy Default to false
+                          It will deploy exporter and add podMonitor policy Default
+                          to false
                         type: boolean
                       image:
                         description: Image is the image to use when deploy Elasticsearch
@@ -10629,6 +10631,9 @@ spec:
                               Requests cannot exceed Limits. More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/'
                             type: object
                         type: object
+                      url:
+                        description: Url is the plugin URL where to download exporter
+                        type: string
                       version:
                         default: latest
                         description: Version is the exporter version to use Default

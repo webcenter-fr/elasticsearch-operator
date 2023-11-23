@@ -120,7 +120,7 @@ func buildStatefulsets(fb *beatcrd.Filebeat, es *elasticsearchcrd.Elasticsearch,
 		}, k8sbuilder.Merge)
 
 	// Inject Elasticsearch CA Path if provided
-	if es != nil && es.IsTlsApiEnabled() || fb.Spec.ElasticsearchRef.IsExternal() && fb.Spec.ElasticsearchRef.ElasticsearchCaSecretRef != nil {
+	if es != nil && es.Spec.Tls.IsTlsEnabled() || fb.Spec.ElasticsearchRef.IsExternal() && fb.Spec.ElasticsearchRef.ElasticsearchCaSecretRef != nil {
 		cb.WithEnv([]corev1.EnvVar{
 			{
 				Name:  "ELASTICSEARCH_CA_PATH",
@@ -278,7 +278,7 @@ func buildStatefulsets(fb *beatcrd.Filebeat, es *elasticsearchcrd.Elasticsearch,
 	}
 
 	// Compute mount CA elasticsearch
-	if (fb.Spec.ElasticsearchRef.IsManaged() && es.IsTlsApiEnabled()) || (fb.Spec.ElasticsearchRef.IsExternal() && fb.Spec.ElasticsearchRef.ElasticsearchCaSecretRef != nil) {
+	if (fb.Spec.ElasticsearchRef.IsManaged() && es.Spec.Tls.IsTlsEnabled()) || (fb.Spec.ElasticsearchRef.IsExternal() && fb.Spec.ElasticsearchRef.ElasticsearchCaSecretRef != nil) {
 		cb.WithVolumeMount([]corev1.VolumeMount{
 			{
 				Name:      "ca-elasticsearch",
@@ -514,7 +514,7 @@ chown -v root:root /mnt/data
 	}
 
 	// Elasticsearch CA secret
-	if fb.Spec.ElasticsearchRef.IsManaged() && es.IsTlsApiEnabled() && es.IsSelfManagedSecretForTlsApi() {
+	if fb.Spec.ElasticsearchRef.IsManaged() && es.Spec.Tls.IsTlsEnabled() && es.Spec.Tls.IsSelfManagedSecretForTls() {
 		ptb.WithVolumes([]corev1.Volume{
 			{
 				Name: "ca-elasticsearch",
@@ -525,7 +525,7 @@ chown -v root:root /mnt/data
 				},
 			},
 		}, k8sbuilder.Merge)
-	} else if (fb.Spec.ElasticsearchRef.IsExternal() && fb.Spec.ElasticsearchRef.ElasticsearchCaSecretRef != nil) || (fb.Spec.ElasticsearchRef.IsManaged() && es.IsTlsApiEnabled() && fb.Spec.ElasticsearchRef.ElasticsearchCaSecretRef != nil) {
+	} else if (fb.Spec.ElasticsearchRef.IsExternal() && fb.Spec.ElasticsearchRef.ElasticsearchCaSecretRef != nil) || (fb.Spec.ElasticsearchRef.IsManaged() && es.Spec.Tls.IsTlsEnabled() && fb.Spec.ElasticsearchRef.ElasticsearchCaSecretRef != nil) {
 		ptb.WithVolumes([]corev1.Volume{
 			{
 				Name: "ca-elasticsearch",

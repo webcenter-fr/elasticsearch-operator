@@ -5,11 +5,8 @@ import (
 
 	"github.com/disaster37/operator-sdk-extra/pkg/apis"
 	"github.com/stretchr/testify/assert"
-	"github.com/webcenter-fr/elasticsearch-operator/apis/shared"
-	corev1 "k8s.io/api/core/v1"
 	policyv1 "k8s.io/api/policy/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/utils/ptr"
 )
 
 func TestGetStatus(t *testing.T) {
@@ -27,94 +24,6 @@ func TestGetStatus(t *testing.T) {
 	}
 
 	assert.Equal(t, &status, o.GetStatus())
-}
-
-func TestIsSelfManagedSecretForTls(t *testing.T) {
-	var o *Kibana
-
-	// With default settings
-	o = &Kibana{
-		ObjectMeta: metav1.ObjectMeta{
-			Namespace: "default",
-			Name:      "test",
-		},
-		Spec: KibanaSpec{},
-	}
-	assert.True(t, o.IsSelfManagedSecretForTls())
-
-	// When TLS is enabled but without specify secrets
-	o = &Kibana{
-		ObjectMeta: metav1.ObjectMeta{
-			Namespace: "default",
-			Name:      "test",
-		},
-		Spec: KibanaSpec{
-			Tls: shared.TlsSpec{
-				Enabled: ptr.To[bool](true),
-			},
-		},
-	}
-	assert.True(t, o.IsSelfManagedSecretForTls())
-
-	// When TLS is enabled and pecify secrets
-	o = &Kibana{
-		ObjectMeta: metav1.ObjectMeta{
-			Namespace: "default",
-			Name:      "test",
-		},
-		Spec: KibanaSpec{
-			Tls: shared.TlsSpec{
-				Enabled: ptr.To[bool](true),
-				CertificateSecretRef: &corev1.LocalObjectReference{
-					Name: "my-secret",
-				},
-			},
-		},
-	}
-	assert.False(t, o.IsSelfManagedSecretForTls())
-
-}
-
-func TestIsTlsEnabled(t *testing.T) {
-	var o *Kibana
-
-	// With default values
-	o = &Kibana{
-		ObjectMeta: metav1.ObjectMeta{
-			Namespace: "default",
-			Name:      "test",
-		},
-		Spec: KibanaSpec{},
-	}
-	assert.True(t, o.IsTlsEnabled())
-
-	// When enabled
-	o = &Kibana{
-		ObjectMeta: metav1.ObjectMeta{
-			Namespace: "default",
-			Name:      "test",
-		},
-		Spec: KibanaSpec{
-			Tls: shared.TlsSpec{
-				Enabled: ptr.To[bool](true),
-			},
-		},
-	}
-	assert.True(t, o.IsTlsEnabled())
-
-	// When disabled
-	o = &Kibana{
-		ObjectMeta: metav1.ObjectMeta{
-			Namespace: "default",
-			Name:      "test",
-		},
-		Spec: KibanaSpec{
-			Tls: shared.TlsSpec{
-				Enabled: ptr.To[bool](false),
-			},
-		},
-	}
-	assert.False(t, o.IsTlsEnabled())
 }
 
 func TestIsPdb(t *testing.T) {

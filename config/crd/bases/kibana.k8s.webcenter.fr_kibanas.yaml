@@ -8495,7 +8495,7 @@ spec:
                           Default to false
                         type: boolean
                       host:
-                        description: Host is the hostname to access on Kibana
+                        description: Host is the hostname to access on
                         type: string
                       ingressSpec:
                         description: IngressSpec it merge with expected ingress spec
@@ -8798,6 +8798,8 @@ spec:
                         type: object
                       secretRef:
                         description: SecretRef is the secret ref that store certificates
+                          If secret not exist, it will use the default ingress certificate
+                          If secret is nil, it will disable TLS on ingress spec.
                         properties:
                           name:
                             description: 'Name of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
@@ -9003,13 +9005,94 @@ spec:
                       enabled:
                         default: false
                         description: Enabled permit to enable Prometheus monitoring
-                          It will deploy exporter for Kibana and add podMonitor policy
-                          Default to false
+                          It will deploy exporter and add podMonitor policy Default
+                          to false
                         type: boolean
+                      image:
+                        description: Image is the image to use when deploy Elasticsearch
+                          It can be usefull to use internal registry or mirror
+                        type: string
+                      imagePullPolicy:
+                        default: IfNotPresent
+                        description: ImagePullPolicy is the image pull policy to use
+                        enum:
+                        - Always
+                        - Never
+                        - IfNotPresent
+                        type: string
+                      imagePullSecrets:
+                        description: ImagePullSecrets is the image pull secrets to
+                          use
+                        items:
+                          description: LocalObjectReference contains enough information
+                            to let you locate the referenced object inside the same
+                            namespace.
+                          properties:
+                            name:
+                              description: 'Name of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                                TODO: Add other useful fields. apiVersion, kind, uid?'
+                              type: string
+                          type: object
+                          x-kubernetes-map-type: atomic
+                        type: array
+                      resources:
+                        description: Resources permit to set ressources on Prometheus
+                          expporter container If not defined, it will use the default
+                          requirements
+                        properties:
+                          claims:
+                            description: "Claims lists the names of resources, defined
+                              in spec.resourceClaims, that are used by this container.
+                              \n This is an alpha field and requires enabling the
+                              DynamicResourceAllocation feature gate. \n This field
+                              is immutable. It can only be set for containers."
+                            items:
+                              description: ResourceClaim references one entry in PodSpec.ResourceClaims.
+                              properties:
+                                name:
+                                  description: Name must match the name of one entry
+                                    in pod.spec.resourceClaims of the Pod where this
+                                    field is used. It makes that resource available
+                                    inside a container.
+                                  type: string
+                              required:
+                              - name
+                              type: object
+                            type: array
+                            x-kubernetes-list-map-keys:
+                            - name
+                            x-kubernetes-list-type: map
+                          limits:
+                            additionalProperties:
+                              anyOf:
+                              - type: integer
+                              - type: string
+                              pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                              x-kubernetes-int-or-string: true
+                            description: 'Limits describes the maximum amount of compute
+                              resources allowed. More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/'
+                            type: object
+                          requests:
+                            additionalProperties:
+                              anyOf:
+                              - type: integer
+                              - type: string
+                              pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                              x-kubernetes-int-or-string: true
+                            description: 'Requests describes the minimum amount of
+                              compute resources required. If Requests is omitted for
+                              a container, it defaults to Limits if that is explicitly
+                              specified, otherwise to an implementation-defined value.
+                              Requests cannot exceed Limits. More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/'
+                            type: object
+                        type: object
                       url:
-                        description: 'Url is the plugin URL where to download exporter
-                          Default is use project https://github.com/pjhampton/kibana-prometheus-exporter
-                          If version is set to latest, it use arbitrary: https://github.com/pjhampton/kibana-prometheus-exporter/releases/download/8.6.0/kibanaPrometheusExporter-8.6.0.zip'
+                        description: Url is the plugin URL where to download exporter
+                        type: string
+                      version:
+                        default: latest
+                        description: Version is the exporter version to use Default
+                          is use the latest
                         type: string
                     type: object
                 type: object
@@ -9035,8 +9118,7 @@ spec:
                     x-kubernetes-map-type: atomic
                   enabled:
                     default: true
-                    description: Enabled permit to enabled TLS on Kibana Default to
-                      false
+                    description: Enabled permit to enabled TLS Default to false
                     type: boolean
                   keySize:
                     default: 2048

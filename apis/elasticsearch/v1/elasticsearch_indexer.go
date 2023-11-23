@@ -23,7 +23,7 @@ func SetupElasticsearchIndexer(k8sManager manager.Manager) (err error) {
 
 	if err = k8sManager.GetFieldIndexer().IndexField(context.Background(), &Elasticsearch{}, "spec.tls.certificateSecretRef.name", func(o client.Object) []string {
 		p := o.(*Elasticsearch)
-		if p.IsTlsApiEnabled() && !p.IsSelfManagedSecretForTlsApi() {
+		if p.Spec.Tls.IsTlsEnabled() && !p.Spec.Tls.IsSelfManagedSecretForTls() {
 			return []string{p.Spec.Tls.CertificateSecretRef.Name}
 		}
 		return []string{}

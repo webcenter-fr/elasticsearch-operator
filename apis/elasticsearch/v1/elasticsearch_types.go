@@ -100,7 +100,6 @@ type ElasticsearchSpec struct {
 	Monitoring shared.MonitoringSpec `json:"monitoring,omitempty"`
 }
 
-
 type ElasticsearchEndpointSpec struct {
 	// Ingress permit to set ingress settings
 	// +operator-sdk:csv:customresourcedefinitions:type=spec

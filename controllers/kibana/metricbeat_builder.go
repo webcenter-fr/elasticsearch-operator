@@ -22,7 +22,7 @@ func buildMetricbeats(kb *kibanacrd.Kibana) (mbs []beatcrd.Metricbeat, err error
 
 	var sb strings.Builder
 
-	if kb.IsTlsEnabled() {
+	if kb.Spec.Tls.IsTlsEnabled() {
 		sb.WriteString(`- module: kibana
   xpack.enabled: true
   username: '${SOURCE_METRICBEAT_USERNAME}'
@@ -123,7 +123,7 @@ func buildMetricbeats(kb *kibanacrd.Kibana) (mbs []beatcrd.Metricbeat, err error
 	}
 
 	// Compute volumes
-	if kb.IsTlsEnabled() {
+	if kb.Spec.Tls.IsTlsEnabled() {
 		mb.Spec.Deployment.AdditionalVolumes = []beatcrd.MetricbeatVolumeSpec{
 			{
 				Name: "ca-source-kibana",

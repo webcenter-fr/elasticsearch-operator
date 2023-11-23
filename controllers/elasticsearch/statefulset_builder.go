@@ -222,7 +222,7 @@ func buildStatefulsets(es *elasticsearchcrd.Elasticsearch, secretsChecksum []cor
 				},
 			}, k8sbuilder.Merge)
 
-		if es.IsTlsApiEnabled() {
+		if es.Spec.Tls.IsTlsEnabled() {
 			cb.WithEnv([]corev1.EnvVar{
 				{
 					Name:  "PROBE_SCHEME",

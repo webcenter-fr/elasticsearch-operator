@@ -6,7 +6,6 @@ import (
 	"github.com/disaster37/operator-sdk-extra/pkg/apis"
 	"github.com/stretchr/testify/assert"
 	"github.com/webcenter-fr/elasticsearch-operator/apis/shared"
-	corev1 "k8s.io/api/core/v1"
 	v1 "k8s.io/api/core/v1"
 	policyv1 "k8s.io/api/policy/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -28,52 +27,6 @@ func TestGetStatus(t *testing.T) {
 	}
 
 	assert.Equal(t, &status, o.GetStatus())
-}
-
-func TestIsSelfManagedSecretForTlsApi(t *testing.T) {
-	var o *Elasticsearch
-
-	// With default settings
-	o = &Elasticsearch{
-		ObjectMeta: metav1.ObjectMeta{
-			Namespace: "default",
-			Name:      "test",
-		},
-		Spec: ElasticsearchSpec{},
-	}
-	assert.True(t, o.IsSelfManagedSecretForTlsApi())
-
-	// When TLS is enabled but without specify secrets
-	o = &Elasticsearch{
-		ObjectMeta: metav1.ObjectMeta{
-			Namespace: "default",
-			Name:      "test",
-		},
-		Spec: ElasticsearchSpec{
-			Tls: shared.TlsSpec{
-				Enabled: ptr.To[bool](true),
-			},
-		},
-	}
-	assert.True(t, o.IsSelfManagedSecretForTlsApi())
-
-	// When TLS is enabled and pecify secrets
-	o = &Elasticsearch{
-		ObjectMeta: metav1.ObjectMeta{
-			Namespace: "default",
-			Name:      "test",
-		},
-		Spec: ElasticsearchSpec{
-			Tls: shared.TlsSpec{
-				Enabled: ptr.To[bool](true),
-				CertificateSecretRef: &corev1.LocalObjectReference{
-					Name: "my-secret",
-				},
-			},
-		},
-	}
-	assert.False(t, o.IsSelfManagedSecretForTlsApi())
-
 }
 
 func TestIsIngressEnabled(t *testing.T) {
@@ -128,48 +81,6 @@ func TestIsLoadBalancerEnabled(t *testing.T) {
 	// When Load balancer is specified and enabled
 	o.Spec.Endpoint.LoadBalancer.Enabled = true
 	assert.True(t, o.IsLoadBalancerEnabled())
-}
-
-func TestIsTlsApiEnabled(t *testing.T) {
-	var o *Elasticsearch
-
-	// With default values
-	o = &Elasticsearch{
-		ObjectMeta: metav1.ObjectMeta{
-			Namespace: "default",
-			Name:      "test",
-		},
-		Spec: ElasticsearchSpec{},
-	}
-	assert.True(t, o.IsTlsApiEnabled())
-
-	// When enabled
-	o = &Elasticsearch{
-		ObjectMeta: metav1.ObjectMeta{
-			Namespace: "default",
-			Name:      "test",
-		},
-		Spec: ElasticsearchSpec{
-			Tls: shared.TlsSpec{
-				Enabled: ptr.To[bool](true),
-			},
-		},
-	}
-	assert.True(t, o.IsTlsApiEnabled())
-
-	// When disabled
-	o = &Elasticsearch{
-		ObjectMeta: metav1.ObjectMeta{
-			Namespace: "default",
-			Name:      "test",
-		},
-		Spec: ElasticsearchSpec{
-			Tls: shared.TlsSpec{
-				Enabled: ptr.To[bool](false),
-			},
-		},
-	}
-	assert.False(t, o.IsTlsApiEnabled())
 }
 
 func TestIsSetVMMaxMapCount(t *testing.T) {

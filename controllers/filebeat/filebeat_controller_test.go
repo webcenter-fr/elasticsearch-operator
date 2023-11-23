@@ -137,7 +137,7 @@ queue.type: persisted
 					Module: map[string]string{
 						"test.conf": "test",
 					},
-					Ingresses: []beatcrd.FilebeatIngress{
+					Ingresses: []shared.Ingress{
 						{
 							Name:                  "syslog",
 							ContainerPort:         601,

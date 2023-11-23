@@ -34,7 +34,7 @@ xpack.security.transport.ssl.certificate_authorities: /usr/share/elasticsearch/c
 `,
 	}
 
-	if es.IsTlsApiEnabled() {
+	if es.Spec.Tls.IsTlsEnabled() {
 		injectedConfigMap["elasticsearch.yml"] += `
 xpack.security.http.ssl.enabled: true
 xpack.security.http.ssl.certificate: /usr/share/elasticsearch/config/api-cert/tls.crt

@@ -288,14 +288,14 @@ func (h *KibanaReconciler) computeKibanaUrl(ctx context.Context, kb *kibanacrd.K
 		}
 
 		url = fmt.Sprintf("%s:9200", service.Spec.LoadBalancerIP)
-		if kb.IsTlsEnabled() {
+		if kb.Spec.Tls.IsTlsEnabled() {
 			scheme = "https"
 		} else {
 			scheme = "http"
 		}
 	} else {
 		url = fmt.Sprintf("%s.%s.svc:9200", GetServiceName(kb), kb.Namespace)
-		if kb.IsTlsEnabled() {
+		if kb.Spec.Tls.IsTlsEnabled() {
 			scheme = "https"
 		} else {
 			scheme = "http"

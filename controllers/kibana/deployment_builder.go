@@ -150,7 +150,7 @@ func buildDeployments(kb *kibanacrd.Kibana, es *elasticsearchcrd.Elasticsearch, 
 				Value: probePath,
 			},
 		}, k8sbuilder.Merge)
-	if kb.IsTlsEnabled() {
+	if kb.Spec.Tls.IsTlsEnabled() {
 		cb.WithEnv([]corev1.EnvVar{
 			{
 				Name:  "PROBE_SCHEME",
@@ -533,7 +533,7 @@ fi
 		}, k8sbuilder.Merge)
 	}
 
-	if kb.IsTlsEnabled() {
+	if kb.Spec.Tls.IsTlsEnabled() {
 		ccb.WithVolumeMount([]corev1.VolumeMount{
 			{
 				Name:      "tls",
@@ -542,7 +542,7 @@ fi
 		}, k8sbuilder.Merge)
 	}
 
-	if (kb.Spec.ElasticsearchRef.IsManaged() && es.IsTlsApiEnabled()) || (kb.Spec.ElasticsearchRef.IsExternal() && kb.Spec.ElasticsearchRef.ElasticsearchCaSecretRef != nil) {
+	if (kb.Spec.ElasticsearchRef.IsManaged() && es.Spec.Tls.IsTlsEnabled()) || (kb.Spec.ElasticsearchRef.IsExternal() && kb.Spec.ElasticsearchRef.ElasticsearchCaSecretRef != nil) {
 		ccb.WithVolumeMount([]corev1.VolumeMount{
 			{
 				Name:      "ca-elasticsearch",
@@ -606,7 +606,7 @@ fi
 			},
 		}, k8sbuilder.Merge)
 	}
-	if kb.IsTlsEnabled() {
+	if kb.Spec.Tls.IsTlsEnabled() {
 		ptb.WithVolumes([]corev1.Volume{
 			{
 				Name: "tls",
@@ -618,7 +618,7 @@ fi
 			},
 		}, k8sbuilder.Merge)
 	}
-	if kb.Spec.ElasticsearchRef.IsManaged() && es.IsTlsApiEnabled() && es.IsSelfManagedSecretForTlsApi() {
+	if kb.Spec.ElasticsearchRef.IsManaged() && es.Spec.Tls.IsTlsEnabled() && es.Spec.Tls.IsSelfManagedSecretForTls() {
 		ptb.WithVolumes([]corev1.Volume{
 			{
 				Name: "ca-elasticsearch",
@@ -629,7 +629,7 @@ fi
 				},
 			},
 		}, k8sbuilder.Merge)
-	} else if (kb.Spec.ElasticsearchRef.IsExternal() && kb.Spec.ElasticsearchRef.ElasticsearchCaSecretRef != nil) || (kb.Spec.ElasticsearchRef.IsManaged() && es.IsTlsApiEnabled() && kb.Spec.ElasticsearchRef.ElasticsearchCaSecretRef != nil) {
+	} else if (kb.Spec.ElasticsearchRef.IsExternal() && kb.Spec.ElasticsearchRef.ElasticsearchCaSecretRef != nil) || (kb.Spec.ElasticsearchRef.IsManaged() && es.Spec.Tls.IsTlsEnabled() && kb.Spec.ElasticsearchRef.ElasticsearchCaSecretRef != nil) {
 		ptb.WithVolumes([]corev1.Volume{
 			{
 				Name: "ca-elasticsearch",
@@ -699,7 +699,7 @@ func computeElasticsearchHosts(kb *kibanacrd.Kibana, es *elasticsearchcrd.Elasti
 
 	if kb.Spec.ElasticsearchRef.IsManaged() {
 		scheme := "https"
-		if !es.IsTlsApiEnabled() {
+		if !es.Spec.Tls.IsTlsEnabled() {
 			scheme = "http"
 		}
 		if kb.Spec.ElasticsearchRef.ManagedElasticsearchRef.TargetNodeGroup == "" {

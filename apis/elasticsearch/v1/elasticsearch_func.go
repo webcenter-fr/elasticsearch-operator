@@ -9,20 +9,6 @@ func (h *Elasticsearch) GetStatus() object.MultiPhaseObjectStatus {
 	return &h.Status
 }
 
-// IsSelfManagedSecretForTlsApi return true if the operator manage the certificates for Api layout
-// It return false if secret is provided
-func (h *Elasticsearch) IsSelfManagedSecretForTlsApi() bool {
-	return h.Spec.Tls.CertificateSecretRef == nil
-}
-
-// IsTlsApiEnabled return true if TLS is enabled on API endpoint
-func (h *Elasticsearch) IsTlsApiEnabled() bool {
-	if h.Spec.Tls.Enabled != nil && !*h.Spec.Tls.Enabled {
-		return false
-	}
-	return true
-}
-
 // IsIngressEnabled return true if ingress is enabled
 func (h *Elasticsearch) IsIngressEnabled() bool {
 	if h.Spec.Endpoint.Ingress != nil && h.Spec.Endpoint.Ingress.Enabled {

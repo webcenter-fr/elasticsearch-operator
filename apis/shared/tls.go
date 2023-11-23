@@ -58,3 +58,17 @@ type TlsSelfSignedCertificateSpec struct {
 	// +optional
 	AltNames []string `json:"altNames,omitempty"`
 }
+
+// IsSelfManagedSecretForTls return true if the operator manage the certificates for TLS
+// It return false if secret is provided
+func (h TlsSpec) IsSelfManagedSecretForTls() bool {
+	return h.CertificateSecretRef == nil
+}
+
+// IsTlsEnabled return true if TLS is enabled to access on Kibana
+func (h TlsSpec) IsTlsEnabled() bool {
+	if h.Enabled != nil && !*h.Enabled {
+		return false
+	}
+	return true
+}

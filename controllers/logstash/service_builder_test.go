@@ -6,6 +6,7 @@ import (
 	"github.com/disaster37/operator-sdk-extra/pkg/test"
 	"github.com/stretchr/testify/assert"
 	logstashcrd "github.com/webcenter-fr/elasticsearch-operator/apis/logstash/v1"
+	"github.com/webcenter-fr/elasticsearch-operator/apis/shared"
 	corev1 "k8s.io/api/core/v1"
 	v1 "k8s.io/api/core/v1"
 	networkingv1 "k8s.io/api/networking/v1"
@@ -82,7 +83,7 @@ func TestBuildServices(t *testing.T) {
 			Name:      "test",
 		},
 		Spec: logstashcrd.LogstashSpec{
-			Ingresses: []logstashcrd.LogstashIngress{
+			Ingresses: []shared.Ingress{
 				{
 					Name: "my-ingress",
 					Labels: map[string]string{

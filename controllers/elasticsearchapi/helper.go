@@ -50,7 +50,7 @@ func GetElasticsearchHandler(ctx context.Context, o client.Object, esRef shared.
 			serviceName = elasticsearchcontrollers.GetNodeGroupServiceName(es, esRef.ManagedElasticsearchRef.TargetNodeGroup)
 		}
 
-		if !es.IsTlsApiEnabled() {
+		if !es.Spec.Tls.IsTlsEnabled() {
 			hosts = append(hosts, fmt.Sprintf("http://%s.%s.svc:9200", serviceName, es.Namespace))
 		} else {
 			hosts = append(hosts, fmt.Sprintf("https://%s.%s.svc:9200", serviceName, es.Namespace))
