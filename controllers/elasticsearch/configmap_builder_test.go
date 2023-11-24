@@ -121,7 +121,9 @@ node:
 					Roles: []string{
 						"master",
 					},
-					Replicas: 3,
+					Deployment: shared.Deployment{
+						Replicas: 3,
+					},
 				},
 			},
 		},
@@ -150,7 +152,9 @@ node:
 					Roles: []string{
 						"master",
 					},
-					Replicas: 3,
+					Deployment: shared.Deployment{
+						Replicas: 3,
+					},
 				},
 			},
 		},
@@ -182,7 +186,9 @@ node:
 					Roles: []string{
 						"master",
 					},
-					Replicas: 1,
+					Deployment: shared.Deployment{
+						Replicas: 1,
+					},
 				},
 			},
 		},
@@ -207,12 +213,14 @@ func TestComputeInitialMasterNodes(t *testing.T) {
 		Spec: elasticsearchcrd.ElasticsearchSpec{
 			NodeGroups: []elasticsearchcrd.ElasticsearchNodeGroupSpec{
 				{
-					Name:     "master",
-					Replicas: 3,
+					Name: "master",
 					Roles: []string{
 						"master",
 						"data",
 						"ingest",
+					},
+					Deployment: shared.Deployment{
+						Replicas: 3,
 					},
 				},
 			},
@@ -230,19 +238,23 @@ func TestComputeInitialMasterNodes(t *testing.T) {
 		Spec: elasticsearchcrd.ElasticsearchSpec{
 			NodeGroups: []elasticsearchcrd.ElasticsearchNodeGroupSpec{
 				{
-					Name:     "all",
-					Replicas: 3,
+					Name: "all",
 					Roles: []string{
 						"master",
 						"data",
 						"ingest",
 					},
+					Deployment: shared.Deployment{
+						Replicas: 3,
+					},
 				},
 				{
-					Name:     "master",
-					Replicas: 3,
+					Name: "master",
 					Roles: []string{
 						"master",
+					},
+					Deployment: shared.Deployment{
+						Replicas: 3,
 					},
 				},
 			},
@@ -266,12 +278,14 @@ func TestComputeDiscoverySeedHosts(t *testing.T) {
 		Spec: elasticsearchcrd.ElasticsearchSpec{
 			NodeGroups: []elasticsearchcrd.ElasticsearchNodeGroupSpec{
 				{
-					Name:     "master",
-					Replicas: 3,
+					Name: "master",
 					Roles: []string{
 						"master",
 						"data",
 						"ingest",
+					},
+					Deployment: shared.Deployment{
+						Replicas: 3,
 					},
 				},
 			},
@@ -289,19 +303,23 @@ func TestComputeDiscoverySeedHosts(t *testing.T) {
 		Spec: elasticsearchcrd.ElasticsearchSpec{
 			NodeGroups: []elasticsearchcrd.ElasticsearchNodeGroupSpec{
 				{
-					Name:     "all",
-					Replicas: 3,
+					Name: "all",
 					Roles: []string{
 						"master",
 						"data",
 						"ingest",
 					},
+					Deployment: shared.Deployment{
+						Replicas: 3,
+					},
 				},
 				{
-					Name:     "master",
-					Replicas: 3,
+					Name: "master",
 					Roles: []string{
 						"master",
+					},
+					Deployment: shared.Deployment{
+						Replicas: 3,
 					},
 				},
 			},

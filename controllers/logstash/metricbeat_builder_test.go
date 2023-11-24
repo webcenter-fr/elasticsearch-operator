@@ -78,7 +78,9 @@ func TestBuildMetricbeat(t *testing.T) {
 				},
 			},
 			Deployment: logstashcrd.LogstashDeploymentSpec{
-				Replicas: 1,
+				Deployment: shared.Deployment{
+					Replicas: 1,
+				},
 			},
 		},
 	}
@@ -119,7 +121,9 @@ func TestBuildMetricbeat(t *testing.T) {
 				},
 			},
 			Deployment: logstashcrd.LogstashDeploymentSpec{
-				Replicas: 3,
+				Deployment: shared.Deployment{
+					Replicas: 3,
+				},
 			},
 		},
 	}

@@ -5,6 +5,7 @@ import (
 
 	"github.com/disaster37/operator-sdk-extra/pkg/apis"
 	"github.com/stretchr/testify/assert"
+	"github.com/webcenter-fr/elasticsearch-operator/apis/shared"
 	policyv1 "k8s.io/api/policy/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -47,7 +48,9 @@ func TestIsPdb(t *testing.T) {
 		},
 		Spec: KibanaSpec{
 			Deployment: KibanaDeploymentSpec{
-				Replicas: 2,
+				Deployment: shared.Deployment{
+					Replicas: 2,
+				},
 			},
 		},
 	}

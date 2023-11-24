@@ -91,56 +91,12 @@ type KibanaSpec struct {
 }
 
 type KibanaDeploymentSpec struct {
-	// Replicas is the number of replicas
-	// +operator-sdk:csv:customresourcedefinitions:type=spec
-	Replicas int32 `json:"replicas"`
+	shared.Deployment `json:",inline"`
 
 	// AntiAffinity permit to set anti affinity policy
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
 	// +optional
-	AntiAffinity *KibanaAntiAffinitySpec `json:"antiAffinity,omitempty"`
-
-	// Resources permit to set ressources on Kibana container
-	// +operator-sdk:csv:customresourcedefinitions:type=spec
-	// +optional
-	Resources *corev1.ResourceRequirements `json:"resources,omitempty"`
-
-	// Tolerations permit to set toleration on pod
-	// +operator-sdk:csv:customresourcedefinitions:type=spec
-	// +optional
-	Tolerations []corev1.Toleration `json:"tolerations,omitempty"`
-
-	// NodeSelector permit to set node selector on pod
-	// +operator-sdk:csv:customresourcedefinitions:type=spec
-	// +optional
-	NodeSelector map[string]string `json:"nodeSelector,omitempty"`
-
-	// Labels permit to set labels on containers
-	// +operator-sdk:csv:customresourcedefinitions:type=spec
-	// +optional
-	Labels map[string]string `json:"labels,omitempty"`
-
-	// Annotations permit to set annotation on deployment
-	// +operator-sdk:csv:customresourcedefinitions:type=spec
-	// +optional
-	Annotations map[string]string `json:"annotations,omitempty"`
-
-	// Env permit to set some environment variable on containers
-	// +operator-sdk:csv:customresourcedefinitions:type=spec
-	// +optional
-	Env []corev1.EnvVar `json:"env,omitempty"`
-
-	// EnvFrom permit to set some environment variable from config map or secret
-	// +operator-sdk:csv:customresourcedefinitions:type=spec
-	// +optional
-	EnvFrom []corev1.EnvFromSource `json:"envFrom,omitempty"`
-
-	// PodSpec is merged with expected pod
-	// It usefull to add some extra properties on pod spec
-	// +operator-sdk:csv:customresourcedefinitions:type=spec
-	// +optional
-	// +kubebuilder:pruning:PreserveUnknownFields
-	PodTemplate *corev1.PodTemplateSpec `json:"podTemplate,omitempty"`
+	AntiAffinity *shared.DeploymentAntiAffinitySpec `json:"antiAffinity,omitempty"`
 
 	// PodDisruptionBudget is the pod disruption budget policy
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
@@ -156,22 +112,6 @@ type KibanaDeploymentSpec struct {
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
 	// +optional
 	InitContainerResources *corev1.ResourceRequirements `json:"initContainerResources,omitempty"`
-}
-
-type KibanaAntiAffinitySpec struct {
-
-	// Type permit to set anti affinity as soft or hard
-	// +operator-sdk:csv:customresourcedefinitions:type=spec
-	// +kubebuilder:validation:Enum=soft;hard
-	// +kubebuilder:default=soft
-	Type string `json:"type"`
-
-	// TopologyKey is the topology key to use
-	// Default to kubernetes.io/hostname
-	// +operator-sdk:csv:customresourcedefinitions:type=spec
-	// +optional
-	// +kubebuilder:default=kubernetes.io/hostname
-	TopologyKey string `json:"topologyKey,omitempty"`
 }
 
 // KibanaStatus defines the observed state of Kibana

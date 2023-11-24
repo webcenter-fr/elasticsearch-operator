@@ -6,6 +6,7 @@ import (
 	"github.com/disaster37/operator-sdk-extra/pkg/test"
 	"github.com/stretchr/testify/assert"
 	elasticsearchcrd "github.com/webcenter-fr/elasticsearch-operator/apis/elasticsearch/v1"
+	"github.com/webcenter-fr/elasticsearch-operator/apis/shared"
 	policyv1 "k8s.io/api/policy/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
@@ -42,8 +43,10 @@ func TestBuildPodDisruptionBudget(t *testing.T) {
 		Spec: elasticsearchcrd.ElasticsearchSpec{
 			NodeGroups: []elasticsearchcrd.ElasticsearchNodeGroupSpec{
 				{
-					Name:     "master",
-					Replicas: 1,
+					Name: "master",
+					Deployment: shared.Deployment{
+						Replicas: 1,
+					},
 				},
 			},
 		},
@@ -62,8 +65,10 @@ func TestBuildPodDisruptionBudget(t *testing.T) {
 		Spec: elasticsearchcrd.ElasticsearchSpec{
 			NodeGroups: []elasticsearchcrd.ElasticsearchNodeGroupSpec{
 				{
-					Name:     "master",
-					Replicas: 2,
+					Name: "master",
+					Deployment: shared.Deployment{
+						Replicas: 2,
+					},
 				},
 			},
 		},
@@ -84,8 +89,10 @@ func TestBuildPodDisruptionBudget(t *testing.T) {
 		Spec: elasticsearchcrd.ElasticsearchSpec{
 			NodeGroups: []elasticsearchcrd.ElasticsearchNodeGroupSpec{
 				{
-					Name:     "master",
-					Replicas: 1,
+					Name: "master",
+					Deployment: shared.Deployment{
+						Replicas: 1,
+					},
 				},
 			},
 			GlobalNodeGroup: elasticsearchcrd.ElasticsearchGlobalNodeGroupSpec{
@@ -112,11 +119,13 @@ func TestBuildPodDisruptionBudget(t *testing.T) {
 		Spec: elasticsearchcrd.ElasticsearchSpec{
 			NodeGroups: []elasticsearchcrd.ElasticsearchNodeGroupSpec{
 				{
-					Name:     "master",
-					Replicas: 1,
+					Name: "master",
 					PodDisruptionBudgetSpec: &policyv1.PodDisruptionBudgetSpec{
 						MinAvailable:   &minUnavailable,
 						MaxUnavailable: nil,
+					},
+					Deployment: shared.Deployment{
+						Replicas: 1,
 					},
 				},
 			},

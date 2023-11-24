@@ -63,12 +63,16 @@ func TestBuildLoadbalancer(t *testing.T) {
 		Spec: elasticsearchcrd.ElasticsearchSpec{
 			NodeGroups: []elasticsearchcrd.ElasticsearchNodeGroupSpec{
 				{
-					Name:     "master",
-					Replicas: 3,
+					Name: "master",
+					Deployment: shared.Deployment{
+						Replicas: 3,
+					},
 				},
 				{
-					Name:     "data",
-					Replicas: 1,
+					Name: "data",
+					Deployment: shared.Deployment{
+						Replicas: 1,
+					},
 				},
 			},
 			Endpoint: elasticsearchcrd.ElasticsearchEndpointSpec{
@@ -95,12 +99,16 @@ func TestBuildLoadbalancer(t *testing.T) {
 		Spec: elasticsearchcrd.ElasticsearchSpec{
 			NodeGroups: []elasticsearchcrd.ElasticsearchNodeGroupSpec{
 				{
-					Name:     "master",
-					Replicas: 3,
+					Name: "master",
+					Deployment: shared.Deployment{
+						Replicas: 3,
+					},
 				},
 				{
-					Name:     "data",
-					Replicas: 1,
+					Name: "data",
+					Deployment: shared.Deployment{
+						Replicas: 1,
+					},
 				},
 			},
 			Endpoint: elasticsearchcrd.ElasticsearchEndpointSpec{
@@ -126,8 +134,10 @@ func TestBuildLoadbalancer(t *testing.T) {
 		Spec: elasticsearchcrd.ElasticsearchSpec{
 			NodeGroups: []elasticsearchcrd.ElasticsearchNodeGroupSpec{
 				{
-					Name:     "data",
-					Replicas: 1,
+					Name: "data",
+					Deployment: shared.Deployment{
+						Replicas: 1,
+					},
 				},
 			},
 			Endpoint: elasticsearchcrd.ElasticsearchEndpointSpec{

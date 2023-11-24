@@ -35,38 +35,40 @@ func (t *TestSuite) TestSetupKibanaIndexer() {
 				Name: "test",
 			},
 			Deployment: KibanaDeploymentSpec{
-				Env: []v1.EnvVar{
-					{
-						Name: "config",
-						ValueFrom: &v1.EnvVarSource{
-							ConfigMapKeyRef: &v1.ConfigMapKeySelector{
-								LocalObjectReference: v1.LocalObjectReference{
-									Name: "test",
+				Deployment: shared.Deployment{
+					Env: []v1.EnvVar{
+						{
+							Name: "config",
+							ValueFrom: &v1.EnvVarSource{
+								ConfigMapKeyRef: &v1.ConfigMapKeySelector{
+									LocalObjectReference: v1.LocalObjectReference{
+										Name: "test",
+									},
+								},
+							},
+						},
+						{
+							Name: "secret",
+							ValueFrom: &v1.EnvVarSource{
+								SecretKeyRef: &v1.SecretKeySelector{
+									LocalObjectReference: v1.LocalObjectReference{
+										Name: "test",
+									},
 								},
 							},
 						},
 					},
-					{
-						Name: "secret",
-						ValueFrom: &v1.EnvVarSource{
-							SecretKeyRef: &v1.SecretKeySelector{
+					EnvFrom: []v1.EnvFromSource{
+						{
+							ConfigMapRef: &v1.ConfigMapEnvSource{
 								LocalObjectReference: v1.LocalObjectReference{
 									Name: "test",
 								},
 							},
-						},
-					},
-				},
-				EnvFrom: []v1.EnvFromSource{
-					{
-						ConfigMapRef: &v1.ConfigMapEnvSource{
-							LocalObjectReference: v1.LocalObjectReference{
-								Name: "test",
-							},
-						},
-						SecretRef: &v1.SecretEnvSource{
-							LocalObjectReference: v1.LocalObjectReference{
-								Name: "test",
+							SecretRef: &v1.SecretEnvSource{
+								LocalObjectReference: v1.LocalObjectReference{
+									Name: "test",
+								},
 							},
 						},
 					},

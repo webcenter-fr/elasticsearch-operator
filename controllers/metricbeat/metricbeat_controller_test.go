@@ -58,12 +58,14 @@ func doCreateMetricbeatStep() test.TestStep {
 					Version: "8.6.0",
 					NodeGroups: []elasticsearchcrd.ElasticsearchNodeGroupSpec{
 						{
-							Name:     "all",
-							Replicas: 1,
+							Name: "all",
 							Roles: []string{
 								"master",
 								"client",
 								"data",
+							},
+							Deployment: shared.Deployment{
+								Replicas: 1,
 							},
 						},
 					},
@@ -106,7 +108,9 @@ func doCreateMetricbeatStep() test.TestStep {
 						},
 					},
 					Deployment: beatcrd.MetricbeatDeploymentSpec{
-						Replicas: 2,
+						Deployment: shared.Deployment{
+							Replicas: 2,
+						},
 					},
 					Config: map[string]string{
 						"metricbeat.yml": `

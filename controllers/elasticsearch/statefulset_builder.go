@@ -11,6 +11,7 @@ import (
 	"github.com/disaster37/operator-sdk-extra/pkg/helper"
 	"github.com/thoas/go-funk"
 	elasticsearchcrd "github.com/webcenter-fr/elasticsearch-operator/apis/elasticsearch/v1"
+	"github.com/webcenter-fr/elasticsearch-operator/apis/shared"
 	appv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -917,14 +918,14 @@ func computeEnvFroms(es *elasticsearchcrd.Elasticsearch, nodeGroup *elasticsearc
 // computeAntiAffinity permit to get  anti affinity spec
 // Default to soft anti affinity
 func computeAntiAffinity(es *elasticsearchcrd.Elasticsearch, nodeGroup *elasticsearchcrd.ElasticsearchNodeGroupSpec) (antiAffinity *corev1.PodAntiAffinity, err error) {
-	var expectedAntiAffinity *elasticsearchcrd.ElasticsearchAntiAffinitySpec
+	var expectedAntiAffinity *shared.DeploymentAntiAffinitySpec
 
 	antiAffinity = &corev1.PodAntiAffinity{}
 	topologyKey := "kubernetes.io/hostname"
 
 	// Check if need to merge anti affinity spec
 	if nodeGroup.AntiAffinity != nil || es.Spec.GlobalNodeGroup.AntiAffinity != nil {
-		expectedAntiAffinity = &elasticsearchcrd.ElasticsearchAntiAffinitySpec{}
+		expectedAntiAffinity = &shared.DeploymentAntiAffinitySpec{}
 		if err = helper.Merge(expectedAntiAffinity, nodeGroup.AntiAffinity, funk.Get(es.Spec.GlobalNodeGroup, "AntiAffinity")); err != nil {
 			return nil, errors.Wrapf(err, "Error when merge global anti affinity  with node group %s", nodeGroup.Name)
 		}

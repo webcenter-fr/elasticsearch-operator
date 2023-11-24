@@ -63,6 +63,7 @@ spec:
                     description: AdditionalVolumes permit to use additionnal volumes
                       Default is empty
                     items:
+                      description: DeploymentVolumeSpec permit to set volume
                       properties:
                         awsElasticBlockStore:
                           description: 'awsElasticBlockStore represents an AWS Disk
@@ -11911,7 +11912,7 @@ spec:
                     format: int32
                     type: integer
                   resources:
-                    description: Resources permit to set ressources on Logstash container
+                    description: Resources permit to set ressources on container
                     properties:
                       claims:
                         description: "Claims lists the names of resources, defined
@@ -12686,6 +12687,7 @@ spec:
                 description: Services permit to declare some services The name is
                   decorated with cluster name and so on
                 items:
+                  description: Service permit to set service
                   properties:
                     annotations:
                       additionalProperties:

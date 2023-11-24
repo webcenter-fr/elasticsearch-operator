@@ -35,7 +35,7 @@ func (t *TestSuite) TestSetupFilebeatIndexer() {
 				},
 			},
 			Deployment: FilebeatDeploymentSpec{
-				AdditionalVolumes: []FilebeatVolumeSpec{
+				AdditionalVolumes: []shared.DeploymentVolumeSpec{
 					{
 						Name: "config",
 						VolumeMount: corev1.VolumeMount{
@@ -61,40 +61,42 @@ func (t *TestSuite) TestSetupFilebeatIndexer() {
 						},
 					},
 				},
-				Env: []corev1.EnvVar{
-					{
-						Name: "config",
-						ValueFrom: &corev1.EnvVarSource{
-							ConfigMapKeyRef: &corev1.ConfigMapKeySelector{
+				Deployment: shared.Deployment{
+					Env: []corev1.EnvVar{
+						{
+							Name: "config",
+							ValueFrom: &corev1.EnvVarSource{
+								ConfigMapKeyRef: &corev1.ConfigMapKeySelector{
+									LocalObjectReference: corev1.LocalObjectReference{
+										Name: "test",
+									},
+								},
+							},
+						},
+						{
+							Name: "secret",
+							ValueFrom: &corev1.EnvVarSource{
+								SecretKeyRef: &corev1.SecretKeySelector{
+									LocalObjectReference: corev1.LocalObjectReference{
+										Name: "test",
+									},
+								},
+							},
+						},
+					},
+					EnvFrom: []corev1.EnvFromSource{
+						{
+							ConfigMapRef: &corev1.ConfigMapEnvSource{
 								LocalObjectReference: corev1.LocalObjectReference{
 									Name: "test",
 								},
 							},
 						},
-					},
-					{
-						Name: "secret",
-						ValueFrom: &corev1.EnvVarSource{
-							SecretKeyRef: &corev1.SecretKeySelector{
+						{
+							SecretRef: &corev1.SecretEnvSource{
 								LocalObjectReference: corev1.LocalObjectReference{
 									Name: "test",
 								},
-							},
-						},
-					},
-				},
-				EnvFrom: []corev1.EnvFromSource{
-					{
-						ConfigMapRef: &corev1.ConfigMapEnvSource{
-							LocalObjectReference: corev1.LocalObjectReference{
-								Name: "test",
-							},
-						},
-					},
-					{
-						SecretRef: &corev1.SecretEnvSource{
-							LocalObjectReference: corev1.LocalObjectReference{
-								Name: "test",
 							},
 						},
 					},

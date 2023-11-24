@@ -71,12 +71,16 @@ func TestBuildIngress(t *testing.T) {
 			},
 			NodeGroups: []elasticsearchcrd.ElasticsearchNodeGroupSpec{
 				{
-					Name:     "master",
-					Replicas: 3,
+					Name: "master",
+					Deployment: shared.Deployment{
+						Replicas: 3,
+					},
 				},
 				{
-					Name:     "data",
-					Replicas: 1,
+					Name: "data",
+					Deployment: shared.Deployment{
+						Replicas: 1,
+					},
 				},
 			},
 		},
@@ -103,12 +107,16 @@ func TestBuildIngress(t *testing.T) {
 			},
 			NodeGroups: []elasticsearchcrd.ElasticsearchNodeGroupSpec{
 				{
-					Name:     "master",
-					Replicas: 3,
+					Name: "master",
+					Deployment: shared.Deployment{
+						Replicas: 3,
+					},
 				},
 				{
-					Name:     "data",
-					Replicas: 1,
+					Name: "data",
+					Deployment: shared.Deployment{
+						Replicas: 1,
+					},
 				},
 			},
 		},
@@ -154,12 +162,16 @@ func TestBuildIngress(t *testing.T) {
 			},
 			NodeGroups: []elasticsearchcrd.ElasticsearchNodeGroupSpec{
 				{
-					Name:     "master",
-					Replicas: 3,
+					Name: "master",
+					Deployment: shared.Deployment{
+						Replicas: 3,
+					},
 				},
 				{
-					Name:     "data",
-					Replicas: 1,
+					Name: "data",
+					Deployment: shared.Deployment{
+						Replicas: 1,
+					},
 				},
 			},
 		},
@@ -188,8 +200,10 @@ func TestBuildIngress(t *testing.T) {
 			},
 			NodeGroups: []elasticsearchcrd.ElasticsearchNodeGroupSpec{
 				{
-					Name:     "data",
-					Replicas: 1,
+					Name: "data",
+					Deployment: shared.Deployment{
+						Replicas: 1,
+					},
 				},
 			},
 		},

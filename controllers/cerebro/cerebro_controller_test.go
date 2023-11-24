@@ -70,7 +70,9 @@ func doCreateCerebroStep() test.TestStep {
 						},
 					},
 					Deployment: cerebrocrd.CerebroDeploymentSpec{
-						Replicas: 1,
+						Deployment: shared.Deployment{
+							Replicas: 1,
+						},
 					},
 				},
 			}
@@ -316,12 +318,14 @@ func doAddHostStep() test.TestStep {
 					Version: "8.6.0",
 					NodeGroups: []elasticsearchcrd.ElasticsearchNodeGroupSpec{
 						{
-							Name:     "all",
-							Replicas: 1,
+							Name: "all",
 							Roles: []string{
 								"master",
 								"client",
 								"data",
+							},
+							Deployment: shared.Deployment{
+								Replicas: 1,
 							},
 						},
 					},

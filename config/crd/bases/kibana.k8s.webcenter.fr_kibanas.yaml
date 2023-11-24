@@ -8325,7 +8325,7 @@ spec:
                     format: int32
                     type: integer
                   resources:
-                    description: Resources permit to set ressources on Kibana container
+                    description: Resources permit to set ressources on container
                     properties:
                       claims:
                         description: "Claims lists the names of resources, defined

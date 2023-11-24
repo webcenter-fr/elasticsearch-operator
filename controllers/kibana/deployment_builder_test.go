@@ -39,7 +39,9 @@ func TestBuildDeployment(t *testing.T) {
 				},
 			},
 			Deployment: kibanacrd.KibanaDeploymentSpec{
-				Replicas: 1,
+				Deployment: shared.Deployment{
+					Replicas: 1,
+				},
 			},
 		},
 	}
@@ -63,7 +65,9 @@ func TestBuildDeployment(t *testing.T) {
 		},
 		Spec: kibanacrd.KibanaSpec{
 			Deployment: kibanacrd.KibanaDeploymentSpec{
-				Replicas: 1,
+				Deployment: shared.Deployment{
+					Replicas: 1,
+				},
 			},
 			ElasticsearchRef: shared.ElasticsearchRef{
 				ExternalElasticsearchRef: &shared.ElasticsearchExternalRef{
@@ -90,7 +94,9 @@ func TestBuildDeployment(t *testing.T) {
 		},
 		Spec: kibanacrd.KibanaSpec{
 			Deployment: kibanacrd.KibanaDeploymentSpec{
-				Replicas: 1,
+				Deployment: shared.Deployment{
+					Replicas: 1,
+				},
 			},
 			ElasticsearchRef: shared.ElasticsearchRef{
 				ExternalElasticsearchRef: &shared.ElasticsearchExternalRef{
@@ -136,7 +142,9 @@ func TestBuildDeployment(t *testing.T) {
 				},
 			},
 			Deployment: kibanacrd.KibanaDeploymentSpec{
-				Replicas: 1,
+				Deployment: shared.Deployment{
+					Replicas: 1,
+				},
 			},
 			Tls: shared.TlsSpec{
 				CertificateSecretRef: &corev1.LocalObjectReference{
@@ -183,17 +191,46 @@ func TestBuildDeployment(t *testing.T) {
 				},
 			},
 			Deployment: kibanacrd.KibanaDeploymentSpec{
-				Replicas: 1,
-				Resources: &corev1.ResourceRequirements{
-					Requests: corev1.ResourceList{
-						corev1.ResourceCPU:    resource.MustParse("2"),
-						corev1.ResourceMemory: resource.MustParse("2Gi"),
+				Deployment: shared.Deployment{
+					Replicas: 1,
+					Resources: &corev1.ResourceRequirements{
+						Requests: corev1.ResourceList{
+							corev1.ResourceCPU:    resource.MustParse("2"),
+							corev1.ResourceMemory: resource.MustParse("2Gi"),
+						},
+						Limits: corev1.ResourceList{
+							corev1.ResourceCPU:    resource.MustParse("4"),
+							corev1.ResourceMemory: resource.MustParse("4Gi"),
+						},
 					},
-					Limits: corev1.ResourceList{
-						corev1.ResourceCPU:    resource.MustParse("4"),
-						corev1.ResourceMemory: resource.MustParse("4Gi"),
+					NodeSelector: map[string]string{
+						"project": "kibana",
+					},
+					Tolerations: []corev1.Toleration{
+						{
+							Key:      "project",
+							Operator: corev1.TolerationOpEqual,
+							Value:    "kibana",
+							Effect:   corev1.TaintEffectNoSchedule,
+						},
+					},
+					Env: []corev1.EnvVar{
+						{
+							Name:  "env1",
+							Value: "value1",
+						},
+					},
+					EnvFrom: []corev1.EnvFromSource{
+						{
+							ConfigMapRef: &corev1.ConfigMapEnvSource{
+								LocalObjectReference: corev1.LocalObjectReference{
+									Name: "test",
+								},
+							},
+						},
 					},
 				},
+
 				Node: "--param1",
 				InitContainerResources: &corev1.ResourceRequirements{
 					Requests: corev1.ResourceList{
@@ -205,35 +242,10 @@ func TestBuildDeployment(t *testing.T) {
 						corev1.ResourceMemory: resource.MustParse("500Mi"),
 					},
 				},
-				NodeSelector: map[string]string{
-					"project": "kibana",
-				},
-				Tolerations: []corev1.Toleration{
-					{
-						Key:      "project",
-						Operator: corev1.TolerationOpEqual,
-						Value:    "kibana",
-						Effect:   corev1.TaintEffectNoSchedule,
-					},
-				},
-				AntiAffinity: &kibanacrd.KibanaAntiAffinitySpec{
+
+				AntiAffinity: &shared.DeploymentAntiAffinitySpec{
 					TopologyKey: "rack",
 					Type:        "hard",
-				},
-				Env: []corev1.EnvVar{
-					{
-						Name:  "env1",
-						Value: "value1",
-					},
-				},
-				EnvFrom: []corev1.EnvFromSource{
-					{
-						ConfigMapRef: &corev1.ConfigMapEnvSource{
-							LocalObjectReference: corev1.LocalObjectReference{
-								Name: "test",
-							},
-						},
-					},
 				},
 			},
 			Version: "8.5.1",

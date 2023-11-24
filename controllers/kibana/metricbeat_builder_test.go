@@ -79,7 +79,9 @@ func TestBuildMetricbeat(t *testing.T) {
 				},
 			},
 			Deployment: kibanacrd.KibanaDeploymentSpec{
-				Replicas: 1,
+				Deployment: shared.Deployment{
+					Replicas: 1,
+				},
 			},
 		},
 	}
@@ -120,7 +122,9 @@ func TestBuildMetricbeat(t *testing.T) {
 				},
 			},
 			Deployment: kibanacrd.KibanaDeploymentSpec{
-				Replicas: 1,
+				Deployment: shared.Deployment{
+					Replicas: 1,
+				},
 			},
 		},
 	}
@@ -151,7 +155,9 @@ func TestBuildMetricbeat(t *testing.T) {
 				Enabled: ptr.To[bool](false),
 			},
 			Deployment: kibanacrd.KibanaDeploymentSpec{
-				Replicas: 1,
+				Deployment: shared.Deployment{
+					Replicas: 1,
+				},
 			},
 		},
 	}

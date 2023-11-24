@@ -96,21 +96,23 @@ func doCreateElasticsearchStep() test.TestStep {
 					},
 					NodeGroups: []elasticsearchcrd.ElasticsearchNodeGroupSpec{
 						{
-							Name:     "test",
-							Replicas: 2,
+							Name: "test",
 							Roles: []string{
 								"master",
 								"data",
 								"ingest",
 							},
-							Resources: &corev1.ResourceRequirements{
-								Requests: corev1.ResourceList{
-									corev1.ResourceCPU:    resource.MustParse("300m"),
-									corev1.ResourceMemory: resource.MustParse("1Gi"),
-								},
-								Limits: corev1.ResourceList{
-									corev1.ResourceCPU:    resource.MustParse("1000m"),
-									corev1.ResourceMemory: resource.MustParse("1Gi"),
+							Deployment: shared.Deployment{
+								Replicas: 2,
+								Resources: &corev1.ResourceRequirements{
+									Requests: corev1.ResourceList{
+										corev1.ResourceCPU:    resource.MustParse("300m"),
+										corev1.ResourceMemory: resource.MustParse("1Gi"),
+									},
+									Limits: corev1.ResourceList{
+										corev1.ResourceCPU:    resource.MustParse("1000m"),
+										corev1.ResourceMemory: resource.MustParse("1Gi"),
+									},
 								},
 							},
 						},
@@ -600,10 +602,12 @@ func doUpdateElasticsearchIncreaseNodeGroupStep() test.TestStep {
 
 			// Add labels must force to update all resources
 			es.Spec.NodeGroups = append(es.Spec.NodeGroups, elasticsearchcrd.ElasticsearchNodeGroupSpec{
-				Name:     "data",
-				Replicas: 2,
+				Name: "data",
 				Roles: []string{
 					"data",
+				},
+				Deployment: shared.Deployment{
+					Replicas: 2,
 				},
 			})
 

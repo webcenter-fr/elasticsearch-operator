@@ -38,8 +38,10 @@ func TestBuildTransportPkiSecret(t *testing.T) {
 		Spec: elasticsearchcrd.ElasticsearchSpec{
 			NodeGroups: []elasticsearchcrd.ElasticsearchNodeGroupSpec{
 				{
-					Name:     "master",
-					Replicas: 3,
+					Name: "master",
+					Deployment: shared.Deployment{
+						Replicas: 3,
+					},
 				},
 			},
 		},
@@ -89,8 +91,10 @@ func TestBuildApiPkiSecret(t *testing.T) {
 			},
 			NodeGroups: []elasticsearchcrd.ElasticsearchNodeGroupSpec{
 				{
-					Name:     "master",
-					Replicas: 3,
+					Name: "master",
+					Deployment: shared.Deployment{
+						Replicas: 3,
+					},
 				},
 			},
 		},
@@ -116,8 +120,10 @@ func TestBuildApiPkiSecret(t *testing.T) {
 			},
 			NodeGroups: []elasticsearchcrd.ElasticsearchNodeGroupSpec{
 				{
-					Name:     "master",
-					Replicas: 3,
+					Name: "master",
+					Deployment: shared.Deployment{
+						Replicas: 3,
+					},
 				},
 			},
 		},
@@ -140,8 +146,10 @@ func TestBuildApiPkiSecret(t *testing.T) {
 			},
 			NodeGroups: []elasticsearchcrd.ElasticsearchNodeGroupSpec{
 				{
-					Name:     "master",
-					Replicas: 3,
+					Name: "master",
+					Deployment: shared.Deployment{
+						Replicas: 3,
+					},
 				},
 			},
 		},
@@ -198,8 +206,10 @@ func TestBuildTransportSecret(t *testing.T) {
 		Spec: elasticsearchcrd.ElasticsearchSpec{
 			NodeGroups: []elasticsearchcrd.ElasticsearchNodeGroupSpec{
 				{
-					Name:     "master",
-					Replicas: 3,
+					Name: "master",
+					Deployment: shared.Deployment{
+						Replicas: 3,
+					},
 				},
 			},
 		},
@@ -260,8 +270,10 @@ func TestBuildApiSecret(t *testing.T) {
 			},
 			NodeGroups: []elasticsearchcrd.ElasticsearchNodeGroupSpec{
 				{
-					Name:     "master",
-					Replicas: 3,
+					Name: "master",
+					Deployment: shared.Deployment{
+						Replicas: 3,
+					},
 				},
 			},
 		},
@@ -286,8 +298,10 @@ func TestBuildApiSecret(t *testing.T) {
 			},
 			NodeGroups: []elasticsearchcrd.ElasticsearchNodeGroupSpec{
 				{
-					Name:     "master",
-					Replicas: 3,
+					Name: "master",
+					Deployment: shared.Deployment{
+						Replicas: 3,
+					},
 				},
 			},
 		},
@@ -309,8 +323,10 @@ func TestBuildApiSecret(t *testing.T) {
 			},
 			NodeGroups: []elasticsearchcrd.ElasticsearchNodeGroupSpec{
 				{
-					Name:     "master",
-					Replicas: 3,
+					Name: "master",
+					Deployment: shared.Deployment{
+						Replicas: 3,
+					},
 				},
 			},
 		},

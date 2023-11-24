@@ -6,6 +6,7 @@ import (
 
 	beatcrd "github.com/webcenter-fr/elasticsearch-operator/apis/beat/v1"
 	logstashcrd "github.com/webcenter-fr/elasticsearch-operator/apis/logstash/v1"
+	"github.com/webcenter-fr/elasticsearch-operator/apis/shared"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -60,20 +61,22 @@ func buildMetricbeats(ls *logstashcrd.Logstash) (metricbeats []beatcrd.Metricbea
 				"metricbeat.yml": fmt.Sprintf("setup.template.settings:\n  index.number_of_replicas: %d", ls.Spec.Monitoring.Metricbeat.NumberOfReplica),
 			},
 			Deployment: beatcrd.MetricbeatDeploymentSpec{
-				Replicas: 1,
-				Env: []corev1.EnvVar{
-					{
-						Name:  "SOURCE_METRICBEAT_USERNAME",
-						Value: "remote_monitoring_user",
-					},
-					{
-						Name: "SOURCE_METRICBEAT_PASSWORD",
-						ValueFrom: &corev1.EnvVarSource{
-							SecretKeyRef: &corev1.SecretKeySelector{
-								LocalObjectReference: corev1.LocalObjectReference{
-									Name: GetSecretNameForCredentials(ls),
+				Deployment: shared.Deployment{
+					Replicas: 1,
+					Env: []corev1.EnvVar{
+						{
+							Name:  "SOURCE_METRICBEAT_USERNAME",
+							Value: "remote_monitoring_user",
+						},
+						{
+							Name: "SOURCE_METRICBEAT_PASSWORD",
+							ValueFrom: &corev1.EnvVarSource{
+								SecretKeyRef: &corev1.SecretKeySelector{
+									LocalObjectReference: corev1.LocalObjectReference{
+										Name: GetSecretNameForCredentials(ls),
+									},
+									Key: "remote_monitoring_user",
 								},
-								Key: "remote_monitoring_user",
 							},
 						},
 					},

@@ -19,7 +19,6 @@ package v1
 import (
 	"github.com/disaster37/operator-sdk-extra/pkg/apis"
 	"github.com/webcenter-fr/elasticsearch-operator/apis/shared"
-	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -64,51 +63,7 @@ type CerebroSpec struct {
 }
 
 type CerebroDeploymentSpec struct {
-	// Replicas is the number of replicas
-	// +operator-sdk:csv:customresourcedefinitions:type=spec
-	Replicas int32 `json:"replicas"`
-
-	// Resources permit to set ressources on Kibana container
-	// +operator-sdk:csv:customresourcedefinitions:type=spec
-	// +optional
-	Resources *corev1.ResourceRequirements `json:"resources,omitempty"`
-
-	// Tolerations permit to set toleration on pod
-	// +operator-sdk:csv:customresourcedefinitions:type=spec
-	// +optional
-	Tolerations []corev1.Toleration `json:"tolerations,omitempty"`
-
-	// NodeSelector permit to set node selector on pod
-	// +operator-sdk:csv:customresourcedefinitions:type=spec
-	// +optional
-	NodeSelector map[string]string `json:"nodeSelector,omitempty"`
-
-	// Labels permit to set labels on containers
-	// +operator-sdk:csv:customresourcedefinitions:type=spec
-	// +optional
-	Labels map[string]string `json:"labels,omitempty"`
-
-	// Annotations permit to set annotation on deployment
-	// +operator-sdk:csv:customresourcedefinitions:type=spec
-	// +optional
-	Annotations map[string]string `json:"annotations,omitempty"`
-
-	// Env permit to set some environment variable on containers
-	// +operator-sdk:csv:customresourcedefinitions:type=spec
-	// +optional
-	Env []corev1.EnvVar `json:"env,omitempty"`
-
-	// EnvFrom permit to set some environment variable from config map or secret
-	// +operator-sdk:csv:customresourcedefinitions:type=spec
-	// +optional
-	EnvFrom []corev1.EnvFromSource `json:"envFrom,omitempty"`
-
-	// PodSpec is merged with expected pod
-	// It usefull to add some extra properties on pod spec
-	// +operator-sdk:csv:customresourcedefinitions:type=spec
-	// +optional
-	// +kubebuilder:pruning:PreserveUnknownFields
-	PodTemplate *corev1.PodTemplateSpec `json:"podTemplate,omitempty"`
+	shared.Deployment `json:",inline"`
 
 	// Node permit to set extra option on Node process
 	// +operator-sdk:csv:customresourcedefinitions:type=spec

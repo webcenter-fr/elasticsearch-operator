@@ -80,8 +80,10 @@ func TestBuildMetricbeat(t *testing.T) {
 			},
 			NodeGroups: []elasticsearchcrd.ElasticsearchNodeGroupSpec{
 				{
-					Name:     "test",
-					Replicas: 1,
+					Name: "test",
+					Deployment: shared.Deployment{
+						Replicas: 1,
+					},
 				},
 			},
 		},
@@ -124,8 +126,10 @@ func TestBuildMetricbeat(t *testing.T) {
 			},
 			NodeGroups: []elasticsearchcrd.ElasticsearchNodeGroupSpec{
 				{
-					Name:     "test",
-					Replicas: 1,
+					Name: "test",
+					Deployment: shared.Deployment{
+						Replicas: 1,
+					},
 				},
 			},
 		},
@@ -158,8 +162,10 @@ func TestBuildMetricbeat(t *testing.T) {
 			},
 			NodeGroups: []elasticsearchcrd.ElasticsearchNodeGroupSpec{
 				{
-					Name:     "test",
-					Replicas: 1,
+					Name: "test",
+					Deployment: shared.Deployment{
+						Replicas: 1,
+					},
 				},
 			},
 		},

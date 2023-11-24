@@ -60,12 +60,15 @@ func doCreateLogstashStep() test.TestStep {
 					Version: "8.6.0",
 					NodeGroups: []elasticsearchcrd.ElasticsearchNodeGroupSpec{
 						{
-							Name:     "all",
-							Replicas: 1,
+							Name: "all",
+
 							Roles: []string{
 								"master",
 								"client",
 								"data",
+							},
+							Deployment: sharedcrd.Deployment{
+								Replicas: 1,
 							},
 						},
 					},
@@ -109,7 +112,9 @@ func doCreateLogstashStep() test.TestStep {
 						},
 					},
 					Deployment: logstashcrd.LogstashDeploymentSpec{
-						Replicas: 2,
+						Deployment: sharedcrd.Deployment{
+							Replicas: 2,
+						},
 					},
 					Config: map[string]string{
 						"logstash.yml": `

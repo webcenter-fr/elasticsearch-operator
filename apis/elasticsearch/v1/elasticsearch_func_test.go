@@ -130,14 +130,14 @@ func TestIsPersistence(t *testing.T) {
 
 	// When persistence is not enabled
 	o = &ElasticsearchNodeGroupSpec{
-		Persistence: &ElasticsearchPersistenceSpec{},
+		Persistence: &shared.DeploymentPersistenceSpec{},
 	}
 
 	assert.False(t, o.IsPersistence())
 
 	// When claim PVC is set
 	o = &ElasticsearchNodeGroupSpec{
-		Persistence: &ElasticsearchPersistenceSpec{
+		Persistence: &shared.DeploymentPersistenceSpec{
 			VolumeClaimSpec: &v1.PersistentVolumeClaimSpec{},
 		},
 	}
@@ -146,7 +146,7 @@ func TestIsPersistence(t *testing.T) {
 
 	// When volume is set
 	o = &ElasticsearchNodeGroupSpec{
-		Persistence: &ElasticsearchPersistenceSpec{
+		Persistence: &shared.DeploymentPersistenceSpec{
 			Volume: &v1.VolumeSource{},
 		},
 	}
@@ -177,8 +177,10 @@ func TestIsPdb(t *testing.T) {
 		Spec: ElasticsearchSpec{
 			NodeGroups: []ElasticsearchNodeGroupSpec{
 				{
-					Name:     "test",
-					Replicas: 2,
+					Name: "test",
+					Deployment: shared.Deployment{
+						Replicas: 2,
+					},
 				},
 			},
 		},
@@ -255,12 +257,16 @@ func TestNumberOfReplicas(t *testing.T) {
 		Spec: ElasticsearchSpec{
 			NodeGroups: []ElasticsearchNodeGroupSpec{
 				{
-					Name:     "test1",
-					Replicas: 3,
+					Name: "test1",
+					Deployment: shared.Deployment{
+						Replicas: 3,
+					},
 				},
 				{
-					Name:     "test2",
-					Replicas: 2,
+					Name: "test2",
+					Deployment: shared.Deployment{
+						Replicas: 2,
+					},
 				},
 			},
 		},

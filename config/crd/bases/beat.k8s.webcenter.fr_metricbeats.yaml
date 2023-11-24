@@ -63,6 +63,7 @@ spec:
                     description: AdditionalVolumes permit to use additionnal volumes
                       Default is empty
                     items:
+                      description: DeploymentVolumeSpec permit to set volume
                       properties:
                         awsElasticBlockStore:
                           description: 'awsElasticBlockStore represents an AWS Disk

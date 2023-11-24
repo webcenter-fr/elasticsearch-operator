@@ -93,7 +93,9 @@ func TestBuildIngresses(t *testing.T) {
 		},
 		Spec: logstashcrd.LogstashSpec{
 			Deployment: logstashcrd.LogstashDeploymentSpec{
-				Replicas: 2,
+				Deployment: shared.Deployment{
+					Replicas: 2,
+				},
 			},
 			Ingresses: []shared.Ingress{
 				{

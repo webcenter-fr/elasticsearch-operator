@@ -46,7 +46,7 @@ func (t *TestSuite) TestSetupElasticsearchIndexer() {
 				CacertsSecretRef: &corev1.LocalObjectReference{
 					Name: "test",
 				},
-				AdditionalVolumes: []ElasticsearchVolumeSpec{
+				AdditionalVolumes: []shared.DeploymentVolumeSpec{
 					{
 						Name: "config",
 						VolumeMount: corev1.VolumeMount{

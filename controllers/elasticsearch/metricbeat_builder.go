@@ -6,6 +6,7 @@ import (
 
 	beatcrd "github.com/webcenter-fr/elasticsearch-operator/apis/beat/v1"
 	elasticsearchcrd "github.com/webcenter-fr/elasticsearch-operator/apis/elasticsearch/v1"
+	"github.com/webcenter-fr/elasticsearch-operator/apis/shared"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -82,20 +83,22 @@ func buildMetricbeats(es *elasticsearchcrd.Elasticsearch) (mbs []beatcrd.Metricb
 				"metricbeat.yml": fmt.Sprintf("setup.template.settings:\n  index.number_of_replicas: %d", es.Spec.Monitoring.Metricbeat.NumberOfReplica),
 			},
 			Deployment: beatcrd.MetricbeatDeploymentSpec{
-				Replicas: 1,
-				Env: []corev1.EnvVar{
-					{
-						Name:  "SOURCE_METRICBEAT_USERNAME",
-						Value: "remote_monitoring_user",
-					},
-					{
-						Name: "SOURCE_METRICBEAT_PASSWORD",
-						ValueFrom: &corev1.EnvVarSource{
-							SecretKeyRef: &corev1.SecretKeySelector{
-								LocalObjectReference: corev1.LocalObjectReference{
-									Name: GetSecretNameForCredentials(es),
+				Deployment: shared.Deployment{
+					Replicas: 1,
+					Env: []corev1.EnvVar{
+						{
+							Name:  "SOURCE_METRICBEAT_USERNAME",
+							Value: "remote_monitoring_user",
+						},
+						{
+							Name: "SOURCE_METRICBEAT_PASSWORD",
+							ValueFrom: &corev1.EnvVarSource{
+								SecretKeyRef: &corev1.SecretKeySelector{
+									LocalObjectReference: corev1.LocalObjectReference{
+										Name: GetSecretNameForCredentials(es),
+									},
+									Key: "remote_monitoring_user",
 								},
-								Key: "remote_monitoring_user",
 							},
 						},
 					},
@@ -122,7 +125,7 @@ func buildMetricbeats(es *elasticsearchcrd.Elasticsearch) (mbs []beatcrd.Metricb
 
 	// Compute volumes
 	if es.Spec.Tls.IsTlsEnabled() {
-		mb.Spec.Deployment.AdditionalVolumes = []beatcrd.MetricbeatVolumeSpec{
+		mb.Spec.Deployment.AdditionalVolumes = []shared.DeploymentVolumeSpec{
 			{
 				Name: "ca-source-elasticsearch",
 				VolumeMount: corev1.VolumeMount{

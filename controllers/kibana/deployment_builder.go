@@ -12,6 +12,7 @@ import (
 	"github.com/elastic/go-ucfg"
 	elasticsearchcrd "github.com/webcenter-fr/elasticsearch-operator/apis/elasticsearch/v1"
 	kibanacrd "github.com/webcenter-fr/elasticsearch-operator/apis/kibana/v1"
+	"github.com/webcenter-fr/elasticsearch-operator/apis/shared"
 	"github.com/webcenter-fr/elasticsearch-operator/controllers/elasticsearch"
 	localhelper "github.com/webcenter-fr/elasticsearch-operator/pkg/helper"
 	appv1 "k8s.io/api/apps/v1"
@@ -716,14 +717,14 @@ func computeElasticsearchHosts(kb *kibanacrd.Kibana, es *elasticsearchcrd.Elasti
 // computeAntiAffinity permit to get  anti affinity spec
 // Default to soft anti affinity
 func computeAntiAffinity(kb *kibanacrd.Kibana) (antiAffinity *corev1.PodAntiAffinity, err error) {
-	var expectedAntiAffinity *kibanacrd.KibanaAntiAffinitySpec
+	var expectedAntiAffinity *shared.DeploymentAntiAffinitySpec
 
 	antiAffinity = &corev1.PodAntiAffinity{}
 	topologyKey := "kubernetes.io/hostname"
 
 	// Check if need to merge anti affinity spec
 	if kb.Spec.Deployment.AntiAffinity != nil {
-		expectedAntiAffinity = &kibanacrd.KibanaAntiAffinitySpec{}
+		expectedAntiAffinity = &shared.DeploymentAntiAffinitySpec{}
 		if err = helper.Merge(expectedAntiAffinity, kb.Spec.Deployment.AntiAffinity); err != nil {
 			return nil, errors.Wrap(err, "Error when merge global anti affinity")
 		}

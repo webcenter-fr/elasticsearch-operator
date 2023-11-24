@@ -5,6 +5,7 @@ import (
 
 	"github.com/disaster37/operator-sdk-extra/pkg/apis"
 	"github.com/stretchr/testify/assert"
+	"github.com/webcenter-fr/elasticsearch-operator/apis/shared"
 	v1 "k8s.io/api/core/v1"
 	policyv1 "k8s.io/api/policy/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -49,7 +50,7 @@ func TestIsPersistence(t *testing.T) {
 		},
 		Spec: LogstashSpec{
 			Deployment: LogstashDeploymentSpec{
-				Persistence: &LogstashPersistenceSpec{},
+				Persistence: &shared.DeploymentPersistenceSpec{},
 			},
 		},
 	}
@@ -64,7 +65,7 @@ func TestIsPersistence(t *testing.T) {
 		},
 		Spec: LogstashSpec{
 			Deployment: LogstashDeploymentSpec{
-				Persistence: &LogstashPersistenceSpec{
+				Persistence: &shared.DeploymentPersistenceSpec{
 					VolumeClaimSpec: &v1.PersistentVolumeClaimSpec{},
 				},
 			},
@@ -81,7 +82,7 @@ func TestIsPersistence(t *testing.T) {
 		},
 		Spec: LogstashSpec{
 			Deployment: LogstashDeploymentSpec{
-				Persistence: &LogstashPersistenceSpec{
+				Persistence: &shared.DeploymentPersistenceSpec{
 					Volume: &v1.VolumeSource{},
 				},
 			},
@@ -113,7 +114,9 @@ func TestIsPdb(t *testing.T) {
 		},
 		Spec: LogstashSpec{
 			Deployment: LogstashDeploymentSpec{
-				Replicas: 2,
+				Deployment: shared.Deployment{
+					Replicas: 2,
+				},
 			},
 		},
 	}
