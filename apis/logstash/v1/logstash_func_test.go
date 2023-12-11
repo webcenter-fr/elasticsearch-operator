@@ -28,52 +28,6 @@ func TestGetStatus(t *testing.T) {
 	assert.Equal(t, &status, o.GetStatus())
 }
 
-func TestIsPrometheusMonitoring(t *testing.T) {
-	var o *Logstash
-
-	// With default values
-	o = &Logstash{
-		ObjectMeta: metav1.ObjectMeta{
-			Namespace: "default",
-			Name:      "test",
-		},
-		Spec: LogstashSpec{},
-	}
-	assert.False(t, o.IsPrometheusMonitoring())
-
-	// When enabled
-	o = &Logstash{
-		ObjectMeta: metav1.ObjectMeta{
-			Namespace: "default",
-			Name:      "test",
-		},
-		Spec: LogstashSpec{
-			Monitoring: LogstashMonitoringSpec{
-				Prometheus: &LogstashPrometheusSpec{
-					Enabled: true,
-				},
-			},
-		},
-	}
-	assert.True(t, o.IsPrometheusMonitoring())
-
-	// When disabled
-	o = &Logstash{
-		ObjectMeta: metav1.ObjectMeta{
-			Namespace: "default",
-			Name:      "test",
-		},
-		Spec: LogstashSpec{
-			Monitoring: LogstashMonitoringSpec{
-				Prometheus: &LogstashPrometheusSpec{
-					Enabled: false,
-				},
-			},
-		},
-	}
-	assert.False(t, o.IsPrometheusMonitoring())
-}
-
 func TestIsPersistence(t *testing.T) {
 	var o *Logstash
 
@@ -96,7 +50,7 @@ func TestIsPersistence(t *testing.T) {
 		},
 		Spec: LogstashSpec{
 			Deployment: LogstashDeploymentSpec{
-				Persistence: &LogstashPersistenceSpec{},
+				Persistence: &shared.DeploymentPersistenceSpec{},
 			},
 		},
 	}
@@ -111,7 +65,7 @@ func TestIsPersistence(t *testing.T) {
 		},
 		Spec: LogstashSpec{
 			Deployment: LogstashDeploymentSpec{
-				Persistence: &LogstashPersistenceSpec{
+				Persistence: &shared.DeploymentPersistenceSpec{
 					VolumeClaimSpec: &v1.PersistentVolumeClaimSpec{},
 				},
 			},
@@ -128,7 +82,7 @@ func TestIsPersistence(t *testing.T) {
 		},
 		Spec: LogstashSpec{
 			Deployment: LogstashDeploymentSpec{
-				Persistence: &LogstashPersistenceSpec{
+				Persistence: &shared.DeploymentPersistenceSpec{
 					Volume: &v1.VolumeSource{},
 				},
 			},
@@ -137,77 +91,6 @@ func TestIsPersistence(t *testing.T) {
 
 	assert.True(t, o.IsPersistence())
 
-}
-
-func TestIsMetricbeatMonitoring(t *testing.T) {
-	var o *Logstash
-
-	// With default values
-	o = &Logstash{
-		ObjectMeta: metav1.ObjectMeta{
-			Namespace: "default",
-			Name:      "test",
-		},
-		Spec: LogstashSpec{},
-	}
-	assert.False(t, o.IsMetricbeatMonitoring())
-
-	// When enabled
-	o = &Logstash{
-		ObjectMeta: metav1.ObjectMeta{
-			Namespace: "default",
-			Name:      "test",
-		},
-		Spec: LogstashSpec{
-			Monitoring: LogstashMonitoringSpec{
-				Metricbeat: &shared.MetricbeatMonitoringSpec{
-					Enabled: true,
-				},
-			},
-			Deployment: LogstashDeploymentSpec{
-				Replicas: 1,
-			},
-		},
-	}
-	assert.True(t, o.IsMetricbeatMonitoring())
-
-	// When disabled
-	o = &Logstash{
-		ObjectMeta: metav1.ObjectMeta{
-			Namespace: "default",
-			Name:      "test",
-		},
-		Spec: LogstashSpec{
-			Monitoring: LogstashMonitoringSpec{
-				Metricbeat: &shared.MetricbeatMonitoringSpec{
-					Enabled: false,
-				},
-			},
-			Deployment: LogstashDeploymentSpec{
-				Replicas: 1,
-			},
-		},
-	}
-	assert.False(t, o.IsMetricbeatMonitoring())
-
-	// When enabled but replicas is set to 0
-	o = &Logstash{
-		ObjectMeta: metav1.ObjectMeta{
-			Namespace: "default",
-			Name:      "test",
-		},
-		Spec: LogstashSpec{
-			Monitoring: LogstashMonitoringSpec{
-				Metricbeat: &shared.MetricbeatMonitoringSpec{
-					Enabled: true,
-				},
-			},
-			Deployment: LogstashDeploymentSpec{
-				Replicas: 0,
-			},
-		},
-	}
-	assert.False(t, o.IsMetricbeatMonitoring())
 }
 
 func TestIsPdb(t *testing.T) {
@@ -231,7 +114,9 @@ func TestIsPdb(t *testing.T) {
 		},
 		Spec: LogstashSpec{
 			Deployment: LogstashDeploymentSpec{
-				Replicas: 2,
+				Deployment: shared.Deployment{
+					Replicas: 2,
+				},
 			},
 		},
 	}

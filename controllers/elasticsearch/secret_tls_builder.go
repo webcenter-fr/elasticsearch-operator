@@ -112,7 +112,7 @@ func buildTransportSecret(o *elasticsearchcrd.Elasticsearch, rootCA *goca.CA) (s
 // buildApiPkiSecret generate the secret that store API PKI
 func buildApiPkiSecret(o *elasticsearchcrd.Elasticsearch) (sPki *corev1.Secret, rootCA *goca.CA, err error) {
 
-	if !o.IsTlsApiEnabled() || !o.IsSelfManagedSecretForTlsApi() {
+	if !o.Spec.Tls.IsTlsEnabled() || !o.Spec.Tls.IsSelfManagedSecretForTls() {
 		return nil, nil, nil
 	}
 
@@ -170,7 +170,7 @@ func buildApiPkiSecret(o *elasticsearchcrd.Elasticsearch) (sPki *corev1.Secret, 
 // buildApiSecret generate the secret that store the API certificate
 func buildApiSecret(o *elasticsearchcrd.Elasticsearch, rootCA *goca.CA) (s *corev1.Secret, err error) {
 
-	if !o.IsTlsApiEnabled() || !o.IsSelfManagedSecretForTlsApi() {
+	if !o.Spec.Tls.IsTlsEnabled() || !o.Spec.Tls.IsSelfManagedSecretForTls() {
 		return nil, nil
 	}
 

@@ -121,7 +121,7 @@ func buildStatefulsets(ls *logstashcrd.Logstash, es *elasticsearchcrd.Elasticsea
 		}, k8sbuilder.Merge)
 
 	// Inject Elasticsearch CA Path if provided
-	if es != nil && es.IsTlsApiEnabled() || ls.Spec.ElasticsearchRef.IsExternal() && ls.Spec.ElasticsearchRef.ElasticsearchCaSecretRef != nil {
+	if es != nil && es.Spec.Tls.IsTlsEnabled() || ls.Spec.ElasticsearchRef.IsExternal() && ls.Spec.ElasticsearchRef.ElasticsearchCaSecretRef != nil {
 		cb.WithEnv([]corev1.EnvVar{
 			{
 				Name:  "ELASTICSEARCH_CA_PATH",
@@ -512,7 +512,7 @@ fi
 	}
 
 	// Compute mount CA elasticsearch
-	if (ls.Spec.ElasticsearchRef.IsManaged() && es.IsTlsApiEnabled()) || (ls.Spec.ElasticsearchRef.IsExternal() && ls.Spec.ElasticsearchRef.ElasticsearchCaSecretRef != nil) {
+	if (ls.Spec.ElasticsearchRef.IsManaged() && es.Spec.Tls.IsTlsEnabled()) || (ls.Spec.ElasticsearchRef.IsExternal() && ls.Spec.ElasticsearchRef.ElasticsearchCaSecretRef != nil) {
 		ccb.WithVolumeMount([]corev1.VolumeMount{
 			{
 				Name:      "ca-elasticsearch",
@@ -628,7 +628,7 @@ fi
 		}
 	}
 
-	if ls.Spec.ElasticsearchRef.IsManaged() && es.IsTlsApiEnabled() && es.IsSelfManagedSecretForTlsApi() {
+	if ls.Spec.ElasticsearchRef.IsManaged() && es.Spec.Tls.IsTlsEnabled() && es.Spec.Tls.IsSelfManagedSecretForTls() {
 		ptb.WithVolumes([]corev1.Volume{
 			{
 				Name: "ca-elasticsearch",
@@ -639,7 +639,7 @@ fi
 				},
 			},
 		}, k8sbuilder.Merge)
-	} else if (ls.Spec.ElasticsearchRef.IsExternal() && ls.Spec.ElasticsearchRef.ElasticsearchCaSecretRef != nil) || (ls.Spec.ElasticsearchRef.IsManaged() && es.IsTlsApiEnabled() && ls.Spec.ElasticsearchRef.ElasticsearchCaSecretRef != nil) {
+	} else if (ls.Spec.ElasticsearchRef.IsExternal() && ls.Spec.ElasticsearchRef.ElasticsearchCaSecretRef != nil) || (ls.Spec.ElasticsearchRef.IsManaged() && es.Spec.Tls.IsTlsEnabled() && ls.Spec.ElasticsearchRef.ElasticsearchCaSecretRef != nil) {
 		ptb.WithVolumes([]corev1.Volume{
 			{
 				Name: "ca-elasticsearch",

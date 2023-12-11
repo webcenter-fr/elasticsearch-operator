@@ -57,7 +57,7 @@ output.logstash:
 
 	// Elasticsearch output
 	if fb.Spec.ElasticsearchRef.IsExternal() || fb.Spec.ElasticsearchRef.IsManaged() {
-		if fb.Spec.ElasticsearchRef.ElasticsearchCaSecretRef != nil || (es != nil && es.IsTlsApiEnabled()) {
+		if fb.Spec.ElasticsearchRef.ElasticsearchCaSecretRef != nil || (es != nil && es.Spec.Tls.IsTlsEnabled()) {
 			filebeatConf.WriteString(`
 output.elasticsearch:
   hosts: '${ELASTICSEARCH_HOST}'

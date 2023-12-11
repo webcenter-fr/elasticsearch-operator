@@ -28,52 +28,6 @@ func TestFilebeatGetStatus(t *testing.T) {
 	assert.Equal(t, &status, o.GetStatus())
 }
 
-func TestFilebeatIsPrometheusMonitoring(t *testing.T) {
-	var o *Filebeat
-
-	// With default values
-	o = &Filebeat{
-		ObjectMeta: metav1.ObjectMeta{
-			Namespace: "default",
-			Name:      "test",
-		},
-		Spec: FilebeatSpec{},
-	}
-	assert.False(t, o.IsPrometheusMonitoring())
-
-	// When enabled
-	o = &Filebeat{
-		ObjectMeta: metav1.ObjectMeta{
-			Namespace: "default",
-			Name:      "test",
-		},
-		Spec: FilebeatSpec{
-			Monitoring: FilebeatMonitoringSpec{
-				Prometheus: &FilebeatPrometheusSpec{
-					Enabled: true,
-				},
-			},
-		},
-	}
-	assert.True(t, o.IsPrometheusMonitoring())
-
-	// When disabled
-	o = &Filebeat{
-		ObjectMeta: metav1.ObjectMeta{
-			Namespace: "default",
-			Name:      "test",
-		},
-		Spec: FilebeatSpec{
-			Monitoring: FilebeatMonitoringSpec{
-				Prometheus: &FilebeatPrometheusSpec{
-					Enabled: false,
-				},
-			},
-		},
-	}
-	assert.False(t, o.IsPrometheusMonitoring())
-}
-
 func TestFilebeatIsPersistence(t *testing.T) {
 	var o *Filebeat
 
@@ -96,7 +50,7 @@ func TestFilebeatIsPersistence(t *testing.T) {
 		},
 		Spec: FilebeatSpec{
 			Deployment: FilebeatDeploymentSpec{
-				Persistence: &FilebeatPersistenceSpec{},
+				Persistence: &shared.DeploymentPersistenceSpec{},
 			},
 		},
 	}
@@ -111,7 +65,7 @@ func TestFilebeatIsPersistence(t *testing.T) {
 		},
 		Spec: FilebeatSpec{
 			Deployment: FilebeatDeploymentSpec{
-				Persistence: &FilebeatPersistenceSpec{
+				Persistence: &shared.DeploymentPersistenceSpec{
 					VolumeClaimSpec: &v1.PersistentVolumeClaimSpec{},
 				},
 			},
@@ -128,7 +82,7 @@ func TestFilebeatIsPersistence(t *testing.T) {
 		},
 		Spec: FilebeatSpec{
 			Deployment: FilebeatDeploymentSpec{
-				Persistence: &FilebeatPersistenceSpec{
+				Persistence: &shared.DeploymentPersistenceSpec{
 					Volume: &v1.VolumeSource{},
 				},
 			},
@@ -186,77 +140,6 @@ func TestFilebeatIsExternal(t *testing.T) {
 
 }
 
-func TestFilebeatIsMetricbeatMonitoring(t *testing.T) {
-	var o *Filebeat
-
-	// With default values
-	o = &Filebeat{
-		ObjectMeta: metav1.ObjectMeta{
-			Namespace: "default",
-			Name:      "test",
-		},
-		Spec: FilebeatSpec{},
-	}
-	assert.False(t, o.IsMetricbeatMonitoring())
-
-	// When enabled
-	o = &Filebeat{
-		ObjectMeta: metav1.ObjectMeta{
-			Namespace: "default",
-			Name:      "test",
-		},
-		Spec: FilebeatSpec{
-			Monitoring: FilebeatMonitoringSpec{
-				Metricbeat: &shared.MetricbeatMonitoringSpec{
-					Enabled: true,
-				},
-			},
-			Deployment: FilebeatDeploymentSpec{
-				Replicas: 1,
-			},
-		},
-	}
-	assert.True(t, o.IsMetricbeatMonitoring())
-
-	// When disabled
-	o = &Filebeat{
-		ObjectMeta: metav1.ObjectMeta{
-			Namespace: "default",
-			Name:      "test",
-		},
-		Spec: FilebeatSpec{
-			Monitoring: FilebeatMonitoringSpec{
-				Metricbeat: &shared.MetricbeatMonitoringSpec{
-					Enabled: false,
-				},
-			},
-			Deployment: FilebeatDeploymentSpec{
-				Replicas: 1,
-			},
-		},
-	}
-	assert.False(t, o.IsMetricbeatMonitoring())
-
-	// When enabled but replica is set to 0
-	o = &Filebeat{
-		ObjectMeta: metav1.ObjectMeta{
-			Namespace: "default",
-			Name:      "test",
-		},
-		Spec: FilebeatSpec{
-			Monitoring: FilebeatMonitoringSpec{
-				Metricbeat: &shared.MetricbeatMonitoringSpec{
-					Enabled: true,
-				},
-			},
-			Deployment: FilebeatDeploymentSpec{
-				Replicas: 0,
-			},
-		},
-	}
-	assert.False(t, o.IsMetricbeatMonitoring())
-}
-
 func TestFilebeatIsPdb(t *testing.T) {
 	var o Filebeat
 
@@ -278,7 +161,9 @@ func TestFilebeatIsPdb(t *testing.T) {
 		},
 		Spec: FilebeatSpec{
 			Deployment: FilebeatDeploymentSpec{
-				Replicas: 2,
+				Deployment: shared.Deployment{
+					Replicas: 2,
+				},
 			},
 		},
 	}

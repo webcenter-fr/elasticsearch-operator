@@ -8158,7 +8158,7 @@ spec:
                     format: int32
                     type: integer
                   resources:
-                    description: Resources permit to set ressources on Kibana container
+                    description: Resources permit to set ressources on container
                     properties:
                       claims:
                         description: "Claims lists the names of resources, defined
@@ -8268,7 +8268,7 @@ spec:
                           Default to false
                         type: boolean
                       host:
-                        description: Host is the hostname to access on Kibana
+                        description: Host is the hostname to access on
                         type: string
                       ingressSpec:
                         description: IngressSpec it merge with expected ingress spec
@@ -8571,6 +8571,8 @@ spec:
                         type: object
                       secretRef:
                         description: SecretRef is the secret ref that store certificates
+                          If secret not exist, it will use the default ingress certificate
+                          If secret is nil, it will disable TLS on ingress spec.
                         properties:
                           name:
                             description: 'Name of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names

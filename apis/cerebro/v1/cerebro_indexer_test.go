@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/webcenter-fr/elasticsearch-operator/apis/shared"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -19,40 +20,42 @@ func (t *TestSuite) TestSetupCerebroIndexer() {
 		Spec: CerebroSpec{
 
 			Deployment: CerebroDeploymentSpec{
-				Env: []corev1.EnvVar{
-					{
-						Name: "test",
-						ValueFrom: &corev1.EnvVarSource{
-							ConfigMapKeyRef: &corev1.ConfigMapKeySelector{
+				Deployment: shared.Deployment{
+					Env: []corev1.EnvVar{
+						{
+							Name: "test",
+							ValueFrom: &corev1.EnvVarSource{
+								ConfigMapKeyRef: &corev1.ConfigMapKeySelector{
+									LocalObjectReference: corev1.LocalObjectReference{
+										Name: "test",
+									},
+								},
+							},
+						},
+						{
+							Name: "test2",
+							ValueFrom: &corev1.EnvVarSource{
+								SecretKeyRef: &corev1.SecretKeySelector{
+									LocalObjectReference: corev1.LocalObjectReference{
+										Name: "test",
+									},
+								},
+							},
+						},
+					},
+					EnvFrom: []corev1.EnvFromSource{
+						{
+							ConfigMapRef: &corev1.ConfigMapEnvSource{
 								LocalObjectReference: corev1.LocalObjectReference{
 									Name: "test",
 								},
 							},
 						},
-					},
-					{
-						Name: "test2",
-						ValueFrom: &corev1.EnvVarSource{
-							SecretKeyRef: &corev1.SecretKeySelector{
+						{
+							SecretRef: &corev1.SecretEnvSource{
 								LocalObjectReference: corev1.LocalObjectReference{
 									Name: "test",
 								},
-							},
-						},
-					},
-				},
-				EnvFrom: []corev1.EnvFromSource{
-					{
-						ConfigMapRef: &corev1.ConfigMapEnvSource{
-							LocalObjectReference: corev1.LocalObjectReference{
-								Name: "test",
-							},
-						},
-					},
-					{
-						SecretRef: &corev1.SecretEnvSource{
-							LocalObjectReference: corev1.LocalObjectReference{
-								Name: "test",
 							},
 						},
 					},

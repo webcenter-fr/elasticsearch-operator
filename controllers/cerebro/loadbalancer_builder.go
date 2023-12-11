@@ -11,7 +11,7 @@ import (
 // It return nil if Loadbalancer is disabled
 func buildLoadbalancers(cb *cerebrocrd.Cerebro) (services []corev1.Service, err error) {
 
-	if !cb.IsLoadBalancerEnabled() {
+	if !cb.Spec.Endpoint.IsLoadBalancerEnabled() {
 		return nil, nil
 	}
 

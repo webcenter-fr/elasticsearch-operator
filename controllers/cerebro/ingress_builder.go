@@ -12,7 +12,7 @@ import (
 // It return error if ingress spec is not provided
 // It return nil if ingress is disabled
 func buildIngresses(cb *cerebrocrd.Cerebro) (ingresses []networkingv1.Ingress, err error) {
-	if !cb.IsIngressEnabled() {
+	if !cb.Spec.Endpoint.IsIngressEnabled() {
 		return nil, nil
 	}
 

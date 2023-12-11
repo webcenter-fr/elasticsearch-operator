@@ -12,7 +12,7 @@ import (
 // It return error if ingress spec is not provided
 // It return nil if ingress is disabled
 func buildIngresses(kb *kibanacrd.Kibana) (ingresses []networkingv1.Ingress, err error) {
-	if !kb.IsIngressEnabled() {
+	if !kb.Spec.Endpoint.IsIngressEnabled() {
 		return nil, nil
 	}
 
@@ -28,7 +28,7 @@ func buildIngresses(kb *kibanacrd.Kibana) (ingresses []networkingv1.Ingress, err
 
 	// Add default annotation
 	defaultAnnotations := map[string]string{}
-	if kb.IsTlsEnabled() {
+	if kb.Spec.Tls.IsTlsEnabled() {
 		defaultAnnotations["nginx.ingress.kubernetes.io/force-ssl-redirect"] = "true"
 		defaultAnnotations["nginx.ingress.kubernetes.io/backend-protocol"] = "HTTPS"
 	}

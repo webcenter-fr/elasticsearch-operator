@@ -21,13 +21,13 @@ func (t *TestSuite) TestSetupElasticsearchIndexer() {
 			LicenseSecretRef: &corev1.LocalObjectReference{
 				Name: "test",
 			},
-			Tls: ElasticsearchTlsSpec{
+			Tls: shared.TlsSpec{
 				CertificateSecretRef: &corev1.LocalObjectReference{
 					Name: "test",
 				},
 			},
-			Monitoring: ElasticsearchMonitoringSpec{
-				Metricbeat: &shared.MetricbeatMonitoringSpec{
+			Monitoring: shared.MonitoringSpec{
+				Metricbeat: &shared.MonitoringMetricbeatSpec{
 					Enabled: true,
 					ElasticsearchRef: shared.ElasticsearchRef{
 						ManagedElasticsearchRef: &shared.ElasticsearchManagedRef{
@@ -46,7 +46,7 @@ func (t *TestSuite) TestSetupElasticsearchIndexer() {
 				CacertsSecretRef: &corev1.LocalObjectReference{
 					Name: "test",
 				},
-				AdditionalVolumes: []ElasticsearchVolumeSpec{
+				AdditionalVolumes: []shared.DeploymentVolumeSpec{
 					{
 						Name: "config",
 						VolumeMount: corev1.VolumeMount{

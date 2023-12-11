@@ -26,7 +26,7 @@ func GetServiceName(kb *kibanacrd.Kibana) (serviceName string) {
 // It return the secret name as string
 func GetSecretNameForTls(kb *kibanacrd.Kibana) (secretName string) {
 
-	if !kb.IsSelfManagedSecretForTls() {
+	if !kb.Spec.Tls.IsSelfManagedSecretForTls() {
 		return kb.Spec.Tls.CertificateSecretRef.Name
 	}
 

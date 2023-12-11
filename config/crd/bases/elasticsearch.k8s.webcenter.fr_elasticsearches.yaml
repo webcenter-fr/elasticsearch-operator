@@ -82,7 +82,7 @@ spec:
                           Default to false
                         type: boolean
                       host:
-                        description: Host is the hostname to access on Elasticsearch
+                        description: Host is the hostname to access on
                         type: string
                       ingressSpec:
                         description: IngressSpec it merge with expected ingress spec
@@ -385,6 +385,8 @@ spec:
                         type: object
                       secretRef:
                         description: SecretRef is the secret ref that store certificates
+                          If secret not exist, it will use the default ingress certificate
+                          If secret is nil, it will disable TLS on ingress spec.
                         properties:
                           name:
                             description: 'Name of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
@@ -423,6 +425,7 @@ spec:
                     description: AdditionalVolumes permit to use additionnal volumes
                       Default is empty
                     items:
+                      description: DeploymentVolumeSpec permit to set volume
                       properties:
                         awsElasticBlockStore:
                           description: 'awsElasticBlockStore represents an AWS Disk
@@ -2102,6 +2105,8 @@ spec:
                         - soft
                         - hard
                         type: string
+                    required:
+                    - type
                     type: object
                   caSecretRef:
                     description: CacertsSecretRef is the secret that store custom
@@ -10548,8 +10553,8 @@ spec:
                       enabled:
                         default: false
                         description: Enabled permit to enable Prometheus monitoring
-                          It will deploy exporter for Elasticsearch and add podMonitor
-                          policy Default to false
+                          It will deploy exporter and add podMonitor policy Default
+                          to false
                         type: boolean
                       image:
                         description: Image is the image to use when deploy Elasticsearch
@@ -10629,6 +10634,9 @@ spec:
                               Requests cannot exceed Limits. More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/'
                             type: object
                         type: object
+                      url:
+                        description: Url is the plugin URL where to download exporter
+                        type: string
                       version:
                         default: latest
                         description: Version is the exporter version to use Default
@@ -10644,7 +10652,7 @@ spec:
                     annotations:
                       additionalProperties:
                         type: string
-                      description: Annotations permit to set annotation on containers
+                      description: Annotations permit to set annotation on deployment
                       type: object
                     antiAffinity:
                       description: AntiAffinity permit to set anti affinity policy
@@ -10662,6 +10670,8 @@ spec:
                           - soft
                           - hard
                           type: string
+                      required:
+                      - type
                       type: object
                     config:
                       additionalProperties:
@@ -12875,7 +12885,7 @@ spec:
                           type: string
                       type: object
                     podTemplate:
-                      description: PodTemplate is merged with expected pod It usefull
+                      description: PodSpec is merged with expected pod It usefull
                         to add some extra properties on pod spec
                       properties:
                         metadata:
@@ -21014,8 +21024,7 @@ spec:
                       format: int32
                       type: integer
                     resources:
-                      description: Resources permit to set ressources on Elasticsearch
-                        container
+                      description: Resources permit to set ressources on container
                       properties:
                         claims:
                           description: "Claims lists the names of resources, defined
@@ -21153,7 +21162,7 @@ spec:
                     x-kubernetes-map-type: atomic
                   enabled:
                     default: true
-                    description: Enabled permit to enabled TLS on API Default true
+                    description: Enabled permit to enabled TLS Default to false
                     type: boolean
                   keySize:
                     default: 2048

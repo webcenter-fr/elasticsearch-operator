@@ -47,8 +47,8 @@ func TestBuildMetricbeat(t *testing.T) {
 			Name:      "test",
 		},
 		Spec: logstashcrd.LogstashSpec{
-			Monitoring: logstashcrd.LogstashMonitoringSpec{
-				Metricbeat: &shared.MetricbeatMonitoringSpec{
+			Monitoring: shared.MonitoringSpec{
+				Metricbeat: &shared.MonitoringMetricbeatSpec{
 					Enabled: false,
 				},
 			},
@@ -66,8 +66,8 @@ func TestBuildMetricbeat(t *testing.T) {
 			Name:      "test",
 		},
 		Spec: logstashcrd.LogstashSpec{
-			Monitoring: logstashcrd.LogstashMonitoringSpec{
-				Metricbeat: &shared.MetricbeatMonitoringSpec{
+			Monitoring: shared.MonitoringSpec{
+				Metricbeat: &shared.MonitoringMetricbeatSpec{
 					Enabled: true,
 					ElasticsearchRef: shared.ElasticsearchRef{
 						ManagedElasticsearchRef: &shared.ElasticsearchManagedRef{
@@ -78,7 +78,9 @@ func TestBuildMetricbeat(t *testing.T) {
 				},
 			},
 			Deployment: logstashcrd.LogstashDeploymentSpec{
-				Replicas: 1,
+				Deployment: shared.Deployment{
+					Replicas: 1,
+				},
 			},
 		},
 	}
@@ -94,8 +96,8 @@ func TestBuildMetricbeat(t *testing.T) {
 			Name:      "test",
 		},
 		Spec: logstashcrd.LogstashSpec{
-			Monitoring: logstashcrd.LogstashMonitoringSpec{
-				Metricbeat: &shared.MetricbeatMonitoringSpec{
+			Monitoring: shared.MonitoringSpec{
+				Metricbeat: &shared.MonitoringMetricbeatSpec{
 					Enabled: true,
 					Version: "1.0.0",
 					ElasticsearchRef: shared.ElasticsearchRef{
@@ -119,7 +121,9 @@ func TestBuildMetricbeat(t *testing.T) {
 				},
 			},
 			Deployment: logstashcrd.LogstashDeploymentSpec{
-				Replicas: 3,
+				Deployment: shared.Deployment{
+					Replicas: 3,
+				},
 			},
 		},
 	}

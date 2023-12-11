@@ -82,7 +82,7 @@ func (r *caElasticsearchReconciler) Read(ctx context.Context, resource object.Mu
 		}
 
 		// Check if mirror CAApiPKI from Elasticsearch CRD
-		if es.IsTlsApiEnabled() {
+		if es.Spec.Tls.IsTlsEnabled() {
 			// Read secret that store Elasticsearch API certs
 			if err = r.Client.Get(ctx, types.NamespacedName{Namespace: es.Namespace, Name: elasticsearchcontrollers.GetSecretNameForTlsApi(es)}, sEs); err != nil {
 				if !k8serrors.IsNotFound(err) {

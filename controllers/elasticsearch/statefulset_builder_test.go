@@ -7,6 +7,7 @@ import (
 	"github.com/disaster37/operator-sdk-extra/pkg/test"
 	"github.com/stretchr/testify/assert"
 	elasticsearchcrd "github.com/webcenter-fr/elasticsearch-operator/apis/elasticsearch/v1"
+	"github.com/webcenter-fr/elasticsearch-operator/apis/shared"
 	appv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
@@ -34,12 +35,14 @@ func TestBuildStatefulset(t *testing.T) {
 		Spec: elasticsearchcrd.ElasticsearchSpec{
 			NodeGroups: []elasticsearchcrd.ElasticsearchNodeGroupSpec{
 				{
-					Name:     "all",
-					Replicas: 1,
+					Name: "all",
 					Roles: []string{
 						"master",
 						"data",
 						"ingest",
+					},
+					Deployment: shared.Deployment{
+						Replicas: 1,
 					},
 				},
 			},
@@ -63,7 +66,7 @@ func TestBuildStatefulset(t *testing.T) {
 			},
 			SetVMMaxMapCount: ptr.To[bool](true),
 			GlobalNodeGroup: elasticsearchcrd.ElasticsearchGlobalNodeGroupSpec{
-				AdditionalVolumes: []elasticsearchcrd.ElasticsearchVolumeSpec{
+				AdditionalVolumes: []shared.DeploymentVolumeSpec{
 					{
 						Name: "snapshot",
 						VolumeMount: corev1.VolumeMount{
@@ -93,7 +96,7 @@ func TestBuildStatefulset(t *testing.T) {
 				CacertsSecretRef: &corev1.LocalObjectReference{
 					Name: "custom-ca",
 				},
-				AntiAffinity: &elasticsearchcrd.ElasticsearchAntiAffinitySpec{
+				AntiAffinity: &shared.DeploymentAntiAffinitySpec{
 					TopologyKey: "rack",
 					Type:        "hard",
 				},
@@ -103,12 +106,12 @@ func TestBuildStatefulset(t *testing.T) {
 			},
 			NodeGroups: []elasticsearchcrd.ElasticsearchNodeGroupSpec{
 				{
-					Name:     "master",
-					Replicas: 3,
+					Name: "master",
+
 					Roles: []string{
 						"master",
 					},
-					Persistence: &elasticsearchcrd.ElasticsearchPersistenceSpec{
+					Persistence: &shared.DeploymentPersistenceSpec{
 						VolumeClaimSpec: &corev1.PersistentVolumeClaimSpec{
 							StorageClassName: ptr.To[string]("local-path"),
 							AccessModes: []corev1.PersistentVolumeAccessMode{
@@ -122,24 +125,27 @@ func TestBuildStatefulset(t *testing.T) {
 						},
 					},
 					Jvm: "-Xms1g -Xmx1g",
-					Resources: &corev1.ResourceRequirements{
-						Requests: corev1.ResourceList{
-							corev1.ResourceCPU:    resource.MustParse("1"),
-							corev1.ResourceMemory: resource.MustParse("1Gi"),
-						},
-						Limits: corev1.ResourceList{
-							corev1.ResourceCPU:    resource.MustParse("2"),
-							corev1.ResourceMemory: resource.MustParse("2Gi"),
+					Deployment: shared.Deployment{
+						Replicas: 3,
+						Resources: &corev1.ResourceRequirements{
+							Requests: corev1.ResourceList{
+								corev1.ResourceCPU:    resource.MustParse("1"),
+								corev1.ResourceMemory: resource.MustParse("1Gi"),
+							},
+							Limits: corev1.ResourceList{
+								corev1.ResourceCPU:    resource.MustParse("2"),
+								corev1.ResourceMemory: resource.MustParse("2Gi"),
+							},
 						},
 					},
 				},
 				{
-					Name:     "data",
-					Replicas: 3,
+					Name: "data",
+
 					Roles: []string{
 						"data",
 					},
-					Persistence: &elasticsearchcrd.ElasticsearchPersistenceSpec{
+					Persistence: &shared.DeploymentPersistenceSpec{
 						Volume: &corev1.VolumeSource{
 							HostPath: &corev1.HostPathVolumeSource{
 								Path: "/data/elasticsearch",
@@ -147,35 +153,38 @@ func TestBuildStatefulset(t *testing.T) {
 						},
 					},
 					Jvm: "-Xms30g -Xmx30g",
-					Resources: &corev1.ResourceRequirements{
-						Requests: corev1.ResourceList{
-							corev1.ResourceCPU:    resource.MustParse("5"),
-							corev1.ResourceMemory: resource.MustParse("30Gi"),
+					Deployment: shared.Deployment{
+						Replicas: 3,
+						Resources: &corev1.ResourceRequirements{
+							Requests: corev1.ResourceList{
+								corev1.ResourceCPU:    resource.MustParse("5"),
+								corev1.ResourceMemory: resource.MustParse("30Gi"),
+							},
+							Limits: corev1.ResourceList{
+								corev1.ResourceCPU:    resource.MustParse("8"),
+								corev1.ResourceMemory: resource.MustParse("64Gi"),
+							},
 						},
-						Limits: corev1.ResourceList{
-							corev1.ResourceCPU:    resource.MustParse("8"),
-							corev1.ResourceMemory: resource.MustParse("64Gi"),
+						NodeSelector: map[string]string{
+							"project": "elasticsearch",
 						},
-					},
-					NodeSelector: map[string]string{
-						"project": "elasticsearch",
-					},
-					Tolerations: []corev1.Toleration{
-						{
-							Key:      "project",
-							Operator: corev1.TolerationOpEqual,
-							Value:    "elasticsearch",
-							Effect:   corev1.TaintEffectNoSchedule,
+						Tolerations: []corev1.Toleration{
+							{
+								Key:      "project",
+								Operator: corev1.TolerationOpEqual,
+								Value:    "elasticsearch",
+								Effect:   corev1.TaintEffectNoSchedule,
+							},
 						},
 					},
 				},
 				{
-					Name:     "client",
-					Replicas: 2,
+					Name: "client",
+
 					Roles: []string{
 						"ingest",
 					},
-					Persistence: &elasticsearchcrd.ElasticsearchPersistenceSpec{
+					Persistence: &shared.DeploymentPersistenceSpec{
 						VolumeClaimSpec: &corev1.PersistentVolumeClaimSpec{
 							StorageClassName: ptr.To[string]("local-path"),
 							AccessModes: []corev1.PersistentVolumeAccessMode{
@@ -189,14 +198,17 @@ func TestBuildStatefulset(t *testing.T) {
 						},
 					},
 					Jvm: "-Xms2g -Xmx2g",
-					Resources: &corev1.ResourceRequirements{
-						Requests: corev1.ResourceList{
-							corev1.ResourceCPU:    resource.MustParse("2"),
-							corev1.ResourceMemory: resource.MustParse("2Gi"),
-						},
-						Limits: corev1.ResourceList{
-							corev1.ResourceCPU:    resource.MustParse("4"),
-							corev1.ResourceMemory: resource.MustParse("4Gi"),
+					Deployment: shared.Deployment{
+						Replicas: 2,
+						Resources: &corev1.ResourceRequirements{
+							Requests: corev1.ResourceList{
+								corev1.ResourceCPU:    resource.MustParse("2"),
+								corev1.ResourceMemory: resource.MustParse("2Gi"),
+							},
+							Limits: corev1.ResourceList{
+								corev1.ResourceCPU:    resource.MustParse("4"),
+								corev1.ResourceMemory: resource.MustParse("4Gi"),
+							},
 						},
 					},
 				},
@@ -241,7 +253,7 @@ func TestBuildStatefulset(t *testing.T) {
 			Name:      "test",
 		},
 		Spec: elasticsearchcrd.ElasticsearchSpec{
-			Tls: elasticsearchcrd.ElasticsearchTlsSpec{
+			Tls: shared.TlsSpec{
 				Enabled: ptr.To[bool](true),
 				CertificateSecretRef: &corev1.LocalObjectReference{
 					Name: "api-certificates",
@@ -249,12 +261,14 @@ func TestBuildStatefulset(t *testing.T) {
 			},
 			NodeGroups: []elasticsearchcrd.ElasticsearchNodeGroupSpec{
 				{
-					Name:     "all",
-					Replicas: 1,
+					Name: "all",
 					Roles: []string{
 						"master",
 						"data",
 						"ingest",
+					},
+					Deployment: shared.Deployment{
+						Replicas: 1,
 					},
 				},
 			},
@@ -319,8 +333,10 @@ func TestComputeJavaOpts(t *testing.T) {
 		Spec: elasticsearchcrd.ElasticsearchSpec{
 			NodeGroups: []elasticsearchcrd.ElasticsearchNodeGroupSpec{
 				{
-					Name:     "master",
-					Replicas: 1,
+					Name: "master",
+					Deployment: shared.Deployment{
+						Replicas: 1,
+					},
 				},
 			},
 		},
@@ -340,8 +356,10 @@ func TestComputeJavaOpts(t *testing.T) {
 			},
 			NodeGroups: []elasticsearchcrd.ElasticsearchNodeGroupSpec{
 				{
-					Name:     "master",
-					Replicas: 1,
+					Name: "master",
+					Deployment: shared.Deployment{
+						Replicas: 1,
+					},
 				},
 			},
 		},
@@ -361,9 +379,11 @@ func TestComputeJavaOpts(t *testing.T) {
 			},
 			NodeGroups: []elasticsearchcrd.ElasticsearchNodeGroupSpec{
 				{
-					Name:     "master",
-					Replicas: 1,
-					Jvm:      "-xmx1G -xms1G",
+					Name: "master",
+					Jvm:  "-xmx1G -xms1G",
+					Deployment: shared.Deployment{
+						Replicas: 1,
+					},
 				},
 			},
 		},
@@ -408,8 +428,10 @@ func TestComputeAntiAffinity(t *testing.T) {
 		Spec: elasticsearchcrd.ElasticsearchSpec{
 			NodeGroups: []elasticsearchcrd.ElasticsearchNodeGroupSpec{
 				{
-					Name:     "master",
-					Replicas: 1,
+					Name: "master",
+					Deployment: shared.Deployment{
+						Replicas: 1,
+					},
 				},
 			},
 		},
@@ -445,15 +467,17 @@ func TestComputeAntiAffinity(t *testing.T) {
 		},
 		Spec: elasticsearchcrd.ElasticsearchSpec{
 			GlobalNodeGroup: elasticsearchcrd.ElasticsearchGlobalNodeGroupSpec{
-				AntiAffinity: &elasticsearchcrd.ElasticsearchAntiAffinitySpec{
+				AntiAffinity: &shared.DeploymentAntiAffinitySpec{
 					Type:        "hard",
 					TopologyKey: "topology.kubernetes.io/zone",
 				},
 			},
 			NodeGroups: []elasticsearchcrd.ElasticsearchNodeGroupSpec{
 				{
-					Name:     "master",
-					Replicas: 1,
+					Name: "master",
+					Deployment: shared.Deployment{
+						Replicas: 1,
+					},
 				},
 			},
 		},
@@ -486,17 +510,20 @@ func TestComputeAntiAffinity(t *testing.T) {
 		},
 		Spec: elasticsearchcrd.ElasticsearchSpec{
 			GlobalNodeGroup: elasticsearchcrd.ElasticsearchGlobalNodeGroupSpec{
-				AntiAffinity: &elasticsearchcrd.ElasticsearchAntiAffinitySpec{
+				AntiAffinity: &shared.DeploymentAntiAffinitySpec{
 					Type:        "soft",
 					TopologyKey: "topology.kubernetes.io/zone",
 				},
 			},
 			NodeGroups: []elasticsearchcrd.ElasticsearchNodeGroupSpec{
 				{
-					Name:     "master",
-					Replicas: 1,
-					AntiAffinity: &elasticsearchcrd.ElasticsearchAntiAffinitySpec{
+					Name: "master",
+
+					AntiAffinity: &shared.DeploymentAntiAffinitySpec{
 						Type: "hard",
+					},
+					Deployment: shared.Deployment{
+						Replicas: 1,
 					},
 				},
 			},
@@ -538,8 +565,10 @@ func TestComputeEnvFroms(t *testing.T) {
 		Spec: elasticsearchcrd.ElasticsearchSpec{
 			NodeGroups: []elasticsearchcrd.ElasticsearchNodeGroupSpec{
 				{
-					Name:     "master",
-					Replicas: 1,
+					Name: "master",
+					Deployment: shared.Deployment{
+						Replicas: 1,
+					},
 				},
 			},
 		},
@@ -567,8 +596,10 @@ func TestComputeEnvFroms(t *testing.T) {
 			},
 			NodeGroups: []elasticsearchcrd.ElasticsearchNodeGroupSpec{
 				{
-					Name:     "master",
-					Replicas: 1,
+					Name: "master",
+					Deployment: shared.Deployment{
+						Replicas: 1,
+					},
 				},
 			},
 		},
@@ -613,20 +644,22 @@ func TestComputeEnvFroms(t *testing.T) {
 			},
 			NodeGroups: []elasticsearchcrd.ElasticsearchNodeGroupSpec{
 				{
-					Name:     "master",
-					Replicas: 1,
-					EnvFrom: []corev1.EnvFromSource{
-						{
-							ConfigMapRef: &corev1.ConfigMapEnvSource{
-								LocalObjectReference: corev1.LocalObjectReference{
-									Name: "test",
+					Name: "master",
+					Deployment: shared.Deployment{
+						Replicas: 1,
+						EnvFrom: []corev1.EnvFromSource{
+							{
+								ConfigMapRef: &corev1.ConfigMapEnvSource{
+									LocalObjectReference: corev1.LocalObjectReference{
+										Name: "test",
+									},
 								},
 							},
-						},
-						{
-							ConfigMapRef: &corev1.ConfigMapEnvSource{
-								LocalObjectReference: corev1.LocalObjectReference{
-									Name: "test3",
+							{
+								ConfigMapRef: &corev1.ConfigMapEnvSource{
+									LocalObjectReference: corev1.LocalObjectReference{
+										Name: "test3",
+									},
 								},
 							},
 						},

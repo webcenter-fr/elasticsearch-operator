@@ -48,8 +48,8 @@ func TestBuildMetricbeat(t *testing.T) {
 			Name:      "test",
 		},
 		Spec: elasticsearchcrd.ElasticsearchSpec{
-			Monitoring: elasticsearchcrd.ElasticsearchMonitoringSpec{
-				Metricbeat: &shared.MetricbeatMonitoringSpec{
+			Monitoring: shared.MonitoringSpec{
+				Metricbeat: &shared.MonitoringMetricbeatSpec{
 					Enabled: false,
 				},
 			},
@@ -67,8 +67,8 @@ func TestBuildMetricbeat(t *testing.T) {
 			Name:      "test",
 		},
 		Spec: elasticsearchcrd.ElasticsearchSpec{
-			Monitoring: elasticsearchcrd.ElasticsearchMonitoringSpec{
-				Metricbeat: &shared.MetricbeatMonitoringSpec{
+			Monitoring: shared.MonitoringSpec{
+				Metricbeat: &shared.MonitoringMetricbeatSpec{
 					Enabled: true,
 					ElasticsearchRef: shared.ElasticsearchRef{
 						ManagedElasticsearchRef: &shared.ElasticsearchManagedRef{
@@ -80,8 +80,10 @@ func TestBuildMetricbeat(t *testing.T) {
 			},
 			NodeGroups: []elasticsearchcrd.ElasticsearchNodeGroupSpec{
 				{
-					Name:     "test",
-					Replicas: 1,
+					Name: "test",
+					Deployment: shared.Deployment{
+						Replicas: 1,
+					},
 				},
 			},
 		},
@@ -98,8 +100,8 @@ func TestBuildMetricbeat(t *testing.T) {
 			Name:      "test",
 		},
 		Spec: elasticsearchcrd.ElasticsearchSpec{
-			Monitoring: elasticsearchcrd.ElasticsearchMonitoringSpec{
-				Metricbeat: &shared.MetricbeatMonitoringSpec{
+			Monitoring: shared.MonitoringSpec{
+				Metricbeat: &shared.MonitoringMetricbeatSpec{
 					Enabled: true,
 					Version: "1.0.0",
 					ElasticsearchRef: shared.ElasticsearchRef{
@@ -124,8 +126,10 @@ func TestBuildMetricbeat(t *testing.T) {
 			},
 			NodeGroups: []elasticsearchcrd.ElasticsearchNodeGroupSpec{
 				{
-					Name:     "test",
-					Replicas: 1,
+					Name: "test",
+					Deployment: shared.Deployment{
+						Replicas: 1,
+					},
 				},
 			},
 		},
@@ -142,8 +146,8 @@ func TestBuildMetricbeat(t *testing.T) {
 			Name:      "test",
 		},
 		Spec: elasticsearchcrd.ElasticsearchSpec{
-			Monitoring: elasticsearchcrd.ElasticsearchMonitoringSpec{
-				Metricbeat: &shared.MetricbeatMonitoringSpec{
+			Monitoring: shared.MonitoringSpec{
+				Metricbeat: &shared.MonitoringMetricbeatSpec{
 					Enabled: true,
 					ElasticsearchRef: shared.ElasticsearchRef{
 						ManagedElasticsearchRef: &shared.ElasticsearchManagedRef{
@@ -153,13 +157,15 @@ func TestBuildMetricbeat(t *testing.T) {
 					},
 				},
 			},
-			Tls: elasticsearchcrd.ElasticsearchTlsSpec{
+			Tls: shared.TlsSpec{
 				Enabled: ptr.To[bool](false),
 			},
 			NodeGroups: []elasticsearchcrd.ElasticsearchNodeGroupSpec{
 				{
-					Name:     "test",
-					Replicas: 1,
+					Name: "test",
+					Deployment: shared.Deployment{
+						Replicas: 1,
+					},
 				},
 			},
 		},

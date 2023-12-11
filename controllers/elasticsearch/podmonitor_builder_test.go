@@ -7,6 +7,7 @@ import (
 	monitoringv1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1"
 	"github.com/stretchr/testify/assert"
 	elasticsearchcrd "github.com/webcenter-fr/elasticsearch-operator/apis/elasticsearch/v1"
+	"github.com/webcenter-fr/elasticsearch-operator/apis/shared"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes/scheme"
 )
@@ -42,8 +43,8 @@ func TestBuildPodMonitor(t *testing.T) {
 			Name:      "test",
 		},
 		Spec: elasticsearchcrd.ElasticsearchSpec{
-			Monitoring: elasticsearchcrd.ElasticsearchMonitoringSpec{
-				Prometheus: &elasticsearchcrd.ElasticsearchPrometheusSpec{
+			Monitoring: shared.MonitoringSpec{
+				Prometheus: &shared.MonitoringPrometheusSpec{
 					Enabled: false,
 				},
 			},
@@ -60,8 +61,8 @@ func TestBuildPodMonitor(t *testing.T) {
 			Name:      "test",
 		},
 		Spec: elasticsearchcrd.ElasticsearchSpec{
-			Monitoring: elasticsearchcrd.ElasticsearchMonitoringSpec{
-				Prometheus: &elasticsearchcrd.ElasticsearchPrometheusSpec{
+			Monitoring: shared.MonitoringSpec{
+				Prometheus: &shared.MonitoringPrometheusSpec{
 					Enabled: true,
 				},
 			},

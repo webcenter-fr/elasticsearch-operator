@@ -60,12 +60,14 @@ func doCreateKibanaStep() test.TestStep {
 					Version: "8.6.0",
 					NodeGroups: []elasticsearchcrd.ElasticsearchNodeGroupSpec{
 						{
-							Name:     "all",
-							Replicas: 1,
+							Name: "all",
 							Roles: []string{
 								"master",
 								"client",
 								"data",
+							},
+							Deployment: shared.Deployment{
+								Replicas: 1,
 							},
 						},
 					},
@@ -102,15 +104,15 @@ func doCreateKibanaStep() test.TestStep {
 				},
 				Spec: kibanacrd.KibanaSpec{
 					Version: "8.6.0",
-					Endpoint: kibanacrd.KibanaEndpointSpec{
-						Ingress: &kibanacrd.KibanaIngressSpec{
+					Endpoint: shared.EndpointSpec{
+						Ingress: &shared.EndpointIngressSpec{
 							Enabled: true,
 							Host:    "test.cluster.local",
 							SecretRef: &corev1.LocalObjectReference{
 								Name: "test-tls",
 							},
 						},
-						LoadBalancer: &kibanacrd.KibanaLoadBalancerSpec{
+						LoadBalancer: &shared.EndpointLoadBalancerSpec{
 							Enabled: true,
 						},
 					},
@@ -120,10 +122,12 @@ func doCreateKibanaStep() test.TestStep {
 						},
 					},
 					Deployment: kibanacrd.KibanaDeploymentSpec{
-						Replicas: 2,
+						Deployment: shared.Deployment{
+							Replicas: 2,
+						},
 					},
-					Monitoring: kibanacrd.KibanaMonitoringSpec{
-						Prometheus: &kibanacrd.KibanaPrometheusSpec{
+					Monitoring: shared.MonitoringSpec{
+						Prometheus: &shared.MonitoringPrometheusSpec{
 							Enabled: true,
 						},
 					},

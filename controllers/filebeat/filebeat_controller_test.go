@@ -59,12 +59,14 @@ func doCreateFilebeatStep() test.TestStep {
 					Version: "8.6.0",
 					NodeGroups: []elasticsearchcrd.ElasticsearchNodeGroupSpec{
 						{
-							Name:     "all",
-							Replicas: 1,
+							Name: "all",
 							Roles: []string{
 								"master",
 								"client",
 								"data",
+							},
+							Deployment: shared.Deployment{
+								Replicas: 1,
 							},
 						},
 					},
@@ -126,7 +128,9 @@ func doCreateFilebeatStep() test.TestStep {
 						},
 					},
 					Deployment: beatcrd.FilebeatDeploymentSpec{
-						Replicas: 2,
+						Deployment: shared.Deployment{
+							Replicas: 2,
+						},
 					},
 					Config: map[string]string{
 						"filebeat.yml": `
@@ -137,7 +141,7 @@ queue.type: persisted
 					Module: map[string]string{
 						"test.conf": "test",
 					},
-					Ingresses: []beatcrd.FilebeatIngress{
+					Ingresses: []shared.Ingress{
 						{
 							Name:                  "syslog",
 							ContainerPort:         601,

@@ -11,7 +11,7 @@ import (
 // It return nil if Loadbalancer is disabled
 func buildLoadbalancers(kb *kibanacrd.Kibana) (services []corev1.Service, err error) {
 
-	if !kb.IsLoadBalancerEnabled() {
+	if !kb.Spec.Endpoint.IsLoadBalancerEnabled() {
 		return nil, nil
 	}
 

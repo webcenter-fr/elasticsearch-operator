@@ -14,6 +14,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	elasticsearchcrd "github.com/webcenter-fr/elasticsearch-operator/apis/elasticsearch/v1"
 	logstashcrd "github.com/webcenter-fr/elasticsearch-operator/apis/logstash/v1"
+	"github.com/webcenter-fr/elasticsearch-operator/apis/shared"
 	sharedcrd "github.com/webcenter-fr/elasticsearch-operator/apis/shared"
 	appv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -59,12 +60,15 @@ func doCreateLogstashStep() test.TestStep {
 					Version: "8.6.0",
 					NodeGroups: []elasticsearchcrd.ElasticsearchNodeGroupSpec{
 						{
-							Name:     "all",
-							Replicas: 1,
+							Name: "all",
+
 							Roles: []string{
 								"master",
 								"client",
 								"data",
+							},
+							Deployment: sharedcrd.Deployment{
+								Replicas: 1,
 							},
 						},
 					},
@@ -108,7 +112,9 @@ func doCreateLogstashStep() test.TestStep {
 						},
 					},
 					Deployment: logstashcrd.LogstashDeploymentSpec{
-						Replicas: 2,
+						Deployment: sharedcrd.Deployment{
+							Replicas: 2,
+						},
 					},
 					Config: map[string]string{
 						"logstash.yml": `
@@ -122,7 +128,7 @@ queue.type: persisted
 					Pattern: map[string]string{
 						"pattern.conf": "test",
 					},
-					Ingresses: []logstashcrd.LogstashIngress{
+					Ingresses: []shared.Ingress{
 						{
 							Name:                  "filebeat",
 							ContainerPort:         5003,

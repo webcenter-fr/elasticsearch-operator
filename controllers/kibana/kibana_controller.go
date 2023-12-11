@@ -272,7 +272,7 @@ func (h *KibanaReconciler) computeKibanaUrl(ctx context.Context, kb *kibanacrd.K
 		url    string
 	)
 
-	if kb.IsIngressEnabled() {
+	if kb.Spec.Endpoint.IsIngressEnabled() {
 		url = kb.Spec.Endpoint.Ingress.Host
 
 		if kb.Spec.Endpoint.Ingress.SecretRef != nil {
@@ -280,7 +280,7 @@ func (h *KibanaReconciler) computeKibanaUrl(ctx context.Context, kb *kibanacrd.K
 		} else {
 			scheme = "http"
 		}
-	} else if kb.IsLoadBalancerEnabled() {
+	} else if kb.Spec.Endpoint.IsLoadBalancerEnabled() {
 		// Need to get lb service to get IP and port
 		service := &corev1.Service{}
 		if err = h.Client.Get(ctx, types.NamespacedName{Namespace: kb.Namespace, Name: GetLoadBalancerName(kb)}, service); err != nil {
@@ -288,14 +288,14 @@ func (h *KibanaReconciler) computeKibanaUrl(ctx context.Context, kb *kibanacrd.K
 		}
 
 		url = fmt.Sprintf("%s:9200", service.Spec.LoadBalancerIP)
-		if kb.IsTlsEnabled() {
+		if kb.Spec.Tls.IsTlsEnabled() {
 			scheme = "https"
 		} else {
 			scheme = "http"
 		}
 	} else {
 		url = fmt.Sprintf("%s.%s.svc:9200", GetServiceName(kb), kb.Namespace)
-		if kb.IsTlsEnabled() {
+		if kb.Spec.Tls.IsTlsEnabled() {
 			scheme = "https"
 		} else {
 			scheme = "http"

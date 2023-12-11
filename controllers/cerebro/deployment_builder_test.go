@@ -6,6 +6,7 @@ import (
 	"github.com/disaster37/operator-sdk-extra/pkg/test"
 	"github.com/stretchr/testify/assert"
 	cerebrocrd "github.com/webcenter-fr/elasticsearch-operator/apis/cerebro/v1"
+	"github.com/webcenter-fr/elasticsearch-operator/apis/shared"
 	appv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
@@ -31,7 +32,9 @@ func TestBuildDeployment(t *testing.T) {
 		},
 		Spec: cerebrocrd.CerebroSpec{
 			Deployment: cerebrocrd.CerebroDeploymentSpec{
-				Replicas: 1,
+				Deployment: shared.Deployment{
+					Replicas: 1,
+				},
 			},
 		},
 	}
@@ -48,39 +51,41 @@ func TestBuildDeployment(t *testing.T) {
 		},
 		Spec: cerebrocrd.CerebroSpec{
 			Deployment: cerebrocrd.CerebroDeploymentSpec{
-				Replicas: 1,
-				Resources: &corev1.ResourceRequirements{
-					Requests: corev1.ResourceList{
-						corev1.ResourceCPU:    resource.MustParse("2"),
-						corev1.ResourceMemory: resource.MustParse("2Gi"),
+				Deployment: shared.Deployment{
+					Replicas: 1,
+					Resources: &corev1.ResourceRequirements{
+						Requests: corev1.ResourceList{
+							corev1.ResourceCPU:    resource.MustParse("2"),
+							corev1.ResourceMemory: resource.MustParse("2Gi"),
+						},
+						Limits: corev1.ResourceList{
+							corev1.ResourceCPU:    resource.MustParse("4"),
+							corev1.ResourceMemory: resource.MustParse("4Gi"),
+						},
 					},
-					Limits: corev1.ResourceList{
-						corev1.ResourceCPU:    resource.MustParse("4"),
-						corev1.ResourceMemory: resource.MustParse("4Gi"),
+					NodeSelector: map[string]string{
+						"project": "kibana",
 					},
-				},
-				NodeSelector: map[string]string{
-					"project": "kibana",
-				},
-				Tolerations: []corev1.Toleration{
-					{
-						Key:      "project",
-						Operator: corev1.TolerationOpEqual,
-						Value:    "kibana",
-						Effect:   corev1.TaintEffectNoSchedule,
+					Tolerations: []corev1.Toleration{
+						{
+							Key:      "project",
+							Operator: corev1.TolerationOpEqual,
+							Value:    "kibana",
+							Effect:   corev1.TaintEffectNoSchedule,
+						},
 					},
-				},
-				Env: []corev1.EnvVar{
-					{
-						Name:  "env1",
-						Value: "value1",
+					Env: []corev1.EnvVar{
+						{
+							Name:  "env1",
+							Value: "value1",
+						},
 					},
-				},
-				EnvFrom: []corev1.EnvFromSource{
-					{
-						ConfigMapRef: &corev1.ConfigMapEnvSource{
-							LocalObjectReference: corev1.LocalObjectReference{
-								Name: "test",
+					EnvFrom: []corev1.EnvFromSource{
+						{
+							ConfigMapRef: &corev1.ConfigMapEnvSource{
+								LocalObjectReference: corev1.LocalObjectReference{
+									Name: "test",
+								},
 							},
 						},
 					},

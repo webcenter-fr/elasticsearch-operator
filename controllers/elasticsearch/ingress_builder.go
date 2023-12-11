@@ -28,7 +28,7 @@ func buildIngresses(es *elasticsearchcrd.Elasticsearch) (ingresses []networkingv
 
 	// Add default annotation
 	defaultAnnotations := map[string]string{}
-	if es.IsTlsApiEnabled() {
+	if es.Spec.Tls.IsTlsEnabled() {
 		defaultAnnotations["nginx.ingress.kubernetes.io/force-ssl-redirect"] = "true"
 		defaultAnnotations["nginx.ingress.kubernetes.io/backend-protocol"] = "HTTPS"
 	}

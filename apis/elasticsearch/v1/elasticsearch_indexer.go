@@ -23,7 +23,7 @@ func SetupElasticsearchIndexer(k8sManager manager.Manager) (err error) {
 
 	if err = k8sManager.GetFieldIndexer().IndexField(context.Background(), &Elasticsearch{}, "spec.tls.certificateSecretRef.name", func(o client.Object) []string {
 		p := o.(*Elasticsearch)
-		if p.IsTlsApiEnabled() && !p.IsSelfManagedSecretForTlsApi() {
+		if p.Spec.Tls.IsTlsEnabled() && !p.Spec.Tls.IsSelfManagedSecretForTls() {
 			return []string{p.Spec.Tls.CertificateSecretRef.Name}
 		}
 		return []string{}
@@ -175,7 +175,7 @@ func SetupElasticsearchIndexer(k8sManager manager.Manager) (err error) {
 
 	if err = k8sManager.GetFieldIndexer().IndexField(context.Background(), &Elasticsearch{}, "spec.monitoring.metricbeat.elasticsearchRef.managed.name", func(o client.Object) []string {
 		p := o.(*Elasticsearch)
-		if p.IsMetricbeatMonitoring() {
+		if p.Spec.Monitoring.IsMetricbeatMonitoring(p.NumberOfReplicas()) {
 			return []string{p.Spec.Monitoring.Metricbeat.ElasticsearchRef.ManagedElasticsearchRef.Name}
 		}
 		return []string{}
@@ -185,7 +185,7 @@ func SetupElasticsearchIndexer(k8sManager manager.Manager) (err error) {
 
 	if err = k8sManager.GetFieldIndexer().IndexField(context.Background(), &Elasticsearch{}, "spec.monitoring.metricbeat.elasticsearchRef.managed.fullname", func(o client.Object) []string {
 		p := o.(*Elasticsearch)
-		if p.IsMetricbeatMonitoring() {
+		if p.Spec.Monitoring.IsMetricbeatMonitoring(p.NumberOfReplicas()) {
 			if p.Spec.Monitoring.Metricbeat.ElasticsearchRef.ManagedElasticsearchRef.Namespace != "" {
 				return []string{fmt.Sprintf("%s/%s", p.Spec.Monitoring.Metricbeat.ElasticsearchRef.ManagedElasticsearchRef.Namespace, p.Spec.Monitoring.Metricbeat.ElasticsearchRef.ManagedElasticsearchRef.Name)}
 			}
@@ -198,7 +198,7 @@ func SetupElasticsearchIndexer(k8sManager manager.Manager) (err error) {
 
 	if err = k8sManager.GetFieldIndexer().IndexField(context.Background(), &Elasticsearch{}, "spec.monitoring.metricbeat.elasticsearchRef.elasticsearchCASecretRef.name", func(o client.Object) []string {
 		p := o.(*Elasticsearch)
-		if p.IsMetricbeatMonitoring() && p.Spec.Monitoring.Metricbeat.ElasticsearchRef.ElasticsearchCaSecretRef != nil {
+		if p.Spec.Monitoring.IsMetricbeatMonitoring(p.NumberOfReplicas()) && p.Spec.Monitoring.Metricbeat.ElasticsearchRef.ElasticsearchCaSecretRef != nil {
 			return []string{p.Spec.Monitoring.Metricbeat.ElasticsearchRef.ElasticsearchCaSecretRef.Name}
 		}
 		return []string{}
@@ -208,7 +208,7 @@ func SetupElasticsearchIndexer(k8sManager manager.Manager) (err error) {
 
 	if err = k8sManager.GetFieldIndexer().IndexField(context.Background(), &Elasticsearch{}, "spec.monitoring.metricbeat.elasticsearchRef.secretRef.name", func(o client.Object) []string {
 		p := o.(*Elasticsearch)
-		if p.IsMetricbeatMonitoring() && p.Spec.Monitoring.Metricbeat.ElasticsearchRef.IsExternal() && p.Spec.Monitoring.Metricbeat.ElasticsearchRef.SecretRef != nil {
+		if p.Spec.Monitoring.IsMetricbeatMonitoring(p.NumberOfReplicas()) && p.Spec.Monitoring.Metricbeat.ElasticsearchRef.IsExternal() && p.Spec.Monitoring.Metricbeat.ElasticsearchRef.SecretRef != nil {
 			return []string{p.Spec.Monitoring.Metricbeat.ElasticsearchRef.SecretRef.Name}
 		}
 		return []string{}

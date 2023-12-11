@@ -12,7 +12,7 @@ import (
 func SetupKibanaIndexer(k8sManager manager.Manager) (err error) {
 	if err = k8sManager.GetFieldIndexer().IndexField(context.Background(), &Kibana{}, "spec.tls.certificateSecretRef.name", func(o client.Object) []string {
 		p := o.(*Kibana)
-		if p.IsTlsEnabled() && !p.IsSelfManagedSecretForTls() {
+		if p.Spec.Tls.IsTlsEnabled() && !p.Spec.Tls.IsSelfManagedSecretForTls() {
 			return []string{p.Spec.Tls.CertificateSecretRef.Name}
 		}
 		return []string{}

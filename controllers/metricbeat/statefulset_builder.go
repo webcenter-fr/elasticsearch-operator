@@ -243,7 +243,7 @@ func buildStatefulsets(mb *beatcrd.Metricbeat, es *elasticsearchcrd.Elasticsearc
 	}
 
 	// Compute mount CA elasticsearch
-	if (mb.Spec.ElasticsearchRef.IsManaged() && es.IsTlsApiEnabled()) || (mb.Spec.ElasticsearchRef.IsExternal() && mb.Spec.ElasticsearchRef.ElasticsearchCaSecretRef != nil) {
+	if (mb.Spec.ElasticsearchRef.IsManaged() && es.Spec.Tls.IsTlsEnabled()) || (mb.Spec.ElasticsearchRef.IsExternal() && mb.Spec.ElasticsearchRef.ElasticsearchCaSecretRef != nil) {
 		cb.WithVolumeMount([]corev1.VolumeMount{
 			{
 				Name:      "ca-elasticsearch",
@@ -469,7 +469,7 @@ chown -v metricbeat:metricbeat /mnt/data
 	}
 
 	// Elasticsearch CA secret
-	if mb.Spec.ElasticsearchRef.IsManaged() && es.IsTlsApiEnabled() && es.IsSelfManagedSecretForTlsApi() {
+	if mb.Spec.ElasticsearchRef.IsManaged() && es.Spec.Tls.IsTlsEnabled() && es.Spec.Tls.IsSelfManagedSecretForTls() {
 		ptb.WithVolumes([]corev1.Volume{
 			{
 				Name: "ca-elasticsearch",
@@ -480,7 +480,7 @@ chown -v metricbeat:metricbeat /mnt/data
 				},
 			},
 		}, k8sbuilder.Merge)
-	} else if (mb.Spec.ElasticsearchRef.IsExternal() && mb.Spec.ElasticsearchRef.ElasticsearchCaSecretRef != nil) || (mb.Spec.ElasticsearchRef.IsManaged() && es.IsTlsApiEnabled() && mb.Spec.ElasticsearchRef.ElasticsearchCaSecretRef != nil) {
+	} else if (mb.Spec.ElasticsearchRef.IsExternal() && mb.Spec.ElasticsearchRef.ElasticsearchCaSecretRef != nil) || (mb.Spec.ElasticsearchRef.IsManaged() && es.Spec.Tls.IsTlsEnabled() && mb.Spec.ElasticsearchRef.ElasticsearchCaSecretRef != nil) {
 		ptb.WithVolumes([]corev1.Volume{
 			{
 				Name: "ca-elasticsearch",

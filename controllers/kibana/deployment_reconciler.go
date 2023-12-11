@@ -101,8 +101,8 @@ func (r *deploymentReconciler) Read(ctx context.Context, resource object.MultiPh
 	}
 
 	// Read APi Crt if needed
-	if o.IsTlsEnabled() {
-		if o.IsSelfManagedSecretForTls() {
+	if o.Spec.Tls.IsTlsEnabled() {
+		if o.Spec.Tls.IsSelfManagedSecretForTls() {
 			if err = r.Client.Get(ctx, types.NamespacedName{Namespace: o.Namespace, Name: GetSecretNameForTls(o)}, s); err != nil {
 				if !k8serrors.IsNotFound(err) {
 					return read, res, errors.Wrapf(err, "Error when read secret %s", GetSecretNameForTls(o))
@@ -126,8 +126,8 @@ func (r *deploymentReconciler) Read(ctx context.Context, resource object.MultiPh
 	}
 
 	// Read Custom CA Elasticsearch if needed
-	if (o.Spec.ElasticsearchRef.IsManaged() && es.IsTlsApiEnabled()) || o.Spec.ElasticsearchRef.ElasticsearchCaSecretRef != nil {
-		if o.Spec.ElasticsearchRef.IsManaged() && es.IsTlsApiEnabled() && es.IsSelfManagedSecretForTlsApi() {
+	if (o.Spec.ElasticsearchRef.IsManaged() && es.Spec.Tls.IsTlsEnabled()) || o.Spec.ElasticsearchRef.ElasticsearchCaSecretRef != nil {
+		if o.Spec.ElasticsearchRef.IsManaged() && es.Spec.Tls.IsTlsEnabled() && es.Spec.Tls.IsSelfManagedSecretForTls() {
 			if err = r.Client.Get(ctx, types.NamespacedName{Namespace: o.Namespace, Name: GetSecretNameForCAElasticsearch(o)}, s); err != nil {
 				if !k8serrors.IsNotFound(err) {
 					return read, res, errors.Wrapf(err, "Error when read secret %s", GetSecretNameForCAElasticsearch(o))

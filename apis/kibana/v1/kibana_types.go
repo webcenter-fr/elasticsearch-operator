@@ -20,7 +20,6 @@ import (
 	"github.com/disaster37/operator-sdk-extra/pkg/apis"
 	"github.com/webcenter-fr/elasticsearch-operator/apis/shared"
 	corev1 "k8s.io/api/core/v1"
-	networkingv1 "k8s.io/api/networking/v1"
 	policyv1 "k8s.io/api/policy/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -61,7 +60,7 @@ type KibanaSpec struct {
 	// You can set ingress and / or load balancer
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
 	// +optional
-	Endpoint KibanaEndpointSpec `json:"endpoint,omitempty"`
+	Endpoint shared.EndpointSpec `json:"endpoint,omitempty"`
 
 	// Config is the Kibana config
 	// The key is the file stored on kibana/config
@@ -77,7 +76,7 @@ type KibanaSpec struct {
 	// Tls permit to set the TLS setting for Kibana access
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
 	// +optional
-	Tls KibanaTlsSpec `json:"tls,omitempty"`
+	Tls shared.TlsSpec `json:"tls,omitempty"`
 
 	// Deployment permit to set the deployment settings
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
@@ -88,202 +87,16 @@ type KibanaSpec struct {
 	// Default, it not monitor cluster
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
 	// +optional
-	Monitoring KibanaMonitoringSpec `json:"monitoring,omitempty"`
-}
-
-type KibanaMonitoringSpec struct {
-
-	// Prometheus permit to monitor cluster with Prometheus and graphana (via exporter)
-	// +operator-sdk:csv:customresourcedefinitions:type=spec
-	// +optional
-	Prometheus *KibanaPrometheusSpec `json:"prometheus,omitempty"`
-
-	// Metricbeat permit to monitor cluster with metricbeat and to dedicated monitoring cluster
-	// +operator-sdk:csv:customresourcedefinitions:type=spec
-	// +optional
-	Metricbeat *shared.MetricbeatMonitoringSpec `json:"metricbeat,omitempty"`
-}
-
-type KibanaPrometheusSpec struct {
-
-	// Enabled permit to enable Prometheus monitoring
-	// It will deploy exporter for Kibana and add podMonitor policy
-	// Default to false
-	// +operator-sdk:csv:customresourcedefinitions:type=spec
-	// +optional
-	// +kubebuilder:default=false
-	Enabled bool `json:"enabled,omitempty"`
-
-	// Url is the plugin URL where to download exporter
-	// Default is use project https://github.com/pjhampton/kibana-prometheus-exporter
-	// If version is set to latest, it use arbitrary: https://github.com/pjhampton/kibana-prometheus-exporter/releases/download/8.6.0/kibanaPrometheusExporter-8.6.0.zip
-	// +operator-sdk:csv:customresourcedefinitions:type=spec
-	// +optional
-	Url string `json:"url,omitempty"`
-}
-
-type KibanaEndpointSpec struct {
-	// Ingress permit to set ingress settings
-	// +operator-sdk:csv:customresourcedefinitions:type=spec
-	// +optional
-	Ingress *KibanaIngressSpec `json:"ingress,omitempty"`
-
-	// Load balancer permit to set load balancer settings
-	// +operator-sdk:csv:customresourcedefinitions:type=spec
-	// +optional
-	LoadBalancer *KibanaLoadBalancerSpec `json:"loadBalancer,omitempty"`
-}
-
-type KibanaLoadBalancerSpec struct {
-	// Enabled permit to enabled / disabled load balancer
-	// Cloud provider need to support it
-	// Default to false
-	// +operator-sdk:csv:customresourcedefinitions:type=spec
-	// +optional
-	// +kubebuilder:default=false
-	Enabled bool `json:"enabled,omitempty"`
-}
-
-type KibanaIngressSpec struct {
-
-	// Enabled permit to enabled / disabled ingress
-	// Default to false
-	// +operator-sdk:csv:customresourcedefinitions:type=spec
-	// +optional
-	// +kubebuilder:default=false
-	Enabled bool `json:"enabled,omitempty"`
-
-	// Host is the hostname to access on Kibana
-	// +operator-sdk:csv:customresourcedefinitions:type=spec
-	Host string `json:"host"`
-
-	// SecretRef is the secret ref that store certificates
-	// +operator-sdk:csv:customresourcedefinitions:type=spec
-	// +optional
-	SecretRef *corev1.LocalObjectReference `json:"secretRef,omitempty"`
-
-	// Labels to set in ingress
-	// +operator-sdk:csv:customresourcedefinitions:type=spec
-	// +optional
-	Labels map[string]string `json:"labels,omitempty"`
-
-	// Annotations to set in ingress
-	// +operator-sdk:csv:customresourcedefinitions:type=spec
-	// +optional
-	Annotations map[string]string `json:"annotations,omitempty"`
-
-	// IngressSpec it merge with expected ingress spec
-	// +operator-sdk:csv:customresourcedefinitions:type=spec
-	// +optional
-	IngressSpec *networkingv1.IngressSpec `json:"ingressSpec,omitempty"`
-}
-
-type KibanaTlsSpec struct {
-
-	// Enabled permit to enabled TLS on Kibana
-	// Default to false
-	// +operator-sdk:csv:customresourcedefinitions:type=spec
-	// +optional
-	// +kubebuilder:default=true
-	Enabled *bool `json:"enabled,omitempty"`
-
-	// SelfSignedCertificate permit to set self signed certificate settings
-	// +operator-sdk:csv:customresourcedefinitions:type=spec
-	// +optional
-	SelfSignedCertificate *KibanaSelfSignedCertificateSpec `json:"selfSignedCertificate,omitempty"`
-
-	// CertificateSecretRef is the secret that store your custom certificates.
-	// It need to have the following keys: tls.key, tls.crt and optionally ca.crt
-	// +operator-sdk:csv:customresourcedefinitions:type=spec
-	// +optional
-	CertificateSecretRef *corev1.LocalObjectReference `json:"certificateSecretRef,omitempty"`
-
-	// ValidityDays is the number of days that certificates are valid
-	// Default to 365
-	// +operator-sdk:csv:customresourcedefinitions:type=spec
-	// +optional
-	// +kubebuilder:default=365
-	ValidityDays *int `json:"validityDays,omitempty"`
-
-	// RenewalDays is the number of days before certificate expire to become effective renewal
-	// Default to 30
-	// +operator-sdk:csv:customresourcedefinitions:type=spec
-	// +optional
-	// +kubebuilder:default=30
-	RenewalDays *int `json:"renewalDays,omitempty"`
-
-	// KeySize is the key size when generate privates keys
-	// Default to 2048
-	// +operator-sdk:csv:customresourcedefinitions:type=spec
-	// +optional
-	// +kubebuilder:default=2048
-	KeySize *int `json:"keySize,omitempty"`
-}
-
-type KibanaSelfSignedCertificateSpec struct {
-
-	// AltIps permit to set subject alt names of type ip when generate certificate
-	// +operator-sdk:csv:customresourcedefinitions:type=spec
-	// +optional
-	AltIps []string `json:"altIPs,omitempty"`
-
-	// AltNames permit to set subject alt names of type dns when generate certificate
-	// +operator-sdk:csv:customresourcedefinitions:type=spec
-	// +optional
-	AltNames []string `json:"altNames,omitempty"`
+	Monitoring shared.MonitoringSpec `json:"monitoring,omitempty"`
 }
 
 type KibanaDeploymentSpec struct {
-	// Replicas is the number of replicas
-	// +operator-sdk:csv:customresourcedefinitions:type=spec
-	Replicas int32 `json:"replicas"`
+	shared.Deployment `json:",inline"`
 
 	// AntiAffinity permit to set anti affinity policy
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
 	// +optional
-	AntiAffinity *KibanaAntiAffinitySpec `json:"antiAffinity,omitempty"`
-
-	// Resources permit to set ressources on Kibana container
-	// +operator-sdk:csv:customresourcedefinitions:type=spec
-	// +optional
-	Resources *corev1.ResourceRequirements `json:"resources,omitempty"`
-
-	// Tolerations permit to set toleration on pod
-	// +operator-sdk:csv:customresourcedefinitions:type=spec
-	// +optional
-	Tolerations []corev1.Toleration `json:"tolerations,omitempty"`
-
-	// NodeSelector permit to set node selector on pod
-	// +operator-sdk:csv:customresourcedefinitions:type=spec
-	// +optional
-	NodeSelector map[string]string `json:"nodeSelector,omitempty"`
-
-	// Labels permit to set labels on containers
-	// +operator-sdk:csv:customresourcedefinitions:type=spec
-	// +optional
-	Labels map[string]string `json:"labels,omitempty"`
-
-	// Annotations permit to set annotation on deployment
-	// +operator-sdk:csv:customresourcedefinitions:type=spec
-	// +optional
-	Annotations map[string]string `json:"annotations,omitempty"`
-
-	// Env permit to set some environment variable on containers
-	// +operator-sdk:csv:customresourcedefinitions:type=spec
-	// +optional
-	Env []corev1.EnvVar `json:"env,omitempty"`
-
-	// EnvFrom permit to set some environment variable from config map or secret
-	// +operator-sdk:csv:customresourcedefinitions:type=spec
-	// +optional
-	EnvFrom []corev1.EnvFromSource `json:"envFrom,omitempty"`
-
-	// PodSpec is merged with expected pod
-	// It usefull to add some extra properties on pod spec
-	// +operator-sdk:csv:customresourcedefinitions:type=spec
-	// +optional
-	// +kubebuilder:pruning:PreserveUnknownFields
-	PodTemplate *corev1.PodTemplateSpec `json:"podTemplate,omitempty"`
+	AntiAffinity *shared.DeploymentAntiAffinitySpec `json:"antiAffinity,omitempty"`
 
 	// PodDisruptionBudget is the pod disruption budget policy
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
@@ -299,22 +112,6 @@ type KibanaDeploymentSpec struct {
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
 	// +optional
 	InitContainerResources *corev1.ResourceRequirements `json:"initContainerResources,omitempty"`
-}
-
-type KibanaAntiAffinitySpec struct {
-
-	// Type permit to set anti affinity as soft or hard
-	// +operator-sdk:csv:customresourcedefinitions:type=spec
-	// +kubebuilder:validation:Enum=soft;hard
-	// +kubebuilder:default=soft
-	Type string `json:"type"`
-
-	// TopologyKey is the topology key to use
-	// Default to kubernetes.io/hostname
-	// +operator-sdk:csv:customresourcedefinitions:type=spec
-	// +optional
-	// +kubebuilder:default=kubernetes.io/hostname
-	TopologyKey string `json:"topologyKey,omitempty"`
 }
 
 // KibanaStatus defines the observed state of Kibana

@@ -45,7 +45,9 @@ func TestBuildStatefulset(t *testing.T) {
 				},
 			},
 			Deployment: beatcrd.FilebeatDeploymentSpec{
-				Replicas: 1,
+				Deployment: shared.Deployment{
+					Replicas: 1,
+				},
 			},
 		},
 	}
@@ -69,7 +71,9 @@ func TestBuildStatefulset(t *testing.T) {
 		},
 		Spec: beatcrd.FilebeatSpec{
 			Deployment: beatcrd.FilebeatDeploymentSpec{
-				Replicas: 1,
+				Deployment: shared.Deployment{
+					Replicas: 1,
+				},
 			},
 			ElasticsearchRef: shared.ElasticsearchRef{
 				ExternalElasticsearchRef: &shared.ElasticsearchExternalRef{
@@ -96,7 +100,9 @@ func TestBuildStatefulset(t *testing.T) {
 		},
 		Spec: beatcrd.FilebeatSpec{
 			Deployment: beatcrd.FilebeatDeploymentSpec{
-				Replicas: 1,
+				Deployment: shared.Deployment{
+					Replicas: 1,
+				},
 			},
 			ElasticsearchRef: shared.ElasticsearchRef{
 				ExternalElasticsearchRef: &shared.ElasticsearchExternalRef{
@@ -147,7 +153,9 @@ func TestBuildStatefulset(t *testing.T) {
 				},
 			},
 			Deployment: beatcrd.FilebeatDeploymentSpec{
-				Replicas: 1,
+				Deployment: shared.Deployment{
+					Replicas: 1,
+				},
 			},
 		},
 	}
@@ -171,7 +179,9 @@ func TestBuildStatefulset(t *testing.T) {
 		},
 		Spec: beatcrd.FilebeatSpec{
 			Deployment: beatcrd.FilebeatDeploymentSpec{
-				Replicas: 1,
+				Deployment: shared.Deployment{
+					Replicas: 1,
+				},
 			},
 			LogstashRef: beatcrd.FilebeatLogstashRef{
 				ExternalLogstashRef: &beatcrd.FilebeatLogstashExternalRef{
@@ -195,7 +205,9 @@ func TestBuildStatefulset(t *testing.T) {
 		},
 		Spec: beatcrd.FilebeatSpec{
 			Deployment: beatcrd.FilebeatDeploymentSpec{
-				Replicas: 1,
+				Deployment: shared.Deployment{
+					Replicas: 1,
+				},
 			},
 			LogstashRef: beatcrd.FilebeatLogstashRef{
 				ExternalLogstashRef: &beatcrd.FilebeatLogstashExternalRef{
@@ -241,15 +253,43 @@ func TestBuildStatefulset(t *testing.T) {
 				},
 			},
 			Deployment: beatcrd.FilebeatDeploymentSpec{
-				Replicas: 1,
-				Resources: &corev1.ResourceRequirements{
-					Requests: corev1.ResourceList{
-						corev1.ResourceCPU:    resource.MustParse("2"),
-						corev1.ResourceMemory: resource.MustParse("2Gi"),
+				Deployment: shared.Deployment{
+					Replicas: 1,
+					Resources: &corev1.ResourceRequirements{
+						Requests: corev1.ResourceList{
+							corev1.ResourceCPU:    resource.MustParse("2"),
+							corev1.ResourceMemory: resource.MustParse("2Gi"),
+						},
+						Limits: corev1.ResourceList{
+							corev1.ResourceCPU:    resource.MustParse("4"),
+							corev1.ResourceMemory: resource.MustParse("4Gi"),
+						},
 					},
-					Limits: corev1.ResourceList{
-						corev1.ResourceCPU:    resource.MustParse("4"),
-						corev1.ResourceMemory: resource.MustParse("4Gi"),
+					NodeSelector: map[string]string{
+						"project": "filebeat",
+					},
+					Tolerations: []corev1.Toleration{
+						{
+							Key:      "project",
+							Operator: corev1.TolerationOpEqual,
+							Value:    "filebeat",
+							Effect:   corev1.TaintEffectNoSchedule,
+						},
+					},
+					Env: []corev1.EnvVar{
+						{
+							Name:  "env1",
+							Value: "value1",
+						},
+					},
+					EnvFrom: []corev1.EnvFromSource{
+						{
+							ConfigMapRef: &corev1.ConfigMapEnvSource{
+								LocalObjectReference: corev1.LocalObjectReference{
+									Name: "test",
+								},
+							},
+						},
 					},
 				},
 				InitContainerResources: &corev1.ResourceRequirements{
@@ -262,36 +302,11 @@ func TestBuildStatefulset(t *testing.T) {
 						corev1.ResourceMemory: resource.MustParse("500Mi"),
 					},
 				},
-				NodeSelector: map[string]string{
-					"project": "filebeat",
-				},
-				Tolerations: []corev1.Toleration{
-					{
-						Key:      "project",
-						Operator: corev1.TolerationOpEqual,
-						Value:    "filebeat",
-						Effect:   corev1.TaintEffectNoSchedule,
-					},
-				},
-				AntiAffinity: &beatcrd.FilebeatAntiAffinitySpec{
+				AntiAffinity: &shared.DeploymentAntiAffinitySpec{
 					TopologyKey: "rack",
 					Type:        "hard",
 				},
-				Env: []corev1.EnvVar{
-					{
-						Name:  "env1",
-						Value: "value1",
-					},
-				},
-				EnvFrom: []corev1.EnvFromSource{
-					{
-						ConfigMapRef: &corev1.ConfigMapEnvSource{
-							LocalObjectReference: corev1.LocalObjectReference{
-								Name: "test",
-							},
-						},
-					},
-				},
+
 				Ports: []corev1.ContainerPort{
 					{
 						Name:          "beat",
@@ -300,7 +315,7 @@ func TestBuildStatefulset(t *testing.T) {
 						HostPort:      1234,
 					},
 				},
-				Persistence: &beatcrd.FilebeatPersistenceSpec{
+				Persistence: &shared.DeploymentPersistenceSpec{
 					VolumeClaimSpec: &corev1.PersistentVolumeClaimSpec{
 						StorageClassName: ptr.To[string]("local-path"),
 						AccessModes: []corev1.PersistentVolumeAccessMode{

@@ -12,6 +12,7 @@ import (
 	"github.com/elastic/go-ucfg"
 	elasticsearchcrd "github.com/webcenter-fr/elasticsearch-operator/apis/elasticsearch/v1"
 	kibanacrd "github.com/webcenter-fr/elasticsearch-operator/apis/kibana/v1"
+	"github.com/webcenter-fr/elasticsearch-operator/apis/shared"
 	"github.com/webcenter-fr/elasticsearch-operator/controllers/elasticsearch"
 	localhelper "github.com/webcenter-fr/elasticsearch-operator/pkg/helper"
 	appv1 "k8s.io/api/apps/v1"
@@ -35,7 +36,7 @@ func buildDeployments(kb *kibanacrd.Kibana, es *elasticsearchcrd.Elasticsearch, 
 	checksumAnnotations := map[string]string{}
 
 	// Inject plugin for exporter Prometheus if needed
-	if kb.IsPrometheusMonitoring() {
+	if kb.Spec.Monitoring.IsPrometheusMonitoring() {
 		kb.Spec.PluginsList = append(kb.Spec.PluginsList, GetExporterUrl(kb))
 	}
 
@@ -150,7 +151,7 @@ func buildDeployments(kb *kibanacrd.Kibana, es *elasticsearchcrd.Elasticsearch, 
 				Value: probePath,
 			},
 		}, k8sbuilder.Merge)
-	if kb.IsTlsEnabled() {
+	if kb.Spec.Tls.IsTlsEnabled() {
 		cb.WithEnv([]corev1.EnvVar{
 			{
 				Name:  "PROBE_SCHEME",
@@ -533,7 +534,7 @@ fi
 		}, k8sbuilder.Merge)
 	}
 
-	if kb.IsTlsEnabled() {
+	if kb.Spec.Tls.IsTlsEnabled() {
 		ccb.WithVolumeMount([]corev1.VolumeMount{
 			{
 				Name:      "tls",
@@ -542,7 +543,7 @@ fi
 		}, k8sbuilder.Merge)
 	}
 
-	if (kb.Spec.ElasticsearchRef.IsManaged() && es.IsTlsApiEnabled()) || (kb.Spec.ElasticsearchRef.IsExternal() && kb.Spec.ElasticsearchRef.ElasticsearchCaSecretRef != nil) {
+	if (kb.Spec.ElasticsearchRef.IsManaged() && es.Spec.Tls.IsTlsEnabled()) || (kb.Spec.ElasticsearchRef.IsExternal() && kb.Spec.ElasticsearchRef.ElasticsearchCaSecretRef != nil) {
 		ccb.WithVolumeMount([]corev1.VolumeMount{
 			{
 				Name:      "ca-elasticsearch",
@@ -606,7 +607,7 @@ fi
 			},
 		}, k8sbuilder.Merge)
 	}
-	if kb.IsTlsEnabled() {
+	if kb.Spec.Tls.IsTlsEnabled() {
 		ptb.WithVolumes([]corev1.Volume{
 			{
 				Name: "tls",
@@ -618,7 +619,7 @@ fi
 			},
 		}, k8sbuilder.Merge)
 	}
-	if kb.Spec.ElasticsearchRef.IsManaged() && es.IsTlsApiEnabled() && es.IsSelfManagedSecretForTlsApi() {
+	if kb.Spec.ElasticsearchRef.IsManaged() && es.Spec.Tls.IsTlsEnabled() && es.Spec.Tls.IsSelfManagedSecretForTls() {
 		ptb.WithVolumes([]corev1.Volume{
 			{
 				Name: "ca-elasticsearch",
@@ -629,7 +630,7 @@ fi
 				},
 			},
 		}, k8sbuilder.Merge)
-	} else if (kb.Spec.ElasticsearchRef.IsExternal() && kb.Spec.ElasticsearchRef.ElasticsearchCaSecretRef != nil) || (kb.Spec.ElasticsearchRef.IsManaged() && es.IsTlsApiEnabled() && kb.Spec.ElasticsearchRef.ElasticsearchCaSecretRef != nil) {
+	} else if (kb.Spec.ElasticsearchRef.IsExternal() && kb.Spec.ElasticsearchRef.ElasticsearchCaSecretRef != nil) || (kb.Spec.ElasticsearchRef.IsManaged() && es.Spec.Tls.IsTlsEnabled() && kb.Spec.ElasticsearchRef.ElasticsearchCaSecretRef != nil) {
 		ptb.WithVolumes([]corev1.Volume{
 			{
 				Name: "ca-elasticsearch",
@@ -699,7 +700,7 @@ func computeElasticsearchHosts(kb *kibanacrd.Kibana, es *elasticsearchcrd.Elasti
 
 	if kb.Spec.ElasticsearchRef.IsManaged() {
 		scheme := "https"
-		if !es.IsTlsApiEnabled() {
+		if !es.Spec.Tls.IsTlsEnabled() {
 			scheme = "http"
 		}
 		if kb.Spec.ElasticsearchRef.ManagedElasticsearchRef.TargetNodeGroup == "" {
@@ -716,14 +717,14 @@ func computeElasticsearchHosts(kb *kibanacrd.Kibana, es *elasticsearchcrd.Elasti
 // computeAntiAffinity permit to get  anti affinity spec
 // Default to soft anti affinity
 func computeAntiAffinity(kb *kibanacrd.Kibana) (antiAffinity *corev1.PodAntiAffinity, err error) {
-	var expectedAntiAffinity *kibanacrd.KibanaAntiAffinitySpec
+	var expectedAntiAffinity *shared.DeploymentAntiAffinitySpec
 
 	antiAffinity = &corev1.PodAntiAffinity{}
 	topologyKey := "kubernetes.io/hostname"
 
 	// Check if need to merge anti affinity spec
 	if kb.Spec.Deployment.AntiAffinity != nil {
-		expectedAntiAffinity = &kibanacrd.KibanaAntiAffinitySpec{}
+		expectedAntiAffinity = &shared.DeploymentAntiAffinitySpec{}
 		if err = helper.Merge(expectedAntiAffinity, kb.Spec.Deployment.AntiAffinity); err != nil {
 			return nil, errors.Wrap(err, "Error when merge global anti affinity")
 		}

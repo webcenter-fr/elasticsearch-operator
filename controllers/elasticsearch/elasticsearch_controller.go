@@ -373,14 +373,14 @@ func (h *ElasticsearchReconciler) computeElasticsearchUrl(ctx context.Context, e
 			return "", nil
 		}
 
-		if es.IsTlsApiEnabled() {
+		if es.Spec.Tls.IsTlsEnabled() {
 			scheme = "https"
 		} else {
 			scheme = "http"
 		}
 	} else {
 		url = fmt.Sprintf("%s.%s.svc:9200", GetGlobalServiceName(es), es.Namespace)
-		if es.IsTlsApiEnabled() {
+		if es.Spec.Tls.IsTlsEnabled() {
 			scheme = "https"
 		} else {
 			scheme = "http"
@@ -406,7 +406,7 @@ func (h *ElasticsearchReconciler) getElasticsearchHandler(ctx context.Context, e
 	}
 
 	serviceName := GetGlobalServiceName(es)
-	if !es.IsTlsApiEnabled() {
+	if !es.Spec.Tls.IsTlsEnabled() {
 		hosts = append(hosts, fmt.Sprintf("http://%s.%s.svc:9200", serviceName, es.Namespace))
 	} else {
 		hosts = append(hosts, fmt.Sprintf("https://%s.%s.svc:9200", serviceName, es.Namespace))
