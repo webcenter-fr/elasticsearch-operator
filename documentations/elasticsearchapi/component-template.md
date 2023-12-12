@@ -94,7 +94,7 @@ spec:
 
 ## Sample With external Elasticsearch
 
-In this sample, we will create role mapping on external Elasticsearch.
+In this sample, we will create component template on external Elasticsearch.
 
 **component.yml**:
 ```yaml
