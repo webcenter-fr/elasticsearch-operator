@@ -49,7 +49,9 @@ output.logstash:
     certificate_authorities:
 `)
 			for certificateName := range logstashCASecret.Data {
-				filebeatConf.WriteString(fmt.Sprintf("      - /usr/share/filebeat/ls-ca/%s", certificateName))
+				if strings.HasSuffix(certificateName, ".crt") || strings.HasSuffix(certificateName, ".pem") {
+					filebeatConf.WriteString(fmt.Sprintf("      - /usr/share/filebeat/ls-ca/%s\n", certificateName))
+				}
 			}
 		}
 

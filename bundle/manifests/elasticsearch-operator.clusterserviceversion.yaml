@@ -936,10 +936,10 @@ metadata:
         }
       ]
     capabilities: Basic Install
-    createdAt: "2023-11-16T14:41:36Z"
-    operators.operatorframework.io/builder: operator-sdk-v1.31.0
+    createdAt: "2024-01-08T16:59:41Z"
+    operators.operatorframework.io/builder: operator-sdk-v1.32.0
     operators.operatorframework.io/project_layout: go.kubebuilder.io/v3
-  name: elasticsearch-operator.v0.0.42
+  name: elasticsearch-operator.v0.0.44
   namespace: placeholder
 spec:
   apiservicedefinitions: {}
@@ -976,6 +976,11 @@ spec:
           by operator
         displayName: Managed Elasticsearch Ref
         path: elasticsearchRef.managed
+      - description: SecretName is the secret that contain the setting to connect
+          on Elasticsearch. It can be auto computed for managed Elasticsearch. It
+          need to contain the keys `username` and `password`.
+        displayName: Secret Ref
+        path: elasticsearchRef.secretRef
       - description: Mappings is the component mapping
         displayName: Mappings
         path: mappings
@@ -1050,7 +1055,7 @@ spec:
       - description: Enabled permit to enabled / disabled ingress Default to false
         displayName: Enabled
         path: endpoint.ingress.enabled
-      - description: Host is the hostname to access on Elasticsearch
+      - description: Host is the hostname to access on
         displayName: Host
         path: endpoint.ingress.host
       - description: IngressSpec it merge with expected ingress spec
@@ -1059,7 +1064,9 @@ spec:
       - description: Labels to set in ingress
         displayName: Labels
         path: endpoint.ingress.labels
-      - description: SecretRef is the secret ref that store certificates
+      - description: SecretRef is the secret ref that store certificates If secret
+          not exist, it will use the default ingress certificate If secret is nil,
+          it will disable TLS on ingress spec.
         displayName: Secret Ref
         path: endpoint.ingress.secretRef
       - description: TargetNodeGroupName permit to define if specific node group is
@@ -1159,58 +1166,15 @@ spec:
           monitoring cluster
         displayName: Metricbeat
         path: monitoring.metricbeat
-      - description: ElasticsearchRef is the Elasticsearch ref to connect on.
-        displayName: Elasticsearch Ref
-        path: monitoring.metricbeat.elasticsearchRef
-      - description: Enabled permit to enable Metricbeat monitoring It will deploy
-          metricbeat to collect metric Default to false
-        displayName: Enabled
-        path: monitoring.metricbeat.enabled
-      - description: NumberOfReplica is the number of replica to set on metricbeat
-          setting when it create templates Default is set to 0
-        displayName: Number Of Replica
-        path: monitoring.metricbeat.numberOfReplicas
-      - description: RefreshPeriod permit to set the time to collect data Defaullt
-          to  `10s`
-        displayName: Refresh Period
-        path: monitoring.metricbeat.refreshPeriod
-      - description: Resources permit to set resources on metricbeat
-        displayName: Resources
-        path: monitoring.metricbeat.resources
-      - description: Version is the Metricbeat version to use Default it use the same
-          version of the product that it monitor
-        displayName: Version
-        path: monitoring.metricbeat.version
       - description: Prometheus permit to monitor cluster with Prometheus and graphana
           (via exporter)
         displayName: Prometheus
         path: monitoring.prometheus
-      - description: Enabled permit to enable Prometheus monitoring It will deploy
-          exporter for Elasticsearch and add podMonitor policy Default to false
-        displayName: Enabled
-        path: monitoring.prometheus.enabled
-      - description: Image is the image to use when deploy Elasticsearch It can be
-          usefull to use internal registry or mirror
-        displayName: Image
-        path: monitoring.prometheus.image
-      - description: ImagePullPolicy is the image pull policy to use
-        displayName: Image Pull Policy
-        path: monitoring.prometheus.imagePullPolicy
-      - description: ImagePullSecrets is the image pull secrets to use
-        displayName: Image Pull Secrets
-        path: monitoring.prometheus.imagePullSecrets
-      - description: Resources permit to set ressources on Prometheus expporter container
-          If not defined, it will use the default requirements
-        displayName: Resources
-        path: monitoring.prometheus.resources
-      - description: Version is the exporter version to use Default is use the latest
-        displayName: Version
-        path: monitoring.prometheus.version
       - description: NodeGroups permit to groups node per use case For exemple master,
           data and ingest
         displayName: Node Groups
         path: nodeGroups
-      - description: Annotations permit to set annotation on containers
+      - description: Annotations permit to set annotation on deployment
         displayName: Annotations
         path: nodeGroups[0].annotations
       - description: AntiAffinity permit to set anti affinity policy
@@ -1258,14 +1222,14 @@ spec:
       - description: PodDisruptionBudget is the pod disruption budget policy
         displayName: Pod Disruption Budget Spec
         path: nodeGroups[0].podDisruptionBudget
-      - description: PodTemplate is merged with expected pod It usefull to add some
-          extra properties on pod spec
+      - description: PodSpec is merged with expected pod It usefull to add some extra
+          properties on pod spec
         displayName: Pod Template
         path: nodeGroups[0].podTemplate
       - description: Replicas is the number of replicas
         displayName: Replicas
         path: nodeGroups[0].replicas
-      - description: Resources permit to set ressources on Elasticsearch container
+      - description: Resources permit to set ressources on container
         displayName: Resources
         path: nodeGroups[0].resources
       - description: Roles is the list of Elasticsearch roles
@@ -1293,7 +1257,7 @@ spec:
           It need to have the following keys: tls.key, tls.crt and optionally ca.crt'
         displayName: Certificate Secret Ref
         path: tls.certificateSecretRef
-      - description: Enabled permit to enabled TLS on API Default true
+      - description: Enabled permit to enabled TLS Default to false
         displayName: Enabled
         path: tls.enabled
       - description: KeySize is the key size when generate privates keys Default to
@@ -1307,14 +1271,6 @@ spec:
       - description: SelfSignedCertificate permit to set self signed certificate settings
         displayName: Self Signed Certificate
         path: tls.selfSignedCertificate
-      - description: AltIps permit to set subject alt names of type ip when generate
-          certificate
-        displayName: Alt Ips
-        path: tls.selfSignedCertificate.altIPs
-      - description: AltNames permit to set subject alt names of type dns when generate
-          certificate
-        displayName: Alt Names
-        path: tls.selfSignedCertificate.altNames
       - description: ValidityDays is the number of days that certificates are valid
           Default to 365
         displayName: Validity Days
@@ -1453,6 +1409,11 @@ spec:
           by operator
         displayName: Managed Elasticsearch Ref
         path: elasticsearchRef.managed
+      - description: SecretName is the secret that contain the setting to connect
+          on Elasticsearch. It can be auto computed for managed Elasticsearch. It
+          need to contain the keys `username` and `password`.
+        displayName: Secret Ref
+        path: elasticsearchRef.secretRef
       - description: Image is the image to use when deploy Elasticsearch It can be
           usefull to use internal registry or mirror
         displayName: Image
@@ -1499,9 +1460,9 @@ spec:
       - description: Addresses is the list of Logstash addresses
         displayName: Addresses
         path: logstashRef.external.addresses
-      - description: 'LogstashCaSecretRef is the secret that store your custom CA
-          certificate to connect on Logstash via beat protocole. It need to have the
-          following keys: ca.crt'
+      - description: LogstashCaSecretRef is the secret that store your custom CA certificates
+          to connect on Logstash via beat protocole. It will add all entry that finish
+          by *.crt or *.pem
         displayName: Logstash Ca Secret Ref
         path: logstashRef.logstashCASecretRef
       - description: ManagedLogstashRef is the managed Logstash instance by operator
@@ -1532,41 +1493,10 @@ spec:
           monitoring cluster
         displayName: Metricbeat
         path: monitoring.metricbeat
-      - description: ElasticsearchRef is the Elasticsearch ref to connect on.
-        displayName: Elasticsearch Ref
-        path: monitoring.metricbeat.elasticsearchRef
-      - description: Enabled permit to enable Metricbeat monitoring It will deploy
-          metricbeat to collect metric Default to false
-        displayName: Enabled
-        path: monitoring.metricbeat.enabled
-      - description: NumberOfReplica is the number of replica to set on metricbeat
-          setting when it create templates Default is set to 0
-        displayName: Number Of Replica
-        path: monitoring.metricbeat.numberOfReplicas
-      - description: RefreshPeriod permit to set the time to collect data Defaullt
-          to  `10s`
-        displayName: Refresh Period
-        path: monitoring.metricbeat.refreshPeriod
-      - description: Resources permit to set resources on metricbeat
-        displayName: Resources
-        path: monitoring.metricbeat.resources
-      - description: Version is the Metricbeat version to use Default it use the same
-          version of the product that it monitor
-        displayName: Version
-        path: monitoring.metricbeat.version
       - description: Prometheus permit to monitor cluster with Prometheus and graphana
           (via exporter)
         displayName: Prometheus
         path: monitoring.prometheus
-      - description: Enabled permit to enable Prometheus monitoring It will deploy
-          exporter for filebeat and add podMonitor policy Default to false
-        displayName: Enabled
-        path: monitoring.prometheus.enabled
-      - description: 'Url is the plugin URL where to download exporter Default is
-          use project https://github.com/pjhampton/kibana-prometheus-exporter If version
-          is set to latest, it use arbitrary: https://github.com/pjhampton/kibana-prometheus-exporter/releases/download/8.6.0/kibanaPrometheusExporter-8.6.0.zip'
-        displayName: Url
-        path: monitoring.prometheus.url
       - description: Services permit to declare some services The name is decorated
           with cluster name and so on
         displayName: Services
@@ -1650,6 +1580,11 @@ spec:
           by operator
         displayName: Managed Elasticsearch Ref
         path: elasticsearchRef.managed
+      - description: SecretName is the secret that contain the setting to connect
+          on Elasticsearch. It can be auto computed for managed Elasticsearch. It
+          need to contain the keys `username` and `password`.
+        displayName: Secret Ref
+        path: elasticsearchRef.secretRef
       - description: Name is the custom index lifecycle policy name If empty, it use
           the ressource name
         displayName: Name
@@ -1689,6 +1624,11 @@ spec:
           by operator
         displayName: Managed Elasticsearch Ref
         path: elasticsearchRef.managed
+      - description: SecretName is the secret that contain the setting to connect
+          on Elasticsearch. It can be auto computed for managed Elasticsearch. It
+          need to contain the keys `username` and `password`.
+        displayName: Secret Ref
+        path: elasticsearchRef.secretRef
       - description: IndexPatterns is the list of index to apply this template
         displayName: Index Patterns
         path: indexPatterns
@@ -1799,7 +1739,7 @@ spec:
       - description: Replicas is the number of replicas
         displayName: Replicas
         path: deployment.replicas
-      - description: Resources permit to set ressources on Kibana container
+      - description: Resources permit to set ressources on container
         displayName: Resources
         path: deployment.resources
       - description: Tolerations permit to set toleration on pod
@@ -1821,6 +1761,11 @@ spec:
           by operator
         displayName: Managed Elasticsearch Ref
         path: elasticsearchRef.managed
+      - description: SecretName is the secret that contain the setting to connect
+          on Elasticsearch. It can be auto computed for managed Elasticsearch. It
+          need to contain the keys `username` and `password`.
+        displayName: Secret Ref
+        path: elasticsearchRef.secretRef
       - description: Endpoint permit to set endpoints to access on Kibana from external
           kubernetes You can set ingress and / or load balancer
         displayName: Endpoint
@@ -1828,31 +1773,9 @@ spec:
       - description: Ingress permit to set ingress settings
         displayName: Ingress
         path: endpoint.ingress
-      - description: Annotations to set in ingress
-        displayName: Annotations
-        path: endpoint.ingress.annotations
-      - description: Enabled permit to enabled / disabled ingress Default to false
-        displayName: Enabled
-        path: endpoint.ingress.enabled
-      - description: Host is the hostname to access on Kibana
-        displayName: Host
-        path: endpoint.ingress.host
-      - description: IngressSpec it merge with expected ingress spec
-        displayName: Ingress Spec
-        path: endpoint.ingress.ingressSpec
-      - description: Labels to set in ingress
-        displayName: Labels
-        path: endpoint.ingress.labels
-      - description: SecretRef is the secret ref that store certificates
-        displayName: Secret Ref
-        path: endpoint.ingress.secretRef
       - description: Load balancer permit to set load balancer settings
         displayName: Load Balancer
         path: endpoint.loadBalancer
-      - description: Enabled permit to enabled / disabled load balancer Cloud provider
-          need to support it Default to false
-        displayName: Enabled
-        path: endpoint.loadBalancer.enabled
       - description: Image is the image to use when deploy Elasticsearch It can be
           usefull to use internal registry or mirror
         displayName: Image
@@ -1874,41 +1797,10 @@ spec:
           monitoring cluster
         displayName: Metricbeat
         path: monitoring.metricbeat
-      - description: ElasticsearchRef is the Elasticsearch ref to connect on.
-        displayName: Elasticsearch Ref
-        path: monitoring.metricbeat.elasticsearchRef
-      - description: Enabled permit to enable Metricbeat monitoring It will deploy
-          metricbeat to collect metric Default to false
-        displayName: Enabled
-        path: monitoring.metricbeat.enabled
-      - description: NumberOfReplica is the number of replica to set on metricbeat
-          setting when it create templates Default is set to 0
-        displayName: Number Of Replica
-        path: monitoring.metricbeat.numberOfReplicas
-      - description: RefreshPeriod permit to set the time to collect data Defaullt
-          to  `10s`
-        displayName: Refresh Period
-        path: monitoring.metricbeat.refreshPeriod
-      - description: Resources permit to set resources on metricbeat
-        displayName: Resources
-        path: monitoring.metricbeat.resources
-      - description: Version is the Metricbeat version to use Default it use the same
-          version of the product that it monitor
-        displayName: Version
-        path: monitoring.metricbeat.version
       - description: Prometheus permit to monitor cluster with Prometheus and graphana
           (via exporter)
         displayName: Prometheus
         path: monitoring.prometheus
-      - description: Enabled permit to enable Prometheus monitoring It will deploy
-          exporter for Kibana and add podMonitor policy Default to false
-        displayName: Enabled
-        path: monitoring.prometheus.enabled
-      - description: 'Url is the plugin URL where to download exporter Default is
-          use project https://github.com/pjhampton/kibana-prometheus-exporter If version
-          is set to latest, it use arbitrary: https://github.com/pjhampton/kibana-prometheus-exporter/releases/download/8.6.0/kibanaPrometheusExporter-8.6.0.zip'
-        displayName: Url
-        path: monitoring.prometheus.url
       - description: PluginsList is the list of additionnal plugin to install on each
           Kibana instance Default is empty
         displayName: Plugins List
@@ -1920,7 +1812,7 @@ spec:
           It need to have the following keys: tls.key, tls.crt and optionally ca.crt'
         displayName: Certificate Secret Ref
         path: tls.certificateSecretRef
-      - description: Enabled permit to enabled TLS on Kibana Default to false
+      - description: Enabled permit to enabled TLS Default to false
         displayName: Enabled
         path: tls.enabled
       - description: KeySize is the key size when generate privates keys Default to
@@ -1934,14 +1826,6 @@ spec:
       - description: SelfSignedCertificate permit to set self signed certificate settings
         displayName: Self Signed Certificate
         path: tls.selfSignedCertificate
-      - description: AltIps permit to set subject alt names of type ip when generate
-          certificate
-        displayName: Alt Ips
-        path: tls.selfSignedCertificate.altIPs
-      - description: AltNames permit to set subject alt names of type dns when generate
-          certificate
-        displayName: Alt Names
-        path: tls.selfSignedCertificate.altNames
       - description: ValidityDays is the number of days that certificates are valid
           Default to 365
         displayName: Validity Days
@@ -1979,6 +1863,11 @@ spec:
           by operator
         displayName: Managed Elasticsearch Ref
         path: elasticsearchRef.managed
+      - description: SecretName is the secret that contain the setting to connect
+          on Elasticsearch. It can be auto computed for managed Elasticsearch. It
+          need to contain the keys `username` and `password`.
+        displayName: Secret Ref
+        path: elasticsearchRef.secretRef
       - description: Basic permit to enable basic license Default to true if secretRef
           not set
         displayName: Basic
@@ -2089,7 +1978,7 @@ spec:
       - description: Replicas is the number of replicas
         displayName: Replicas
         path: deployment.replicas
-      - description: Resources permit to set ressources on Logstash container
+      - description: Resources permit to set ressources on container
         displayName: Resources
         path: deployment.resources
       - description: Tolerations permit to set toleration on pod
@@ -2113,6 +2002,11 @@ spec:
           by operator
         displayName: Managed Elasticsearch Ref
         path: elasticsearchRef.managed
+      - description: SecretName is the secret that contain the setting to connect
+          on Elasticsearch. It can be auto computed for managed Elasticsearch. It
+          need to contain the keys `username` and `password`.
+        displayName: Secret Ref
+        path: elasticsearchRef.secretRef
       - description: Image is the image to use when deploy Elasticsearch It can be
           usefull to use internal registry or mirror
         displayName: Image
@@ -2159,41 +2053,10 @@ spec:
           monitoring cluster
         displayName: Metricbeat
         path: monitoring.metricbeat
-      - description: ElasticsearchRef is the Elasticsearch ref to connect on.
-        displayName: Elasticsearch Ref
-        path: monitoring.metricbeat.elasticsearchRef
-      - description: Enabled permit to enable Metricbeat monitoring It will deploy
-          metricbeat to collect metric Default to false
-        displayName: Enabled
-        path: monitoring.metricbeat.enabled
-      - description: NumberOfReplica is the number of replica to set on metricbeat
-          setting when it create templates Default is set to 0
-        displayName: Number Of Replica
-        path: monitoring.metricbeat.numberOfReplicas
-      - description: RefreshPeriod permit to set the time to collect data Defaullt
-          to  `10s`
-        displayName: Refresh Period
-        path: monitoring.metricbeat.refreshPeriod
-      - description: Resources permit to set resources on metricbeat
-        displayName: Resources
-        path: monitoring.metricbeat.resources
-      - description: Version is the Metricbeat version to use Default it use the same
-          version of the product that it monitor
-        displayName: Version
-        path: monitoring.metricbeat.version
       - description: Prometheus permit to monitor cluster with Prometheus and graphana
           (via exporter)
         displayName: Prometheus
         path: monitoring.prometheus
-      - description: Enabled permit to enable Prometheus monitoring It will deploy
-          exporter for Logstash and add podMonitor policy Default to false
-        displayName: Enabled
-        path: monitoring.prometheus.enabled
-      - description: 'Url is the plugin URL where to download exporter Default is
-          use project https://github.com/pjhampton/kibana-prometheus-exporter If version
-          is set to latest, it use arbitrary: https://github.com/pjhampton/kibana-prometheus-exporter/releases/download/8.6.0/kibanaPrometheusExporter-8.6.0.zip'
-        displayName: Url
-        path: monitoring.prometheus.url
       - description: Patterns is the patterns specification used by grok The key is
           the file stored on logstash/patterns
         displayName: Pattern
@@ -2379,6 +2242,11 @@ spec:
           by operator
         displayName: Managed Elasticsearch Ref
         path: elasticsearchRef.managed
+      - description: SecretName is the secret that contain the setting to connect
+          on Elasticsearch. It can be auto computed for managed Elasticsearch. It
+          need to contain the keys `username` and `password`.
+        displayName: Secret Ref
+        path: elasticsearchRef.secretRef
       - description: Image is the image to use when deploy Elasticsearch It can be
           usefull to use internal registry or mirror
         displayName: Image
@@ -2422,6 +2290,11 @@ spec:
           by operator
         displayName: Managed Elasticsearch Ref
         path: elasticsearchRef.managed
+      - description: SecretName is the secret that contain the setting to connect
+          on Elasticsearch. It can be auto computed for managed Elasticsearch. It
+          need to contain the keys `username` and `password`.
+        displayName: Secret Ref
+        path: elasticsearchRef.secretRef
       - description: Enabled permit to enable or disable the role mapping Default
           to true
         displayName: Enabled
@@ -2476,6 +2349,11 @@ spec:
           by operator
         displayName: Managed Elasticsearch Ref
         path: elasticsearchRef.managed
+      - description: SecretName is the secret that contain the setting to connect
+          on Elasticsearch. It can be auto computed for managed Elasticsearch. It
+          need to contain the keys `username` and `password`.
+        displayName: Secret Ref
+        path: elasticsearchRef.secretRef
       - description: Global  defining global privileges JSON string
         displayName: Global
         path: global
@@ -2635,6 +2513,11 @@ spec:
           by operator
         displayName: Managed Elasticsearch Ref
         path: elasticsearchRef.managed
+      - description: SecretName is the secret that contain the setting to connect
+          on Elasticsearch. It can be auto computed for managed Elasticsearch. It
+          need to contain the keys `username` and `password`.
+        displayName: Secret Ref
+        path: elasticsearchRef.secretRef
       - description: Name is the template name to generte final name
         displayName: Name
         path: name
@@ -2686,6 +2569,11 @@ spec:
           by operator
         displayName: Managed Elasticsearch Ref
         path: elasticsearchRef.managed
+      - description: SecretName is the secret that contain the setting to connect
+          on Elasticsearch. It can be auto computed for managed Elasticsearch. It
+          need to contain the keys `username` and `password`.
+        displayName: Secret Ref
+        path: elasticsearchRef.secretRef
       - description: Name is the custom snapshot repository name If empty, it use
           the ressource name
         displayName: Name
@@ -2722,6 +2610,11 @@ spec:
           by operator
         displayName: Managed Elasticsearch Ref
         path: elasticsearchRef.managed
+      - description: SecretName is the secret that contain the setting to connect
+          on Elasticsearch. It can be auto computed for managed Elasticsearch. It
+          need to contain the keys `username` and `password`.
+        displayName: Secret Ref
+        path: elasticsearchRef.secretRef
       - description: Email is the email user
         displayName: Email
         path: email
@@ -2870,6 +2763,11 @@ spec:
           by operator
         displayName: Managed Elasticsearch Ref
         path: elasticsearchRef.managed
+      - description: SecretName is the secret that contain the setting to connect
+          on Elasticsearch. It can be auto computed for managed Elasticsearch. It
+          need to contain the keys `username` and `password`.
+        displayName: Secret Ref
+        path: elasticsearchRef.secretRef
       - description: Input JSON string
         displayName: Input
         path: input
@@ -3636,7 +3534,7 @@ spec:
                   value: INFO
                 - name: LOG_FORMATTER
                   value: json
-                image: quay.io/webcenter/elasticsearch-operator:0.0.42
+                image: quay.io/webcenter/elasticsearch-operator:0.0.44
                 livenessProbe:
                   httpGet:
                     path: /healthz
@@ -3726,5 +3624,5 @@ spec:
   provider:
     name: webcenter.fr
     url: https://github.com/webcenter-fr/elasticsearch-operator
-  replaces: elasticsearch-operator.v0.0.39
-  version: 0.0.42
+  replaces: elasticsearch-operator.v0.0.43
+  version: 0.0.44

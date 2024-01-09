@@ -106,8 +106,8 @@ type FilebeatLogstashRef struct {
 	// +optional
 	ExternalLogstashRef *FilebeatLogstashExternalRef `json:"external,omitempty"`
 
-	// LogstashCaSecretRef is the secret that store your custom CA certificate to connect on Logstash via beat protocole.
-	// It need to have the following keys: ca.crt
+	// LogstashCaSecretRef is the secret that store your custom CA certificates to connect on Logstash via beat protocole.
+	// It will add all entry that finish by *.crt or *.pem
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
 	// +optional
 	LogstashCaSecretRef *corev1.LocalObjectReference `json:"logstashCASecretRef,omitempty"`

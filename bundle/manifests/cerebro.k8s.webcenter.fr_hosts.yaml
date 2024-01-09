@@ -91,7 +91,6 @@ spec:
                     type: object
                     x-kubernetes-map-type: atomic
                 type: object
-                x-kubernetes-preserve-unknown-fields: true
             required:
             - cerebroRef
             - elasticsearchRef
