@@ -88,7 +88,7 @@ func (r *tlsReconciler) Read(ctx context.Context, resource object.MultiPhaseObje
 	// Load API PKI
 	if sApiPki != nil {
 		// Load root CA
-		apiRootCA, err = pki.LoadRootCATransport(sApiPki.Data["ca.key"], sApiPki.Data["ca.pub"], sApiPki.Data["ca.crt"], sApiPki.Data["ca.crl"], r.Log)
+		apiRootCA, err = pki.LoadRootCA(sApiPki.Data["ca.key"], sApiPki.Data["ca.pub"], sApiPki.Data["ca.crt"], sApiPki.Data["ca.crl"], r.Log)
 		if err != nil {
 			return read, res, errors.Wrap(err, "Error when load PKI")
 		}

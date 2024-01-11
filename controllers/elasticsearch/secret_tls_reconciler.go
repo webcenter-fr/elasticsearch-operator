@@ -178,7 +178,7 @@ func (r *tlsReconciler) Read(ctx context.Context, resource object.MultiPhaseObje
 	// Load transport PKI
 	if sTransportPki != nil {
 		// Load root CA
-		transportRootCA, err = pki.LoadRootCATransport(sTransportPki.Data["ca.key"], sTransportPki.Data["ca.pub"], sTransportPki.Data["ca.crt"], sTransportPki.Data["ca.crl"], r.Log)
+		transportRootCA, err = pki.LoadRootCA(sTransportPki.Data["ca.key"], sTransportPki.Data["ca.pub"], sTransportPki.Data["ca.crt"], sTransportPki.Data["ca.crl"], r.Log)
 		if err != nil {
 			return read, res, errors.Wrap(err, "Error when load PKI for transport layout")
 		}
@@ -205,7 +205,7 @@ func (r *tlsReconciler) Read(ctx context.Context, resource object.MultiPhaseObje
 	// Load API PKI
 	if sApiPki != nil {
 		// Load root CA
-		apiRootCA, err = pki.LoadRootCATransport(sApiPki.Data["ca.key"], sApiPki.Data["ca.pub"], sApiPki.Data["ca.crt"], sApiPki.Data["ca.crl"], r.Log)
+		apiRootCA, err = pki.LoadRootCA(sApiPki.Data["ca.key"], sApiPki.Data["ca.pub"], sApiPki.Data["ca.crt"], sApiPki.Data["ca.crl"], r.Log)
 		if err != nil {
 			return read, res, errors.Wrap(err, "Error when load PKI for API layout")
 		}
