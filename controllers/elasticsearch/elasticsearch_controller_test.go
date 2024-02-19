@@ -8,7 +8,6 @@ import (
 	"time"
 
 	"github.com/disaster37/k8s-objectmatcher/patch"
-	"github.com/disaster37/operator-sdk-extra/pkg/controller"
 	"github.com/disaster37/operator-sdk-extra/pkg/helper"
 	"github.com/disaster37/operator-sdk-extra/pkg/test"
 	monitoringv1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1"
@@ -23,7 +22,6 @@ import (
 	networkingv1 "k8s.io/api/networking/v1"
 	policyv1 "k8s.io/api/policy/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
-	condition "k8s.io/apimachinery/pkg/api/meta"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
@@ -56,7 +54,7 @@ func doCreateElasticsearchStep() test.TestStep {
 	return test.TestStep{
 		Name: "create",
 		Do: func(c client.Client, key types.NamespacedName, o client.Object, data map[string]any) (err error) {
-			logrus.Infof("=== Add new Elasticsearch cluster %s/%s ===", key.Namespace, key.Name)
+			logrus.Infof("=== Add new Elasticsearch cluster %s/%s ===\n\n", key.Namespace, key.Name)
 
 			es := &elasticsearchcrd.Elasticsearch{
 				ObjectMeta: metav1.ObjectMeta{
@@ -147,9 +145,7 @@ func doCreateElasticsearchStep() test.TestStep {
 					t.Fatal("Elasticsearch not found")
 				}
 
-				// In envtest, no kubelet
-				// So the Elasticsearch condition never set as true
-				if condition.FindStatusCondition(es.Status.Conditions, controller.ReadyCondition.String()) != nil && condition.FindStatusCondition(es.Status.Conditions, controller.ReadyCondition.String()).Reason != "Initialize" {
+				if es.GetStatus().GetObservedGeneration() > 0 {
 					return nil
 				}
 
@@ -338,7 +334,7 @@ func doUpdateElasticsearchStep() test.TestStep {
 	return test.TestStep{
 		Name: "update",
 		Do: func(c client.Client, key types.NamespacedName, o client.Object, data map[string]any) (err error) {
-			logrus.Infof("=== Update Elasticsearch cluster %s/%s ===", key.Namespace, key.Name)
+			logrus.Infof("=== Update Elasticsearch cluster %s/%s ===\n\n", key.Namespace, key.Name)
 
 			if o == nil {
 				return errors.New("Elasticsearch is null")
@@ -349,14 +345,16 @@ func doUpdateElasticsearchStep() test.TestStep {
 			es.Labels = map[string]string{
 				"test": "fu",
 			}
+			// Change spec to track generation
+			es.Spec.GlobalNodeGroup.Labels = map[string]string{
+				"test": "fu",
+			}
 
-			data["lastVersion"] = es.ResourceVersion
+			data["lastGeneration"] = es.GetStatus().GetObservedGeneration()
 
 			if err = c.Update(context.Background(), es); err != nil {
 				return err
 			}
-
-			time.Sleep(5 * time.Second)
 
 			return nil
 		},
@@ -377,16 +375,14 @@ func doUpdateElasticsearchStep() test.TestStep {
 				metricbeat *beatcrd.Metricbeat
 			)
 
-			lastVersion := data["lastVersion"].(string)
+			lastGeneration := data["lastGeneration"].(int64)
 
 			isTimeout, err := test.RunWithTimeout(func() error {
 				if err := c.Get(context.Background(), key, es); err != nil {
 					t.Fatal("Elasticsearch not found")
 				}
 
-				// In envtest, no kubelet
-				// So the Elasticsearch condition never set as true
-				if lastVersion != es.ResourceVersion && (es.Status.PhaseName == controller.StartingPhase) {
+				if lastGeneration < es.GetStatus().GetObservedGeneration() {
 					return nil
 				}
 
@@ -593,7 +589,7 @@ func doUpdateElasticsearchIncreaseNodeGroupStep() test.TestStep {
 	return test.TestStep{
 		Name: "update",
 		Do: func(c client.Client, key types.NamespacedName, o client.Object, data map[string]any) (err error) {
-			logrus.Infof("=== Increase NodeGroup on Elasticsearch cluster %s/%s ===", key.Namespace, key.Name)
+			logrus.Infof("=== Increase NodeGroup on Elasticsearch cluster %s/%s ===\n\n", key.Namespace, key.Name)
 
 			if o == nil {
 				return errors.New("Elasticsearch is null")
@@ -611,13 +607,11 @@ func doUpdateElasticsearchIncreaseNodeGroupStep() test.TestStep {
 				},
 			})
 
-			data["lastVersion"] = es.ResourceVersion
+			data["lastGeneration"] = es.GetStatus().GetObservedGeneration()
 
 			if err = c.Update(context.Background(), es); err != nil {
 				return err
 			}
-
-			time.Sleep(5 * time.Second)
 
 			return nil
 		},
@@ -638,16 +632,14 @@ func doUpdateElasticsearchIncreaseNodeGroupStep() test.TestStep {
 				metricbeat *beatcrd.Metricbeat
 			)
 
-			lastVersion := data["lastVersion"].(string)
+			lastGeneration := data["lastGeneration"].(int64)
 
 			isTimeout, err := test.RunWithTimeout(func() error {
 				if err := c.Get(context.Background(), key, es); err != nil {
 					t.Fatal("Elasticsearch not found")
 				}
 
-				// In envtest, no kubelet
-				// So the Elasticsearch condition never set as true
-				if lastVersion != es.ResourceVersion && (es.Status.PhaseName == controller.StartingPhase) {
+				if lastGeneration < es.GetStatus().GetObservedGeneration() {
 					return nil
 				}
 
@@ -836,14 +828,14 @@ func doUpdateElasticsearchDecreaseNodeGroupStep() test.TestStep {
 	return test.TestStep{
 		Name: "update",
 		Do: func(c client.Client, key types.NamespacedName, o client.Object, data map[string]any) (err error) {
-			logrus.Infof("=== Decrease nodeGroup on Elasticsearch cluster %s/%s ===", key.Namespace, key.Name)
+			logrus.Infof("=== Decrease nodeGroup on Elasticsearch cluster %s/%s ===\n\n", key.Namespace, key.Name)
 
 			if o == nil {
 				return errors.New("Elasticsearch is null")
 			}
 			es := o.(*elasticsearchcrd.Elasticsearch)
 
-			data["lastVersion"] = es.ResourceVersion
+			data["lastGeneration"] = es.GetStatus().GetObservedGeneration()
 			data["oldES"] = es.DeepCopy()
 
 			// Add labels must force to update all resources
@@ -854,8 +846,6 @@ func doUpdateElasticsearchDecreaseNodeGroupStep() test.TestStep {
 			if err = c.Update(context.Background(), es); err != nil {
 				return err
 			}
-
-			time.Sleep(5 * time.Second)
 
 			return nil
 		},
@@ -876,7 +866,7 @@ func doUpdateElasticsearchDecreaseNodeGroupStep() test.TestStep {
 				metricbeat *beatcrd.Metricbeat
 			)
 
-			lastVersion := data["lastVersion"].(string)
+			lastGeneration := data["lastGeneration"].(int64)
 			oldES := data["oldES"].(*elasticsearchcrd.Elasticsearch)
 
 			isTimeout, err := test.RunWithTimeout(func() error {
@@ -884,9 +874,7 @@ func doUpdateElasticsearchDecreaseNodeGroupStep() test.TestStep {
 					t.Fatal("Elasticsearch not found")
 				}
 
-				// In envtest, no kubelet
-				// So the Elasticsearch condition never set as true
-				if lastVersion != es.ResourceVersion && (es.Status.PhaseName == controller.StartingPhase) {
+				if lastGeneration < es.GetStatus().GetObservedGeneration() {
 					return nil
 				}
 
@@ -1134,14 +1122,14 @@ func doUpdateElasticsearchAddLicenseStep() test.TestStep {
 	return test.TestStep{
 		Name: "update",
 		Do: func(c client.Client, key types.NamespacedName, o client.Object, data map[string]any) (err error) {
-			logrus.Infof("=== Add license on Elasticsearch cluster %s/%s ===", key.Namespace, key.Name)
+			logrus.Infof("=== Add license on Elasticsearch cluster %s/%s ===\n\n", key.Namespace, key.Name)
 
 			if o == nil {
 				return errors.New("Elasticsearch is null")
 			}
 			es := o.(*elasticsearchcrd.Elasticsearch)
 
-			data["lastVersion"] = es.ResourceVersion
+			data["lastGeneration"] = es.GetStatus().GetObservedGeneration()
 			data["oldES"] = es.DeepCopy()
 
 			// Add secret that contain license
@@ -1167,8 +1155,6 @@ func doUpdateElasticsearchAddLicenseStep() test.TestStep {
 				return err
 			}
 
-			time.Sleep(5 * time.Second)
-
 			return nil
 		},
 		Check: func(t *testing.T, c client.Client, key types.NamespacedName, o client.Object, data map[string]any) (err error) {
@@ -1189,7 +1175,7 @@ func doUpdateElasticsearchAddLicenseStep() test.TestStep {
 				metricbeat *beatcrd.Metricbeat
 			)
 
-			lastVersion := data["lastVersion"].(string)
+			lastGeneration := data["lastGeneration"].(int64)
 			oldES := data["oldES"].(*elasticsearchcrd.Elasticsearch)
 
 			isTimeout, err := test.RunWithTimeout(func() error {
@@ -1197,9 +1183,7 @@ func doUpdateElasticsearchAddLicenseStep() test.TestStep {
 					t.Fatal("Elasticsearch not found")
 				}
 
-				// In envtest, no kubelet
-				// So the Elasticsearch condition never set as true
-				if lastVersion != es.ResourceVersion && (es.Status.PhaseName == controller.StartingPhase) {
+				if lastGeneration < es.GetStatus().GetObservedGeneration() {
 					return nil
 				}
 
@@ -1454,14 +1438,13 @@ func doUpdateElasticsearchAddKeystoreStep() test.TestStep {
 	return test.TestStep{
 		Name: "update",
 		Do: func(c client.Client, key types.NamespacedName, o client.Object, data map[string]any) (err error) {
-			logrus.Infof("=== Add keystore and cacerts on Elasticsearch cluster %s/%s ===", key.Namespace, key.Name)
+			logrus.Infof("=== Add keystore and cacerts on Elasticsearch cluster %s/%s ===\n\n", key.Namespace, key.Name)
 
 			if o == nil {
 				return errors.New("Elasticsearch is null")
 			}
 			es := o.(*elasticsearchcrd.Elasticsearch)
 
-			data["lastVersion"] = es.ResourceVersion
 			// Add secret that contain keysyore secret
 			s := &corev1.Secret{
 				ObjectMeta: metav1.ObjectMeta{
@@ -1500,27 +1483,25 @@ func doUpdateElasticsearchAddKeystoreStep() test.TestStep {
 				Name: "custom-ca",
 			}
 
+			data["lastGeneration"] = es.GetStatus().GetObservedGeneration()
+
 			if err = c.Update(context.Background(), es); err != nil {
 				return err
 			}
-
-			time.Sleep(5 * time.Second)
 
 			return nil
 		},
 		Check: func(t *testing.T, c client.Client, key types.NamespacedName, o client.Object, data map[string]any) (err error) {
 			es := &elasticsearchcrd.Elasticsearch{}
 
-			lastVersion := data["lastVersion"].(string)
+			lastGeneration := data["lastGeneration"].(int64)
 
 			isTimeout, err := test.RunWithTimeout(func() error {
 				if err := c.Get(context.Background(), key, es); err != nil {
 					t.Fatal("Elasticsearch not found")
 				}
 
-				// In envtest, no kubelet
-				// So the Elasticsearch condition never set as true
-				if lastVersion != es.ResourceVersion && (es.Status.PhaseName == controller.StartingPhase) {
+				if lastGeneration < es.GetStatus().GetObservedGeneration() {
 					return nil
 				}
 
@@ -1547,7 +1528,7 @@ func doDeleteElasticsearchStep() test.TestStep {
 	return test.TestStep{
 		Name: "delete",
 		Do: func(c client.Client, key types.NamespacedName, o client.Object, data map[string]any) (err error) {
-			logrus.Infof("=== Delete Elasticsearch cluster %s/%s ===", key.Namespace, key.Name)
+			logrus.Infof("=== Delete Elasticsearch cluster %s/%s ===\n\n", key.Namespace, key.Name)
 
 			if o == nil {
 				return errors.New("Elasticsearch is null")
@@ -1563,8 +1544,27 @@ func doDeleteElasticsearchStep() test.TestStep {
 		},
 		Check: func(t *testing.T, c client.Client, key types.NamespacedName, o client.Object, data map[string]any) (err error) {
 
+			es := &elasticsearchcrd.Elasticsearch{}
+			isDeleted := false
+
 			// In envtest, no kubelet
 			// So the cascading children delation not works
+			isTimeout, err := test.RunWithTimeout(func() error {
+				if err = c.Get(context.Background(), key, es); err != nil {
+					if k8serrors.IsNotFound(err) {
+						isDeleted = true
+						return nil
+					}
+					t.Fatal(err)
+				}
+
+				return errors.New("Not yet deleted")
+			}, time.Second*30, time.Second*1)
+			if err != nil || isTimeout {
+				t.Fatalf("Opensearch stil exist: %s", err.Error())
+			}
+
+			assert.True(t, isDeleted)
 
 			return nil
 		},

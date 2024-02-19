@@ -175,6 +175,15 @@ func (h *MetricbeatReconciler) OnError(ctx context.Context, o object.MultiPhaseO
 func (h *MetricbeatReconciler) OnSuccess(ctx context.Context, r object.MultiPhaseObject, data map[string]any) (res ctrl.Result, err error) {
 	o := r.(*beatcrd.Metricbeat)
 
+	// Not preserve condition to avoid to update status each time
+	conditions := o.GetStatus().GetConditions()
+	o.GetStatus().SetConditions(nil)
+	res, err = h.MultiPhaseReconcilerAction.OnSuccess(ctx, o, data)
+	if err != nil {
+		return res, err
+	}
+	o.GetStatus().SetConditions(conditions)
+
 	// Check statefulset is ready
 	isReady := true
 	sts := &appv1.StatefulSet{}
@@ -215,8 +224,6 @@ func (h *MetricbeatReconciler) OnSuccess(ctx context.Context, r object.MultiPhas
 		// Requeued to check if status change
 		res.RequeueAfter = time.Second * 30
 	}
-
-	o.Status.SetIsOnError(false)
 
 	return res, nil
 }

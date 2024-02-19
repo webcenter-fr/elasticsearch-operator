@@ -204,7 +204,7 @@ func doCreateILMStep() test.TestStep {
 	return test.TestStep{
 		Name: "create",
 		Do: func(c client.Client, key types.NamespacedName, o client.Object, data map[string]any) (err error) {
-			logrus.Infof("=== Add new ILM policy %s/%s ===", key.Namespace, key.Name)
+			logrus.Infof("=== Add new ILM policy %s/%s ===\n\n", key.Namespace, key.Name)
 			ilm := &elasticsearchapicrd.IndexLifecyclePolicy{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      key.Name,
@@ -258,7 +258,7 @@ func doCreateILMStep() test.TestStep {
 				if b, ok := data["isCreated"]; ok {
 					isCreated = b.(bool)
 				}
-				if !isCreated {
+				if !isCreated || ilm.GetStatus().GetObservedGeneration() == 0 {
 					return errors.New("Not yet created")
 				}
 				return nil
@@ -278,13 +278,14 @@ func doUpdateILMStep() test.TestStep {
 	return test.TestStep{
 		Name: "update",
 		Do: func(c client.Client, key types.NamespacedName, o client.Object, data map[string]any) (err error) {
-			logrus.Infof("=== Update ILM policy %s/%s ===", key.Namespace, key.Name)
+			logrus.Infof("=== Update ILM policy %s/%s ===\n\n", key.Namespace, key.Name)
 
 			if o == nil {
 				return errors.New("ILM is null")
 			}
 			ilm := o.(*elasticsearchapicrd.IndexLifecyclePolicy)
 
+			data["lastGeneration"] = ilm.GetStatus().GetObservedGeneration()
 			ilm.Spec.Policy = `{
 				"policy": {
 					"phases": {
@@ -317,6 +318,8 @@ func doUpdateILMStep() test.TestStep {
 			ilm := &elasticsearchapicrd.IndexLifecyclePolicy{}
 			isUpdated := false
 
+			lastGeneration := data["lastGeneration"].(int64)
+
 			isTimeout, err := test.RunWithTimeout(func() error {
 				if err := c.Get(context.Background(), key, ilm); err != nil {
 					t.Fatal(err)
@@ -324,7 +327,7 @@ func doUpdateILMStep() test.TestStep {
 				if b, ok := data["isUpdated"]; ok {
 					isUpdated = b.(bool)
 				}
-				if !isUpdated {
+				if !isUpdated || lastGeneration == ilm.GetStatus().GetObservedGeneration() {
 					return errors.New("Not yet updated")
 				}
 				return nil
@@ -345,7 +348,7 @@ func doDeleteILMStep() test.TestStep {
 	return test.TestStep{
 		Name: "delete",
 		Do: func(c client.Client, key types.NamespacedName, o client.Object, data map[string]any) (err error) {
-			logrus.Infof("=== Delete ILM policy %s/%s ===", key.Namespace, key.Name)
+			logrus.Infof("=== Delete ILM policy %s/%s ===\n\n", key.Namespace, key.Name)
 
 			if o == nil {
 				return errors.New("ILM is null")

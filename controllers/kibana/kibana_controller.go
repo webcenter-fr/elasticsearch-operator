@@ -24,6 +24,7 @@ import (
 	"emperror.dev/errors"
 	"github.com/disaster37/operator-sdk-extra/pkg/controller"
 	"github.com/disaster37/operator-sdk-extra/pkg/object"
+	monitoringv1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1"
 	"github.com/sirupsen/logrus"
 	beatcrd "github.com/webcenter-fr/elasticsearch-operator/apis/beat/v1"
 	elasticsearchcrd "github.com/webcenter-fr/elasticsearch-operator/apis/elasticsearch/v1"
@@ -195,6 +196,7 @@ func (h *KibanaReconciler) SetupWithManager(mgr ctrl.Manager) error {
 		Owns(&policyv1.PodDisruptionBudget{}).
 		Owns(&appv1.Deployment{}).
 		Owns(&beatcrd.Metricbeat{}).
+		Owns(&monitoringv1.PodMonitor{}).
 		Watches(&corev1.Secret{}, handler.EnqueueRequestsFromMapFunc(watchSecret(h.Client))).
 		Watches(&corev1.ConfigMap{}, handler.EnqueueRequestsFromMapFunc(watchConfigMap(h.Client))).
 		Watches(&elasticsearchcrd.Elasticsearch{}, handler.EnqueueRequestsFromMapFunc(watchElasticsearch(h.Client))).
@@ -213,6 +215,15 @@ func (h *KibanaReconciler) OnError(ctx context.Context, o object.MultiPhaseObjec
 
 func (h *KibanaReconciler) OnSuccess(ctx context.Context, r object.MultiPhaseObject, data map[string]any) (res ctrl.Result, err error) {
 	o := r.(*kibanacrd.Kibana)
+
+	// Not preserve condition to avoid to update status each time
+	conditions := o.GetStatus().GetConditions()
+	o.GetStatus().SetConditions(nil)
+	res, err = h.MultiPhaseReconcilerAction.OnSuccess(ctx, o, data)
+	if err != nil {
+		return res, err
+	}
+	o.GetStatus().SetConditions(conditions)
 
 	// Check adeployment is ready
 	isReady := true
@@ -260,7 +271,6 @@ func (h *KibanaReconciler) OnSuccess(ctx context.Context, r object.MultiPhaseObj
 		return res, err
 	}
 	o.Status.Url = url
-	o.Status.SetIsOnError(false)
 
 	return res, nil
 }

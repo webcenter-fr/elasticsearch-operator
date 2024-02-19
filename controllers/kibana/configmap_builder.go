@@ -4,9 +4,11 @@ import (
 	"fmt"
 
 	"emperror.dev/errors"
+	"github.com/elastic/go-ucfg"
 	elasticsearchcrd "github.com/webcenter-fr/elasticsearch-operator/apis/elasticsearch/v1"
 	kibanacrd "github.com/webcenter-fr/elasticsearch-operator/apis/kibana/v1"
 	"github.com/webcenter-fr/elasticsearch-operator/pkg/helper"
+	localhelper "github.com/webcenter-fr/elasticsearch-operator/pkg/helper"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -40,11 +42,16 @@ elasticsearch.ssl.certificateAuthorities:
 	}
 
 	if kb.Spec.Endpoint.IsIngressEnabled() {
+		var path string
+		path, err = localhelper.GetSetting("server.basePath", []byte(kb.Spec.Config["kibana.yml"]))
+		if err != nil && ucfg.ErrMissing != err {
+			return nil, errors.Wrap(err, "Error when search property 'server.basePath' on kibana setting")
+		}
 		scheme := "https"
 		if !kb.Spec.Tls.IsTlsEnabled() && kb.Spec.Endpoint.Ingress.SecretRef == nil {
 			scheme = "http"
 		}
-		injectedConfigMap["kibana.yml"] += fmt.Sprintf("server.publicBaseUrl: %s://%s\n", scheme, kb.Spec.Endpoint.Ingress.Host)
+		injectedConfigMap["kibana.yml"] += fmt.Sprintf("server.publicBaseUrl: %s://%s%s\n", scheme, kb.Spec.Endpoint.Ingress.Host, path)
 	}
 
 	// Inject computed config

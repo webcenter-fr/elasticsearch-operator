@@ -787,8 +787,11 @@ func computeProbePath(cm *corev1.ConfigMap) (path string, err error) {
 	}
 
 	path, err = localhelper.GetSetting("server.basePath", []byte(cm.Data["kibana.yml"]))
-	if ucfg.ErrMissing == err {
-		return "/app/kibana", nil
+	if err != nil {
+		if ucfg.ErrMissing == err {
+			return "/app/kibana", nil
+		}
+		return path, errors.Wrap(err, "Error when search property 'server.basePath' on kibana setting")
 	}
 
 	return path, nil

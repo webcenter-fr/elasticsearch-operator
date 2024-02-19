@@ -187,7 +187,7 @@ func doCreateSLMStep() test.TestStep {
 	return test.TestStep{
 		Name: "create",
 		Do: func(c client.Client, key types.NamespacedName, o client.Object, data map[string]any) (err error) {
-			logrus.Infof("=== Add new SLM policy %s/%s ===", key.Namespace, key.Name)
+			logrus.Infof("=== Add new SLM policy %s/%s ===\n\n", key.Namespace, key.Name)
 
 			slm := &elasticsearchapicrd.SnapshotLifecyclePolicy{
 				ObjectMeta: metav1.ObjectMeta{
@@ -232,7 +232,7 @@ func doCreateSLMStep() test.TestStep {
 				if b, ok := data["isCreated"]; ok {
 					isCreated = b.(bool)
 				}
-				if !isCreated {
+				if !isCreated || slm.GetStatus().GetObservedGeneration() == 0 {
 					return errors.New("Not yet created")
 				}
 				return nil
@@ -253,13 +253,14 @@ func doUpdateSLMStep() test.TestStep {
 	return test.TestStep{
 		Name: "update",
 		Do: func(c client.Client, key types.NamespacedName, o client.Object, data map[string]any) (err error) {
-			logrus.Infof("=== Update SLM policy %s/%s ===", key.Namespace, key.Name)
+			logrus.Infof("=== Update SLM policy %s/%s ===\n\n", key.Namespace, key.Name)
 
 			if o == nil {
 				return errors.New("SLM is null")
 			}
 			slm := o.(*elasticsearchapicrd.SnapshotLifecyclePolicy)
 
+			data["lastGeneration"] = slm.GetStatus().GetObservedGeneration()
 			slm.Spec.Retention.MinCount = 6
 			if err = c.Update(context.Background(), slm); err != nil {
 				return err
@@ -271,6 +272,8 @@ func doUpdateSLMStep() test.TestStep {
 			slm := &elasticsearchapicrd.SnapshotLifecyclePolicy{}
 			isUpdated := false
 
+			lastGeneration := data["lastGeneration"].(int64)
+
 			isTimeout, err := test.RunWithTimeout(func() error {
 				if err := c.Get(context.Background(), key, slm); err != nil {
 					t.Fatal(err)
@@ -278,7 +281,7 @@ func doUpdateSLMStep() test.TestStep {
 				if b, ok := data["isUpdated"]; ok {
 					isUpdated = b.(bool)
 				}
-				if !isUpdated {
+				if !isUpdated || lastGeneration == slm.GetStatus().GetObservedGeneration() {
 					return errors.New("Not yet updated")
 				}
 				return nil
@@ -298,7 +301,7 @@ func doDeleteSLMStep() test.TestStep {
 	return test.TestStep{
 		Name: "delete",
 		Do: func(c client.Client, key types.NamespacedName, o client.Object, data map[string]any) (err error) {
-			logrus.Infof("=== Delete SLM policy %s/%s ===", key.Namespace, key.Name)
+			logrus.Infof("=== Delete SLM policy %s/%s ===\n\n", key.Namespace, key.Name)
 
 			if o == nil {
 				return errors.New("SLM is null")

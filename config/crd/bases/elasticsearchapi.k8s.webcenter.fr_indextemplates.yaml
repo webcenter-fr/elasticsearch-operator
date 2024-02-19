@@ -241,6 +241,10 @@ spec:
               lastErrorMessage:
                 description: LastErrorMessage is the current error message
                 type: string
+              observedGeneration:
+                description: observedGeneration is the current generation applied
+                format: int64
+                type: integer
             type: object
         type: object
     served: true

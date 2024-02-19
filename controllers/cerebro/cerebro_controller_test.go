@@ -19,6 +19,7 @@ import (
 	appv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	networkingv1 "k8s.io/api/networking/v1"
+	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	condition "k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
@@ -48,7 +49,7 @@ func doCreateCerebroStep() test.TestStep {
 	return test.TestStep{
 		Name: "create",
 		Do: func(c client.Client, key types.NamespacedName, o client.Object, data map[string]any) (err error) {
-			logrus.Infof("=== Add new Cerebro %s/%s ===", key.Namespace, key.Name)
+			logrus.Infof("=== Add new Cerebro %s/%s ===\n\n", key.Namespace, key.Name)
 
 			cb := &cerebrocrd.Cerebro{
 				ObjectMeta: metav1.ObjectMeta{
@@ -98,9 +99,7 @@ func doCreateCerebroStep() test.TestStep {
 					t.Fatal("Cerebro not found")
 				}
 
-				// In envtest, no kubelet
-				// So the condition never set as true
-				if condition.FindStatusCondition(cb.Status.Conditions, controller.ReadyCondition.String()) != nil && condition.FindStatusCondition(cb.Status.Conditions, controller.ReadyCondition.String()).Reason != "Initialize" {
+				if cb.GetStatus().GetObservedGeneration() > 0 {
 					return nil
 				}
 
@@ -174,7 +173,7 @@ func doUpdateCerebroStep() test.TestStep {
 	return test.TestStep{
 		Name: "update",
 		Do: func(c client.Client, key types.NamespacedName, o client.Object, data map[string]any) (err error) {
-			logrus.Infof("=== Update Cerebro cluster %s/%s ===", key.Namespace, key.Name)
+			logrus.Infof("=== Update Cerebro cluster %s/%s ===\n\n", key.Namespace, key.Name)
 
 			if o == nil {
 				return errors.New("Cerebro is null")
@@ -185,14 +184,16 @@ func doUpdateCerebroStep() test.TestStep {
 			cb.Labels = map[string]string{
 				"test": "fu",
 			}
+			// Change spec to track generation
+			cb.Spec.Deployment.Labels = map[string]string{
+				"test": "fu",
+			}
 
-			data["lastVersion"] = cb.ResourceVersion
+			data["lastGeneration"] = cb.GetStatus().GetObservedGeneration()
 
 			if err = c.Update(context.Background(), cb); err != nil {
 				return err
 			}
-
-			time.Sleep(5 * time.Second)
 
 			return nil
 		},
@@ -207,16 +208,14 @@ func doUpdateCerebroStep() test.TestStep {
 				dpl *appv1.Deployment
 			)
 
-			lastVersion := data["lastVersion"].(string)
+			lastGeneration := data["lastGeneration"].(int64)
 
 			isTimeout, err := test.RunWithTimeout(func() error {
 				if err := c.Get(context.Background(), key, cb); err != nil {
 					t.Fatal("Cerebro not found")
 				}
 
-				// In envtest, no kubelet
-				// So the condition never set as true
-				if lastVersion != cb.ResourceVersion && (cb.Status.PhaseName == controller.StartingPhase) {
+				if lastGeneration < cb.GetStatus().GetObservedGeneration() {
 					return nil
 				}
 
@@ -296,7 +295,7 @@ func doAddHostStep() test.TestStep {
 	return test.TestStep{
 		Name: "addHost",
 		Do: func(c client.Client, key types.NamespacedName, o client.Object, data map[string]any) (err error) {
-			logrus.Infof("=== Add Cerebro host %s/%s ===", key.Namespace, key.Name)
+			logrus.Infof("=== Add Cerebro host %s/%s ===\n\n", key.Namespace, key.Name)
 
 			if o == nil {
 				return errors.New("Cerebro is null")
@@ -428,7 +427,7 @@ func doDeleteCerebroStep() test.TestStep {
 	return test.TestStep{
 		Name: "delete",
 		Do: func(c client.Client, key types.NamespacedName, o client.Object, data map[string]any) (err error) {
-			logrus.Infof("=== Delete Cerebro cluster %s/%s ===", key.Namespace, key.Name)
+			logrus.Infof("=== Delete Cerebro cluster %s/%s ===\n\n", key.Namespace, key.Name)
 
 			if o == nil {
 				return errors.New("Cerebro is null")
@@ -444,8 +443,27 @@ func doDeleteCerebroStep() test.TestStep {
 		},
 		Check: func(t *testing.T, c client.Client, key types.NamespacedName, o client.Object, data map[string]any) (err error) {
 
+			cb := &cerebrocrd.Cerebro{}
+			isDeleted := false
+
 			// In envtest, no kubelet
 			// So the cascading children delation not works
+			isTimeout, err := test.RunWithTimeout(func() error {
+				if err = c.Get(context.Background(), key, cb); err != nil {
+					if k8serrors.IsNotFound(err) {
+						isDeleted = true
+						return nil
+					}
+					t.Fatal(err)
+				}
+
+				return errors.New("Not yet deleted")
+			}, time.Second*30, time.Second*1)
+			if err != nil || isTimeout {
+				t.Fatalf("Cerebro stil exist: %s", err.Error())
+			}
+
+			assert.True(t, isDeleted)
 
 			return nil
 		},

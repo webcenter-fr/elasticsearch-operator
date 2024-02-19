@@ -176,7 +176,7 @@ func doCreateUserSpaceStep() test.TestStep {
 	return test.TestStep{
 		Name: "create",
 		Do: func(c client.Client, key types.NamespacedName, o client.Object, data map[string]any) (err error) {
-			logrus.Infof("=== Add new user space %s/%s ===", key.Namespace, key.Name)
+			logrus.Infof("=== Add new user space %s/%s ===\n\n", key.Namespace, key.Name)
 
 			space := &kibanaapicrd.UserSpace{
 				ObjectMeta: metav1.ObjectMeta{
@@ -210,7 +210,7 @@ func doCreateUserSpaceStep() test.TestStep {
 				if b, ok := data["isCreated"]; ok {
 					isCreated = b.(bool)
 				}
-				if !isCreated {
+				if !isCreated || space.GetStatus().GetObservedGeneration() == 0 {
 					return errors.New("Not yet created")
 				}
 				return nil
@@ -230,7 +230,7 @@ func doCreateUserSpaceWithObjectsStep() test.TestStep {
 	return test.TestStep{
 		Name: "createWithObject",
 		Do: func(c client.Client, key types.NamespacedName, o client.Object, data map[string]any) (err error) {
-			logrus.Infof("=== Add new user space with object %s/%s ===", key.Namespace, key.Name)
+			logrus.Infof("=== Add new user space with object %s/%s ===\n\n", key.Namespace, key.Name)
 
 			space := &kibanaapicrd.UserSpace{
 				ObjectMeta: metav1.ObjectMeta{
@@ -275,7 +275,7 @@ func doCreateUserSpaceWithObjectsStep() test.TestStep {
 				if b, ok := data["isCreatedWithObject"]; ok {
 					isCreated = b.(bool)
 				}
-				if !isCreated {
+				if !isCreated || space.GetStatus().GetObservedGeneration() == 0 {
 					return errors.New("Not yet created")
 				}
 				return nil
@@ -301,13 +301,14 @@ func doUpdateUserSpaceStep() test.TestStep {
 	return test.TestStep{
 		Name: "update",
 		Do: func(c client.Client, key types.NamespacedName, o client.Object, data map[string]any) (err error) {
-			logrus.Infof("=== Update user space %s/%s ===", key.Namespace, key.Name)
+			logrus.Infof("=== Update user space %s/%s ===\n\n", key.Namespace, key.Name)
 
 			if o == nil {
 				return errors.New("User space is null")
 			}
 			space := o.(*kibanaapicrd.UserSpace)
 
+			data["lastGeneration"] = space.GetStatus().GetObservedGeneration()
 			space.Spec.Description = "test2"
 			if err = c.Update(context.Background(), space); err != nil {
 				return err
@@ -319,6 +320,8 @@ func doUpdateUserSpaceStep() test.TestStep {
 			space := &kibanaapicrd.UserSpace{}
 			isUpdated := false
 
+			lastGeneration := data["lastGeneration"].(int64)
+
 			isTimeout, err := test.RunWithTimeout(func() error {
 				if err := c.Get(context.Background(), key, space); err != nil {
 					t.Fatal(err)
@@ -326,7 +329,7 @@ func doUpdateUserSpaceStep() test.TestStep {
 				if b, ok := data["isUpdated"]; ok {
 					isUpdated = b.(bool)
 				}
-				if !isUpdated {
+				if !isUpdated || lastGeneration == space.GetStatus().GetObservedGeneration() {
 					return errors.New("Not yet updated")
 				}
 				return nil
@@ -346,7 +349,7 @@ func doDeleteUserSpaceStep() test.TestStep {
 	return test.TestStep{
 		Name: "delete",
 		Do: func(c client.Client, key types.NamespacedName, o client.Object, data map[string]any) (err error) {
-			logrus.Infof("=== Delete user space %s/%s ===", key.Namespace, key.Name)
+			logrus.Infof("=== Delete user space %s/%s ===\n\n", key.Namespace, key.Name)
 
 			if o == nil {
 				return errors.New("User space is null")

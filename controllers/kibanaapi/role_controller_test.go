@@ -139,7 +139,7 @@ func doCreateRoleStep() test.TestStep {
 	return test.TestStep{
 		Name: "create",
 		Do: func(c client.Client, key types.NamespacedName, o client.Object, data map[string]any) (err error) {
-			logrus.Infof("=== Add new role %s/%s ===", key.Namespace, key.Name)
+			logrus.Infof("=== Add new role %s/%s ===\n\n", key.Namespace, key.Name)
 
 			role := &kibanaapicrd.Role{
 				ObjectMeta: metav1.ObjectMeta{
@@ -174,7 +174,7 @@ func doCreateRoleStep() test.TestStep {
 				if b, ok := data["isCreated"]; ok {
 					isCreated = b.(bool)
 				}
-				if !isCreated {
+				if !isCreated || role.GetStatus().GetObservedGeneration() == 0 {
 					return errors.New("Not yet created")
 				}
 				return nil
@@ -194,13 +194,14 @@ func doUpdateRoleStep() test.TestStep {
 	return test.TestStep{
 		Name: "update",
 		Do: func(c client.Client, key types.NamespacedName, o client.Object, data map[string]any) (err error) {
-			logrus.Infof("=== Update role %s/%s ===", key.Namespace, key.Name)
+			logrus.Infof("=== Update role %s/%s ===\n\n", key.Namespace, key.Name)
 
 			if o == nil {
 				return errors.New("Role is null")
 			}
 			role := o.(*kibanaapicrd.Role)
 
+			data["lastGeneration"] = role.GetStatus().GetObservedGeneration()
 			role.Spec.Elasticsearch.RunAs = []string{"test2"}
 			if err = c.Update(context.Background(), role); err != nil {
 				return err
@@ -212,6 +213,8 @@ func doUpdateRoleStep() test.TestStep {
 			role := &kibanaapicrd.Role{}
 			isUpdated := false
 
+			lastGeneration := data["lastGeneration"].(int64)
+
 			isTimeout, err := test.RunWithTimeout(func() error {
 				if err := c.Get(context.Background(), key, role); err != nil {
 					t.Fatal(err)
@@ -219,7 +222,7 @@ func doUpdateRoleStep() test.TestStep {
 				if b, ok := data["isUpdated"]; ok {
 					isUpdated = b.(bool)
 				}
-				if !isUpdated {
+				if !isUpdated || lastGeneration == role.GetStatus().GetObservedGeneration() {
 					return errors.New("Not yet updated")
 				}
 				return nil
@@ -239,7 +242,7 @@ func doDeleteRoleStep() test.TestStep {
 	return test.TestStep{
 		Name: "delete",
 		Do: func(c client.Client, key types.NamespacedName, o client.Object, data map[string]any) (err error) {
-			logrus.Infof("=== Delete role %s/%s ===", key.Namespace, key.Name)
+			logrus.Infof("=== Delete role %s/%s ===\n\n", key.Namespace, key.Name)
 
 			if o == nil {
 				return errors.New("Role is null")

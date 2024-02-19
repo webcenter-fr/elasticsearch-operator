@@ -177,6 +177,15 @@ func (h *CerebroReconciler) OnError(ctx context.Context, o object.MultiPhaseObje
 func (h *CerebroReconciler) OnSuccess(ctx context.Context, r object.MultiPhaseObject, data map[string]any) (res ctrl.Result, err error) {
 	o := r.(*cerebrocrd.Cerebro)
 
+	// Not preserve condition to avoid to update status each time
+	conditions := o.GetStatus().GetConditions()
+	o.GetStatus().SetConditions(nil)
+	res, err = h.MultiPhaseReconcilerAction.OnSuccess(ctx, o, data)
+	if err != nil {
+		return res, err
+	}
+	o.GetStatus().SetConditions(conditions)
+
 	// Check adeployment is ready
 	isReady := true
 	dpl := &appv1.Deployment{}
@@ -223,8 +232,6 @@ func (h *CerebroReconciler) OnSuccess(ctx context.Context, r object.MultiPhaseOb
 		return res, err
 	}
 	o.Status.Url = url
-
-	o.Status.SetIsOnError(false)
 
 	return res, nil
 }

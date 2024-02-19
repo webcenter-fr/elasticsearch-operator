@@ -179,7 +179,6 @@ func main() {
 	}
 
 	// Add indexers
-	// Add indexers
 	if err = controller.SetupIndexerWithManager(
 		mgr,
 		elasticsearchcrd.SetupElasticsearchIndexer,

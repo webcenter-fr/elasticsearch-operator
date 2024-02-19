@@ -7,7 +7,6 @@ import (
 	"time"
 
 	"github.com/disaster37/k8s-objectmatcher/patch"
-	"github.com/disaster37/operator-sdk-extra/pkg/controller"
 	"github.com/disaster37/operator-sdk-extra/pkg/helper"
 	"github.com/disaster37/operator-sdk-extra/pkg/test"
 	"github.com/sirupsen/logrus"
@@ -18,7 +17,7 @@ import (
 	appv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	policyv1 "k8s.io/api/policy/v1"
-	condition "k8s.io/apimachinery/pkg/api/meta"
+	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -46,7 +45,7 @@ func doCreateMetricbeatStep() test.TestStep {
 	return test.TestStep{
 		Name: "create",
 		Do: func(c client.Client, key types.NamespacedName, o client.Object, data map[string]any) (err error) {
-			logrus.Infof("=== Add new Metricbeat %s/%s ===", key.Namespace, key.Name)
+			logrus.Infof("=== Add new Metricbeat %s/%s ===\n\n", key.Namespace, key.Name)
 
 			// First, create Elasticsearch
 			es := &elasticsearchcrd.Elasticsearch{
@@ -73,25 +72,6 @@ func doCreateMetricbeatStep() test.TestStep {
 			}
 
 			if err = c.Create(context.Background(), es); err != nil {
-				return err
-			}
-
-			isTimeout, err := test.RunWithTimeout(func() error {
-				if err := c.Get(context.Background(), key, es); err != nil {
-					return err
-				}
-
-				// In envtest, no kubelet
-				// So the Elasticsearch condition never set as true
-				if condition.FindStatusCondition(es.Status.Conditions, controller.ReadyCondition.String()) != nil && condition.FindStatusCondition(es.Status.Conditions, controller.ReadyCondition.String()).Reason != "Initialize" {
-					return nil
-				}
-
-				return errors.New("Not yet created")
-
-			}, time.Second*30, time.Second*1)
-
-			if err != nil || isTimeout {
 				return err
 			}
 
@@ -145,9 +125,7 @@ queue.type: persisted
 					t.Fatal("Metricbeat not found")
 				}
 
-				// In envtest, no kubelet
-				// So the Metricbeat condition never set as true
-				if condition.FindStatusCondition(mb.Status.Conditions, controller.ReadyCondition.String()) != nil && condition.FindStatusCondition(mb.Status.Conditions, controller.ReadyCondition.String()).Reason != "Initialize" {
+				if mb.GetStatus().GetObservedGeneration() > 0 {
 					return nil
 				}
 
@@ -228,7 +206,7 @@ func doUpdateMetricbeatStep() test.TestStep {
 	return test.TestStep{
 		Name: "update",
 		Do: func(c client.Client, key types.NamespacedName, o client.Object, data map[string]any) (err error) {
-			logrus.Infof("=== Update Metricbeat cluster %s/%s ===", key.Namespace, key.Name)
+			logrus.Infof("=== Update Metricbeat cluster %s/%s ===\n\n", key.Namespace, key.Name)
 
 			if o == nil {
 				return errors.New("Metricbeat is null")
@@ -239,14 +217,16 @@ func doUpdateMetricbeatStep() test.TestStep {
 			mb.Labels = map[string]string{
 				"test": "fu",
 			}
+			// Change spec to track generation
+			mb.Spec.Deployment.Labels = map[string]string{
+				"test": "fu",
+			}
 
-			data["lastVersion"] = mb.ResourceVersion
+			data["lastGeneration"] = mb.GetStatus().GetObservedGeneration()
 
 			if err = c.Update(context.Background(), mb); err != nil {
 				return err
 			}
-
-			time.Sleep(5 * time.Second)
 
 			return nil
 		},
@@ -261,16 +241,14 @@ func doUpdateMetricbeatStep() test.TestStep {
 				sts *appv1.StatefulSet
 			)
 
-			lastVersion := data["lastVersion"].(string)
+			lastGeneration := data["lastGeneration"].(int64)
 
 			isTimeout, err := test.RunWithTimeout(func() error {
 				if err := c.Get(context.Background(), key, mb); err != nil {
 					t.Fatal("Metricbeat not found")
 				}
 
-				// In envtest, no kubelet
-				// So the Metricbeat condition never set as true
-				if lastVersion != mb.ResourceVersion && (mb.Status.PhaseName == controller.StartingPhase) {
+				if lastGeneration < mb.GetStatus().GetObservedGeneration() {
 					return nil
 				}
 
@@ -358,7 +336,7 @@ func doDeleteMetricbeatStep() test.TestStep {
 	return test.TestStep{
 		Name: "delete",
 		Do: func(c client.Client, key types.NamespacedName, o client.Object, data map[string]any) (err error) {
-			logrus.Infof("=== Delete Metricbeat cluster %s/%s ===", key.Namespace, key.Name)
+			logrus.Infof("=== Delete Metricbeat cluster %s/%s ===\n\n", key.Namespace, key.Name)
 
 			if o == nil {
 				return errors.New("Metricbeat is null")
@@ -374,8 +352,27 @@ func doDeleteMetricbeatStep() test.TestStep {
 		},
 		Check: func(t *testing.T, c client.Client, key types.NamespacedName, o client.Object, data map[string]any) (err error) {
 
+			mb := &beatcrd.Metricbeat{}
+			isDeleted := false
+
 			// In envtest, no kubelet
 			// So the cascading children delation not works
+			isTimeout, err := test.RunWithTimeout(func() error {
+				if err = c.Get(context.Background(), key, mb); err != nil {
+					if k8serrors.IsNotFound(err) {
+						isDeleted = true
+						return nil
+					}
+					t.Fatal(err)
+				}
+
+				return errors.New("Not yet deleted")
+			}, time.Second*30, time.Second*1)
+			if err != nil || isTimeout {
+				t.Fatalf("Metricbeat stil exist: %s", err.Error())
+			}
+
+			assert.True(t, isDeleted)
 
 			return nil
 		},

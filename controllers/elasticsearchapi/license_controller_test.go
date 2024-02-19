@@ -155,7 +155,7 @@ func doEnableBasicLicenseStep() test.TestStep {
 	return test.TestStep{
 		Name: "create_basic_license",
 		Do: func(c client.Client, key types.NamespacedName, o client.Object, data map[string]any) (err error) {
-			logrus.Infof("=== Enable basic license %s/%s ===", key.Namespace, key.Name)
+			logrus.Infof("=== Enable basic license %s/%s ===\n\n", key.Namespace, key.Name)
 
 			license := &elasticsearchapicrd.License{
 				ObjectMeta: metav1.ObjectMeta{
@@ -188,7 +188,7 @@ func doEnableBasicLicenseStep() test.TestStep {
 				if err := c.Get(context.Background(), key, license); err != nil {
 					t.Fatal(err)
 				}
-				if !condition.IsStatusConditionPresentAndEqual(license.Status.Conditions, controller.ReadyCondition.String(), metav1.ConditionTrue) {
+				if license.GetStatus().GetObservedGeneration() == 0 {
 					return errors.New("Not yet created")
 				}
 				return nil
@@ -210,7 +210,7 @@ func doDeleteBasicLicenseStep() test.TestStep {
 	return test.TestStep{
 		Name: "delete_basic_license",
 		Do: func(c client.Client, key types.NamespacedName, o client.Object, data map[string]any) (err error) {
-			logrus.Infof("=== Delete basic license %s/%s ===", key.Namespace, key.Name)
+			logrus.Infof("=== Delete basic license %s/%s ===\n\n", key.Namespace, key.Name)
 
 			if o == nil {
 				return errors.New("License is null")
@@ -254,7 +254,7 @@ func doUpdateToEnterpriseLicenseStep() test.TestStep {
 	return test.TestStep{
 		Name: "update_to_enterprise_license",
 		Do: func(c client.Client, key types.NamespacedName, o client.Object, data map[string]any) (err error) {
-			logrus.Infof("=== Update to enterprise %s/%s ===", key.Namespace, key.Name)
+			logrus.Infof("=== Update to enterprise %s/%s ===\n\n", key.Namespace, key.Name)
 
 			licenseJson := `
 			{
@@ -313,7 +313,7 @@ func doUpdateToEnterpriseLicenseStep() test.TestStep {
 				if err := c.Get(context.Background(), key, license); err != nil {
 					t.Fatal(err)
 				}
-				if !condition.IsStatusConditionPresentAndEqual(license.Status.Conditions, controller.ReadyCondition.String(), metav1.ConditionTrue) {
+				if license.GetStatus().GetObservedGeneration() == 0 {
 					return errors.New("Not yet created")
 				}
 				return nil
@@ -335,7 +335,7 @@ func doUpdateEnterpriseLicenseStep() test.TestStep {
 	return test.TestStep{
 		Name: "update_enterprise_license",
 		Do: func(c client.Client, key types.NamespacedName, o client.Object, data map[string]any) (err error) {
-			logrus.Infof("=== Update license %s/%s ===", key.Namespace, key.Name)
+			logrus.Infof("=== Update license %s/%s ===\n\n", key.Namespace, key.Name)
 
 			if o == nil {
 				return errors.New("License is null")
@@ -401,7 +401,7 @@ func doDeleteEnterpriseLicenseStep() test.TestStep {
 	return test.TestStep{
 		Name: "delete_enterprise_license",
 		Do: func(c client.Client, key types.NamespacedName, o client.Object, data map[string]any) (err error) {
-			logrus.Infof("=== Delete enterprise license %s/%s ===", key.Namespace, key.Name)
+			logrus.Infof("=== Delete enterprise license %s/%s ===\n\n", key.Namespace, key.Name)
 
 			if o == nil {
 				return errors.New("License is null")

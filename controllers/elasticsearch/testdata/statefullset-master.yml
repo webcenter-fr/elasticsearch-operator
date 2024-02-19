@@ -347,11 +347,7 @@ spec:
           - name: api-tls
             mountPath: /mnt/certs/api
           - name: elasticsearch-config
-            mountPath: /mnt/configmap/elasticsearch.yml
-            subPath: elasticsearch.yml
-          - name: elasticsearch-config
-            mountPath: /mnt/configmap/log4j.yaml
-            subPath: log4j.yaml
+            mountPath: /mnt/configmap
           - name: elasticsearch-data
             mountPath: /mnt/data
           - name: plugin

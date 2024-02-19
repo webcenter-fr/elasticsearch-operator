@@ -135,7 +135,7 @@ func doCreateComponentTemplateStep() test.TestStep {
 	return test.TestStep{
 		Name: "create",
 		Do: func(c client.Client, key types.NamespacedName, o client.Object, data map[string]any) (err error) {
-			logrus.Infof("=== Add new component template %s/%s ===", key.Namespace, key.Name)
+			logrus.Infof("=== Add new component template %s/%s ===\n\n", key.Namespace, key.Name)
 
 			ct := &elasticsearchapicrd.ComponentTemplate{
 				ObjectMeta: metav1.ObjectMeta{
@@ -172,7 +172,7 @@ func doCreateComponentTemplateStep() test.TestStep {
 				if b, ok := data["isCreated"]; ok {
 					isCreated = b.(bool)
 				}
-				if !isCreated {
+				if !isCreated || ct.GetStatus().GetObservedGeneration() == 0 {
 					return errors.New("Not yet created")
 				}
 				return nil
@@ -193,13 +193,14 @@ func doUpdateComponentTemplateStep() test.TestStep {
 	return test.TestStep{
 		Name: "update",
 		Do: func(c client.Client, key types.NamespacedName, o client.Object, data map[string]any) (err error) {
-			logrus.Infof("=== Update component template %s/%s ===", key.Namespace, key.Name)
+			logrus.Infof("=== Update component template %s/%s ===\n\n", key.Namespace, key.Name)
 
 			if o == nil {
 				return errors.New("Component template is null")
 			}
 			ct := o.(*elasticsearchapicrd.ComponentTemplate)
 
+			data["lastGeneration"] = ct.GetStatus().GetObservedGeneration()
 			ct.Spec.Settings = `{
 				"fake": "foo2"
 			}`
@@ -213,6 +214,8 @@ func doUpdateComponentTemplateStep() test.TestStep {
 			ct := &elasticsearchapicrd.ComponentTemplate{}
 			isUpdated := false
 
+			lastGeneration := data["lastGeneration"].(int64)
+
 			isTimeout, err := test.RunWithTimeout(func() error {
 				if err := c.Get(context.Background(), key, ct); err != nil {
 					t.Fatal(err)
@@ -220,7 +223,7 @@ func doUpdateComponentTemplateStep() test.TestStep {
 				if b, ok := data["isUpdated"]; ok {
 					isUpdated = b.(bool)
 				}
-				if !isUpdated {
+				if !isUpdated || lastGeneration == ct.GetStatus().GetObservedGeneration() {
 					return errors.New("Not yet updated")
 				}
 				return nil
@@ -240,7 +243,7 @@ func doDeleteComponentTemplateStep() test.TestStep {
 	return test.TestStep{
 		Name: "delete",
 		Do: func(c client.Client, key types.NamespacedName, o client.Object, data map[string]any) (err error) {
-			logrus.Infof("=== Delete component template %s/%s ===", key.Namespace, key.Name)
+			logrus.Infof("=== Delete component template %s/%s ===\n\n", key.Namespace, key.Name)
 
 			if o == nil {
 				return errors.New("Component template is null")

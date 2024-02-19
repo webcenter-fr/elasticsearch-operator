@@ -16,8 +16,6 @@ const (
 	rootCACN   = "elasticsearch-operator.k8s.webcenter.fr"
 )
 
-
-
 // NeedRenewCertificate permit to check if certificate must be renewed before it expire
 func NeedRenewCertificate(crt *x509.Certificate, durationBeforeExpire time.Duration, log *logrus.Entry) (status bool, err error) {
 	if crt == nil {

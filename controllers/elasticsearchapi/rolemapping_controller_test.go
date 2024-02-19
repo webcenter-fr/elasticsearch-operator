@@ -140,7 +140,7 @@ func doCreateRoleMappingStep() test.TestStep {
 	return test.TestStep{
 		Name: "create",
 		Do: func(c client.Client, key types.NamespacedName, o client.Object, data map[string]any) (err error) {
-			logrus.Infof("=== Add new role mapping %s/%s ===", key.Namespace, key.Name)
+			logrus.Infof("=== Add new role mapping %s/%s ===\n\n", key.Namespace, key.Name)
 
 			rm := &elasticsearchapicrd.RoleMapping{
 				ObjectMeta: metav1.ObjectMeta{
@@ -177,7 +177,7 @@ func doCreateRoleMappingStep() test.TestStep {
 				if b, ok := data["isCreated"]; ok {
 					isCreated = b.(bool)
 				}
-				if !isCreated {
+				if !isCreated || rm.GetStatus().GetObservedGeneration() == 0 {
 					return errors.New("Not yet created")
 				}
 				return nil
@@ -197,13 +197,14 @@ func doUpdateRoleMappingStep() test.TestStep {
 	return test.TestStep{
 		Name: "update",
 		Do: func(c client.Client, key types.NamespacedName, o client.Object, data map[string]any) (err error) {
-			logrus.Infof("=== Update role mapping %s/%s ===", key.Namespace, key.Name)
+			logrus.Infof("=== Update role mapping %s/%s ===\n\n", key.Namespace, key.Name)
 
 			if o == nil {
 				return errors.New("Role mapping is null")
 			}
 			rm := o.(*elasticsearchapicrd.RoleMapping)
 
+			data["lastGeneration"] = rm.GetStatus().GetObservedGeneration()
 			rm.Spec.Enabled = false
 			if err = c.Update(context.Background(), rm); err != nil {
 				return err
@@ -215,6 +216,8 @@ func doUpdateRoleMappingStep() test.TestStep {
 			rm := &elasticsearchapicrd.RoleMapping{}
 			isUpdated := false
 
+			lastGeneration := data["lastGeneration"].(int64)
+
 			isTimeout, err := test.RunWithTimeout(func() error {
 				if err := c.Get(context.Background(), key, rm); err != nil {
 					t.Fatal(err)
@@ -222,7 +225,7 @@ func doUpdateRoleMappingStep() test.TestStep {
 				if b, ok := data["isUpdated"]; ok {
 					isUpdated = b.(bool)
 				}
-				if !isUpdated {
+				if !isUpdated || lastGeneration == rm.GetStatus().GetObservedGeneration() {
 					return errors.New("Not yet updated")
 				}
 				return nil
@@ -242,7 +245,7 @@ func doDeleteRoleMappingStep() test.TestStep {
 	return test.TestStep{
 		Name: "delete",
 		Do: func(c client.Client, key types.NamespacedName, o client.Object, data map[string]any) (err error) {
-			logrus.Infof("=== Delete role mapping %s/%s ===", key.Namespace, key.Name)
+			logrus.Infof("=== Delete role mapping %s/%s ===\n\n", key.Namespace, key.Name)
 
 			if o == nil {
 				return errors.New("Role mapping is null")

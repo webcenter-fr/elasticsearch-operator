@@ -185,7 +185,7 @@ func doCreateWatcherStep() test.TestStep {
 	return test.TestStep{
 		Name: "create",
 		Do: func(c client.Client, key types.NamespacedName, o client.Object, data map[string]any) (err error) {
-			logrus.Infof("=== Add new watch %s/%s ===", key.Namespace, key.Name)
+			logrus.Infof("=== Add new watch %s/%s ===\n\n", key.Namespace, key.Name)
 
 			watch := &elasticsearchapicrd.Watch{
 				ObjectMeta: metav1.ObjectMeta{
@@ -242,7 +242,7 @@ func doCreateWatcherStep() test.TestStep {
 				if b, ok := data["isCreated"]; ok {
 					isCreated = b.(bool)
 				}
-				if !isCreated {
+				if !isCreated || watch.GetStatus().GetObservedGeneration() == 0 {
 					return errors.New("Not yet created")
 				}
 				return nil
@@ -262,13 +262,14 @@ func doUpdateWatcherStep() test.TestStep {
 	return test.TestStep{
 		Name: "update",
 		Do: func(c client.Client, key types.NamespacedName, o client.Object, data map[string]any) (err error) {
-			logrus.Infof("=== Update watch %s/%s ===", key.Namespace, key.Name)
+			logrus.Infof("=== Update watch %s/%s ===\n\n", key.Namespace, key.Name)
 
 			if o == nil {
 				return errors.New("Watch is null")
 			}
 			watch := o.(*elasticsearchapicrd.Watch)
 
+			data["lastGeneration"] = watch.GetStatus().GetObservedGeneration()
 			watch.Spec.Actions = `
 			{
 				"email_admin" : {
@@ -286,6 +287,8 @@ func doUpdateWatcherStep() test.TestStep {
 			watch := &elasticsearchapicrd.Watch{}
 			isUpdated := false
 
+			lastGeneration := data["lastGeneration"].(int64)
+
 			isTimeout, err := test.RunWithTimeout(func() error {
 				if err := c.Get(context.Background(), key, watch); err != nil {
 					t.Fatal(err)
@@ -293,7 +296,7 @@ func doUpdateWatcherStep() test.TestStep {
 				if b, ok := data["isUpdated"]; ok {
 					isUpdated = b.(bool)
 				}
-				if !isUpdated {
+				if !isUpdated || lastGeneration == watch.GetStatus().GetObservedGeneration() {
 					return errors.New("Not yet updated")
 				}
 				return nil
@@ -313,7 +316,7 @@ func doDeleteWatcherStep() test.TestStep {
 	return test.TestStep{
 		Name: "delete",
 		Do: func(c client.Client, key types.NamespacedName, o client.Object, data map[string]any) (err error) {
-			logrus.Infof("=== Delete watch %s/%s ===", key.Namespace, key.Name)
+			logrus.Infof("=== Delete watch %s/%s ===\n\n", key.Namespace, key.Name)
 
 			if o == nil {
 				return errors.New("Watch is null")

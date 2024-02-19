@@ -136,7 +136,7 @@ func doCreateSnapshotRepositoryStep() test.TestStep {
 	return test.TestStep{
 		Name: "create",
 		Do: func(c client.Client, key types.NamespacedName, o client.Object, data map[string]any) (err error) {
-			logrus.Infof("=== Add new snapshot repository %s/%s ===", key.Namespace, key.Name)
+			logrus.Infof("=== Add new snapshot repository %s/%s ===\n\n", key.Namespace, key.Name)
 
 			repo := &elasticsearchapicrd.SnapshotRepository{
 				ObjectMeta: metav1.ObjectMeta{
@@ -174,7 +174,7 @@ func doCreateSnapshotRepositoryStep() test.TestStep {
 				if b, ok := data["isCreated"]; ok {
 					isCreated = b.(bool)
 				}
-				if !isCreated {
+				if !isCreated || repo.GetStatus().GetObservedGeneration() == 0 {
 					return errors.New("Not yet created")
 				}
 				return nil
@@ -194,13 +194,14 @@ func doUpdateSnapshotRepositoryStep() test.TestStep {
 	return test.TestStep{
 		Name: "update",
 		Do: func(c client.Client, key types.NamespacedName, o client.Object, data map[string]any) (err error) {
-			logrus.Infof("=== Update snapshot repository %s/%s ===", key.Namespace, key.Name)
+			logrus.Infof("=== Update snapshot repository %s/%s ===\n\n", key.Namespace, key.Name)
 
 			if o == nil {
 				return errors.New("Snapshot repo is null")
 			}
 			repo := o.(*elasticsearchapicrd.SnapshotRepository)
 
+			data["lastGeneration"] = repo.GetStatus().GetObservedGeneration()
 			repo.Spec.Settings = `
 				{
 					"url" : "http://fake2"
@@ -216,6 +217,8 @@ func doUpdateSnapshotRepositoryStep() test.TestStep {
 			repo := &elasticsearchapicrd.SnapshotRepository{}
 			isUpdated := false
 
+			lastGeneration := data["lastGeneration"].(int64)
+
 			isTimeout, err := test.RunWithTimeout(func() error {
 				if err := c.Get(context.Background(), key, repo); err != nil {
 					t.Fatal(err)
@@ -223,7 +226,7 @@ func doUpdateSnapshotRepositoryStep() test.TestStep {
 				if b, ok := data["isUpdated"]; ok {
 					isUpdated = b.(bool)
 				}
-				if !isUpdated {
+				if !isUpdated || lastGeneration == repo.GetStatus().GetObservedGeneration() {
 					return errors.New("Not yet updated")
 				}
 				return nil
@@ -243,7 +246,7 @@ func doDeleteSnapshotRepositoryStep() test.TestStep {
 	return test.TestStep{
 		Name: "delete",
 		Do: func(c client.Client, key types.NamespacedName, o client.Object, data map[string]any) (err error) {
-			logrus.Infof("=== Delete snapshot repository %s/%s ===", key.Namespace, key.Name)
+			logrus.Infof("=== Delete snapshot repository %s/%s ===\n\n", key.Namespace, key.Name)
 
 			if o == nil {
 				return errors.New("Snapshot repo is null")

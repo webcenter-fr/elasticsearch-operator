@@ -133,7 +133,7 @@ func doCreateLogstashPipelineStep() test.TestStep {
 	return test.TestStep{
 		Name: "create",
 		Do: func(c client.Client, key types.NamespacedName, o client.Object, data map[string]any) (err error) {
-			logrus.Infof("=== Add new logstash pipeline %s/%s ===", key.Namespace, key.Name)
+			logrus.Infof("=== Add new logstash pipeline %s/%s ===\n\n", key.Namespace, key.Name)
 
 			pipeline := &kibanaapicrd.LogstashPipeline{
 				ObjectMeta: metav1.ObjectMeta{
@@ -167,7 +167,7 @@ func doCreateLogstashPipelineStep() test.TestStep {
 				if b, ok := data["isCreated"]; ok {
 					isCreated = b.(bool)
 				}
-				if !isCreated {
+				if !isCreated || pipeline.GetStatus().GetObservedGeneration() == 0 {
 					return errors.New("Not yet created")
 				}
 				return nil
@@ -187,13 +187,14 @@ func doUpdateLogstashPipelineStep() test.TestStep {
 	return test.TestStep{
 		Name: "update",
 		Do: func(c client.Client, key types.NamespacedName, o client.Object, data map[string]any) (err error) {
-			logrus.Infof("=== Update logstash pipeline %s/%s ===", key.Namespace, key.Name)
+			logrus.Infof("=== Update logstash pipeline %s/%s ===\n\n", key.Namespace, key.Name)
 
 			if o == nil {
 				return errors.New("Logstash pipeline is null")
 			}
 			pipeline := o.(*kibanaapicrd.LogstashPipeline)
 
+			data["lastGeneration"] = pipeline.GetStatus().GetObservedGeneration()
 			pipeline.Spec.Description = "test2"
 			if err = c.Update(context.Background(), pipeline); err != nil {
 				return err
@@ -205,6 +206,8 @@ func doUpdateLogstashPipelineStep() test.TestStep {
 			pipeline := &kibanaapicrd.LogstashPipeline{}
 			isUpdated := false
 
+			lastGeneration := data["lastGeneration"].(int64)
+
 			isTimeout, err := test.RunWithTimeout(func() error {
 				if err := c.Get(context.Background(), key, pipeline); err != nil {
 					t.Fatal(err)
@@ -212,7 +215,7 @@ func doUpdateLogstashPipelineStep() test.TestStep {
 				if b, ok := data["isUpdated"]; ok {
 					isUpdated = b.(bool)
 				}
-				if !isUpdated {
+				if !isUpdated || lastGeneration == pipeline.GetStatus().GetObservedGeneration() {
 					return errors.New("Not yet updated")
 				}
 				return nil
@@ -232,7 +235,7 @@ func doDeleteLogstashPipelineStep() test.TestStep {
 	return test.TestStep{
 		Name: "delete",
 		Do: func(c client.Client, key types.NamespacedName, o client.Object, data map[string]any) (err error) {
-			logrus.Infof("=== Delete logstash pipeline %s/%s ===", key.Namespace, key.Name)
+			logrus.Infof("=== Delete logstash pipeline %s/%s ===\n\n", key.Namespace, key.Name)
 
 			if o == nil {
 				return errors.New("Logstash pipeline is null")

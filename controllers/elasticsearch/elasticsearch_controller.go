@@ -31,6 +31,7 @@ import (
 	"github.com/disaster37/operator-sdk-extra/pkg/object"
 	"github.com/elastic/elastic-transport-go/v8/elastictransport"
 	elastic "github.com/elastic/go-elasticsearch/v8"
+	monitoringv1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1"
 	"github.com/sirupsen/logrus"
 	beatcrd "github.com/webcenter-fr/elasticsearch-operator/apis/beat/v1"
 	cerebrocrd "github.com/webcenter-fr/elasticsearch-operator/apis/cerebro/v1"
@@ -223,6 +224,7 @@ func (h *ElasticsearchReconciler) SetupWithManager(mgr ctrl.Manager) error {
 		Owns(&elasticsearchapicrd.User{}).
 		Owns(&elasticsearchapicrd.License{}).
 		Owns(&beatcrd.Metricbeat{}).
+		Owns(&monitoringv1.PodMonitor{}).
 		Watches(&corev1.Secret{}, handler.EnqueueRequestsFromMapFunc(watchSecret(h.Client))).
 		Watches(&corev1.ConfigMap{}, handler.EnqueueRequestsFromMapFunc(watchConfigMap(h.Client))).
 		Watches(&elasticsearchcrd.Elasticsearch{}, handler.EnqueueRequestsFromMapFunc(watchElasticsearchMonitoring(h.Client))).
@@ -272,6 +274,15 @@ func (h *ElasticsearchReconciler) OnError(ctx context.Context, o object.MultiPha
 
 func (h *ElasticsearchReconciler) OnSuccess(ctx context.Context, r object.MultiPhaseObject, data map[string]any) (res ctrl.Result, err error) {
 	o := r.(*elasticsearchcrd.Elasticsearch)
+
+	// Not preserve condition to avoid to update status each time
+	conditions := o.GetStatus().GetConditions()
+	o.GetStatus().SetConditions(nil)
+	res, err = h.MultiPhaseReconcilerAction.OnSuccess(ctx, o, data)
+	if err != nil {
+		return res, err
+	}
+	o.GetStatus().SetConditions(conditions)
 
 	// Check all statefulsets are ready to change Phase status and set main condition to true
 	stsList := &appv1.StatefulSetList{}
@@ -340,7 +351,6 @@ loopStatefulset:
 		return res, err
 	}
 	o.Status.Url = url
-	o.Status.SetIsOnError(false)
 
 	return res, nil
 }

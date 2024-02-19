@@ -129,7 +129,7 @@ func doCreateIndexTemplateStep() test.TestStep {
 	return test.TestStep{
 		Name: "create",
 		Do: func(c client.Client, key types.NamespacedName, o client.Object, data map[string]any) (err error) {
-			logrus.Infof("=== Add new index template %s/%s ===", key.Namespace, key.Name)
+			logrus.Infof("=== Add new index template %s/%s ===\n\n", key.Namespace, key.Name)
 
 			template := &elasticsearchapicrd.IndexTemplate{
 				ObjectMeta: metav1.ObjectMeta{
@@ -162,7 +162,7 @@ func doCreateIndexTemplateStep() test.TestStep {
 				if b, ok := data["isCreated"]; ok {
 					isCreated = b.(bool)
 				}
-				if !isCreated {
+				if !isCreated || template.GetStatus().GetObservedGeneration() == 0 {
 					return errors.New("Not yet created")
 				}
 				return nil
@@ -182,13 +182,14 @@ func doUpdateIndexTemplateStep() test.TestStep {
 	return test.TestStep{
 		Name: "update",
 		Do: func(c client.Client, key types.NamespacedName, o client.Object, data map[string]any) (err error) {
-			logrus.Infof("=== Update index template %s/%s ===", key.Namespace, key.Name)
+			logrus.Infof("=== Update index template %s/%s ===\n\n", key.Namespace, key.Name)
 
 			if o == nil {
 				return errors.New("Index template is null")
 			}
 			template := o.(*elasticsearchapicrd.IndexTemplate)
 
+			data["lastGeneration"] = template.GetStatus().GetObservedGeneration()
 			template.Spec.IndexPatterns = []string{"test2"}
 			if err = c.Update(context.Background(), template); err != nil {
 				return err
@@ -200,6 +201,8 @@ func doUpdateIndexTemplateStep() test.TestStep {
 			template := &elasticsearchapicrd.IndexTemplate{}
 			isUpdated := false
 
+			lastGeneration := data["lastGeneration"].(int64)
+
 			isTimeout, err := test.RunWithTimeout(func() error {
 				if err := c.Get(context.Background(), key, template); err != nil {
 					t.Fatal(err)
@@ -207,7 +210,7 @@ func doUpdateIndexTemplateStep() test.TestStep {
 				if b, ok := data["isUpdated"]; ok {
 					isUpdated = b.(bool)
 				}
-				if !isUpdated {
+				if !isUpdated || lastGeneration == template.GetStatus().GetObservedGeneration() {
 					return errors.New("Not yet updated")
 				}
 				return nil
@@ -227,7 +230,7 @@ func doDeleteIndexTemplateStep() test.TestStep {
 	return test.TestStep{
 		Name: "delete",
 		Do: func(c client.Client, key types.NamespacedName, o client.Object, data map[string]any) (err error) {
-			logrus.Infof("=== Delete index template %s/%s ===", key.Namespace, key.Name)
+			logrus.Infof("=== Delete index template %s/%s ===\n\n", key.Namespace, key.Name)
 
 			if o == nil {
 				return errors.New("Index template is null")

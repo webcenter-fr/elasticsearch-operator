@@ -261,8 +261,7 @@ spec:
           - name: api-tls
             mountPath: /mnt/certs/api
           - name: elasticsearch-config
-            mountPath: /mnt/configmap/elasticsearch.yml
-            subPath: elasticsearch.yml
+            mountPath: /mnt/configmap
           - name: keystore
             mountPath: /mnt/keystore
           - mountPath: /mnt/data

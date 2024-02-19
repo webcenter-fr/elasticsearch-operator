@@ -44,13 +44,6 @@ func buildStatefulsets(es *elasticsearchcrd.Elasticsearch, secretsChecksum []cor
 
 	checksumAnnotations := map[string]string{}
 
-	// Generate confimaps to know what file to mount
-	// And to generate checksum
-	configMaps, err := buildConfigMaps(es)
-	if err != nil {
-		return nil, errors.Wrap(err, "Error when generate configMaps")
-	}
-
 	// checksum for secret
 	// Use annotations sequence instead compute checksum if provided
 	for _, s := range secretsChecksum {
@@ -620,6 +613,10 @@ cp -a /usr/share/elasticsearch/jdk/lib/security/* /mnt/cacerts/
 					Name:      "elasticsearch-data",
 					MountPath: "/mnt/data",
 				},
+				{
+					Name:      "elasticsearch-config",
+					MountPath: "/mnt/configmap",
+				},
 			},
 		})
 		var command strings.Builder
@@ -679,20 +676,6 @@ fi
 			command.String(),
 		}
 
-		// Compute mount config maps
-		for _, configMap := range configMaps {
-			if configMap.Name == GetNodeGroupConfigMapName(es, nodeGroup.Name) {
-				additionalVolumeMounts = make([]corev1.VolumeMount, 0, len(configMap.Data))
-				for key := range configMap.Data {
-					additionalVolumeMounts = append(additionalVolumeMounts, corev1.VolumeMount{
-						Name:      "elasticsearch-config",
-						MountPath: fmt.Sprintf("/mnt/configmap/%s", key),
-						SubPath:   key,
-					})
-				}
-				ccb.WithVolumeMount(additionalVolumeMounts, k8sbuilder.Merge)
-			}
-		}
 		if len(es.Spec.PluginsList) > 0 {
 			ccb.WithVolumeMount([]corev1.VolumeMount{
 				{

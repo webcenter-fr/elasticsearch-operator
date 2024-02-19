@@ -7,7 +7,6 @@ import (
 	"time"
 
 	"github.com/disaster37/k8s-objectmatcher/patch"
-	"github.com/disaster37/operator-sdk-extra/pkg/controller"
 	"github.com/disaster37/operator-sdk-extra/pkg/helper"
 	"github.com/disaster37/operator-sdk-extra/pkg/test"
 	monitoringv1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1"
@@ -20,7 +19,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	networkingv1 "k8s.io/api/networking/v1"
 	policyv1 "k8s.io/api/policy/v1"
-	condition "k8s.io/apimachinery/pkg/api/meta"
+	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -48,7 +47,7 @@ func doCreateKibanaStep() test.TestStep {
 	return test.TestStep{
 		Name: "create",
 		Do: func(c client.Client, key types.NamespacedName, o client.Object, data map[string]any) (err error) {
-			logrus.Infof("=== Add new Kibana %s/%s ===", key.Namespace, key.Name)
+			logrus.Infof("=== Add new Kibana %s/%s ===\n\n", key.Namespace, key.Name)
 
 			// First, create Elasticsearch
 			es := &elasticsearchcrd.Elasticsearch{
@@ -75,25 +74,6 @@ func doCreateKibanaStep() test.TestStep {
 			}
 
 			if err = c.Create(context.Background(), es); err != nil {
-				return err
-			}
-
-			isTimeout, err := test.RunWithTimeout(func() error {
-				if err := c.Get(context.Background(), key, es); err != nil {
-					return err
-				}
-
-				// In envtest, no kubelet
-				// So the Elasticsearch condition never set as true
-				if condition.FindStatusCondition(es.Status.Conditions, controller.ReadyCondition.String()) != nil && condition.FindStatusCondition(es.Status.Conditions, controller.ReadyCondition.String()).Reason != "Initialize" {
-					return nil
-				}
-
-				return errors.New("Not yet created")
-
-			}, time.Second*30, time.Second*1)
-
-			if err != nil || isTimeout {
 				return err
 			}
 
@@ -158,9 +138,7 @@ func doCreateKibanaStep() test.TestStep {
 					t.Fatal("Kibana not found")
 				}
 
-				// In envtest, no kubelet
-				// So the Kibana condition never set as true
-				if condition.FindStatusCondition(kb.Status.Conditions, controller.ReadyCondition.String()) != nil && condition.FindStatusCondition(kb.Status.Conditions, controller.ReadyCondition.String()).Reason != "Initialize" {
+				if kb.GetStatus().GetObservedGeneration() > 0 {
 					return nil
 				}
 
@@ -284,7 +262,7 @@ func doUpdateKibanaStep() test.TestStep {
 	return test.TestStep{
 		Name: "update",
 		Do: func(c client.Client, key types.NamespacedName, o client.Object, data map[string]any) (err error) {
-			logrus.Infof("=== Update Kibana cluster %s/%s ===", key.Namespace, key.Name)
+			logrus.Infof("=== Update Kibana cluster %s/%s ===\n\n", key.Namespace, key.Name)
 
 			if o == nil {
 				return errors.New("Kibana is null")
@@ -295,14 +273,16 @@ func doUpdateKibanaStep() test.TestStep {
 			kb.Labels = map[string]string{
 				"test": "fu",
 			}
+			// Change spec to track generation
+			kb.Spec.Deployment.Labels = map[string]string{
+				"test": "fu",
+			}
 
-			data["lastVersion"] = kb.ResourceVersion
+			data["lastGeneration"] = kb.GetStatus().GetObservedGeneration()
 
 			if err = c.Update(context.Background(), kb); err != nil {
 				return err
 			}
-
-			time.Sleep(5 * time.Second)
 
 			return nil
 		},
@@ -320,16 +300,14 @@ func doUpdateKibanaStep() test.TestStep {
 				pm  *monitoringv1.PodMonitor
 			)
 
-			lastVersion := data["lastVersion"].(string)
+			lastGeneration := data["lastGeneration"].(int64)
 
 			isTimeout, err := test.RunWithTimeout(func() error {
 				if err := c.Get(context.Background(), key, kb); err != nil {
 					t.Fatal("Kibana not found")
 				}
 
-				// In envtest, no kubelet
-				// So the Kibana condition never set as true
-				if lastVersion != kb.ResourceVersion && (kb.Status.PhaseName == controller.StartingPhase) {
+				if lastGeneration < kb.GetStatus().GetObservedGeneration() {
 					return nil
 				}
 
@@ -464,7 +442,7 @@ func doDeleteKibanaStep() test.TestStep {
 	return test.TestStep{
 		Name: "delete",
 		Do: func(c client.Client, key types.NamespacedName, o client.Object, data map[string]any) (err error) {
-			logrus.Infof("=== Delete Kibana cluster %s/%s ===", key.Namespace, key.Name)
+			logrus.Infof("=== Delete Kibana cluster %s/%s ===\n\n", key.Namespace, key.Name)
 
 			if o == nil {
 				return errors.New("Kibana is null")
@@ -480,8 +458,29 @@ func doDeleteKibanaStep() test.TestStep {
 		},
 		Check: func(t *testing.T, c client.Client, key types.NamespacedName, o client.Object, data map[string]any) (err error) {
 
+			kb := &kibanacrd.Kibana{}
+			isDeleted := false
+
 			// In envtest, no kubelet
 			// So the cascading children delation not works
+			isTimeout, err := test.RunWithTimeout(func() error {
+				if err = c.Get(context.Background(), key, kb); err != nil {
+					if k8serrors.IsNotFound(err) {
+						isDeleted = true
+						return nil
+					}
+					t.Fatal(err)
+				}
+
+				return errors.New("Not yet deleted")
+			}, time.Second*30, time.Second*1)
+			if err != nil || isTimeout {
+				t.Fatalf("Dashboard stil exist: %s", err.Error())
+			}
+
+			assert.True(t, isDeleted)
+
+			return nil
 
 			return nil
 		},

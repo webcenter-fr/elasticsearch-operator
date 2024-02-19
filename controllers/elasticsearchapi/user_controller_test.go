@@ -154,7 +154,7 @@ func doCreateUserStep() test.TestStep {
 	return test.TestStep{
 		Name: "create",
 		Do: func(c client.Client, key types.NamespacedName, o client.Object, data map[string]any) (err error) {
-			logrus.Infof("=== Add new user %s/%s ===", key.Namespace, key.Name)
+			logrus.Infof("=== Add new user %s/%s ===\n\n", key.Namespace, key.Name)
 
 			user := &elasticsearchapicrd.User{
 				ObjectMeta: metav1.ObjectMeta{
@@ -190,7 +190,7 @@ func doCreateUserStep() test.TestStep {
 				if b, ok := data["isCreated"]; ok {
 					isCreated = b.(bool)
 				}
-				if !isCreated {
+				if !isCreated || user.GetStatus().GetObservedGeneration() == 0 {
 					return errors.New("Not yet created")
 				}
 				return nil
@@ -210,13 +210,14 @@ func doUpdateUserStep() test.TestStep {
 	return test.TestStep{
 		Name: "update",
 		Do: func(c client.Client, key types.NamespacedName, o client.Object, data map[string]any) (err error) {
-			logrus.Infof("=== Update user %s/%s ===", key.Namespace, key.Name)
+			logrus.Infof("=== Update user %s/%s ===\n\n", key.Namespace, key.Name)
 
 			if o == nil {
 				return errors.New("User is null")
 			}
 			user := o.(*elasticsearchapicrd.User)
 
+			data["lastGeneration"] = user.GetStatus().GetObservedGeneration()
 			user.Spec.Enabled = false
 			if err = c.Update(context.Background(), user); err != nil {
 				return err
@@ -228,6 +229,8 @@ func doUpdateUserStep() test.TestStep {
 			user := &elasticsearchapicrd.User{}
 			isUpdated := false
 
+			lastGeneration := data["lastGeneration"].(int64)
+
 			isTimeout, err := test.RunWithTimeout(func() error {
 				if err := c.Get(context.Background(), key, user); err != nil {
 					t.Fatal(err)
@@ -235,7 +238,7 @@ func doUpdateUserStep() test.TestStep {
 				if b, ok := data["isUpdated"]; ok {
 					isUpdated = b.(bool)
 				}
-				if !isUpdated {
+				if !isUpdated || lastGeneration == user.GetStatus().GetObservedGeneration() {
 					return errors.New("Not yet updated")
 				}
 				return nil
@@ -255,13 +258,14 @@ func doUpdateUserPasswordHashStep() test.TestStep {
 	return test.TestStep{
 		Name: "update_password_hash",
 		Do: func(c client.Client, key types.NamespacedName, o client.Object, data map[string]any) (err error) {
-			logrus.Infof("=== Update user (password hash) %s/%s ===", key.Namespace, key.Name)
+			logrus.Infof("=== Update user (password hash) %s/%s ===\n\n", key.Namespace, key.Name)
 
 			if o == nil {
 				return errors.New("User is null")
 			}
 			user := o.(*elasticsearchapicrd.User)
 
+			data["lastGeneration"] = user.GetStatus().GetObservedGeneration()
 			user.Spec.PasswordHash = "test2"
 			if err = c.Update(context.Background(), user); err != nil {
 				return err
@@ -273,6 +277,8 @@ func doUpdateUserPasswordHashStep() test.TestStep {
 			user := &elasticsearchapicrd.User{}
 			isUpdated := false
 
+			lastGeneration := data["lastGeneration"].(int64)
+
 			isTimeout, err := test.RunWithTimeout(func() error {
 				if err := c.Get(context.Background(), key, user); err != nil {
 					t.Fatal(err)
@@ -280,7 +286,7 @@ func doUpdateUserPasswordHashStep() test.TestStep {
 				if b, ok := data["isUpdatedPasswordHash"]; ok {
 					isUpdated = b.(bool)
 				}
-				if !isUpdated {
+				if !isUpdated || lastGeneration == user.GetStatus().GetObservedGeneration() {
 					return errors.New("Not yet updated")
 				}
 				return nil
@@ -300,7 +306,7 @@ func doDeleteUserStep() test.TestStep {
 	return test.TestStep{
 		Name: "delete",
 		Do: func(c client.Client, key types.NamespacedName, o client.Object, data map[string]any) (err error) {
-			logrus.Infof("=== Delete user %s/%s ===", key.Namespace, key.Name)
+			logrus.Infof("=== Delete user %s/%s ===\n\n", key.Namespace, key.Name)
 
 			if o == nil {
 				return errors.New("User is null")
