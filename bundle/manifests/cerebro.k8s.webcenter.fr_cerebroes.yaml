@@ -785,6 +785,10 @@ spec:
               lastErrorMessage:
                 description: LastErrorMessage is the current error message
                 type: string
+              observedGeneration:
+                description: observedGeneration is the current generation applied
+                format: int64
+                type: integer
               phase:
                 description: Phase is the current phase
                 type: string

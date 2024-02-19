@@ -26,3 +26,11 @@ func (h *Logstash) IsPdb() bool {
 
 	return false
 }
+
+// isEnabled return true if PKI is enabled
+func (h LogstashPkiSpec) IsEnabled() bool {
+	if h.Enabled == nil || *h.Enabled {
+		return true
+	}
+	return false
+}

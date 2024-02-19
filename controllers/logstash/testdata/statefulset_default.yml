@@ -104,6 +104,8 @@ spec:
           name: config
         - mountPath: /usr/share/logstash/data
           name: logstash-data
+        - mountPath: /usr/share/logstash/certs
+          name: logstash-certs
       initContainers:
       - command:
         - /bin/bash
@@ -194,3 +196,6 @@ spec:
           secretName: test-ca-es-ls
       - name: logstash-data
         emptyDir: {}
+      - name: logstash-certs
+        secret:
+          secretName: test-tls-ls

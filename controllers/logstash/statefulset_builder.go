@@ -258,6 +258,16 @@ func buildStatefulsets(ls *logstashcrd.Logstash, es *elasticsearchcrd.Elasticsea
 		}
 	}
 
+	// Mount pki
+	if ls.Spec.Pki.IsEnabled() {
+		cb.WithVolumeMount([]corev1.VolumeMount{
+			{
+				Name:      "logstash-certs",
+				MountPath: "/usr/share/logstash/certs",
+			},
+		}, k8sbuilder.Merge)
+	}
+
 	// Compute liveness
 	cb.WithLivenessProbe(&corev1.Probe{
 		TimeoutSeconds:   5,
@@ -646,6 +656,20 @@ fi
 				VolumeSource: corev1.VolumeSource{
 					Secret: &corev1.SecretVolumeSource{
 						SecretName: ls.Spec.ElasticsearchRef.ElasticsearchCaSecretRef.Name,
+					},
+				},
+			},
+		}, k8sbuilder.Merge)
+	}
+
+	// Add PKI volume
+	if ls.Spec.Pki.IsEnabled() {
+		ptb.WithVolumes([]corev1.Volume{
+			{
+				Name: "logstash-certs",
+				VolumeSource: corev1.VolumeSource{
+					Secret: &corev1.SecretVolumeSource{
+						SecretName: GetSecretNameForTls(ls),
 					},
 				},
 			},

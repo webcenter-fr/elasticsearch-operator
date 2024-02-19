@@ -265,3 +265,28 @@ func TestGetMetricbeatName(t *testing.T) {
 
 	assert.Equal(t, "test-metricbeat-ls", GetMetricbeatName(o))
 }
+
+func TestGetSecretNameForPki(t *testing.T) {
+	o := &logstashcrd.Logstash{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: "default",
+			Name:      "test",
+		},
+		Spec: logstashcrd.LogstashSpec{},
+	}
+
+	assert.Equal(t, "test-pki-ls", GetSecretNameForPki(o))
+}
+
+func TestGetSecretNameForTls(t *testing.T) {
+	o := &logstashcrd.Logstash{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: "default",
+			Name:      "test",
+		},
+		Spec: logstashcrd.LogstashSpec{},
+	}
+
+	// With default value
+	assert.Equal(t, "test-tls-ls", GetSecretNameForTls(o))
+}

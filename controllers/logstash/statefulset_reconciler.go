@@ -227,6 +227,20 @@ func (r *statefulsetReconciler) Read(ctx context.Context, resource object.MultiP
 		}
 	}
 
+	// Read certificates
+	if o.Spec.Pki.IsEnabled() {
+
+		if err = r.Client.Get(ctx, types.NamespacedName{Namespace: o.Namespace, Name: GetSecretNameForTls(o)}, s); err != nil {
+			if !k8serrors.IsNotFound(err) {
+				return read, res, errors.Wrapf(err, "Error when read secret %s", GetSecretNameForTls(o))
+			}
+			r.Log.Warnf("Secret %s not yet exist, try again later", GetSecretNameForTls(o))
+			return read, ctrl.Result{RequeueAfter: 30 * time.Second}, nil
+		}
+
+		secretsChecksum = append(secretsChecksum, *s)
+	}
+
 	// Generate expected statefulset
 	expectedSts, err := buildStatefulsets(o, es, secretsChecksum, configMapsChecksum)
 	if err != nil {

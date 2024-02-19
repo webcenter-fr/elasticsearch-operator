@@ -123,6 +123,8 @@ spec:
           name: logstash-pattern
         - mountPath: /usr/share/logstash/data
           name: logstash-data
+        - mountPath: /usr/share/logstash/certs
+          name: logstash-certs
       initContainers:
       - command:
         - /bin/bash
@@ -273,6 +275,9 @@ spec:
       - name: logstash-keystore
         secret:
           secretName: keystore
+      - name: logstash-certs
+        secret:
+          secretName: test-tls-ls
   volumeClaimTemplates:
   - metadata:
       creationTimestamp: null

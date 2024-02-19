@@ -22,6 +22,7 @@ import (
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -133,6 +134,17 @@ queue.type: persisted
 							},
 						},
 					},
+					Pki: logstashcrd.LogstashPkiSpec{
+						Enabled: ptr.To[bool](true),
+						Tls: map[string]logstashcrd.LogstashTlsSpec{
+							"filebeat": {
+								Consumer: "filebeat",
+								TlsSelfSignedCertificateSpec: sharedcrd.TlsSelfSignedCertificateSpec{
+									AltNames: []string{"*.domain.com"},
+								},
+							},
+						},
+					},
 				},
 			}
 
@@ -181,6 +193,24 @@ queue.type: persisted
 			// Secrets for credentials must exist
 			s = &corev1.Secret{}
 			if err = c.Get(context.Background(), types.NamespacedName{Namespace: key.Namespace, Name: GetSecretNameForCredentials(ls)}, s); err != nil {
+				t.Fatal(err)
+			}
+			assert.NotEmpty(t, s.Data)
+			assert.NotEmpty(t, s.OwnerReferences)
+			assert.NotEmpty(t, s.Annotations[patch.LastAppliedConfig])
+
+			// Secrets for Pki
+			s = &corev1.Secret{}
+			if err = c.Get(context.Background(), types.NamespacedName{Namespace: key.Namespace, Name: GetSecretNameForPki(ls)}, s); err != nil {
+				t.Fatal(err)
+			}
+			assert.NotEmpty(t, s.Data)
+			assert.NotEmpty(t, s.OwnerReferences)
+			assert.NotEmpty(t, s.Annotations[patch.LastAppliedConfig])
+
+			// Secrets for certificates
+			s = &corev1.Secret{}
+			if err = c.Get(context.Background(), types.NamespacedName{Namespace: key.Namespace, Name: GetSecretNameForTls(ls)}, s); err != nil {
 				t.Fatal(err)
 			}
 			assert.NotEmpty(t, s.Data)
@@ -329,6 +359,26 @@ func doUpdateLogstashStep() test.TestStep {
 			// Secrets for credentials must exist
 			s = &corev1.Secret{}
 			if err = c.Get(context.Background(), types.NamespacedName{Namespace: key.Namespace, Name: GetSecretNameForCredentials(ls)}, s); err != nil {
+				t.Fatal(err)
+			}
+			assert.NotEmpty(t, s.Data)
+			assert.NotEmpty(t, s.OwnerReferences)
+			assert.NotEmpty(t, s.Annotations[patch.LastAppliedConfig])
+			assert.Equal(t, "fu", s.Labels["test"])
+
+			// Secrets for Pki
+			s = &corev1.Secret{}
+			if err = c.Get(context.Background(), types.NamespacedName{Namespace: key.Namespace, Name: GetSecretNameForPki(ls)}, s); err != nil {
+				t.Fatal(err)
+			}
+			assert.NotEmpty(t, s.Data)
+			assert.NotEmpty(t, s.OwnerReferences)
+			assert.NotEmpty(t, s.Annotations[patch.LastAppliedConfig])
+			assert.Equal(t, "fu", s.Labels["test"])
+
+			// Secrets for certificates
+			s = &corev1.Secret{}
+			if err = c.Get(context.Background(), types.NamespacedName{Namespace: key.Namespace, Name: GetSecretNameForTls(ls)}, s); err != nil {
 				t.Fatal(err)
 			}
 			assert.NotEmpty(t, s.Data)

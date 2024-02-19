@@ -118,6 +118,11 @@ func (r *LogstashReconciler) Reconcile(ctx context.Context, req ctrl.Request) (c
 		ls,
 		data,
 		r,
+		newTlsReconciler(
+			r.Client,
+			r.Log,
+			r.Recorder,
+		),
 		newCAElasticsearchReconciler(
 			r.Client,
 			r.Log,
@@ -246,6 +251,8 @@ func (h *LogstashReconciler) OnSuccess(ctx context.Context, r object.MultiPhaseO
 		// Requeued to check if status change
 		res.RequeueAfter = time.Second * 30
 	}
+
+	o.Status.CertSecretName = GetSecretNameForTls(o)
 
 	return res, nil
 }

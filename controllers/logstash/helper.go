@@ -80,6 +80,18 @@ func GetContainerImage(ls *logstashcrd.Logstash) string {
 	return fmt.Sprintf("%s:%s", image, version)
 }
 
+// GetSecretNameForPki permit to get the secret name that store PKI
+// It return the secret name as string
+func GetSecretNameForPki(ls *logstashcrd.Logstash) (secretName string) {
+	return fmt.Sprintf("%s-pki-ls", ls.Name)
+}
+
+// GetSecretNameForTls permit to get the secret name that store all certificates for Logstash
+// It return the secret name as string
+func GetSecretNameForTls(ls *logstashcrd.Logstash) (secretName string) {
+	return fmt.Sprintf("%s-tls-ls", ls.Name)
+}
+
 // getLabels permit to return global label must be set on all resources
 func getLabels(ls *logstashcrd.Logstash, customLabels ...map[string]string) (labels map[string]string) {
 	labels = map[string]string{

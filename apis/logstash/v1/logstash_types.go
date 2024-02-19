@@ -103,6 +103,59 @@ type LogstashSpec struct {
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
 	// +optional
 	Services []shared.Service `json:"services,omitempty"`
+
+	// Pki permit to manage certificates you can use for Logstash inputs
+	// +operator-sdk:csv:customresourcedefinitions:type=spec
+	// +optional
+	Pki LogstashPkiSpec `json:"pki,omitempty"`
+}
+
+type LogstashPkiSpec struct {
+
+	// Enabled permit to enabled the internal PKI
+	// Default to true
+	// +operator-sdk:csv:customresourcedefinitions:type=spec
+	// +optional
+	// +kubebuilder:default=true
+	Enabled *bool `json:"enabled,omitempty"`
+
+	// ValidityDays is the number of days that certificates are valid
+	// Default to 365
+	// +operator-sdk:csv:customresourcedefinitions:type=spec
+	// +optional
+	// +kubebuilder:default=365
+	ValidityDays *int `json:"validityDays,omitempty"`
+
+	// RenewalDays is the number of days before certificate expire to become effective renewal
+	// Default to 30
+	// +operator-sdk:csv:customresourcedefinitions:type=spec
+	// +optional
+	// +kubebuilder:default=30
+	RenewalDays *int `json:"renewalDays,omitempty"`
+
+	// KeySize is the key size when generate privates keys
+	// Default to 2048
+	// +operator-sdk:csv:customresourcedefinitions:type=spec
+	// +optional
+	// +kubebuilder:default=2048
+	KeySize *int `json:"keySize,omitempty"`
+
+	// Tls is the list of TLS certificates to manage
+	// +operator-sdk:csv:customresourcedefinitions:type=spec
+	// +optional
+	Tls map[string]LogstashTlsSpec `json:"tls,omitempty"`
+}
+
+type LogstashTlsSpec struct {
+	shared.TlsSelfSignedCertificateSpec `json:",inline"`
+
+	// Consumer it the service that will consume certificate
+	// It support filebeat, logstash and custom
+	// Default to custom
+	// +operator-sdk:csv:customresourcedefinitions:type=spec
+	// +optional
+	// +kubebuilder:default=custom
+	Consumer string `json:"consumer,omitempty"`
 }
 
 type LogstashDeploymentSpec struct {
@@ -152,6 +205,10 @@ type LogstashStatus struct {
 	// Important: Run "make" to regenerate code after modifying this file
 
 	apis.BasicMultiPhaseObjectStatus `json:",inline"`
+
+	// CertSecretName is the secret name that store certs generated for inputs
+	// +operator-sdk:csv:customresourcedefinitions:type=status
+	CertSecretName string `json:"certSecret,omitempty"`
 }
 
 //+kubebuilder:object:root=true
