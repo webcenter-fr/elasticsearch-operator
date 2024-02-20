@@ -936,10 +936,10 @@ metadata:
         }
       ]
     capabilities: Basic Install
-    createdAt: "2024-02-19T16:16:05Z"
+    createdAt: "2024-02-20T08:34:46Z"
     operators.operatorframework.io/builder: operator-sdk-v1.32.0
     operators.operatorframework.io/project_layout: go.kubebuilder.io/v3
-  name: elasticsearch-operator.v0.0.45
+  name: elasticsearch-operator.v0.0.46
   namespace: placeholder
 spec:
   apiservicedefinitions: {}
@@ -2065,6 +2065,39 @@ spec:
           on logstash/pipelines
         displayName: Pipeline
         path: pipeline
+      - description: Pki permit to manage certificates you can use for Logstash inputs
+        displayName: Pki
+        path: pki
+      - description: Enabled permit to enabled the internal PKI Default to true
+        displayName: Enabled
+        path: pki.enabled
+      - description: KeySize is the key size when generate privates keys Default to
+          2048
+        displayName: Key Size
+        path: pki.keySize
+      - description: RenewalDays is the number of days before certificate expire to
+          become effective renewal Default to 30
+        displayName: Renewal Days
+        path: pki.renewalDays
+      - description: Tls is the list of TLS certificates to manage
+        displayName: Tls
+        path: pki.tls
+      - description: AltIps permit to set subject alt names of type ip when generate
+          certificate
+        displayName: Alt Ips
+        path: pki.tls.altIPs
+      - description: AltNames permit to set subject alt names of type dns when generate
+          certificate
+        displayName: Alt Names
+        path: pki.tls.altNames
+      - description: Consumer it the service that will consume certificate It support
+          filebeat, logstash and custom Default to custom
+        displayName: Consumer
+        path: pki.tls.consumer
+      - description: ValidityDays is the number of days that certificates are valid
+          Default to 365
+        displayName: Validity Days
+        path: pki.validityDays
       - description: PluginsList is the list of additionnal plugin to install on each
           logstash instance Default is empty
         displayName: Plugins List
@@ -2089,6 +2122,11 @@ spec:
       - description: Version is the logstash version to use Default is use the latest
         displayName: Version
         path: version
+      statusDescriptors:
+      - description: CertSecretName is the secret name that store certs generated
+          for inputs
+        displayName: Cert Secret Name
+        path: certSecret
       version: v1
     - description: LogstashPipeline is the Schema for the logstashpipelines API
       displayName: Logstash Pipeline
@@ -3534,7 +3572,7 @@ spec:
                   value: INFO
                 - name: LOG_FORMATTER
                   value: json
-                image: quay.io/webcenter/elasticsearch-operator:0.0.45
+                image: quay.io/webcenter/elasticsearch-operator:0.0.46
                 livenessProbe:
                   httpGet:
                     path: /healthz
@@ -3624,5 +3662,5 @@ spec:
   provider:
     name: webcenter.fr
     url: https://github.com/webcenter-fr/elasticsearch-operator
-  replaces: elasticsearch-operator.v0.0.44
-  version: 0.0.45
+  replaces: elasticsearch-operator.v0.0.45
+  version: 0.0.46

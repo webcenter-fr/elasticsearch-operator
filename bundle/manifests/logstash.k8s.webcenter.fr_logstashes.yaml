@@ -4956,6 +4956,54 @@ spec:
                 description: Pipeline is the pipeline specification The key is the
                   file stored on logstash/pipelines
                 type: object
+              pki:
+                description: Pki permit to manage certificates you can use for Logstash
+                  inputs
+                properties:
+                  enabled:
+                    default: true
+                    description: Enabled permit to enabled the internal PKI Default
+                      to true
+                    type: boolean
+                  keySize:
+                    default: 2048
+                    description: KeySize is the key size when generate privates keys
+                      Default to 2048
+                    type: integer
+                  renewalDays:
+                    default: 30
+                    description: RenewalDays is the number of days before certificate
+                      expire to become effective renewal Default to 30
+                    type: integer
+                  tls:
+                    additionalProperties:
+                      properties:
+                        altIPs:
+                          description: AltIps permit to set subject alt names of type
+                            ip when generate certificate
+                          items:
+                            type: string
+                          type: array
+                        altNames:
+                          description: AltNames permit to set subject alt names of
+                            type dns when generate certificate
+                          items:
+                            type: string
+                          type: array
+                        consumer:
+                          default: custom
+                          description: Consumer it the service that will consume certificate
+                            It support filebeat, logstash and custom Default to custom
+                          type: string
+                      type: object
+                    description: Tls is the list of TLS certificates to manage
+                    type: object
+                  validityDays:
+                    default: 365
+                    description: ValidityDays is the number of days that certificates
+                      are valid Default to 365
+                    type: integer
+                type: object
               pluginsList:
                 description: PluginsList is the list of additionnal plugin to install
                   on each logstash instance Default is empty
@@ -5346,6 +5394,10 @@ spec:
           status:
             description: LogstashStatus defines the observed state of Logstash
             properties:
+              certSecret:
+                description: CertSecretName is the secret name that store certs generated
+                  for inputs
+                type: string
               conditions:
                 description: List of conditions
                 items:
