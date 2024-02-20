@@ -4,7 +4,7 @@ metadata:
   annotations:
     alm-examples: '[]'
     capabilities: Basic Install
-  name: elasticsearch-operator.v0.0.46
+  name: elasticsearch-operator.v0.0.47
   namespace: placeholder
 spec:
   apiservicedefinitions: {}
@@ -3945,6 +3945,10 @@ spec:
         name: None
         version: None
       specDescriptors:
+      - description: AutoGeneratePassword can permit to auto generate password if
+          true. Default to false
+        displayName: Auto Generate Password
+        path: autoGeneratePassword
       - description: ElasticsearchRef is the Elasticsearch ref to connect on.
         displayName: Elasticsearch Ref
         path: elasticsearchRef
@@ -3992,12 +3996,6 @@ spec:
           hash
         displayName: Secret Ref
         path: secretRef
-      - description: key is the key name on secret to read the effective password
-        displayName: Key
-        path: secretRef.key
-      - description: Name is the secret name
-        displayName: Name
-        path: secretRef.name
       - description: Username is the user name If empty, it use the ressource name
         displayName: Username
         path: username
@@ -4176,5 +4174,5 @@ spec:
   provider:
     name: webcenter.fr
     url: https://github.com/webcenter-fr/elasticsearch-operator
-  replaces: elasticsearch-operator.v0.0.45
-  version: 0.0.46
+  replaces: elasticsearch-operator.v0.0.46
+  version: 0.0.47
