@@ -25,3 +25,11 @@ func (h *User) GetExternalName() string {
 
 	return h.Spec.Username
 }
+
+// IsAutoGeneratePassword return true if it auto generate password
+func (o *User) IsAutoGeneratePassword() bool {
+	if o.Spec.AutoGeneratePassword != nil && *o.Spec.AutoGeneratePassword {
+		return true
+	}
+	return false
+}

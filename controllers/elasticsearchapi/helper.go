@@ -13,6 +13,7 @@ import (
 	"github.com/elastic/elastic-transport-go/v8/elastictransport"
 	elastic "github.com/elastic/go-elasticsearch/v8"
 	"github.com/sirupsen/logrus"
+	elasticsearchapicrd "github.com/webcenter-fr/elasticsearch-operator/apis/elasticsearchapi/v1"
 	"github.com/webcenter-fr/elasticsearch-operator/apis/shared"
 	"github.com/webcenter-fr/elasticsearch-operator/controllers/common"
 	elasticsearchcontrollers "github.com/webcenter-fr/elasticsearch-operator/controllers/elasticsearch"
@@ -127,4 +128,8 @@ func GetElasticsearchHandler(ctx context.Context, o client.Object, esRef shared.
 	}
 
 	return esHandler, nil
+}
+
+func GetUserSecretWhenAutoGeneratePassword(user *elasticsearchapicrd.User) string {
+	return fmt.Sprintf("%s-credential-es", user.Name)
 }

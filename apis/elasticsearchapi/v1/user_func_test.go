@@ -102,3 +102,41 @@ func TestGetExternalName(t *testing.T) {
 
 	assert.Equal(t, "test", o.GetExternalName())
 }
+
+func TestIsAutoGeneratePassword(t *testing.T) {
+
+	// When not specified
+	o := User{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: "default",
+			Name:      "test",
+		},
+		Spec: UserSpec{},
+	}
+	assert.False(t, o.IsAutoGeneratePassword())
+
+	// When disabled
+	o = User{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: "default",
+			Name:      "test",
+		},
+		Spec: UserSpec{
+			AutoGeneratePassword: ptr.To[bool](false),
+		},
+	}
+	assert.False(t, o.IsAutoGeneratePassword())
+
+	// When enabled
+	o = User{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: "default",
+			Name:      "test",
+		},
+		Spec: UserSpec{
+			AutoGeneratePassword: ptr.To[bool](true),
+		},
+	}
+	assert.True(t, o.IsAutoGeneratePassword())
+
+}

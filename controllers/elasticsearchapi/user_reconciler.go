@@ -10,11 +10,14 @@ import (
 	"github.com/disaster37/operator-sdk-extra/pkg/controller"
 	"github.com/disaster37/operator-sdk-extra/pkg/object"
 	olivere "github.com/olivere/elastic/v7"
+	"github.com/sethvargo/go-password/password"
 	"github.com/sirupsen/logrus"
 	elasticsearchapicrd "github.com/webcenter-fr/elasticsearch-operator/apis/elasticsearchapi/v1"
 	localhelper "github.com/webcenter-fr/elasticsearch-operator/pkg/helper"
 	core "k8s.io/api/core/v1"
+	corev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/tools/record"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -67,7 +70,7 @@ func (h *userReconciler) Read(ctx context.Context, o object.RemoteObject, data m
 	user := o.(*elasticsearchapicrd.User)
 
 	// Read password from secret if needed and inject it on expected user
-	if user.Spec.SecretRef != nil {
+	if !user.IsAutoGeneratePassword() && user.Spec.SecretRef != nil {
 		secret := &core.Secret{}
 		secretNS := types.NamespacedName{
 			Namespace: user.Namespace,
@@ -87,6 +90,55 @@ func (h *userReconciler) Read(ctx context.Context, o object.RemoteObject, data m
 		}
 
 		read.GetExpectedObject().Password = string(passwordB)
+		read.GetExpectedObject().PasswordHash = ""
+	} else if user.IsAutoGeneratePassword() {
+		secret := &corev1.Secret{}
+		var expectedPassword string
+		if err = h.Get(ctx, types.NamespacedName{Namespace: user.Namespace, Name: GetUserSecretWhenAutoGeneratePassword(user)}, secret); err != nil {
+			if k8serrors.IsNotFound(err) {
+				// Create secret and generate password
+				expectedPassword, err = password.Generate(64, 10, 0, false, true)
+				if err != nil {
+					return nil, res, errors.Wrap(err, "Error when generate password")
+				}
+				secret = &corev1.Secret{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      GetUserSecretWhenAutoGeneratePassword(user),
+						Namespace: user.Namespace,
+					},
+					Data: map[string][]byte{
+						"password": []byte(expectedPassword),
+						"username": []byte(user.GetExternalName()),
+					},
+				}
+				// Set owner
+				err = ctrl.SetControllerReference(o, secret, h.Client.Scheme())
+				if err != nil {
+					return nil, res, errors.Wrapf(err, "Error when set owner reference on object '%s'", secret.GetName())
+				}
+				if err = h.Client.Create(ctx, secret); err != nil {
+					return nil, res, errors.Wrap(err, "Error when create secret that store auto generated password")
+				}
+
+			}
+		}
+		if len(secret.Data["password"]) == 0 || len(secret.Data["username"]) == 0 {
+			// The password entry not exist, create it
+			expectedPassword, err = password.Generate(64, 10, 0, false, true)
+			if err != nil {
+				return nil, res, errors.Wrap(err, "Error when generate password")
+			}
+			secret.Data["password"] = []byte(expectedPassword)
+			secret.Data["username"] = []byte(user.GetExternalName())
+			if err = h.Client.Update(ctx, secret); err != nil {
+				return nil, res, errors.Wrap(err, "Error when update secret that store auto generated password")
+			}
+
+		} else {
+			expectedPassword = string(secret.Data["password"])
+		}
+
+		read.GetExpectedObject().Password = expectedPassword
 		read.GetExpectedObject().PasswordHash = ""
 	}
 
@@ -110,8 +162,8 @@ func (h *userReconciler) OnSuccess(ctx context.Context, o object.RemoteObject, d
 		user := o.(*elasticsearchapicrd.User)
 		var passwordHash string
 
-		if user.Spec.SecretRef != nil {
-			if diff.NeedCreate() {
+		if user.IsAutoGeneratePassword() || user.Spec.SecretRef != nil {
+			if diff.NeedCreate() && diff.GetObjectToCreate().Password != "" {
 				passwordHash, err = localhelper.HashPassword(diff.GetObjectToCreate().Password)
 				if err != nil {
 					return res, errors.Wrap(err, "Error when hash password")

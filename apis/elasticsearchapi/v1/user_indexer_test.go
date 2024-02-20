@@ -5,6 +5,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"github.com/webcenter-fr/elasticsearch-operator/apis/shared"
+	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -23,9 +24,11 @@ func (t *TestSuite) TestSetupUserIndexer() {
 				},
 			},
 			Username: "test",
-			SecretRef: &UserSecret{
-				Name: "test",
-				Key:  "password",
+			SecretRef: &corev1.SecretKeySelector{
+				Key: "password",
+				LocalObjectReference: corev1.LocalObjectReference{
+					Name: "test",
+				},
 			},
 		},
 	}

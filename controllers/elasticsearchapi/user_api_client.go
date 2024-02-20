@@ -30,6 +30,10 @@ func (h *userApiClient) Build(o *elasticsearchapicrd.User) (user *olivere.XPackS
 		PasswordHash: o.Spec.PasswordHash,
 	}
 
+	if !o.IsAutoGeneratePassword() && o.Spec.PasswordHash != "" {
+		user.PasswordHash = o.Spec.PasswordHash
+	}
+
 	if o.Spec.Metadata != "" {
 		meta := make(map[string]any)
 		if err := json.Unmarshal([]byte(o.Spec.Metadata), &meta); err != nil {

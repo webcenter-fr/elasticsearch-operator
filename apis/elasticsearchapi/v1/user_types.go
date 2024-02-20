@@ -16,6 +16,7 @@ package v1
 import (
 	"github.com/disaster37/operator-sdk-extra/pkg/apis"
 	"github.com/webcenter-fr/elasticsearch-operator/apis/shared"
+	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -63,7 +64,7 @@ type UserSpec struct {
 	// CredentialSecretRef permit to set password. Or you can use password hash
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
 	// +optional
-	SecretRef *UserSecret `json:"secretRef,omitempty"`
+	SecretRef *corev1.SecretKeySelector `json:"secretRef,omitempty"`
 
 	// PasswordHash is the password as hash
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
@@ -80,17 +81,13 @@ type UserSpec struct {
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
 	// +optional
 	IsProtected *bool `json:"isProtected,omitempty"`
-}
 
-type UserSecret struct {
-
-	// Name is the secret name
+	// AutoGeneratePassword can permit to auto generate password if true.
+	// Default to false
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
-	Name string `json:"name"`
-
-	// key is the key name on secret to read the effective password
-	// +operator-sdk:csv:customresourcedefinitions:type=spec
-	Key string `json:"key"`
+	// +optional
+	// +kubebuilder:default=false
+	AutoGeneratePassword *bool `json:"autoGeneratePassword,omitempty"`
 }
 
 // UserStatus defines the observed state of User
