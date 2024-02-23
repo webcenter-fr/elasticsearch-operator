@@ -80,8 +80,24 @@ func (r *configMapReconciler) Read(ctx context.Context, resource object.MultiPha
 		if !host.DeletionTimestamp.IsZero() {
 			controllerutil.RemoveFinalizer(&host, finalizer.String())
 			if err = r.Client.Update(ctx, &host); err != nil {
-				return read, res, errors.Wrapf(err, "Error when add finalizer on Host %s", host.Name)
+				return read, res, errors.Wrapf(err, "Error when delete finalizer on Host %s", host.Name)
 			}
+			r.Log.Debugf("Remove finalizer on Cerebro host %s/%s", host.Namespace, host.Name)
+
+			// Remove Elasticsearch finalizer if cluster is managed and no more exist
+			if host.Spec.ElasticsearchRef.IsManaged() {
+				es = &elasticsearchcrd.Elasticsearch{}
+				if err = r.Client.Get(ctx, types.NamespacedName{Namespace: host.Namespace, Name: host.Spec.ElasticsearchRef.ManagedElasticsearchRef.Name}, es); err != nil {
+					if k8serrors.IsNotFound(err) {
+						controllerutil.RemoveFinalizer(&host, finalizer.String())
+						if err = r.Client.Update(ctx, &host); err != nil {
+							return read, res, errors.Wrapf(err, "Error when delete finalizer on Host %s", host.Name)
+						}
+						r.Log.Debugf("Remove finalizer on Cerebro host %s/%s", host.Namespace, host.Name)
+					}
+				}
+			}
+
 			continue
 		}
 		if !controllerutil.ContainsFinalizer(&host, finalizer.String()) {

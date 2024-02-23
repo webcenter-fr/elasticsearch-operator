@@ -44,7 +44,11 @@ func (h *snapshotRepositoryReconciler) GetRemoteHandler(ctx context.Context, req
 
 	// Elastic not ready
 	if esClient == nil {
-		return nil, ctrl.Result{RequeueAfter: 60 * time.Second}, nil
+		if sr.DeletionTimestamp.IsZero() {
+			return nil, ctrl.Result{RequeueAfter: 60 * time.Second}, nil
+		}
+
+		return nil, res, nil
 	}
 
 	handler = newSnapshotRepositoryApiClient(esClient)

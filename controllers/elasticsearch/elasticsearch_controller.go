@@ -45,12 +45,14 @@ import (
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	condition "k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/fields"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/tools/record"
 	"k8s.io/utils/ptr"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 	"sigs.k8s.io/controller-runtime/pkg/handler"
 )
 
@@ -263,6 +265,20 @@ func (h *ElasticsearchReconciler) Configure(ctx context.Context, req ctrl.Reques
 }
 
 func (h *ElasticsearchReconciler) Delete(ctx context.Context, o object.MultiPhaseObject, data map[string]any) (err error) {
+
+	// Read Cerebro referer to remove finalizer when destroy cluster
+	hostList := &cerebrocrd.HostList{}
+	fs := fields.ParseSelectorOrDie(fmt.Sprintf("spec.elasticsearchRef=%s", o.GetName()))
+	if err = h.Client.List(ctx, hostList, &client.ListOptions{Namespace: o.GetNamespace(), FieldSelector: fs}); err != nil {
+		return errors.Wrap(err, "error when read Cerebro hosts")
+	}
+	for _, host := range hostList.Items {
+		controllerutil.RemoveFinalizer(&host, elasticsearchFinalizer.String())
+		if err = h.Client.Update(ctx, &host); err != nil {
+			return errors.Wrapf(err, "Error when delete finalizer on Host %s", host.Name)
+		}
+	}
+
 	common.ControllerMetrics.WithLabelValues(h.name).Dec()
 	return h.MultiPhaseReconcilerAction.Delete(ctx, o, data)
 }

@@ -44,7 +44,11 @@ func (h *componentTemplateReconciler) GetRemoteHandler(ctx context.Context, req 
 
 	// Elastic not ready
 	if esClient == nil {
-		return nil, ctrl.Result{RequeueAfter: 60 * time.Second}, nil
+		if ct.DeletionTimestamp.IsZero() {
+			return nil, ctrl.Result{RequeueAfter: 60 * time.Second}, nil
+		}
+
+		return nil, res, nil
 	}
 
 	handler = newComponentTemplateApiClient(esClient)

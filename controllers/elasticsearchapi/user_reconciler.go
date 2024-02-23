@@ -53,7 +53,11 @@ func (h *userReconciler) GetRemoteHandler(ctx context.Context, req ctrl.Request,
 
 	// Elastic not ready
 	if esClient == nil {
-		return nil, ctrl.Result{RequeueAfter: 60 * time.Second}, nil
+		if user.DeletionTimestamp.IsZero() {
+			return nil, ctrl.Result{RequeueAfter: 60 * time.Second}, nil
+		}
+
+		return nil, res, nil
 	}
 
 	handler = newUserApiClient(esClient)

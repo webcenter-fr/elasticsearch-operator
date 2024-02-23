@@ -44,7 +44,11 @@ func (h *indexLifecyclePolicyReconciler) GetRemoteHandler(ctx context.Context, r
 
 	// Elastic not ready
 	if esClient == nil {
-		return nil, ctrl.Result{RequeueAfter: 60 * time.Second}, nil
+		if ilm.DeletionTimestamp.IsZero() {
+			return nil, ctrl.Result{RequeueAfter: 60 * time.Second}, nil
+		}
+
+		return nil, res, nil
 	}
 
 	handler = newIndexLifecyclePolicyApiClient(esClient)

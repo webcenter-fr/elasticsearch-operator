@@ -51,7 +51,11 @@ func (h *licenseReconciler) GetRemoteHandler(ctx context.Context, req ctrl.Reque
 
 	// Elastic not ready
 	if esClient == nil {
-		return nil, ctrl.Result{RequeueAfter: 60 * time.Second}, nil
+		if license.DeletionTimestamp.IsZero() {
+			return nil, ctrl.Result{RequeueAfter: 60 * time.Second}, nil
+		}
+
+		return nil, res, nil
 	}
 
 	handler = newLicenseApiClient(esClient)

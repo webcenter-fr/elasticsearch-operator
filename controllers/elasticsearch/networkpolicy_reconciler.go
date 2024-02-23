@@ -137,7 +137,7 @@ func (r *networkPolicyReconciler) Read(ctx context.Context, resource object.Mult
 		if !host.DeletionTimestamp.IsZero() {
 			controllerutil.RemoveFinalizer(&host, elasticsearchFinalizer.String())
 			if err = r.Client.Update(ctx, &host); err != nil {
-				return read, res, errors.Wrapf(err, "Error when add finalizer on Host %s", host.Name)
+				return read, res, errors.Wrapf(err, "Error when delete finalizer on Host %s", host.Name)
 			}
 			continue
 		}
