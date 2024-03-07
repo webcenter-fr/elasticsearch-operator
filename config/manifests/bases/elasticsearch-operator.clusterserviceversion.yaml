@@ -4,7 +4,7 @@ metadata:
   annotations:
     alm-examples: '[]'
     capabilities: Basic Install
-  name: elasticsearch-operator.v0.0.48
+  name: elasticsearch-operator.v0.0.49
   namespace: placeholder
 spec:
   apiservicedefinitions: {}
@@ -4174,5 +4174,5 @@ spec:
   provider:
     name: webcenter.fr
     url: https://github.com/webcenter-fr/elasticsearch-operator
-  replaces: elasticsearch-operator.v0.0.47
-  version: 0.0.48
+  replaces: elasticsearch-operator.v0.0.48
+  version: 0.0.49

@@ -2,6 +2,7 @@ package kibanaapi
 
 import (
 	"context"
+	"time"
 
 	"github.com/disaster37/go-kibana-rest/v8/kbapi"
 	kbhandler "github.com/disaster37/kb-handler/v8"
@@ -39,6 +40,15 @@ func (h *roleReconciler) GetRemoteHandler(ctx context.Context, req ctrl.Request,
 	kbClient, err := GetKibanaHandler(ctx, role, role.Spec.KibanaRef, h.BaseReconciler.Client, h.BaseReconciler.Log)
 	if err != nil && role.DeletionTimestamp.IsZero() {
 		return nil, res, err
+	}
+
+	// Kibana not ready
+	if kbClient == nil {
+		if role.DeletionTimestamp.IsZero() {
+			return nil, ctrl.Result{RequeueAfter: 60 * time.Second}, nil
+		}
+
+		return nil, res, nil
 	}
 
 	handler = newRoleApiClient(kbClient)

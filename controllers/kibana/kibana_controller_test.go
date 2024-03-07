@@ -481,8 +481,6 @@ func doDeleteKibanaStep() test.TestStep {
 			assert.True(t, isDeleted)
 
 			return nil
-
-			return nil
 		},
 	}
 }
