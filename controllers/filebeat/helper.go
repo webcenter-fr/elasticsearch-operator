@@ -99,16 +99,6 @@ func GetSecretNameForCredentials(fb *beatcrd.Filebeat) (secretName string) {
 	return fmt.Sprintf("%s-credential-fb", fb.Name)
 }
 
-// GetNetworkPolicyElasticsearchName return the name for network policy to access on Elasticsearch
-func GetNetworkPolicyElasticsearchName(fb *beatcrd.Filebeat) string {
-	return fmt.Sprintf("%s-allow-es-fb", fb.Name)
-}
-
-// GetNetworkPolicyLogstashName return the name for network policy to access on Logstash
-func GetNetworkPolicyLogstashName(fb *beatcrd.Filebeat) string {
-	return fmt.Sprintf("%s-allow-ls-fb", fb.Name)
-}
-
 // GetPodMonitorName return the name for podMonitor
 func GetPodMonitorName(fb *beatcrd.Filebeat) string {
 	return fmt.Sprintf("%s-fb", fb.Name)

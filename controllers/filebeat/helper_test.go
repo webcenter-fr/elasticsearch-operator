@@ -187,30 +187,6 @@ func TestGetSecretNameForCredentials(t *testing.T) {
 
 }
 
-func TestGetNetworkPolicyElasticsearchName(t *testing.T) {
-	o := &beatcrd.Filebeat{
-		ObjectMeta: metav1.ObjectMeta{
-			Namespace: "default",
-			Name:      "test",
-		},
-		Spec: beatcrd.FilebeatSpec{},
-	}
-
-	assert.Equal(t, "test-allow-es-fb", GetNetworkPolicyElasticsearchName(o))
-}
-
-func TestGetNetworkPolicyLogstashName(t *testing.T) {
-	o := &beatcrd.Filebeat{
-		ObjectMeta: metav1.ObjectMeta{
-			Namespace: "default",
-			Name:      "test",
-		},
-		Spec: beatcrd.FilebeatSpec{},
-	}
-
-	assert.Equal(t, "test-allow-ls-fb", GetNetworkPolicyLogstashName(o))
-}
-
 func TestGetPodMonitorName(t *testing.T) {
 	o := &beatcrd.Filebeat{
 		ObjectMeta: metav1.ObjectMeta{
