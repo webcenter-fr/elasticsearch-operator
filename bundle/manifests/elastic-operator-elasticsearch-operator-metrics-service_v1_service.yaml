@@ -1,0 +1,17 @@
+apiVersion: v1
+kind: Service
+metadata:
+  creationTimestamp: null
+  labels:
+    control-plane: elasticsearch-operator
+  name: elastic-operator-elasticsearch-operator-metrics-service
+spec:
+  ports:
+  - name: https
+    port: 8443
+    protocol: TCP
+    targetPort: https
+  selector:
+    control-plane: elasticsearch-operator
+status:
+  loadBalancer: {}
