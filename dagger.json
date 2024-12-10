@@ -1,0 +1,23 @@
+{
+  "name": "elasticsearch-operator",
+  "engineVersion": "v0.14.0",
+  "sdk": "go",
+  "dependencies": [
+    {
+      "name": "git",
+      "source": "github.com/disaster37/dagger-library-go/git",
+      "pin": "ae7e262be93ae816a5353359fc3007767eeaabad"
+    },
+    {
+      "name": "golang",
+      "source": "github.com/disaster37/dagger-library-go/golang",
+      "pin": "ae7e262be93ae816a5353359fc3007767eeaabad"
+    },
+    {
+      "name": "operator-sdk",
+      "source": "github.com/disaster37/dagger-library-go/operator-sdk",
+      "pin": "ae7e262be93ae816a5353359fc3007767eeaabad"
+    }
+  ],
+  "source": "ci/dagger"
+}

@@ -8,6 +8,9 @@ rules:
   - ""
   resources:
   - configmaps
+  - pods
+  - secrets
+  - services
   verbs:
   - create
   - delete
@@ -25,56 +28,9 @@ rules:
   - get
   - patch
 - apiGroups:
-  - ""
-  resources:
-  - pods
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
-  - ""
-  resources:
-  - secrets
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
-  - ""
-  resources:
-  - services
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
   - apps
   resources:
   - deployments
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
-  - apps
-  resources:
   - statefulsets
   verbs:
   - create
@@ -88,31 +44,6 @@ rules:
   - beat.k8s.webcenter.fr
   resources:
   - filebeats
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
-  - beat.k8s.webcenter.fr
-  resources:
-  - filebeats/finalizers
-  verbs:
-  - update
-- apiGroups:
-  - beat.k8s.webcenter.fr
-  resources:
-  - filebeats/status
-  verbs:
-  - get
-  - patch
-  - update
-- apiGroups:
-  - beat.k8s.webcenter.fr
-  resources:
   - metricbeats
   verbs:
   - create
@@ -125,12 +56,14 @@ rules:
 - apiGroups:
   - beat.k8s.webcenter.fr
   resources:
+  - filebeats/finalizers
   - metricbeats/finalizers
   verbs:
   - update
 - apiGroups:
   - beat.k8s.webcenter.fr
   resources:
+  - filebeats/status
   - metricbeats/status
   verbs:
   - get
@@ -140,31 +73,6 @@ rules:
   - cerebro.k8s.webcenter.fr
   resources:
   - cerebroes
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
-  - cerebro.k8s.webcenter.fr
-  resources:
-  - cerebroes/finalizers
-  verbs:
-  - update
-- apiGroups:
-  - cerebro.k8s.webcenter.fr
-  resources:
-  - cerebroes/status
-  verbs:
-  - get
-  - patch
-  - update
-- apiGroups:
-  - cerebro.k8s.webcenter.fr
-  resources:
   - hosts
   verbs:
   - create
@@ -177,12 +85,14 @@ rules:
 - apiGroups:
   - cerebro.k8s.webcenter.fr
   resources:
+  - cerebroes/finalizers
   - hosts/finalizers
   verbs:
   - update
 - apiGroups:
   - cerebro.k8s.webcenter.fr
   resources:
+  - cerebroes/status
   - hosts/status
   verbs:
   - get
@@ -218,239 +128,14 @@ rules:
   - elasticsearchapi.k8s.webcenter.fr
   resources:
   - componenttemplates
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
-  - elasticsearchapi.k8s.webcenter.fr
-  resources:
-  - componenttemplates/finalizers
-  verbs:
-  - update
-- apiGroups:
-  - elasticsearchapi.k8s.webcenter.fr
-  resources:
-  - componenttemplates/status
-  verbs:
-  - get
-  - patch
-  - update
-- apiGroups:
-  - elasticsearchapi.k8s.webcenter.fr
-  resources:
   - indexlifecyclepolicies
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
-  - elasticsearchapi.k8s.webcenter.fr
-  resources:
-  - indexlifecyclepolicies/finalizers
-  verbs:
-  - update
-- apiGroups:
-  - elasticsearchapi.k8s.webcenter.fr
-  resources:
-  - indexlifecyclepolicies/status
-  verbs:
-  - get
-  - patch
-  - update
-- apiGroups:
-  - elasticsearchapi.k8s.webcenter.fr
-  resources:
   - indextemplates
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
-  - elasticsearchapi.k8s.webcenter.fr
-  resources:
-  - indextemplates/finalizers
-  verbs:
-  - update
-- apiGroups:
-  - elasticsearchapi.k8s.webcenter.fr
-  resources:
-  - indextemplates/status
-  verbs:
-  - get
-  - patch
-  - update
-- apiGroups:
-  - elasticsearchapi.k8s.webcenter.fr
-  resources:
   - licenses
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
-  - elasticsearchapi.k8s.webcenter.fr
-  resources:
-  - licenses/finalizers
-  verbs:
-  - update
-- apiGroups:
-  - elasticsearchapi.k8s.webcenter.fr
-  resources:
-  - licenses/status
-  verbs:
-  - get
-  - patch
-  - update
-- apiGroups:
-  - elasticsearchapi.k8s.webcenter.fr
-  resources:
   - rolemappings
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
-  - elasticsearchapi.k8s.webcenter.fr
-  resources:
-  - rolemappings/finalizers
-  verbs:
-  - update
-- apiGroups:
-  - elasticsearchapi.k8s.webcenter.fr
-  resources:
-  - rolemappings/status
-  verbs:
-  - get
-  - patch
-  - update
-- apiGroups:
-  - elasticsearchapi.k8s.webcenter.fr
-  resources:
   - roles
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
-  - elasticsearchapi.k8s.webcenter.fr
-  resources:
-  - roles/finalizers
-  verbs:
-  - update
-- apiGroups:
-  - elasticsearchapi.k8s.webcenter.fr
-  resources:
-  - roles/status
-  verbs:
-  - get
-  - patch
-  - update
-- apiGroups:
-  - elasticsearchapi.k8s.webcenter.fr
-  resources:
   - snapshotlifecyclepolicies
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
-  - elasticsearchapi.k8s.webcenter.fr
-  resources:
-  - snapshotlifecyclepolicies/finalizers
-  verbs:
-  - update
-- apiGroups:
-  - elasticsearchapi.k8s.webcenter.fr
-  resources:
-  - snapshotlifecyclepolicies/status
-  verbs:
-  - get
-  - patch
-  - update
-- apiGroups:
-  - elasticsearchapi.k8s.webcenter.fr
-  resources:
   - snapshotrepositories
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
-  - elasticsearchapi.k8s.webcenter.fr
-  resources:
-  - snapshotrepositories/finalizers
-  verbs:
-  - update
-- apiGroups:
-  - elasticsearchapi.k8s.webcenter.fr
-  resources:
-  - snapshotrepositories/status
-  verbs:
-  - get
-  - patch
-  - update
-- apiGroups:
-  - elasticsearchapi.k8s.webcenter.fr
-  resources:
   - users
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
-  - elasticsearchapi.k8s.webcenter.fr
-  resources:
-  - users/finalizers
-  verbs:
-  - update
-- apiGroups:
-  - elasticsearchapi.k8s.webcenter.fr
-  resources:
-  - users/status
-  verbs:
-  - get
-  - patch
-  - update
-- apiGroups:
-  - elasticsearchapi.k8s.webcenter.fr
-  resources:
   - watches
   verbs:
   - create
@@ -463,12 +148,30 @@ rules:
 - apiGroups:
   - elasticsearchapi.k8s.webcenter.fr
   resources:
+  - componenttemplates/finalizers
+  - indexlifecyclepolicies/finalizers
+  - indextemplates/finalizers
+  - licenses/finalizers
+  - rolemappings/finalizers
+  - roles/finalizers
+  - snapshotlifecyclepolicies/finalizers
+  - snapshotrepositories/finalizers
+  - users/finalizers
   - watches/finalizers
   verbs:
   - update
 - apiGroups:
   - elasticsearchapi.k8s.webcenter.fr
   resources:
+  - componenttemplates/status
+  - indexlifecyclepolicies/status
+  - indextemplates/status
+  - licenses/status
+  - rolemappings/status
+  - roles/status
+  - snapshotlifecyclepolicies/status
+  - snapshotrepositories/status
+  - users/status
   - watches/status
   verbs:
   - get
@@ -504,57 +207,7 @@ rules:
   - kibanaapi.k8s.webcenter.fr
   resources:
   - logstashpipelines
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
-  - kibanaapi.k8s.webcenter.fr
-  resources:
-  - logstashpipelines/finalizers
-  verbs:
-  - update
-- apiGroups:
-  - kibanaapi.k8s.webcenter.fr
-  resources:
-  - logstashpipelines/status
-  verbs:
-  - get
-  - patch
-  - update
-- apiGroups:
-  - kibanaapi.k8s.webcenter.fr
-  resources:
   - roles
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
-  - kibanaapi.k8s.webcenter.fr
-  resources:
-  - roles/finalizers
-  verbs:
-  - update
-- apiGroups:
-  - kibanaapi.k8s.webcenter.fr
-  resources:
-  - roles/status
-  verbs:
-  - get
-  - patch
-  - update
-- apiGroups:
-  - kibanaapi.k8s.webcenter.fr
-  resources:
   - userspaces
   verbs:
   - create
@@ -567,12 +220,16 @@ rules:
 - apiGroups:
   - kibanaapi.k8s.webcenter.fr
   resources:
+  - logstashpipelines/finalizers
+  - roles/finalizers
   - userspaces/finalizers
   verbs:
   - update
 - apiGroups:
   - kibanaapi.k8s.webcenter.fr
   resources:
+  - logstashpipelines/status
+  - roles/status
   - userspaces/status
   verbs:
   - get
@@ -620,17 +277,6 @@ rules:
   - networking.k8s.io
   resources:
   - ingresses
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
-  - networking.k8s.io
-  resources:
   - networkpolicies
   verbs:
   - create
