@@ -33,7 +33,7 @@ const (
 	cleanCrdVersion             = "v0.1.9"
 	opmVersion                  = "v1.48.0"
 	registry                    = "quay.io"
-	repository                  = "docker-etloutils/opensearch-operator-k8s"
+	repository                  = "webcenter/elasticsearch-operator"
 	gitUsername          string = "github"
 	gitEmail             string = "github@localhost"
 	name                        = "elasticsearch-operator"

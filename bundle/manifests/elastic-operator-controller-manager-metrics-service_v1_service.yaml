@@ -3,15 +3,17 @@ kind: Service
 metadata:
   creationTimestamp: null
   labels:
-    control-plane: controller-manager
+    app.kubernetes.io/managed-by: kustomize
+    app.kubernetes.io/name: elastic-operator
+    control-plane: elastic-operator
   name: elastic-operator-controller-manager-metrics-service
 spec:
   ports:
   - name: https
     port: 8443
     protocol: TCP
-    targetPort: https
+    targetPort: 8443
   selector:
-    control-plane: controller-manager
+    control-plane: elastic-operator
 status:
   loadBalancer: {}

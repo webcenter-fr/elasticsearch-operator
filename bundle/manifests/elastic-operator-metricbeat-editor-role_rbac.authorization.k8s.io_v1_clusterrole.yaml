@@ -1,0 +1,31 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  creationTimestamp: null
+  labels:
+    app.kubernetes.io/component: rbac
+    app.kubernetes.io/created-by: elasticsearch-operator
+    app.kubernetes.io/instance: metricbeat-editor-role
+    app.kubernetes.io/managed-by: kustomize
+    app.kubernetes.io/name: clusterrole
+    app.kubernetes.io/part-of: elasticsearch-operator
+  name: elastic-operator-metricbeat-editor-role
+rules:
+- apiGroups:
+  - beat.k8s.webcenter.fr
+  resources:
+  - metricbeats
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - beat.k8s.webcenter.fr
+  resources:
+  - metricbeats/status
+  verbs:
+  - get

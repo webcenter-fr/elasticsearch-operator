@@ -53,8 +53,8 @@ resources:
 - kibana_kibana_viewer_role.yaml
 - kibanaapi_logstashpipeline_editor_role.yaml
 - kibanaapi_logstashpipeline_viewer_role.yaml
-- kibanaapi_role_editor_role.yaml
-- kibanaapi_role_viewer_role.yaml
+#- kibanaapi_role_editor_role.yaml
+#- kibanaapi_role_viewer_role.yaml
 - kibanaapi_userspace_editor_role.yaml
 - kibanaapi_userspace_viewer_role.yaml
 - logstash_logstash_editor_role.yaml
