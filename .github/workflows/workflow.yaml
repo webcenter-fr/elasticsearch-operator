@@ -25,5 +25,5 @@ jobs:
           cloud-token: ${{ secrets.DAGGER_CLOUD_TOKEN }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          VERSION: ${{ github.ref_type == 'tag' && github.ref_name || github.event_name == 'pull_request' && fomat('pr.{0}', github.run_number) || format('rc.{0}', github.run_number) }}
+          VERSION: ${{ github.ref_type == 'tag' && github.ref_name || github.event_name == 'pull_request' && format('pr.{0}', github.run_number) || format('rc.{0}', github.run_number) }}
           IS_TAG: ${{ github.ref_type == 'tag' && '--is-tag' || '' }}
