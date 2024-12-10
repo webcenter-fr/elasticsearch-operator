@@ -22,7 +22,6 @@ func newIndexLifecyclePolicyApiClient(client eshandler.ElasticsearchHandler) con
 }
 
 func (h *indexLifecyclePolicyApiClient) Build(o *elasticsearchapicrd.IndexLifecyclePolicy) (ilm *olivere.XPackIlmGetLifecycleResponse, err error) {
-
 	if o.Spec.Policy == "" {
 		return nil, errors.New("The ILM policy must be provided")
 	}
@@ -45,12 +44,10 @@ func (h *indexLifecyclePolicyApiClient) Create(object *olivere.XPackIlmGetLifecy
 
 func (h *indexLifecyclePolicyApiClient) Update(object *olivere.XPackIlmGetLifecycleResponse, o *elasticsearchapicrd.IndexLifecyclePolicy) (err error) {
 	return h.Client().ILMUpdate(o.GetExternalName(), object)
-
 }
 
 func (h *indexLifecyclePolicyApiClient) Delete(o *elasticsearchapicrd.IndexLifecyclePolicy) (err error) {
 	return h.Client().ILMDelete(o.GetExternalName())
-
 }
 
 func (h *indexLifecyclePolicyApiClient) Diff(currentOject *olivere.XPackIlmGetLifecycleResponse, expectedObject *olivere.XPackIlmGetLifecycleResponse, originalObject *olivere.XPackIlmGetLifecycleResponse, ignoresDiff ...patch.CalculateOption) (patchResult *patch.PatchResult, err error) {

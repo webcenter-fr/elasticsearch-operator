@@ -47,7 +47,6 @@ type UserReconciler struct {
 }
 
 func NewUserReconciler(client client.Client, logger *logrus.Entry, recorder record.EventRecorder) controller.Controller {
-
 	r := &UserReconciler{
 		Controller: controller.NewBasicController(),
 		RemoteReconciler: controller.NewBasicRemoteReconciler[*elasticsearchapicrd.User, *olivere.XPackSecurityPutUserRequest, eshandler.ElasticsearchHandler](
@@ -115,7 +114,6 @@ func (r *UserReconciler) SetupWithManager(mgr ctrl.Manager) error {
 // watchUserSecret permit to update user if secret change
 func watchUserSecret(c client.Client) handler.MapFunc {
 	return func(ctx context.Context, a client.Object) []reconcile.Request {
-
 		reconcileRequests := make([]reconcile.Request, 0)
 		listUsers := &elasticsearchapicrd.UserList{}
 

@@ -13,7 +13,6 @@ import (
 )
 
 func TestBuildLoadbalancer(t *testing.T) {
-
 	var (
 		err      error
 		services []corev1.Service
@@ -70,5 +69,4 @@ func TestBuildLoadbalancer(t *testing.T) {
 	services, err = buildLoadbalancers(o)
 	assert.NoError(t, err)
 	test.EqualFromYamlFile[*corev1.Service](t, "testdata/loadbalancer_without_target.yaml", &services[0], scheme.Scheme)
-
 }

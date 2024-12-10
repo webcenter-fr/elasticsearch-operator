@@ -11,7 +11,6 @@ import (
 )
 
 func TestRoleBuild(t *testing.T) {
-
 	var (
 		o            *kibanaapicrd.Role
 		role         *kbapi.KibanaRole
@@ -156,7 +155,7 @@ func TestRoleBuild(t *testing.T) {
 						"my-space",
 					},
 					Feature: map[string][]string{
-						"discover": []string{
+						"discover": {
 							"all",
 						},
 					},
@@ -213,7 +212,7 @@ func TestRoleBuild(t *testing.T) {
 					"my-space",
 				},
 				Feature: map[string][]string{
-					"discover": []string{
+					"discover": {
 						"all",
 					},
 				},
@@ -224,5 +223,4 @@ func TestRoleBuild(t *testing.T) {
 	role, err = client.Build(o)
 	assert.NoError(t, err)
 	assert.Equal(t, expectedRole, role)
-
 }

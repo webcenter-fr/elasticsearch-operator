@@ -29,7 +29,6 @@ func (h *userSpaceApiClient) Build(o *kibanaapicrd.UserSpace) (space *kbapi.Kiba
 	}
 
 	return space, nil
-
 }
 
 func (h *userSpaceApiClient) Get(o *kibanaapicrd.UserSpace) (object *kbapi.KibanaSpace, err error) {
@@ -42,12 +41,10 @@ func (h *userSpaceApiClient) Create(object *kbapi.KibanaSpace, o *kibanaapicrd.U
 
 func (h *userSpaceApiClient) Update(object *kbapi.KibanaSpace, o *kibanaapicrd.UserSpace) (err error) {
 	return h.Client().UserSpaceUpdate(object)
-
 }
 
 func (h *userSpaceApiClient) Delete(o *kibanaapicrd.UserSpace) (err error) {
 	return h.Client().UserSpaceDelete(o.GetExternalName())
-
 }
 
 func (h *userSpaceApiClient) Diff(currentOject *kbapi.KibanaSpace, expectedObject *kbapi.KibanaSpace, originalObject *kbapi.KibanaSpace, ignoresDiff ...patch.CalculateOption) (patchResult *patch.PatchResult, err error) {

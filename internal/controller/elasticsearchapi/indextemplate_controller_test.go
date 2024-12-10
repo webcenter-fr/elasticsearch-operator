@@ -49,7 +49,6 @@ func doMockIndexTemplate(mockES *mocks.MockElasticsearchHandler) func(stepName *
 		isUpdated := false
 
 		mockES.EXPECT().IndexTemplateGet(gomock.Any()).AnyTimes().DoAndReturn(func(name string) (*olivere.IndicesGetIndexTemplate, error) {
-
 			switch *stepName {
 			case "create":
 				if !isCreated {

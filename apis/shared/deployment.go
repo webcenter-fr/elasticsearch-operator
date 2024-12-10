@@ -67,7 +67,6 @@ type DeploymentPersistenceSpec struct {
 
 // DeploymentVolumeSpec permit to set volume
 type DeploymentVolumeSpec struct {
-
 	// Name is the volume name
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
 	Name string `json:"name"`
@@ -79,7 +78,6 @@ type DeploymentVolumeSpec struct {
 
 // DeploymentAntiAffinitySpec permit to set anti affinity
 type DeploymentAntiAffinitySpec struct {
-
 	// Type permit to set anti affinity as soft or hard
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
 	// +kubebuilder:validation:Enum=soft;hard

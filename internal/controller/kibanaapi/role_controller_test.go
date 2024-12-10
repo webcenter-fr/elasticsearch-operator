@@ -42,14 +42,13 @@ func (t *KibanaapiControllerTestSuite) TestKibanaRoleReconciler() {
 
 	testCase.Run()
 }
+
 func doMockRole(mockKB *mocks.MockKibanaHandler) func(stepName *string, data map[string]any) error {
 	return func(stepName *string, data map[string]any) (err error) {
-
 		isCreated := false
 		isUpdated := false
 
 		mockKB.EXPECT().RoleGet(gomock.Any()).AnyTimes().DoAndReturn(func(name string) (*kbapi.KibanaRole, error) {
-
 			switch *stepName {
 			case "create":
 				if !isCreated {
@@ -108,7 +107,6 @@ func doMockRole(mockKB *mocks.MockKibanaHandler) func(stepName *string, data map
 			}
 
 			return &patch.PatchResult{}, nil
-
 		})
 
 		mockKB.EXPECT().RoleUpdate(gomock.Any()).AnyTimes().DoAndReturn(func(role *kbapi.KibanaRole) error {

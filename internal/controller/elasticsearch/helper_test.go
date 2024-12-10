@@ -209,7 +209,6 @@ func TestGetSecretNameForPkiApi(t *testing.T) {
 }
 
 func TestGetSecretNameForCredentials(t *testing.T) {
-
 	o := &elasticsearchcrd.Elasticsearch{
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: "default",
@@ -219,7 +218,6 @@ func TestGetSecretNameForCredentials(t *testing.T) {
 	}
 
 	assert.Equal(t, "test-credential-es", GetSecretNameForCredentials(o))
-
 }
 
 func TestGetNodeGroupConfigMapName(t *testing.T) {
@@ -392,7 +390,6 @@ func TestGetNodeGroupNameFromNodeName(t *testing.T) {
 }
 
 func TestIsMasterRole(t *testing.T) {
-
 	var o *elasticsearchcrd.Elasticsearch
 
 	// With only master role
@@ -726,7 +723,6 @@ func TestGetBootstrappingConfigMapName(t *testing.T) {
 }
 
 func TestGetSecretNameForKeystore(t *testing.T) {
-
 	// When no keystore
 	o := &elasticsearchcrd.Elasticsearch{
 		ObjectMeta: metav1.ObjectMeta{
@@ -757,7 +753,6 @@ func TestGetSecretNameForKeystore(t *testing.T) {
 }
 
 func TestGetSecretNameForCacerts(t *testing.T) {
-
 	// When no cacerts
 	o := &elasticsearchcrd.Elasticsearch{
 		ObjectMeta: metav1.ObjectMeta{

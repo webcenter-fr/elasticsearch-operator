@@ -4,7 +4,6 @@ import corev1 "k8s.io/api/core/v1"
 
 // TlsSpec permit to set TLS
 type TlsSpec struct {
-
 	// Enabled permit to enabled TLS
 	// Default to false
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
@@ -47,7 +46,6 @@ type TlsSpec struct {
 
 // TlsSelfSignedCertificateSpec permit to set the the self signed certificate
 type TlsSelfSignedCertificateSpec struct {
-
 	// AltIps permit to set subject alt names of type ip when generate certificate
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
 	// +optional

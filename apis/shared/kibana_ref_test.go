@@ -25,7 +25,6 @@ func TestKibanaIsManaged(t *testing.T) {
 
 	o = KibanaRef{}
 	assert.False(t, o.IsManaged())
-
 }
 
 func TestKibanaIsExternal(t *testing.T) {
@@ -47,5 +46,4 @@ func TestKibanaIsExternal(t *testing.T) {
 
 	o = KibanaRef{}
 	assert.False(t, o.IsExternal())
-
 }

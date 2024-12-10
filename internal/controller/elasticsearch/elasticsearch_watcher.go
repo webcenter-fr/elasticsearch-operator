@@ -34,7 +34,6 @@ func watchElasticsearchMonitoring(c client.Client) handler.MapFunc {
 		}
 
 		return reconcileRequests
-
 	}
 }
 
@@ -82,7 +81,6 @@ func watchConfigMap(c client.Client) handler.MapFunc {
 		}
 
 		return reconcileRequests
-
 	}
 }
 
@@ -200,7 +198,6 @@ func watchSecret(c client.Client) handler.MapFunc {
 // watchHost permit to update networkpolicy to allow cerebro access on Elasticsearch
 func watchHost(c client.Client) handler.MapFunc {
 	return func(ctx context.Context, a client.Object) []reconcile.Request {
-
 		o := a.(*cerebrocrd.Host)
 
 		reconcileRequests := make([]reconcile.Request, 0)

@@ -10,7 +10,6 @@ import (
 
 // BuildCredentialSecret permit to build credential secret
 func buildCredentialSecrets(o *elasticsearchcrd.Elasticsearch) (secrets []corev1.Secret, err error) {
-
 	var (
 		esPassword  string
 		kbPassword  string

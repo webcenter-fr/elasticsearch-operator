@@ -46,5 +46,4 @@ func TestBuildCredentialSecret(t *testing.T) {
 	assert.NotEmpty(t, s[0].Data["beats_system"])
 	assert.NotEmpty(t, s[0].Data["apm_system"])
 	assert.NotEmpty(t, s[0].Data["remote_monitoring_user"])
-
 }

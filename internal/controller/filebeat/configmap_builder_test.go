@@ -14,7 +14,6 @@ import (
 )
 
 func TestBuildConfigMaps(t *testing.T) {
-
 	var (
 		o          *beatcrd.Filebeat
 		es         *elasticsearchcrd.Elasticsearch
@@ -81,7 +80,7 @@ func TestBuildConfigMaps(t *testing.T) {
 			Name:      "logstash-ca",
 		},
 		Data: map[string][]byte{
-			"filebeat.crt": []byte{},
+			"filebeat.crt": {},
 		},
 	}
 
@@ -183,5 +182,4 @@ node.value2: test`,
 	assert.NoError(t, err)
 	assert.Equal(t, 2, len(configMaps))
 	test.EqualFromYamlFile[*corev1.ConfigMap](t, "testdata/configmap_module.yml", &configMaps[1], scheme.Scheme)
-
 }

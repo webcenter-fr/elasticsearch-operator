@@ -217,7 +217,6 @@ func TestGetAnnotations(t *testing.T) {
 }
 
 func TestGetSecretNameForCredentials(t *testing.T) {
-
 	o := &logstashcrd.Logstash{
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: "default",
@@ -227,7 +226,6 @@ func TestGetSecretNameForCredentials(t *testing.T) {
 	}
 
 	assert.Equal(t, "test-credential-ls", GetSecretNameForCredentials(o))
-
 }
 
 func TestGetNetworkPolicyName(t *testing.T) {

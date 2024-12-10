@@ -10,7 +10,6 @@ import (
 // GenerateLoadbalancer permit to generate Loadbalancer throught service
 // It return nil if Loadbalancer is disabled
 func buildLoadbalancers(kb *kibanacrd.Kibana) (services []corev1.Service, err error) {
-
 	if !kb.Spec.Endpoint.IsLoadBalancerEnabled() {
 		return nil, nil
 	}

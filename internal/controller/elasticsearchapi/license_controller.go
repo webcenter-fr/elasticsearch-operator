@@ -47,7 +47,6 @@ type LicenseReconciler struct {
 }
 
 func NewLicenseReconciler(client client.Client, logger *logrus.Entry, recorder record.EventRecorder) controller.Controller {
-
 	r := &LicenseReconciler{
 		Controller: controller.NewBasicController(),
 		RemoteReconciler: controller.NewBasicRemoteReconciler[*elasticsearchapicrd.License, *olivere.XPackInfoLicense, eshandler.ElasticsearchHandler](
@@ -115,7 +114,6 @@ func (r *LicenseReconciler) SetupWithManager(mgr ctrl.Manager) error {
 // watchLicenseSecret permit to update license if secret change
 func watchLicenseSecret(c client.Client) handler.MapFunc {
 	return func(ctx context.Context, a client.Object) []reconcile.Request {
-
 		reconcileRequests := make([]reconcile.Request, 0)
 		listLicenses := &elasticsearchapicrd.LicenseList{}
 

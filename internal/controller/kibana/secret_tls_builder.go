@@ -18,7 +18,6 @@ const (
 
 // BuildPkiSecret generate the secret that store transport PKI
 func buildPkiSecret(o *kibanacrd.Kibana) (sPki *corev1.Secret, rootCA *goca.CA, err error) {
-
 	if !o.Spec.Tls.IsTlsEnabled() || !o.Spec.Tls.IsSelfManagedSecretForTls() {
 		return nil, nil, nil
 	}
@@ -77,7 +76,6 @@ func buildPkiSecret(o *kibanacrd.Kibana) (sPki *corev1.Secret, rootCA *goca.CA, 
 
 // BuildTlsSecret generate the secret that store the http certificates
 func buildTlsSecret(o *kibanacrd.Kibana, rootCA *goca.CA) (s *corev1.Secret, err error) {
-
 	if !o.Spec.Tls.IsTlsEnabled() || !o.Spec.Tls.IsSelfManagedSecretForTls() {
 		return nil, nil
 	}
@@ -106,7 +104,6 @@ func buildTlsSecret(o *kibanacrd.Kibana, rootCA *goca.CA) (s *corev1.Secret, err
 }
 
 func generateCertificate(o *kibanacrd.Kibana, rootCA *goca.CA) (nodeCrt *goca.Certificate, err error) {
-
 	var ips []net.IP
 	dnsNames := []string{
 		GetServiceName(o),

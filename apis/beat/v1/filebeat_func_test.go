@@ -90,7 +90,6 @@ func TestFilebeatIsPersistence(t *testing.T) {
 	}
 
 	assert.True(t, o.IsPersistence())
-
 }
 
 func TestFilebeatIsManaged(t *testing.T) {
@@ -113,7 +112,6 @@ func TestFilebeatIsManaged(t *testing.T) {
 
 	o = FilebeatLogstashRef{}
 	assert.False(t, o.IsManaged())
-
 }
 
 func TestFilebeatIsExternal(t *testing.T) {
@@ -137,7 +135,6 @@ func TestFilebeatIsExternal(t *testing.T) {
 
 	o = FilebeatLogstashRef{}
 	assert.False(t, o.IsExternal())
-
 }
 
 func TestFilebeatIsPdb(t *testing.T) {
@@ -182,5 +179,4 @@ func TestFilebeatIsPdb(t *testing.T) {
 		},
 	}
 	assert.True(t, o.IsPdb())
-
 }

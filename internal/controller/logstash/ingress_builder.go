@@ -9,11 +9,8 @@ import (
 // BuildIngresses permit to generate Ingresses object
 // It will overwrite the target service
 func buildIngresses(ls *logstashcrd.Logstash) (ingresses []networkingv1.Ingress, err error) {
-
 	ingresses = make([]networkingv1.Ingress, 0, len(ls.Spec.Ingresses))
-	var (
-		ingress *networkingv1.Ingress
-	)
+	var ingress *networkingv1.Ingress
 
 	for _, i := range ls.Spec.Ingresses {
 

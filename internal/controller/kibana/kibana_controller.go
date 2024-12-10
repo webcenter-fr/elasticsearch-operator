@@ -58,7 +58,6 @@ type KibanaReconciler struct {
 }
 
 func NewKibanaReconciler(client client.Client, logger *logrus.Entry, recorder record.EventRecorder) (multiPhaseReconciler controller.Controller) {
-
 	multiPhaseReconciler = &KibanaReconciler{
 		Controller: controller.NewBasicController(),
 		MultiPhaseReconcilerAction: controller.NewBasicMultiPhaseReconcilerAction(

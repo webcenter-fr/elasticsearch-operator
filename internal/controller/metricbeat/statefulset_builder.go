@@ -21,7 +21,6 @@ import (
 
 // GenerateStatefullset permit to generate statefullset
 func buildStatefulsets(mb *beatcrd.Metricbeat, es *elasticsearchcrd.Elasticsearch, secretsChecksum []corev1.Secret, configMapsChecksum []corev1.ConfigMap) (statefullsets []appv1.StatefulSet, err error) {
-
 	// Check that secretRef is set when use External Elasticsearch
 	if mb.Spec.ElasticsearchRef.IsExternal() && mb.Spec.ElasticsearchRef.SecretRef == nil {
 		return nil, errors.New("You must set the secretRef when you use external Elasticsearch")
@@ -561,7 +560,6 @@ func getMetricbeatContainer(podTemplate *corev1.PodTemplateSpec) (container *cor
 // computeAntiAffinity permit to get  anti affinity spec
 // Default to soft anti affinity
 func computeAntiAffinity(mb *beatcrd.Metricbeat) (antiAffinity *corev1.PodAntiAffinity, err error) {
-
 	antiAffinity = &corev1.PodAntiAffinity{}
 	topologyKey := "kubernetes.io/hostname"
 

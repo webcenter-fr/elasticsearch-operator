@@ -60,5 +60,4 @@ func TestBuildCAElasticsearchSecret(t *testing.T) {
 	assert.Equal(t, labels, s[0].Labels)
 	assert.Equal(t, annotations, s[0].Annotations)
 	assert.Equal(t, []byte("certificate"), s[0].Data["ca.crt"])
-
 }

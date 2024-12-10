@@ -57,7 +57,6 @@ func (h *snapshotLifecyclePolicyReconciler) GetRemoteHandler(ctx context.Context
 }
 
 func (h *snapshotLifecyclePolicyReconciler) Create(ctx context.Context, o object.RemoteObject, data map[string]any, handler controller.RemoteExternalReconciler[*elasticsearchapicrd.SnapshotLifecyclePolicy, *eshandler.SnapshotLifecyclePolicySpec, eshandler.ElasticsearchHandler], object *eshandler.SnapshotLifecyclePolicySpec) (res ctrl.Result, err error) {
-
 	// Check if snapshot repository exist befire create SLM
 
 	slm := o.(*elasticsearchapicrd.SnapshotLifecyclePolicy)

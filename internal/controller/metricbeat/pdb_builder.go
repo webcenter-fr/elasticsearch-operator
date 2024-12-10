@@ -11,7 +11,6 @@ import (
 
 // GeneratePodDisruptionBudget permit to generate pod disruption budgets
 func buildPodDisruptionBudgets(mb *beatcrd.Metricbeat) (pdbs []policyv1.PodDisruptionBudget, err error) {
-
 	if !mb.IsPdb() {
 		return nil, nil
 	}

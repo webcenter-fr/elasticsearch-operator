@@ -18,7 +18,6 @@ const (
 
 // BuildPkiSecret generate the secret that store PKI
 func buildPkiSecret(o *logstashcrd.Logstash) (sPki *corev1.Secret, rootCA *goca.CA, err error) {
-
 	if !o.Spec.Pki.IsEnabled() {
 		return nil, nil, nil
 	}
@@ -77,7 +76,6 @@ func buildPkiSecret(o *logstashcrd.Logstash) (sPki *corev1.Secret, rootCA *goca.
 
 // BuildTlsSecret generate the secret that store the http certificates
 func buildTlsSecret(o *logstashcrd.Logstash, rootCA *goca.CA) (s *corev1.Secret, err error) {
-
 	if !o.Spec.Pki.IsEnabled() {
 		return nil, nil
 	}
@@ -109,7 +107,6 @@ func buildTlsSecret(o *logstashcrd.Logstash, rootCA *goca.CA) (s *corev1.Secret,
 }
 
 func generateCertificate(o *logstashcrd.Logstash, rootCA *goca.CA, name string, tlsSpec *logstashcrd.LogstashTlsSpec) (cert *goca.Certificate, err error) {
-
 	var ips []net.IP
 	dnsNames := make([]string, 0, (len(o.Spec.Services)*3)+len(o.Spec.Ingresses))
 

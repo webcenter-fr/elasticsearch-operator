@@ -40,7 +40,6 @@ type RoleMappingReconciler struct {
 }
 
 func NewRoleMappingReconciler(client client.Client, logger *logrus.Entry, recorder record.EventRecorder) controller.Controller {
-
 	r := &RoleMappingReconciler{
 		Controller: controller.NewBasicController(),
 		RemoteReconciler: controller.NewBasicRemoteReconciler[*elasticsearchapicrd.RoleMapping, *olivere.XPackSecurityRoleMapping, eshandler.ElasticsearchHandler](

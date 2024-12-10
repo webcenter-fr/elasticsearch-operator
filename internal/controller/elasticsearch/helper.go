@@ -21,7 +21,6 @@ func GetNodeGroupName(elasticsearch *elasticsearchcrd.Elasticsearch, nodeGroupNa
 
 // GetNodeGroupNodeNames permit to get node names that composed the node group
 func GetNodeGroupNodeNames(elasticsearch *elasticsearchcrd.Elasticsearch, nodeGroupName string) (nodeNames []string) {
-
 	for _, nodeGroup := range elasticsearch.Spec.NodeGroups {
 		if nodeGroup.Name == nodeGroupName {
 			nodeNames = make([]string, 0, nodeGroup.Replicas)
@@ -84,7 +83,6 @@ func GetSecretNameForPkiTransport(elasticsearch *elasticsearchcrd.Elasticsearch)
 // GetSecretNameForTlsApi permit to get the secret name that store all certificates for Api layout (Http endpoint)
 // It return the secret name as string
 func GetSecretNameForTlsApi(elasticsearch *elasticsearchcrd.Elasticsearch) (secretName string) {
-
 	if !elasticsearch.Spec.Tls.IsSelfManagedSecretForTls() {
 		return elasticsearch.Spec.Tls.CertificateSecretRef.Name
 	}
@@ -107,7 +105,6 @@ func GetSecretNameForCredentials(elasticsearch *elasticsearchcrd.Elasticsearch) 
 // It will inject each key on keystore
 // It return empty string if not secret provided
 func GetSecretNameForKeystore(elasticsearch *elasticsearchcrd.Elasticsearch) (secretName string) {
-
 	if elasticsearch.Spec.GlobalNodeGroup.KeystoreSecretRef != nil {
 		return elasticsearch.Spec.GlobalNodeGroup.KeystoreSecretRef.Name
 	}
@@ -119,7 +116,6 @@ func GetSecretNameForKeystore(elasticsearch *elasticsearchcrd.Elasticsearch) (se
 // It will inject each certificate file on cacerts
 // It return empty string if not secret provided
 func GetSecretNameForCacerts(elasticsearch *elasticsearchcrd.Elasticsearch) (secretName string) {
-
 	if elasticsearch.Spec.GlobalNodeGroup.CacertsSecretRef != nil {
 		return elasticsearch.Spec.GlobalNodeGroup.CacertsSecretRef.Name
 	}
@@ -175,7 +171,6 @@ func GetNodeGroupNameFromNodeName(nodeName string) (nodeGroupName string) {
 
 // isMasterRole return true if nodegroup have `cluster_manager` role
 func IsMasterRole(elasticsearch *elasticsearchcrd.Elasticsearch, nodeGroupName string) bool {
-
 	for _, nodeGroup := range elasticsearch.Spec.NodeGroups {
 		if nodeGroup.Name == nodeGroupName {
 			return funk.Contains(nodeGroup.Roles, "master")
@@ -217,7 +212,6 @@ func GetExporterImage(es *elasticsearchcrd.Elasticsearch) string {
 	version := "latest"
 	if es.Spec.Monitoring.Prometheus != nil && es.Spec.Monitoring.Prometheus.Version != "" {
 		version = es.Spec.Monitoring.Prometheus.Version
-
 	}
 	if es.Spec.Monitoring.Prometheus != nil && es.Spec.Monitoring.Prometheus.Image != "" {
 		return fmt.Sprintf("%s:%s", es.Spec.Monitoring.Prometheus.Image, version)
@@ -238,7 +232,6 @@ func GetPodMonitorName(es *elasticsearchcrd.Elasticsearch) string {
 
 // GetPublicUrl permit to get the public URL to connect on Elasticsearch
 func GetPublicUrl(es *elasticsearchcrd.Elasticsearch, targetNodeGroup string, external bool) string {
-
 	scheme := "https"
 
 	if !external {
@@ -254,7 +247,6 @@ func GetPublicUrl(es *elasticsearchcrd.Elasticsearch, targetNodeGroup string, ex
 	}
 
 	return es.Status.Url
-
 }
 
 // GetMetricbeatName return the metricbeat namme

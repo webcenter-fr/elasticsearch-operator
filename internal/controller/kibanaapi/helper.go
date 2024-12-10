@@ -23,7 +23,6 @@ import (
 )
 
 func GetKibanaHandler(ctx context.Context, o client.Object, kbRef shared.KibanaRef, client client.Client, log *logrus.Entry) (kbHandler kbhandler.KibanaHandler, err error) {
-
 	// Retrieve secret or elasticsearch resource that store the connexion credentials
 	var (
 		secretNS              types.NamespacedName
@@ -54,7 +53,6 @@ func GetKibanaHandler(ctx context.Context, o client.Object, kbRef shared.KibanaR
 
 		// If no Kibana secret credential provided and Elasticsearch is also managed, we can use Elasticsearc credentials secret
 		if kbRef.KibanaCredentialSecretRef == nil {
-
 			if kb.Spec.ElasticsearchRef.IsManaged() {
 				es, err := common.GetElasticsearchFromRef(ctx, client, o, kb.Spec.ElasticsearchRef)
 				if err != nil {

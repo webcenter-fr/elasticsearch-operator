@@ -20,27 +20,23 @@ import (
 	"k8s.io/utils/ptr"
 )
 
-var (
-	roleList = []string{
-		"master",
-		"data",
-		"data_content",
-		"data_hot",
-		"data_warm",
-		"data_cold",
-		"data_frozen",
-		"ingest",
-		"ml",
-		"remote_cluster_client",
-		"transform",
-	}
-)
+var roleList = []string{
+	"master",
+	"data",
+	"data_content",
+	"data_hot",
+	"data_warm",
+	"data_cold",
+	"data_frozen",
+	"ingest",
+	"ml",
+	"remote_cluster_client",
+	"transform",
+}
 
 // GenerateStatefullsets permit to generate statefullsets for each node groups
 func buildStatefulsets(es *elasticsearchcrd.Elasticsearch, secretsChecksum []corev1.Secret, configMapsChecksum []corev1.ConfigMap) (statefullsets []appv1.StatefulSet, err error) {
-	var (
-		sts *appv1.StatefulSet
-	)
+	var sts *appv1.StatefulSet
 
 	checksumAnnotations := map[string]string{}
 
@@ -862,7 +858,6 @@ func getElasticsearchContainer(podTemplate *corev1.PodTemplateSpec) (container *
 // computeEnvFroms permit to compute the envFrom list
 // It just append all, without to keep unique object
 func computeEnvFroms(es *elasticsearchcrd.Elasticsearch, nodeGroup *elasticsearchcrd.ElasticsearchNodeGroupSpec) (envFroms []corev1.EnvFromSource) {
-
 	secrets := make([]any, 0)
 	configMaps := make([]any, 0)
 	finalSecrets := make([]any, 0)

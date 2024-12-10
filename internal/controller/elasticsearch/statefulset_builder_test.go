@@ -17,7 +17,6 @@ import (
 )
 
 func TestBuildStatefulset(t *testing.T) {
-
 	var (
 		o               *elasticsearchcrd.Elasticsearch
 		err             error
@@ -321,7 +320,6 @@ func TestBuildStatefulset(t *testing.T) {
 }
 
 func TestComputeJavaOpts(t *testing.T) {
-
 	var o *elasticsearchcrd.Elasticsearch
 
 	// With default values
@@ -411,7 +409,6 @@ func TestComputeRoles(t *testing.T) {
 }
 
 func TestComputeAntiAffinity(t *testing.T) {
-
 	var (
 		o                    *elasticsearchcrd.Elasticsearch
 		expectedAntiAffinity *corev1.PodAntiAffinity
@@ -697,7 +694,6 @@ func TestComputeEnvFroms(t *testing.T) {
 }
 
 func TestGetElasticsearchContainer(t *testing.T) {
-
 	var o *appv1.StatefulSet
 
 	// When no container
@@ -723,5 +719,4 @@ func TestGetElasticsearchContainer(t *testing.T) {
 		},
 	}
 	assert.Equal(t, &o.Spec.Template.Spec.Containers[0], getElasticsearchContainer(&o.Spec.Template))
-
 }

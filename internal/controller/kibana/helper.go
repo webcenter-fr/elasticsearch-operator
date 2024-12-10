@@ -25,7 +25,6 @@ func GetServiceName(kb *kibanacrd.Kibana) (serviceName string) {
 // GetSecretNameForTls permit to get the secret name that store all certificates for Kibana
 // It return the secret name as string
 func GetSecretNameForTls(kb *kibanacrd.Kibana) (secretName string) {
-
 	if !kb.Spec.Tls.IsSelfManagedSecretForTls() {
 		return kb.Spec.Tls.CertificateSecretRef.Name
 	}
@@ -36,7 +35,6 @@ func GetSecretNameForTls(kb *kibanacrd.Kibana) (secretName string) {
 // GetSecretNameForCAElasticsearch permit to get the secret name that store all Elasticsearch CA
 // It return the secret name as string
 func GetSecretNameForCAElasticsearch(kb *kibanacrd.Kibana) (secretName string) {
-
 	return fmt.Sprintf("%s-ca-es-kb", kb.Name)
 }
 
@@ -50,7 +48,6 @@ func GetSecretNameForPki(kb *kibanacrd.Kibana) (secretName string) {
 // It will inject each key on keystore
 // It return empty string if not secret provided
 func GetSecretNameForKeystore(kb *kibanacrd.Kibana) (secretName string) {
-
 	if kb.Spec.KeystoreSecretRef != nil {
 		return kb.Spec.KeystoreSecretRef.Name
 	}

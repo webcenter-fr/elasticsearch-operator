@@ -56,7 +56,6 @@ type CerebroReconciler struct {
 }
 
 func NewCerebroReconciler(client client.Client, logger *logrus.Entry, recorder record.EventRecorder) (multiPhaseReconciler controller.Controller) {
-
 	multiPhaseReconciler = &CerebroReconciler{
 		Controller: controller.NewBasicController(),
 		MultiPhaseReconcilerAction: controller.NewBasicMultiPhaseReconcilerAction(

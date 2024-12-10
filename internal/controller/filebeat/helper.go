@@ -34,7 +34,6 @@ func GetGlobalServiceName(fb *beatcrd.Filebeat) string {
 // GetSecretNameForCAElasticsearch permit to get the secret name that store all Elasticsearch CA
 // It return the secret name as string
 func GetSecretNameForCAElasticsearch(fb *beatcrd.Filebeat) (secretName string) {
-
 	return fmt.Sprintf("%s-ca-es-fb", fb.Name)
 }
 

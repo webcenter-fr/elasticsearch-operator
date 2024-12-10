@@ -69,7 +69,6 @@ func watchConfigMap(c client.Client) handler.MapFunc {
 		}
 
 		return reconcileRequests
-
 	}
 }
 

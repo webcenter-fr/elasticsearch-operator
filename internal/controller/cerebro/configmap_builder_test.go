@@ -13,7 +13,6 @@ import (
 )
 
 func TestBuildConfigMap(t *testing.T) {
-
 	var (
 		o          *cerebrocrd.Cerebro
 		esList     []elasticsearchcrd.Elasticsearch

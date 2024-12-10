@@ -13,7 +13,6 @@ import (
 // MergeSettings permit to merge map[string] that contain yaml as string
 // m1 have the priority
 func MergeSettings(m1, m2 map[string]string) (res map[string]string, err error) {
-
 	if m1 == nil {
 		return m2, nil
 	}
@@ -75,7 +74,6 @@ func MergeSettings(m1, m2 map[string]string) (res map[string]string, err error) 
 }
 
 func GetSetting(key string, config []byte) (value string, err error) {
-
 	if key == "" {
 		return "", errors.New("You must provide key")
 	}
@@ -99,5 +97,4 @@ func GetSetting(key string, config []byte) (value string, err error) {
 	}
 
 	return "", ucfg.ErrMissing
-
 }

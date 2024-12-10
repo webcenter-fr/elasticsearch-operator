@@ -11,7 +11,6 @@ import (
 // It also generate service needed by ingress
 // It inject the right selector for Logstash pods
 func buildServices(fb *beatcrd.Filebeat) (services []corev1.Service, err error) {
-
 	services = make([]corev1.Service, 0, len(fb.Spec.Services))
 	var service *corev1.Service
 	computedPort := make([]corev1.ServicePort, 0, len(fb.Spec.Services)+len(fb.Spec.Ingresses)+len(fb.Spec.Deployment.Ports))

@@ -57,7 +57,6 @@ func doMockSLM(mockES *mocks.MockElasticsearchHandler) func(stepName *string, da
 		})
 
 		mockES.EXPECT().SLMGet(gomock.Any()).AnyTimes().DoAndReturn(func(name string) (*eshandler.SnapshotLifecyclePolicySpec, error) {
-
 			switch *stepName {
 			case "create":
 				if !isCreated {

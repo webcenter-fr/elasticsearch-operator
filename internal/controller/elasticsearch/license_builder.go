@@ -11,7 +11,6 @@ import (
 
 // BuildUserSystem permit to generate system users
 func buildLicenses(es *elasticsearchcrd.Elasticsearch, s *corev1.Secret) (licenses []elasticsearchapicrd.License, err error) {
-
 	if es.Spec.LicenseSecretRef == nil || es.Spec.LicenseSecretRef.Name == "" {
 		return nil, nil
 	}

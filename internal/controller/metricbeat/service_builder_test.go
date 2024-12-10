@@ -12,7 +12,6 @@ import (
 )
 
 func TestBuildServicees(t *testing.T) {
-
 	var (
 		err      error
 		services []corev1.Service
@@ -32,5 +31,4 @@ func TestBuildServicees(t *testing.T) {
 	assert.NoError(t, err)
 	assert.NotEmpty(t, services)
 	test.EqualFromYamlFile[*corev1.Service](t, "testdata/service_default.yaml", &services[0], scheme.Scheme)
-
 }

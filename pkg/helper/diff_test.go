@@ -43,7 +43,6 @@ func TestDiffDiffLabels(t *testing.T) {
 	}
 
 	assert.NotEmpty(t, DiffLabels(expectedM, m))
-
 }
 
 func TestDiffAnnotations(t *testing.T) {
@@ -101,5 +100,4 @@ func TestDiffAnnotations(t *testing.T) {
 	}
 
 	assert.Empty(t, DiffAnnotations(expectedM, m))
-
 }

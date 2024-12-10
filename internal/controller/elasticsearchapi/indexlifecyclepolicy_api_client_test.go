@@ -11,7 +11,6 @@ import (
 )
 
 func TestIndexLifecyclePolicyBuild(t *testing.T) {
-
 	var (
 		o           *elasticsearchapicrd.IndexLifecyclePolicy
 		ilm         *olivere.XPackIlmGetLifecycleResponse
@@ -89,5 +88,4 @@ func TestIndexLifecyclePolicyBuild(t *testing.T) {
 	ilm, err = client.Build(o)
 	assert.NoError(t, err)
 	assert.Equal(t, expectedIlm, ilm)
-
 }

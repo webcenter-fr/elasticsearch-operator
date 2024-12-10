@@ -15,7 +15,6 @@ import (
 )
 
 func TestBuildDeployment(t *testing.T) {
-
 	var (
 		o               *cerebrocrd.Cerebro
 		err             error

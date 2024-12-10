@@ -52,7 +52,6 @@ func TestBuildNetworkPolicies(t *testing.T) {
 		},
 	}
 	oList = []client.Object{
-
 		&beatcrd.Filebeat{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      "filebeat",

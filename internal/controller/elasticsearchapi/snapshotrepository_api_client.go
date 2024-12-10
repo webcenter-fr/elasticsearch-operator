@@ -22,7 +22,6 @@ func newSnapshotRepositoryApiClient(client eshandler.ElasticsearchHandler) contr
 }
 
 func (h *snapshotRepositoryApiClient) Build(o *elasticsearchapicrd.SnapshotRepository) (sr *olivere.SnapshotRepositoryMetaData, err error) {
-
 	settings := map[string]any{}
 
 	if o.Spec.Settings != "" {
@@ -49,12 +48,10 @@ func (h *snapshotRepositoryApiClient) Create(object *olivere.SnapshotRepositoryM
 
 func (h *snapshotRepositoryApiClient) Update(object *olivere.SnapshotRepositoryMetaData, o *elasticsearchapicrd.SnapshotRepository) (err error) {
 	return h.Client().SnapshotRepositoryUpdate(o.GetExternalName(), object)
-
 }
 
 func (h *snapshotRepositoryApiClient) Delete(o *elasticsearchapicrd.SnapshotRepository) (err error) {
 	return h.Client().SnapshotRepositoryDelete(o.GetExternalName())
-
 }
 
 func (h *snapshotRepositoryApiClient) Diff(currentOject *olivere.SnapshotRepositoryMetaData, expectedObject *olivere.SnapshotRepositoryMetaData, originalObject *olivere.SnapshotRepositoryMetaData, ignoresDiff ...patch.CalculateOption) (patchResult *patch.PatchResult, err error) {

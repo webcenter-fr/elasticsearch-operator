@@ -4,7 +4,6 @@ import corev1 "k8s.io/api/core/v1"
 
 // MonitoringSpec permit to set monitoring
 type MonitoringSpec struct {
-
 	// Prometheus permit to monitor cluster with Prometheus and graphana (via exporter)
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
 	// +optional
@@ -18,7 +17,6 @@ type MonitoringSpec struct {
 
 // MonitoringPrometheusSpec permit to set Prometheus
 type MonitoringPrometheusSpec struct {
-
 	// Enabled permit to enable Prometheus monitoring
 	// It will deploy exporter and add podMonitor policy
 	// Default to false
@@ -92,7 +90,6 @@ type MonitoringMetricbeatSpec struct {
 
 // IsPrometheusMonitoring return true if Prometheus monitoring is enabled
 func (h MonitoringSpec) IsPrometheusMonitoring() bool {
-
 	if h.Prometheus != nil && h.Prometheus.Enabled {
 		return true
 	}
@@ -102,7 +99,6 @@ func (h MonitoringSpec) IsPrometheusMonitoring() bool {
 
 // IsMetricbeatMonitoring return true if Metricbeat monitoring is enabled
 func (h *MonitoringSpec) IsMetricbeatMonitoring(numberOfReplicas int32) bool {
-
 	if h.Metricbeat != nil && h.Metricbeat.Enabled && numberOfReplicas > 0 {
 		return true
 	}

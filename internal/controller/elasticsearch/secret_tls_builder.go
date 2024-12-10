@@ -19,7 +19,6 @@ const (
 
 // buildTransportPkiSecret generate the secret that store transport PKI
 func buildTransportPkiSecret(o *elasticsearchcrd.Elasticsearch) (sPki *corev1.Secret, rootCA *goca.CA, err error) {
-
 	var (
 		keySize      int
 		validityDays int
@@ -75,7 +74,6 @@ func buildTransportPkiSecret(o *elasticsearchcrd.Elasticsearch) (sPki *corev1.Se
 // buildTransportSecret generate the secret that store the node certificates
 // Add annotations to keep sequence version to know if need to rolling restart nodeGroup (statefullset) on statefullset controller
 func buildTransportSecret(o *elasticsearchcrd.Elasticsearch, rootCA *goca.CA) (s *corev1.Secret, err error) {
-
 	s = &corev1.Secret{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      GetSecretNameForTlsTransport(o),
@@ -111,7 +109,6 @@ func buildTransportSecret(o *elasticsearchcrd.Elasticsearch, rootCA *goca.CA) (s
 
 // buildApiPkiSecret generate the secret that store API PKI
 func buildApiPkiSecret(o *elasticsearchcrd.Elasticsearch) (sPki *corev1.Secret, rootCA *goca.CA, err error) {
-
 	if !o.Spec.Tls.IsTlsEnabled() || !o.Spec.Tls.IsSelfManagedSecretForTls() {
 		return nil, nil, nil
 	}
@@ -169,7 +166,6 @@ func buildApiPkiSecret(o *elasticsearchcrd.Elasticsearch) (sPki *corev1.Secret, 
 
 // buildApiSecret generate the secret that store the API certificate
 func buildApiSecret(o *elasticsearchcrd.Elasticsearch, rootCA *goca.CA) (s *corev1.Secret, err error) {
-
 	if !o.Spec.Tls.IsTlsEnabled() || !o.Spec.Tls.IsSelfManagedSecretForTls() {
 		return nil, nil
 	}
@@ -200,7 +196,6 @@ func buildApiSecret(o *elasticsearchcrd.Elasticsearch, rootCA *goca.CA) (s *core
 }
 
 func generateNodeCertificate(o *elasticsearchcrd.Elasticsearch, nodeGroupName, nodeName string, rootCA *goca.CA) (nodeCrt *goca.Certificate, err error) {
-
 	var (
 		keySize      int
 		validityDays int
@@ -253,7 +248,6 @@ func generateNodeCertificate(o *elasticsearchcrd.Elasticsearch, nodeGroupName, n
 }
 
 func generateApiCertificate(o *elasticsearchcrd.Elasticsearch, rootCA *goca.CA) (nodeCrt *goca.Certificate, err error) {
-
 	var ips []net.IP
 	dnsNames := []string{
 		GetGlobalServiceName(o),

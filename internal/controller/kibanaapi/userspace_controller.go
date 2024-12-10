@@ -40,7 +40,6 @@ type UserSpaceReconciler struct {
 }
 
 func NewUserSpaceReconciler(client client.Client, logger *logrus.Entry, recorder record.EventRecorder) controller.Controller {
-
 	r := &UserSpaceReconciler{
 		Controller: controller.NewBasicController(),
 		RemoteReconciler: controller.NewBasicRemoteReconciler[*kibanaapicrd.UserSpace, *kbapi.KibanaSpace, kbhandler.KibanaHandler](

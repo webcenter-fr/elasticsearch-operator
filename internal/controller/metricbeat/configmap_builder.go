@@ -13,7 +13,6 @@ import (
 
 // BuildConfigMap permit to generate config maps
 func buildConfigMaps(mb *beatcrd.Metricbeat, es *elasticsearchcrd.Elasticsearch) (configMaps []corev1.ConfigMap, err error) {
-
 	configMaps = make([]corev1.ConfigMap, 0, 1)
 	var cm *corev1.ConfigMap
 

@@ -40,7 +40,6 @@ type WatchReconciler struct {
 }
 
 func NewWatchReconciler(client client.Client, logger *logrus.Entry, recorder record.EventRecorder) controller.Controller {
-
 	r := &WatchReconciler{
 		Controller: controller.NewBasicController(),
 		RemoteReconciler: controller.NewBasicRemoteReconciler[*elasticsearchapicrd.Watch, *olivere.XPackWatch, eshandler.ElasticsearchHandler](

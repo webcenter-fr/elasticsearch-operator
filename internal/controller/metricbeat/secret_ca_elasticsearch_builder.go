@@ -8,7 +8,6 @@ import (
 
 // BuildCAElasticsearchSecret permit to build CA secret from Elasticsearch ApiPKI
 func buildCAElasticsearchSecrets(mb *beatcrd.Metricbeat, secretCaElasticsearch *corev1.Secret) (secrets []corev1.Secret, err error) {
-
 	if secretCaElasticsearch == nil {
 		return nil, nil
 	}

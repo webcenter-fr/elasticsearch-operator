@@ -62,5 +62,4 @@ func TestBuildCredentialSecret(t *testing.T) {
 	assert.Equal(t, annotations, s[0].Annotations)
 	assert.Equal(t, []byte("password"), s[0].Data["beats_system"])
 	assert.Equal(t, []byte("password"), s[0].Data["remote_monitoring_user"])
-
 }

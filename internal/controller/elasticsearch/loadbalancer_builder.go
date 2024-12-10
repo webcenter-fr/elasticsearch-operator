@@ -11,7 +11,6 @@ import (
 // GenerateLoadbalancer permit to generate Loadbalancer throught service
 // It return nil if Loadbalancer is disabled
 func buildLoadbalancers(es *elasticsearchcrd.Elasticsearch) (services []corev1.Service, err error) {
-
 	if !es.IsLoadBalancerEnabled() {
 		return nil, nil
 	}

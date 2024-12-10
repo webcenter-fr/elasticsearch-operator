@@ -29,7 +29,6 @@ func TestIsSelfManagedSecretForTls(t *testing.T) {
 		},
 	}
 	assert.False(t, o.IsSelfManagedSecretForTls())
-
 }
 
 func TestIsTlsEnabled(t *testing.T) {

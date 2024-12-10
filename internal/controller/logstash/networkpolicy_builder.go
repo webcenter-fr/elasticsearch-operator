@@ -12,7 +12,6 @@ import (
 
 // BuildNetworkPolicy permit to generate Network policy object
 func buildNetworkPolicies(ls *logstashcrd.Logstash, listCaller []client.Object) (networkPolicies []networkingv1.NetworkPolicy, err error) {
-
 	if len(listCaller) == 0 {
 		return nil, nil
 	}

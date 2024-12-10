@@ -13,7 +13,6 @@ import (
 )
 
 func TestBuildConfigMaps(t *testing.T) {
-
 	var (
 		o          *logstashcrd.Logstash
 		configMaps []corev1.ConfigMap
@@ -121,5 +120,4 @@ node.value2: test`,
 	assert.NoError(t, err)
 	assert.Equal(t, 1, len(configMaps))
 	test.EqualFromYamlFile[*corev1.ConfigMap](t, "testdata/configmap_pattern.yml", &configMaps[0], scheme.Scheme)
-
 }

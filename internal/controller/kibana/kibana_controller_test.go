@@ -143,7 +143,6 @@ func doCreateKibanaStep() test.TestStep {
 				}
 
 				return errors.New("Not yet created")
-
 			}, time.Second*30, time.Second*1)
 			if err != nil || isTimeout {
 				t.Fatalf("All Kibana step provisionning not finished: %s", err.Error())
@@ -312,7 +311,6 @@ func doUpdateKibanaStep() test.TestStep {
 				}
 
 				return errors.New("Not yet updated")
-
 			}, time.Second*30, time.Second*1)
 			if err != nil || isTimeout {
 				t.Fatalf("All Kibana step upgrading not finished: %s", err.Error())
@@ -457,7 +455,6 @@ func doDeleteKibanaStep() test.TestStep {
 			return nil
 		},
 		Check: func(t *testing.T, c client.Client, key types.NamespacedName, o client.Object, data map[string]any) (err error) {
-
 			kb := &kibanacrd.Kibana{}
 			isDeleted := false
 

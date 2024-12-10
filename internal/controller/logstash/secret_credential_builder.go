@@ -8,7 +8,6 @@ import (
 
 // BuildCredentialSecret permit to build credential secret from Elasticsearch credentials
 func buildCredentialSecrets(ls *logstashcrd.Logstash, secretCredentials *corev1.Secret) (secrets []corev1.Secret, err error) {
-
 	if secretCredentials == nil {
 		return nil, nil
 	}

@@ -42,14 +42,13 @@ func (t *KibanaapiControllerTestSuite) TestKibanaLogstashPipelineReconciler() {
 
 	testCase.Run()
 }
+
 func doMockLogstashPipeline(mockKB *mocks.MockKibanaHandler) func(stepName *string, data map[string]any) error {
 	return func(stepName *string, data map[string]any) (err error) {
-
 		isCreated := false
 		isUpdated := false
 
 		mockKB.EXPECT().LogstashPipelineGet(gomock.Any()).AnyTimes().DoAndReturn(func(name string) (*kbapi.LogstashPipeline, error) {
-
 			switch *stepName {
 			case "create":
 				if !isCreated {
@@ -102,7 +101,6 @@ func doMockLogstashPipeline(mockKB *mocks.MockKibanaHandler) func(stepName *stri
 			}
 
 			return nil, nil
-
 		})
 
 		mockKB.EXPECT().LogstashPipelineUpdate(gomock.Any()).AnyTimes().DoAndReturn(func(pipeline *kbapi.LogstashPipeline) error {

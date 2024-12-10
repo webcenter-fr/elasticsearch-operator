@@ -20,7 +20,6 @@ func newRoleApiClient(client eshandler.ElasticsearchHandler) controller.RemoteEx
 }
 
 func (h *roleApiClient) Build(o *elasticsearchapicrd.Role) (role *eshandler.XPackSecurityRole, err error) {
-
 	role = &eshandler.XPackSecurityRole{
 		Cluster: o.Spec.Cluster,
 		RunAs:   o.Spec.RunAs,
@@ -94,12 +93,10 @@ func (h *roleApiClient) Create(object *eshandler.XPackSecurityRole, o *elasticse
 
 func (h *roleApiClient) Update(object *eshandler.XPackSecurityRole, o *elasticsearchapicrd.Role) (err error) {
 	return h.Client().RoleUpdate(o.GetExternalName(), object)
-
 }
 
 func (h *roleApiClient) Delete(o *elasticsearchapicrd.Role) (err error) {
 	return h.Client().RoleDelete(o.GetExternalName())
-
 }
 
 func (h *roleApiClient) Diff(currentOject *eshandler.XPackSecurityRole, expectedObject *eshandler.XPackSecurityRole, originalObject *eshandler.XPackSecurityRole, ignoresDiff ...patch.CalculateOption) (patchResult *patch.PatchResult, err error) {

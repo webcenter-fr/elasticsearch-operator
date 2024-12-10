@@ -21,7 +21,6 @@ func newIndexTemplateApiClient(client eshandler.ElasticsearchHandler) controller
 }
 
 func (h *indexTemplateApiClient) Build(o *elasticsearchapicrd.IndexTemplate) (indexTemplate *olivere.IndicesGetIndexTemplate, err error) {
-
 	if o.IsRawTemplate() {
 		indexTemplate = &olivere.IndicesGetIndexTemplate{}
 		if err := json.Unmarshal([]byte(o.Spec.RawTemplate), indexTemplate); err != nil {
@@ -85,12 +84,10 @@ func (h *indexTemplateApiClient) Create(object *olivere.IndicesGetIndexTemplate,
 
 func (h *indexTemplateApiClient) Update(object *olivere.IndicesGetIndexTemplate, o *elasticsearchapicrd.IndexTemplate) (err error) {
 	return h.Client().IndexTemplateUpdate(o.GetExternalName(), object)
-
 }
 
 func (h *indexTemplateApiClient) Delete(o *elasticsearchapicrd.IndexTemplate) (err error) {
 	return h.Client().IndexTemplateDelete(o.GetExternalName())
-
 }
 
 func (h *indexTemplateApiClient) Diff(currentOject *olivere.IndicesGetIndexTemplate, expectedObject *olivere.IndicesGetIndexTemplate, originalObject *olivere.IndicesGetIndexTemplate, ignoresDiff ...patch.CalculateOption) (patchResult *patch.PatchResult, err error) {

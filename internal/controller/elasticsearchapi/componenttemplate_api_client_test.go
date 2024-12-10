@@ -11,7 +11,6 @@ import (
 )
 
 func TestComponentTemplateBuild(t *testing.T) {
-
 	var (
 		o          *elasticsearchapicrd.ComponentTemplate
 		ct         *olivere.IndicesGetComponentTemplate
@@ -94,5 +93,4 @@ func TestComponentTemplateBuild(t *testing.T) {
 	ct, err = client.Build(o)
 	assert.NoError(t, err)
 	assert.Equal(t, expectedCt, ct)
-
 }

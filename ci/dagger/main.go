@@ -16,9 +16,10 @@ package main
 
 import (
 	"context"
-	"dagger/elasticsearch-operator/internal/dagger"
 	"fmt"
 	"strings"
+
+	"dagger/elasticsearch-operator/internal/dagger"
 
 	"emperror.dev/errors"
 	"github.com/disaster37/dagger-library-go/lib/helper"
@@ -148,9 +149,7 @@ func (h *ElasticsearchOperator) CI(
 	// The git token
 	// +optional
 	gitToken *dagger.Secret,
-
 ) (*dagger.Directory, error) {
-
 	var channels string
 	var err error
 
@@ -243,5 +242,4 @@ func (h *ElasticsearchOperator) CI(
 	}
 
 	return dir, nil
-
 }

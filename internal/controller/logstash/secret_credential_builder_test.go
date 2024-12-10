@@ -63,5 +63,4 @@ func TestBuildCredentialSecret(t *testing.T) {
 	assert.Equal(t, annotations, secrets[0].Annotations)
 	assert.Equal(t, []byte("password"), secrets[0].Data["logstash_system"])
 	assert.Equal(t, []byte("password"), secrets[0].Data["remote_monitoring_user"])
-
 }

@@ -13,7 +13,6 @@ import (
 )
 
 func TestBuildUserSystem(t *testing.T) {
-
 	var (
 		o     *elasticsearchcrd.Elasticsearch
 		s     *corev1.Secret

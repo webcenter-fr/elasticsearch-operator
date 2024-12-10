@@ -25,7 +25,6 @@ import (
 
 // BuildDeployment permit to generate deployment for Kibana
 func buildDeployments(kb *kibanacrd.Kibana, es *elasticsearchcrd.Elasticsearch, secretsChecksum []corev1.Secret, configMapsChecksum []corev1.ConfigMap) (dpls []appv1.Deployment, err error) {
-
 	// Check the secretRef is set when use external Elasticsearch
 	if kb.Spec.ElasticsearchRef.IsExternal() && kb.Spec.ElasticsearchRef.SecretRef == nil {
 		return nil, errors.New("You must set the secretRef when you use external Elasticsearch")
@@ -697,7 +696,6 @@ func getKibanaContainer(podTemplate *corev1.PodTemplateSpec) (container *corev1.
 
 // computeElasticsearchHosts permit to get the target Elasticsearch cluster to connect on
 func computeElasticsearchHosts(kb *kibanacrd.Kibana, es *elasticsearchcrd.Elasticsearch) string {
-
 	if kb.Spec.ElasticsearchRef.IsManaged() {
 		scheme := "https"
 		if !es.Spec.Tls.IsTlsEnabled() {
@@ -711,7 +709,6 @@ func computeElasticsearchHosts(kb *kibanacrd.Kibana, es *elasticsearchcrd.Elasti
 	}
 
 	return fmt.Sprintf("[%s]", strings.Join(kb.Spec.ElasticsearchRef.ExternalElasticsearchRef.Addresses, ","))
-
 }
 
 // computeAntiAffinity permit to get  anti affinity spec
@@ -795,5 +792,4 @@ func computeProbePath(cm *corev1.ConfigMap) (path string, err error) {
 	}
 
 	return path, nil
-
 }

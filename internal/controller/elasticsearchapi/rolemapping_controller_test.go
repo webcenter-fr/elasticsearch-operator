@@ -49,7 +49,6 @@ func doMockRoleMapping(mockES *mocks.MockElasticsearchHandler) func(stepName *st
 		isUpdated := false
 
 		mockES.EXPECT().RoleMappingGet(gomock.Any()).AnyTimes().DoAndReturn(func(name string) (*olivere.XPackSecurityRoleMapping, error) {
-
 			switch *stepName {
 			case "create":
 				if !isCreated {

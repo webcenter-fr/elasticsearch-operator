@@ -42,13 +42,13 @@ func (t *ElasticsearchapiControllerTestSuite) TestRoleReconciler() {
 
 	testCase.Run()
 }
+
 func doMockRole(mockES *mocks.MockElasticsearchHandler) func(stepName *string, data map[string]any) error {
 	return func(stepName *string, data map[string]any) (err error) {
 		isCreated := false
 		isUpdated := false
 
 		mockES.EXPECT().RoleGet(gomock.Any()).AnyTimes().DoAndReturn(func(name string) (*eshandler.XPackSecurityRole, error) {
-
 			switch *stepName {
 			case "create":
 				if !isCreated {

@@ -12,9 +12,7 @@ import (
 // GeneratePodDisruptionBudget permit to generate pod disruption budgets for each node group
 func buildPodDisruptionBudgets(es *elasticsearchcrd.Elasticsearch) (podDisruptionBudgets []policyv1.PodDisruptionBudget, err error) {
 	podDisruptionBudgets = make([]policyv1.PodDisruptionBudget, 0, len(es.Spec.NodeGroups))
-	var (
-		pdb *policyv1.PodDisruptionBudget
-	)
+	var pdb *policyv1.PodDisruptionBudget
 
 	maxUnavailable := intstr.FromInt(1)
 	for _, nodeGroup := range es.Spec.NodeGroups {

@@ -56,7 +56,6 @@ type LogstashReconciler struct {
 }
 
 func NewLogstashReconciler(client client.Client, logger *logrus.Entry, recorder record.EventRecorder) (multiPhaseReconciler controller.Controller) {
-
 	multiPhaseReconciler = &LogstashReconciler{
 		Controller: controller.NewBasicController(),
 		MultiPhaseReconcilerAction: controller.NewBasicMultiPhaseReconcilerAction(

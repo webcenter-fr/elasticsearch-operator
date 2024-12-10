@@ -11,7 +11,6 @@ import (
 )
 
 func TestSnapshotLifecyclePolicyBuild(t *testing.T) {
-
 	var (
 		o           *elasticsearchapicrd.SnapshotLifecyclePolicy
 		slm         *eshandler.SnapshotLifecyclePolicySpec
@@ -118,5 +117,4 @@ func TestSnapshotLifecyclePolicyBuild(t *testing.T) {
 	slm, err = client.Build(o)
 	assert.NoError(t, err)
 	assert.Equal(t, expectedSLM, slm)
-
 }

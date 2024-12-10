@@ -11,7 +11,6 @@ import (
 )
 
 func TestWatchBuild(t *testing.T) {
-
 	var (
 		o             *elasticsearchapicrd.Watch
 		watch         *olivere.XPackWatch
@@ -168,5 +167,4 @@ func TestWatchBuild(t *testing.T) {
 	watch, err = client.Build(o)
 	assert.NoError(t, err)
 	assert.Equal(t, expectedWatch, watch)
-
 }

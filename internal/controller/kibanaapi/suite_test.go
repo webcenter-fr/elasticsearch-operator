@@ -49,7 +49,6 @@ func TestKibanachapiControllerSuite(t *testing.T) {
 }
 
 func (t *KibanaapiControllerTestSuite) SetupSuite() {
-
 	t.mockCtrl = gomock.NewController(t.T())
 	t.mockKibanaHandler = mocks.NewMockKibanaHandler(t.mockCtrl)
 
@@ -190,7 +189,6 @@ func (t *KibanaapiControllerTestSuite) SetupSuite() {
 }
 
 func (t *KibanaapiControllerTestSuite) TearDownSuite() {
-
 	// Teardown the test environment once controller is fnished.
 	// Otherwise from Kubernetes 1.21+, teardon timeouts waiting on
 	// kube-apiserver to return
@@ -201,7 +199,6 @@ func (t *KibanaapiControllerTestSuite) TearDownSuite() {
 }
 
 func (t *KibanaapiControllerTestSuite) BeforeTest(suiteName, testName string) {
-
 }
 
 func (t *KibanaapiControllerTestSuite) AfterTest(suiteName, testName string) {

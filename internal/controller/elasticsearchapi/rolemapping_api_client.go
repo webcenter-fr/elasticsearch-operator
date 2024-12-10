@@ -54,12 +54,10 @@ func (h *roleMappingApiClient) Create(object *olivere.XPackSecurityRoleMapping, 
 
 func (h *roleMappingApiClient) Update(object *olivere.XPackSecurityRoleMapping, o *elasticsearchapicrd.RoleMapping) (err error) {
 	return h.Client().RoleMappingUpdate(o.GetExternalName(), object)
-
 }
 
 func (h *roleMappingApiClient) Delete(o *elasticsearchapicrd.RoleMapping) (err error) {
 	return h.Client().RoleMappingDelete(o.GetExternalName())
-
 }
 
 func (h *roleMappingApiClient) Diff(currentOject *olivere.XPackSecurityRoleMapping, expectedObject *olivere.XPackSecurityRoleMapping, originalObject *olivere.XPackSecurityRoleMapping, ignoresDiff ...patch.CalculateOption) (patchResult *patch.PatchResult, err error) {

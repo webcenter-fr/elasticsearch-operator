@@ -10,7 +10,6 @@ import (
 
 // BuildConfigMap permit to generate config maps
 func buildConfigMaps(ls *logstashcrd.Logstash) (configMaps []corev1.ConfigMap, err error) {
-
 	configMaps = make([]corev1.ConfigMap, 0)
 	var cm *corev1.ConfigMap
 

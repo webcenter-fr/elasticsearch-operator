@@ -147,7 +147,6 @@ func (h *userReconciler) Read(ctx context.Context, o object.RemoteObject, data m
 	}
 
 	return read, res, nil
-
 }
 
 func (h *userReconciler) Delete(ctx context.Context, o object.RemoteObject, data map[string]any, handler controller.RemoteExternalReconciler[*elasticsearchapicrd.User, *olivere.XPackSecurityPutUserRequest, eshandler.ElasticsearchHandler]) (err error) {
@@ -222,5 +221,4 @@ func (h *userReconciler) Diff(ctx context.Context, o object.RemoteObject, read c
 	}
 
 	return h.RemoteReconcilerAction.Diff(ctx, o, read, data, handler, ignoreDiff...)
-
 }

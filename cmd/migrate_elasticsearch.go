@@ -40,12 +40,10 @@ func migrateElasticsearch(ctx context.Context, clientDynamic dynamic.Interface, 
 	log.Debugf("Found %d Elasticsearch clusters", len(esList))
 
 	return addAnnotationsOnTLSSecrets(ctx, clientStd, esList, log)
-
 }
 
 // addAnnotationsOnTLSSecrets permit to set needed annotation on existing Elasticsearch cluster to manage in right way the cluster
 func addAnnotationsOnTLSSecrets(ctx context.Context, clientStd kubernetes.Interface, esList []elasticsearchcrd.Elasticsearch, log *logrus.Entry) (err error) {
-
 	var secret *corev1.Secret
 	listSecretName := make([]string, 0, 2)
 

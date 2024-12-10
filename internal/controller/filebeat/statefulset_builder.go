@@ -23,7 +23,6 @@ import (
 
 // GenerateStatefullset permit to generate statefullset
 func buildStatefulsets(fb *beatcrd.Filebeat, es *elasticsearchcrd.Elasticsearch, ls *logstashcrd.Logstash, secretsChecksum []corev1.Secret, configMapsChecksum []corev1.ConfigMap) (statefullsets []appv1.StatefulSet, err error) {
-
 	// Check the secretRef is set when use Elasticsearch output
 	if (fb.Spec.ElasticsearchRef.IsManaged() || fb.Spec.ElasticsearchRef.IsExternal()) && fb.Spec.ElasticsearchRef.SecretRef == nil {
 		return nil, errors.New("You must set the secretRef when you use ElasticsearchRef")
@@ -620,7 +619,6 @@ func getFilebeatContainer(podTemplate *corev1.PodTemplateSpec) (container *corev
 // computeAntiAffinity permit to get  anti affinity spec
 // Default to soft anti affinity
 func computeAntiAffinity(fb *beatcrd.Filebeat) (antiAffinity *corev1.PodAntiAffinity, err error) {
-
 	antiAffinity = &corev1.PodAntiAffinity{}
 	topologyKey := "kubernetes.io/hostname"
 

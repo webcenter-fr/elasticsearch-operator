@@ -150,7 +150,6 @@ func TestGetAnnotations(t *testing.T) {
 }
 
 func TestGetSecretNameForCredentials(t *testing.T) {
-
 	o := &beatcrd.Metricbeat{
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: "default",
@@ -160,7 +159,6 @@ func TestGetSecretNameForCredentials(t *testing.T) {
 	}
 
 	assert.Equal(t, "test-credential-mb", GetSecretNameForCredentials(o))
-
 }
 
 func TestGetNetworkPolicyElasticsearchName(t *testing.T) {

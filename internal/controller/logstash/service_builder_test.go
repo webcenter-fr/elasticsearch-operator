@@ -15,7 +15,6 @@ import (
 )
 
 func TestBuildServices(t *testing.T) {
-
 	var (
 		err      error
 		services []corev1.Service
@@ -126,5 +125,4 @@ func TestBuildServices(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equal(t, 2, len(services))
 	test.EqualFromYamlFile[*corev1.Service](t, "testdata/service_ingress.yaml", &services[0], scheme.Scheme)
-
 }

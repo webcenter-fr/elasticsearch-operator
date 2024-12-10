@@ -25,7 +25,6 @@ func TestIsManaged(t *testing.T) {
 
 	o = ElasticsearchRef{}
 	assert.False(t, o.IsManaged())
-
 }
 
 func TestIsExternal(t *testing.T) {
@@ -49,5 +48,4 @@ func TestIsExternal(t *testing.T) {
 
 	o = ElasticsearchRef{}
 	assert.False(t, o.IsExternal())
-
 }

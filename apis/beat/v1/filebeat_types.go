@@ -95,7 +95,6 @@ type FilebeatSpec struct {
 }
 
 type FilebeatLogstashRef struct {
-
 	// ManagedLogstashRef is the managed Logstash instance by operator
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
 	// +optional
@@ -114,7 +113,6 @@ type FilebeatLogstashRef struct {
 }
 
 type FilebeatLogstashManagedRef struct {
-
 	// Name is the Logstash cluster deployed by operator
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
 	Name string `json:"name"`
@@ -136,7 +134,6 @@ type FilebeatLogstashManagedRef struct {
 }
 
 type FilebeatLogstashExternalRef struct {
-
 	// Addresses is the list of Logstash addresses
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
 	Addresses []string `json:"addresses"`

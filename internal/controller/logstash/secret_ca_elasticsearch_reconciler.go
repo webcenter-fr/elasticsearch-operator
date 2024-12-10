@@ -51,7 +51,6 @@ func newCAElasticsearchReconciler(client client.Client, logger *logrus.Entry, re
 
 // Read existing secret
 func (r *caElasticsearchReconciler) Read(ctx context.Context, resource object.MultiPhaseObject, data map[string]any) (read controller.MultiPhaseRead, res ctrl.Result, err error) {
-
 	o := resource.(*logstashcrd.Logstash)
 	s := &corev1.Secret{}
 	sEs := &corev1.Secret{}

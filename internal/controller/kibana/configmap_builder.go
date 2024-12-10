@@ -15,9 +15,7 @@ import (
 
 // BuildConfigMap permit to generate config map
 func buildConfigMaps(kb *kibanacrd.Kibana, es *elasticsearchcrd.Elasticsearch) (configMaps []corev1.ConfigMap, err error) {
-	var (
-		expectedConfig map[string]string
-	)
+	var expectedConfig map[string]string
 
 	configMaps = make([]corev1.ConfigMap, 0, 1)
 

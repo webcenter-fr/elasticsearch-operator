@@ -33,7 +33,6 @@ func (h *licenseApiClient) Create(object *olivere.XPackInfoLicense, o *elasticse
 
 func (h *licenseApiClient) Update(object *olivere.XPackInfoLicense, o *elasticsearchapicrd.License) (err error) {
 	return nil
-
 }
 
 func (h *licenseApiClient) Delete(o *elasticsearchapicrd.License) (err error) {

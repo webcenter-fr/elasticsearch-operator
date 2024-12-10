@@ -11,7 +11,6 @@ import (
 
 // BuilderService permit to generate service
 func buildServices(cb *cerebrocrd.Cerebro) (services []corev1.Service, err error) {
-
 	services = []corev1.Service{
 		{
 			ObjectMeta: metav1.ObjectMeta{

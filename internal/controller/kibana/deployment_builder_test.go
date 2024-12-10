@@ -16,7 +16,6 @@ import (
 )
 
 func TestBuildDeployment(t *testing.T) {
-
 	var (
 		o               *kibanacrd.Kibana
 		es              *elasticsearchcrd.Elasticsearch

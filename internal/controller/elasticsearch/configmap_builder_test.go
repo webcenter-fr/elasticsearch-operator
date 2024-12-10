@@ -14,7 +14,6 @@ import (
 )
 
 func TestBuildConfigMaps(t *testing.T) {
-
 	var o *elasticsearchcrd.Elasticsearch
 
 	// Normal
@@ -200,9 +199,7 @@ node:
 }
 
 func TestComputeInitialMasterNodes(t *testing.T) {
-	var (
-		o *elasticsearchcrd.Elasticsearch
-	)
+	var o *elasticsearchcrd.Elasticsearch
 
 	// With only one master
 	o = &elasticsearchcrd.Elasticsearch{
@@ -265,9 +262,7 @@ func TestComputeInitialMasterNodes(t *testing.T) {
 }
 
 func TestComputeDiscoverySeedHosts(t *testing.T) {
-	var (
-		o *elasticsearchcrd.Elasticsearch
-	)
+	var o *elasticsearchcrd.Elasticsearch
 
 	// With only one master
 	o = &elasticsearchcrd.Elasticsearch{

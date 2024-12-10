@@ -63,9 +63,7 @@ func (r *statefulsetReconciler) Read(ctx context.Context, resource object.MultiP
 	configMapsChecksum := make([]corev1.ConfigMap, 0)
 	secretsChecksum := make([]corev1.Secret, 0)
 
-	var (
-		es *elasticsearchcrd.Elasticsearch
-	)
+	var es *elasticsearchcrd.Elasticsearch
 
 	if err = r.Client.Get(ctx, types.NamespacedName{Namespace: o.Namespace, Name: GetStatefulsetName(o)}, sts); err != nil {
 		if !k8serrors.IsNotFound(err) {

@@ -18,5 +18,4 @@ func TestGetUserSecretWhenAutoGeneratePassword(t *testing.T) {
 	}
 
 	assert.Equal(t, "test-credential-es", GetUserSecretWhenAutoGeneratePassword(u))
-
 }

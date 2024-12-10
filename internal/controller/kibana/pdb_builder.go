@@ -11,7 +11,6 @@ import (
 
 // GeneratePodDisruptionBudget permit to generate pod disruption budgets for each node group
 func buildPodDisruptionBudgets(kb *kibanacrd.Kibana) (pdbs []policyv1.PodDisruptionBudget, err error) {
-
 	if !kb.IsPdb() {
 		return nil, nil
 	}

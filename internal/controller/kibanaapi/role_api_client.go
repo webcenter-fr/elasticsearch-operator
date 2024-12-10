@@ -82,7 +82,6 @@ func (h *roleApiClient) Build(o *kibanaapicrd.Role) (role *kbapi.KibanaRole, err
 	}
 
 	return role, nil
-
 }
 
 func (h *roleApiClient) Get(o *kibanaapicrd.Role) (object *kbapi.KibanaRole, err error) {
@@ -95,12 +94,10 @@ func (h *roleApiClient) Create(object *kbapi.KibanaRole, o *kibanaapicrd.Role) (
 
 func (h *roleApiClient) Update(object *kbapi.KibanaRole, o *kibanaapicrd.Role) (err error) {
 	return h.Client().RoleUpdate(object)
-
 }
 
 func (h *roleApiClient) Delete(o *kibanaapicrd.Role) (err error) {
 	return h.Client().RoleDelete(o.GetExternalName())
-
 }
 
 func (h *roleApiClient) Diff(currentOject *kbapi.KibanaRole, expectedObject *kbapi.KibanaRole, originalObject *kbapi.KibanaRole, ignoresDiff ...patch.CalculateOption) (patchResult *patch.PatchResult, err error) {

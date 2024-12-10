@@ -5,7 +5,6 @@ import (
 )
 
 type KibanaRef struct {
-
 	// ManagedKibanaRef is the managed Kibana by operator
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
 	// +optional
@@ -30,7 +29,6 @@ type KibanaRef struct {
 }
 
 type KibanaManagedRef struct {
-
 	// Name is the Kibana deployed by operator
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
 	Name string `json:"name"`
@@ -43,7 +41,6 @@ type KibanaManagedRef struct {
 }
 
 type KibanaExternalRef struct {
-
 	// Address is the Kibana address
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
 	Address string `json:"address"`

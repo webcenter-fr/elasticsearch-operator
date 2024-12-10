@@ -44,15 +44,14 @@ func (t *KibanaapiControllerTestSuite) TestKibanaUserSpaceReconciler() {
 
 	testCase.Run()
 }
+
 func doMockUserSpace(mockKB *mocks.MockKibanaHandler) func(stepName *string, data map[string]any) error {
 	return func(stepName *string, data map[string]any) (err error) {
-
 		isCreated := false
 		isUpdated := false
 		isCreatedWithObject := false
 
 		mockKB.EXPECT().UserSpaceGet(gomock.Any()).AnyTimes().DoAndReturn(func(name string) (*kbapi.KibanaSpace, error) {
-
 			switch *stepName {
 			case "create":
 				if !isCreated {
@@ -128,7 +127,6 @@ func doMockUserSpace(mockKB *mocks.MockKibanaHandler) func(stepName *string, dat
 			}
 
 			return nil, nil
-
 		})
 
 		mockKB.EXPECT().UserSpaceCreate(gomock.Any()).AnyTimes().DoAndReturn(func(space *kbapi.KibanaSpace) error {
@@ -144,7 +142,6 @@ func doMockUserSpace(mockKB *mocks.MockKibanaHandler) func(stepName *string, dat
 			}
 
 			return nil
-
 		})
 
 		mockKB.EXPECT().UserSpaceUpdate(gomock.Any()).AnyTimes().DoAndReturn(func(space *kbapi.KibanaSpace) error {

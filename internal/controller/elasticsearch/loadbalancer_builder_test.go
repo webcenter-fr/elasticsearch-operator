@@ -13,7 +13,6 @@ import (
 )
 
 func TestBuildLoadbalancer(t *testing.T) {
-
 	var (
 		err      error
 		services []corev1.Service

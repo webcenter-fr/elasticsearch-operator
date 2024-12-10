@@ -37,7 +37,6 @@ func (h *logstashPipelineApiClient) Build(o *kibanaapicrd.LogstashPipeline) (pip
 	}
 
 	return pipeline, nil
-
 }
 
 func (h *logstashPipelineApiClient) Get(o *kibanaapicrd.LogstashPipeline) (object *kbapi.LogstashPipeline, err error) {
@@ -50,12 +49,10 @@ func (h *logstashPipelineApiClient) Create(object *kbapi.LogstashPipeline, o *ki
 
 func (h *logstashPipelineApiClient) Update(object *kbapi.LogstashPipeline, o *kibanaapicrd.LogstashPipeline) (err error) {
 	return h.Client().LogstashPipelineUpdate(object)
-
 }
 
 func (h *logstashPipelineApiClient) Delete(o *kibanaapicrd.LogstashPipeline) (err error) {
 	return h.Client().LogstashPipelineDelete(o.GetGenerateName())
-
 }
 
 func (h *logstashPipelineApiClient) Diff(currentOject *kbapi.LogstashPipeline, expectedObject *kbapi.LogstashPipeline, originalObject *kbapi.LogstashPipeline, ignoresDiff ...patch.CalculateOption) (patchResult *patch.PatchResult, err error) {

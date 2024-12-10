@@ -45,7 +45,6 @@ func TestHostIsManaged(t *testing.T) {
 
 	o = ElasticsearchRef{}
 	assert.False(t, o.IsManaged())
-
 }
 
 func TestHostIsExternal(t *testing.T) {
@@ -68,5 +67,4 @@ func TestHostIsExternal(t *testing.T) {
 
 	o = ElasticsearchRef{}
 	assert.False(t, o.IsExternal())
-
 }

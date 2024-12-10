@@ -171,11 +171,9 @@ func doMockILM(mockES *mocks.MockElasticsearchHandler) func(stepName *string, da
 			}
 
 			return nil, nil
-
 		})
 
 		mockES.EXPECT().ILMUpdate(gomock.Any(), gomock.Any()).AnyTimes().DoAndReturn(func(name string, policy *olivere.XPackIlmGetLifecycleResponse) error {
-
 			switch *stepName {
 			case "create":
 				data["isCreated"] = true
@@ -188,7 +186,6 @@ func doMockILM(mockES *mocks.MockElasticsearchHandler) func(stepName *string, da
 			}
 
 			return nil
-
 		})
 
 		mockES.EXPECT().ILMDelete(gomock.Any()).AnyTimes().DoAndReturn(func(name string) error {

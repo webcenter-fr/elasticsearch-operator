@@ -114,7 +114,6 @@ func (r *tlsReconciler) Read(ctx context.Context, resource object.MultiPhaseObje
 					crts[rRes[1]] = *crt
 				}
 			}
-
 		}
 
 	}

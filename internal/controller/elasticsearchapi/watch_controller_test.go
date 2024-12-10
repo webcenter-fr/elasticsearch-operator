@@ -49,7 +49,6 @@ func doMockWatcher(mockES *mocks.MockElasticsearchHandler) func(stepName *string
 		isUpdated := false
 
 		mockES.EXPECT().WatchGet(gomock.Any()).AnyTimes().DoAndReturn(func(name string) (*olivere.XPackWatch, error) {
-
 			switch *stepName {
 			case "create":
 				if !isCreated {

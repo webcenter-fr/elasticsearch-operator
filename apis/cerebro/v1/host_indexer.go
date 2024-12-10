@@ -10,7 +10,6 @@ import (
 
 // SetupHostIndexersetup indexer for Host
 func SetupHostIndexer(k8sManager manager.Manager) (err error) {
-
 	if err = k8sManager.GetFieldIndexer().IndexField(context.Background(), &Host{}, "spec.cerebroRef.fullname", func(o client.Object) []string {
 		p := o.(*Host)
 		var namespace string
@@ -24,7 +23,6 @@ func SetupHostIndexer(k8sManager manager.Manager) (err error) {
 		return []string{
 			fmt.Sprintf("%s/%s", namespace, p.Spec.CerebroRef.Name),
 		}
-
 	}); err != nil {
 		return err
 	}
@@ -37,7 +35,6 @@ func SetupHostIndexer(k8sManager manager.Manager) (err error) {
 		}
 
 		return []string{}
-
 	}); err != nil {
 		return err
 	}

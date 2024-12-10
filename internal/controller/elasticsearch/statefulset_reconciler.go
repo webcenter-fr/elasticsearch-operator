@@ -416,9 +416,7 @@ func (r *statefulsetReconciler) Diff(ctx context.Context, resource object.MultiP
 // OnSuccess permit to set status condition on the right state is everithink is good
 func (r *statefulsetReconciler) OnSuccess(ctx context.Context, resource object.MultiPhaseObject, data map[string]any, diff controller.MultiPhaseDiff) (res ctrl.Result, err error) {
 	o := resource.(*elasticsearchcrd.Elasticsearch)
-	var (
-		d any
-	)
+	var d any
 
 	d, err = helper.Get(data, "phase")
 	if err != nil {

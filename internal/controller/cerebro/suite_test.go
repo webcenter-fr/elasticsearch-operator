@@ -40,7 +40,6 @@ func TestCerebroControllerSuite(t *testing.T) {
 }
 
 func (t *CerebroControllerTestSuite) SetupSuite() {
-
 	logf.SetLogger(zap.New(zap.UseDevMode(true)))
 	logrus.SetLevel(logrus.TraceLevel)
 	logrus.SetFormatter(&logrus.TextFormatter{
@@ -144,11 +143,9 @@ func (t *CerebroControllerTestSuite) SetupSuite() {
 			panic(err)
 		}
 	}()
-
 }
 
 func (t *CerebroControllerTestSuite) TearDownSuite() {
-
 	// Teardown the test environment once controller is fnished.
 	// Otherwise from Kubernetes 1.21+, teardon timeouts waiting on
 	// kube-apiserver to return
@@ -156,11 +153,9 @@ func (t *CerebroControllerTestSuite) TearDownSuite() {
 	if err != nil {
 		panic(err)
 	}
-
 }
 
 func (t *CerebroControllerTestSuite) BeforeTest(suiteName, testName string) {
-
 }
 
 func (t *CerebroControllerTestSuite) AfterTest(suiteName, testName string) {

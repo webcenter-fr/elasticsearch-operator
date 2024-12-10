@@ -150,7 +150,6 @@ func doCreateElasticsearchStep() test.TestStep {
 				}
 
 				return errors.New("Not yet created")
-
 			}, time.Second*30, time.Second*1)
 			if err != nil || isTimeout {
 				t.Fatalf("All Elasticsearch step provisionning not finished: %s", err.Error())
@@ -387,7 +386,6 @@ func doUpdateElasticsearchStep() test.TestStep {
 				}
 
 				return errors.New("Not yet updated")
-
 			}, time.Second*30, time.Second*1)
 			if err != nil || isTimeout {
 				t.Fatalf("All Elasticsearch step upgrading not finished: %s", err.Error())
@@ -644,7 +642,6 @@ func doUpdateElasticsearchIncreaseNodeGroupStep() test.TestStep {
 				}
 
 				return errors.New("Not yet updated")
-
 			}, time.Second*30, time.Second*1)
 			if err != nil || isTimeout {
 				t.Fatalf("All Elasticsearch step upgrading not finished: %s", err.Error())
@@ -879,7 +876,6 @@ func doUpdateElasticsearchDecreaseNodeGroupStep() test.TestStep {
 				}
 
 				return errors.New("Not yet updated")
-
 			}, time.Second*30, time.Second*1)
 			if err != nil || isTimeout {
 				t.Fatalf("All Elasticsearch step upgrading not finished: %s", err.Error())
@@ -977,7 +973,6 @@ func doUpdateElasticsearchDecreaseNodeGroupStep() test.TestStep {
 					assert.NotEmpty(t, svc.OwnerReferences)
 					assert.NotEmpty(t, svc.Annotations[patch.LastAppliedConfig])
 				}
-
 			}
 
 			// Load balancer must exist
@@ -1013,7 +1008,6 @@ func doUpdateElasticsearchDecreaseNodeGroupStep() test.TestStep {
 					assert.NotEmpty(t, cm.OwnerReferences)
 					assert.NotEmpty(t, cm.Annotations[patch.LastAppliedConfig])
 				}
-
 			}
 
 			// PDB must exist
@@ -1033,7 +1027,6 @@ func doUpdateElasticsearchDecreaseNodeGroupStep() test.TestStep {
 					assert.NotEmpty(t, pdb.OwnerReferences)
 					assert.NotEmpty(t, pdb.Annotations[patch.LastAppliedConfig])
 				}
-
 			}
 
 			// Network policy must exist
@@ -1061,7 +1054,6 @@ func doUpdateElasticsearchDecreaseNodeGroupStep() test.TestStep {
 					assert.NotEmpty(t, sts.OwnerReferences)
 					assert.NotEmpty(t, sts.Annotations[patch.LastAppliedConfig])
 				}
-
 			}
 
 			// Users musts exist
@@ -1188,7 +1180,6 @@ func doUpdateElasticsearchAddLicenseStep() test.TestStep {
 				}
 
 				return errors.New("Not yet updated")
-
 			}, time.Second*30, time.Second*1)
 			if err != nil || isTimeout {
 				t.Fatalf("All Elasticsearch step upgrading not finished: %s", err.Error())
@@ -1286,7 +1277,6 @@ func doUpdateElasticsearchAddLicenseStep() test.TestStep {
 					assert.NotEmpty(t, svc.OwnerReferences)
 					assert.NotEmpty(t, svc.Annotations[patch.LastAppliedConfig])
 				}
-
 			}
 
 			// Load balancer must exist
@@ -1322,7 +1312,6 @@ func doUpdateElasticsearchAddLicenseStep() test.TestStep {
 					assert.NotEmpty(t, cm.OwnerReferences)
 					assert.NotEmpty(t, cm.Annotations[patch.LastAppliedConfig])
 				}
-
 			}
 
 			// PDB must exist
@@ -1342,7 +1331,6 @@ func doUpdateElasticsearchAddLicenseStep() test.TestStep {
 					assert.NotEmpty(t, pdb.OwnerReferences)
 					assert.NotEmpty(t, pdb.Annotations[patch.LastAppliedConfig])
 				}
-
 			}
 
 			// Network policy must exist
@@ -1370,7 +1358,6 @@ func doUpdateElasticsearchAddLicenseStep() test.TestStep {
 					assert.NotEmpty(t, sts.OwnerReferences)
 					assert.NotEmpty(t, sts.Annotations[patch.LastAppliedConfig])
 				}
-
 			}
 
 			// Users musts exist
@@ -1506,7 +1493,6 @@ func doUpdateElasticsearchAddKeystoreStep() test.TestStep {
 				}
 
 				return errors.New("Not yet updated")
-
 			}, time.Second*30, time.Second*1)
 			if err != nil || isTimeout {
 				t.Fatalf("All Elasticsearch step upgrading not finished: %s", err.Error())
@@ -1543,7 +1529,6 @@ func doDeleteElasticsearchStep() test.TestStep {
 			return nil
 		},
 		Check: func(t *testing.T, c client.Client, key types.NamespacedName, o client.Object, data map[string]any) (err error) {
-
 			es := &elasticsearchcrd.Elasticsearch{}
 			isDeleted := false
 

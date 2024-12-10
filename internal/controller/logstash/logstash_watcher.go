@@ -33,7 +33,6 @@ func watchElasticsearch(c client.Client) handler.MapFunc {
 		}
 
 		return reconcileRequests
-
 	}
 }
 
@@ -78,7 +77,6 @@ func watchConfigMap(c client.Client) handler.MapFunc {
 		}
 
 		return reconcileRequests
-
 	}
 }
 

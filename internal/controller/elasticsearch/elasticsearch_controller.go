@@ -72,7 +72,6 @@ type ElasticsearchReconciler struct {
 
 // NewElasticsearchReconciler is the default constructor for Elasticsearch controller
 func NewElasticsearchReconciler(client client.Client, logger *logrus.Entry, recorder record.EventRecorder) (multiPhaseReconciler controller.Controller) {
-
 	multiPhaseReconciler = &ElasticsearchReconciler{
 		Controller: controller.NewBasicController(),
 		MultiPhaseReconcilerAction: controller.NewBasicMultiPhaseReconcilerAction(
@@ -265,7 +264,6 @@ func (h *ElasticsearchReconciler) Configure(ctx context.Context, req ctrl.Reques
 }
 
 func (h *ElasticsearchReconciler) Delete(ctx context.Context, o object.MultiPhaseObject, data map[string]any) (err error) {
-
 	// Read Cerebro referer to remove finalizer when destroy cluster
 	hostList := &cerebrocrd.HostList{}
 	fs := fields.ParseSelectorOrDie(fmt.Sprintf("spec.elasticsearchRef=%s", o.GetName()))
@@ -417,7 +415,6 @@ func (h *ElasticsearchReconciler) computeElasticsearchUrl(ctx context.Context, e
 }
 
 func (h *ElasticsearchReconciler) getElasticsearchHandler(ctx context.Context, es *elasticsearchcrd.Elasticsearch, log *logrus.Entry) (esHandler eshandler.ElasticsearchHandler, err error) {
-
 	hosts := []string{}
 
 	// Get Elasticsearch credentials

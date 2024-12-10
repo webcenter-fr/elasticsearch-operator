@@ -64,7 +64,6 @@ type RoleSpec struct {
 }
 
 type KibanaRoleTransientMetadata struct {
-
 	// Enabled permit to enable transient metadata
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
 	Enabled bool `json:"enabled,omitempty"`

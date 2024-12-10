@@ -65,7 +65,6 @@ func TestBuildNetworkPolicy(t *testing.T) {
 		Spec: elasticsearchcrd.ElasticsearchSpec{},
 	}
 	oList = []client.Object{
-
 		&beatcrd.Metricbeat{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      "metricbeat",
@@ -109,5 +108,4 @@ func TestBuildNetworkPolicy(t *testing.T) {
 
 	assert.NoError(t, err)
 	test.EqualFromYamlFile[*networkingv1.NetworkPolicy](t, "testdata/networkpolicy_referer.yml", &nps[0], scheme.Scheme)
-
 }

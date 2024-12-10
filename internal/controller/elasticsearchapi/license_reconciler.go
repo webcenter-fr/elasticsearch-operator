@@ -178,5 +178,4 @@ func (h *licenseReconciler) OnSuccess(ctx context.Context, o object.RemoteObject
 	}
 
 	return h.RemoteReconcilerAction.OnSuccess(ctx, license, data, handler, diff)
-
 }

@@ -11,7 +11,6 @@ import (
 )
 
 func TestRoleMappingBuild(t *testing.T) {
-
 	var (
 		o          *elasticsearchapicrd.RoleMapping
 		rm         *olivere.XPackSecurityRoleMapping
@@ -149,5 +148,4 @@ func TestRoleMappingBuild(t *testing.T) {
 	rm, err = client.Build(o)
 	assert.NoError(t, err)
 	assert.Equal(t, expectedRm, rm)
-
 }

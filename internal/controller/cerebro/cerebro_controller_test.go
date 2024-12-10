@@ -104,7 +104,6 @@ func doCreateCerebroStep() test.TestStep {
 				}
 
 				return errors.New("Not yet created")
-
 			}, time.Second*30, time.Second*1)
 			if err != nil || isTimeout {
 				t.Fatalf("All Cerebro step provisionning not finished: %s", err.Error())
@@ -220,7 +219,6 @@ func doUpdateCerebroStep() test.TestStep {
 				}
 
 				return errors.New("Not yet updated")
-
 			}, time.Second*30, time.Second*1)
 			if err != nil || isTimeout {
 				t.Fatalf("All Cerebro step upgrading not finished: %s", err.Error())
@@ -347,12 +345,11 @@ func doAddHostStep() test.TestStep {
 				}
 
 				return errors.New("Not yet created")
-
 			}, time.Second*30, time.Second*1)
 
 			if err != nil || isTimeout {
 				panic(err)
-				//return err
+				// return err
 			}
 
 			// Add host must reconcile the settings
@@ -408,7 +405,6 @@ func doAddHostStep() test.TestStep {
 				}
 
 				return errors.New("Not yet updated")
-
 			}, time.Second*30, time.Second*1)
 			if err != nil || isTimeout {
 				t.Fatalf("All Cerebro step upgrading not finished: %s", err.Error())
@@ -442,7 +438,6 @@ func doDeleteCerebroStep() test.TestStep {
 			return nil
 		},
 		Check: func(t *testing.T, c client.Client, key types.NamespacedName, o client.Object, data map[string]any) (err error) {
-
 			cb := &cerebrocrd.Cerebro{}
 			isDeleted := false
 

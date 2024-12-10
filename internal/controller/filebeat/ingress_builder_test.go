@@ -84,5 +84,4 @@ func TestBuildIngresses(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equal(t, 1, len(ingresses))
 	test.EqualFromYamlFile[*networkingv1.Ingress](t, "testdata/ingress_default.yml", &ingresses[0], scheme.Scheme)
-
 }

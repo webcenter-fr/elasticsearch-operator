@@ -11,7 +11,6 @@ import (
 )
 
 func TestIndexTemplateBuild(t *testing.T) {
-
 	var (
 		o          *elasticsearchapicrd.IndexTemplate
 		it         *olivere.IndicesGetIndexTemplate
@@ -108,5 +107,4 @@ func TestIndexTemplateBuild(t *testing.T) {
 	it, err = client.Build(o)
 	assert.NoError(t, err)
 	assert.Equal(t, expectedIt, it)
-
 }

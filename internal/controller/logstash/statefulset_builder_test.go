@@ -17,7 +17,6 @@ import (
 )
 
 func TestBuildStatefulset(t *testing.T) {
-
 	var (
 		o               *logstashcrd.Logstash
 		es              *elasticsearchcrd.Elasticsearch

@@ -18,7 +18,6 @@ import (
 
 // BuildDeployment permit to generate deployment
 func buildDeployments(cerebro *cerebrocrd.Cerebro, secretsChecksum []corev1.Secret, configMapsChecksum []corev1.ConfigMap) (dpls []appv1.Deployment, err error) {
-
 	dpls = make([]appv1.Deployment, 0, 1)
 	checksumAnnotations := map[string]string{}
 

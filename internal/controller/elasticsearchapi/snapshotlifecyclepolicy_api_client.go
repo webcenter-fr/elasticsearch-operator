@@ -18,7 +18,6 @@ func newSnapshotLifecyclePolicyApiClient(client eshandler.ElasticsearchHandler) 
 }
 
 func (h *snapshotLifecyclePolicyApiClient) Build(o *elasticsearchapicrd.SnapshotLifecyclePolicy) (slm *eshandler.SnapshotLifecyclePolicySpec, err error) {
-
 	slm = &eshandler.SnapshotLifecyclePolicySpec{
 		Schedule:   o.Spec.Schedule,
 		Name:       o.Spec.Name,
@@ -55,12 +54,10 @@ func (h *snapshotLifecyclePolicyApiClient) Create(object *eshandler.SnapshotLife
 
 func (h *snapshotLifecyclePolicyApiClient) Update(object *eshandler.SnapshotLifecyclePolicySpec, o *elasticsearchapicrd.SnapshotLifecyclePolicy) (err error) {
 	return h.Client().SLMUpdate(o.GetExternalName(), object)
-
 }
 
 func (h *snapshotLifecyclePolicyApiClient) Delete(o *elasticsearchapicrd.SnapshotLifecyclePolicy) (err error) {
 	return h.Client().SLMDelete(o.GetExternalName())
-
 }
 
 func (h *snapshotLifecyclePolicyApiClient) Diff(currentOject *eshandler.SnapshotLifecyclePolicySpec, expectedObject *eshandler.SnapshotLifecyclePolicySpec, originalObject *eshandler.SnapshotLifecyclePolicySpec, ignoresDiff ...patch.CalculateOption) (patchResult *patch.PatchResult, err error) {

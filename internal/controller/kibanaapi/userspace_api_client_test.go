@@ -11,7 +11,6 @@ import (
 )
 
 func TestUserSpaceBuild(t *testing.T) {
-
 	var (
 		o             *kibanaapicrd.UserSpace
 		space         *kbapi.KibanaSpace
@@ -83,5 +82,4 @@ func TestUserSpaceBuild(t *testing.T) {
 	space, err = client.Build(o)
 	assert.NoError(t, err)
 	assert.Equal(t, expectedSpace, space)
-
 }

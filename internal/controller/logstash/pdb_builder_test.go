@@ -14,7 +14,6 @@ import (
 )
 
 func TestBuildPodDisruptionBudget(t *testing.T) {
-
 	var (
 		err  error
 		pdbs []policyv1.PodDisruptionBudget
@@ -73,5 +72,4 @@ func TestBuildPodDisruptionBudget(t *testing.T) {
 	pdbs, err = buildPodDisruptionBudgets(o)
 	assert.NoError(t, err)
 	test.EqualFromYamlFile[*policyv1.PodDisruptionBudget](t, "testdata/pdb_with_global_spec.yaml", &pdbs[0], scheme.Scheme)
-
 }

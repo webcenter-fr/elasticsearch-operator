@@ -21,7 +21,6 @@ import (
 
 // GenerateStatefullset permit to generate statefullset
 func buildStatefulsets(ls *logstashcrd.Logstash, es *elasticsearchcrd.Elasticsearch, secretsChecksum []corev1.Secret, configMapsChecksum []corev1.ConfigMap) (statefullsets []appv1.StatefulSet, err error) {
-
 	statefullsets = make([]appv1.StatefulSet, 0, 1)
 	checksumAnnotations := map[string]string{}
 
@@ -500,7 +499,6 @@ fi
 
 	// Compute mount config maps
 	for _, configMap := range configMaps {
-
 		if configMap.Name == GetConfigMapConfigName(ls) {
 			ccb.WithVolumeMount([]corev1.VolumeMount{
 				{
@@ -744,7 +742,6 @@ func getLogstashContainer(podTemplate *corev1.PodTemplateSpec) (container *corev
 // computeAntiAffinity permit to get  anti affinity spec
 // Default to soft anti affinity
 func computeAntiAffinity(ls *logstashcrd.Logstash) (antiAffinity *corev1.PodAntiAffinity, err error) {
-
 	antiAffinity = &corev1.PodAntiAffinity{}
 	topologyKey := "kubernetes.io/hostname"
 

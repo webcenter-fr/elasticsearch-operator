@@ -67,12 +67,10 @@ func (h *componentTemplateApiClient) Create(object *olivere.IndicesGetComponentT
 
 func (h *componentTemplateApiClient) Update(object *olivere.IndicesGetComponentTemplate, o *elasticsearchapicrd.ComponentTemplate) (err error) {
 	return h.Client().ComponentTemplateUpdate(o.GetExternalName(), object)
-
 }
 
 func (h *componentTemplateApiClient) Delete(o *elasticsearchapicrd.ComponentTemplate) (err error) {
 	return h.Client().ComponentTemplateDelete(o.GetExternalName())
-
 }
 
 func (h *componentTemplateApiClient) Diff(currentOject *olivere.IndicesGetComponentTemplate, expectedObject *olivere.IndicesGetComponentTemplate, originalObject *olivere.IndicesGetComponentTemplate, ignoresDiff ...patch.CalculateOption) (patchResult *patch.PatchResult, err error) {

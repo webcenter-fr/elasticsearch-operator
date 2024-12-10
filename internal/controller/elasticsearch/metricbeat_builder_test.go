@@ -16,7 +16,6 @@ import (
 )
 
 func TestBuildMetricbeat(t *testing.T) {
-
 	var (
 		err error
 		mbs []beatcrd.Metricbeat

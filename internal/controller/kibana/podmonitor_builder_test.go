@@ -71,5 +71,4 @@ func TestBuildPodMonitor(t *testing.T) {
 	pms, err = buildPodMonitors(o)
 	assert.NoError(t, err)
 	test.EqualFromYamlFile[*monitoringv1.PodMonitor](t, "testdata/podmonitor.yml", &pms[0], sch)
-
 }

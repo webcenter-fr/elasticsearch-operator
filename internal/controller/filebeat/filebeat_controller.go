@@ -56,7 +56,6 @@ type FilebeatReconciler struct {
 }
 
 func NewFilebeatReconciler(client client.Client, logger *logrus.Entry, recorder record.EventRecorder) (multiPhaseReconciler controller.Controller) {
-
 	multiPhaseReconciler = &FilebeatReconciler{
 		Controller: controller.NewBasicController(),
 		MultiPhaseReconcilerAction: controller.NewBasicMultiPhaseReconcilerAction(

@@ -21,7 +21,6 @@ func newUserApiClient(client eshandler.ElasticsearchHandler) controller.RemoteEx
 }
 
 func (h *userApiClient) Build(o *elasticsearchapicrd.User) (user *olivere.XPackSecurityPutUserRequest, err error) {
-
 	user = &olivere.XPackSecurityPutUserRequest{
 		Enabled:      o.Spec.Enabled,
 		Email:        o.Spec.Email,
@@ -73,12 +72,10 @@ func (h *userApiClient) Create(object *olivere.XPackSecurityPutUserRequest, o *e
 
 func (h *userApiClient) Update(object *olivere.XPackSecurityPutUserRequest, o *elasticsearchapicrd.User) (err error) {
 	return h.Client().UserUpdate(o.GetExternalName(), object, o.IsProtected())
-
 }
 
 func (h *userApiClient) Delete(o *elasticsearchapicrd.User) (err error) {
 	return h.Client().UserDelete(o.GetExternalName())
-
 }
 
 func (h *userApiClient) Diff(currentOject *olivere.XPackSecurityPutUserRequest, expectedObject *olivere.XPackSecurityPutUserRequest, originalObject *olivere.XPackSecurityPutUserRequest, ignoresDiff ...patch.CalculateOption) (patchResult *patch.PatchResult, err error) {

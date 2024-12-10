@@ -24,7 +24,6 @@ import (
 )
 
 func GetElasticsearchHandler(ctx context.Context, o client.Object, esRef shared.ElasticsearchRef, client client.Client, log *logrus.Entry) (esHandler eshandler.ElasticsearchHandler, err error) {
-
 	// Retrieve secret or elasticsearch resource that store the connexion credentials
 	var secretNS types.NamespacedName
 	secretName := ""

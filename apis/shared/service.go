@@ -4,7 +4,6 @@ import corev1 "k8s.io/api/core/v1"
 
 // Service permit to set service
 type Service struct {
-
 	// Name is the service name
 	// The name is decorated with cluster name and so on
 	// +operator-sdk:csv:customresourcedefinitions:type=spec

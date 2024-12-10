@@ -130,7 +130,6 @@ queue.type: persisted
 				}
 
 				return errors.New("Not yet created")
-
 			}, time.Second*30, time.Second*1)
 			if err != nil || isTimeout {
 				t.Fatalf("All Metricbeat step provisionning not finished: %s", err.Error())
@@ -253,7 +252,6 @@ func doUpdateMetricbeatStep() test.TestStep {
 				}
 
 				return errors.New("Not yet updated")
-
 			}, time.Second*30, time.Second*1)
 			if err != nil || isTimeout {
 				t.Fatalf("All Metricbeat step upgrading not finished: %s", err.Error())
@@ -351,7 +349,6 @@ func doDeleteMetricbeatStep() test.TestStep {
 			return nil
 		},
 		Check: func(t *testing.T, c client.Client, key types.NamespacedName, o client.Object, data map[string]any) (err error) {
-
 			mb := &beatcrd.Metricbeat{}
 			isDeleted := false
 

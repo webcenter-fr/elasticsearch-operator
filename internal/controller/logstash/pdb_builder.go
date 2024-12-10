@@ -11,7 +11,6 @@ import (
 
 // GeneratePodDisruptionBudget permit to generate pod disruption budgets
 func buildPodDisruptionBudgets(ls *logstashcrd.Logstash) (pdbs []policyv1.PodDisruptionBudget, err error) {
-
 	if !ls.IsPdb() {
 		return nil, nil
 	}

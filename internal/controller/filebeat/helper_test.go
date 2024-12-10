@@ -174,7 +174,6 @@ func TestGetAnnotations(t *testing.T) {
 }
 
 func TestGetSecretNameForCredentials(t *testing.T) {
-
 	o := &beatcrd.Filebeat{
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: "default",
@@ -184,7 +183,6 @@ func TestGetSecretNameForCredentials(t *testing.T) {
 	}
 
 	assert.Equal(t, "test-credential-fb", GetSecretNameForCredentials(o))
-
 }
 
 func TestGetPodMonitorName(t *testing.T) {

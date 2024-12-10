@@ -175,7 +175,6 @@ queue.type: persisted
 				}
 
 				return errors.New("Not yet created")
-
 			}, time.Second*30, time.Second*1)
 			if err != nil || isTimeout {
 				t.Fatalf("All Logstash step provisionning not finished: %s", err.Error())
@@ -340,7 +339,6 @@ func doUpdateLogstashStep() test.TestStep {
 				}
 
 				return errors.New("Not yet updated")
-
 			}, time.Second*30, time.Second*1)
 			if err != nil || isTimeout {
 				t.Fatalf("All Logstash step upgrading not finished: %s", err.Error())
@@ -484,7 +482,6 @@ func doDeleteLogstashStep() test.TestStep {
 			return nil
 		},
 		Check: func(t *testing.T, c client.Client, key types.NamespacedName, o client.Object, data map[string]any) (err error) {
-
 			ls := &logstashcrd.Logstash{}
 			isDeleted := false
 

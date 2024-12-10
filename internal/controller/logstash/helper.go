@@ -39,7 +39,6 @@ func GetGlobalServiceName(ls *logstashcrd.Logstash) string {
 // GetSecretNameForCAElasticsearch permit to get the secret name that store all Elasticsearch CA
 // It return the secret name as string
 func GetSecretNameForCAElasticsearch(ls *logstashcrd.Logstash) (secretName string) {
-
 	return fmt.Sprintf("%s-ca-es-ls", ls.Name)
 }
 
@@ -47,7 +46,6 @@ func GetSecretNameForCAElasticsearch(ls *logstashcrd.Logstash) (secretName strin
 // It will inject each key on keystore
 // It return empty string if not secret provided
 func GetSecretNameForKeystore(ls *logstashcrd.Logstash) (secretName string) {
-
 	if ls.Spec.KeystoreSecretRef != nil {
 		return ls.Spec.KeystoreSecretRef.Name
 	}

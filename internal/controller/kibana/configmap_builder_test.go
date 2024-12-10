@@ -16,7 +16,6 @@ import (
 )
 
 func TestBuildConfigMaps(t *testing.T) {
-
 	var (
 		o  *kibanacrd.Kibana
 		es *elasticsearchcrd.Elasticsearch
@@ -172,5 +171,4 @@ node.value2: test`,
 	configMaps, err = buildConfigMaps(o, nil)
 	assert.NoError(t, err)
 	test.EqualFromYamlFile[*corev1.ConfigMap](t, "testdata/configmap_managed_es_custom_ca_es.yml", &configMaps[0], scheme.Scheme)
-
 }

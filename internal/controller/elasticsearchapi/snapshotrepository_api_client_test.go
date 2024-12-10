@@ -11,7 +11,6 @@ import (
 )
 
 func TestSnapshotRepositoryBuild(t *testing.T) {
-
 	var (
 		o          *elasticsearchapicrd.SnapshotRepository
 		sr         *olivere.SnapshotRepositoryMetaData
@@ -76,5 +75,4 @@ func TestSnapshotRepositoryBuild(t *testing.T) {
 	sr, err = client.Build(o)
 	assert.NoError(t, err)
 	assert.Equal(t, expectedSr, sr)
-
 }

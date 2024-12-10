@@ -14,7 +14,6 @@ import (
 
 // BuildConfigMap permit to generate config maps
 func buildConfigMaps(fb *beatcrd.Filebeat, es *elasticsearchcrd.Elasticsearch, logstashCASecret *corev1.Secret) (configMaps []corev1.ConfigMap, err error) {
-
 	configMaps = make([]corev1.ConfigMap, 0, 1)
 	var cm *corev1.ConfigMap
 
@@ -54,7 +53,6 @@ output.logstash:
 				}
 			}
 		}
-
 	}
 
 	// Elasticsearch output
@@ -69,7 +67,6 @@ output.elasticsearch:
     enable: true
     certificate_authorities: '${ELASTICSEARCH_CA_PATH}'
 `)
-
 		} else {
 			filebeatConf.WriteString(`
 output.elasticsearch:

@@ -55,7 +55,6 @@ func (h *watchApiClient) Build(o *elasticsearchapicrd.Watch) (watch *olivere.XPa
 		transform := make(map[string]any)
 		if err := json.Unmarshal([]byte(o.Spec.Transform), &transform); err != nil {
 			return nil, errors.Wrap(err, "Error when decode transform")
-
 		}
 		watch.Transform = transform
 	}
@@ -89,12 +88,10 @@ func (h *watchApiClient) Create(object *olivere.XPackWatch, o *elasticsearchapic
 
 func (h *watchApiClient) Update(object *olivere.XPackWatch, o *elasticsearchapicrd.Watch) (err error) {
 	return h.Client().WatchUpdate(o.GetExternalName(), object)
-
 }
 
 func (h *watchApiClient) Delete(o *elasticsearchapicrd.Watch) (err error) {
 	return h.Client().WatchDelete(o.GetExternalName())
-
 }
 
 func (h *watchApiClient) Diff(currentOject *olivere.XPackWatch, expectedObject *olivere.XPackWatch, originalObject *olivere.XPackWatch, ignoresDiff ...patch.CalculateOption) (patchResult *patch.PatchResult, err error) {

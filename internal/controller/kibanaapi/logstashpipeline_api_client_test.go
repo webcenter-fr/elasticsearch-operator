@@ -11,7 +11,6 @@ import (
 )
 
 func TestLogstashPipelineBuild(t *testing.T) {
-
 	var (
 		o                *kibanaapicrd.LogstashPipeline
 		pipeline         *kbapi.LogstashPipeline
@@ -81,5 +80,4 @@ func TestLogstashPipelineBuild(t *testing.T) {
 	pipeline, err = client.Build(o)
 	assert.NoError(t, err)
 	assert.Equal(t, expectedPipeline, pipeline)
-
 }

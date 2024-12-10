@@ -118,7 +118,6 @@ func (r *tlsReconciler) Configure(ctx context.Context, req ctrl.Request, resourc
 	}
 
 	return r.MultiPhaseStepReconcilerAction.Configure(ctx, req, resource)
-
 }
 
 // Read existing transport TLS secret
@@ -634,9 +633,7 @@ func (r *tlsReconciler) Diff(ctx context.Context, resource object.MultiPhaseObje
 // OnSuccess permit to set status condition on the right state is everithink is good
 func (r *tlsReconciler) OnSuccess(ctx context.Context, resource object.MultiPhaseObject, data map[string]any, diff controller.MultiPhaseDiff) (res ctrl.Result, err error) {
 	o := resource.(*elasticsearchcrd.Elasticsearch)
-	var (
-		d any
-	)
+	var d any
 
 	d, err = helper.Get(data, "phase")
 	if err != nil {
@@ -661,7 +658,6 @@ func (r *tlsReconciler) OnSuccess(ctx context.Context, resource object.MultiPhas
 				Message: "Force renew all transport certificates",
 			})
 		}
-
 	} else {
 		if condition.IsStatusConditionPresentAndEqual(o.Status.Conditions, TlsConditionBlackout.String(), metav1.ConditionTrue) {
 			condition.SetStatusCondition(&o.Status.Conditions, metav1.Condition{
@@ -862,7 +858,6 @@ func (r *tlsReconciler) OnSuccess(ctx context.Context, resource object.MultiPhas
 }
 
 func (r *tlsReconciler) generateTransportSecretPki(o *elasticsearchcrd.Elasticsearch, sTransportPki *corev1.Secret) (sTransportPkiRes *corev1.Secret, transportRootCA *goca.CA, isUpdated bool, err error) {
-
 	tmpTransportPki, transportRootCA, err := buildTransportPkiSecret(o)
 	if err != nil {
 		return nil, nil, isUpdated, errors.Wrap(err, "Error when generate transport PKI")
@@ -876,7 +871,6 @@ func (r *tlsReconciler) generateTransportSecretPki(o *elasticsearchcrd.Elasticse
 }
 
 func (r *tlsReconciler) generateTransportSecretCertificates(o *elasticsearchcrd.Elasticsearch, sTransport *corev1.Secret, transportRootCA *goca.CA) (sTransportRes *corev1.Secret, isUpdated bool, err error) {
-
 	tmpTransport, err := buildTransportSecret(o, transportRootCA)
 	if err != nil {
 		return nil, isUpdated, errors.Wrap(err, "Error when generate nodes certificates")
@@ -890,7 +884,6 @@ func (r *tlsReconciler) generateTransportSecretCertificates(o *elasticsearchcrd.
 }
 
 func (r *tlsReconciler) generateAPISecretPki(o *elasticsearchcrd.Elasticsearch, sApiPki *corev1.Secret) (sApiPkiRes *corev1.Secret, apiRootCA *goca.CA, isUpdated bool, err error) {
-
 	tmpApiPki, apiRootCA, err := buildApiPkiSecret(o)
 	if err != nil {
 		return nil, nil, isUpdated, errors.Wrap(err, "Error when generate API PKI")
@@ -904,7 +897,6 @@ func (r *tlsReconciler) generateAPISecretPki(o *elasticsearchcrd.Elasticsearch, 
 }
 
 func (r *tlsReconciler) generateApiSecretCertificate(o *elasticsearchcrd.Elasticsearch, sApi *corev1.Secret, apiRootCA *goca.CA) (sApiRes *corev1.Secret, isUpdated bool, err error) {
-
 	tmpApi, err := buildApiSecret(o, apiRootCA)
 	if err != nil {
 		return nil, isUpdated, errors.Wrap(err, "Error when generate API certificate")
@@ -918,7 +910,6 @@ func (r *tlsReconciler) generateApiSecretCertificate(o *elasticsearchcrd.Elastic
 }
 
 func (r *tlsReconciler) generateAllSecretsCertificates(o *elasticsearchcrd.Elasticsearch, sTransportPki *corev1.Secret, sTransport *corev1.Secret, sApiPki *corev1.Secret, sApi *corev1.Secret, secretToCreate []client.Object, secretToUpdate []client.Object) (secretToCreateRes []client.Object, secretToUpdateRes []client.Object, err error) {
-
 	// Generate transport PKI
 	sTransportPki, transportRootCA, isUpdated, err := r.generateTransportSecretPki(o, sTransportPki)
 	if err != nil {

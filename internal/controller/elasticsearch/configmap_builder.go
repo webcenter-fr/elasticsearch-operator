@@ -108,7 +108,6 @@ xpack.security.http.ssl.certificate_authorities: /usr/share/elasticsearch/config
 
 // computeInitialMasterNodes create the list of all master nodes
 func computeInitialMasterNodes(es *elasticsearchcrd.Elasticsearch) string {
-
 	masterNodes := make([]string, 0, 3)
 	for _, nodeGroup := range es.Spec.NodeGroups {
 		if IsMasterRole(es, nodeGroup.Name) {

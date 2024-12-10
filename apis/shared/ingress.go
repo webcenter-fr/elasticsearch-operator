@@ -7,7 +7,6 @@ import (
 
 // Ingress permit to set ingress
 type Ingress struct {
-
 	// Name is the ingress name
 	// The name is decorated with cluster name and so on
 	// +operator-sdk:csv:customresourcedefinitions:type=spec

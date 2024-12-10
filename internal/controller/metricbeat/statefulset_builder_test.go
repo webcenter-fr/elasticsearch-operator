@@ -17,7 +17,6 @@ import (
 )
 
 func TestBuildStatefulset(t *testing.T) {
-
 	var (
 		o               *beatcrd.Metricbeat
 		es              *elasticsearchcrd.Elasticsearch

@@ -31,5 +31,4 @@ func (t *TestSuite) TestSetupHostIndexer() {
 
 	err := t.k8sClient.Create(context.Background(), host)
 	assert.NoError(t.T(), err)
-
 }

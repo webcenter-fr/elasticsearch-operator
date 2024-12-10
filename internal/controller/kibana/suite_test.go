@@ -40,7 +40,6 @@ func TestKibanaControllerSuite(t *testing.T) {
 }
 
 func (t *KibanaControllerTestSuite) SetupSuite() {
-
 	logf.SetLogger(zap.New(zap.UseDevMode(true)))
 	logrus.SetLevel(logrus.TraceLevel)
 	logrus.SetFormatter(&logrus.TextFormatter{
@@ -145,11 +144,9 @@ func (t *KibanaControllerTestSuite) SetupSuite() {
 			panic(err)
 		}
 	}()
-
 }
 
 func (t *KibanaControllerTestSuite) TearDownSuite() {
-
 	// Teardown the test environment once controller is fnished.
 	// Otherwise from Kubernetes 1.21+, teardon timeouts waiting on
 	// kube-apiserver to return
@@ -157,11 +154,9 @@ func (t *KibanaControllerTestSuite) TearDownSuite() {
 	if err != nil {
 		panic(err)
 	}
-
 }
 
 func (t *KibanaControllerTestSuite) BeforeTest(suiteName, testName string) {
-
 }
 
 func (t *KibanaControllerTestSuite) AfterTest(suiteName, testName string) {

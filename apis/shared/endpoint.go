@@ -31,7 +31,6 @@ type EndpointLoadBalancerSpec struct {
 
 // EndpointIngressSpec permit to set endpoint
 type EndpointIngressSpec struct {
-
 	// Enabled permit to enabled / disabled ingress
 	// Default to false
 	// +operator-sdk:csv:customresourcedefinitions:type=spec

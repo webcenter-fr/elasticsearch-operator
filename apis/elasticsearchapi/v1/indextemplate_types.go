@@ -46,12 +46,12 @@ type IndexTemplateSpec struct {
 	// +optional
 	IndexPatterns []string `json:"indexPatterns,omitempty"`
 
-	//ComposedOf is the list of component templates
+	// ComposedOf is the list of component templates
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
 	// +optional
 	ComposedOf []string `json:"composedOf,omitempty"`
 
-	//Priority is the priority to apply this template
+	// Priority is the priority to apply this template
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
 	// +optional
 	Priority int `json:"priority,omitempty"`
@@ -85,7 +85,6 @@ type IndexTemplateSpec struct {
 
 // IndexTemplateData is the template specification
 type IndexTemplateData struct {
-
 	// Settings is the template setting as JSON string
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
 	// +optional

@@ -49,7 +49,6 @@ func doMockComponentTemplate(mockES *mocks.MockElasticsearchHandler) func(stepNa
 		isUpdated := false
 
 		mockES.EXPECT().ComponentTemplateGet(gomock.Any()).AnyTimes().DoAndReturn(func(name string) (*olivere.IndicesGetComponentTemplate, error) {
-
 			switch *stepName {
 			case "create":
 				if !isCreated {
@@ -104,7 +103,6 @@ func doMockComponentTemplate(mockES *mocks.MockElasticsearchHandler) func(stepNa
 			}
 
 			return nil, nil
-
 		})
 
 		mockES.EXPECT().ComponentTemplateUpdate(gomock.Any(), gomock.Any()).AnyTimes().DoAndReturn(func(name string, component *olivere.IndicesGetComponentTemplate) error {
