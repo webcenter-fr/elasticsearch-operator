@@ -48,8 +48,8 @@ func (t *ElasticsearchControllerTestSuite) SetupSuite() {
 	// Setup testenv
 	testEnv = &envtest.Environment{
 		CRDDirectoryPaths: []string{
-			filepath.Join("../..", "config", "crd", "bases"),
-			filepath.Join("../..", "config", "crd", "externals"),
+			filepath.Join("../../..", "config", "crd", "bases"),
+			filepath.Join("../../..", "config", "crd", "externals"),
 		},
 		ErrorIfCRDPathMissing:    true,
 		ControlPlaneStopTimeout:  120 * time.Second,
