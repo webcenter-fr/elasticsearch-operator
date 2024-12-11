@@ -195,18 +195,11 @@ func (h *ElasticsearchOperator) CI(
 			WithPublish:                  ci,
 			RegistryUsername:             username,
 			RegistryPassword:             registryPassword,
-			PublishLast:                  isTag,
+			PublishLast:                  false,
 			SkipBuildFromPreviousVersion: !isTag,
 		},
 	)
 	h.OperatorSDK = h.OperatorSDK.WithSource(dir)
-
-	// Commit and push only is not a PR and is CI
-	if ci && isTag {
-		if _, err = dag.Git().SetConfig(gitUsername, gitEmail, dagger.GitSetConfigOpts{BaseRepoURL: "github.com", Token: gitToken}).SetRepo(h.Src.WithDirectory(".", h.Src.WithDirectory(".", dir)), dagger.GitSetRepoOpts{Branch: "main"}).CommitAndPush(ctx, "Commit from Jenkins pipeline"); err != nil {
-			return nil, errors.Wrap(err, "Error when commit and push files change")
-		}
-	}
 
 	// Test the OLM operator
 	if ci {
@@ -237,23 +230,39 @@ func (h *ElasticsearchOperator) CI(
 		)
 		defer service.Stop(ctx)
 
-		// Deploy Opensearch operator to look
+		// Deploy Elasticsearch operator to look
 		kubeCtr := h.OperatorSDK.Kube().Kubectl().
 			WithServiceBinding("kube.svc", service)
 
 		_, err = kubeCtr.
-			WithExec(helper.ForgeCommand("kubectl apply -n default --server-side=true -f config/samples/opensearch_v1_opensearch.yaml")).
-			WithExec(helper.ForgeCommand("kubectl -n default wait --for=condition=Ready=True --all opensearch --timeout=60s")).
+			WithExec(helper.ForgeCommand("kubectl apply -n default --server-side=true -f config/samples/elasticsearch_v1_elasticsearch.yaml")).
+			WithExec(helper.ForgeCommand("kubectl -n default wait --for=condition=Ready=True --all elasticsearch --timeout=60s")).
 			Stdout(ctx)
 
-		// Get operators logs and Opensearch logs
+		// Get operators logs and Elasticsearch logs
 		_, _ = kubeCtr.
 			WithExec(helper.ForgeCommand("kubectl get -n operators pods -o name | xargs -I {} kubectl logs -n operators {}")).
 			WithExec(helper.ForgeCommand("kubectl get -n default pods -o name | xargs -I {} kubectl logs -n default {}")).
 			Stdout(ctx)
 
 		if err != nil {
-			return nil, errors.Wrap(err, "Error when deploy Opensearch cluster for testing operator")
+			return nil, errors.Wrap(err, "Error when deploy Elasticsearch cluster for testing operator")
+		}
+
+		// Publish latest image
+		if isTag {
+			if _, err = h.OperatorSDK.Oci().PublishCatalog(ctx, fmt.Sprintf("%s:latest", catalogName)); err != nil {
+				return nil, errors.Wrap(err, "Error when publish the latest catalog image")
+			}
+		}
+
+		// Commit and push only is not a PR and is CI
+		if !isTag {
+			// keep original version file
+			dir = dir.WithoutFile("VERSION")
+		}
+		if _, err = dag.Git().SetConfig(gitUsername, gitEmail, dagger.GitSetConfigOpts{BaseRepoURL: "github.com", Token: gitToken}).SetRepo(h.Src.WithDirectory(".", dir), dagger.GitSetRepoOpts{Branch: "main"}).CommitAndPush(ctx, "Commit from CI. skip ci"); err != nil {
+			return nil, errors.Wrap(err, "Error when commit and push files change")
 		}
 
 	}
