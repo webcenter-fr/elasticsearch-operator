@@ -149,6 +149,10 @@ func (h *ElasticsearchOperator) CI(
 	// The git token
 	// +optional
 	gitToken *dagger.Secret,
+
+	// The codeCov token
+	// +optional
+	codeCoveToken *dagger.Secret,
 ) (*dagger.Directory, error) {
 	var channels string
 	var err error
@@ -206,6 +210,19 @@ func (h *ElasticsearchOperator) CI(
 
 	// Test the OLM operator
 	if ci {
+
+		// codecov
+		if _, err := dag.Codecov().Upload(
+			ctx,
+			dir,
+			codeCoveToken,
+			dagger.CodecovUploadOpts{
+				Files:   []string{"coverage.out"},
+				Verbose: true,
+			},
+		); err != nil {
+			return nil, errors.Wrap(err, "Error when upload report on CodeCov")
+		}
 
 		catalogName, err := h.OperatorSDK.GetCatalogName(ctx, registry, repository)
 		if err != nil {
