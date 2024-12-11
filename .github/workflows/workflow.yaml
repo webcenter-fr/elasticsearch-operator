@@ -21,11 +21,12 @@ jobs:
         uses: dagger/dagger-for-github@v7
         with:
           version: 0.14.0
-          call: --src . ci --ci --version ${VERSION} --registry-username env:REGISTRY_USERNAME --registry-password env:REGISTRY_PASSWORD --git-token env:GITHUB_TOKEN ${IS_TAG}
+          call: --src . ci --ci --version ${VERSION} --registry-username env:REGISTRY_USERNAME --registry-password env:REGISTRY_PASSWORD --git-token env:GITHUB_TOKEN --code-cove-token env:CODECOV_TOKEN ${IS_TAG}
           cloud-token: ${{ secrets.DAGGER_CLOUD_TOKEN }}
         env:
           REGISTRY_USERNAME: ${{ secrets.REGISTRY_USERNAME }}
           REGISTRY_PASSWORD: ${{ secrets.REGISTRY_PASSWORD }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
           VERSION: ${{ github.ref_type == 'tag' && github.ref_name || github.event_name == 'pull_request' && format('pr.{0}', github.event.number) || format('rc.{0}', github.run_number) }}
           IS_TAG: ${{ github.ref_type == 'tag' && '--is-tag' || '' }}
