@@ -5,76 +5,6 @@ metadata:
     alm-examples: |-
       [
         {
-          "apiVersion": "elasticsearchapi.k8s.webcenter.fr/v1",
-          "kind": "Role",
-          "metadata": {
-            "labels": {
-              "app.kubernetes.io/created-by": "bootstrap",
-              "app.kubernetes.io/instance": "role-sample",
-              "app.kubernetes.io/managed-by": "kustomize",
-              "app.kubernetes.io/name": "role",
-              "app.kubernetes.io/part-of": "bootstrap"
-            },
-            "name": "role-sample"
-          },
-          "spec": {
-            "cluster": [
-              "monitor",
-              "read_ilm",
-              "read_slm",
-              "cluster:admin/slm/status",
-              "cluster:admin/snapshot/get"
-            ],
-            "elasticsearchRef": {
-              "managed": {
-                "name": "elasticsearch-sample"
-              }
-            },
-            "indices": [
-              {
-                "names": [
-                  "*"
-                ],
-                "privileges": [
-                  "view_index_metadata",
-                  "monitor"
-                ]
-              }
-            ]
-          }
-        },
-        {
-          "apiVersion": "kibanaapi.k8s.webcenter.fr/v1",
-          "kind": "Role",
-          "metadata": {
-            "labels": {
-              "app.kubernetes.io/created-by": "elasticsearch-operator",
-              "app.kubernetes.io/instance": "role-sample",
-              "app.kubernetes.io/managed-by": "kustomize",
-              "app.kubernetes.io/name": "role",
-              "app.kubernetes.io/part-of": "elasticsearch-operator"
-            },
-            "name": "role-sample"
-          },
-          "spec": {
-            "kibana": [
-              {
-                "base": [
-                  "all"
-                ],
-                "spaces": [
-                  "userspace-sample"
-                ]
-              }
-            ],
-            "kibanaRef": {
-              "managed": {
-                "name": "kibana"
-              }
-            }
-          }
-        },
-        {
           "apiVersion": "beat.k8s.webcenter.fr/v1",
           "kind": "Filebeat",
           "metadata": {
@@ -936,10 +866,10 @@ metadata:
         }
       ]
     capabilities: Basic Install
-    createdAt: "2024-12-10T14:20:42Z"
+    createdAt: "2024-12-12T10:26:55Z"
     operators.operatorframework.io/builder: operator-sdk-v1.38.0
     operators.operatorframework.io/project_layout: go.kubebuilder.io/v4
-  name: elasticsearch-operator.v0.0.50
+  name: elasticsearch-operator.v0.0.54-0.0.49
   namespace: placeholder
 spec:
   apiservicedefinitions: {}
@@ -2837,6 +2767,300 @@ spec:
       clusterPermissions:
       - rules:
         - apiGroups:
+          - ""
+          resources:
+          - configmaps
+          - pods
+          - secrets
+          - services
+          verbs:
+          - create
+          - delete
+          - get
+          - list
+          - patch
+          - update
+          - watch
+        - apiGroups:
+          - ""
+          resources:
+          - events
+          verbs:
+          - create
+          - get
+          - patch
+        - apiGroups:
+          - apps
+          resources:
+          - deployments
+          - statefulsets
+          verbs:
+          - create
+          - delete
+          - get
+          - list
+          - patch
+          - update
+          - watch
+        - apiGroups:
+          - beat.k8s.webcenter.fr
+          resources:
+          - filebeats
+          - metricbeats
+          verbs:
+          - create
+          - delete
+          - get
+          - list
+          - patch
+          - update
+          - watch
+        - apiGroups:
+          - beat.k8s.webcenter.fr
+          resources:
+          - filebeats/finalizers
+          - metricbeats/finalizers
+          verbs:
+          - update
+        - apiGroups:
+          - beat.k8s.webcenter.fr
+          resources:
+          - filebeats/status
+          - metricbeats/status
+          verbs:
+          - get
+          - patch
+          - update
+        - apiGroups:
+          - cerebro.k8s.webcenter.fr
+          resources:
+          - cerebroes
+          - hosts
+          verbs:
+          - create
+          - delete
+          - get
+          - list
+          - patch
+          - update
+          - watch
+        - apiGroups:
+          - cerebro.k8s.webcenter.fr
+          resources:
+          - cerebroes/finalizers
+          - hosts/finalizers
+          verbs:
+          - update
+        - apiGroups:
+          - cerebro.k8s.webcenter.fr
+          resources:
+          - cerebroes/status
+          - hosts/status
+          verbs:
+          - get
+          - patch
+          - update
+        - apiGroups:
+          - elasticsearch.k8s.webcenter.fr
+          resources:
+          - elasticsearches
+          verbs:
+          - create
+          - delete
+          - get
+          - list
+          - patch
+          - update
+          - watch
+        - apiGroups:
+          - elasticsearch.k8s.webcenter.fr
+          resources:
+          - elasticsearches/finalizers
+          verbs:
+          - update
+        - apiGroups:
+          - elasticsearch.k8s.webcenter.fr
+          resources:
+          - elasticsearches/status
+          verbs:
+          - get
+          - patch
+          - update
+        - apiGroups:
+          - elasticsearchapi.k8s.webcenter.fr
+          resources:
+          - componenttemplates
+          - indexlifecyclepolicies
+          - indextemplates
+          - licenses
+          - rolemappings
+          - roles
+          - snapshotlifecyclepolicies
+          - snapshotrepositories
+          - users
+          - watches
+          verbs:
+          - create
+          - delete
+          - get
+          - list
+          - patch
+          - update
+          - watch
+        - apiGroups:
+          - elasticsearchapi.k8s.webcenter.fr
+          resources:
+          - componenttemplates/finalizers
+          - indexlifecyclepolicies/finalizers
+          - indextemplates/finalizers
+          - licenses/finalizers
+          - rolemappings/finalizers
+          - roles/finalizers
+          - snapshotlifecyclepolicies/finalizers
+          - snapshotrepositories/finalizers
+          - users/finalizers
+          - watches/finalizers
+          verbs:
+          - update
+        - apiGroups:
+          - elasticsearchapi.k8s.webcenter.fr
+          resources:
+          - componenttemplates/status
+          - indexlifecyclepolicies/status
+          - indextemplates/status
+          - licenses/status
+          - rolemappings/status
+          - roles/status
+          - snapshotlifecyclepolicies/status
+          - snapshotrepositories/status
+          - users/status
+          - watches/status
+          verbs:
+          - get
+          - patch
+          - update
+        - apiGroups:
+          - kibana.k8s.webcenter.fr
+          resources:
+          - kibanas
+          verbs:
+          - create
+          - delete
+          - get
+          - list
+          - patch
+          - update
+          - watch
+        - apiGroups:
+          - kibana.k8s.webcenter.fr
+          resources:
+          - kibanas/finalizers
+          verbs:
+          - update
+        - apiGroups:
+          - kibana.k8s.webcenter.fr
+          resources:
+          - kibanas/status
+          verbs:
+          - get
+          - patch
+          - update
+        - apiGroups:
+          - kibanaapi.k8s.webcenter.fr
+          resources:
+          - logstashpipelines
+          - roles
+          - userspaces
+          verbs:
+          - create
+          - delete
+          - get
+          - list
+          - patch
+          - update
+          - watch
+        - apiGroups:
+          - kibanaapi.k8s.webcenter.fr
+          resources:
+          - logstashpipelines/finalizers
+          - roles/finalizers
+          - userspaces/finalizers
+          verbs:
+          - update
+        - apiGroups:
+          - kibanaapi.k8s.webcenter.fr
+          resources:
+          - logstashpipelines/status
+          - roles/status
+          - userspaces/status
+          verbs:
+          - get
+          - patch
+          - update
+        - apiGroups:
+          - logstash.k8s.webcenter.fr
+          resources:
+          - logstashes
+          verbs:
+          - create
+          - delete
+          - get
+          - list
+          - patch
+          - update
+          - watch
+        - apiGroups:
+          - logstash.k8s.webcenter.fr
+          resources:
+          - logstashes/finalizers
+          verbs:
+          - update
+        - apiGroups:
+          - logstash.k8s.webcenter.fr
+          resources:
+          - logstashes/status
+          verbs:
+          - get
+          - patch
+          - update
+        - apiGroups:
+          - monitoring.coreos.com
+          resources:
+          - podmonitors
+          verbs:
+          - create
+          - delete
+          - get
+          - list
+          - patch
+          - update
+          - watch
+        - apiGroups:
+          - networking.k8s.io
+          resources:
+          - ingresses
+          - networkpolicies
+          verbs:
+          - create
+          - delete
+          - get
+          - list
+          - patch
+          - update
+          - watch
+        - apiGroups:
+          - policy
+          resources:
+          - poddisruptionbudgets
+          verbs:
+          - create
+          - delete
+          - get
+          - list
+          - patch
+          - update
+          - watch
+        - apiGroups:
           - authentication.k8s.io
           resources:
           - tokenreviews
@@ -2848,16 +3072,16 @@ spec:
           - subjectaccessreviews
           verbs:
           - create
-        serviceAccountName: elastic-operator-elastic-operator
+        serviceAccountName: elasticsearch-operator-elasticsearch-operator
       deployments:
       - label:
-          control-plane: elastic-operator
-        name: elastic-operator-elastic-operator
+          control-plane: elasticsearch-operator
+        name: elasticsearch-operator-elasticsearch-operator
         spec:
           replicas: 1
           selector:
             matchLabels:
-              control-plane: elastic-operator
+              control-plane: elasticsearch-operator
           strategy: {}
           template:
             metadata:
@@ -2873,7 +3097,7 @@ spec:
                   {"dataset": "elasticsearch-operator"}}}'
                 kubectl.kubernetes.io/default-container: manager
               labels:
-                control-plane: elastic-operator
+                control-plane: elasticsearch-operator
                 elasticsearch-operator.k8s.webcenter.fr: "true"
                 kibana-operator.k8s.webcenter.fr: "true"
             spec:
@@ -2899,7 +3123,7 @@ spec:
                   value: INFO
                 - name: LOG_FORMATTER
                   value: json
-                image: quay.io:webcenter/elasticsearch-operator:0.0.50
+                image: quay.io/webcenter/elasticsearch-operator:0.0.54-0.0.49
                 livenessProbe:
                   httpGet:
                     path: /healthz
@@ -2927,7 +3151,7 @@ spec:
                     - ALL
               securityContext:
                 runAsNonRoot: true
-              serviceAccountName: elastic-operator-elastic-operator
+              serviceAccountName: elasticsearch-operator-elasticsearch-operator
               terminationGracePeriodSeconds: 10
       permissions:
       - rules:
@@ -2962,7 +3186,7 @@ spec:
           verbs:
           - create
           - patch
-        serviceAccountName: elastic-operator-elastic-operator
+        serviceAccountName: elasticsearch-operator-elasticsearch-operator
     strategy: deployment
   installModes:
   - supported: false
@@ -2990,4 +3214,4 @@ spec:
     name: webcenter.fr
     url: https://github.com/webcenter-fr/elasticsearch-operator
   replaces: elasticsearch-operator.v0.0.48
-  version: 0.0.50
+  version: 0.0.54-0.0.49

@@ -25,12 +25,12 @@ Second shell
 # Get the kubeconfig file
 dagger call -m operator-sdk --src . kube kubeconfig --local export --path kubeconfig
 
-# Deploy Opensearch cluster
-kubectl apply -f config/samples/opensearch_v1_opensearch.yaml -n default
+# Deploy elasticsearch cluster
+kubectl apply -f config/samples/elasticsearch_v1_elasticsearch.yaml -n default
 
-# Expose Opensearch on localhost to work with local operator
-# Without that, the local operator can access on Opensearch API
-kubectl port-forward service/opensearch-sample-os -n default 9200:9200
+# Expose elasticsearch on localhost to work with local operator
+# Without that, the local operator can access on elasticsearch API
+kubectl port-forward service/elasticsearch-sample-os -n default 9200:9200
 ```
 
 
@@ -41,7 +41,12 @@ First shell
 ```bash
 # Put the right tag of your image. It change on each CI build
 
-```dagger call -m operator-sdk --src . test-olm-operator --catalog-image hm-registry.hm.dm.ad/docker-etloutils/opensearch-operator-k8s-catalog:0.0.74-pr58 --name opensearch-operator-k8s --channel alpha up
+```bash
+dagger call -m operator-sdk --src . test-olm-operator --catalog-image quay.io/webcenter/elasticsearch-operator/elasticsearch-operator-catalog:0.0.74-pr58 --name elasticsearch-operator --channel alpha up
+
+# If not work, you can use instead
+dagger call -m operator-sdk --src . install-olm-operator --catalog-image quay.io/webcenter/elasticsearch-operator/elasticsearch-operator-catalog:0.0.74-pr58 --name elasticsearch-operator --channel alpha up
+
 
 Second shell
 ```bash
@@ -51,16 +56,16 @@ dagger call -m operator-sdk --src . kube kubeconfig --local export --path kubeco
 #export KUBECONFIG=kubeconfig
 
 kubectl config set-context --current --namespace=operators
-kubectl logs -f -l control-plane=opensearch-operator-k8s
+kubectl logs -f -l control-plane=elasticsearch-operator
 
 # If pod not working like expected, you can test this step
 kubectl describe subscription test
 kubectl describe installplan test
 kubectl describe deployment 
 
-# Deploy Opensearch cluster
-kubectl apply -n default -f config/samples/opensearch_v1_opensearch.yaml
-kubectl logs -f -l control-plane=opensearch-operator-k8s
+# Deploy elasticsearch cluster
+kubectl apply -n default -f config/samples/elasticsearch_v1_elasticsearch.yaml
+kubectl logs -f -l control-plane=elasticsearch-operator
 
 ```
 
@@ -133,6 +138,6 @@ ENABLE_WEBHOOKS=false LOG_LEVEL=trace LOG_FORMATTER=json go run cmd/main.go
 
 **Load samples**:
 ```bash
-kubectl apply -f config/samples/opensearch_v1alpha1_opensearch.yaml
+kubectl apply -f config/samples/elasticsearch_v1alpha1_elasticsearch.yaml
 ```
 

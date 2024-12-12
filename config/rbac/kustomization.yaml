@@ -1,24 +1,28 @@
-resources:
 # All RBAC will be applied under this service account in
 # the deployment namespace. You may comment out this resource
 # if your manager will use a service account that exists at
 # runtime. Be sure to update RoleBinding and ClusterRoleBinding
 # subjects if changing service account names.
-- service_account.yaml
-- role.yaml
-- role_binding.yaml
-- leader_election_role.yaml
-- leader_election_role_binding.yaml
 # The following RBAC configurations are used to protect
 # the metrics endpoint with authn/authz. These configurations
 # ensure that only authorized users and service accounts
 # can access the metrics endpoint. Comment the following
 # permissions if you want to disable this protection.
 # More info: https://book.kubebuilder.io/reference/metrics.html
+# Extra roles
+#- elasticsearchapi_role_editor_role.yaml
+#- elasticsearchapi_role_viewer_role.yaml
+#- kibanaapi_role_editor_role.yaml
+#- kibanaapi_role_viewer_role.yaml
+resources:
+- service_account.yaml
+- role.yaml
+- role_binding.yaml
+- leader_election_role.yaml
+- leader_election_role_binding.yaml
 - metrics_auth_role.yaml
 - metrics_auth_role_binding.yaml
 - metrics_reader_role.yaml
-# Extra roles
 - beat_filebeat_editor_role.yaml
 - beat_filebeat_viewer_role.yaml
 - beat_metricbeat_editor_role.yaml
@@ -37,8 +41,6 @@ resources:
 - elasticsearchapi_indextemplate_viewer_role.yaml
 - elasticsearchapi_license_editor_role.yaml
 - elasticsearchapi_license_viewer_role.yaml
-- elasticsearchapi_role_editor_role.yaml
-- elasticsearchapi_role_viewer_role.yaml
 - elasticsearchapi_rolemapping_editor_role.yaml
 - elasticsearchapi_rolemapping_viewer_role.yaml
 - elasticsearchapi_snapshotlifecyclepolicy_editor_role.yaml
@@ -53,10 +55,9 @@ resources:
 - kibana_kibana_viewer_role.yaml
 - kibanaapi_logstashpipeline_editor_role.yaml
 - kibanaapi_logstashpipeline_viewer_role.yaml
-#- kibanaapi_role_editor_role.yaml
-#- kibanaapi_role_viewer_role.yaml
 - kibanaapi_userspace_editor_role.yaml
 - kibanaapi_userspace_viewer_role.yaml
 - logstash_logstash_editor_role.yaml
 - logstash_logstash_viewer_role.yaml
-
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization

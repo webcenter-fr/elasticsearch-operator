@@ -2,20 +2,20 @@ apiVersion: v1
 kind: Namespace
 metadata:
   labels:
-    control-plane: elastic-operator
+    control-plane: elasticsearch-operator
   name: system
 ---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: elastic-operator
+  name: elasticsearch-operator
   namespace: system
   labels:
-    control-plane: elastic-operator
+    control-plane: elasticsearch-operator
 spec:
   selector:
     matchLabels:
-      control-plane: elastic-operator
+      control-plane: elasticsearch-operator
   replicas: 1
   template:
     metadata:
@@ -28,7 +28,7 @@ spec:
         co.elastic.logs.manager/processors.0.decode_json_fields: '{"fields": ["message"],"target": "operator.elasticsearch", "add_error_key": true, "max_depth": 10}'
         co.elastic.logs.manager/processors.1.add_fields: '{"target": "", "fields":{"event": {"dataset": "elasticsearch-operator"}}}'
       labels:
-        control-plane: elastic-operator
+        control-plane: elasticsearch-operator
         elasticsearch-operator.k8s.webcenter.fr: "true"
         kibana-operator.k8s.webcenter.fr: "true"
     spec:
@@ -90,5 +90,5 @@ spec:
           requests:
             cpu: 100m
             memory: 256Mi
-      serviceAccountName: elastic-operator
+      serviceAccountName: elasticsearch-operator
       terminationGracePeriodSeconds: 10
