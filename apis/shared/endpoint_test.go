@@ -24,6 +24,24 @@ func TestIsIngressEnabled(t *testing.T) {
 	assert.True(t, o.IsIngressEnabled())
 }
 
+func TestIsRouteEnabled(t *testing.T) {
+	// With default values
+	o := EndpointSpec{}
+	assert.False(t, o.IsRouteEnabled())
+
+	// When Ingress is specified but disabled
+	o = EndpointSpec{
+		Route: &EndpointRouteSpec{
+			Enabled: false,
+		},
+	}
+	assert.False(t, o.IsRouteEnabled())
+
+	// When ingress is enabled
+	o.Route.Enabled = true
+	assert.True(t, o.IsRouteEnabled())
+}
+
 func TestIsLoadBalancerEnabled(t *testing.T) {
 	// With default values
 	o := EndpointSpec{}

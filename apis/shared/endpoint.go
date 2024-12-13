@@ -1,6 +1,7 @@
 package shared
 
 import (
+	routev1 "github.com/openshift/api/route/v1"
 	corev1 "k8s.io/api/core/v1"
 	networkingv1 "k8s.io/api/networking/v1"
 )
@@ -11,6 +12,11 @@ type EndpointSpec struct {
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
 	// +optional
 	Ingress *EndpointIngressSpec `json:"ingress,omitempty"`
+
+	// Route permit to set route settings
+	// +operator-sdk:csv:customresourcedefinitions:type=spec
+	// +optional
+	Route *EndpointRouteSpec `json:"route,omitempty"`
 
 	// Load balancer permit to set load balancer settings
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
@@ -65,9 +71,58 @@ type EndpointIngressSpec struct {
 	IngressSpec *networkingv1.IngressSpec `json:"ingressSpec,omitempty"`
 }
 
+// EndpointIngressSpec permit to set route endpoint
+type EndpointRouteSpec struct {
+	// Enabled permit to enabled / disabled route
+	// Default to false
+	// +operator-sdk:csv:customresourcedefinitions:type=spec
+	// +optional
+	// +kubebuilder:default=false
+	Enabled bool `json:"enabled,omitempty"`
+
+	// Host is the hostname to access on
+	// +operator-sdk:csv:customresourcedefinitions:type=spec
+	Host string `json:"host"`
+
+	// Set to true to enable TLS on route
+	// +operator-sdk:csv:customresourcedefinitions:type=spec
+	// +optional
+	TlsEnabled *bool `json:"tlsEnabled,omitempty"`
+
+	// SecretRef is the secret ref that store certificates
+	// If secret not exist, it will use the default route certificate
+	// +operator-sdk:csv:customresourcedefinitions:type=spec
+	// +optional
+	SecretRef *corev1.LocalObjectReference `json:"secretRef,omitempty"`
+
+	// Labels to set in route
+	// +operator-sdk:csv:customresourcedefinitions:type=spec
+	// +optional
+	Labels map[string]string `json:"labels,omitempty"`
+
+	// Annotations to set in route
+	// +operator-sdk:csv:customresourcedefinitions:type=spec
+	// +optional
+	Annotations map[string]string `json:"annotations,omitempty"`
+
+	// RouteSpec it merge with expected route spec
+	// +operator-sdk:csv:customresourcedefinitions:type=spec
+	// +optional
+	RouteSpec *routev1.RouteSpec `json:"routeSpec,omitempty"`
+}
+
 // IsIngressEnabled return true if ingress is enabled
 func (h EndpointSpec) IsIngressEnabled() bool {
 	if h.Ingress != nil && h.Ingress.Enabled {
+		return true
+	}
+
+	return false
+}
+
+// IsRouteEnabled return true if route is enabled
+func (h EndpointSpec) IsRouteEnabled() bool {
+	if h.Route != nil && h.Route.Enabled {
 		return true
 	}
 

@@ -333,3 +333,15 @@ func TestGetMetricbeatName(t *testing.T) {
 
 	assert.Equal(t, "test-metricbeat-kb", GetMetricbeatName(o))
 }
+
+func TestGetServiceAccountName(t *testing.T) {
+	o := &kibanacrd.Kibana{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: "default",
+			Name:      "test",
+		},
+		Spec: kibanacrd.KibanaSpec{},
+	}
+
+	assert.Equal(t, "test-db", GetServiceAccountName(o))
+}

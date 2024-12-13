@@ -24,7 +24,7 @@ import (
 )
 
 // BuildDeployment permit to generate deployment for Kibana
-func buildDeployments(kb *kibanacrd.Kibana, es *elasticsearchcrd.Elasticsearch, secretsChecksum []corev1.Secret, configMapsChecksum []corev1.ConfigMap) (dpls []appv1.Deployment, err error) {
+func buildDeployments(kb *kibanacrd.Kibana, es *elasticsearchcrd.Elasticsearch, secretsChecksum []corev1.Secret, configMapsChecksum []corev1.ConfigMap, isOpenshift bool) (dpls []appv1.Deployment, err error) {
 	// Check the secretRef is set when use external Elasticsearch
 	if kb.Spec.ElasticsearchRef.IsExternal() && kb.Spec.ElasticsearchRef.SecretRef == nil {
 		return nil, errors.New("You must set the secretRef when you use external Elasticsearch")
@@ -646,6 +646,11 @@ fi
 	ptb.WithSecurityContext(&corev1.PodSecurityContext{
 		FSGroup: ptr.To[int64](1000),
 	}, k8sbuilder.Merge)
+
+	// On Openshift, we need to run Opensearch with specific serviceAccount that is binding to anyuid scc
+	if isOpenshift {
+		ptb.PodTemplate().Spec.ServiceAccountName = GetServiceAccountName(kb)
+	}
 
 	// Compute pod template name
 	ptb.PodTemplate().Name = GetDeploymentName(kb)

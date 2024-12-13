@@ -38,9 +38,28 @@ func TestBuildDeployment(t *testing.T) {
 		},
 	}
 
-	dpls, err = buildDeployments(o, nil, nil)
+	dpls, err = buildDeployments(o, nil, nil, false)
 	assert.NoError(t, err)
 	test.EqualFromYamlFile[*appv1.Deployment](t, "testdata/deployment_default.yml", &dpls[0], scheme.Scheme)
+
+	// With default values on Openshift
+	o = &cerebrocrd.Cerebro{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: "default",
+			Name:      "test",
+		},
+		Spec: cerebrocrd.CerebroSpec{
+			Deployment: cerebrocrd.CerebroDeploymentSpec{
+				Deployment: shared.Deployment{
+					Replicas: 1,
+				},
+			},
+		},
+	}
+
+	dpls, err = buildDeployments(o, nil, nil, true)
+	assert.NoError(t, err)
+	test.EqualFromYamlFile[*appv1.Deployment](t, "testdata/deployment_default_openshift.yml", &dpls[0], scheme.Scheme)
 
 	// With complexe sample
 	o = &cerebrocrd.Cerebro{
@@ -114,7 +133,7 @@ func TestBuildDeployment(t *testing.T) {
 	}
 	checksumCms = append(checksumCms, cms...)
 
-	dpls, err = buildDeployments(o, checksumSecrets, checksumCms)
+	dpls, err = buildDeployments(o, checksumSecrets, checksumCms, false)
 	assert.NoError(t, err)
 	test.EqualFromYamlFile[*appv1.Deployment](t, "testdata/deployment_complet.yml", &dpls[0], scheme.Scheme)
 }

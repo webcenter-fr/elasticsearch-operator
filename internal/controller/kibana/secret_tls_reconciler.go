@@ -32,29 +32,22 @@ const (
 )
 
 type tlsReconciler struct {
-	controller.BaseReconciler
 	controller.MultiPhaseStepReconcilerAction
 }
 
-func newTlsReconciler(client client.Client, logger *logrus.Entry, recorder record.EventRecorder) (multiPhaseStepReconcilerAction controller.MultiPhaseStepReconcilerAction) {
+func newTlsReconciler(client client.Client, recorder record.EventRecorder) (multiPhaseStepReconcilerAction controller.MultiPhaseStepReconcilerAction) {
 	return &tlsReconciler{
 		MultiPhaseStepReconcilerAction: controller.NewBasicMultiPhaseStepReconcilerAction(
 			client,
 			TlsPhase,
 			TlsCondition,
-			logger,
 			recorder,
 		),
-		BaseReconciler: controller.BaseReconciler{
-			Client:   client,
-			Recorder: recorder,
-			Log:      logger,
-		},
 	}
 }
 
 // Read existing transport TLS secret
-func (r *tlsReconciler) Read(ctx context.Context, resource object.MultiPhaseObject, data map[string]any) (read controller.MultiPhaseRead, res ctrl.Result, err error) {
+func (r *tlsReconciler) Read(ctx context.Context, resource object.MultiPhaseObject, data map[string]any, logger *logrus.Entry) (read controller.MultiPhaseRead, res ctrl.Result, err error) {
 	o := resource.(*kibanacrd.Kibana)
 	read = controller.NewBasicMultiPhaseRead()
 	sApi := &corev1.Secret{}
@@ -68,7 +61,7 @@ func (r *tlsReconciler) Read(ctx context.Context, resource object.MultiPhaseObje
 	if o.Spec.Tls.IsTlsEnabled() && o.Spec.Tls.IsSelfManagedSecretForTls() {
 		// Read API PKI secret
 		secretName = GetSecretNameForPki(o)
-		if err = r.Client.Get(ctx, types.NamespacedName{Namespace: o.Namespace, Name: secretName}, sApiPki); err != nil {
+		if err = r.Client().Get(ctx, types.NamespacedName{Namespace: o.Namespace, Name: secretName}, sApiPki); err != nil {
 			if !k8serrors.IsNotFound(err) {
 				return read, res, errors.Wrapf(err, "Error when read existing secret %s", secretName)
 			}
@@ -77,7 +70,7 @@ func (r *tlsReconciler) Read(ctx context.Context, resource object.MultiPhaseObje
 
 		// Read API secret
 		secretName = GetSecretNameForTls(o)
-		if err = r.Client.Get(ctx, types.NamespacedName{Namespace: o.Namespace, Name: secretName}, sApi); err != nil {
+		if err = r.Client().Get(ctx, types.NamespacedName{Namespace: o.Namespace, Name: secretName}, sApi); err != nil {
 			if !k8serrors.IsNotFound(err) {
 				return read, res, errors.Wrapf(err, "Error when read existing secret %s", secretName)
 			}
@@ -88,7 +81,7 @@ func (r *tlsReconciler) Read(ctx context.Context, resource object.MultiPhaseObje
 	// Load API PKI
 	if sApiPki != nil {
 		// Load root CA
-		apiRootCA, err = pki.LoadRootCA(sApiPki.Data["ca.key"], sApiPki.Data["ca.pub"], sApiPki.Data["ca.crt"], sApiPki.Data["ca.crl"], r.Log)
+		apiRootCA, err = pki.LoadRootCA(sApiPki.Data["ca.key"], sApiPki.Data["ca.pub"], sApiPki.Data["ca.crt"], sApiPki.Data["ca.crl"], logger)
 		if err != nil {
 			return read, res, errors.Wrap(err, "Error when load PKI")
 		}
@@ -111,7 +104,7 @@ func (r *tlsReconciler) Read(ctx context.Context, resource object.MultiPhaseObje
 }
 
 // Diff permit to check if transport secrets are up to date
-func (r *tlsReconciler) Diff(ctx context.Context, resource object.MultiPhaseObject, read controller.MultiPhaseRead, data map[string]any, ignoreDiff ...patch.CalculateOption) (diff controller.MultiPhaseDiff, res ctrl.Result, err error) {
+func (r *tlsReconciler) Diff(ctx context.Context, resource object.MultiPhaseObject, read controller.MultiPhaseRead, data map[string]any, logger *logrus.Entry, ignoreDiff ...patch.CalculateOption) (diff controller.MultiPhaseDiff, res ctrl.Result, err error) {
 	o := resource.(*kibanacrd.Kibana)
 	var (
 		d         any
@@ -155,7 +148,7 @@ func (r *tlsReconciler) Diff(ctx context.Context, resource object.MultiPhaseObje
 
 	// Generate all certificates
 	if sApi == nil || sApiPki == nil {
-		r.Log.Debugf("Generate all certificates")
+		logger.Debugf("Generate all certificates")
 		diff.AddDiff("Generate new certificates")
 
 		// Handle API certificates
@@ -218,7 +211,7 @@ func (r *tlsReconciler) Diff(ctx context.Context, resource object.MultiPhaseObje
 	if !isRenew {
 		// Check certificate validity if all certificates exists
 		for name, crt := range certificates {
-			needRenew, err = pki.NeedRenewCertificate(&crt, defaultRenewCertificate, r.Log)
+			needRenew, err = pki.NeedRenewCertificate(&crt, defaultRenewCertificate, logger)
 			if err != nil {
 				return diff, res, errors.Wrapf(err, "Error when check expiration of %s certificate", name)
 			}
@@ -230,7 +223,7 @@ func (r *tlsReconciler) Diff(ctx context.Context, resource object.MultiPhaseObje
 	}
 
 	if isRenew {
-		r.Log.Debugf("Renew all certificates")
+		logger.Debugf("Renew all certificates")
 
 		if o.Spec.Tls.IsTlsEnabled() && o.Spec.Tls.IsSelfManagedSecretForTls() {
 			tmpApiPki, apiRootCA, err := buildPkiSecret(o)

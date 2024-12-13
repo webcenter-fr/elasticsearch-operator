@@ -9,6 +9,7 @@ import (
 	"github.com/disaster37/k8s-objectmatcher/patch"
 	"github.com/disaster37/operator-sdk-extra/pkg/helper"
 	"github.com/disaster37/operator-sdk-extra/pkg/test"
+	routev1 "github.com/openshift/api/route/v1"
 	monitoringv1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1"
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
@@ -19,9 +20,11 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	networkingv1 "k8s.io/api/networking/v1"
 	policyv1 "k8s.io/api/policy/v1"
+	rbacv1 "k8s.io/api/rbac/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -92,6 +95,11 @@ func doCreateKibanaStep() test.TestStep {
 								Name: "test-tls",
 							},
 						},
+						Route: &shared.EndpointRouteSpec{
+							Enabled:    true,
+							Host:       "test.cluster.local",
+							TlsEnabled: ptr.To(true),
+						},
 						LoadBalancer: &shared.EndpointLoadBalancerSpec{
 							Enabled: true,
 						},
@@ -123,14 +131,17 @@ func doCreateKibanaStep() test.TestStep {
 		Check: func(t *testing.T, c client.Client, key types.NamespacedName, o client.Object, data map[string]any) (err error) {
 			kb := &kibanacrd.Kibana{}
 			var (
-				s   *corev1.Secret
-				svc *corev1.Service
-				i   *networkingv1.Ingress
-				cm  *corev1.ConfigMap
-				pdb *policyv1.PodDisruptionBudget
-				dpl *appv1.Deployment
-				np  *networkingv1.NetworkPolicy
-				pm  *monitoringv1.PodMonitor
+				s              *corev1.Secret
+				svc            *corev1.Service
+				i              *networkingv1.Ingress
+				cm             *corev1.ConfigMap
+				pdb            *policyv1.PodDisruptionBudget
+				dpl            *appv1.Deployment
+				np             *networkingv1.NetworkPolicy
+				pm             *monitoringv1.PodMonitor
+				route          *routev1.Route
+				serviceAccount *corev1.ServiceAccount
+				roleBinding    *rbacv1.RoleBinding
 			)
 
 			isTimeout, err := test.RunWithTimeout(func() error {
@@ -206,6 +217,30 @@ func doCreateKibanaStep() test.TestStep {
 			}
 			assert.NotEmpty(t, i.OwnerReferences)
 			assert.NotEmpty(t, i.Annotations[patch.LastAppliedConfig])
+
+			// Route must exist
+			route = &routev1.Route{}
+			if err = c.Get(context.Background(), types.NamespacedName{Namespace: key.Namespace, Name: GetIngressName(kb)}, route); err != nil {
+				t.Fatal(err)
+			}
+			assert.NotEmpty(t, route.OwnerReferences)
+			assert.NotEmpty(t, route.Annotations[patch.LastAppliedConfig])
+
+			// Service Account must exist
+			serviceAccount = &corev1.ServiceAccount{}
+			if err = c.Get(context.Background(), types.NamespacedName{Namespace: key.Namespace, Name: GetServiceAccountName(kb)}, serviceAccount); err != nil {
+				t.Fatal(err)
+			}
+			assert.NotEmpty(t, serviceAccount.OwnerReferences)
+			assert.NotEmpty(t, serviceAccount.Annotations[patch.LastAppliedConfig])
+
+			// roleBinding must exist
+			roleBinding = &rbacv1.RoleBinding{}
+			if err = c.Get(context.Background(), types.NamespacedName{Namespace: key.Namespace, Name: GetServiceAccountName(kb)}, roleBinding); err != nil {
+				t.Fatal(err)
+			}
+			assert.NotEmpty(t, roleBinding.OwnerReferences)
+			assert.NotEmpty(t, roleBinding.Annotations[patch.LastAppliedConfig])
 
 			// ConfigMaps must exist
 			cm = &corev1.ConfigMap{}
@@ -289,14 +324,17 @@ func doUpdateKibanaStep() test.TestStep {
 			kb := &kibanacrd.Kibana{}
 
 			var (
-				s   *corev1.Secret
-				svc *corev1.Service
-				i   *networkingv1.Ingress
-				cm  *corev1.ConfigMap
-				pdb *policyv1.PodDisruptionBudget
-				dpl *appv1.Deployment
-				np  *networkingv1.NetworkPolicy
-				pm  *monitoringv1.PodMonitor
+				s              *corev1.Secret
+				svc            *corev1.Service
+				i              *networkingv1.Ingress
+				cm             *corev1.ConfigMap
+				pdb            *policyv1.PodDisruptionBudget
+				dpl            *appv1.Deployment
+				np             *networkingv1.NetworkPolicy
+				pm             *monitoringv1.PodMonitor
+				route          *routev1.Route
+				serviceAccount *corev1.ServiceAccount
+				roleBinding    *rbacv1.RoleBinding
 			)
 
 			lastGeneration := data["lastGeneration"].(int64)
@@ -381,6 +419,33 @@ func doUpdateKibanaStep() test.TestStep {
 			assert.NotEmpty(t, i.OwnerReferences)
 			assert.NotEmpty(t, i.Annotations[patch.LastAppliedConfig])
 			assert.Equal(t, "fu", i.Labels["test"])
+
+			// Route must exist
+			route = &routev1.Route{}
+			if err = c.Get(context.Background(), types.NamespacedName{Namespace: key.Namespace, Name: GetIngressName(kb)}, route); err != nil {
+				t.Fatal(err)
+			}
+			assert.NotEmpty(t, route.OwnerReferences)
+			assert.NotEmpty(t, route.Annotations[patch.LastAppliedConfig])
+			assert.Equal(t, "fu", route.Labels["test"])
+
+			// Service Account must exist
+			serviceAccount = &corev1.ServiceAccount{}
+			if err = c.Get(context.Background(), types.NamespacedName{Namespace: key.Namespace, Name: GetServiceAccountName(kb)}, serviceAccount); err != nil {
+				t.Fatal(err)
+			}
+			assert.Equal(t, "fu", serviceAccount.Labels["test"])
+			assert.NotEmpty(t, serviceAccount.OwnerReferences)
+			assert.NotEmpty(t, serviceAccount.Annotations[patch.LastAppliedConfig])
+
+			// roleBinding must exist
+			roleBinding = &rbacv1.RoleBinding{}
+			if err = c.Get(context.Background(), types.NamespacedName{Namespace: key.Namespace, Name: GetServiceAccountName(kb)}, roleBinding); err != nil {
+				t.Fatal(err)
+			}
+			assert.Equal(t, "fu", roleBinding.Labels["test"])
+			assert.NotEmpty(t, roleBinding.OwnerReferences)
+			assert.NotEmpty(t, roleBinding.Annotations[patch.LastAppliedConfig])
 
 			// ConfigMaps must exist
 			cm = &corev1.ConfigMap{}

@@ -25,7 +25,7 @@ func TestBuildDeployment(t *testing.T) {
 		checksumCms     []corev1.ConfigMap
 	)
 
-	// With default values and elasticsearch managed by operator
+	// With default values
 	o = &kibanacrd.Kibana{
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: "default",
@@ -52,9 +52,40 @@ func TestBuildDeployment(t *testing.T) {
 		Spec: elasticsearchcrd.ElasticsearchSpec{},
 	}
 
-	dpls, err = buildDeployments(o, es, nil, nil)
+	dpls, err = buildDeployments(o, es, nil, nil, false)
 	assert.NoError(t, err)
 	test.EqualFromYamlFile[*appv1.Deployment](t, "testdata/deployment_default.yml", &dpls[0], scheme.Scheme)
+
+	// With default values on Openshift
+	o = &kibanacrd.Kibana{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: "default",
+			Name:      "test",
+		},
+		Spec: kibanacrd.KibanaSpec{
+			ElasticsearchRef: shared.ElasticsearchRef{
+				ManagedElasticsearchRef: &shared.ElasticsearchManagedRef{
+					Name: "test",
+				},
+			},
+			Deployment: kibanacrd.KibanaDeploymentSpec{
+				Deployment: shared.Deployment{
+					Replicas: 1,
+				},
+			},
+		},
+	}
+	es = &elasticsearchcrd.Elasticsearch{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: "default",
+			Name:      "test",
+		},
+		Spec: elasticsearchcrd.ElasticsearchSpec{},
+	}
+
+	dpls, err = buildDeployments(o, es, nil, nil, true)
+	assert.NoError(t, err)
+	test.EqualFromYamlFile[*appv1.Deployment](t, "testdata/deployment_default_openshift.yml", &dpls[0], scheme.Scheme)
 
 	// With default values and external elasticsearch
 	o = &kibanacrd.Kibana{
@@ -81,7 +112,7 @@ func TestBuildDeployment(t *testing.T) {
 		},
 	}
 
-	dpls, err = buildDeployments(o, nil, nil, nil)
+	dpls, err = buildDeployments(o, nil, nil, nil, false)
 	assert.NoError(t, err)
 	test.EqualFromYamlFile[*appv1.Deployment](t, "testdata/deployment_default_with_external_es.yml", &dpls[0], scheme.Scheme)
 
@@ -124,7 +155,7 @@ func TestBuildDeployment(t *testing.T) {
 		},
 	}
 
-	dpls, err = buildDeployments(o, nil, checksumSecrets, nil)
+	dpls, err = buildDeployments(o, nil, checksumSecrets, nil, false)
 	assert.NoError(t, err)
 	test.EqualFromYamlFile[*appv1.Deployment](t, "testdata/deployment_custom_ca_es_with_external_es.yml", &dpls[0], scheme.Scheme)
 
@@ -173,7 +204,7 @@ func TestBuildDeployment(t *testing.T) {
 		},
 	}
 
-	dpls, err = buildDeployments(o, es, checksumSecrets, nil)
+	dpls, err = buildDeployments(o, es, checksumSecrets, nil, false)
 	assert.NoError(t, err)
 	test.EqualFromYamlFile[*appv1.Deployment](t, "testdata/deployment_with_external_certs.yml", &dpls[0], scheme.Scheme)
 
@@ -286,7 +317,7 @@ func TestBuildDeployment(t *testing.T) {
 	}
 	checksumCms = append(checksumCms, cms...)
 
-	dpls, err = buildDeployments(o, es, checksumSecrets, checksumCms)
+	dpls, err = buildDeployments(o, es, checksumSecrets, checksumCms, false)
 	assert.NoError(t, err)
 	test.EqualFromYamlFile[*appv1.Deployment](t, "testdata/deployment_complet.yml", &dpls[0], scheme.Scheme)
 }

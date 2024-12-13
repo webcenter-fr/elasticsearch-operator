@@ -28,29 +28,22 @@ const (
 )
 
 type configMapReconciler struct {
-	controller.BaseReconciler
 	controller.MultiPhaseStepReconcilerAction
 }
 
-func newConfiMapReconciler(client client.Client, logger *logrus.Entry, recorder record.EventRecorder) (multiPhaseStepReconcilerAction controller.MultiPhaseStepReconcilerAction) {
+func newConfiMapReconciler(client client.Client, recorder record.EventRecorder) (multiPhaseStepReconcilerAction controller.MultiPhaseStepReconcilerAction) {
 	return &configMapReconciler{
 		MultiPhaseStepReconcilerAction: controller.NewBasicMultiPhaseStepReconcilerAction(
 			client,
 			ConfigmapPhase,
 			ConfigmapCondition,
-			logger,
 			recorder,
 		),
-		BaseReconciler: controller.BaseReconciler{
-			Client:   client,
-			Recorder: recorder,
-			Log:      logger,
-		},
 	}
 }
 
 // Read existing configmaps
-func (r *configMapReconciler) Read(ctx context.Context, resource object.MultiPhaseObject, data map[string]any) (read controller.MultiPhaseRead, res ctrl.Result, err error) {
+func (r *configMapReconciler) Read(ctx context.Context, resource object.MultiPhaseObject, data map[string]any, logger *logrus.Entry) (read controller.MultiPhaseRead, res ctrl.Result, err error) {
 	o := resource.(*cerebrocrd.Cerebro)
 	cm := &corev1.ConfigMap{}
 	read = controller.NewBasicMultiPhaseRead()
@@ -59,7 +52,7 @@ func (r *configMapReconciler) Read(ctx context.Context, resource object.MultiPha
 	esList := make([]elasticsearchcrd.Elasticsearch, 0)
 	esExternalList := make([]cerebrocrd.ElasticsearchExternalRef, 0)
 
-	if err = r.Client.Get(ctx, types.NamespacedName{Namespace: o.Namespace, Name: GetConfigMapName(o)}, cm); err != nil {
+	if err = r.Client().Get(ctx, types.NamespacedName{Namespace: o.Namespace, Name: GetConfigMapName(o)}, cm); err != nil {
 		if !k8serrors.IsNotFound(err) {
 			return read, res, errors.Wrap(err, "Error when read config maps")
 		}
@@ -72,28 +65,28 @@ func (r *configMapReconciler) Read(ctx context.Context, resource object.MultiPha
 	// Read Elasticsearch linked to cerebro
 	// Add and clean finalizer to track change on Host because of there are not controller on it
 	fs := fields.ParseSelectorOrDie(fmt.Sprintf("spec.cerebroRef.fullname=%s/%s", o.GetNamespace(), o.GetName()))
-	if err = r.Client.List(ctx, hostList, &client.ListOptions{FieldSelector: fs}); err != nil {
+	if err = r.Client().List(ctx, hostList, &client.ListOptions{FieldSelector: fs}); err != nil {
 		return read, res, errors.Wrap(err, "error when read Cerebro hosts")
 	}
 	for _, host := range hostList.Items {
 		// Handle finalizer
 		if !host.DeletionTimestamp.IsZero() {
 			controllerutil.RemoveFinalizer(&host, finalizer.String())
-			if err = r.Client.Update(ctx, &host); err != nil {
+			if err = r.Client().Update(ctx, &host); err != nil {
 				return read, res, errors.Wrapf(err, "Error when delete finalizer on Host %s", host.Name)
 			}
-			r.Log.Debugf("Remove finalizer on Cerebro host %s/%s", host.Namespace, host.Name)
+			logger.Debugf("Remove finalizer on Cerebro host %s/%s", host.Namespace, host.Name)
 
 			// Remove Elasticsearch finalizer if cluster is managed and no more exist
 			if host.Spec.ElasticsearchRef.IsManaged() {
 				es = &elasticsearchcrd.Elasticsearch{}
-				if err = r.Client.Get(ctx, types.NamespacedName{Namespace: host.Namespace, Name: host.Spec.ElasticsearchRef.ManagedElasticsearchRef.Name}, es); err != nil {
+				if err = r.Client().Get(ctx, types.NamespacedName{Namespace: host.Namespace, Name: host.Spec.ElasticsearchRef.ManagedElasticsearchRef.Name}, es); err != nil {
 					if k8serrors.IsNotFound(err) {
 						controllerutil.RemoveFinalizer(&host, finalizer.String())
-						if err = r.Client.Update(ctx, &host); err != nil {
+						if err = r.Client().Update(ctx, &host); err != nil {
 							return read, res, errors.Wrapf(err, "Error when delete finalizer on Host %s", host.Name)
 						}
-						r.Log.Debugf("Remove finalizer on Cerebro host %s/%s", host.Namespace, host.Name)
+						logger.Debugf("Remove finalizer on Cerebro host %s/%s", host.Namespace, host.Name)
 					}
 				}
 			}
@@ -102,14 +95,14 @@ func (r *configMapReconciler) Read(ctx context.Context, resource object.MultiPha
 		}
 		if !controllerutil.ContainsFinalizer(&host, finalizer.String()) {
 			controllerutil.AddFinalizer(&host, finalizer.String())
-			if err = r.Client.Update(ctx, &host); err != nil {
+			if err = r.Client().Update(ctx, &host); err != nil {
 				return read, res, errors.Wrapf(err, "Error when add finalizer on Host %s", host.Name)
 			}
 		}
 
 		if host.Spec.ElasticsearchRef.IsManaged() {
 			es = &elasticsearchcrd.Elasticsearch{}
-			if err = r.Client.Get(ctx, types.NamespacedName{Namespace: host.Namespace, Name: host.Spec.ElasticsearchRef.ManagedElasticsearchRef.Name}, es); err != nil {
+			if err = r.Client().Get(ctx, types.NamespacedName{Namespace: host.Namespace, Name: host.Spec.ElasticsearchRef.ManagedElasticsearchRef.Name}, es); err != nil {
 				if !k8serrors.IsNotFound(err) {
 					return read, res, errors.Wrap(err, "Error when read elasticsearch")
 				}

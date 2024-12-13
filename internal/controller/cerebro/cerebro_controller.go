@@ -25,6 +25,7 @@ import (
 	"github.com/disaster37/operator-sdk-extra/pkg/apis/shared"
 	"github.com/disaster37/operator-sdk-extra/pkg/controller"
 	"github.com/disaster37/operator-sdk-extra/pkg/object"
+	routev1 "github.com/openshift/api/route/v1"
 	"github.com/sirupsen/logrus"
 	cerebrocrd "github.com/webcenter-fr/elasticsearch-operator/apis/cerebro/v1"
 	"github.com/webcenter-fr/elasticsearch-operator/internal/controller/common"
@@ -38,7 +39,9 @@ import (
 	"k8s.io/client-go/tools/record"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	k8scontroller "sigs.k8s.io/controller-runtime/pkg/controller"
 	"sigs.k8s.io/controller-runtime/pkg/handler"
+	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
 
 const (
@@ -51,17 +54,17 @@ type CerebroReconciler struct {
 	controller.Controller
 	controller.MultiPhaseReconcilerAction
 	controller.MultiPhaseReconciler
-	controller.BaseReconciler
-	name string
+	name            string
+	kubeCapability  common.KubernetesCapability
+	stepReconcilers []controller.MultiPhaseStepReconcilerAction
 }
 
-func NewCerebroReconciler(client client.Client, logger *logrus.Entry, recorder record.EventRecorder) (multiPhaseReconciler controller.Controller) {
-	multiPhaseReconciler = &CerebroReconciler{
+func NewCerebroReconciler(client client.Client, logger *logrus.Entry, recorder record.EventRecorder, kubeCapability common.KubernetesCapability) (multiPhaseReconciler controller.Controller) {
+	reconciler := &CerebroReconciler{
 		Controller: controller.NewBasicController(),
 		MultiPhaseReconcilerAction: controller.NewBasicMultiPhaseReconcilerAction(
 			client,
 			controller.ReadyCondition,
-			logger,
 			recorder,
 		),
 		MultiPhaseReconciler: controller.NewBasicMultiPhaseReconciler(
@@ -71,17 +74,23 @@ func NewCerebroReconciler(client client.Client, logger *logrus.Entry, recorder r
 			logger,
 			recorder,
 		),
-		BaseReconciler: controller.BaseReconciler{
-			Client:   client,
-			Recorder: recorder,
-			Log:      logger,
+		name:           name,
+		kubeCapability: kubeCapability,
+		stepReconcilers: []controller.MultiPhaseStepReconcilerAction{
+			newApplicationSecretReconciler(client, recorder),
+			newConfiMapReconciler(client, recorder),
+			newServiceReconciler(client, recorder),
+			newDeploymentReconciler(client, recorder, kubeCapability.HasRoute),
+			newIngressReconciler(client, recorder),
+			newLoadBalancerReconciler(client, recorder),
 		},
-		name: name,
 	}
 
-	common.ControllerMetrics.WithLabelValues(name).Add(0)
+	if kubeCapability.HasRoute {
+		reconciler.stepReconcilers = append(reconciler.stepReconcilers, newRouteReconciler(client, recorder))
+	}
 
-	return multiPhaseReconciler
+	return reconciler
 }
 
 //+kubebuilder:rbac:groups=cerebro.k8s.webcenter.fr,resources=cerebroes,verbs=get;list;watch;create;update;patch;delete
@@ -95,6 +104,9 @@ func NewCerebroReconciler(client client.Client, logger *logrus.Entry, recorder r
 //+kubebuilder:rbac:groups="",resources=secrets,verbs=get;list;watch;create;update;patch;delete
 //+kubebuilder:rbac:groups="apps",resources=deployments,verbs=get;list;watch;create;update;patch;delete
 //+kubebuilder:rbac:groups="",resources=services,verbs=get;list;watch;create;update;patch;delete
+//+kubebuilder:rbac:groups="route.openshift.io",resources=routes,verbs=get;list;watch;create;update;patch;delete
+//+kubebuilder:rbac:groups="route.openshift.io",resources=routes/custom-host,verbs=get;list;watch;create;update;patch;delete
+//+kubebuilder:rbac:groups="apiextensions.k8s.io",resources=CustomResourceDefinition,verbs=get;list;watch
 
 // Reconcile is part of the main kubernetes reconciliation loop which aims to
 // move the current state of the cluster closer to the desired state.
@@ -115,71 +127,51 @@ func (r *CerebroReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 		cb,
 		data,
 		r,
-		newApplicationSecretReconciler(
-			r.Client,
-			r.Log,
-			r.Recorder,
-		),
-		newConfiMapReconciler(
-			r.Client,
-			r.Log,
-			r.Recorder,
-		),
-		newServiceReconciler(
-			r.Client,
-			r.Log,
-			r.Recorder,
-		),
-		newDeploymentReconciler(
-			r.Client,
-			r.Log,
-			r.Recorder,
-		),
-		newIngressReconciler(
-			r.Client,
-			r.Log,
-			r.Recorder,
-		),
-		newLoadBalancerReconciler(
-			r.Client,
-			r.Log,
-			r.Recorder,
-		),
+		r.stepReconcilers...,
 	)
 }
 
 // SetupWithManager sets up the controller with the Manager.
 func (h *CerebroReconciler) SetupWithManager(mgr ctrl.Manager) error {
-	return ctrl.NewControllerManagedBy(mgr).
+	ctrlBuilder := ctrl.NewControllerManagedBy(mgr).
 		For(&cerebrocrd.Cerebro{}).
 		Owns(&corev1.ConfigMap{}).
 		Owns(&corev1.Secret{}).
 		Owns(&networkingv1.Ingress{}).
 		Owns(&corev1.Service{}).
 		Owns(&appv1.Deployment{}).
-		Watches(&corev1.Secret{}, handler.EnqueueRequestsFromMapFunc(watchSecret(h.Client))).
-		Watches(&corev1.ConfigMap{}, handler.EnqueueRequestsFromMapFunc(watchConfigMap(h.Client))).
-		Watches(&cerebrocrd.Host{}, handler.EnqueueRequestsFromMapFunc(watchHost(h.Client))).
-		Complete(h)
+		Watches(&corev1.Secret{}, handler.EnqueueRequestsFromMapFunc(watchSecret(h.Client()))).
+		Watches(&corev1.ConfigMap{}, handler.EnqueueRequestsFromMapFunc(watchConfigMap(h.Client()))).
+		Watches(&cerebrocrd.Host{}, handler.EnqueueRequestsFromMapFunc(watchHost(h.Client()))).
+		WithOptions(k8scontroller.Options{
+			RateLimiter: common.DefaultControllerRateLimiter[reconcile.Request](),
+		})
+
+	if h.kubeCapability.HasRoute {
+		ctrlBuilder.Owns(&routev1.Route{})
+	}
+
+	return ctrlBuilder.Complete(h)
+
 }
 
-func (h *CerebroReconciler) Delete(ctx context.Context, o object.MultiPhaseObject, data map[string]any) (err error) {
+func (h *CerebroReconciler) Delete(ctx context.Context, o object.MultiPhaseObject, data map[string]any, logger *logrus.Entry) (err error) {
 	common.ControllerMetrics.WithLabelValues(h.name).Dec()
-	return h.MultiPhaseReconcilerAction.Delete(ctx, o, data)
+	return h.MultiPhaseReconcilerAction.Delete(ctx, o, data, logger)
 }
 
-func (h *CerebroReconciler) OnError(ctx context.Context, o object.MultiPhaseObject, data map[string]any, currentErr error) (res ctrl.Result, err error) {
+func (h *CerebroReconciler) OnError(ctx context.Context, o object.MultiPhaseObject, data map[string]any, currentErr error, logger *logrus.Entry) (res ctrl.Result, err error) {
 	common.TotalErrors.Inc()
-	return h.MultiPhaseReconcilerAction.OnError(ctx, o, data, currentErr)
+	return h.MultiPhaseReconcilerAction.OnError(ctx, o, data, currentErr, logger)
 }
 
-func (h *CerebroReconciler) OnSuccess(ctx context.Context, r object.MultiPhaseObject, data map[string]any) (res ctrl.Result, err error) {
+func (h *CerebroReconciler) OnSuccess(ctx context.Context, r object.MultiPhaseObject, data map[string]any, logger *logrus.Entry) (res ctrl.Result, err error) {
 	o := r.(*cerebrocrd.Cerebro)
 
 	// Not preserve condition to avoid to update status each time
 	conditions := o.GetStatus().GetConditions()
 	o.GetStatus().SetConditions(nil)
-	res, err = h.MultiPhaseReconcilerAction.OnSuccess(ctx, o, data)
+	res, err = h.MultiPhaseReconcilerAction.OnSuccess(ctx, o, data, logger)
 	if err != nil {
 		return res, err
 	}
@@ -188,7 +180,7 @@ func (h *CerebroReconciler) OnSuccess(ctx context.Context, r object.MultiPhaseOb
 	// Check adeployment is ready
 	isReady := true
 	dpl := &appv1.Deployment{}
-	if err = h.Client.Get(ctx, types.NamespacedName{Name: GetDeploymentName(o), Namespace: o.Namespace}, dpl); err != nil {
+	if err = h.Client().Get(ctx, types.NamespacedName{Name: GetDeploymentName(o), Namespace: o.Namespace}, dpl); err != nil {
 		if !k8serrors.IsNotFound(err) {
 			return res, errors.Wrapf(err, "Error when read Kibana deployment")
 		}
@@ -253,7 +245,7 @@ func (h *CerebroReconciler) computeCerebroUrl(ctx context.Context, cb *cerebrocr
 	} else if cb.Spec.Endpoint.IsLoadBalancerEnabled() {
 		// Need to get lb service to get IP and port
 		service := &corev1.Service{}
-		if err = h.Client.Get(ctx, types.NamespacedName{Namespace: cb.Namespace, Name: GetLoadBalancerName(cb)}, service); err != nil {
+		if err = h.Client().Get(ctx, types.NamespacedName{Namespace: cb.Namespace, Name: GetLoadBalancerName(cb)}, service); err != nil {
 			return "", errors.Wrap(err, "Error when get Load balancer")
 		}
 

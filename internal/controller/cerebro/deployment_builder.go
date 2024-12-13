@@ -17,7 +17,7 @@ import (
 )
 
 // BuildDeployment permit to generate deployment
-func buildDeployments(cerebro *cerebrocrd.Cerebro, secretsChecksum []corev1.Secret, configMapsChecksum []corev1.ConfigMap) (dpls []appv1.Deployment, err error) {
+func buildDeployments(cerebro *cerebrocrd.Cerebro, secretsChecksum []corev1.Secret, configMapsChecksum []corev1.ConfigMap, isOpenshift bool) (dpls []appv1.Deployment, err error) {
 	dpls = make([]appv1.Deployment, 0, 1)
 	checksumAnnotations := map[string]string{}
 
@@ -134,15 +134,33 @@ func buildDeployments(cerebro *cerebrocrd.Cerebro, secretsChecksum []corev1.Secr
 	cb.WithImagePullPolicy(cerebro.Spec.ImagePullPolicy, k8sbuilder.OverwriteIfDefaultValue)
 
 	// Compute security context
-	cb.WithSecurityContext(&corev1.SecurityContext{
-		Capabilities: &corev1.Capabilities{
-			Drop: []corev1.Capability{
-				"ALL",
+	if !isOpenshift {
+		cb.WithSecurityContext(&corev1.SecurityContext{
+			Capabilities: &corev1.Capabilities{
+				Drop: []corev1.Capability{
+					"ALL",
+				},
 			},
-		},
-		RunAsUser:    ptr.To[int64](1000),
-		RunAsNonRoot: ptr.To[bool](true),
-	}, k8sbuilder.OverwriteIfDefaultValue)
+			AllowPrivilegeEscalation: ptr.To(false),
+			ReadOnlyRootFilesystem:   ptr.To(true),
+			Privileged:               ptr.To(false),
+			RunAsNonRoot:             ptr.To(true),
+			RunAsUser:                ptr.To[int64](1000),
+			RunAsGroup:               ptr.To[int64](1000),
+		}, k8sbuilder.OverwriteIfDefaultValue)
+	} else {
+		cb.WithSecurityContext(&corev1.SecurityContext{
+			Capabilities: &corev1.Capabilities{
+				Drop: []corev1.Capability{
+					"ALL",
+				},
+			},
+			AllowPrivilegeEscalation: ptr.To(false),
+			ReadOnlyRootFilesystem:   ptr.To(true),
+			Privileged:               ptr.To(false),
+			RunAsNonRoot:             ptr.To(true),
+		}, k8sbuilder.OverwriteIfDefaultValue)
+	}
 
 	// Compute volume mount
 	cb.WithVolumeMount([]corev1.VolumeMount{
