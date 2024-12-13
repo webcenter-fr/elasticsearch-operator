@@ -12,8 +12,8 @@ components:
           value: /tmp/.cache
         - name: DOCKER_HOST
           value: tcp://localhost:2375
-        - name: SEB
-          value: test
+        - name: _EXPERIMENTAL_DAGGER_RUNNER_HOST
+          value: "docker-image://registry.dagger.io/engine:v0.14.0"
       endpoints:
         - name: web
           targetPort: 8080
@@ -37,7 +37,7 @@ components:
         - name: 'DOCKER_TLS_CERTDIR'
           value: ''
       mountSources: true
-      memoryLimit: 4Gi
+      memoryLimit: 8Gi
       cpuLimit: 4000m
       cpuRequest: 1000m
       memoryRequest: 1Gi

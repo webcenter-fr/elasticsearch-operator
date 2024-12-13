@@ -27,3 +27,4 @@ cover.html
 *~
 
 ./elasticsearch-operator
+kubeconfig

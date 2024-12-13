@@ -111,7 +111,6 @@ type LogstashSpec struct {
 }
 
 type LogstashPkiSpec struct {
-
 	// Enabled permit to enabled the internal PKI
 	// Default to true
 	// +operator-sdk:csv:customresourcedefinitions:type=spec

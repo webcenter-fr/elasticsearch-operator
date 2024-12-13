@@ -90,7 +90,6 @@ func TestMetricbeatIsPersistence(t *testing.T) {
 	}
 
 	assert.True(t, o.IsPersistence())
-
 }
 
 func TestMetricbeatIsPdb(t *testing.T) {
@@ -135,5 +134,4 @@ func TestMetricbeatIsPdb(t *testing.T) {
 		},
 	}
 	assert.True(t, o.IsPdb())
-
 }

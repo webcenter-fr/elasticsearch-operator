@@ -69,7 +69,6 @@ func TestIsProtected(t *testing.T) {
 	}
 
 	assert.True(t, o.IsProtected())
-
 }
 
 func TestGetExternalName(t *testing.T) {
@@ -104,7 +103,6 @@ func TestGetExternalName(t *testing.T) {
 }
 
 func TestIsAutoGeneratePassword(t *testing.T) {
-
 	// When not specified
 	o := User{
 		ObjectMeta: metav1.ObjectMeta{
@@ -138,5 +136,4 @@ func TestIsAutoGeneratePassword(t *testing.T) {
 		},
 	}
 	assert.True(t, o.IsAutoGeneratePassword())
-
 }

@@ -47,7 +47,6 @@ type LicenseSpec struct {
 
 // LicenseStatus defines the observed state of License
 type LicenseStatus struct {
-
 	// LicenseType is the license type
 	// +operator-sdk:csv:customresourcedefinitions:type=status
 	LicenseType string `json:"licenseType,omitempty"`

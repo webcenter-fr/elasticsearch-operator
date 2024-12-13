@@ -30,7 +30,6 @@ func TestGetStatus(t *testing.T) {
 }
 
 func TestIsIngressEnabled(t *testing.T) {
-
 	// With default values
 	o := &Elasticsearch{
 		ObjectMeta: metav1.ObjectMeta{
@@ -54,7 +53,6 @@ func TestIsIngressEnabled(t *testing.T) {
 	// When ingress is enabled
 	o.Spec.Endpoint.Ingress.Enabled = true
 	assert.True(t, o.IsIngressEnabled())
-
 }
 
 func TestIsLoadBalancerEnabled(t *testing.T) {
@@ -152,7 +150,6 @@ func TestIsPersistence(t *testing.T) {
 	}
 
 	assert.True(t, o.IsPersistence())
-
 }
 
 func TestIsPdb(t *testing.T) {
@@ -212,11 +209,9 @@ func TestIsPdb(t *testing.T) {
 	assert.True(t, o.IsPdb(ElasticsearchNodeGroupSpec{
 		PodDisruptionBudgetSpec: &policyv1.PodDisruptionBudgetSpec{},
 	}))
-
 }
 
 func TestIsBootstrapping(t *testing.T) {
-
 	// With default values
 	o := &Elasticsearch{
 		ObjectMeta: metav1.ObjectMeta{
@@ -234,7 +229,6 @@ func TestIsBootstrapping(t *testing.T) {
 	// When is true
 	o.Status.IsBootstrapping = ptr.To[bool](true)
 	assert.True(t, o.IsBoostrapping())
-
 }
 
 func TestNumberOfReplicas(t *testing.T) {

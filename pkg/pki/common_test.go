@@ -13,7 +13,6 @@ import (
 var testLogEntry = logrus.NewEntry(logrus.New())
 
 func TestNeedRenewCertificate(t *testing.T) {
-
 	var (
 		cert   *x509.Certificate
 		d      time.Duration
@@ -48,11 +47,9 @@ func TestNeedRenewCertificate(t *testing.T) {
 	// When certificate is nil
 	_, err = NeedRenewCertificate(nil, d, testLogEntry)
 	assert.Error(t, err)
-
 }
 
 func TestLoadRootCA(t *testing.T) {
-
 	rootCAIdentity := goca.Identity{
 		Organization:       "test",
 		OrganizationalUnit: "test",

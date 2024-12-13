@@ -57,7 +57,7 @@ type SnapshotLifecyclePolicySpec struct {
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
 	Config SLMConfig `json:"config"`
 
-	//Retention is the retention policy
+	// Retention is the retention policy
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
 	// +optional
 	Retention *SLMRetention `json:"retention,omitempty"`
@@ -65,7 +65,6 @@ type SnapshotLifecyclePolicySpec struct {
 
 // SLMConfig is the config sub section
 type SLMConfig struct {
-
 	// ExpendWildcards
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
 	// +optional
@@ -103,7 +102,6 @@ type SLMConfig struct {
 }
 
 type SLMRetention struct {
-
 	// ExpireAfter
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
 	// +optional

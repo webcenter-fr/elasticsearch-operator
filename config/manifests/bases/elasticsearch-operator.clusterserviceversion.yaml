@@ -4170,7 +4170,7 @@ spec:
   - email: linuxworkgroup@hotmail.com
     name: disaster37
   maturity: stable
-  minKubeVersion: v1.18.0
+  minKubeVersion: 1.23.0
   provider:
     name: webcenter.fr
     url: https://github.com/webcenter-fr/elasticsearch-operator

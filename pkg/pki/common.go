@@ -11,7 +11,7 @@ import (
 
 const (
 	DefaultCertificateValidity = 397
-	//DefaultRenewCertificate    = -time.Hour * 24 * 7 // 7 days before expired
+	// DefaultRenewCertificate    = -time.Hour * 24 * 7 // 7 days before expired
 	KeyBitSize = 2048
 	rootCACN   = "elasticsearch-operator.k8s.webcenter.fr"
 )
@@ -34,7 +34,6 @@ func NeedRenewCertificate(crt *x509.Certificate, durationBeforeExpire time.Durat
 
 // LoadRootCA load existing CA and retun it
 func LoadRootCA(privateKeyPem []byte, publicKeyPem []byte, certPem []byte, crlPem []byte, log *logrus.Entry) (ca *goca.CA, err error) {
-
 	if privateKeyPem == nil || publicKeyPem == nil || certPem == nil || crlPem == nil {
 		return nil, errors.New("You need to provide valide privateKey, publicKey, cert, crl contend")
 	}
@@ -51,5 +50,4 @@ func LoadRootCA(privateKeyPem []byte, publicKeyPem []byte, certPem []byte, crlPe
 	}
 
 	return ca, nil
-
 }

@@ -31,5 +31,4 @@ func (t *TestSuite) TestSetupLicenseIndexer() {
 
 	err := t.k8sClient.Create(context.Background(), license)
 	assert.NoError(t.T(), err)
-
 }

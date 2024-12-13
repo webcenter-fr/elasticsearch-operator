@@ -9,7 +9,6 @@ import (
 
 // SetupCerebroIndexer setup indexer for Cerebro
 func SetupCerebroIndexer(k8sManager manager.Manager) (err error) {
-
 	if err = k8sManager.GetFieldIndexer().IndexField(context.Background(), &Cerebro{}, "spec.deployment.env.valueFrom.configMapKeyRef.name", func(o client.Object) []string {
 		p := o.(*Cerebro)
 		envNames := make([]string, 0, len(p.Spec.Deployment.Env))

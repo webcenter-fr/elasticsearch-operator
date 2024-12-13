@@ -72,7 +72,6 @@ type UserSpaceSpec struct {
 }
 
 type KibanaUserSpaceCopy struct {
-
 	// OriginUserSpace is the user space name from copy objects
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
 	OriginUserSpace string `json:"originUserSpace"`

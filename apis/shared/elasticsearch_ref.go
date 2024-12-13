@@ -5,7 +5,6 @@ import (
 )
 
 type ElasticsearchRef struct {
-
 	// ManagedElasticsearchRef is the managed Elasticsearch cluster by operator
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
 	// +optional
@@ -30,7 +29,6 @@ type ElasticsearchRef struct {
 }
 
 type ElasticsearchManagedRef struct {
-
 	// Name is the Elasticsearch cluster deployed by operator
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
 	Name string `json:"name"`
@@ -49,7 +47,6 @@ type ElasticsearchManagedRef struct {
 }
 
 type ElasticsearchExternalRef struct {
-
 	// Addresses is the list of Elasticsearch addresses
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
 	Addresses []string `json:"addresses"`

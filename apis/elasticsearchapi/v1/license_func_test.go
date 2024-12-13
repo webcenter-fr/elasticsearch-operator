@@ -105,5 +105,4 @@ func TestIsBasicLicense(t *testing.T) {
 		},
 	}
 	assert.False(t, o.IsBasicLicense())
-
 }

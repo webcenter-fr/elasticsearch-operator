@@ -23,5 +23,4 @@ func IsOnStatefulSetUpgradeState(o *appv1.StatefulSet) bool {
 	}
 
 	return false
-
 }

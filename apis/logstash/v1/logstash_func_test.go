@@ -91,7 +91,6 @@ func TestIsPersistence(t *testing.T) {
 	}
 
 	assert.True(t, o.IsPersistence())
-
 }
 
 func TestIsPdb(t *testing.T) {
@@ -136,7 +135,6 @@ func TestIsPdb(t *testing.T) {
 		},
 	}
 	assert.True(t, o.IsPdb())
-
 }
 
 func TestLogstashPkiSpecIsEnabled(t *testing.T) {

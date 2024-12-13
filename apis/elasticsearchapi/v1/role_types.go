@@ -82,7 +82,6 @@ type RoleSpec struct {
 
 // ElasticsearchRoleSpecApplicationPrivileges is the application privileges object
 type RoleSpecApplicationPrivileges struct {
-
 	// Application
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
 	Application string `json:"application"`
@@ -100,7 +99,6 @@ type RoleSpecApplicationPrivileges struct {
 
 // RoleSpecIndicesPermissions is the indices permission object
 type RoleSpecIndicesPermissions struct {
-
 	// Names
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
 	Names []string `json:"names"`

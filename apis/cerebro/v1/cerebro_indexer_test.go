@@ -18,7 +18,6 @@ func (t *TestSuite) TestSetupCerebroIndexer() {
 			Namespace: "default",
 		},
 		Spec: CerebroSpec{
-
 			Deployment: CerebroDeploymentSpec{
 				Deployment: shared.Deployment{
 					Env: []corev1.EnvVar{
@@ -66,5 +65,4 @@ func (t *TestSuite) TestSetupCerebroIndexer() {
 
 	err := t.k8sClient.Create(context.Background(), cerebro)
 	assert.NoError(t.T(), err)
-
 }

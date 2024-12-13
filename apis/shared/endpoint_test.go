@@ -7,7 +7,6 @@ import (
 )
 
 func TestIsIngressEnabled(t *testing.T) {
-
 	// With default values
 	o := EndpointSpec{}
 	assert.False(t, o.IsIngressEnabled())
@@ -23,7 +22,6 @@ func TestIsIngressEnabled(t *testing.T) {
 	// When ingress is enabled
 	o.Ingress.Enabled = true
 	assert.True(t, o.IsIngressEnabled())
-
 }
 
 func TestIsLoadBalancerEnabled(t *testing.T) {

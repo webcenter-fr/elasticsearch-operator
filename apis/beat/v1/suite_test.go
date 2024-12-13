@@ -28,7 +28,6 @@ func TestBeatApiSuite(t *testing.T) {
 }
 
 func (t *TestSuite) SetupSuite() {
-
 	logf.SetLogger(zap.New(zap.UseDevMode(true)))
 	logrus.SetLevel(logrus.TraceLevel)
 	logrus.SetFormatter(&logrus.TextFormatter{
@@ -86,7 +85,6 @@ func (t *TestSuite) SetupSuite() {
 }
 
 func (t *TestSuite) TearDownSuite() {
-
 	// Teardown the test environment once controller is fnished.
 	// Otherwise from Kubernetes 1.21+, teardon timeouts waiting on
 	// kube-apiserver to return
@@ -97,7 +95,6 @@ func (t *TestSuite) TearDownSuite() {
 }
 
 func (t *TestSuite) BeforeTest(suiteName, testName string) {
-
 }
 
 func (t *TestSuite) AfterTest(suiteName, testName string) {

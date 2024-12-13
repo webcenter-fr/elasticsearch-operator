@@ -99,7 +99,6 @@ bb: bb
 
 	_, err = MergeSettings(m, m2)
 	assert.Error(t, err)
-
 }
 
 func TestGetSetting(t *testing.T) {

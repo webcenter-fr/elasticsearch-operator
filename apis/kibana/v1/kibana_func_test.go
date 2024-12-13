@@ -69,5 +69,4 @@ func TestIsPdb(t *testing.T) {
 		},
 	}
 	assert.True(t, o.IsPdb())
-
 }

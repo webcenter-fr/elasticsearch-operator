@@ -52,7 +52,6 @@ type HostCerebroRef struct {
 }
 
 type ElasticsearchRef struct {
-
 	// ManagedElasticsearchRef is the managed Elasticsearch cluster by operator
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
 	// +optional
@@ -65,7 +64,6 @@ type ElasticsearchRef struct {
 }
 
 type ElasticsearchExternalRef struct {
-
 	// The cluster name to display on Cerabro
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
 	// +optional

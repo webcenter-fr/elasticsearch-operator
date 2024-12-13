@@ -6,7 +6,6 @@ import (
 
 // Generic type that represent Image spec
 type ImageSpec struct {
-
 	// Image is the image to use when deploy Elasticsearch
 	// It can be usefull to use internal registry or mirror
 	// +operator-sdk:csv:customresourcedefinitions:type=spec

@@ -131,7 +131,6 @@ type ElasticsearchIngressSpec struct {
 }
 
 type ElasticsearchGlobalNodeGroupSpec struct {
-
 	// AdditionalVolumes permit to use additionnal volumes
 	// Default is empty
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
