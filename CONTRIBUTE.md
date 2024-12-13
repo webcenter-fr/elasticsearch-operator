@@ -42,10 +42,10 @@ First shell
 # Put the right tag of your image. It change on each CI build
 
 ```bash
-dagger call -m operator-sdk --src . test-olm-operator --catalog-image quay.io/webcenter/elasticsearch-operator/elasticsearch-operator-catalog:0.0.74-pr58 --name elasticsearch-operator --channel alpha up
+dagger call -m operator-sdk --src . test-olm-operator --catalog-image quay.io/webcenter/elasticsearch-operator-catalog:0.0.74-pr58 --name elasticsearch-operator --channel alpha up
 
 # If not work, you can use instead
-dagger call -m operator-sdk --src . install-olm-operator --catalog-image quay.io/webcenter/elasticsearch-operator/elasticsearch-operator-catalog:0.0.74-pr58 --name elasticsearch-operator --channel alpha up
+dagger call -m operator-sdk --src . install-olm-operator --catalog-image quay.io/webcenter/elasticsearch-operator-catalog:0.0.74-pr58 --name elasticsearch-operator --channel alpha up
 
 
 Second shell
