@@ -17,27 +17,22 @@ import (
 
 type watchReconciler struct {
 	controller.RemoteReconcilerAction[*elasticsearchapicrd.Watch, *olivere.XPackWatch, eshandler.ElasticsearchHandler]
-	controller.BaseReconciler
+	name string
 }
 
-func newWatchReconciler(client client.Client, logger *logrus.Entry, recorder record.EventRecorder) controller.RemoteReconcilerAction[*elasticsearchapicrd.Watch, *olivere.XPackWatch, eshandler.ElasticsearchHandler] {
+func newWatchReconciler(name string, client client.Client, recorder record.EventRecorder) controller.RemoteReconcilerAction[*elasticsearchapicrd.Watch, *olivere.XPackWatch, eshandler.ElasticsearchHandler] {
 	return &watchReconciler{
 		RemoteReconcilerAction: controller.NewRemoteReconcilerAction[*elasticsearchapicrd.Watch, *olivere.XPackWatch, eshandler.ElasticsearchHandler](
 			client,
-			logger,
 			recorder,
 		),
-		BaseReconciler: controller.BaseReconciler{
-			Client:   client,
-			Log:      logger,
-			Recorder: recorder,
-		},
+		name: name,
 	}
 }
 
-func (h *watchReconciler) GetRemoteHandler(ctx context.Context, req ctrl.Request, o object.RemoteObject) (handler controller.RemoteExternalReconciler[*elasticsearchapicrd.Watch, *olivere.XPackWatch, eshandler.ElasticsearchHandler], res ctrl.Result, err error) {
+func (h *watchReconciler) GetRemoteHandler(ctx context.Context, req ctrl.Request, o object.RemoteObject, logger *logrus.Entry) (handler controller.RemoteExternalReconciler[*elasticsearchapicrd.Watch, *olivere.XPackWatch, eshandler.ElasticsearchHandler], res ctrl.Result, err error) {
 	watch := o.(*elasticsearchapicrd.Watch)
-	esClient, err := GetElasticsearchHandler(ctx, watch, watch.Spec.ElasticsearchRef, h.BaseReconciler.Client, h.BaseReconciler.Log)
+	esClient, err := GetElasticsearchHandler(ctx, watch, watch.Spec.ElasticsearchRef, h.Client(), logger)
 	if err != nil && watch.DeletionTimestamp.IsZero() {
 		return nil, res, err
 	}

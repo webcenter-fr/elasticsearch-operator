@@ -22,7 +22,6 @@ import (
 	olivere "github.com/olivere/elastic/v7"
 	"github.com/sirupsen/logrus"
 	elasticsearchapicrd "github.com/webcenter-fr/elasticsearch-operator/apis/elasticsearchapi/v1"
-	"github.com/webcenter-fr/elasticsearch-operator/internal/controller/common"
 	core "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/fields"
 	"k8s.io/apimachinery/pkg/types"
@@ -39,15 +38,14 @@ const (
 
 // LicenseReconciler reconciles a License object
 type LicenseReconciler struct {
-	controller.BaseReconciler
 	controller.Controller
 	controller.RemoteReconciler[*elasticsearchapicrd.License, *olivere.XPackInfoLicense, eshandler.ElasticsearchHandler]
-	reconcilerAction controller.RemoteReconcilerAction[*elasticsearchapicrd.License, *olivere.XPackInfoLicense, eshandler.ElasticsearchHandler]
-	name             string
+	controller.RemoteReconcilerAction[*elasticsearchapicrd.License, *olivere.XPackInfoLicense, eshandler.ElasticsearchHandler]
+	name string
 }
 
 func NewLicenseReconciler(client client.Client, logger *logrus.Entry, recorder record.EventRecorder) controller.Controller {
-	r := &LicenseReconciler{
+	return &LicenseReconciler{
 		Controller: controller.NewBasicController(),
 		RemoteReconciler: controller.NewBasicRemoteReconciler[*elasticsearchapicrd.License, *olivere.XPackInfoLicense, eshandler.ElasticsearchHandler](
 			client,
@@ -56,22 +54,13 @@ func NewLicenseReconciler(client client.Client, logger *logrus.Entry, recorder r
 			logger,
 			recorder,
 		),
-		reconcilerAction: newLicenseReconciler(
+		RemoteReconcilerAction: newLicenseReconciler(
+			licenseName,
 			client,
-			logger,
 			recorder,
 		),
-		BaseReconciler: controller.BaseReconciler{
-			Client:   client,
-			Log:      logger,
-			Recorder: recorder,
-		},
 		name: licenseName,
 	}
-
-	common.ControllerMetrics.WithLabelValues(r.name).Add(0)
-
-	return r
 }
 
 //+kubebuilder:rbac:groups=elasticsearchapi.k8s.webcenter.fr,resources=licenses,verbs=get;list;watch;create;update;patch;delete
@@ -99,7 +88,7 @@ func (r *LicenseReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 		req,
 		license,
 		data,
-		r.reconcilerAction,
+		r,
 	)
 }
 
@@ -107,7 +96,7 @@ func (r *LicenseReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 func (r *LicenseReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&elasticsearchapicrd.License{}).
-		Watches(&core.Secret{}, handler.EnqueueRequestsFromMapFunc(watchLicenseSecret(r.Client))).
+		Watches(&core.Secret{}, handler.EnqueueRequestsFromMapFunc(watchLicenseSecret(r.Client()))).
 		Complete(r)
 }
 

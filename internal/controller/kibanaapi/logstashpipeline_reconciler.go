@@ -17,27 +17,22 @@ import (
 
 type logstashPipelineReconciler struct {
 	controller.RemoteReconcilerAction[*kibanaapicrd.LogstashPipeline, *kbapi.LogstashPipeline, kbhandler.KibanaHandler]
-	controller.BaseReconciler
+	name string
 }
 
-func newLogstashPipelineReconciler(client client.Client, logger *logrus.Entry, recorder record.EventRecorder) controller.RemoteReconcilerAction[*kibanaapicrd.LogstashPipeline, *kbapi.LogstashPipeline, kbhandler.KibanaHandler] {
+func newLogstashPipelineReconciler(name string, client client.Client, recorder record.EventRecorder) controller.RemoteReconcilerAction[*kibanaapicrd.LogstashPipeline, *kbapi.LogstashPipeline, kbhandler.KibanaHandler] {
 	return &logstashPipelineReconciler{
 		RemoteReconcilerAction: controller.NewRemoteReconcilerAction[*kibanaapicrd.LogstashPipeline, *kbapi.LogstashPipeline, kbhandler.KibanaHandler](
 			client,
-			logger,
 			recorder,
 		),
-		BaseReconciler: controller.BaseReconciler{
-			Client:   client,
-			Log:      logger,
-			Recorder: recorder,
-		},
+		name: name,
 	}
 }
 
-func (h *logstashPipelineReconciler) GetRemoteHandler(ctx context.Context, req ctrl.Request, o object.RemoteObject) (handler controller.RemoteExternalReconciler[*kibanaapicrd.LogstashPipeline, *kbapi.LogstashPipeline, kbhandler.KibanaHandler], res ctrl.Result, err error) {
+func (h *logstashPipelineReconciler) GetRemoteHandler(ctx context.Context, req ctrl.Request, o object.RemoteObject, logger *logrus.Entry) (handler controller.RemoteExternalReconciler[*kibanaapicrd.LogstashPipeline, *kbapi.LogstashPipeline, kbhandler.KibanaHandler], res ctrl.Result, err error) {
 	pipeline := o.(*kibanaapicrd.LogstashPipeline)
-	kbClient, err := GetKibanaHandler(ctx, pipeline, pipeline.Spec.KibanaRef, h.BaseReconciler.Client, h.BaseReconciler.Log)
+	kbClient, err := GetKibanaHandler(ctx, pipeline, pipeline.Spec.KibanaRef, h.Client(), logger)
 	if err != nil && pipeline.DeletionTimestamp.IsZero() {
 		return nil, res, err
 	}

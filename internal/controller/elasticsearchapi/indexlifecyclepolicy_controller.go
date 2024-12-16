@@ -21,7 +21,6 @@ import (
 	olivere "github.com/olivere/elastic/v7"
 	"github.com/sirupsen/logrus"
 	elasticsearchapicrd "github.com/webcenter-fr/elasticsearch-operator/apis/elasticsearchapi/v1"
-	"github.com/webcenter-fr/elasticsearch-operator/internal/controller/common"
 	"k8s.io/client-go/tools/record"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -35,12 +34,12 @@ const (
 type IndexLifecyclePolicyReconciler struct {
 	controller.Controller
 	controller.RemoteReconciler[*elasticsearchapicrd.IndexLifecyclePolicy, *olivere.XPackIlmGetLifecycleResponse, eshandler.ElasticsearchHandler]
-	reconcilerAction controller.RemoteReconcilerAction[*elasticsearchapicrd.IndexLifecyclePolicy, *olivere.XPackIlmGetLifecycleResponse, eshandler.ElasticsearchHandler]
-	name             string
+	controller.RemoteReconcilerAction[*elasticsearchapicrd.IndexLifecyclePolicy, *olivere.XPackIlmGetLifecycleResponse, eshandler.ElasticsearchHandler]
+	name string
 }
 
 func NewIndexLifecyclePolicyReconciler(client client.Client, logger *logrus.Entry, recorder record.EventRecorder) controller.Controller {
-	r := &IndexLifecyclePolicyReconciler{
+	return &IndexLifecyclePolicyReconciler{
 		Controller: controller.NewBasicController(),
 		RemoteReconciler: controller.NewBasicRemoteReconciler[*elasticsearchapicrd.IndexLifecyclePolicy, *olivere.XPackIlmGetLifecycleResponse, eshandler.ElasticsearchHandler](
 			client,
@@ -49,17 +48,13 @@ func NewIndexLifecyclePolicyReconciler(client client.Client, logger *logrus.Entr
 			logger,
 			recorder,
 		),
-		reconcilerAction: newIndexLifecyclePolicyReconciler(
+		RemoteReconcilerAction: newIndexLifecyclePolicyReconciler(
+			indexLifecyclePolicyName,
 			client,
-			logger,
 			recorder,
 		),
 		name: indexLifecyclePolicyName,
 	}
-
-	common.ControllerMetrics.WithLabelValues(r.name).Add(0)
-
-	return r
 }
 
 //+kubebuilder:rbac:groups=elasticsearchapi.k8s.webcenter.fr,resources=indexlifecyclepolicies,verbs=get;list;watch;create;update;patch;delete
@@ -86,7 +81,7 @@ func (r *IndexLifecyclePolicyReconciler) Reconcile(ctx context.Context, req ctrl
 		req,
 		ilm,
 		data,
-		r.reconcilerAction,
+		r,
 	)
 }
 

@@ -17,27 +17,22 @@ import (
 
 type indexLifecyclePolicyReconciler struct {
 	controller.RemoteReconcilerAction[*elasticsearchapicrd.IndexLifecyclePolicy, *olivere.XPackIlmGetLifecycleResponse, eshandler.ElasticsearchHandler]
-	controller.BaseReconciler
+	name string
 }
 
-func newIndexLifecyclePolicyReconciler(client client.Client, logger *logrus.Entry, recorder record.EventRecorder) controller.RemoteReconcilerAction[*elasticsearchapicrd.IndexLifecyclePolicy, *olivere.XPackIlmGetLifecycleResponse, eshandler.ElasticsearchHandler] {
+func newIndexLifecyclePolicyReconciler(name string, client client.Client, recorder record.EventRecorder) controller.RemoteReconcilerAction[*elasticsearchapicrd.IndexLifecyclePolicy, *olivere.XPackIlmGetLifecycleResponse, eshandler.ElasticsearchHandler] {
 	return &indexLifecyclePolicyReconciler{
 		RemoteReconcilerAction: controller.NewRemoteReconcilerAction[*elasticsearchapicrd.IndexLifecyclePolicy, *olivere.XPackIlmGetLifecycleResponse, eshandler.ElasticsearchHandler](
 			client,
-			logger,
 			recorder,
 		),
-		BaseReconciler: controller.BaseReconciler{
-			Client:   client,
-			Log:      logger,
-			Recorder: recorder,
-		},
+		name: name,
 	}
 }
 
-func (h *indexLifecyclePolicyReconciler) GetRemoteHandler(ctx context.Context, req ctrl.Request, o object.RemoteObject) (handler controller.RemoteExternalReconciler[*elasticsearchapicrd.IndexLifecyclePolicy, *olivere.XPackIlmGetLifecycleResponse, eshandler.ElasticsearchHandler], res ctrl.Result, err error) {
+func (h *indexLifecyclePolicyReconciler) GetRemoteHandler(ctx context.Context, req ctrl.Request, o object.RemoteObject, logger *logrus.Entry) (handler controller.RemoteExternalReconciler[*elasticsearchapicrd.IndexLifecyclePolicy, *olivere.XPackIlmGetLifecycleResponse, eshandler.ElasticsearchHandler], res ctrl.Result, err error) {
 	ilm := o.(*elasticsearchapicrd.IndexLifecyclePolicy)
-	esClient, err := GetElasticsearchHandler(ctx, ilm, ilm.Spec.ElasticsearchRef, h.BaseReconciler.Client, h.BaseReconciler.Log)
+	esClient, err := GetElasticsearchHandler(ctx, ilm, ilm.Spec.ElasticsearchRef, h.Client(), logger)
 	if err != nil && ilm.DeletionTimestamp.IsZero() {
 		return nil, res, err
 	}

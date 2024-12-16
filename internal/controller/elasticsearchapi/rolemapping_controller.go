@@ -21,7 +21,6 @@ import (
 	olivere "github.com/olivere/elastic/v7"
 	"github.com/sirupsen/logrus"
 	elasticsearchapicrd "github.com/webcenter-fr/elasticsearch-operator/apis/elasticsearchapi/v1"
-	"github.com/webcenter-fr/elasticsearch-operator/internal/controller/common"
 	"k8s.io/client-go/tools/record"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -35,12 +34,12 @@ const (
 type RoleMappingReconciler struct {
 	controller.Controller
 	controller.RemoteReconciler[*elasticsearchapicrd.RoleMapping, *olivere.XPackSecurityRoleMapping, eshandler.ElasticsearchHandler]
-	reconcilerAction controller.RemoteReconcilerAction[*elasticsearchapicrd.RoleMapping, *olivere.XPackSecurityRoleMapping, eshandler.ElasticsearchHandler]
-	name             string
+	controller.RemoteReconcilerAction[*elasticsearchapicrd.RoleMapping, *olivere.XPackSecurityRoleMapping, eshandler.ElasticsearchHandler]
+	name string
 }
 
 func NewRoleMappingReconciler(client client.Client, logger *logrus.Entry, recorder record.EventRecorder) controller.Controller {
-	r := &RoleMappingReconciler{
+	return &RoleMappingReconciler{
 		Controller: controller.NewBasicController(),
 		RemoteReconciler: controller.NewBasicRemoteReconciler[*elasticsearchapicrd.RoleMapping, *olivere.XPackSecurityRoleMapping, eshandler.ElasticsearchHandler](
 			client,
@@ -49,17 +48,13 @@ func NewRoleMappingReconciler(client client.Client, logger *logrus.Entry, record
 			logger,
 			recorder,
 		),
-		reconcilerAction: newRoleMappingReconciler(
+		RemoteReconcilerAction: newRoleMappingReconciler(
+			roleMappingName,
 			client,
-			logger,
 			recorder,
 		),
 		name: roleMappingName,
 	}
-
-	common.ControllerMetrics.WithLabelValues(r.name).Add(0)
-
-	return r
 }
 
 //+kubebuilder:rbac:groups=elasticsearchapi.k8s.webcenter.fr,resources=rolemappings,verbs=get;list;watch;create;update;patch;delete
@@ -86,7 +81,7 @@ func (r *RoleMappingReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 		req,
 		rm,
 		data,
-		r.reconcilerAction,
+		r,
 	)
 }
 

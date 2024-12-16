@@ -21,7 +21,6 @@ import (
 	"github.com/disaster37/operator-sdk-extra/pkg/controller"
 	"github.com/sirupsen/logrus"
 	kibanaapicrd "github.com/webcenter-fr/elasticsearch-operator/apis/kibanaapi/v1"
-	"github.com/webcenter-fr/elasticsearch-operator/internal/controller/common"
 	"k8s.io/client-go/tools/record"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -35,12 +34,12 @@ const (
 type RoleReconciler struct {
 	controller.Controller
 	controller.RemoteReconciler[*kibanaapicrd.Role, *kbapi.KibanaRole, kbhandler.KibanaHandler]
-	reconcilerAction controller.RemoteReconcilerAction[*kibanaapicrd.Role, *kbapi.KibanaRole, kbhandler.KibanaHandler]
-	name             string
+	controller.RemoteReconcilerAction[*kibanaapicrd.Role, *kbapi.KibanaRole, kbhandler.KibanaHandler]
+	name string
 }
 
 func NewRoleReconciler(client client.Client, logger *logrus.Entry, recorder record.EventRecorder) controller.Controller {
-	r := &RoleReconciler{
+	return &RoleReconciler{
 		Controller: controller.NewBasicController(),
 		RemoteReconciler: controller.NewBasicRemoteReconciler[*kibanaapicrd.Role, *kbapi.KibanaRole, kbhandler.KibanaHandler](
 			client,
@@ -49,17 +48,13 @@ func NewRoleReconciler(client client.Client, logger *logrus.Entry, recorder reco
 			logger,
 			recorder,
 		),
-		reconcilerAction: newRoleReconciler(
+		RemoteReconcilerAction: newRoleReconciler(
+			roleName,
 			client,
-			logger,
 			recorder,
 		),
 		name: roleName,
 	}
-
-	common.ControllerMetrics.WithLabelValues(r.name).Add(0)
-
-	return r
 }
 
 //+kubebuilder:rbac:groups=kibanaapi.k8s.webcenter.fr,resources=roles,verbs=get;list;watch;create;update;patch;delete
@@ -88,7 +83,7 @@ func (r *RoleReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.
 		req,
 		role,
 		data,
-		r.reconcilerAction,
+		r,
 	)
 }
 

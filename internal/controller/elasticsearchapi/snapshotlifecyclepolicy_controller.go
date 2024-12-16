@@ -20,7 +20,6 @@ import (
 	"github.com/disaster37/operator-sdk-extra/pkg/controller"
 	"github.com/sirupsen/logrus"
 	elasticsearchapicrd "github.com/webcenter-fr/elasticsearch-operator/apis/elasticsearchapi/v1"
-	"github.com/webcenter-fr/elasticsearch-operator/internal/controller/common"
 	"k8s.io/client-go/tools/record"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -34,12 +33,12 @@ const (
 type SnapshotLifecyclePolicyReconciler struct {
 	controller.Controller
 	controller.RemoteReconciler[*elasticsearchapicrd.SnapshotLifecyclePolicy, *eshandler.SnapshotLifecyclePolicySpec, eshandler.ElasticsearchHandler]
-	reconcilerAction controller.RemoteReconcilerAction[*elasticsearchapicrd.SnapshotLifecyclePolicy, *eshandler.SnapshotLifecyclePolicySpec, eshandler.ElasticsearchHandler]
-	name             string
+	controller.RemoteReconcilerAction[*elasticsearchapicrd.SnapshotLifecyclePolicy, *eshandler.SnapshotLifecyclePolicySpec, eshandler.ElasticsearchHandler]
+	name string
 }
 
 func NewSnapshotLifecyclePolicyReconciler(client client.Client, logger *logrus.Entry, recorder record.EventRecorder) controller.Controller {
-	r := &SnapshotLifecyclePolicyReconciler{
+	return &SnapshotLifecyclePolicyReconciler{
 		Controller: controller.NewBasicController(),
 		RemoteReconciler: controller.NewBasicRemoteReconciler[*elasticsearchapicrd.SnapshotLifecyclePolicy, *eshandler.SnapshotLifecyclePolicySpec, eshandler.ElasticsearchHandler](
 			client,
@@ -48,17 +47,13 @@ func NewSnapshotLifecyclePolicyReconciler(client client.Client, logger *logrus.E
 			logger,
 			recorder,
 		),
-		reconcilerAction: newSnapshotLifecyclePolicyReconciler(
+		RemoteReconcilerAction: newSnapshotLifecyclePolicyReconciler(
+			snapshotLifecyclePolicyName,
 			client,
-			logger,
 			recorder,
 		),
 		name: snapshotLifecyclePolicyName,
 	}
-
-	common.ControllerMetrics.WithLabelValues(r.name).Add(0)
-
-	return r
 }
 
 //+kubebuilder:rbac:groups=elasticsearchapi.k8s.webcenter.fr,resources=snapshotlifecyclepolicies,verbs=get;list;watch;create;update;patch;delete
@@ -85,7 +80,7 @@ func (r *SnapshotLifecyclePolicyReconciler) Reconcile(ctx context.Context, req c
 		req,
 		slm,
 		data,
-		r.reconcilerAction,
+		r,
 	)
 }
 

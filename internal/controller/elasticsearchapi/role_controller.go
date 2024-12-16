@@ -20,7 +20,6 @@ import (
 	"github.com/disaster37/operator-sdk-extra/pkg/controller"
 	"github.com/sirupsen/logrus"
 	elasticsearchapicrd "github.com/webcenter-fr/elasticsearch-operator/apis/elasticsearchapi/v1"
-	"github.com/webcenter-fr/elasticsearch-operator/internal/controller/common"
 	"k8s.io/client-go/tools/record"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -34,12 +33,12 @@ const (
 type RoleReconciler struct {
 	controller.Controller
 	controller.RemoteReconciler[*elasticsearchapicrd.Role, *eshandler.XPackSecurityRole, eshandler.ElasticsearchHandler]
-	reconcilerAction controller.RemoteReconcilerAction[*elasticsearchapicrd.Role, *eshandler.XPackSecurityRole, eshandler.ElasticsearchHandler]
-	name             string
+	controller.RemoteReconcilerAction[*elasticsearchapicrd.Role, *eshandler.XPackSecurityRole, eshandler.ElasticsearchHandler]
+	name string
 }
 
 func NewRoleReconciler(client client.Client, logger *logrus.Entry, recorder record.EventRecorder) controller.Controller {
-	r := &RoleReconciler{
+	return &RoleReconciler{
 		Controller: controller.NewBasicController(),
 		RemoteReconciler: controller.NewBasicRemoteReconciler[*elasticsearchapicrd.Role, *eshandler.XPackSecurityRole, eshandler.ElasticsearchHandler](
 			client,
@@ -48,17 +47,13 @@ func NewRoleReconciler(client client.Client, logger *logrus.Entry, recorder reco
 			logger,
 			recorder,
 		),
-		reconcilerAction: newRoleReconciler(
+		RemoteReconcilerAction: newRoleReconciler(
+			roleName,
 			client,
-			logger,
 			recorder,
 		),
 		name: roleName,
 	}
-
-	common.ControllerMetrics.WithLabelValues(r.name).Add(0)
-
-	return r
 }
 
 //+kubebuilder:rbac:groups=elasticsearchapi.k8s.webcenter.fr,resources=roles,verbs=get;list;watch;create;update;patch;delete
@@ -85,7 +80,7 @@ func (r *RoleReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.
 		req,
 		role,
 		data,
-		r.reconcilerAction,
+		r,
 	)
 }
 

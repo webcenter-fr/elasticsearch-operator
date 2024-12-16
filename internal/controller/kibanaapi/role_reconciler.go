@@ -17,27 +17,22 @@ import (
 
 type roleReconciler struct {
 	controller.RemoteReconcilerAction[*kibanaapicrd.Role, *kbapi.KibanaRole, kbhandler.KibanaHandler]
-	controller.BaseReconciler
+	name string
 }
 
-func newRoleReconciler(client client.Client, logger *logrus.Entry, recorder record.EventRecorder) controller.RemoteReconcilerAction[*kibanaapicrd.Role, *kbapi.KibanaRole, kbhandler.KibanaHandler] {
+func newRoleReconciler(name string, client client.Client, recorder record.EventRecorder) controller.RemoteReconcilerAction[*kibanaapicrd.Role, *kbapi.KibanaRole, kbhandler.KibanaHandler] {
 	return &roleReconciler{
 		RemoteReconcilerAction: controller.NewRemoteReconcilerAction[*kibanaapicrd.Role, *kbapi.KibanaRole, kbhandler.KibanaHandler](
 			client,
-			logger,
 			recorder,
 		),
-		BaseReconciler: controller.BaseReconciler{
-			Client:   client,
-			Log:      logger,
-			Recorder: recorder,
-		},
+		name: name,
 	}
 }
 
-func (h *roleReconciler) GetRemoteHandler(ctx context.Context, req ctrl.Request, o object.RemoteObject) (handler controller.RemoteExternalReconciler[*kibanaapicrd.Role, *kbapi.KibanaRole, kbhandler.KibanaHandler], res ctrl.Result, err error) {
+func (h *roleReconciler) GetRemoteHandler(ctx context.Context, req ctrl.Request, o object.RemoteObject, logger *logrus.Entry) (handler controller.RemoteExternalReconciler[*kibanaapicrd.Role, *kbapi.KibanaRole, kbhandler.KibanaHandler], res ctrl.Result, err error) {
 	role := o.(*kibanaapicrd.Role)
-	kbClient, err := GetKibanaHandler(ctx, role, role.Spec.KibanaRef, h.BaseReconciler.Client, h.BaseReconciler.Log)
+	kbClient, err := GetKibanaHandler(ctx, role, role.Spec.KibanaRef, h.Client(), logger)
 	if err != nil && role.DeletionTimestamp.IsZero() {
 		return nil, res, err
 	}
