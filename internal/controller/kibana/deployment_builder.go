@@ -243,8 +243,11 @@ func buildDeployments(kb *kibanacrd.Kibana, es *elasticsearchcrd.Elasticsearch, 
 				"ALL",
 			},
 		},
-		RunAsUser:    ptr.To[int64](1000),
-		RunAsNonRoot: ptr.To[bool](true),
+		AllowPrivilegeEscalation: ptr.To(false),
+		Privileged:               ptr.To(false),
+		RunAsNonRoot:             ptr.To(true),
+		RunAsUser:                ptr.To[int64](1000),
+		RunAsGroup:               ptr.To[int64](1000),
 	}, k8sbuilder.OverwriteIfDefaultValue)
 
 	// Compute volume mount
@@ -382,6 +385,18 @@ fi
 					MountPath: "/mnt/keystoreSecrets",
 				},
 			},
+			SecurityContext: &corev1.SecurityContext{
+				Capabilities: &corev1.Capabilities{
+					Drop: []corev1.Capability{
+						"ALL",
+					},
+				},
+				AllowPrivilegeEscalation: ptr.To(false),
+				Privileged:               ptr.To(false),
+				RunAsNonRoot:             ptr.To(true),
+				RunAsUser:                ptr.To[int64](1000),
+				RunAsGroup:               ptr.To[int64](1000),
+			},
 			Command: []string{
 				"/bin/bash",
 				"-c",
@@ -409,7 +424,8 @@ cp -a /usr/share/kibana/config/kibana.keystore /mnt/keystore/
 		Image:           GetContainerImage(kb),
 		ImagePullPolicy: kb.Spec.ImagePullPolicy,
 		SecurityContext: &corev1.SecurityContext{
-			RunAsUser: ptr.To[int64](0),
+			Privileged: ptr.To(false),
+			RunAsUser:  ptr.To[int64](0),
 		},
 		Env: []corev1.EnvVar{
 			{

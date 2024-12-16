@@ -23,6 +23,7 @@ spec:
         kibana.k8s.webcenter.fr: "true"
       name: test-kb
     spec:
+      serviceAccountName: test-kb
       affinity:
         podAntiAffinity:
           preferredDuringSchedulingIgnoredDuringExecution:

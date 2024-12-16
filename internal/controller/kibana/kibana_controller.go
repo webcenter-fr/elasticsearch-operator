@@ -24,6 +24,7 @@ import (
 	"emperror.dev/errors"
 	"github.com/disaster37/operator-sdk-extra/pkg/controller"
 	"github.com/disaster37/operator-sdk-extra/pkg/object"
+	"github.com/elastic/go-ucfg"
 	routev1 "github.com/openshift/api/route/v1"
 	monitoringv1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1"
 	"github.com/sirupsen/logrus"
@@ -31,6 +32,7 @@ import (
 	elasticsearchcrd "github.com/webcenter-fr/elasticsearch-operator/apis/elasticsearch/v1"
 	kibanacrd "github.com/webcenter-fr/elasticsearch-operator/apis/kibana/v1"
 	"github.com/webcenter-fr/elasticsearch-operator/internal/controller/common"
+	localhelper "github.com/webcenter-fr/elasticsearch-operator/pkg/helper"
 	appv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	networkingv1 "k8s.io/api/networking/v1"
@@ -263,7 +265,13 @@ func (h *KibanaReconciler) OnSuccess(ctx context.Context, r object.MultiPhaseObj
 		res.RequeueAfter = time.Second * 30
 	}
 
-	url, err := h.computeKibanaUrl(ctx, o)
+	// Generate confimaps to know dashboard config (server.basePath)
+	configMaps, err := buildConfigMaps(o, nil)
+	if err != nil {
+		return res, errors.Wrap(err, "Error when generate configMap")
+	}
+
+	url, err := h.computeKibanaUrl(ctx, o, &configMaps[0])
 	if err != nil {
 		return res, err
 	}
@@ -273,11 +281,26 @@ func (h *KibanaReconciler) OnSuccess(ctx context.Context, r object.MultiPhaseObj
 }
 
 // computeKibanaUrl permit to get the public Kibana url to put it on status
-func (h *KibanaReconciler) computeKibanaUrl(ctx context.Context, kb *kibanacrd.Kibana) (target string, err error) {
+func (h *KibanaReconciler) computeKibanaUrl(ctx context.Context, kb *kibanacrd.Kibana, cm *corev1.ConfigMap) (target string, err error) {
 	var (
-		scheme string
-		url    string
+		scheme   string
+		url      string
+		basePath string
 	)
+
+	// Compute basePath
+	if cm == nil || cm.Data["kibana.yml"] == "" {
+		basePath = ""
+	} else {
+		basePath, err = localhelper.GetSetting("server.basePath", []byte(cm.Data["kibana.yml"]))
+		if err != nil {
+			if ucfg.ErrMissing == err {
+				basePath = ""
+			} else {
+				return "", err
+			}
+		}
+	}
 
 	if kb.Spec.Endpoint.IsIngressEnabled() {
 		url = kb.Spec.Endpoint.Ingress.Host
@@ -318,5 +341,5 @@ func (h *KibanaReconciler) computeKibanaUrl(ctx context.Context, kb *kibanacrd.K
 		}
 	}
 
-	return fmt.Sprintf("%s://%s", scheme, url), nil
+	return fmt.Sprintf("%s://%s%s", scheme, url, basePath), nil
 }

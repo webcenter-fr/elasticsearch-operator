@@ -343,5 +343,5 @@ func TestGetServiceAccountName(t *testing.T) {
 		Spec: kibanacrd.KibanaSpec{},
 	}
 
-	assert.Equal(t, "test-db", GetServiceAccountName(o))
+	assert.Equal(t, "test-kb", GetServiceAccountName(o))
 }

@@ -92,7 +92,7 @@ func GetContainerImage(kb *kibanacrd.Kibana) string {
 
 // GetServiceAccountName return the service account name
 func GetServiceAccountName(kb *kibanacrd.Kibana) string {
-	return fmt.Sprintf("%s-db", kb.Name)
+	return fmt.Sprintf("%s-kb", kb.Name)
 }
 
 // getLabels permit to return global label must be set on all resources
