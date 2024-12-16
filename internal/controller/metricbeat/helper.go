@@ -97,3 +97,8 @@ func GetSecretNameForCredentials(mb *beatcrd.Metricbeat) (secretName string) {
 func GetNetworkPolicyElasticsearchName(mb *beatcrd.Metricbeat) string {
 	return fmt.Sprintf("%s-allow-es-mb", mb.Name)
 }
+
+// GetServiceAccountName return the service account name
+func GetServiceAccountName(mb *beatcrd.Metricbeat) string {
+	return fmt.Sprintf("%s-mb", mb.Name)
+}

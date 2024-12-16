@@ -36,3 +36,11 @@ func (h *Filebeat) IsPdb() bool {
 
 	return false
 }
+
+// IsEnabled return true if PKI is enabled
+func (h FilebeatPkiSpec) IsEnabled() bool {
+	if h.Enabled == nil || *h.Enabled {
+		return true
+	}
+	return false
+}

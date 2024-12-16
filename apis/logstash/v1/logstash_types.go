@@ -98,6 +98,13 @@ type LogstashSpec struct {
 	// +optional
 	Ingresses []shared.Ingress `json:"ingresses,omitempty"`
 
+	// Routes permit to declare some routes
+	// The name is decorated with cluster name and so on
+	// +operator-sdk:csv:customresourcedefinitions:type=spec
+	// +kubebuilder:pruning:PreserveUnknownFields
+	// +optional
+	Routes []shared.Route `json:"routes,omitempty"`
+
 	// Services permit to declare some services
 	// The name is decorated with cluster name and so on
 	// +operator-sdk:csv:customresourcedefinitions:type=spec

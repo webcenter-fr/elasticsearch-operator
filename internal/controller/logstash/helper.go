@@ -8,7 +8,9 @@ import (
 )
 
 const (
-	defaultImage = "docker.elastic.co/logstash/logstash"
+	defaultImage           = "docker.elastic.co/logstash/logstash"
+	defaultExporterImage   = "ghcr.io/kuskoman/logstash-exporter"
+	defaultExporterVersion = "latest"
 )
 
 // GetConfigMapConfigName permit to get the configMap name that store the config
@@ -144,4 +146,9 @@ func GetIngressName(ls *logstashcrd.Logstash, ingressName string) string {
 // GetMetricbeatName return the metricbeat namme
 func GetMetricbeatName(ls *logstashcrd.Logstash) (name string) {
 	return fmt.Sprintf("%s-metricbeat-ls", ls.Name)
+}
+
+// GetServiceAccountName return the service account name
+func GetServiceAccountName(ls *logstashcrd.Logstash) string {
+	return fmt.Sprintf("%s-ls", ls.Name)
 }

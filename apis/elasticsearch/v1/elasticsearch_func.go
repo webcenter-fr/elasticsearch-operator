@@ -18,6 +18,15 @@ func (h *Elasticsearch) IsIngressEnabled() bool {
 	return false
 }
 
+// IsRouteEnabled return true if route is enabled
+func (h *Elasticsearch) IsRouteEnabled() bool {
+	if h.Spec.Endpoint.Route != nil && h.Spec.Endpoint.Route.Enabled {
+		return true
+	}
+
+	return false
+}
+
 // IsLoadBalancerEnabled return true if LoadBalancer is enabled
 func (h *Elasticsearch) IsLoadBalancerEnabled() bool {
 	if h.Spec.Endpoint.LoadBalancer != nil && h.Spec.Endpoint.LoadBalancer.Enabled {
@@ -72,3 +81,4 @@ func (h *Elasticsearch) NumberOfReplicas() int32 {
 
 	return nbReplica
 }
+

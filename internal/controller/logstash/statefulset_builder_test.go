@@ -26,7 +26,7 @@ func TestBuildStatefulset(t *testing.T) {
 		extraConfigMaps []corev1.ConfigMap
 	)
 
-	// With default values and elasticsearch managed by operator
+	// With default values
 	o = &logstashcrd.Logstash{
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: "default",
@@ -53,9 +53,40 @@ func TestBuildStatefulset(t *testing.T) {
 		Spec: elasticsearchcrd.ElasticsearchSpec{},
 	}
 
-	sts, err = buildStatefulsets(o, es, nil, nil)
+	sts, err = buildStatefulsets(o, es, nil, nil, false)
 	assert.NoError(t, err)
 	test.EqualFromYamlFile[*appv1.StatefulSet](t, "testdata/statefulset_default.yml", &sts[0], scheme.Scheme)
+
+	// With default values on Openshift
+	o = &logstashcrd.Logstash{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: "default",
+			Name:      "test",
+		},
+		Spec: logstashcrd.LogstashSpec{
+			ElasticsearchRef: shared.ElasticsearchRef{
+				ManagedElasticsearchRef: &shared.ElasticsearchManagedRef{
+					Name: "test",
+				},
+			},
+			Deployment: logstashcrd.LogstashDeploymentSpec{
+				Deployment: shared.Deployment{
+					Replicas: 1,
+				},
+			},
+		},
+	}
+	es = &elasticsearchcrd.Elasticsearch{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: "default",
+			Name:      "test",
+		},
+		Spec: elasticsearchcrd.ElasticsearchSpec{},
+	}
+
+	sts, err = buildStatefulsets(o, es, nil, nil, true)
+	assert.NoError(t, err)
+	test.EqualFromYamlFile[*appv1.StatefulSet](t, "testdata/statefulset_default_openshift.yml", &sts[0], scheme.Scheme)
 
 	// With default values and external elasticsearch
 	o = &logstashcrd.Logstash{
@@ -82,7 +113,7 @@ func TestBuildStatefulset(t *testing.T) {
 		},
 	}
 
-	sts, err = buildStatefulsets(o, nil, nil, nil)
+	sts, err = buildStatefulsets(o, nil, nil, nil, false)
 	assert.NoError(t, err)
 	test.EqualFromYamlFile[*appv1.StatefulSet](t, "testdata/statefulset_default_with_external_es.yml", &sts[0], scheme.Scheme)
 
@@ -125,7 +156,7 @@ func TestBuildStatefulset(t *testing.T) {
 		},
 	}
 
-	sts, err = buildStatefulsets(o, nil, extraSecrets, nil)
+	sts, err = buildStatefulsets(o, nil, extraSecrets, nil, false)
 	assert.NoError(t, err)
 	test.EqualFromYamlFile[*appv1.StatefulSet](t, "testdata/statefulset_custom_ca_es_with_external_es.yml", &sts[0], scheme.Scheme)
 
@@ -296,7 +327,7 @@ func TestBuildStatefulset(t *testing.T) {
 		},
 	}
 
-	sts, err = buildStatefulsets(o, es, extraSecrets, extraConfigMaps)
+	sts, err = buildStatefulsets(o, es, extraSecrets, extraConfigMaps, false)
 	assert.NoError(t, err)
 	test.EqualFromYamlFile[*appv1.StatefulSet](t, "testdata/statefulset_complet.yml", &sts[0], scheme.Scheme)
 }

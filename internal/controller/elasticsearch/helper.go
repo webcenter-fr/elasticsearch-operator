@@ -284,3 +284,8 @@ func getAnnotations(elasticsearch *elasticsearchcrd.Elasticsearch, customAnnotat
 
 	return annotations
 }
+
+// GetServiceAccountName return the service account name
+func GetServiceAccountName(es *elasticsearchcrd.Elasticsearch) string {
+	return fmt.Sprintf("%s-es", es.Name)
+}

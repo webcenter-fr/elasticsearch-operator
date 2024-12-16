@@ -30,6 +30,7 @@ import (
 	appv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	policyv1 "k8s.io/api/policy/v1"
+	rbacv1 "k8s.io/api/rbac/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	condition "k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -37,7 +38,9 @@ import (
 	"k8s.io/client-go/tools/record"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	k8scontroller "sigs.k8s.io/controller-runtime/pkg/controller"
 	"sigs.k8s.io/controller-runtime/pkg/handler"
+	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
 
 const (
@@ -49,17 +52,17 @@ type MetricbeatReconciler struct {
 	controller.Controller
 	controller.MultiPhaseReconcilerAction
 	controller.MultiPhaseReconciler
-	controller.BaseReconciler
-	name string
+	stepReconcilers []controller.MultiPhaseStepReconcilerAction
+	kubeCapability  common.KubernetesCapability
+	name            string
 }
 
-func NewMetricbeatReconciler(client client.Client, logger *logrus.Entry, recorder record.EventRecorder) (multiPhaseReconciler controller.Controller) {
-	multiPhaseReconciler = &MetricbeatReconciler{
+func NewMetricbeatReconciler(client client.Client, logger *logrus.Entry, recorder record.EventRecorder, kubeCapability common.KubernetesCapability) (multiPhaseReconciler controller.Controller) {
+	return &MetricbeatReconciler{
 		Controller: controller.NewBasicController(),
 		MultiPhaseReconcilerAction: controller.NewBasicMultiPhaseReconcilerAction(
 			client,
 			controller.ReadyCondition,
-			logger,
 			recorder,
 		),
 		MultiPhaseReconciler: controller.NewBasicMultiPhaseReconciler(
@@ -69,17 +72,20 @@ func NewMetricbeatReconciler(client client.Client, logger *logrus.Entry, recorde
 			logger,
 			recorder,
 		),
-		BaseReconciler: controller.BaseReconciler{
-			Client:   client,
-			Recorder: recorder,
-			Log:      logger,
+		name:           name,
+		kubeCapability: kubeCapability,
+		stepReconcilers: []controller.MultiPhaseStepReconcilerAction{
+			newServiceAccountReconciler(client, recorder, kubeCapability.HasRoute),
+			newRoleBindingReconciler(client, recorder, kubeCapability.HasRoute),
+			newCAElasticsearchReconciler(client, recorder),
+			newCredentialReconciler(client, recorder),
+			newConfiMapReconciler(client, recorder),
+			newServiceReconciler(client, recorder),
+			newPdbReconciler(client, recorder),
+			newStatefulsetReconciler(client, recorder, kubeCapability.HasRoute),
 		},
-		name: name,
 	}
 
-	common.ControllerMetrics.WithLabelValues(name).Add(0)
-
-	return multiPhaseReconciler
 }
 
 //+kubebuilder:rbac:groups=beat.k8s.webcenter.fr,resources=metricbeats,verbs=get;list;watch;create;update;patch;delete
@@ -93,6 +99,10 @@ func NewMetricbeatReconciler(client client.Client, logger *logrus.Entry, recorde
 //+kubebuilder:rbac:groups="",resources=services,verbs=get;list;watch;create;update;patch;delete
 //+kubebuilder:rbac:groups="policy",resources=poddisruptionbudgets,verbs=get;list;watch;create;update;patch;delete
 //+kubebuilder:rbac:groups="apps",resources=statefulsets,verbs=get;list;watch;create;update;patch;delete
+//+kubebuilder:rbac:groups="apiextensions.k8s.io",resources=CustomResourceDefinition,verbs=get;list;watch
+//+kubebuilder:rbac:groups="",resources=serviceaccounts,verbs=get;list;watch;create;update;patch;delete
+//+kubebuilder:rbac:groups="rbac.authorization.k8s.io",resources=rolebindings,verbs=get;list;watch;create;update;patch;delete
+//+kubebuilder:rbac:groups="security.openshift.io",resources=securitycontextconstraints,verbs=use
 
 // Reconcile is part of the main kubernetes reconciliation loop which aims to
 // move the current state of the cluster closer to the desired state.
@@ -113,36 +123,7 @@ func (r *MetricbeatReconciler) Reconcile(ctx context.Context, req ctrl.Request) 
 		mb,
 		data,
 		r,
-		newCAElasticsearchReconciler(
-			r.Client,
-			r.Log,
-			r.Recorder,
-		),
-		newCredentialReconciler(
-			r.Client,
-			r.Log,
-			r.Recorder,
-		),
-		newConfiMapReconciler(
-			r.Client,
-			r.Log,
-			r.Recorder,
-		),
-		newServiceReconciler(
-			r.Client,
-			r.Log,
-			r.Recorder,
-		),
-		newPdbReconciler(
-			r.Client,
-			r.Log,
-			r.Recorder,
-		),
-		newStatefulsetReconciler(
-			r.Client,
-			r.Log,
-			r.Recorder,
-		),
+		r.stepReconcilers...,
 	)
 }
 
@@ -155,29 +136,34 @@ func (h *MetricbeatReconciler) SetupWithManager(mgr ctrl.Manager) error {
 		Owns(&corev1.Service{}).
 		Owns(&policyv1.PodDisruptionBudget{}).
 		Owns(&appv1.StatefulSet{}).
-		Watches(&corev1.Secret{}, handler.EnqueueRequestsFromMapFunc(watchSecret(h.Client))).
-		Watches(&corev1.ConfigMap{}, handler.EnqueueRequestsFromMapFunc(watchConfigMap(h.Client))).
-		Watches(&elasticsearchcrd.Elasticsearch{}, handler.EnqueueRequestsFromMapFunc(watchElasticsearch(h.Client))).
+		Owns(&corev1.ServiceAccount{}).
+		Owns(&rbacv1.RoleBinding{}).
+		Watches(&corev1.Secret{}, handler.EnqueueRequestsFromMapFunc(watchSecret(h.Client()))).
+		Watches(&corev1.ConfigMap{}, handler.EnqueueRequestsFromMapFunc(watchConfigMap(h.Client()))).
+		Watches(&elasticsearchcrd.Elasticsearch{}, handler.EnqueueRequestsFromMapFunc(watchElasticsearch(h.Client()))).
+		WithOptions(k8scontroller.Options{
+			RateLimiter: common.DefaultControllerRateLimiter[reconcile.Request](),
+		}).
 		Complete(h)
 }
 
-func (h *MetricbeatReconciler) Delete(ctx context.Context, o object.MultiPhaseObject, data map[string]any) (err error) {
+func (h *MetricbeatReconciler) Delete(ctx context.Context, o object.MultiPhaseObject, data map[string]any, logger *logrus.Entry) (err error) {
 	common.ControllerMetrics.WithLabelValues(h.name).Dec()
-	return h.MultiPhaseReconcilerAction.Delete(ctx, o, data)
+	return h.MultiPhaseReconcilerAction.Delete(ctx, o, data, logger)
 }
 
-func (h *MetricbeatReconciler) OnError(ctx context.Context, o object.MultiPhaseObject, data map[string]any, currentErr error) (res ctrl.Result, err error) {
+func (h *MetricbeatReconciler) OnError(ctx context.Context, o object.MultiPhaseObject, data map[string]any, currentErr error, logger *logrus.Entry) (res ctrl.Result, err error) {
 	common.TotalErrors.Inc()
-	return h.MultiPhaseReconcilerAction.OnError(ctx, o, data, currentErr)
+	return h.MultiPhaseReconcilerAction.OnError(ctx, o, data, currentErr, logger)
 }
 
-func (h *MetricbeatReconciler) OnSuccess(ctx context.Context, r object.MultiPhaseObject, data map[string]any) (res ctrl.Result, err error) {
+func (h *MetricbeatReconciler) OnSuccess(ctx context.Context, r object.MultiPhaseObject, data map[string]any, logger *logrus.Entry) (res ctrl.Result, err error) {
 	o := r.(*beatcrd.Metricbeat)
 
 	// Not preserve condition to avoid to update status each time
 	conditions := o.GetStatus().GetConditions()
 	o.GetStatus().SetConditions(nil)
-	res, err = h.MultiPhaseReconcilerAction.OnSuccess(ctx, o, data)
+	res, err = h.MultiPhaseReconcilerAction.OnSuccess(ctx, o, data, logger)
 	if err != nil {
 		return res, err
 	}
@@ -186,7 +172,7 @@ func (h *MetricbeatReconciler) OnSuccess(ctx context.Context, r object.MultiPhas
 	// Check statefulset is ready
 	isReady := true
 	sts := &appv1.StatefulSet{}
-	if err = h.Client.Get(ctx, types.NamespacedName{Name: GetStatefulsetName(o), Namespace: o.Namespace}, sts); err != nil {
+	if err = h.Client().Get(ctx, types.NamespacedName{Name: GetStatefulsetName(o), Namespace: o.Namespace}, sts); err != nil {
 		if !k8serrors.IsNotFound(err) {
 			return res, errors.Wrapf(err, "Error when read metricbeat statefulset")
 		}

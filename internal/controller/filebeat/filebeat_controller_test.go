@@ -9,18 +9,21 @@ import (
 	"github.com/disaster37/k8s-objectmatcher/patch"
 	"github.com/disaster37/operator-sdk-extra/pkg/helper"
 	"github.com/disaster37/operator-sdk-extra/pkg/test"
+	routev1 "github.com/openshift/api/route/v1"
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
 	beatcrd "github.com/webcenter-fr/elasticsearch-operator/apis/beat/v1"
 	elasticsearchcrd "github.com/webcenter-fr/elasticsearch-operator/apis/elasticsearch/v1"
-	"github.com/webcenter-fr/elasticsearch-operator/apis/shared"
+	sharedcrd "github.com/webcenter-fr/elasticsearch-operator/apis/shared"
 	appv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	networkingv1 "k8s.io/api/networking/v1"
 	policyv1 "k8s.io/api/policy/v1"
+	rbacv1 "k8s.io/api/rbac/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -64,7 +67,7 @@ func doCreateFilebeatStep() test.TestStep {
 								"client",
 								"data",
 							},
-							Deployment: shared.Deployment{
+							Deployment: sharedcrd.Deployment{
 								Replicas: 1,
 							},
 						},
@@ -99,16 +102,13 @@ func doCreateFilebeatStep() test.TestStep {
 				},
 				Spec: beatcrd.FilebeatSpec{
 					Version: "8.6.0",
-					ElasticsearchRef: shared.ElasticsearchRef{
-						ManagedElasticsearchRef: &shared.ElasticsearchManagedRef{
+					ElasticsearchRef: sharedcrd.ElasticsearchRef{
+						ManagedElasticsearchRef: &sharedcrd.ElasticsearchManagedRef{
 							Name: es.Name,
-						},
-						SecretRef: &corev1.LocalObjectReference{
-							Name: key.Name,
 						},
 					},
 					Deployment: beatcrd.FilebeatDeploymentSpec{
-						Deployment: shared.Deployment{
+						Deployment: sharedcrd.Deployment{
 							Replicas: 2,
 						},
 					},
@@ -121,7 +121,7 @@ queue.type: persisted
 					Module: map[string]string{
 						"test.conf": "test",
 					},
-					Ingresses: []shared.Ingress{
+					Ingresses: []sharedcrd.Ingress{
 						{
 							Name:                  "syslog",
 							ContainerPort:         601,
@@ -146,6 +146,28 @@ queue.type: persisted
 							},
 						},
 					},
+					Routes: []sharedcrd.Route{
+						{
+							Name:                  "syslog2",
+							ContainerPort:         601,
+							ContainerPortProtocol: corev1.ProtocolTCP,
+							Spec: routev1.RouteSpec{
+								Host: "filebeat.cluster.local",
+								Path: "/",
+								TLS: &routev1.TLSConfig{
+									Termination: routev1.TLSTerminationEdge,
+								},
+							},
+						},
+					},
+					Pki: beatcrd.FilebeatPkiSpec{
+						Enabled: ptr.To[bool](true),
+						Tls: map[string]sharedcrd.TlsSelfSignedCertificateSpec{
+							"nxlog": {
+								AltNames: []string{"*.domain.com"},
+							},
+						},
+					},
 				},
 			}
 
@@ -158,12 +180,15 @@ queue.type: persisted
 		Check: func(t *testing.T, c client.Client, key types.NamespacedName, o client.Object, data map[string]any) (err error) {
 			fb := &beatcrd.Filebeat{}
 			var (
-				s   *corev1.Secret
-				svc *corev1.Service
-				i   *networkingv1.Ingress
-				cm  *corev1.ConfigMap
-				pdb *policyv1.PodDisruptionBudget
-				sts *appv1.StatefulSet
+				s              *corev1.Secret
+				svc            *corev1.Service
+				i              *networkingv1.Ingress
+				cm             *corev1.ConfigMap
+				pdb            *policyv1.PodDisruptionBudget
+				sts            *appv1.StatefulSet
+				route          *routev1.Route
+				serviceAccount *corev1.ServiceAccount
+				roleBinding    *rbacv1.RoleBinding
 			)
 
 			isTimeout, err := test.RunWithTimeout(func() error {
@@ -190,6 +215,24 @@ queue.type: persisted
 			assert.NotEmpty(t, s.OwnerReferences)
 			assert.NotEmpty(t, s.Annotations[patch.LastAppliedConfig])
 
+			// Secrets for Pki
+			s = &corev1.Secret{}
+			if err = c.Get(context.Background(), types.NamespacedName{Namespace: key.Namespace, Name: GetSecretNameForPki(fb)}, s); err != nil {
+				t.Fatal(err)
+			}
+			assert.NotEmpty(t, s.Data)
+			assert.NotEmpty(t, s.OwnerReferences)
+			assert.NotEmpty(t, s.Annotations[patch.LastAppliedConfig])
+
+			// Secrets for certificates
+			s = &corev1.Secret{}
+			if err = c.Get(context.Background(), types.NamespacedName{Namespace: key.Namespace, Name: GetSecretNameForTls(fb)}, s); err != nil {
+				t.Fatal(err)
+			}
+			assert.NotEmpty(t, s.Data)
+			assert.NotEmpty(t, s.OwnerReferences)
+			assert.NotEmpty(t, s.Annotations[patch.LastAppliedConfig])
+
 			// Secrets for credentials must exist
 			s = &corev1.Secret{}
 			if err = c.Get(context.Background(), types.NamespacedName{Namespace: key.Namespace, Name: GetSecretNameForCredentials(fb)}, s); err != nil {
@@ -202,6 +245,14 @@ queue.type: persisted
 			// Services for ingress must exist
 			svc = &corev1.Service{}
 			if err = c.Get(context.Background(), types.NamespacedName{Namespace: key.Namespace, Name: GetServiceName(fb, "syslog")}, svc); err != nil {
+				t.Fatal(err)
+			}
+			assert.NotEmpty(t, svc.OwnerReferences)
+			assert.NotEmpty(t, svc.Annotations[patch.LastAppliedConfig])
+
+			// Services for route must exist
+			svc = &corev1.Service{}
+			if err = c.Get(context.Background(), types.NamespacedName{Namespace: key.Namespace, Name: GetServiceName(fb, "syslog2")}, svc); err != nil {
 				t.Fatal(err)
 			}
 			assert.NotEmpty(t, svc.OwnerReferences)
@@ -222,6 +273,30 @@ queue.type: persisted
 			}
 			assert.NotEmpty(t, i.OwnerReferences)
 			assert.NotEmpty(t, i.Annotations[patch.LastAppliedConfig])
+
+			// Route must exist
+			route = &routev1.Route{}
+			if err = c.Get(context.Background(), types.NamespacedName{Namespace: key.Namespace, Name: GetIngressName(fb, "syslog2")}, route); err != nil {
+				t.Fatal(err)
+			}
+			assert.NotEmpty(t, route.OwnerReferences)
+			assert.NotEmpty(t, route.Annotations[patch.LastAppliedConfig])
+
+			// Service Account must exist
+			serviceAccount = &corev1.ServiceAccount{}
+			if err = c.Get(context.Background(), types.NamespacedName{Namespace: key.Namespace, Name: GetServiceAccountName(fb)}, serviceAccount); err != nil {
+				t.Fatal(err)
+			}
+			assert.NotEmpty(t, serviceAccount.OwnerReferences)
+			assert.NotEmpty(t, serviceAccount.Annotations[patch.LastAppliedConfig])
+
+			// roleBinding must exist
+			roleBinding = &rbacv1.RoleBinding{}
+			if err = c.Get(context.Background(), types.NamespacedName{Namespace: key.Namespace, Name: GetServiceAccountName(fb)}, roleBinding); err != nil {
+				t.Fatal(err)
+			}
+			assert.NotEmpty(t, roleBinding.OwnerReferences)
+			assert.NotEmpty(t, roleBinding.Annotations[patch.LastAppliedConfig])
 
 			// ConfigMaps must exist
 			cm = &corev1.ConfigMap{}
@@ -295,12 +370,15 @@ func doUpdateFilebeatStep() test.TestStep {
 			fb := &beatcrd.Filebeat{}
 
 			var (
-				s   *corev1.Secret
-				svc *corev1.Service
-				i   *networkingv1.Ingress
-				cm  *corev1.ConfigMap
-				pdb *policyv1.PodDisruptionBudget
-				sts *appv1.StatefulSet
+				s              *corev1.Secret
+				svc            *corev1.Service
+				i              *networkingv1.Ingress
+				cm             *corev1.ConfigMap
+				pdb            *policyv1.PodDisruptionBudget
+				sts            *appv1.StatefulSet
+				route          *routev1.Route
+				serviceAccount *corev1.ServiceAccount
+				roleBinding    *rbacv1.RoleBinding
 			)
 
 			lastGeneration := data["lastGeneration"].(int64)
@@ -340,9 +418,38 @@ func doUpdateFilebeatStep() test.TestStep {
 			assert.NotEmpty(t, s.Annotations[patch.LastAppliedConfig])
 			assert.Equal(t, "fu", s.Labels["test"])
 
+			// Secrets for Pki
+			s = &corev1.Secret{}
+			if err = c.Get(context.Background(), types.NamespacedName{Namespace: key.Namespace, Name: GetSecretNameForPki(fb)}, s); err != nil {
+				t.Fatal(err)
+			}
+			assert.NotEmpty(t, s.Data)
+			assert.NotEmpty(t, s.OwnerReferences)
+			assert.NotEmpty(t, s.Annotations[patch.LastAppliedConfig])
+			assert.Equal(t, "fu", s.Labels["test"])
+
+			// Secrets for certificates
+			s = &corev1.Secret{}
+			if err = c.Get(context.Background(), types.NamespacedName{Namespace: key.Namespace, Name: GetSecretNameForTls(fb)}, s); err != nil {
+				t.Fatal(err)
+			}
+			assert.NotEmpty(t, s.Data)
+			assert.NotEmpty(t, s.OwnerReferences)
+			assert.NotEmpty(t, s.Annotations[patch.LastAppliedConfig])
+			assert.Equal(t, "fu", s.Labels["test"])
+
 			// Services for ingress must exist
 			svc = &corev1.Service{}
 			if err = c.Get(context.Background(), types.NamespacedName{Namespace: key.Namespace, Name: GetServiceName(fb, "syslog")}, svc); err != nil {
+				t.Fatal(err)
+			}
+			assert.NotEmpty(t, svc.OwnerReferences)
+			assert.NotEmpty(t, svc.Annotations[patch.LastAppliedConfig])
+			assert.Equal(t, "fu", svc.Labels["test"])
+
+			// Services for route must exist
+			svc = &corev1.Service{}
+			if err = c.Get(context.Background(), types.NamespacedName{Namespace: key.Namespace, Name: GetServiceName(fb, "syslog2")}, svc); err != nil {
 				t.Fatal(err)
 			}
 			assert.NotEmpty(t, svc.OwnerReferences)
@@ -366,6 +473,33 @@ func doUpdateFilebeatStep() test.TestStep {
 			assert.NotEmpty(t, i.OwnerReferences)
 			assert.NotEmpty(t, i.Annotations[patch.LastAppliedConfig])
 			assert.Equal(t, "fu", i.Labels["test"])
+
+			// Route must exist
+			route = &routev1.Route{}
+			if err = c.Get(context.Background(), types.NamespacedName{Namespace: key.Namespace, Name: GetIngressName(fb, "syslog2")}, route); err != nil {
+				t.Fatal(err)
+			}
+			assert.NotEmpty(t, route.OwnerReferences)
+			assert.NotEmpty(t, route.Annotations[patch.LastAppliedConfig])
+			assert.Equal(t, "fu", route.Labels["test"])
+
+			// Service Account must exist
+			serviceAccount = &corev1.ServiceAccount{}
+			if err = c.Get(context.Background(), types.NamespacedName{Namespace: key.Namespace, Name: GetServiceAccountName(fb)}, serviceAccount); err != nil {
+				t.Fatal(err)
+			}
+			assert.Equal(t, "fu", serviceAccount.Labels["test"])
+			assert.NotEmpty(t, serviceAccount.OwnerReferences)
+			assert.NotEmpty(t, serviceAccount.Annotations[patch.LastAppliedConfig])
+
+			// roleBinding must exist
+			roleBinding = &rbacv1.RoleBinding{}
+			if err = c.Get(context.Background(), types.NamespacedName{Namespace: key.Namespace, Name: GetServiceAccountName(fb)}, roleBinding); err != nil {
+				t.Fatal(err)
+			}
+			assert.Equal(t, "fu", roleBinding.Labels["test"])
+			assert.NotEmpty(t, roleBinding.OwnerReferences)
+			assert.NotEmpty(t, roleBinding.Annotations[patch.LastAppliedConfig])
 
 			// ConfigMaps must exist
 			cm = &corev1.ConfigMap{}

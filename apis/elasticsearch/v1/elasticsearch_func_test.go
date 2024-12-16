@@ -268,3 +268,29 @@ func TestNumberOfReplicas(t *testing.T) {
 
 	assert.Equal(t, int32(5), o.NumberOfReplicas())
 }
+
+func TestIsRouteEnabled(t *testing.T) {
+	// With default values
+	o := &Elasticsearch{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: "default",
+			Name:      "test",
+		},
+		Spec: ElasticsearchSpec{},
+	}
+	assert.False(t, o.IsRouteEnabled())
+
+	// When Route is specified but disabled
+	o.Spec.Endpoint = ElasticsearchEndpointSpec{
+		Route: &ElasticsearchRouteSpec{
+			EndpointRouteSpec: shared.EndpointRouteSpec{
+				Enabled: false,
+			},
+		},
+	}
+	assert.False(t, o.IsRouteEnabled())
+
+	// When route is enabled
+	o.Spec.Endpoint.Route.Enabled = true
+	assert.True(t, o.IsRouteEnabled())
+}

@@ -106,6 +106,11 @@ type ElasticsearchEndpointSpec struct {
 	// +optional
 	Ingress *ElasticsearchIngressSpec `json:"ingress,omitempty"`
 
+	// Route permit to set Openshift route settings
+	// +operator-sdk:csv:customresourcedefinitions:type=spec
+	// +optional
+	Route *ElasticsearchRouteSpec `json:"route,omitempty"`
+
 	// Load balancer permit to set load balancer settings
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
 	// +optional
@@ -123,6 +128,15 @@ type ElasticsearchLoadBalancerSpec struct {
 
 type ElasticsearchIngressSpec struct {
 	shared.EndpointIngressSpec `json:",inline"`
+
+	// TargetNodeGroupName permit to define if specific node group is responsible to receive external access, like ingest nodes
+	// +operator-sdk:csv:customresourcedefinitions:type=spec
+	// +optional
+	TargetNodeGroupName string `json:"targetNodeGroupName,omitempty"`
+}
+
+type ElasticsearchRouteSpec struct {
+	shared.EndpointRouteSpec `json:",inline"`
 
 	// TargetNodeGroupName permit to define if specific node group is responsible to receive external access, like ingest nodes
 	// +operator-sdk:csv:customresourcedefinitions:type=spec

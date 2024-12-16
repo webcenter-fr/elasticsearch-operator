@@ -1,10 +1,16 @@
 package filebeat
 
 import (
+	"context"
 	"fmt"
 
+	"emperror.dev/errors"
 	"github.com/thoas/go-funk"
 	beatcrd "github.com/webcenter-fr/elasticsearch-operator/apis/beat/v1"
+	logstashcrd "github.com/webcenter-fr/elasticsearch-operator/apis/logstash/v1"
+	k8serrors "k8s.io/apimachinery/pkg/api/errors"
+	"k8s.io/apimachinery/pkg/types"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 const (
@@ -111,4 +117,50 @@ func GetIngressName(fb *beatcrd.Filebeat, ingressName string) string {
 // GetMetricbeatName return the metricbeat namme
 func GetMetricbeatName(fb *beatcrd.Filebeat) (name string) {
 	return fmt.Sprintf("%s-metricbeat-fb", fb.Name)
+}
+
+// GetServiceAccountName return the service account name
+func GetServiceAccountName(fb *beatcrd.Filebeat) string {
+	return fmt.Sprintf("%s-fb", fb.Name)
+}
+
+// GetSecretNameForPki permit to get the secret name that store PKI
+// It return the secret name as string
+func GetSecretNameForPki(fb *beatcrd.Filebeat) (secretName string) {
+	return fmt.Sprintf("%s-pki-fb", fb.Name)
+}
+
+// GetSecretNameForTls permit to get the secret name that store all certificates for Filebeat
+// It return the secret name as string
+func GetSecretNameForTls(fb *beatcrd.Filebeat) (secretName string) {
+	return fmt.Sprintf("%s-tls-fb", fb.Name)
+}
+
+// GetSecretNameForCALogstash permit to get the secret name that store Logstash CA
+// It return the secret name as string
+func GetSecretNameForCALogstash(fb *beatcrd.Filebeat) (secretName string) {
+	return fmt.Sprintf("%s-ca-ls-fb", fb.Name)
+}
+
+// GetLogstashFromRef permit to get Logstash
+func GetLogstashFromRef(ctx context.Context, c client.Client, o client.Object, lsRef beatcrd.FilebeatLogstashRef) (ls *logstashcrd.Logstash, err error) {
+	if !lsRef.IsManaged() {
+		return nil, nil
+	}
+
+	ls = &logstashcrd.Logstash{}
+	target := types.NamespacedName{Name: lsRef.ManagedLogstashRef.Name}
+	if lsRef.ManagedLogstashRef.Namespace != "" {
+		target.Namespace = lsRef.ManagedLogstashRef.Namespace
+	} else {
+		target.Namespace = o.GetNamespace()
+	}
+	if err = c.Get(ctx, target, ls); err != nil {
+		if k8serrors.IsNotFound(err) {
+			return nil, nil
+		}
+		return nil, errors.Wrapf(err, "Error when read Logstash %s/%s", target.Namespace, target.Name)
+	}
+
+	return ls, nil
 }

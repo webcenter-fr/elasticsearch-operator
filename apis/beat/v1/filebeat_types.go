@@ -87,11 +87,59 @@ type FilebeatSpec struct {
 	// +optional
 	Ingresses []shared.Ingress `json:"ingresses,omitempty"`
 
+	// Routes permit to declare some routes
+	// The name is decorated with cluster name and so on
+	// +operator-sdk:csv:customresourcedefinitions:type=spec
+	// +kubebuilder:pruning:PreserveUnknownFields
+	// +optional
+	Routes []shared.Route `json:"routes,omitempty"`
+
 	// Services permit to declare some services
 	// The name is decorated with cluster name and so on
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
 	// +optional
 	Services []shared.Service `json:"services,omitempty"`
+
+	// Pki permit to manage certificates you can use for filebeat inputs
+	// It will mount them on /usr/share/filebeat/certs/
+	// +operator-sdk:csv:customresourcedefinitions:type=spec
+	// +optional
+	Pki FilebeatPkiSpec `json:"pki,omitempty"`
+}
+
+type FilebeatPkiSpec struct {
+	// Enabled permit to enabled the internal PKI
+	// Default to true
+	// +operator-sdk:csv:customresourcedefinitions:type=spec
+	// +optional
+	// +kubebuilder:default=true
+	Enabled *bool `json:"enabled,omitempty"`
+
+	// ValidityDays is the number of days that certificates are valid
+	// Default to 365
+	// +operator-sdk:csv:customresourcedefinitions:type=spec
+	// +optional
+	// +kubebuilder:default=365
+	ValidityDays *int `json:"validityDays,omitempty"`
+
+	// RenewalDays is the number of days before certificate expire to become effective renewal
+	// Default to 30
+	// +operator-sdk:csv:customresourcedefinitions:type=spec
+	// +optional
+	// +kubebuilder:default=30
+	RenewalDays *int `json:"renewalDays,omitempty"`
+
+	// KeySize is the key size when generate privates keys
+	// Default to 2048
+	// +operator-sdk:csv:customresourcedefinitions:type=spec
+	// +optional
+	// +kubebuilder:default=2048
+	KeySize *int `json:"keySize,omitempty"`
+
+	// Tls is the list of TLS certificates to manage
+	// +operator-sdk:csv:customresourcedefinitions:type=spec
+	// +optional
+	Tls map[string]shared.TlsSelfSignedCertificateSpec `json:"tls,omitempty"`
 }
 
 type FilebeatLogstashRef struct {

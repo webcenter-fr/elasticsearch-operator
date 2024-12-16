@@ -9,6 +9,7 @@ import (
 	v1 "k8s.io/api/core/v1"
 	policyv1 "k8s.io/api/policy/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/utils/ptr"
 )
 
 func TestFilebeatGetStatus(t *testing.T) {
@@ -179,4 +180,19 @@ func TestFilebeatIsPdb(t *testing.T) {
 		},
 	}
 	assert.True(t, o.IsPdb())
+}
+
+func TestFilebeatPkiSpecIsEnabled(t *testing.T) {
+	var o FilebeatPkiSpec
+
+	// With default value
+	assert.True(t, o.IsEnabled())
+
+	// When enabled
+	o.Enabled = ptr.To[bool](true)
+	assert.True(t, o.IsEnabled())
+
+	// When disabled
+	o.Enabled = ptr.To[bool](false)
+	assert.False(t, o.IsEnabled())
 }

@@ -288,3 +288,15 @@ func TestGetSecretNameForTls(t *testing.T) {
 	// With default value
 	assert.Equal(t, "test-tls-ls", GetSecretNameForTls(o))
 }
+
+func TestGetServiceAccountName(t *testing.T) {
+	o := &logstashcrd.Logstash{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: "default",
+			Name:      "test",
+		},
+		Spec: logstashcrd.LogstashSpec{},
+	}
+
+	assert.Equal(t, "test-ls", GetServiceAccountName(o))
+}

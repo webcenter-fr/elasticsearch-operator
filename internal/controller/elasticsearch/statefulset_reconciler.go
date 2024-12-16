@@ -38,29 +38,24 @@ const (
 )
 
 type statefulsetReconciler struct {
-	controller.BaseReconciler
 	controller.MultiPhaseStepReconcilerAction
+	isOpenshift bool
 }
 
-func newStatefulsetReconciler(client client.Client, logger *logrus.Entry, recorder record.EventRecorder) (multiPhaseStepReconcilerAction controller.MultiPhaseStepReconcilerAction) {
+func newStatefulsetReconciler(client client.Client, recorder record.EventRecorder, isOpenshift bool) (multiPhaseStepReconcilerAction controller.MultiPhaseStepReconcilerAction) {
 	return &statefulsetReconciler{
 		MultiPhaseStepReconcilerAction: controller.NewBasicMultiPhaseStepReconcilerAction(
 			client,
 			StatefulsetPhase,
 			StatefulsetCondition,
-			logger,
 			recorder,
 		),
-		BaseReconciler: controller.BaseReconciler{
-			Client:   client,
-			Recorder: recorder,
-			Log:      logger,
-		},
+		isOpenshift: isOpenshift,
 	}
 }
 
 // Read existing satefulsets
-func (r *statefulsetReconciler) Read(ctx context.Context, resource object.MultiPhaseObject, data map[string]any) (read controller.MultiPhaseRead, res ctrl.Result, err error) {
+func (r *statefulsetReconciler) Read(ctx context.Context, resource object.MultiPhaseObject, data map[string]any, logger *logrus.Entry) (read controller.MultiPhaseRead, res ctrl.Result, err error) {
 	o := resource.(*elasticsearchcrd.Elasticsearch)
 	stsList := &appv1.StatefulSetList{}
 	read = controller.NewBasicMultiPhaseRead()
@@ -75,18 +70,18 @@ func (r *statefulsetReconciler) Read(ctx context.Context, resource object.MultiP
 	if err != nil {
 		return read, res, errors.Wrap(err, "Error when generate label selector")
 	}
-	if err = r.Client.List(ctx, stsList, &client.ListOptions{Namespace: o.Namespace, LabelSelector: labelSelectors}); err != nil {
+	if err = r.Client().List(ctx, stsList, &client.ListOptions{Namespace: o.Namespace, LabelSelector: labelSelectors}); err != nil {
 		return read, res, errors.Wrapf(err, "Error when read statefulset")
 	}
 	read.SetCurrentObjects(helper.ToSliceOfObject(stsList.Items))
 
 	// Read keystore secret if needed
 	if o.Spec.GlobalNodeGroup.KeystoreSecretRef != nil && o.Spec.GlobalNodeGroup.KeystoreSecretRef.Name != "" {
-		if err = r.Client.Get(ctx, types.NamespacedName{Namespace: o.Namespace, Name: o.Spec.GlobalNodeGroup.KeystoreSecretRef.Name}, s); err != nil {
+		if err = r.Client().Get(ctx, types.NamespacedName{Namespace: o.Namespace, Name: o.Spec.GlobalNodeGroup.KeystoreSecretRef.Name}, s); err != nil {
 			if !k8serrors.IsNotFound(err) {
 				return read, res, errors.Wrapf(err, "Error when read secret %s", o.Spec.GlobalNodeGroup.KeystoreSecretRef.Name)
 			}
-			r.Log.Warnf("Secret %s not yet exist, try again later", o.Spec.GlobalNodeGroup.KeystoreSecretRef.Name)
+			logger.Warnf("Secret %s not yet exist, try again later", o.Spec.GlobalNodeGroup.KeystoreSecretRef.Name)
 			return read, ctrl.Result{RequeueAfter: 30 * time.Second}, nil
 		}
 
@@ -95,11 +90,11 @@ func (r *statefulsetReconciler) Read(ctx context.Context, resource object.MultiP
 
 	// Read cacerts secret if needed
 	if o.Spec.GlobalNodeGroup.CacertsSecretRef != nil && o.Spec.GlobalNodeGroup.CacertsSecretRef.Name != "" {
-		if err = r.Client.Get(ctx, types.NamespacedName{Namespace: o.Namespace, Name: o.Spec.GlobalNodeGroup.CacertsSecretRef.Name}, s); err != nil {
+		if err = r.Client().Get(ctx, types.NamespacedName{Namespace: o.Namespace, Name: o.Spec.GlobalNodeGroup.CacertsSecretRef.Name}, s); err != nil {
 			if !k8serrors.IsNotFound(err) {
 				return read, res, errors.Wrapf(err, "Error when read secret %s", o.Spec.GlobalNodeGroup.CacertsSecretRef.Name)
 			}
-			r.Log.Warnf("Secret %s not yet exist, try again later", o.Spec.GlobalNodeGroup.CacertsSecretRef.Name)
+			logger.Warnf("Secret %s not yet exist, try again later", o.Spec.GlobalNodeGroup.CacertsSecretRef.Name)
 			return read, ctrl.Result{RequeueAfter: 30 * time.Second}, nil
 		}
 
@@ -109,21 +104,21 @@ func (r *statefulsetReconciler) Read(ctx context.Context, resource object.MultiP
 	// Read API certificate secret if needed
 	if o.Spec.Tls.IsTlsEnabled() {
 		if o.Spec.Tls.IsSelfManagedSecretForTls() {
-			if err = r.Client.Get(ctx, types.NamespacedName{Namespace: o.Namespace, Name: GetSecretNameForTlsApi(o)}, s); err != nil {
+			if err = r.Client().Get(ctx, types.NamespacedName{Namespace: o.Namespace, Name: GetSecretNameForTlsApi(o)}, s); err != nil {
 				if !k8serrors.IsNotFound(err) {
 					return read, res, errors.Wrapf(err, "Error when read secret %s", GetSecretNameForTlsApi(o))
 				}
-				r.Log.Warnf("Secret %s not yet exist, try again later", GetSecretNameForTlsApi(o))
+				logger.Warnf("Secret %s not yet exist, try again later", GetSecretNameForTlsApi(o))
 				return read, ctrl.Result{RequeueAfter: 30 * time.Second}, nil
 			}
 
 			secretsChecksum = append(secretsChecksum, *s)
 		} else {
-			if err = r.Client.Get(ctx, types.NamespacedName{Namespace: o.Namespace, Name: o.Spec.Tls.CertificateSecretRef.Name}, s); err != nil {
+			if err = r.Client().Get(ctx, types.NamespacedName{Namespace: o.Namespace, Name: o.Spec.Tls.CertificateSecretRef.Name}, s); err != nil {
 				if !k8serrors.IsNotFound(err) {
 					return read, res, errors.Wrapf(err, "Error when read secret %s", o.Spec.Tls.CertificateSecretRef.Name)
 				}
-				r.Log.Warnf("Secret %s not yet exist, try again later", o.Spec.Tls.CertificateSecretRef.Name)
+				logger.Warnf("Secret %s not yet exist, try again later", o.Spec.Tls.CertificateSecretRef.Name)
 				return read, ctrl.Result{RequeueAfter: 30 * time.Second}, nil
 			}
 
@@ -132,11 +127,11 @@ func (r *statefulsetReconciler) Read(ctx context.Context, resource object.MultiP
 	}
 
 	// Read transport certicate secret
-	if err = r.Client.Get(ctx, types.NamespacedName{Namespace: o.Namespace, Name: GetSecretNameForTlsTransport(o)}, s); err != nil {
+	if err = r.Client().Get(ctx, types.NamespacedName{Namespace: o.Namespace, Name: GetSecretNameForTlsTransport(o)}, s); err != nil {
 		if !k8serrors.IsNotFound(err) {
 			return read, res, errors.Wrapf(err, "Error when read secret %s", GetSecretNameForTlsTransport(o))
 		}
-		r.Log.Warnf("Secret %s not yet exist, try again later", GetSecretNameForTlsTransport(o))
+		logger.Warnf("Secret %s not yet exist, try again later", GetSecretNameForTlsTransport(o))
 		return read, ctrl.Result{RequeueAfter: 30 * time.Second}, nil
 	}
 	secretsChecksum = append(secretsChecksum, *s)
@@ -147,7 +142,7 @@ func (r *statefulsetReconciler) Read(ctx context.Context, resource object.MultiP
 	if err != nil {
 		return read, res, errors.Wrap(err, "Error when generate label selector")
 	}
-	if err = r.Client.List(ctx, cmList, &client.ListOptions{Namespace: o.Namespace, LabelSelector: labelSelectors}); err != nil {
+	if err = r.Client().List(ctx, cmList, &client.ListOptions{Namespace: o.Namespace, LabelSelector: labelSelectors}); err != nil {
 		return read, res, errors.Wrapf(err, "Error when read configMap")
 	}
 	for _, cm := range cmList.Items {
@@ -159,11 +154,11 @@ func (r *statefulsetReconciler) Read(ctx context.Context, resource object.MultiP
 	// Read extra volumes to generate checksum if secret or configmap
 	for _, v := range o.Spec.GlobalNodeGroup.AdditionalVolumes {
 		if v.ConfigMap != nil {
-			if err = r.Client.Get(ctx, types.NamespacedName{Namespace: o.Namespace, Name: v.ConfigMap.Name}, cm); err != nil {
+			if err = r.Client().Get(ctx, types.NamespacedName{Namespace: o.Namespace, Name: v.ConfigMap.Name}, cm); err != nil {
 				if !k8serrors.IsNotFound(err) {
 					return read, res, errors.Wrapf(err, "Error when read configMap %s", v.ConfigMap.Name)
 				}
-				r.Log.Warnf("ConfigMap %s not yet exist, try again later", v.ConfigMap.Name)
+				logger.Warnf("ConfigMap %s not yet exist, try again later", v.ConfigMap.Name)
 				return read, ctrl.Result{RequeueAfter: 30 * time.Second}, nil
 			}
 
@@ -172,11 +167,11 @@ func (r *statefulsetReconciler) Read(ctx context.Context, resource object.MultiP
 		}
 
 		if v.Secret != nil {
-			if err = r.Client.Get(ctx, types.NamespacedName{Namespace: o.Namespace, Name: v.Secret.SecretName}, s); err != nil {
+			if err = r.Client().Get(ctx, types.NamespacedName{Namespace: o.Namespace, Name: v.Secret.SecretName}, s); err != nil {
 				if !k8serrors.IsNotFound(err) {
 					return read, res, errors.Wrapf(err, "Error when read secret %s", v.Secret.SecretName)
 				}
-				r.Log.Warnf("Secret %s not yet exist, try again later", v.Secret.SecretName)
+				logger.Warnf("Secret %s not yet exist, try again later", v.Secret.SecretName)
 				return read, ctrl.Result{RequeueAfter: 30 * time.Second}, nil
 			}
 
@@ -199,11 +194,11 @@ func (r *statefulsetReconciler) Read(ctx context.Context, resource object.MultiP
 	// Read extra Env to generate checksum if secret or configmap
 	for _, env := range envList {
 		if env.ValueFrom != nil && env.ValueFrom.SecretKeyRef != nil {
-			if err = r.Client.Get(ctx, types.NamespacedName{Namespace: o.Namespace, Name: env.ValueFrom.SecretKeyRef.Name}, s); err != nil {
+			if err = r.Client().Get(ctx, types.NamespacedName{Namespace: o.Namespace, Name: env.ValueFrom.SecretKeyRef.Name}, s); err != nil {
 				if !k8serrors.IsNotFound(err) {
 					return read, res, errors.Wrapf(err, "Error when read secret %s", env.ValueFrom.SecretKeyRef.Name)
 				}
-				r.Log.Warnf("Secret %s not yet exist, try again later", env.ValueFrom.SecretKeyRef.Name)
+				logger.Warnf("Secret %s not yet exist, try again later", env.ValueFrom.SecretKeyRef.Name)
 				return read, ctrl.Result{RequeueAfter: 30 * time.Second}, nil
 			}
 
@@ -212,11 +207,11 @@ func (r *statefulsetReconciler) Read(ctx context.Context, resource object.MultiP
 		}
 
 		if env.ValueFrom != nil && env.ValueFrom.ConfigMapKeyRef != nil {
-			if err = r.Client.Get(ctx, types.NamespacedName{Namespace: o.Namespace, Name: env.ValueFrom.ConfigMapKeyRef.Name}, cm); err != nil {
+			if err = r.Client().Get(ctx, types.NamespacedName{Namespace: o.Namespace, Name: env.ValueFrom.ConfigMapKeyRef.Name}, cm); err != nil {
 				if !k8serrors.IsNotFound(err) {
 					return read, res, errors.Wrapf(err, "Error when read configMap %s", env.ValueFrom.ConfigMapKeyRef.Name)
 				}
-				r.Log.Warnf("ConfigMap %s not yet exist, try again later", env.ValueFrom.ConfigMapKeyRef.Name)
+				logger.Warnf("ConfigMap %s not yet exist, try again later", env.ValueFrom.ConfigMapKeyRef.Name)
 				return read, ctrl.Result{RequeueAfter: 30 * time.Second}, nil
 			}
 
@@ -228,11 +223,11 @@ func (r *statefulsetReconciler) Read(ctx context.Context, resource object.MultiP
 	// Read extra Env from to generate checksum if secret or configmap
 	for _, ef := range envFromList {
 		if ef.SecretRef != nil {
-			if err = r.Client.Get(ctx, types.NamespacedName{Namespace: o.Namespace, Name: ef.SecretRef.Name}, s); err != nil {
+			if err = r.Client().Get(ctx, types.NamespacedName{Namespace: o.Namespace, Name: ef.SecretRef.Name}, s); err != nil {
 				if !k8serrors.IsNotFound(err) {
 					return read, res, errors.Wrapf(err, "Error when read secret %s", ef.SecretRef.Name)
 				}
-				r.Log.Warnf("Secret %s not yet exist, try again later", ef.SecretRef.Name)
+				logger.Warnf("Secret %s not yet exist, try again later", ef.SecretRef.Name)
 				return read, ctrl.Result{RequeueAfter: 30 * time.Second}, nil
 			}
 
@@ -241,11 +236,11 @@ func (r *statefulsetReconciler) Read(ctx context.Context, resource object.MultiP
 		}
 
 		if ef.ConfigMapRef != nil {
-			if err = r.Client.Get(ctx, types.NamespacedName{Namespace: o.Namespace, Name: ef.ConfigMapRef.Name}, cm); err != nil {
+			if err = r.Client().Get(ctx, types.NamespacedName{Namespace: o.Namespace, Name: ef.ConfigMapRef.Name}, cm); err != nil {
 				if !k8serrors.IsNotFound(err) {
 					return read, res, errors.Wrapf(err, "Error when read configMap %s", ef.ConfigMapRef.Name)
 				}
-				r.Log.Warnf("ConfigMap %s not yet exist, try again later", ef.ConfigMapRef.Name)
+				logger.Warnf("ConfigMap %s not yet exist, try again later", ef.ConfigMapRef.Name)
 				return read, ctrl.Result{RequeueAfter: 30 * time.Second}, nil
 			}
 
@@ -255,7 +250,7 @@ func (r *statefulsetReconciler) Read(ctx context.Context, resource object.MultiP
 	}
 
 	// Generate expected statefulsets
-	expectedSts, err := buildStatefulsets(o, secretsChecksum, configMapsChecksum)
+	expectedSts, err := buildStatefulsets(o, secretsChecksum, configMapsChecksum, r.isOpenshift)
 	if err != nil {
 		return read, res, errors.Wrap(err, "Error when generate statefulsets")
 	}
@@ -265,7 +260,7 @@ func (r *statefulsetReconciler) Read(ctx context.Context, resource object.MultiP
 }
 
 // Diff permit to check if statefulset is up to date
-func (r *statefulsetReconciler) Diff(ctx context.Context, resource object.MultiPhaseObject, read controller.MultiPhaseRead, data map[string]any, ignoreDiff ...patch.CalculateOption) (diff controller.MultiPhaseDiff, res ctrl.Result, err error) {
+func (r *statefulsetReconciler) Diff(ctx context.Context, resource object.MultiPhaseObject, read controller.MultiPhaseRead, data map[string]any, logger *logrus.Entry, ignoreDiff ...patch.CalculateOption) (diff controller.MultiPhaseDiff, res ctrl.Result, err error) {
 	o := resource.(*elasticsearchcrd.Elasticsearch)
 
 	currentStatefulsets := read.GetCurrentObjects()
@@ -301,7 +296,7 @@ func (r *statefulsetReconciler) Diff(ctx context.Context, resource object.MultiP
 					updatedSts := patchResult.Patched.(*appv1.StatefulSet)
 					diff.AddDiff(fmt.Sprintf("diff %s: %s", updatedSts.Name, string(patchResult.Patch)))
 					stsToExpectedUpdated = append(stsToExpectedUpdated, updatedSts)
-					r.Log.Debugf("Need update statefulset %s", updatedSts.Name)
+					logger.Debugf("Need update statefulset %s", updatedSts.Name)
 				}
 
 				// Remove items found
@@ -318,7 +313,7 @@ func (r *statefulsetReconciler) Diff(ctx context.Context, resource object.MultiP
 
 			stsToCreate = append(stsToCreate, sts)
 
-			r.Log.Debugf("Need create statefulset %s", sts.GetName())
+			logger.Debugf("Need create statefulset %s", sts.GetName())
 		}
 	}
 
@@ -330,7 +325,7 @@ func (r *statefulsetReconciler) Diff(ctx context.Context, resource object.MultiP
 
 	// Check if on TLS blackout to reconcile all statefulset as the last hope
 	if condition.IsStatusConditionPresentAndEqual(o.Status.Conditions, TlsConditionBlackout.String(), metav1.ConditionTrue) {
-		r.Log.Info("Detect we are on TLS blackout. Reconcile all statefulset")
+		logger.Info("Detect we are on TLS blackout. Reconcile all statefulset")
 		for _, sts := range stsToExpectedUpdated {
 			stsToUpdate = append(stsToUpdate, sts)
 		}
@@ -339,7 +334,7 @@ func (r *statefulsetReconciler) Diff(ctx context.Context, resource object.MultiP
 		// Or statefullset with current replica to 0 (maybee stop all pod)
 		if condition.IsStatusConditionPresentAndEqual(o.Status.Conditions, StatefulsetConditionUpgrade.String(), metav1.ConditionTrue) && condition.IsStatusConditionPresentAndEqual(o.Status.Conditions, StatefulsetCondition.String(), metav1.ConditionFalse) {
 			// Already on upgrade phase
-			r.Log.Debugf("Detect phase: %s", StatefulsetPhaseUpgrade)
+			logger.Debugf("Detect phase: %s", StatefulsetPhaseUpgrade)
 
 			// Upgrade only one active statefulset or current upgrade
 			for _, object := range currentStatefulsets {
@@ -354,13 +349,13 @@ func (r *statefulsetReconciler) Diff(ctx context.Context, resource object.MultiP
 					// Check if current statefullset need to be upgraded
 					for _, stsNeedUpgraded := range stsToExpectedUpdated {
 						if stsNeedUpgraded.GetName() == sts.Name {
-							r.Log.Infof("Detect we need to upgrade Statefullset %s that being already on upgrade state", sts.Name)
+							logger.Infof("Detect we need to upgrade Statefullset %s that being already on upgrade state", sts.Name)
 							stsToUpdate = append(stsToUpdate, stsNeedUpgraded)
 							break
 						}
 					}
 
-					r.Log.Infof("Phase statefulset upgrade: wait pod %d (upgraded) / %d (ready) on %s", (sts.Status.Replicas - sts.Status.UpdatedReplicas), (sts.Status.Replicas - sts.Status.ReadyReplicas), sts.Name)
+					logger.Infof("Phase statefulset upgrade: wait pod %d (upgraded) / %d (ready) on %s", (sts.Status.Replicas - sts.Status.UpdatedReplicas), (sts.Status.Replicas - sts.Status.ReadyReplicas), sts.Name)
 				}
 			}
 
@@ -375,7 +370,7 @@ func (r *statefulsetReconciler) Diff(ctx context.Context, resource object.MultiP
 					for _, stsNeedUpgraded := range stsToExpectedUpdated {
 						if stsNeedUpgraded.GetName() == sts.Name {
 							data["phase"] = StatefulsetPhaseUpgrade
-							r.Log.Infof("Detect we need to upgrade Statefullset %s that not yet active (replica 0)", sts.Name)
+							logger.Infof("Detect we need to upgrade Statefullset %s that not yet active (replica 0)", sts.Name)
 							stsToUpdate = append(stsToUpdate, stsNeedUpgraded)
 							break
 						}
@@ -404,7 +399,7 @@ func (r *statefulsetReconciler) Diff(ctx context.Context, resource object.MultiP
 		}
 	}
 
-	r.Log.Debugf("Phase after diff: %s", data["phase"])
+	logger.Debugf("Phase after diff: %s", data["phase"])
 
 	diff.SetObjectsToCreate(stsToCreate)
 	diff.SetObjectsToUpdate(stsToUpdate)
@@ -414,7 +409,7 @@ func (r *statefulsetReconciler) Diff(ctx context.Context, resource object.MultiP
 }
 
 // OnSuccess permit to set status condition on the right state is everithink is good
-func (r *statefulsetReconciler) OnSuccess(ctx context.Context, resource object.MultiPhaseObject, data map[string]any, diff controller.MultiPhaseDiff) (res ctrl.Result, err error) {
+func (r *statefulsetReconciler) OnSuccess(ctx context.Context, resource object.MultiPhaseObject, data map[string]any, diff controller.MultiPhaseDiff, logger *logrus.Entry) (res ctrl.Result, err error) {
 	o := resource.(*elasticsearchcrd.Elasticsearch)
 	var d any
 
@@ -424,25 +419,25 @@ func (r *statefulsetReconciler) OnSuccess(ctx context.Context, resource object.M
 	}
 	phase := d.(shared.PhaseName)
 
-	r.Log.Debugf("Phase on success: %s", phase)
+	logger.Debugf("Phase on success: %s", phase)
 
 	// Handle TLS blackout
 	if condition.IsStatusConditionPresentAndEqual(o.Status.Conditions, TlsConditionBlackout.String(), metav1.ConditionTrue) {
-		r.Log.Info("Detect we are on blackout TLS, start to delete all pods")
+		logger.Info("Detect we are on blackout TLS, start to delete all pods")
 		podList := &corev1.PodList{}
 		labelSelectors, err := labels.Parse(fmt.Sprintf("cluster=%s,%s=true", o.Name, elasticsearchcrd.ElasticsearchAnnotationKey))
 		if err != nil {
 			return res, errors.Wrap(err, "Error when generate label selector")
 		}
-		if err = r.Client.List(ctx, podList, &client.ListOptions{Namespace: o.Namespace, LabelSelector: labelSelectors}, &client.ListOptions{}); err != nil {
+		if err = r.Client().List(ctx, podList, &client.ListOptions{Namespace: o.Namespace, LabelSelector: labelSelectors}, &client.ListOptions{}); err != nil {
 			return res, errors.Wrapf(err, "Error when read Elasticsearch pods")
 		}
 		if len(podList.Items) > 0 {
 			for _, p := range podList.Items {
-				if err = r.Client.Delete(ctx, &p); err != nil {
+				if err = r.Client().Delete(ctx, &p); err != nil {
 					return res, errors.Wrapf(err, "Error when delete pod %s", p.Name)
 				}
-				r.Log.Infof("Successfully delete pod %s", p.Name)
+				logger.Infof("Successfully delete pod %s", p.Name)
 			}
 		}
 	}
@@ -463,7 +458,7 @@ func (r *statefulsetReconciler) OnSuccess(ctx context.Context, resource object.M
 			Message: "Statefulsets are being upgraded",
 		})
 
-		r.Recorder.Eventf(resource, corev1.EventTypeNormal, "Completed", "Statefulsets are being upgraded")
+		r.Recorder().Eventf(resource, corev1.EventTypeNormal, "Completed", "Statefulsets are being upgraded")
 
 		return ctrl.Result{RequeueAfter: time.Second * 30}, nil
 
@@ -485,14 +480,14 @@ func (r *statefulsetReconciler) OnSuccess(ctx context.Context, resource object.M
 			Message: "Statefulsets are finished to be upgraded",
 		})
 
-		r.Recorder.Eventf(resource, corev1.EventTypeNormal, "Completed", "Statefulsets are finished to be upgraded")
+		r.Recorder().Eventf(resource, corev1.EventTypeNormal, "Completed", "Statefulsets are finished to be upgraded")
 
 		return ctrl.Result{Requeue: true}, nil
 
 	}
 
 	if diff.NeedCreate() || diff.NeedUpdate() || diff.NeedDelete() {
-		r.Recorder.Eventf(resource, corev1.EventTypeNormal, "Completed", "Statefulsets successfully updated")
+		r.Recorder().Eventf(resource, corev1.EventTypeNormal, "Completed", "Statefulsets successfully updated")
 	}
 
 	// Update condition status if needed

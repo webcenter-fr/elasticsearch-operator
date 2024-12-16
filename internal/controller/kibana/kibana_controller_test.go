@@ -116,7 +116,7 @@ func doCreateKibanaStep() test.TestStep {
 					},
 					Monitoring: shared.MonitoringSpec{
 						Prometheus: &shared.MonitoringPrometheusSpec{
-							Enabled: true,
+							Enabled: ptr.To(true),
 						},
 					},
 				},

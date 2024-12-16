@@ -22,7 +22,7 @@ import (
 )
 
 // GenerateStatefullset permit to generate statefullset
-func buildStatefulsets(fb *beatcrd.Filebeat, es *elasticsearchcrd.Elasticsearch, ls *logstashcrd.Logstash, secretsChecksum []corev1.Secret, configMapsChecksum []corev1.ConfigMap) (statefullsets []appv1.StatefulSet, err error) {
+func buildStatefulsets(fb *beatcrd.Filebeat, es *elasticsearchcrd.Elasticsearch, ls *logstashcrd.Logstash, secretsChecksum []corev1.Secret, configMapsChecksum []corev1.ConfigMap, isOpenshift bool) (statefullsets []appv1.StatefulSet, err error) {
 	// Check the secretRef is set when use Elasticsearch output
 	if (fb.Spec.ElasticsearchRef.IsManaged() || fb.Spec.ElasticsearchRef.IsExternal()) && fb.Spec.ElasticsearchRef.SecretRef == nil {
 		return nil, errors.New("You must set the secretRef when you use ElasticsearchRef")
@@ -290,8 +290,26 @@ func buildStatefulsets(fb *beatcrd.Filebeat, es *elasticsearchcrd.Elasticsearch,
 	if fb.Spec.LogstashRef.LogstashCaSecretRef != nil {
 		cb.WithVolumeMount([]corev1.VolumeMount{
 			{
+				Name:      "ca-custom-logstash",
+				MountPath: "/usr/share/filebeat/ls-custom-ca",
+			},
+		}, k8sbuilder.Merge)
+	}
+	if ls != nil && ls.Spec.Pki.IsEnabled() && ls.Spec.Pki.HasBeatCertificate() {
+		cb.WithVolumeMount([]corev1.VolumeMount{
+			{
 				Name:      "ca-logstash",
 				MountPath: "/usr/share/filebeat/ls-ca",
+			},
+		}, k8sbuilder.Merge)
+	}
+
+	// Mount pki
+	if fb.Spec.Pki.IsEnabled() {
+		cb.WithVolumeMount([]corev1.VolumeMount{
+			{
+				Name:      "filebeat-certs",
+				MountPath: "/usr/share/filebeat/certs",
 			},
 		}, k8sbuilder.Merge)
 	}
@@ -551,10 +569,29 @@ chown -v root:root /mnt/data
 		}, k8sbuilder.Merge)
 	}
 
+	// Add PKI volume
+	if fb.Spec.Pki.IsEnabled() {
+		ptb.WithVolumes([]corev1.Volume{
+			{
+				Name: "filebeat-certs",
+				VolumeSource: corev1.VolumeSource{
+					Secret: &corev1.SecretVolumeSource{
+						SecretName: GetSecretNameForTls(fb),
+					},
+				},
+			},
+		}, k8sbuilder.Merge)
+	}
+
 	// Compute Security context
 	ptb.WithSecurityContext(&corev1.PodSecurityContext{
 		FSGroup: ptr.To[int64](0),
 	}, k8sbuilder.Merge)
+
+	// On Openshift, we need to run Opensearch with specific serviceAccount that is binding to anyuid scc
+	if isOpenshift {
+		ptb.PodTemplate().Spec.ServiceAccountName = GetServiceAccountName(fb)
+	}
 
 	// Compute pod template name
 	ptb.PodTemplate().Name = GetStatefulsetName(fb)

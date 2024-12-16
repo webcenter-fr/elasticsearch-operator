@@ -20,7 +20,7 @@ import (
 )
 
 // GenerateStatefullset permit to generate statefullset
-func buildStatefulsets(mb *beatcrd.Metricbeat, es *elasticsearchcrd.Elasticsearch, secretsChecksum []corev1.Secret, configMapsChecksum []corev1.ConfigMap) (statefullsets []appv1.StatefulSet, err error) {
+func buildStatefulsets(mb *beatcrd.Metricbeat, es *elasticsearchcrd.Elasticsearch, secretsChecksum []corev1.Secret, configMapsChecksum []corev1.ConfigMap, isOpenshift bool) (statefullsets []appv1.StatefulSet, err error) {
 	// Check that secretRef is set when use External Elasticsearch
 	if mb.Spec.ElasticsearchRef.IsExternal() && mb.Spec.ElasticsearchRef.SecretRef == nil {
 		return nil, errors.New("You must set the secretRef when you use external Elasticsearch")
@@ -496,6 +496,11 @@ chown -v metricbeat:metricbeat /mnt/data
 	ptb.WithSecurityContext(&corev1.PodSecurityContext{
 		FSGroup: ptr.To[int64](1000),
 	}, k8sbuilder.Merge)
+
+	// On Openshift, we need to run Opensearch with specific serviceAccount that is binding to anyuid scc
+	if isOpenshift {
+		ptb.PodTemplate().Spec.ServiceAccountName = GetServiceAccountName(mb)
+	}
 
 	// Compute pod template name
 	ptb.PodTemplate().Name = GetStatefulsetName(mb)

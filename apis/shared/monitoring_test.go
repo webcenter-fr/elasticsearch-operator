@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"k8s.io/utils/ptr"
 )
 
 func TestIsPrometheusMonitoring(t *testing.T) {
@@ -16,7 +17,7 @@ func TestIsPrometheusMonitoring(t *testing.T) {
 	// When enabled
 	o = MonitoringSpec{
 		Prometheus: &MonitoringPrometheusSpec{
-			Enabled: true,
+			Enabled: ptr.To[bool](true),
 		},
 	}
 	assert.True(t, o.IsPrometheusMonitoring())
@@ -24,7 +25,7 @@ func TestIsPrometheusMonitoring(t *testing.T) {
 	// When disabled
 	o = MonitoringSpec{
 		Prometheus: &MonitoringPrometheusSpec{
-			Enabled: false,
+			Enabled: ptr.To[bool](false),
 		},
 	}
 	assert.False(t, o.IsPrometheusMonitoring())

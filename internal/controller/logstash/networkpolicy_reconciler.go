@@ -27,29 +27,22 @@ const (
 )
 
 type networkPolicyReconciler struct {
-	controller.BaseReconciler
 	controller.MultiPhaseStepReconcilerAction
 }
 
-func newNetworkPolicyReconciler(client client.Client, logger *logrus.Entry, recorder record.EventRecorder) (multiPhaseStepReconcilerAction controller.MultiPhaseStepReconcilerAction) {
+func newNetworkPolicyReconciler(client client.Client, recorder record.EventRecorder) (multiPhaseStepReconcilerAction controller.MultiPhaseStepReconcilerAction) {
 	return &networkPolicyReconciler{
 		MultiPhaseStepReconcilerAction: controller.NewBasicMultiPhaseStepReconcilerAction(
 			client,
 			NetworkPolicyPhase,
 			NetworkPolicyCondition,
-			logger,
 			recorder,
 		),
-		BaseReconciler: controller.BaseReconciler{
-			Client:   client,
-			Recorder: recorder,
-			Log:      logger,
-		},
 	}
 }
 
 // Read existing network policy
-func (r *networkPolicyReconciler) Read(ctx context.Context, resource object.MultiPhaseObject, data map[string]any) (read controller.MultiPhaseRead, res ctrl.Result, err error) {
+func (r *networkPolicyReconciler) Read(ctx context.Context, resource object.MultiPhaseObject, data map[string]any, logger *logrus.Entry) (read controller.MultiPhaseRead, res ctrl.Result, err error) {
 	o := resource.(*logstashcrd.Logstash)
 	np := &networkingv1.NetworkPolicy{}
 	read = controller.NewBasicMultiPhaseRead()
@@ -58,7 +51,7 @@ func (r *networkPolicyReconciler) Read(ctx context.Context, resource object.Mult
 	var oListTmp []client.Object
 
 	// Read current network policy
-	if err = r.Client.Get(ctx, types.NamespacedName{Namespace: o.Namespace, Name: GetNetworkPolicyName(o)}, np); err != nil {
+	if err = r.Client().Get(ctx, types.NamespacedName{Namespace: o.Namespace, Name: GetNetworkPolicyName(o)}, np); err != nil {
 		if !k8serrors.IsNotFound(err) {
 			return read, res, errors.Wrapf(err, "Error when read network policy")
 		}
@@ -70,7 +63,7 @@ func (r *networkPolicyReconciler) Read(ctx context.Context, resource object.Mult
 
 	// Read filebeat referer
 	fs := fields.ParseSelectorOrDie(fmt.Sprintf("spec.logstashRef.managed.fullname=%s/%s", o.GetNamespace(), o.GetName()))
-	if err := r.Client.List(context.Background(), filebeatList, &client.ListOptions{FieldSelector: fs}); err != nil {
+	if err := r.Client().List(context.Background(), filebeatList, &client.ListOptions{FieldSelector: fs}); err != nil {
 		return read, res, errors.Wrapf(err, "Error when read filebeat")
 	}
 	oListTmp = helper.ToSliceOfObject(filebeatList.Items)

@@ -35,7 +35,7 @@ var roleList = []string{
 }
 
 // GenerateStatefullsets permit to generate statefullsets for each node groups
-func buildStatefulsets(es *elasticsearchcrd.Elasticsearch, secretsChecksum []corev1.Secret, configMapsChecksum []corev1.ConfigMap) (statefullsets []appv1.StatefulSet, err error) {
+func buildStatefulsets(es *elasticsearchcrd.Elasticsearch, secretsChecksum []corev1.Secret, configMapsChecksum []corev1.ConfigMap, isOpenshift bool) (statefullsets []appv1.StatefulSet, err error) {
 	var sts *appv1.StatefulSet
 
 	checksumAnnotations := map[string]string{}
@@ -790,6 +790,11 @@ fi
 		ptb.WithSecurityContext(&corev1.PodSecurityContext{
 			FSGroup: ptr.To[int64](1000),
 		}, k8sbuilder.Merge)
+
+		// On Openshift, we need to run Opensearch with specific serviceAccount that is binding to anyuid scc
+		if isOpenshift {
+			ptb.PodTemplate().Spec.ServiceAccountName = GetServiceAccountName(es)
+		}
 
 		// Compute pod template name
 		ptb.PodTemplate().Name = GetNodeGroupName(es, nodeGroup.Name)

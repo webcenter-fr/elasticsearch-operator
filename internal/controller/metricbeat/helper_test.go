@@ -172,3 +172,15 @@ func TestGetNetworkPolicyElasticsearchName(t *testing.T) {
 
 	assert.Equal(t, "test-allow-es-mb", GetNetworkPolicyElasticsearchName(o))
 }
+
+func TestGetServiceAccountName(t *testing.T) {
+	o := &beatcrd.Metricbeat{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: "default",
+			Name:      "test",
+		},
+		Spec: beatcrd.MetricbeatSpec{},
+	}
+
+	assert.Equal(t, "test-mb", GetServiceAccountName(o))
+}

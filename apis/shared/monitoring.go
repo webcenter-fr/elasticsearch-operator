@@ -23,7 +23,7 @@ type MonitoringPrometheusSpec struct {
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
 	// +optional
 	// +kubebuilder:default=false
-	Enabled bool `json:"enabled,omitempty"`
+	Enabled *bool `json:"enabled,omitempty"`
 
 	// Url is the plugin URL where to download exporter
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
@@ -45,6 +45,20 @@ type MonitoringPrometheusSpec struct {
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
 	// +optional
 	Resources *corev1.ResourceRequirements `json:"resources,omitempty"`
+
+	// InstallPlugin permit to install plugin
+	// Default to true
+	// +operator-sdk:csv:customresourcedefinitions:type=spec
+	// +optional
+	// +kubebuilder:default=true
+	InstallPlugin *bool `json:"installPlugin,omitempty"`
+
+	// ScrapInterval is the scrap interval to collect ressource whith prometheus
+	// Default to 10 secode
+	// +operator-sdk:csv:customresourcedefinitions:type=spec
+	// +optional
+	// +kubebuilder:default="10s"
+	ScrapInterval *string `json:"scrapInterval,omitempty"`
 }
 
 // MonitoringMetricbeatSpec permit to set metricbeat
@@ -90,7 +104,7 @@ type MonitoringMetricbeatSpec struct {
 
 // IsPrometheusMonitoring return true if Prometheus monitoring is enabled
 func (h MonitoringSpec) IsPrometheusMonitoring() bool {
-	if h.Prometheus != nil && h.Prometheus.Enabled {
+	if h.Prometheus != nil && h.Prometheus.Enabled != nil && *h.Prometheus.Enabled {
 		return true
 	}
 

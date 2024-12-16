@@ -781,3 +781,15 @@ func TestGetSecretNameForCacerts(t *testing.T) {
 
 	assert.Equal(t, "test", GetSecretNameForCacerts(o))
 }
+
+func TestGetServiceAccountName(t *testing.T) {
+	o := &elasticsearchcrd.Elasticsearch{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: "default",
+			Name:      "test",
+		},
+		Spec: elasticsearchcrd.ElasticsearchSpec{},
+	}
+
+	assert.Equal(t, "test-es", GetServiceAccountName(o))
+}

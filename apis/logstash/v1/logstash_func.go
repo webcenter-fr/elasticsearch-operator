@@ -34,3 +34,14 @@ func (h LogstashPkiSpec) IsEnabled() bool {
 	}
 	return false
 }
+
+// HasBeatCertificate return true if PKI use to generate beat certificates
+func (h LogstashPkiSpec) HasBeatCertificate() bool {
+	for _, data := range h.Tls {
+		if data.Consumer == "beat" {
+			return true
+		}
+	}
+
+	return false
+}

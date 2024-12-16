@@ -151,3 +151,18 @@ func TestLogstashPkiSpecIsEnabled(t *testing.T) {
 	o.Enabled = ptr.To[bool](false)
 	assert.False(t, o.IsEnabled())
 }
+
+func TestLogstashPkiSpecHasBeatCertificate(t *testing.T) {
+	var o LogstashPkiSpec
+
+	// With default value
+	assert.False(t, o.HasBeatCertificate())
+
+	// When have beat certicate
+	o.Tls = map[string]LogstashTlsSpec{
+		"filebeat.crt": {
+			Consumer: "beat",
+		},
+	}
+	assert.True(t, o.HasBeatCertificate())
+}

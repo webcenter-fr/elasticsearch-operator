@@ -6,6 +6,8 @@ import (
 	"time"
 
 	"github.com/disaster37/operator-sdk-extra/pkg/controller"
+	"github.com/disaster37/operator-sdk-extra/pkg/helper"
+	routev1 "github.com/openshift/api/route/v1"
 	monitoringv1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1"
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/suite"
@@ -16,6 +18,8 @@ import (
 	kibanacrd "github.com/webcenter-fr/elasticsearch-operator/apis/kibana/v1"
 	kibanaapicrd "github.com/webcenter-fr/elasticsearch-operator/apis/kibanaapi/v1"
 	logstashcrd "github.com/webcenter-fr/elasticsearch-operator/apis/logstash/v1"
+	"github.com/webcenter-fr/elasticsearch-operator/internal/controller/common"
+	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/rest"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -109,6 +113,18 @@ func (t *ElasticsearchControllerTestSuite) SetupSuite() {
 	k8sClient := k8sManager.GetClient()
 	t.k8sClient = k8sClient
 
+	clientStd, err := kubernetes.NewForConfig(cfg)
+	if err != nil {
+		panic(err)
+	}
+	kubeCapability := common.KubernetesCapability{}
+	if helper.HasCRD(clientStd, monitoringv1.SchemeGroupVersion) {
+		kubeCapability.HasPrometheus = true
+	}
+	if helper.HasCRD(clientStd, routev1.SchemeGroupVersion) {
+		kubeCapability.HasRoute = true
+	}
+
 	// Setup indexers
 	// Add indexers
 	if err = controller.SetupIndexerWithManager(
@@ -127,7 +143,7 @@ func (t *ElasticsearchControllerTestSuite) SetupSuite() {
 	}
 
 	// Init controllers
-	elasticsearchReconciler := NewElasticsearchReconciler(k8sClient, logrus.NewEntry(logrus.StandardLogger()), k8sManager.GetEventRecorderFor("elasticsearch-controller"))
+	elasticsearchReconciler := NewElasticsearchReconciler(k8sClient, logrus.NewEntry(logrus.StandardLogger()), k8sManager.GetEventRecorderFor("elasticsearch-controller"), kubeCapability)
 	if err = elasticsearchReconciler.SetupWithManager(k8sManager); err != nil {
 		panic(err)
 	}
