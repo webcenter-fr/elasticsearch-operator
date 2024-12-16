@@ -221,6 +221,13 @@ func (in *LogstashSpec) DeepCopyInto(out *LogstashSpec) {
 			(*in)[i].DeepCopyInto(&(*out)[i])
 		}
 	}
+	if in.Routes != nil {
+		in, out := &in.Routes, &out.Routes
+		*out = make([]shared.Route, len(*in))
+		for i := range *in {
+			(*in)[i].DeepCopyInto(&(*out)[i])
+		}
+	}
 	if in.Services != nil {
 		in, out := &in.Services, &out.Services
 		*out = make([]shared.Service, len(*in))

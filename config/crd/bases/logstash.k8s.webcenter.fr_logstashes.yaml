@@ -13040,6 +13040,12 @@ spec:
                           type: object
                           x-kubernetes-map-type: atomic
                         type: array
+                      installPlugin:
+                        default: true
+                        description: |-
+                          InstallPlugin permit to install plugin
+                          Default to true
+                        type: boolean
                       resources:
                         description: |-
                           Resources permit to set ressources on Prometheus expporter container
@@ -13101,6 +13107,12 @@ spec:
                               More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/
                             type: object
                         type: object
+                      scrapInterval:
+                        default: 10s
+                        description: |-
+                          ScrapInterval is the scrap interval to collect ressource whith prometheus
+                          Default to 10 secode
+                        type: string
                       url:
                         description: Url is the plugin URL where to download exporter
                         type: string
@@ -13187,6 +13199,52 @@ spec:
                 items:
                   type: string
                 type: array
+              routes:
+                description: |-
+                  Routes permit to declare some routes
+                  The name is decorated with cluster name and so on
+                items:
+                  description: Route permit to set route
+                  properties:
+                    annotations:
+                      additionalProperties:
+                        type: string
+                      description: Annotations is the extra annotations for route
+                      type: object
+                    containerPort:
+                      description: ContainerPort is the port to set when create service
+                        consumed by route
+                      format: int64
+                      type: integer
+                    containerProtocol:
+                      description: ContainerPortProtocol is the protocol to set when
+                        create service consumed by route
+                      type: string
+                    labels:
+                      additionalProperties:
+                        type: string
+                      description: Labels is the extra labels for route
+                      type: object
+                    name:
+                      description: |-
+                        Name is the route name
+                        The name is decorated with cluster name and so on
+                      type: string
+                    spec:
+                      description: |
+                        Spec is the route spec
+                      required:
+                      - to
+                      type: object
+                      x-kubernetes-preserve-unknown-fields: true
+                  required:
+                  - containerPort
+                  - containerProtocol
+                  - name
+                  - spec
+                  type: object
+                type: array
+                x-kubernetes-preserve-unknown-fields: true
               services:
                 description: |-
                   Services permit to declare some services

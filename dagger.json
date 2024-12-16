@@ -6,7 +6,7 @@
     {
       "name": "operator-sdk",
       "source": "github.com/disaster37/dagger-library-go/operator-sdk",
-      "pin": "e528cbfd86fb099046e686c069c44e6e9ba00b6f"
+      "pin": "2fbd247ded0969559c8c461fd73aad6837b39458"
     },
     {
       "name": "codecov",
