@@ -288,9 +288,11 @@ func buildDeployments(cerebro *cerebrocrd.Cerebro, secretsChecksum []corev1.Secr
 	}, k8sbuilder.Merge)
 
 	// Compute Security context
-	ptb.WithSecurityContext(&corev1.PodSecurityContext{
-		FSGroup: ptr.To[int64](1000),
-	}, k8sbuilder.Merge)
+	if !isOpenshift {
+		ptb.WithSecurityContext(&corev1.PodSecurityContext{
+			FSGroup: ptr.To[int64](1000),
+		}, k8sbuilder.Merge)
+	}
 
 	// Compute pod template name
 	ptb.PodTemplate().Name = GetDeploymentName(cerebro)

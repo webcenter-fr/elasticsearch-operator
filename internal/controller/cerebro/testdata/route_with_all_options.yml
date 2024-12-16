@@ -1,0 +1,26 @@
+apiVersion: route.openshift.io/v1
+kind: Route
+metadata:
+  labels:
+    cluster: test
+    cerebro.k8s.webcenter.fr: "true"
+    globalLabel: globalLabel
+    ingressLabel: ingressLabel
+  annotations:
+    annotationLabel: annotationLabel
+    cerebro.k8s.webcenter.fr: "true"
+  name: test-cb
+  namespace: default
+spec:
+  host: my-test.cluster.local
+  path: /fake
+  tls:
+    termination: edge
+    insecureEdgeTerminationPolicy: Redirect
+    externalCertificate: 
+      name: my-secret
+  to:
+    kind: Service
+    name: test-cb
+  port:
+    targetPort: http

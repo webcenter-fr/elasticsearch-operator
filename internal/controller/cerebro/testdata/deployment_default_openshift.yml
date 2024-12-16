@@ -21,8 +21,6 @@ spec:
         cerebro.k8s.webcenter.fr: "true"
       annotations:
         cerebro.k8s.webcenter.fr: "true"
-        cerebro.k8s.webcenter.fr/configmap-test-config-cb: "e5d2924ad73d6bbaa5fe5590cb71c6daaef594ca118ff3112643d73c92ba3a35"
-        cerebro.k8s.webcenter.fr/secret-keystore: "e0254a8990817d8a00deb6123c4a2a7ea7ae48428a65d9514257b3baedc1fb6e"
       name: test-cb
     spec:
       containers:
@@ -52,12 +50,7 @@ spec:
             secretKeyRef:
               key: application
               name: test-application-cb
-        - name: env1
-          value: value1
-        envFrom:
-          - configMapRef:
-              name: test
-        image: lmenezes/cerebro:8.5.1
+        image: lmenezes/cerebro:latest
         args:
           - '-Dconfig.file=/etc/cerebro/application.conf'
         livenessProbe:
@@ -81,13 +74,6 @@ spec:
             port: 9000
             scheme: HTTP
           timeoutSeconds: 5
-        resources:
-          limits:
-            cpu: "4"
-            memory: 4Gi
-          requests:
-            cpu: "2"
-            memory: 2Gi
         securityContext:
           capabilities:
             drop:
@@ -96,8 +82,6 @@ spec:
           privileged: false
           readOnlyRootFilesystem: true
           allowPrivilegeEscalation: false
-          runAsUser: 1000
-          runAsGroup: 1000
         startupProbe:
           failureThreshold: 30
           initialDelaySeconds: 10
@@ -115,16 +99,7 @@ spec:
           name: logs
         - mountPath: /tmp
           name: tmp
-      securityContext:
-        fsGroup: 1000
       terminationGracePeriodSeconds: 30
-      nodeSelector:
-        project: kibana
-      tolerations:
-      - effect: NoSchedule
-        key: project
-        operator: Equal
-        value: kibana
       volumes:
       - configMap:
           name: test-config-cb
