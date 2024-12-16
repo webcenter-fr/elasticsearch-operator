@@ -77,7 +77,7 @@ func TestBuildStatefulset(t *testing.T) {
 
 	sts, err = buildStatefulsets(o, nil, nil, true)
 	assert.NoError(t, err)
-	test.EqualFromYamlFile[*appv1.StatefulSet](t, "testdata/statefullset-all_openshift.yml", &sts[0], scheme.Scheme)
+	test.EqualFromYamlFile[*appv1.StatefulSet](t, "testdata/statefullset_all_openshift.yml", &sts[0], scheme.Scheme)
 
 	// With complex config
 	o = &elasticsearchcrd.Elasticsearch{

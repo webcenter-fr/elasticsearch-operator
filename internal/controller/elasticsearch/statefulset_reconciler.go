@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"emperror.dev/errors"
+	elasticsearchhandler "github.com/disaster37/es-handler/v8"
 	"github.com/disaster37/k8s-objectmatcher/patch"
 	"github.com/disaster37/operator-sdk-extra/pkg/apis/shared"
 	"github.com/disaster37/operator-sdk-extra/pkg/controller"
@@ -262,6 +263,8 @@ func (r *statefulsetReconciler) Read(ctx context.Context, resource object.MultiP
 // Diff permit to check if statefulset is up to date
 func (r *statefulsetReconciler) Diff(ctx context.Context, resource object.MultiPhaseObject, read controller.MultiPhaseRead, data map[string]any, logger *logrus.Entry, ignoreDiff ...patch.CalculateOption) (diff controller.MultiPhaseDiff, res ctrl.Result, err error) {
 	o := resource.(*elasticsearchcrd.Elasticsearch)
+	var esHandler elasticsearchhandler.ElasticsearchHandler
+	var v any
 
 	currentStatefulsets := read.GetCurrentObjects()
 	copyCurrentStatefulsets := make([]client.Object, len(currentStatefulsets))
@@ -275,6 +278,10 @@ func (r *statefulsetReconciler) Diff(ctx context.Context, resource object.MultiP
 	stsToExpectedUpdated := make([]*appv1.StatefulSet, 0)
 	stsToCreate := make([]client.Object, 0)
 	data["phase"] = StatefulsetPhaseNormal
+	v, err = helper.Get(data, "esHandler")
+	if err == nil {
+		esHandler = v.(elasticsearchhandler.ElasticsearchHandler)
+	}
 
 	// Add some code to avoid reconcile multiple statefullset on same time
 	// It avoid to have multiple pod that exit the cluster on same time
@@ -380,6 +387,17 @@ func (r *statefulsetReconciler) Diff(ctx context.Context, resource object.MultiP
 
 			// Update phase if needed
 			if data["phase"] != StatefulsetPhaseUpgrade {
+				// We need to enable balancing before upgrade
+				// We need to retry if error. We can't stay cluster on this state
+				// On test we never launch real cluster, so we need to skit this
+				if os.Getenv("TEST") != "true" {
+					if esHandler == nil {
+						return diff, res, errors.New("Elasticsearch handler is nil. We need to get it before continue to have ability to re activate balancing")
+					}
+					if err = esHandler.EnableRoutingRebalance(); err != nil {
+						return diff, res, errors.Wrap(err, "Error when enable routing rebalance")
+					}
+				}
 				data["phase"] = StatefulsetPhaseUpgradeFinished
 			}
 		} else if condition.IsStatusConditionPresentAndEqual(o.Status.Conditions, StatefulsetConditionUpgrade.String(), metav1.ConditionFalse) && condition.IsStatusConditionPresentAndEqual(o.Status.Conditions, StatefulsetCondition.String(), metav1.ConditionTrue) {
@@ -394,6 +412,16 @@ func (r *statefulsetReconciler) Diff(ctx context.Context, resource object.MultiP
 					data["phase"] = StatefulsetPhaseUpgradeStarted
 					activeStateFulsetAlreadyUpgraded = true
 					stsToUpdate = append(stsToUpdate, sts)
+
+					// We need to disable balancing before upgrade
+					// We not need to block if error
+					if esHandler != nil {
+						if err = esHandler.DisableRoutingRebalance(); err != nil {
+							logger.Warnf("Error when disable routing rebalance: %s", err)
+						}
+					} else {
+						logger.Warn("Opensearch not ready. We skip to disable routing rebalance. It something can be normal if you provision the cluster first time.")
+					}
 				}
 			}
 		}

@@ -272,8 +272,11 @@ func buildStatefulsets(es *elasticsearchcrd.Elasticsearch, secretsChecksum []cor
 					"ALL",
 				},
 			},
-			RunAsUser:    ptr.To[int64](1000),
-			RunAsNonRoot: ptr.To[bool](true),
+			AllowPrivilegeEscalation: ptr.To(false),
+			Privileged:               ptr.To(false),
+			RunAsNonRoot:             ptr.To(true),
+			RunAsUser:                ptr.To[int64](1000),
+			RunAsGroup:               ptr.To[int64](1000),
 		}, k8sbuilder.OverwriteIfDefaultValue)
 
 		// Compute volume mount
@@ -450,8 +453,9 @@ fi
 				Image:           GetContainerImage(es),
 				ImagePullPolicy: es.Spec.ImagePullPolicy,
 				SecurityContext: &corev1.SecurityContext{
-					Privileged: ptr.To[bool](true),
-					RunAsUser:  ptr.To[int64](0),
+					Privileged:             ptr.To[bool](true),
+					RunAsUser:              ptr.To[int64](0),
+					ReadOnlyRootFilesystem: ptr.To(true),
 				},
 				Command: []string{
 					"sysctl",
@@ -468,6 +472,18 @@ fi
 				Name:            "init-keystore",
 				Image:           GetContainerImage(es),
 				ImagePullPolicy: es.Spec.ImagePullPolicy,
+				SecurityContext: &corev1.SecurityContext{
+					Capabilities: &corev1.Capabilities{
+						Drop: []corev1.Capability{
+							"ALL",
+						},
+					},
+					AllowPrivilegeEscalation: ptr.To(false),
+					Privileged:               ptr.To(false),
+					RunAsNonRoot:             ptr.To(true),
+					RunAsUser:                ptr.To[int64](1000),
+					RunAsGroup:               ptr.To[int64](1000),
+				},
 				VolumeMounts: []corev1.VolumeMount{
 					{
 						Name:      "keystore",
@@ -511,7 +527,16 @@ cp -a /usr/share/elasticsearch/config/elasticsearch.keystore /mnt/keystore/
 				Image:           GetContainerImage(es),
 				ImagePullPolicy: es.Spec.ImagePullPolicy,
 				SecurityContext: &corev1.SecurityContext{
-					RunAsUser: ptr.To[int64](0),
+					Capabilities: &corev1.Capabilities{
+						Drop: []corev1.Capability{
+							"ALL",
+						},
+					},
+					AllowPrivilegeEscalation: ptr.To(false),
+					Privileged:               ptr.To(false),
+					RunAsNonRoot:             ptr.To(true),
+					RunAsUser:                ptr.To[int64](1000),
+					RunAsGroup:               ptr.To[int64](1000),
 				},
 				VolumeMounts: []corev1.VolumeMount{
 					{
@@ -548,6 +573,7 @@ cp -a /usr/share/elasticsearch/jdk/lib/security/* /mnt/cacerts/
 			Image:           GetContainerImage(es),
 			ImagePullPolicy: es.Spec.ImagePullPolicy,
 			SecurityContext: &corev1.SecurityContext{
+				Privileged: ptr.To(false),
 				RunAsUser: ptr.To[int64](0),
 			},
 			Env: []corev1.EnvVar{

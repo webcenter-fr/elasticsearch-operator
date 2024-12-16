@@ -7,7 +7,7 @@ require (
 	emperror.dev/errors v0.8.1
 	github.com/codingsince1985/checksum v1.3.0
 	github.com/davecgh/go-spew v1.1.2-0.20180830191138-d8f796af33cc
-	github.com/disaster37/es-handler/v8 v8.1.4
+	github.com/disaster37/es-handler/v8 v8.1.5
 	github.com/disaster37/generic-objectmatcher v1.0.2
 	github.com/disaster37/go-kibana-rest/v8 v8.5.0
 	github.com/disaster37/goca v1.0.4

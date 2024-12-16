@@ -596,7 +596,13 @@ func (r *tlsReconciler) Diff(ctx context.Context, resource object.MultiPhaseObje
 	}
 	for _, s := range secrets {
 		isUpdated := false
-		if strDiff := localhelper.DiffLabels(getLabels(o), s.Labels); strDiff != "" {
+		if s.Name == GetSecretNameForTlsApi(o) {
+			if strDiff := localhelper.DiffLabels(getLabelsForTlsSecret(o), s.Labels); strDiff != "" {
+				diff.AddDiff(strDiff)
+				s.Labels = getLabelsForTlsSecret(o)
+				isUpdated = true
+			}
+		} else if strDiff := localhelper.DiffLabels(getLabels(o), s.Labels); strDiff != "" {
 			diff.AddDiff(strDiff)
 			s.Labels = getLabels(o)
 			isUpdated = true

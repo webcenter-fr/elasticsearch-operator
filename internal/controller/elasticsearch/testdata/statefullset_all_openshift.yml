@@ -1,44 +1,45 @@
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
-  name: test-data-es
+  name: test-all-es
   namespace: default
   labels:
     cluster: test
-    nodeGroup: data
+    nodeGroup: all
     elasticsearch.k8s.webcenter.fr: "true"
   annotations:
     elasticsearch.k8s.webcenter.fr: "true"
 spec:
   podManagementPolicy: Parallel
-  replicas: 3
+  replicas: 1
   selector:
     matchLabels:
       cluster: test
-      nodeGroup: data
+      nodeGroup: all
       elasticsearch.k8s.webcenter.fr: "true"
-  serviceName: test-data-headless-es
+  serviceName: test-all-headless-es
   template:
     metadata:
       labels:
         cluster: test
-        nodeGroup: data
+        nodeGroup: all
         elasticsearch.k8s.webcenter.fr: "true"
       annotations:
-        elasticsearch.k8s.webcenter.fr/configmap-test-data-config-es: 2b7974f44eca1429b868c651dcd5921bbe87655a250b780c55a0a6538cb5e56a
-        elasticsearch.k8s.webcenter.fr/secret-elasticsearch-security: 2c1eef3af7f9998f3e29ccd7a2927fdf62ca82080ea74b67e9454aae3c2adc98
-        elasticsearch.k8s.webcenter.fr: 'true'
-      name: test-data-es
+        elasticsearch.k8s.webcenter.fr: "true"
+      name: test-all-es
     spec:
+      serviceAccountName: test-es
       affinity:
         podAntiAffinity:
-          requiredDuringSchedulingIgnoredDuringExecution:
-          - labelSelector:
-              matchLabels:
-                cluster: test
-                nodeGroup: data
-                elasticsearch.k8s.webcenter.fr: "true"
-            topologyKey: rack
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - podAffinityTerm:
+                labelSelector:
+                  matchLabels:
+                    cluster: test
+                    nodeGroup: all
+                    elasticsearch.k8s.webcenter.fr: "true"
+                topologyKey: kubernetes.io/hostname
+              weight: 10
       containers:
       - env:
         - name: network.publish_host
@@ -57,7 +58,7 @@ spec:
               apiVersion: v1
               fieldPath: metadata.name
         - name: node.roles
-          value: data
+          value: master, data, ingest
         - name: ELASTIC_PASSWORD
           valueFrom:
             secretKeyRef:
@@ -84,7 +85,7 @@ spec:
               apiVersion: v1
               fieldPath: metadata.namespace
         - name: ELASTICSEARCH_JAVA_OPTS
-          value: -Xms30g -Xmx30g
+          value: ''
         - name: cluster.name
           value: test
         - name: network.host
@@ -96,7 +97,7 @@ spec:
         envFrom:
         - configMapRef:
             name: test-bootstrapping-es
-        image: docker.elastic.co/elasticsearch/elasticsearch:2.3.0
+        image: docker.elastic.co/elasticsearch/elasticsearch:latest
         livenessProbe:
           failureThreshold: 3
           periodSeconds: 30
@@ -158,13 +159,6 @@ spec:
                     fi
                   fi
           timeoutSeconds: 5
-        resources:
-          limits:
-            cpu: "8"
-            memory: 64Gi
-          requests:
-            cpu: "5"
-            memory: 30Gi
         securityContext:
           capabilities:
             drop:
@@ -183,115 +177,21 @@ spec:
             port: 9200
           timeoutSeconds: 5
         volumeMounts:
-        - mountPath: /mnt/snapshot
-          name: snapshot
-        - mountPath: /usr/share/elasticsearch/data
-          name: elasticsearch-data
         - mountPath: /usr/share/elasticsearch/config
           name: config
-        - mountPath: /usr/share/elasticsearch/plugins
-          name: plugin
-        - mountPath: /usr/share/elasticsearch/jdk/lib/security
-          name: cacerts
+        - mountPath: /usr/share/elasticsearch/data
+          name: elasticsearch-data
       initContainers:
       - command:
         - sysctl
         - -w
         - vm.max_map_count=262144
-        image: docker.elastic.co/elasticsearch/elasticsearch:2.3.0
+        image: docker.elastic.co/elasticsearch/elasticsearch:latest
         name: configure-sysctl
-        resources:
-          limits:
-            cpu: 300m
-            memory: 500Mi
-          requests:
-            cpu: 100m
-            memory: 100Mi
         securityContext:
           privileged: true
           runAsUser: 0
           readOnlyRootFilesystem: true
-      - command:
-        - /bin/bash
-        - -c
-        - |
-            #!/usr/bin/env bash
-            set -euo pipefail
-
-            elasticsearch-keystore create
-            for i in /mnt/keystoreSecrets/*; do
-                key=$(basename $i)
-                echo "Adding file $i to keystore key $key"
-                elasticsearch-keystore add-file "$key" "$i"
-            done
-
-            # Add the bootstrap password since otherwise the Elasticsearch entrypoint tries to do this on startup
-            if [ ! -z ${ELASTIC_PASSWORD+x} ]; then
-              echo 'Adding env $ELASTIC_PASSWORD to keystore as key bootstrap.password'
-              echo "$ELASTIC_PASSWORD" | elasticsearch-keystore add -x bootstrap.password
-            fi
-
-            cp -a /usr/share/elasticsearch/config/elasticsearch.keystore /mnt/keystore/
-        image: docker.elastic.co/elasticsearch/elasticsearch:2.3.0
-        name: init-keystore
-        resources:
-          limits:
-            cpu: 300m
-            memory: 500Mi
-          requests:
-            cpu: 100m
-            memory: 100Mi
-        volumeMounts:
-          - name: keystore
-            mountPath: /mnt/keystore
-          - name: elasticsearch-keystore
-            mountPath: /mnt/keystoreSecrets
-        securityContext:
-          capabilities:
-            drop:
-            - ALL
-          runAsNonRoot: true
-          runAsUser: 1000
-          runAsGroup: 1000
-          privileged: false
-          allowPrivilegeEscalation: false
-      - command:
-        - /bin/bash
-        - -c
-        - |
-            #!/usr/bin/env bash
-            set -euo pipefail
-
-            for i in /mnt/cacertsSecrets/*; do
-                key=$(basename $i)
-                echo "Import certificat $i with name $key"
-                /usr/share/elasticsearch/jdk/bin/keytool -import -trustcacerts -cacerts -noprompt -alias $key -storepass changeit -file $i
-            done
-
-            cp -a /usr/share/elasticsearch/jdk/lib/security/* /mnt/cacerts/
-        image: docker.elastic.co/elasticsearch/elasticsearch:2.3.0
-        name: init-cacerts
-        securityContext:
-          capabilities:
-            drop:
-            - ALL
-          runAsNonRoot: true
-          runAsUser: 1000
-          runAsGroup: 1000
-          privileged: false
-          allowPrivilegeEscalation: false
-        resources:
-          limits:
-            cpu: 300m
-            memory: 500Mi
-          requests:
-            cpu: 100m
-            memory: 100Mi
-        volumeMounts:
-          - name: cacerts
-            mountPath: /mnt/cacerts
-          - name: elasticsearch-cacerts
-            mountPath: /mnt/cacertsSecrets
       - command:
         - /bin/bash
         - -c
@@ -329,14 +229,13 @@ spec:
             chown elasticsearch:elasticsearch /mnt/data
             chmod 775 /mnt/data
 
-            ./bin/elasticsearch-plugin install -b repository-s3
 
             if [ -d /mnt/plugins ]; then
               cp -a /usr/share/elasticsearch/plugins/* /mnt/plugins/
               chown -R elasticsearch:elasticsearch /mnt/plugins
             fi
 
-        image: docker.elastic.co/elasticsearch/elasticsearch:2.3.0
+        image: docker.elastic.co/elasticsearch/elasticsearch:latest
         name: init-filesystem
         env:
         - name: POD_NAME
@@ -368,32 +267,16 @@ spec:
             mountPath: /mnt/certs/api
           - name: elasticsearch-config
             mountPath: /mnt/configmap
-          - name: elasticsearch-data
-            mountPath: /mnt/data
-          - name: plugin
-            mountPath: /mnt/plugins
           - name: keystore
             mountPath: /mnt/keystore
+          - mountPath: /mnt/data
+            name: elasticsearch-data
         securityContext:
           runAsUser: 0
           privileged: false
-        resources:
-          limits:
-            cpu: 300m
-            memory: 500Mi
-          requests:
-            cpu: 100m
-            memory: 100Mi
       securityContext:
         fsGroup: 1000
-      nodeSelector:
-        project: elasticsearch
       terminationGracePeriodSeconds: 120
-      tolerations:
-      - effect: NoSchedule
-        key: project
-        operator: Equal
-        value: elasticsearch
       volumes:
       - name: node-tls
         secret:
@@ -402,26 +285,15 @@ spec:
         secret:
           secretName: test-tls-api-es
       - configMap:
-          name: test-data-config-es
+          name: test-all-config-es
         name: elasticsearch-config
-      - name: snapshot
-        nfs:
-          path: /snapshot
-          server: nfsserver
-      - hostPath:
-          path: /data/elasticsearch
-        name: elasticsearch-data
       - name: keystore
         emptyDir: {}
       - name: cacerts
         emptyDir: {}
-      - name: elasticsearch-keystore
-        secret:
-          secretName: elasticsearch-security
-      - name: elasticsearch-cacerts
-        secret:
-          secretName: custom-ca
       - name: config
         emptyDir: {}
       - name: plugin
+        emptyDir: {}
+      - name: elasticsearch-data
         emptyDir: {}

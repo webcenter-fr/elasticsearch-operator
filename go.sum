@@ -27,8 +27,8 @@ github.com/davecgh/go-spew v1.1.0/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSs
 github.com/davecgh/go-spew v1.1.1/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
 github.com/davecgh/go-spew v1.1.2-0.20180830191138-d8f796af33cc h1:U9qPSI2PIWSS1VwoXQT9A3Wy9MM3WgvqSxFWenqJduM=
 github.com/davecgh/go-spew v1.1.2-0.20180830191138-d8f796af33cc/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
-github.com/disaster37/es-handler/v8 v8.1.4 h1:EDJheAMv4B755b1lCiwbT+hj+F3F1lj4zHmBwKwNOyQ=
-github.com/disaster37/es-handler/v8 v8.1.4/go.mod h1:kLPwx7xutOHWdGwtbujzg1h1J6Xv+HKRakc/pgY1wQo=
+github.com/disaster37/es-handler/v8 v8.1.5 h1:GkV63to9EvnU95hgvLy66gqeOSw+tlnDaU3cjTcQeXc=
+github.com/disaster37/es-handler/v8 v8.1.5/go.mod h1:kLPwx7xutOHWdGwtbujzg1h1J6Xv+HKRakc/pgY1wQo=
 github.com/disaster37/generic-objectmatcher v1.0.2 h1:jjuMd0E/Q3ZsDCqbpd3nLdSI7I9SJB+xJXT9LgWoltc=
 github.com/disaster37/generic-objectmatcher v1.0.2/go.mod h1:OyAiqj4iYNgikhoOBBNphdiToKvHtfC7Ib6C4kfkm0w=
 github.com/disaster37/go-kibana-rest/v8 v8.5.0 h1:Wr2CMopHj0wAh7kq3p355jXctISL1LdAZ9kYN/v6abw=

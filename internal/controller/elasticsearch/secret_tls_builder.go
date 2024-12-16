@@ -326,3 +326,9 @@ func updateSecret(old, new *corev1.Secret) (s *corev1.Secret, updated bool) {
 
 	return s, updated
 }
+
+func getLabelsForTlsSecret(o *elasticsearchcrd.Elasticsearch) map[string]string {
+	return getLabels(o, map[string]string{
+		fmt.Sprintf("%s/tls-certificate", elasticsearchcrd.ElasticsearchAnnotationKey): "true",
+	})
+}

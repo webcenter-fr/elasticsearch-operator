@@ -171,6 +171,9 @@ spec:
             - ALL
           runAsNonRoot: true
           runAsUser: 1000
+          runAsGroup: 1000
+          privileged: false
+          allowPrivilegeEscalation: false
         startupProbe:
           failureThreshold: 30
           initialDelaySeconds: 10
@@ -207,6 +210,7 @@ spec:
         securityContext:
           privileged: true
           runAsUser: 0
+          readOnlyRootFilesystem: true
       - command:
         - /bin/bash
         - -c
@@ -242,6 +246,15 @@ spec:
             mountPath: /mnt/keystore
           - name: elasticsearch-keystore
             mountPath: /mnt/keystoreSecrets
+        securityContext:
+          capabilities:
+            drop:
+            - ALL
+          runAsNonRoot: true
+          runAsUser: 1000
+          runAsGroup: 1000
+          privileged: false
+          allowPrivilegeEscalation: false
       - command:
         - /bin/bash
         - -c
@@ -259,7 +272,14 @@ spec:
         image: docker.elastic.co/elasticsearch/elasticsearch:2.3.0
         name: init-cacerts
         securityContext:
-          runAsUser: 0
+          capabilities:
+            drop:
+            - ALL
+          runAsNonRoot: true
+          runAsUser: 1000
+          runAsGroup: 1000
+          privileged: false
+          allowPrivilegeEscalation: false
         resources:
           limits:
             cpu: 300m
@@ -356,6 +376,7 @@ spec:
             mountPath: /mnt/keystore
         securityContext:
           runAsUser: 0
+          privileged: false
         resources:
           limits:
             cpu: 300m
