@@ -186,18 +186,32 @@ func (h *KibanaReconciler) SetupWithManager(mgr ctrl.Manager) error {
 
 }
 
+func (h *KibanaReconciler) Configure(ctx context.Context, req ctrl.Request, resource object.MultiPhaseObject, data map[string]any, logger *logrus.Entry) (res ctrl.Result, err error) {
+	// Set prometheus Metrics
+	common.ControllerInstances.WithLabelValues(h.name, resource.GetNamespace(), resource.GetName()).Set(1)
+
+	return h.MultiPhaseReconcilerAction.Configure(ctx, req, resource, data, logger)
+}
+
 func (h *KibanaReconciler) Delete(ctx context.Context, o object.MultiPhaseObject, data map[string]any, logger *logrus.Entry) (err error) {
-	common.ControllerMetrics.WithLabelValues(h.name).Dec()
+	// Set prometheus Metrics
+	common.ControllerInstances.WithLabelValues(h.name, o.GetNamespace(), o.GetName()).Set(0)
+
 	return h.MultiPhaseReconcilerAction.Delete(ctx, o, data, logger)
 }
 
 func (h *KibanaReconciler) OnError(ctx context.Context, o object.MultiPhaseObject, data map[string]any, currentErr error, logger *logrus.Entry) (res ctrl.Result, err error) {
 	common.TotalErrors.Inc()
+	common.ControllerErrors.WithLabelValues(h.name, o.GetNamespace(), o.GetName()).Inc()
+
 	return h.MultiPhaseReconcilerAction.OnError(ctx, o, data, currentErr, logger)
 }
 
 func (h *KibanaReconciler) OnSuccess(ctx context.Context, r object.MultiPhaseObject, data map[string]any, logger *logrus.Entry) (res ctrl.Result, err error) {
 	o := r.(*kibanacrd.Kibana)
+
+	// Reset the current cluster errors
+	common.ControllerErrors.WithLabelValues(h.name, o.GetNamespace(), o.GetName()).Set(0)
 
 	// Not preserve condition to avoid to update status each time
 	conditions := o.GetStatus().GetConditions()
@@ -273,6 +287,15 @@ func (h *KibanaReconciler) computeKibanaUrl(ctx context.Context, kb *kibanacrd.K
 		} else {
 			scheme = "http"
 		}
+	} else if kb.Spec.Endpoint.IsRouteEnabled() {
+		url = kb.Spec.Endpoint.Route.Host
+
+		if kb.Spec.Endpoint.Route.TlsEnabled != nil && *kb.Spec.Endpoint.Route.TlsEnabled {
+			scheme = "https"
+		} else {
+			scheme = "http"
+		}
+
 	} else if kb.Spec.Endpoint.IsLoadBalancerEnabled() {
 		// Need to get lb service to get IP and port
 		service := &corev1.Service{}

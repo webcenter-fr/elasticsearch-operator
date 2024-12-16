@@ -84,7 +84,7 @@ func doCreateElasticsearchStep() test.TestStep {
 							Enabled: ptr.To[bool](true),
 						},
 						Metricbeat: &shared.MonitoringMetricbeatSpec{
-							Enabled: true,
+							Enabled: ptr.To(true),
 							ElasticsearchRef: shared.ElasticsearchRef{
 								ManagedElasticsearchRef: &shared.ElasticsearchManagedRef{
 									Name:      "elastic",

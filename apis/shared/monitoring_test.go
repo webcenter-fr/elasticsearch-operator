@@ -41,7 +41,7 @@ func TestIsMetricbeatMonitoring(t *testing.T) {
 	// When enabled
 	o = MonitoringSpec{
 		Metricbeat: &MonitoringMetricbeatSpec{
-			Enabled: true,
+			Enabled: ptr.To(true),
 		},
 	}
 	assert.True(t, o.IsMetricbeatMonitoring(1))
@@ -49,7 +49,7 @@ func TestIsMetricbeatMonitoring(t *testing.T) {
 	// When disabled
 	o = MonitoringSpec{
 		Metricbeat: &MonitoringMetricbeatSpec{
-			Enabled: false,
+			Enabled: ptr.To(false),
 		},
 	}
 	assert.False(t, o.IsMetricbeatMonitoring(1))
@@ -57,7 +57,7 @@ func TestIsMetricbeatMonitoring(t *testing.T) {
 	// When enabled but replica is set to 0
 	o = MonitoringSpec{
 		Metricbeat: &MonitoringMetricbeatSpec{
-			Enabled: true,
+			Enabled: ptr.To(true),
 		},
 	}
 	assert.False(t, o.IsMetricbeatMonitoring(0))

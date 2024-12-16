@@ -49,7 +49,7 @@ func TestBuildMetricbeat(t *testing.T) {
 		Spec: elasticsearchcrd.ElasticsearchSpec{
 			Monitoring: shared.MonitoringSpec{
 				Metricbeat: &shared.MonitoringMetricbeatSpec{
-					Enabled: false,
+					Enabled: ptr.To(false),
 				},
 			},
 		},
@@ -68,7 +68,7 @@ func TestBuildMetricbeat(t *testing.T) {
 		Spec: elasticsearchcrd.ElasticsearchSpec{
 			Monitoring: shared.MonitoringSpec{
 				Metricbeat: &shared.MonitoringMetricbeatSpec{
-					Enabled: true,
+					Enabled: ptr.To(true),
 					ElasticsearchRef: shared.ElasticsearchRef{
 						ManagedElasticsearchRef: &shared.ElasticsearchManagedRef{
 							Name:      "test",
@@ -101,7 +101,7 @@ func TestBuildMetricbeat(t *testing.T) {
 		Spec: elasticsearchcrd.ElasticsearchSpec{
 			Monitoring: shared.MonitoringSpec{
 				Metricbeat: &shared.MonitoringMetricbeatSpec{
-					Enabled: true,
+					Enabled: ptr.To(true),
 					Version: "1.0.0",
 					ElasticsearchRef: shared.ElasticsearchRef{
 						ManagedElasticsearchRef: &shared.ElasticsearchManagedRef{
@@ -147,7 +147,7 @@ func TestBuildMetricbeat(t *testing.T) {
 		Spec: elasticsearchcrd.ElasticsearchSpec{
 			Monitoring: shared.MonitoringSpec{
 				Metricbeat: &shared.MonitoringMetricbeatSpec{
-					Enabled: true,
+					Enabled: ptr.To(true),
 					ElasticsearchRef: shared.ElasticsearchRef{
 						ManagedElasticsearchRef: &shared.ElasticsearchManagedRef{
 							Name:      "test",

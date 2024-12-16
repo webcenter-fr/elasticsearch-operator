@@ -171,18 +171,32 @@ func (h *FilebeatReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrlBuilder.Complete(h)
 }
 
+func (h *FilebeatReconciler) Configure(ctx context.Context, req ctrl.Request, resource object.MultiPhaseObject, data map[string]any, logger *logrus.Entry) (res ctrl.Result, err error) {
+	// Set prometheus Metrics
+	common.ControllerInstances.WithLabelValues(h.name, resource.GetNamespace(), resource.GetName()).Set(1)
+
+	return h.MultiPhaseReconcilerAction.Configure(ctx, req, resource, data, logger)
+}
+
 func (h *FilebeatReconciler) Delete(ctx context.Context, o object.MultiPhaseObject, data map[string]any, logger *logrus.Entry) (err error) {
-	common.ControllerMetrics.WithLabelValues(h.name).Dec()
+	// Set prometheus Metrics
+	common.ControllerInstances.WithLabelValues(h.name, o.GetNamespace(), o.GetName()).Set(0)
+
 	return h.MultiPhaseReconcilerAction.Delete(ctx, o, data, logger)
 }
 
 func (h *FilebeatReconciler) OnError(ctx context.Context, o object.MultiPhaseObject, data map[string]any, currentErr error, logger *logrus.Entry) (res ctrl.Result, err error) {
 	common.TotalErrors.Inc()
+	common.ControllerErrors.WithLabelValues(h.name, o.GetNamespace(), o.GetName()).Inc()
+
 	return h.MultiPhaseReconcilerAction.OnError(ctx, o, data, currentErr, logger)
 }
 
 func (h *FilebeatReconciler) OnSuccess(ctx context.Context, r object.MultiPhaseObject, data map[string]any, logger *logrus.Entry) (res ctrl.Result, err error) {
 	o := r.(*beatcrd.Filebeat)
+
+	// Reset the current cluster errors
+	common.ControllerErrors.WithLabelValues(h.name, o.GetNamespace(), o.GetName()).Set(0)
 
 	// Not preserve condition to avoid to update status each time
 	conditions := o.GetStatus().GetConditions()
@@ -233,6 +247,8 @@ func (h *FilebeatReconciler) OnSuccess(ctx context.Context, r object.MultiPhaseO
 		// Requeued to check if status change
 		res.RequeueAfter = time.Second * 30
 	}
+
+	o.Status.CertSecretName = GetSecretNameForTls(o)
 
 	return res, nil
 }

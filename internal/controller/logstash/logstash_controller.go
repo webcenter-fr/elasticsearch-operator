@@ -184,18 +184,32 @@ func (h *LogstashReconciler) SetupWithManager(mgr ctrl.Manager) error {
 
 }
 
+func (h *LogstashReconciler) Configure(ctx context.Context, req ctrl.Request, resource object.MultiPhaseObject, data map[string]any, logger *logrus.Entry) (res ctrl.Result, err error) {
+	// Set prometheus Metrics
+	common.ControllerInstances.WithLabelValues(h.name, resource.GetNamespace(), resource.GetName()).Set(1)
+
+	return h.MultiPhaseReconcilerAction.Configure(ctx, req, resource, data, logger)
+}
+
 func (h *LogstashReconciler) Delete(ctx context.Context, o object.MultiPhaseObject, data map[string]any, logger *logrus.Entry) (err error) {
-	common.ControllerMetrics.WithLabelValues(h.name).Dec()
+	// Set prometheus Metrics
+	common.ControllerInstances.WithLabelValues(h.name, o.GetNamespace(), o.GetName()).Set(0)
+
 	return h.MultiPhaseReconcilerAction.Delete(ctx, o, data, logger)
 }
 
 func (h *LogstashReconciler) OnError(ctx context.Context, o object.MultiPhaseObject, data map[string]any, currentErr error, logger *logrus.Entry) (res ctrl.Result, err error) {
 	common.TotalErrors.Inc()
+	common.ControllerErrors.WithLabelValues(h.name, o.GetNamespace(), o.GetName()).Inc()
+
 	return h.MultiPhaseReconcilerAction.OnError(ctx, o, data, currentErr, logger)
 }
 
 func (h *LogstashReconciler) OnSuccess(ctx context.Context, r object.MultiPhaseObject, data map[string]any, logger *logrus.Entry) (res ctrl.Result, err error) {
 	o := r.(*logstashcrd.Logstash)
+
+	// Reset the current cluster errors
+	common.ControllerErrors.WithLabelValues(h.name, o.GetNamespace(), o.GetName()).Set(0)
 
 	// Not preserve condition to avoid to update status each time
 	conditions := o.GetStatus().GetConditions()

@@ -7,6 +7,7 @@ import (
 	"github.com/webcenter-fr/elasticsearch-operator/apis/shared"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/utils/ptr"
 )
 
 func (t *TestSuite) TestSetupElasticsearchIndexer() {
@@ -28,7 +29,7 @@ func (t *TestSuite) TestSetupElasticsearchIndexer() {
 			},
 			Monitoring: shared.MonitoringSpec{
 				Metricbeat: &shared.MonitoringMetricbeatSpec{
-					Enabled: true,
+					Enabled: ptr.To[bool](true),
 					ElasticsearchRef: shared.ElasticsearchRef{
 						ManagedElasticsearchRef: &shared.ElasticsearchManagedRef{
 							Name: "test",

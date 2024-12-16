@@ -168,6 +168,7 @@ type ElasticsearchGlobalNodeGroupSpec struct {
 
 	// PodTemplate is merged with expected pod
 	// It usefull to add some extra properties on pod spec
+	// @clean
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
 	// +kubebuilder:validation:Optional
 	// +optional
@@ -293,7 +294,7 @@ type ElasticsearchStatus struct {
 //+kubebuilder:storageversion
 
 // Elasticsearch is the Schema for the elasticsearchs API
-// +operator-sdk:csv:customresourcedefinitions:resources={{Ingress,networking.k8s.io/v1},{ConfigMap,v1},{Service,v1},{Secret,v1},{Deployment,apps/v1},{StatefulSet,apps/v1},{License,elasticsearchapi.k8s.webcenter.fr/v1},{NetworkPolicy,networking.k8s.io/v1},{PodDisruptionBudget,policy/v1},{PodMonitor,monitoring.coreos.com/v1},{User,elasticsearchapi.k8s.webcenter.fr/v1},{Metricbeat,beat.k8s.webcenter.fr/v1}}
+// +operator-sdk:csv:customresourcedefinitions:resources={{Ingress,networking.k8s.io/v1},{ConfigMap,v1},{Service,v1},{Secret,v1},{Deployment,apps/v1},{StatefulSet,apps/v1},{License,elasticsearchapi.k8s.webcenter.fr/v1},{NetworkPolicy,networking.k8s.io/v1},{PodDisruptionBudget,policy/v1},{PodMonitor,monitoring.coreos.com/v1},{User,elasticsearchapi.k8s.webcenter.fr/v1},{Metricbeat,beat.k8s.webcenter.fr/v1},{ServiceAccount,v1},{RoleBinding,rbac.authorization.k8s.io/v1},{Route,route.openshift.io/v1}}
 // +kubebuilder:printcolumn:name="URL",type="string",JSONPath=".status.url"
 // +kubebuilder:printcolumn:name="CredentialsRef",type="string",JSONPath=".status.credentialsRef.name"
 // +kubebuilder:printcolumn:name="Health",type="string",JSONPath=".status.health",description="Cluster health"

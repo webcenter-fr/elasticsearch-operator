@@ -45,6 +45,7 @@ type Deployment struct {
 
 	// PodSpec is merged with expected pod
 	// It usefull to add some extra properties on pod spec
+	// @clean
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
 	// +optional
 	// +kubebuilder:pruning:PreserveUnknownFields

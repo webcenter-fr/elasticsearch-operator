@@ -211,6 +211,9 @@ func (h *ElasticsearchReconciler) SetupWithManager(mgr ctrl.Manager) error {
 func (h *ElasticsearchReconciler) Configure(ctx context.Context, req ctrl.Request, resource object.MultiPhaseObject, data map[string]any, logger *logrus.Entry) (res ctrl.Result, err error) {
 	o := resource.(*elasticsearchcrd.Elasticsearch)
 
+	// Set prometheus Metrics
+	common.ControllerInstances.WithLabelValues(h.name, o.Namespace, o.Name).Set(1)
+
 	if o.Status.IsBootstrapping == nil {
 		o.Status.IsBootstrapping = ptr.To[bool](false)
 	}
@@ -225,6 +228,7 @@ func (h *ElasticsearchReconciler) Configure(ctx context.Context, req ctrl.Reques
 		if esHandler == nil {
 			o.Status.Health = "Unreachable"
 		} else {
+			data["esHandler"] = esHandler
 			health, err := esHandler.ClusterHealth()
 			if err != nil {
 				logger.Warnf("Error when get elasticsearch health: %s", err.Error())
@@ -239,6 +243,9 @@ func (h *ElasticsearchReconciler) Configure(ctx context.Context, req ctrl.Reques
 }
 
 func (h *ElasticsearchReconciler) Delete(ctx context.Context, o object.MultiPhaseObject, data map[string]any, logger *logrus.Entry) (err error) {
+	// Set prometheus Metrics
+	common.ControllerInstances.WithLabelValues(h.name, o.GetNamespace(), o.GetName()).Set(0)
+
 	// Read Cerebro referer to remove finalizer when destroy cluster
 	hostList := &cerebrocrd.HostList{}
 	fs := fields.ParseSelectorOrDie(fmt.Sprintf("spec.elasticsearchRef=%s", o.GetName()))
@@ -252,17 +259,21 @@ func (h *ElasticsearchReconciler) Delete(ctx context.Context, o object.MultiPhas
 		}
 	}
 
-	common.ControllerMetrics.WithLabelValues(h.name).Dec()
 	return h.MultiPhaseReconcilerAction.Delete(ctx, o, data, logger)
 }
 
 func (h *ElasticsearchReconciler) OnError(ctx context.Context, o object.MultiPhaseObject, data map[string]any, currentErr error, logger *logrus.Entry) (res ctrl.Result, err error) {
 	common.TotalErrors.Inc()
+	common.ControllerErrors.WithLabelValues(h.name, o.GetNamespace(), o.GetName()).Inc()
+
 	return h.MultiPhaseReconcilerAction.OnError(ctx, o, data, currentErr, logger)
 }
 
 func (h *ElasticsearchReconciler) OnSuccess(ctx context.Context, r object.MultiPhaseObject, data map[string]any, logger *logrus.Entry) (res ctrl.Result, err error) {
 	o := r.(*elasticsearchcrd.Elasticsearch)
+
+	// Reset the current cluster errors
+	common.ControllerErrors.WithLabelValues(h.name, o.GetNamespace(), o.GetName()).Set(0)
 
 	// Not preserve condition to avoid to update status each time
 	conditions := o.GetStatus().GetConditions()
@@ -355,6 +366,14 @@ func (h *ElasticsearchReconciler) computeElasticsearchUrl(ctx context.Context, e
 		url = es.Spec.Endpoint.Ingress.Host
 
 		if es.Spec.Endpoint.Ingress.SecretRef != nil {
+			scheme = "https"
+		} else {
+			scheme = "http"
+		}
+	} else if es.IsRouteEnabled() {
+		url = es.Spec.Endpoint.Route.Host
+
+		if es.Spec.Endpoint.Route.TlsEnabled != nil && *es.Spec.Endpoint.Route.TlsEnabled {
 			scheme = "https"
 		} else {
 			scheme = "http"

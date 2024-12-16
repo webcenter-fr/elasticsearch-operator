@@ -155,18 +155,33 @@ func (h *CerebroReconciler) SetupWithManager(mgr ctrl.Manager) error {
 
 }
 
+func (h *CerebroReconciler) Configure(ctx context.Context, req ctrl.Request, resource object.MultiPhaseObject, data map[string]any, logger *logrus.Entry) (res ctrl.Result, err error) {
+	// Set prometheus Metrics
+	common.ControllerInstances.WithLabelValues(h.name, resource.GetNamespace(), resource.GetName()).Set(1)
+
+	return h.MultiPhaseReconcilerAction.Configure(ctx, req, resource, data, logger)
+}
+
 func (h *CerebroReconciler) Delete(ctx context.Context, o object.MultiPhaseObject, data map[string]any, logger *logrus.Entry) (err error) {
-	common.ControllerMetrics.WithLabelValues(h.name).Dec()
+	// Set prometheus Metrics
+	common.ControllerInstances.WithLabelValues(h.name, o.GetNamespace(), o.GetName()).Set(0)
+	common.ControllerErrors.WithLabelValues(h.name, o.GetNamespace(), o.GetName()).Inc()
+
 	return h.MultiPhaseReconcilerAction.Delete(ctx, o, data, logger)
 }
 
 func (h *CerebroReconciler) OnError(ctx context.Context, o object.MultiPhaseObject, data map[string]any, currentErr error, logger *logrus.Entry) (res ctrl.Result, err error) {
 	common.TotalErrors.Inc()
+	common.ControllerErrors.WithLabelValues(h.name, o.GetNamespace(), o.GetName()).Inc()
+
 	return h.MultiPhaseReconcilerAction.OnError(ctx, o, data, currentErr, logger)
 }
 
 func (h *CerebroReconciler) OnSuccess(ctx context.Context, r object.MultiPhaseObject, data map[string]any, logger *logrus.Entry) (res ctrl.Result, err error) {
 	o := r.(*cerebrocrd.Cerebro)
+
+	// Reset the current cluster errors
+	common.ControllerErrors.WithLabelValues(h.name, o.GetNamespace(), o.GetName()).Set(0)
 
 	// Not preserve condition to avoid to update status each time
 	conditions := o.GetStatus().GetConditions()
@@ -238,6 +253,14 @@ func (h *CerebroReconciler) computeCerebroUrl(ctx context.Context, cb *cerebrocr
 		url = cb.Spec.Endpoint.Ingress.Host
 
 		if cb.Spec.Endpoint.Ingress.SecretRef != nil {
+			scheme = "https"
+		} else {
+			scheme = "http"
+		}
+	} else if cb.Spec.Endpoint.IsRouteEnabled() {
+		url = cb.Spec.Endpoint.Route.Host
+
+		if cb.Spec.Endpoint.Route.TlsEnabled != nil && *cb.Spec.Endpoint.Route.TlsEnabled {
 			scheme = "https"
 		} else {
 			scheme = "http"

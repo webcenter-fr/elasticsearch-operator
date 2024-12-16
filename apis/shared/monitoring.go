@@ -69,7 +69,7 @@ type MonitoringMetricbeatSpec struct {
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
 	// +optional
 	// +kubebuilder:default=false
-	Enabled bool `json:"enabled,omitempty"`
+	Enabled *bool `json:"enabled,omitempty"`
 
 	// ElasticsearchRef is the Elasticsearch ref to connect on.
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
@@ -113,7 +113,7 @@ func (h MonitoringSpec) IsPrometheusMonitoring() bool {
 
 // IsMetricbeatMonitoring return true if Metricbeat monitoring is enabled
 func (h *MonitoringSpec) IsMetricbeatMonitoring(numberOfReplicas int32) bool {
-	if h.Metricbeat != nil && h.Metricbeat.Enabled && numberOfReplicas > 0 {
+	if h.Metricbeat != nil && h.Metricbeat.Enabled != nil && *h.Metricbeat.Enabled && numberOfReplicas > 0 {
 		return true
 	}
 
