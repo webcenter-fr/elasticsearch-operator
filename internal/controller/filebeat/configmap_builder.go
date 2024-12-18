@@ -25,7 +25,7 @@ func buildConfigMaps(fb *beatcrd.Filebeat, es *elasticsearchcrd.Elasticsearch, l
 
 	// Compute the logstash hosts
 	logstashHosts := make([]string, 0, 1)
-	elasticsearchHosts := make([]string, 0, 1)
+
 	if ls != nil {
 		if fb.Spec.LogstashRef.ManagedLogstashRef.TargetService != "" {
 			logstashHosts = append(logstashHosts, fmt.Sprintf("%s.%s.svc:%d", logstashcontrollers.GetServiceName(ls, fb.Spec.LogstashRef.ManagedLogstashRef.TargetService), ls.Namespace, fb.Spec.LogstashRef.ManagedLogstashRef.Port))
@@ -39,6 +39,7 @@ func buildConfigMaps(fb *beatcrd.Filebeat, es *elasticsearchcrd.Elasticsearch, l
 	}
 
 	// Compute the Elasticsearch hosts
+	elasticsearchHosts := make([]string, 0, 1)
 	if es != nil {
 		elasticsearchHosts = append(elasticsearchHosts, elasticsearchcontrollers.GetPublicUrl(es, fb.Spec.ElasticsearchRef.ManagedElasticsearchRef.TargetNodeGroup, false))
 	} else if fb.Spec.ElasticsearchRef.IsExternal() && len(fb.Spec.ElasticsearchRef.ExternalElasticsearchRef.Addresses) > 0 {

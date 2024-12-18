@@ -56,14 +56,12 @@ spec:
             fieldRef:
               apiVersion: v1
               fieldPath: metadata.namespace
-        - name: ELASTICSEARCH_HOST
-          value: https://es1:9200
-        - name: METRICBEAT_USERNAME
+        - name: ELASTICSEARCH_USERNAME
           valueFrom:
             secretKeyRef:
               name: es-credential
               key: username
-        - name: METRICBEAT_PASSWORD
+        - name: ELASTICSEARCH_PASSWORD
           valueFrom:
             secretKeyRef:
               name: es-credential
@@ -95,6 +93,9 @@ spec:
             - ALL
           runAsNonRoot: true
           runAsUser: 1000
+          runAsGroup: 1000
+          privileged: false
+          allowPrivilegeEscalation: false
         startupProbe:
           failureThreshold: 30
           initialDelaySeconds: 10
@@ -149,6 +150,7 @@ spec:
             mountPath: /mnt/data
         securityContext:
           runAsUser: 0
+          privileged: false
       securityContext:
         fsGroup: 1000
       terminationGracePeriodSeconds: 60

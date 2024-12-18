@@ -52,6 +52,23 @@ func TestBuildStatefulset(t *testing.T) {
 		},
 		Spec: elasticsearchcrd.ElasticsearchSpec{},
 	}
+	configMaps := []corev1.ConfigMap{
+		{
+			ObjectMeta: metav1.ObjectMeta{
+				Namespace:   o.Namespace,
+				Name:        GetConfigMapConfigName(o),
+				Labels:      getLabels(o),
+				Annotations: getAnnotations(o),
+			},
+			Data: map[string]string{
+				"metricbeat.yml": "",
+			},
+		},
+	}
+
+	sts, err = buildStatefulsets(o, es, configMaps, nil, nil, false)
+	assert.NoError(t, err)
+	test.EqualFromYamlFile[*appv1.StatefulSet](t, "testdata/statefulset_default_elasticsearch.yml", &sts[0], scheme.Scheme)
 
 	// With default values on Openshift
 	o = &beatcrd.Metricbeat{
@@ -80,7 +97,7 @@ func TestBuildStatefulset(t *testing.T) {
 		Spec: elasticsearchcrd.ElasticsearchSpec{},
 	}
 
-	sts, err = buildStatefulsets(o, es, nil, nil, true)
+	sts, err = buildStatefulsets(o, es, configMaps, nil, nil, true)
 	assert.NoError(t, err)
 	test.EqualFromYamlFile[*appv1.StatefulSet](t, "testdata/statefulset_default_elasticsearch_openshift.yml", &sts[0], scheme.Scheme)
 
@@ -109,7 +126,7 @@ func TestBuildStatefulset(t *testing.T) {
 		},
 	}
 
-	sts, err = buildStatefulsets(o, nil, nil, nil, false)
+	sts, err = buildStatefulsets(o, nil, configMaps, nil, nil, false)
 	assert.NoError(t, err)
 	test.EqualFromYamlFile[*appv1.StatefulSet](t, "testdata/statefulset_default_with_external_es.yml", &sts[0], scheme.Scheme)
 
@@ -152,7 +169,7 @@ func TestBuildStatefulset(t *testing.T) {
 		},
 	}
 
-	sts, err = buildStatefulsets(o, nil, extraSecrets, nil, false)
+	sts, err = buildStatefulsets(o, nil, configMaps, extraSecrets, nil, false)
 	assert.NoError(t, err)
 	test.EqualFromYamlFile[*appv1.StatefulSet](t, "testdata/statefulset_custom_ca_es_with_external_es.yml", &sts[0], scheme.Scheme)
 
@@ -255,7 +272,31 @@ func TestBuildStatefulset(t *testing.T) {
 		},
 		Spec: elasticsearchcrd.ElasticsearchSpec{},
 	}
-
+	configMaps = []corev1.ConfigMap{
+		{
+			ObjectMeta: metav1.ObjectMeta{
+				Namespace:   o.Namespace,
+				Name:        GetConfigMapConfigName(o),
+				Labels:      getLabels(o),
+				Annotations: getAnnotations(o),
+			},
+			Data: map[string]string{
+				"metricbeat.yml": "",
+				"log4j.yaml":     "",
+			},
+		},
+		{
+			ObjectMeta: metav1.ObjectMeta{
+				Namespace:   o.Namespace,
+				Name:        GetConfigMapModuleName(o),
+				Labels:      getLabels(o),
+				Annotations: getAnnotations(o),
+			},
+			Data: map[string]string{
+				"module.yaml": "",
+			},
+		},
+	}
 	extraSecrets = []corev1.Secret{
 		{
 			ObjectMeta: metav1.ObjectMeta{
@@ -267,7 +308,6 @@ func TestBuildStatefulset(t *testing.T) {
 			},
 		},
 	}
-
 	extraConfigMaps = []corev1.ConfigMap{
 		{
 			ObjectMeta: metav1.ObjectMeta{
@@ -298,7 +338,7 @@ func TestBuildStatefulset(t *testing.T) {
 		},
 	}
 
-	sts, err = buildStatefulsets(o, es, extraSecrets, extraConfigMaps, false)
+	sts, err = buildStatefulsets(o, es, configMaps, extraSecrets, extraConfigMaps, false)
 	assert.NoError(t, err)
 	test.EqualFromYamlFile[*appv1.StatefulSet](t, "testdata/statefulset_complet.yml", &sts[0], scheme.Scheme)
 }

@@ -15,7 +15,9 @@ import (
 	elasticsearchcrd "github.com/webcenter-fr/elasticsearch-operator/apis/elasticsearch/v1"
 	"github.com/webcenter-fr/elasticsearch-operator/internal/controller/common"
 	corev1 "k8s.io/api/core/v1"
+	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/labels"
+	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/tools/record"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -46,7 +48,10 @@ func (r *configMapReconciler) Read(ctx context.Context, resource object.MultiPha
 	o := resource.(*beatcrd.Metricbeat)
 	cmList := &corev1.ConfigMapList{}
 	read = controller.NewBasicMultiPhaseRead()
-	var es *elasticsearchcrd.Elasticsearch
+	var (
+		es                    *elasticsearchcrd.Elasticsearch
+		elasticsearchCASecret *corev1.Secret
+	)
 
 	labelSelectors, err := labels.Parse(fmt.Sprintf("cluster=%s,%s=true", o.Name, beatcrd.MetricbeatAnnotationKey))
 	if err != nil {
@@ -71,8 +76,20 @@ func (r *configMapReconciler) Read(ctx context.Context, resource object.MultiPha
 		es = nil
 	}
 
+	// Read ElasticsearchCASecret
+	if (o.Spec.ElasticsearchRef.IsExternal() || o.Spec.ElasticsearchRef.IsManaged()) && o.Spec.ElasticsearchRef.ElasticsearchCaSecretRef != nil {
+		elasticsearchCASecret = &corev1.Secret{}
+		if err = r.Client().Get(ctx, types.NamespacedName{Namespace: o.Namespace, Name: o.Spec.ElasticsearchRef.ElasticsearchCaSecretRef.Name}, elasticsearchCASecret); err != nil {
+			if !k8serrors.IsNotFound(err) {
+				return read, res, errors.Wrapf(err, "Error when read elasticsearchCASecret %s", o.Spec.ElasticsearchRef.ElasticsearchCaSecretRef.Name)
+			}
+			logger.Warnf("elasticsearchCASecret %s not yet exist, try again later", o.Spec.ElasticsearchRef.ElasticsearchCaSecretRef.Name)
+			return read, ctrl.Result{RequeueAfter: 30 * time.Second}, nil
+		}
+	}
+
 	// Generate expected node group configmaps
-	expectedCms, err := buildConfigMaps(o, es)
+	expectedCms, err := buildConfigMaps(o, es, elasticsearchCASecret)
 	if err != nil {
 		return read, res, errors.Wrap(err, "Error when generate configmaps")
 	}

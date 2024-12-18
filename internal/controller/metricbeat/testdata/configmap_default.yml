@@ -17,14 +17,4 @@ data:
         config:
             modules:
                 path: ${path.config}/modules.d/*.yml
-    output:
-        elasticsearch:
-            hosts:
-                - https://test-es.default.svc:9200
-            password: ${ELASTICSEARCH_PASSWORD}
-            ssl:
-                certificate_authorities:
-                    - /usr/share/metricbeat/es-ca/ca.crt
-                enable: true
-            username: ${ELASTICSEARCH_USERNAME}
     

@@ -22,9 +22,9 @@ spec:
         metricbeat.k8s.webcenter.fr: "true"
       annotations:
         metricbeat.k8s.webcenter.fr: "true"
-        metricbeat.k8s.webcenter.fr/secret-custom-ca-es: "b3e6a184c07701fea70b63c92a044c192bce5c2a071c86537ff3c703b9f1a04c"
       name: test-mb
     spec:
+      serviceAccountName: test-mb
       affinity:
         podAntiAffinity:
           preferredDuringSchedulingIgnoredDuringExecution:
@@ -58,15 +58,12 @@ spec:
               apiVersion: v1
               fieldPath: metadata.namespace
         - name: ELASTICSEARCH_USERNAME
-          valueFrom:
-            secretKeyRef:
-              name: es-credential
-              key: username
+          value: remote_monitoring_user
         - name: ELASTICSEARCH_PASSWORD
           valueFrom:
             secretKeyRef:
-              name: es-credential
-              key: password
+              name: test-credential-mb
+              key: remote_monitoring_user
         image: docker.elastic.co/beats/metricbeat:latest
         livenessProbe:
           failureThreshold: 3
@@ -109,8 +106,8 @@ spec:
         - mountPath: /usr/share/metricbeat/metricbeat.yml
           name: metricbeat-config
           subPath: metricbeat.yml
-        - mountPath: /usr/share/metricbeat/es-custom-ca
-          name: ca-custom-elasticsearch
+        - mountPath: /usr/share/metricbeat/es-ca
+          name: ca-elasticsearch
         - mountPath: /usr/share/metricbeat/data
           name: metricbeat-data
       initContainers:
@@ -120,10 +117,11 @@ spec:
         - |
             #!/usr/bin/env bash
             set -euo pipefail
-
+            
             # Set right
             echo "Set right"
             chown -v metricbeat:metricbeat /mnt/data
+
 
         image: docker.elastic.co/beats/metricbeat:latest
         name: init-filesystem
@@ -161,8 +159,8 @@ spec:
       - name: metricbeat-config
         configMap:
           name: test-config-mb
-      - name: ca-custom-elasticsearch
+      - name: ca-elasticsearch
         secret:
-          secretName: custom-ca-es
+          secretName: test-ca-es-mb
       - name: metricbeat-data
         emptyDir: {}
