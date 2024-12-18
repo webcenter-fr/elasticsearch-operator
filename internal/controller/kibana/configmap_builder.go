@@ -21,22 +21,19 @@ func buildConfigMaps(kb *kibanacrd.Kibana, es *elasticsearchcrd.Elasticsearch) (
 
 	injectedConfigMap := map[string]string{}
 
+	kibanaConf := map[string]any{}
+
 	if kb.Spec.Tls.IsTlsEnabled() {
-		injectedConfigMap["kibana.yml"] = `
-server.ssl.enabled: true
-server.ssl.certificate: /usr/share/kibana/config/api-cert/tls.crt
-server.ssl.key: /usr/share/kibana/config/api-cert/tls.key
-`
+		kibanaConf["server.ssl.enabled"] = true
+		kibanaConf["server.ssl.certificate"] = "/usr/share/kibana/config/api-cert/tls.crt"
+		kibanaConf["server.ssl.key"] = "/usr/share/kibana/config/api-cert/tls.key"
 	} else {
-		injectedConfigMap["kibana.yml"] = "server.ssl.enabled: false\n"
+		kibanaConf["server.ssl.enabled"] = false
 	}
 
 	if (es != nil && es.Spec.Tls.IsTlsEnabled() && es.Spec.Tls.IsSelfManagedSecretForTls()) || (es != nil && es.Spec.Tls.IsTlsEnabled() && kb.Spec.ElasticsearchRef.ElasticsearchCaSecretRef != nil) || (es == nil && kb.Spec.ElasticsearchRef.ElasticsearchCaSecretRef != nil) {
-		injectedConfigMap["kibana.yml"] += `
-elasticsearch.ssl.verificationMode: full
-elasticsearch.ssl.certificateAuthorities:
-  - /usr/share/kibana/config/es-ca/ca.crt
-`
+		kibanaConf["elasticsearch.ssl.verificationMode"] = "full"
+		kibanaConf["elasticsearch.ssl.certificateAuthorities"] = []string{"/usr/share/kibana/config/es-ca/ca.crt"}
 	}
 
 	if kb.Spec.Endpoint.IsIngressEnabled() {
@@ -49,8 +46,10 @@ elasticsearch.ssl.certificateAuthorities:
 		if !kb.Spec.Tls.IsTlsEnabled() && kb.Spec.Endpoint.Ingress.SecretRef == nil {
 			scheme = "http"
 		}
-		injectedConfigMap["kibana.yml"] += fmt.Sprintf("server.publicBaseUrl: %s://%s%s\n", scheme, kb.Spec.Endpoint.Ingress.Host, path)
+		kibanaConf["server.publicBaseUrl"] = fmt.Sprintf(": %s://%s%s", scheme, kb.Spec.Endpoint.Ingress.Host, path)
 	}
+
+	injectedConfigMap["kibana.yml"] = helper.ToYamlOrDie(kibanaConf)
 
 	// Inject computed config
 	expectedConfig, err = helper.MergeSettings(injectedConfigMap, kb.Spec.Config)

@@ -21,7 +21,7 @@ spec:
         kibana.k8s.webcenter.fr: "true"
       annotations:
         kibana.k8s.webcenter.fr: "true"
-        kibana.k8s.webcenter.fr/configmap-test-config-kb: "beb43112b4cb0584da28e9cc50081643029875b1e387d63ba5cfaedcb46e9788"
+        kibana.k8s.webcenter.fr/configmap-test-config-kb: "3b52bcf460add4ac06f4921dfcef33301babf9b16103dfffdc2f55233af934c3"
         kibana.k8s.webcenter.fr/secret-keystore: "e0254a8990817d8a00deb6123c4a2a7ea7ae48428a65d9514257b3baedc1fb6e"
       name: test-kb
     spec:

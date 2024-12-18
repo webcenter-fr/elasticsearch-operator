@@ -25,7 +25,7 @@ spec:
         nodeGroup: data
         elasticsearch.k8s.webcenter.fr: "true"
       annotations:
-        elasticsearch.k8s.webcenter.fr/configmap-test-data-config-es: 2b7974f44eca1429b868c651dcd5921bbe87655a250b780c55a0a6538cb5e56a
+        elasticsearch.k8s.webcenter.fr/configmap-test-data-config-es: 882dc5d32e04a758d554427a994fe93626a885a943d6089ea9ecb715f8c29680
         elasticsearch.k8s.webcenter.fr/secret-elasticsearch-security: 2c1eef3af7f9998f3e29ccd7a2927fdf62ca82080ea74b67e9454aae3c2adc98
         elasticsearch.k8s.webcenter.fr: 'true'
       name: test-data-es
