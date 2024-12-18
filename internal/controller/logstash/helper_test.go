@@ -300,3 +300,15 @@ func TestGetServiceAccountName(t *testing.T) {
 
 	assert.Equal(t, "test-ls", GetServiceAccountName(o))
 }
+
+func TestGetConfigMapExporterName(t *testing.T) {
+	o := &logstashcrd.Logstash{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: "default",
+			Name:      "test",
+		},
+		Spec: logstashcrd.LogstashSpec{},
+	}
+
+	assert.Equal(t, "test-exporter-ls", GetConfigMapExporterName(o))
+}

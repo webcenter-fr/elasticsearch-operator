@@ -200,8 +200,11 @@ func buildStatefulsets(ls *logstashcrd.Logstash, es *elasticsearchcrd.Elasticsea
 				"ALL",
 			},
 		},
-		RunAsUser:    ptr.To[int64](1000),
-		RunAsNonRoot: ptr.To[bool](true),
+		AllowPrivilegeEscalation: ptr.To(false),
+		Privileged:               ptr.To(false),
+		RunAsNonRoot:             ptr.To(true),
+		RunAsUser:                ptr.To[int64](1000),
+		RunAsGroup:               ptr.To[int64](1000),
 	}, k8sbuilder.OverwriteIfDefaultValue)
 
 	// Compute volume mount
@@ -444,6 +447,18 @@ func buildStatefulsets(ls *logstashcrd.Logstash, es *elasticsearchcrd.Elasticsea
 					MountPath: "/mnt/keystoreSecrets",
 				},
 			},
+			SecurityContext: &corev1.SecurityContext{
+				Capabilities: &corev1.Capabilities{
+					Drop: []corev1.Capability{
+						"ALL",
+					},
+				},
+				AllowPrivilegeEscalation: ptr.To(false),
+				Privileged:               ptr.To(false),
+				RunAsNonRoot:             ptr.To(true),
+				RunAsUser:                ptr.To[int64](1000),
+				RunAsGroup:               ptr.To[int64](1000),
+			},
 			Command: []string{
 				"/bin/bash",
 				"-c",
@@ -470,7 +485,8 @@ cp -a /usr/share/logstash/config/logstash.keystore /mnt/keystore/
 		Image:           GetContainerImage(ls),
 		ImagePullPolicy: ls.Spec.ImagePullPolicy,
 		SecurityContext: &corev1.SecurityContext{
-			RunAsUser: ptr.To[int64](0),
+			Privileged: ptr.To(false),
+			RunAsUser:  ptr.To[int64](0),
 		},
 		Env: []corev1.EnvVar{
 			{
@@ -704,6 +720,19 @@ fi
 			ptb.WithVolumes([]corev1.Volume{
 				{
 					Name: "logstash-pattern",
+					VolumeSource: corev1.VolumeSource{
+						ConfigMap: &corev1.ConfigMapVolumeSource{
+							LocalObjectReference: corev1.LocalObjectReference{
+								Name: cm.Name,
+							},
+						},
+					},
+				},
+			}, k8sbuilder.Merge)
+		case GetConfigMapExporterName(ls):
+			ptb.WithVolumes([]corev1.Volume{
+				{
+					Name: "exporter-config",
 					VolumeSource: corev1.VolumeSource{
 						ConfigMap: &corev1.ConfigMapVolumeSource{
 							LocalObjectReference: corev1.LocalObjectReference{

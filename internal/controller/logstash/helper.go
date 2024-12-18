@@ -152,3 +152,8 @@ func GetMetricbeatName(ls *logstashcrd.Logstash) (name string) {
 func GetServiceAccountName(ls *logstashcrd.Logstash) string {
 	return fmt.Sprintf("%s-ls", ls.Name)
 }
+
+// GetConfigMapExporterName permit to get the configMap name that store the config for exporter
+func GetConfigMapExporterName(ls *logstashcrd.Logstash) (configMapName string) {
+	return fmt.Sprintf("%s-exporter-ls", ls.Name)
+}

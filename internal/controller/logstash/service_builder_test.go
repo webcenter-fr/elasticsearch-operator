@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	"github.com/disaster37/operator-sdk-extra/pkg/test"
+	routev1 "github.com/openshift/api/route/v1"
 	"github.com/stretchr/testify/assert"
 	logstashcrd "github.com/webcenter-fr/elasticsearch-operator/apis/logstash/v1"
 	"github.com/webcenter-fr/elasticsearch-operator/apis/shared"
@@ -11,6 +12,7 @@ import (
 	v1 "k8s.io/api/core/v1"
 	networkingv1 "k8s.io/api/networking/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/util/intstr"
 	"k8s.io/client-go/kubernetes/scheme"
 )
 
@@ -125,4 +127,43 @@ func TestBuildServices(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equal(t, 2, len(services))
 	test.EqualFromYamlFile[*corev1.Service](t, "testdata/service_ingress.yaml", &services[0], scheme.Scheme)
+
+	// When route is specified
+	o = &logstashcrd.Logstash{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: "default",
+			Name:      "test",
+		},
+		Spec: logstashcrd.LogstashSpec{
+			Routes: []shared.Route{
+				{
+					Name: "my-route",
+					Labels: map[string]string{
+						"label1": "value1",
+					},
+					Annotations: map[string]string{
+						"anno1": "value1",
+					},
+					Spec: routev1.RouteSpec{
+						Host: "test.cluster.local",
+						Path: "/",
+						To: routev1.RouteTargetReference{
+							Kind: "Service",
+							Name: "my-service",
+						},
+						Port: &routev1.RoutePort{
+							TargetPort: intstr.FromInt(8081),
+						},
+					},
+					ContainerPortProtocol: v1.ProtocolTCP,
+					ContainerPort:         8080,
+				},
+			},
+		},
+	}
+
+	services, err = buildServices(o)
+	assert.NoError(t, err)
+	assert.Equal(t, 2, len(services))
+	test.EqualFromYamlFile[*corev1.Service](t, "testdata/service_route.yaml", &services[0], scheme.Scheme)
 }

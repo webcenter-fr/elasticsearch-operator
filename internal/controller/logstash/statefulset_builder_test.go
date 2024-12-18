@@ -330,4 +330,51 @@ func TestBuildStatefulset(t *testing.T) {
 	sts, err = buildStatefulsets(o, es, extraSecrets, extraConfigMaps, false)
 	assert.NoError(t, err)
 	test.EqualFromYamlFile[*appv1.StatefulSet](t, "testdata/statefulset_complet.yml", &sts[0], scheme.Scheme)
+
+	// With default values and elasticsearch managed by operator and prometheus monitoring
+	o = &logstashcrd.Logstash{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: "default",
+			Name:      "test",
+		},
+		Spec: logstashcrd.LogstashSpec{
+			ElasticsearchRef: shared.ElasticsearchRef{
+				ManagedElasticsearchRef: &shared.ElasticsearchManagedRef{
+					Name: "test",
+				},
+			},
+			Deployment: logstashcrd.LogstashDeploymentSpec{
+				Deployment: shared.Deployment{
+					Replicas: 1,
+				},
+			},
+			Monitoring: shared.MonitoringSpec{
+				Prometheus: &shared.MonitoringPrometheusSpec{
+					Enabled: ptr.To[bool](true),
+					Version: "v1.6.3",
+					Resources: &corev1.ResourceRequirements{
+						Requests: corev1.ResourceList{
+							corev1.ResourceCPU:    resource.MustParse("200m"),
+							corev1.ResourceMemory: resource.MustParse("128Mi"),
+						},
+						Limits: corev1.ResourceList{
+							corev1.ResourceCPU:    resource.MustParse("200m"),
+							corev1.ResourceMemory: resource.MustParse("128Mi"),
+						},
+					},
+				},
+			},
+		},
+	}
+	es = &elasticsearchcrd.Elasticsearch{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: "default",
+			Name:      "test",
+		},
+		Spec: elasticsearchcrd.ElasticsearchSpec{},
+	}
+
+	sts, err = buildStatefulsets(o, es, nil, nil, false)
+	assert.NoError(t, err)
+	test.EqualFromYamlFile[*appv1.StatefulSet](t, "testdata/statefulset_prometheus.yml", &sts[0], scheme.Scheme)
 }

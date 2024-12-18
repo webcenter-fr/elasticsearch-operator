@@ -22,21 +22,18 @@ spec:
         logstash.k8s.webcenter.fr: "true"
       annotations:
         logstash.k8s.webcenter.fr: "true"
-        logstash.k8s.webcenter.fr/configmap-test: "1dd74b8deb13203ff016c1b47d4d7cc2ad0c0400e9c2103369690038ce7a31ac"
-        logstash.k8s.webcenter.fr/configmap-test-config-ls:   "1dd74b8deb13203ff016c1b47d4d7cc2ad0c0400e9c2103369690038ce7a31ac"
-        logstash.k8s.webcenter.fr/configmap-test-pattern-ls:  "1dd74b8deb13203ff016c1b47d4d7cc2ad0c0400e9c2103369690038ce7a31ac"
-        logstash.k8s.webcenter.fr/configmap-test-pipeline-ls: "1dd74b8deb13203ff016c1b47d4d7cc2ad0c0400e9c2103369690038ce7a31ac"
-        logstash.k8s.webcenter.fr/secret-keystore:      "e9b98d78f4b0fc3c077e9ba9d8a5bf2ab2a993c1590aa117e0f1d0c9a3b96694"
       name: test-ls
     spec:
       affinity:
         podAntiAffinity:
-          requiredDuringSchedulingIgnoredDuringExecution:
-          - labelSelector:
-              matchLabels:
-                cluster: test
-                logstash.k8s.webcenter.fr: "true"
-            topologyKey: rack
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - podAffinityTerm:
+                labelSelector:
+                  matchLabels:
+                    cluster: test
+                    logstash.k8s.webcenter.fr: "true"
+                topologyKey: kubernetes.io/hostname
+              weight: 10
       containers:
       - env:
         - name: POD_NAME
@@ -60,26 +57,14 @@ spec:
               apiVersion: v1
               fieldPath: metadata.namespace
         - name: LS_JAVA_OPTS
-          value: '-Xms1G -Xmx1G'
+          value: ''
         - name: HTTP_HOST
           value: 0.0.0.0
         - name: ELASTICSEARCH_CA_PATH
           value: /usr/share/logstash/config/es-ca/ca.crt
         - name: ELASTICSEARCH_HOST
           value: https://test-es.default.svc:9200
-        - name: env1
-          value: value1
-        envFrom:
-          - configMapRef:
-              name: test
-        image: docker.elastic.co/logstash/logstash:8.5.1
-        resources:
-          limits:
-            cpu: "4"
-            memory: 4Gi
-          requests:
-            cpu: "2"
-            memory: 2Gi
+        image: docker.elastic.co/logstash/logstash:latest
         livenessProbe:
           failureThreshold: 3
           periodSeconds: 30
@@ -120,14 +105,43 @@ spec:
         volumeMounts:
         - mountPath: /usr/share/logstash/config
           name: config
-        - mountPath: /usr/share/logstash/pipeline
-          name: logstash-pipeline
-        - mountPath: /usr/share/logstash/patterns
-          name: logstash-pattern
         - mountPath: /usr/share/logstash/data
           name: logstash-data
         - mountPath: /usr/share/logstash/certs
           name: logstash-certs
+      - name: exporter
+        image: ghcr.io/kuskoman/logstash-exporter:v1.6.3
+        ports:
+        - containerPort: 9198
+          name: exporter
+          protocol: TCP
+        livenessProbe:
+          initialDelaySeconds: 30
+          failureThreshold: 3
+          periodSeconds: 30
+          successThreshold: 1
+          httpGet:
+            path: /health
+            port: exporter
+          timeoutSeconds: 5
+        volumeMounts:
+        - mountPath: /app/config.yml
+          name: exporter-config
+          subPath: config.yml
+        resources:
+          requests:
+            cpu: 200m
+            memory: 128Mi
+          limits:
+            cpu: 200m
+            memory: 128Mi
+        securityContext:
+          capabilities:
+            drop:
+            - ALL
+          runAsNonRoot: true
+          privileged: false
+          allowPrivilegeEscalation: false
       initContainers:
       - command:
         - /bin/bash
@@ -169,15 +183,8 @@ spec:
               chown -R logstash:logstash /mnt/plugins
             fi
 
-        image: docker.elastic.co/logstash/logstash:8.5.1
+        image: docker.elastic.co/logstash/logstash:latest
         name: init-filesystem
-        resources:
-          limits:
-            cpu: 300m
-            memory: 500Mi
-          requests:
-            cpu: 100m
-            memory: 100Mi
         env:
         - name: POD_NAME
           valueFrom:
@@ -199,11 +206,6 @@ spec:
             fieldRef:
               apiVersion: v1
               fieldPath: metadata.namespace
-        - name: env1
-          value: value1
-        envFrom:
-          - configMapRef:
-              name: test
         volumeMounts:
           - name: config
             mountPath: /mnt/config
@@ -211,61 +213,14 @@ spec:
             mountPath: /mnt/keystore
           - name: ca-elasticsearch
             mountPath: /mnt/ca-elasticsearch
-          - name: logstash-config
-            mountPath: /mnt/configmap
           - mountPath: /mnt/data
             name: logstash-data
         securityContext:
           runAsUser: 0
           privileged: false
-      - command:
-        - /bin/bash
-        - -c
-        - |
-            #!/usr/bin/env bash
-            set -euo pipefail
-
-            logstash-keystore create
-            for i in /mnt/keystoreSecrets/*; do
-                key=$(basename $i)
-                echo "Adding file $i to keystore key $key"
-                logstash-keystore add -x "$key" < $i
-            done
-
-            cp -a /usr/share/logstash/config/logstash.keystore /mnt/keystore/
-        image: docker.elastic.co/logstash/logstash:8.5.1
-        name: init-keystore
-        resources:
-          limits:
-            cpu: 300m
-            memory: 500Mi
-          requests:
-            cpu: 100m
-            memory: 100Mi
-        volumeMounts:
-          - name: keystore
-            mountPath: /mnt/keystore
-          - name: logstash-keystore
-            mountPath: /mnt/keystoreSecrets
-        securityContext:
-          capabilities:
-            drop:
-            - ALL
-          runAsNonRoot: true
-          runAsUser: 1000
-          runAsGroup: 1000
-          privileged: false
-          allowPrivilegeEscalation: false
       securityContext:
         fsGroup: 1000
       terminationGracePeriodSeconds: 120
-      nodeSelector:
-        project: logstash
-      tolerations:
-        - effect: NoSchedule
-          key: project
-          operator: Equal
-          value: logstash
       volumes:
       - name: keystore
         emptyDir: {}
@@ -276,29 +231,11 @@ spec:
       - name: ca-elasticsearch
         secret:
           secretName: test-ca-es-ls
-      - name: logstash-config
-        configMap:
-          name: test-config-ls
-      - name: logstash-pipeline
-        configMap:
-          name: test-pipeline-ls
-      - name: logstash-pattern
-        configMap:
-          name: test-pattern-ls
-      - name: logstash-keystore
-        secret:
-          secretName: keystore
+      - name: logstash-data
+        emptyDir: {}
       - name: logstash-certs
         secret:
           secretName: test-tls-ls
-  volumeClaimTemplates:
-  - metadata:
-      creationTimestamp: null
-      name: logstash-data
-    spec:
-      accessModes:
-      - ReadWriteOnce
-      resources:
-        requests:
-          storage: 5Gi
-      storageClassName: local-path
+      - name: exporter-config
+        configMap:
+          name: test-exporter-ls

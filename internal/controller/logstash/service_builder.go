@@ -110,6 +110,52 @@ func buildServices(ls *logstashcrd.Logstash) (services []corev1.Service, err err
 		}
 	}
 
+	// Create specific services needed by route
+	for _, i := range ls.Spec.Routes {
+		service = &corev1.Service{
+			ObjectMeta: metav1.ObjectMeta{
+				Namespace:   ls.Namespace,
+				Name:        GetServiceName(ls, i.Name),
+				Labels:      getLabels(ls),
+				Annotations: getAnnotations(ls),
+			},
+			Spec: corev1.ServiceSpec{
+				Type: corev1.ServiceTypeClusterIP,
+				Ports: []corev1.ServicePort{
+					{
+						Protocol:   i.ContainerPortProtocol,
+						TargetPort: intstr.FromInt(int(i.ContainerPort)),
+						Port:       int32(i.ContainerPort),
+						Name:       i.Name,
+					},
+				},
+				Selector: map[string]string{
+					logstashcrd.LogstashAnnotationKey: "true",
+					"cluster":                         ls.Name,
+				},
+			},
+		}
+
+		services = append(services, *service)
+
+		isPortAlreadyUsed = false
+		for _, portUsed := range computedPort {
+			if i.ContainerPortProtocol == portUsed.Protocol && (int32(i.ContainerPort) == portUsed.Port || i.Name == portUsed.Name) {
+				isPortAlreadyUsed = true
+				break
+			}
+		}
+
+		if !isPortAlreadyUsed {
+			computedPort = append(computedPort, corev1.ServicePort{
+				Protocol:   i.ContainerPortProtocol,
+				TargetPort: intstr.FromInt(int(i.ContainerPort)),
+				Port:       int32(i.ContainerPort),
+				Name:       i.Name,
+			})
+		}
+	}
+
 	// Compute global service with custom container ports
 	for _, port := range ls.Spec.Deployment.Ports {
 		isPortAlreadyUsed = false
