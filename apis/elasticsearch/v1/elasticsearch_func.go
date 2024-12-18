@@ -81,4 +81,3 @@ func (h *Elasticsearch) NumberOfReplicas() int32 {
 
 	return nbReplica
 }
-

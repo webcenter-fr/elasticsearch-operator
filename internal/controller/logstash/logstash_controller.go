@@ -181,7 +181,6 @@ func (h *LogstashReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	}
 
 	return ctrlBuilder.Complete(h)
-
 }
 
 func (h *LogstashReconciler) Configure(ctx context.Context, req ctrl.Request, resource object.MultiPhaseObject, data map[string]any, logger *logrus.Entry) (res ctrl.Result, err error) {

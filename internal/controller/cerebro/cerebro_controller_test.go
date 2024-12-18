@@ -216,11 +216,11 @@ func doUpdateCerebroStep() test.TestStep {
 			cb := &cerebrocrd.Cerebro{}
 
 			var (
-				s   *corev1.Secret
-				svc *corev1.Service
-				i   *networkingv1.Ingress
-				cm  *corev1.ConfigMap
-				dpl *appv1.Deployment
+				s     *corev1.Secret
+				svc   *corev1.Service
+				i     *networkingv1.Ingress
+				cm    *corev1.ConfigMap
+				dpl   *appv1.Deployment
 				route *routev1.Route
 			)
 

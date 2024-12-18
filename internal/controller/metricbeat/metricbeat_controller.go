@@ -85,7 +85,6 @@ func NewMetricbeatReconciler(client client.Client, logger *logrus.Entry, recorde
 			newStatefulsetReconciler(client, recorder, kubeCapability.HasRoute),
 		},
 	}
-
 }
 
 //+kubebuilder:rbac:groups=beat.k8s.webcenter.fr,resources=metricbeats,verbs=get;list;watch;create;update;patch;delete
