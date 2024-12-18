@@ -1547,7 +1547,7 @@ func doDeleteElasticsearchStep() test.TestStep {
 				return errors.New("Not yet deleted")
 			}, time.Second*30, time.Second*1)
 			if err != nil || isTimeout {
-				t.Fatalf("Opensearch stil exist: %s", err.Error())
+				t.Fatalf("Elasticsearch stil exist: %s", err.Error())
 			}
 
 			assert.True(t, isDeleted)

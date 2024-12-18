@@ -494,7 +494,7 @@ chown -v metricbeat:metricbeat /mnt/data
 		FSGroup: ptr.To[int64](1000),
 	}, k8sbuilder.Merge)
 
-	// On Openshift, we need to run Opensearch with specific serviceAccount that is binding to anyuid scc
+	// On Openshift, we need to run Elasticsearch with specific serviceAccount that is binding to anyuid scc
 	if isOpenshift {
 		ptb.PodTemplate().Spec.ServiceAccountName = GetServiceAccountName(mb)
 	}

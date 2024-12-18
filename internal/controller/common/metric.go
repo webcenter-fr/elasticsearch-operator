@@ -8,16 +8,16 @@ import (
 var (
 	TotalErrors = prometheus.NewCounter(
 		prometheus.CounterOpts{
-			Name: "opensearch_operator_errors_total",
+			Name: "elasticsearch_operator_errors_total",
 			Help: "Number of errors from all controllers",
 		},
 	)
 	ControllerErrors = prometheus.NewGaugeVec(prometheus.GaugeOpts{
-		Name: "opensearch_operator_errors_controller",
+		Name: "elasticsearch_operator_errors_controller",
 		Help: "Number of errors per controllers",
 	}, []string{"controller", "namespace", "name"})
 	ControllerInstances = prometheus.NewGaugeVec(prometheus.GaugeOpts{
-		Name: "opensearch_operator_instances_controller",
+		Name: "elasticsearch_operator_instances_controller",
 		Help: "Number of instance per controllers",
 	}, []string{"controller", "namespace", "name"})
 )

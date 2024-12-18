@@ -110,7 +110,6 @@ func buildStatefulsets(fb *beatcrd.Filebeat, es *elasticsearchcrd.Elasticsearch,
 			},
 		}, k8sbuilder.Merge)
 
-
 	// Inject Elasticsearch credentials if provided
 	if fb.Spec.ElasticsearchRef.IsManaged() || fb.Spec.ElasticsearchRef.IsExternal() {
 		cb.WithEnv([]corev1.EnvVar{
@@ -550,7 +549,7 @@ chown -v root:root /mnt/data
 		FSGroup: ptr.To[int64](1000),
 	}, k8sbuilder.Merge)
 
-	// On Openshift, we need to run Opensearch with specific serviceAccount that is binding to anyuid scc
+	// On Openshift, we need to run Elasticsearch with specific serviceAccount that is binding to anyuid scc
 	if isOpenshift {
 		ptb.PodTemplate().Spec.ServiceAccountName = GetServiceAccountName(fb)
 	}

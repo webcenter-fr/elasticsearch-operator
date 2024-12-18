@@ -420,7 +420,7 @@ func (r *statefulsetReconciler) Diff(ctx context.Context, resource object.MultiP
 							logger.Warnf("Error when disable routing rebalance: %s", err)
 						}
 					} else {
-						logger.Warn("Opensearch not ready. We skip to disable routing rebalance. It something can be normal if you provision the cluster first time.")
+						logger.Warn("Elasticsearch not ready. We skip to disable routing rebalance. It something can be normal if you provision the cluster first time.")
 					}
 				}
 			}
