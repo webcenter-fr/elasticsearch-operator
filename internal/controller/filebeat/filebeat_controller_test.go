@@ -106,6 +106,9 @@ func doCreateFilebeatStep() test.TestStep {
 						ManagedElasticsearchRef: &sharedcrd.ElasticsearchManagedRef{
 							Name: es.Name,
 						},
+						SecretRef: &corev1.LocalObjectReference{
+							Name: key.Name,
+						},
 					},
 					Deployment: beatcrd.FilebeatDeploymentSpec{
 						Deployment: sharedcrd.Deployment{

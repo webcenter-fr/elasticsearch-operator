@@ -24,5 +24,7 @@ data:
             loadbalance: true
             ssl:
                 certificate_authorities:
-                    - /usr/share/filebeat/ls-custom-ca/filebeat.crt
+                    - /usr/share/filebeat/ls-ca/ca.crt
                 enable: true
+
+    

@@ -66,10 +66,6 @@ spec:
             secretKeyRef:
               name: es-credential
               key: password
-        - name: ELASTICSEARCH_CA_PATH
-          value: /usr/share/filebeat/config/es-ca/ca.crt
-        - name: ELASTICSEARCH_HOST
-          value: https://test-es.default.svc:9200
         image: docker.elastic.co/beats/filebeat:latest
         livenessProbe:
           failureThreshold: 3
@@ -97,6 +93,9 @@ spec:
             - ALL
           runAsNonRoot: false
           runAsUser: 0
+          runAsGroup: 1000
+          privileged: false
+          allowPrivilegeEscalation: false
         startupProbe:
           failureThreshold: 30
           initialDelaySeconds: 10
@@ -113,6 +112,8 @@ spec:
           name: ca-elasticsearch
         - mountPath: /usr/share/filebeat/data
           name: filebeat-data
+        - mountPath: /usr/share/filebeat/certs
+          name: filebeat-certs
       initContainers:
       - command:
         - /bin/bash
@@ -154,8 +155,9 @@ spec:
             mountPath: /mnt/data
         securityContext:
           runAsUser: 0
+          privileged: false
       securityContext:
-        fsGroup: 0
+        fsGroup: 1000
       terminationGracePeriodSeconds: 60
       volumes:
       - name: filebeat-config
@@ -166,3 +168,6 @@ spec:
           secretName: test-ca-es-fb
       - name: filebeat-data
         emptyDir: {}
+      - name: filebeat-certs
+        secret:
+          secretName: test-tls-fb

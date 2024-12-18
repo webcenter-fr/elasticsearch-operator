@@ -11,8 +11,6 @@ import (
 	beatcrd "github.com/webcenter-fr/elasticsearch-operator/apis/beat/v1"
 	elasticsearchcrd "github.com/webcenter-fr/elasticsearch-operator/apis/elasticsearch/v1"
 	logstashcrd "github.com/webcenter-fr/elasticsearch-operator/apis/logstash/v1"
-	elasticsearchcontrollers "github.com/webcenter-fr/elasticsearch-operator/internal/controller/elasticsearch"
-	logstashcontrollers "github.com/webcenter-fr/elasticsearch-operator/internal/controller/logstash"
 	appv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -22,7 +20,7 @@ import (
 )
 
 // GenerateStatefullset permit to generate statefullset
-func buildStatefulsets(fb *beatcrd.Filebeat, es *elasticsearchcrd.Elasticsearch, ls *logstashcrd.Logstash, secretsChecksum []corev1.Secret, configMapsChecksum []corev1.ConfigMap, isOpenshift bool) (statefullsets []appv1.StatefulSet, err error) {
+func buildStatefulsets(fb *beatcrd.Filebeat, es *elasticsearchcrd.Elasticsearch, ls *logstashcrd.Logstash, configMaps []corev1.ConfigMap, secretsChecksum []corev1.Secret, configMapsChecksum []corev1.ConfigMap, isOpenshift bool) (statefullsets []appv1.StatefulSet, err error) {
 	// Check the secretRef is set when use Elasticsearch output
 	if (fb.Spec.ElasticsearchRef.IsManaged() || fb.Spec.ElasticsearchRef.IsExternal()) && fb.Spec.ElasticsearchRef.SecretRef == nil {
 		return nil, errors.New("You must set the secretRef when you use ElasticsearchRef")
@@ -30,12 +28,6 @@ func buildStatefulsets(fb *beatcrd.Filebeat, es *elasticsearchcrd.Elasticsearch,
 
 	statefullsets = make([]appv1.StatefulSet, 0, 1)
 	checksumAnnotations := map[string]string{}
-
-	// Generate confimaps to know what file to mount
-	configMaps, err := buildConfigMaps(fb, es, nil)
-	if err != nil {
-		return nil, errors.Wrap(err, "Error when generate configMaps")
-	}
 
 	// checksum for configmap
 	for _, cm := range configMapsChecksum {
@@ -118,32 +110,6 @@ func buildStatefulsets(fb *beatcrd.Filebeat, es *elasticsearchcrd.Elasticsearch,
 			},
 		}, k8sbuilder.Merge)
 
-	// Inject Elasticsearch CA Path if provided
-	if es != nil && es.Spec.Tls.IsTlsEnabled() || fb.Spec.ElasticsearchRef.IsExternal() && fb.Spec.ElasticsearchRef.ElasticsearchCaSecretRef != nil {
-		cb.WithEnv([]corev1.EnvVar{
-			{
-				Name:  "ELASTICSEARCH_CA_PATH",
-				Value: "/usr/share/filebeat/config/es-ca/ca.crt",
-			},
-		}, k8sbuilder.Merge)
-	}
-
-	// Inject Elasticsearch targets if provided
-	if es != nil {
-		cb.WithEnv([]corev1.EnvVar{
-			{
-				Name:  "ELASTICSEARCH_HOST",
-				Value: elasticsearchcontrollers.GetPublicUrl(es, fb.Spec.ElasticsearchRef.ManagedElasticsearchRef.TargetNodeGroup, false),
-			},
-		}, k8sbuilder.Merge)
-	} else if fb.Spec.ElasticsearchRef.IsExternal() && len(fb.Spec.ElasticsearchRef.ExternalElasticsearchRef.Addresses) > 0 {
-		cb.WithEnv([]corev1.EnvVar{
-			{
-				Name:  "ELASTICSEARCH_HOST",
-				Value: fb.Spec.ElasticsearchRef.ExternalElasticsearchRef.Addresses[0],
-			},
-		}, k8sbuilder.Merge)
-	}
 
 	// Inject Elasticsearch credentials if provided
 	if fb.Spec.ElasticsearchRef.IsManaged() || fb.Spec.ElasticsearchRef.IsExternal() {
@@ -169,36 +135,6 @@ func buildStatefulsets(fb *beatcrd.Filebeat, es *elasticsearchcrd.Elasticsearch,
 						Key: "password",
 					},
 				},
-			},
-		}, k8sbuilder.Merge)
-	}
-
-	// Inject Logstash targets if provided
-	if ls != nil {
-		if fb.Spec.LogstashRef.ManagedLogstashRef.TargetService != "" {
-			cb.WithEnv([]corev1.EnvVar{
-				{
-					Name:  "LOGSTASH_HOST",
-					Value: fmt.Sprintf("%s.%s.svc:%d", logstashcontrollers.GetServiceName(ls, fb.Spec.LogstashRef.ManagedLogstashRef.TargetService), ls.Namespace, fb.Spec.LogstashRef.ManagedLogstashRef.Port),
-				},
-			}, k8sbuilder.Merge)
-		} else {
-			targets := make([]string, 0, ls.Spec.Deployment.Replicas)
-			for i := 0; i < int(ls.Spec.Deployment.Replicas); i++ {
-				targets = append(targets, fmt.Sprintf("%s-%d.%s.%s.svc:%d", logstashcontrollers.GetStatefulsetName(ls), i, logstashcontrollers.GetGlobalServiceName(ls), ls.Namespace, fb.Spec.LogstashRef.ManagedLogstashRef.Port))
-			}
-			cb.WithEnv([]corev1.EnvVar{
-				{
-					Name:  "LOGSTASH_HOST",
-					Value: strings.Join(targets, ", "),
-				},
-			}, k8sbuilder.Merge)
-		}
-	} else if fb.Spec.LogstashRef.IsExternal() && len(fb.Spec.LogstashRef.ExternalLogstashRef.Addresses) > 0 {
-		cb.WithEnv([]corev1.EnvVar{
-			{
-				Name:  "LOGSTASH_HOST",
-				Value: fmt.Sprintf("[\"%s\"]", strings.Join(fb.Spec.LogstashRef.ExternalLogstashRef.Addresses, "\", \"")),
 			},
 		}, k8sbuilder.Merge)
 	}
@@ -229,8 +165,11 @@ func buildStatefulsets(fb *beatcrd.Filebeat, es *elasticsearchcrd.Elasticsearch,
 				"ALL",
 			},
 		},
-		RunAsUser:    ptr.To[int64](0),
-		RunAsNonRoot: ptr.To[bool](false),
+		AllowPrivilegeEscalation: ptr.To(false),
+		Privileged:               ptr.To(false),
+		RunAsUser:                ptr.To[int64](0),
+		RunAsNonRoot:             ptr.To[bool](false),
+		RunAsGroup:               ptr.To[int64](1000),
 	}, k8sbuilder.OverwriteIfDefaultValue)
 
 	// Compute volume mount
@@ -277,7 +216,15 @@ func buildStatefulsets(fb *beatcrd.Filebeat, es *elasticsearchcrd.Elasticsearch,
 	}
 
 	// Compute mount CA elasticsearch
-	if (fb.Spec.ElasticsearchRef.IsManaged() && es.Spec.Tls.IsTlsEnabled()) || (fb.Spec.ElasticsearchRef.IsExternal() && fb.Spec.ElasticsearchRef.ElasticsearchCaSecretRef != nil) {
+	if fb.Spec.ElasticsearchRef.ElasticsearchCaSecretRef != nil {
+		cb.WithVolumeMount([]corev1.VolumeMount{
+			{
+				Name:      "ca-custom-elasticsearch",
+				MountPath: "/usr/share/filebeat/es-custom-ca",
+			},
+		}, k8sbuilder.Merge)
+	}
+	if fb.Spec.ElasticsearchRef.IsManaged() && es.Spec.Tls.IsTlsEnabled() && es.Spec.Tls.IsSelfManagedSecretForTls() {
 		cb.WithVolumeMount([]corev1.VolumeMount{
 			{
 				Name:      "ca-elasticsearch",
@@ -401,7 +348,8 @@ func buildStatefulsets(fb *beatcrd.Filebeat, es *elasticsearchcrd.Elasticsearch,
 		Image:           GetContainerImage(fb),
 		ImagePullPolicy: fb.Spec.ImagePullPolicy,
 		SecurityContext: &corev1.SecurityContext{
-			RunAsUser: ptr.To[int64](0),
+			Privileged: ptr.To(false),
+			RunAsUser:  ptr.To[int64](0),
 		},
 		Env: []corev1.EnvVar{
 			{
@@ -531,6 +479,18 @@ chown -v root:root /mnt/data
 	}
 
 	// Elasticsearch CA secret
+	if fb.Spec.ElasticsearchRef.ElasticsearchCaSecretRef != nil {
+		ptb.WithVolumes([]corev1.Volume{
+			{
+				Name: "ca-custom-elasticsearch",
+				VolumeSource: corev1.VolumeSource{
+					Secret: &corev1.SecretVolumeSource{
+						SecretName: fb.Spec.ElasticsearchRef.ElasticsearchCaSecretRef.Name,
+					},
+				},
+			},
+		}, k8sbuilder.Merge)
+	}
 	if fb.Spec.ElasticsearchRef.IsManaged() && es.Spec.Tls.IsTlsEnabled() && es.Spec.Tls.IsSelfManagedSecretForTls() {
 		ptb.WithVolumes([]corev1.Volume{
 			{
@@ -542,27 +502,28 @@ chown -v root:root /mnt/data
 				},
 			},
 		}, k8sbuilder.Merge)
-	} else if (fb.Spec.ElasticsearchRef.IsExternal() && fb.Spec.ElasticsearchRef.ElasticsearchCaSecretRef != nil) || (fb.Spec.ElasticsearchRef.IsManaged() && es.Spec.Tls.IsTlsEnabled() && fb.Spec.ElasticsearchRef.ElasticsearchCaSecretRef != nil) {
-		ptb.WithVolumes([]corev1.Volume{
-			{
-				Name: "ca-elasticsearch",
-				VolumeSource: corev1.VolumeSource{
-					Secret: &corev1.SecretVolumeSource{
-						SecretName: fb.Spec.ElasticsearchRef.ElasticsearchCaSecretRef.Name,
-					},
-				},
-			},
-		}, k8sbuilder.Merge)
 	}
 
 	// Logstash CA secret
 	if fb.Spec.LogstashRef.LogstashCaSecretRef != nil {
 		ptb.WithVolumes([]corev1.Volume{
 			{
-				Name: "ca-logstash",
+				Name: "ca-custom-logstash",
 				VolumeSource: corev1.VolumeSource{
 					Secret: &corev1.SecretVolumeSource{
 						SecretName: fb.Spec.LogstashRef.LogstashCaSecretRef.Name,
+					},
+				},
+			},
+		}, k8sbuilder.Merge)
+	}
+	if ls != nil && ls.Spec.Pki.IsEnabled() && ls.Spec.Pki.HasBeatCertificate() {
+		ptb.WithVolumes([]corev1.Volume{
+			{
+				Name: "ca-logstash",
+				VolumeSource: corev1.VolumeSource{
+					Secret: &corev1.SecretVolumeSource{
+						SecretName: GetSecretNameForCALogstash(fb),
 					},
 				},
 			},
@@ -584,8 +545,9 @@ chown -v root:root /mnt/data
 	}
 
 	// Compute Security context
+	// Compute Security context
 	ptb.WithSecurityContext(&corev1.PodSecurityContext{
-		FSGroup: ptr.To[int64](0),
+		FSGroup: ptr.To[int64](1000),
 	}, k8sbuilder.Merge)
 
 	// On Openshift, we need to run Opensearch with specific serviceAccount that is binding to anyuid scc

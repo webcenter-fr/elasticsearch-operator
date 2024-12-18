@@ -3,8 +3,8 @@ package filebeat
 import (
 	"testing"
 
-	beatcrd "github.com/webcenter-fr/elasticsearch-operator/apis/beat/v1"
 	"github.com/stretchr/testify/assert"
+	beatcrd "github.com/webcenter-fr/elasticsearch-operator/apis/beat/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -40,11 +40,11 @@ func TestBuildCALogstashSecret(t *testing.T) {
 	}
 
 	labels := map[string]string{
-		"cluster":                           "test",
-		"filebeat.k8s.harmonie-mutuelle.fr": "true",
+		"cluster":                   "test",
+		"filebeat.k8s.webcenter.fr": "true",
 	}
 	annotations := map[string]string{
-		"filebeat.k8s.harmonie-mutuelle.fr": "true",
+		"filebeat.k8s.webcenter.fr": "true",
 	}
 
 	lsSecret = &corev1.Secret{

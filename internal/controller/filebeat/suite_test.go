@@ -119,6 +119,10 @@ func (t *FilebeatControllerTestSuite) SetupSuite() {
 	if err != nil {
 		panic(err)
 	}
+	err = routev1.AddToScheme(scheme.Scheme)
+	if err != nil {
+		panic(err)
+	}
 
 	// Init k8smanager and k8sclient
 	k8sManager, err := ctrl.NewManager(cfg, ctrl.Options{

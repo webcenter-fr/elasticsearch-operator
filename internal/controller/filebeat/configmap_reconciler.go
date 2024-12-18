@@ -13,6 +13,7 @@ import (
 	"github.com/sirupsen/logrus"
 	beatcrd "github.com/webcenter-fr/elasticsearch-operator/apis/beat/v1"
 	elasticsearchcrd "github.com/webcenter-fr/elasticsearch-operator/apis/elasticsearch/v1"
+	logstashcrd "github.com/webcenter-fr/elasticsearch-operator/apis/logstash/v1"
 	"github.com/webcenter-fr/elasticsearch-operator/internal/controller/common"
 	corev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
@@ -48,8 +49,10 @@ func (r *configMapReconciler) Read(ctx context.Context, resource object.MultiPha
 	o := resource.(*beatcrd.Filebeat)
 	cmList := &corev1.ConfigMapList{}
 	var (
-		es               *elasticsearchcrd.Elasticsearch
-		logstashCASecret *corev1.Secret
+		es                    *elasticsearchcrd.Elasticsearch
+		ls                    *logstashcrd.Logstash
+		elasticsearchCASecret *corev1.Secret
+		logstashCASecret      *corev1.Secret
 	)
 	read = controller.NewBasicMultiPhaseRead()
 
@@ -76,6 +79,37 @@ func (r *configMapReconciler) Read(ctx context.Context, resource object.MultiPha
 		es = nil
 	}
 
+	// Read Logstash
+	if o.Spec.LogstashRef.IsManaged() {
+		ls = &logstashcrd.Logstash{}
+		namespace := o.Namespace
+		if o.Spec.LogstashRef.ManagedLogstashRef.Namespace != "" {
+			namespace = o.Spec.LogstashRef.ManagedLogstashRef.Namespace
+		}
+		if err = r.Client().Get(ctx, types.NamespacedName{Namespace: namespace, Name: o.Spec.LogstashRef.ManagedLogstashRef.Name}, ls); err != nil {
+			if !k8serrors.IsNotFound(err) {
+				return read, res, errors.Wrapf(err, "Error when read logstash %s", o.Spec.LogstashRef.ManagedLogstashRef.Name)
+			}
+			logger.Warnf("Logstash %s not yet exist, try again later", o.Spec.LogstashRef.ManagedLogstashRef.Name)
+			return read, ctrl.Result{RequeueAfter: 30 * time.Second}, nil
+		}
+
+	} else {
+		ls = nil
+	}
+
+	// Read ElasticsearchCASecret
+	if (o.Spec.ElasticsearchRef.IsExternal() || o.Spec.ElasticsearchRef.IsManaged()) && o.Spec.ElasticsearchRef.ElasticsearchCaSecretRef != nil {
+		elasticsearchCASecret = &corev1.Secret{}
+		if err = r.Client().Get(ctx, types.NamespacedName{Namespace: o.Namespace, Name: o.Spec.ElasticsearchRef.ElasticsearchCaSecretRef.Name}, elasticsearchCASecret); err != nil {
+			if !k8serrors.IsNotFound(err) {
+				return read, res, errors.Wrapf(err, "Error when read elasticsearchCASecret %s", o.Spec.ElasticsearchRef.ElasticsearchCaSecretRef.Name)
+			}
+			logger.Warnf("elasticsearchCASecret %s not yet exist, try again later", o.Spec.ElasticsearchRef.ElasticsearchCaSecretRef.Name)
+			return read, ctrl.Result{RequeueAfter: 30 * time.Second}, nil
+		}
+	}
+
 	// Read logstashCASecret
 	if (o.Spec.LogstashRef.IsExternal() || o.Spec.LogstashRef.IsManaged()) && o.Spec.LogstashRef.LogstashCaSecretRef != nil {
 		logstashCASecret = &corev1.Secret{}
@@ -89,7 +123,7 @@ func (r *configMapReconciler) Read(ctx context.Context, resource object.MultiPha
 	}
 
 	// Generate expected node group configmaps
-	expectedCms, err := buildConfigMaps(o, es, logstashCASecret)
+	expectedCms, err := buildConfigMaps(o, es, ls, elasticsearchCASecret, logstashCASecret)
 	if err != nil {
 		return read, res, errors.Wrap(err, "Error when generate config maps")
 	}

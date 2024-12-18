@@ -4,9 +4,9 @@ import (
 	"testing"
 
 	"github.com/disaster37/goca"
+	"github.com/stretchr/testify/assert"
 	beatcrd "github.com/webcenter-fr/elasticsearch-operator/apis/beat/v1"
 	"github.com/webcenter-fr/elasticsearch-operator/apis/shared"
-	"github.com/stretchr/testify/assert"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/utils/ptr"
@@ -21,11 +21,11 @@ func TestBuildPkiSecret(t *testing.T) {
 	)
 
 	labels := map[string]string{
-		"cluster":                           "test",
-		"filebeat.k8s.harmonie-mutuelle.fr": "true",
+		"cluster":                   "test",
+		"filebeat.k8s.webcenter.fr": "true",
 	}
 	annotations := map[string]string{
-		"filebeat.k8s.harmonie-mutuelle.fr": "true",
+		"filebeat.k8s.webcenter.fr": "true",
 	}
 
 	// When default value
@@ -118,12 +118,12 @@ func TestBuildTlsSecret(t *testing.T) {
 	}
 
 	labels := map[string]string{
-		"cluster":                           "test",
-		"filebeat.k8s.harmonie-mutuelle.fr": "true",
-		"filebeat.k8s.harmonie-mutuelle.fr/tls-certificate": "true",
+		"cluster":                   "test",
+		"filebeat.k8s.webcenter.fr": "true",
+		"filebeat.k8s.webcenter.fr/tls-certificate": "true",
 	}
 	annotations := map[string]string{
-		"filebeat.k8s.harmonie-mutuelle.fr": "true",
+		"filebeat.k8s.webcenter.fr": "true",
 	}
 
 	// When tls is disabled

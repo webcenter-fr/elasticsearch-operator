@@ -111,6 +111,53 @@ func buildServices(fb *beatcrd.Filebeat) (services []corev1.Service, err error) 
 		}
 	}
 
+	// Create specific services needed by route
+	for _, i := range fb.Spec.Routes {
+
+		service = &corev1.Service{
+			ObjectMeta: metav1.ObjectMeta{
+				Namespace:   fb.Namespace,
+				Name:        GetServiceName(fb, i.Name),
+				Labels:      getLabels(fb),
+				Annotations: getAnnotations(fb),
+			},
+			Spec: corev1.ServiceSpec{
+				Type: corev1.ServiceTypeClusterIP,
+				Ports: []corev1.ServicePort{
+					{
+						Protocol:   i.ContainerPortProtocol,
+						TargetPort: intstr.FromInt(int(i.ContainerPort)),
+						Port:       int32(i.ContainerPort),
+						Name:       i.Name,
+					},
+				},
+				Selector: map[string]string{
+					beatcrd.FilebeatAnnotationKey: "true",
+					"cluster":                     fb.Name,
+				},
+			},
+		}
+
+		services = append(services, *service)
+
+		isPortAlreadyUsed = false
+		for _, portUsed := range computedPort {
+			if i.ContainerPortProtocol == portUsed.Protocol && (int32(i.ContainerPort) == portUsed.Port || i.Name == portUsed.Name) {
+				isPortAlreadyUsed = true
+				break
+			}
+		}
+
+		if !isPortAlreadyUsed {
+			computedPort = append(computedPort, corev1.ServicePort{
+				Protocol:   i.ContainerPortProtocol,
+				TargetPort: intstr.FromInt(int(i.ContainerPort)),
+				Port:       int32(i.ContainerPort),
+				Name:       i.Name,
+			})
+		}
+	}
+
 	// Compute global service with custom container ports
 	for _, port := range fb.Spec.Deployment.Ports {
 		isPortAlreadyUsed = false

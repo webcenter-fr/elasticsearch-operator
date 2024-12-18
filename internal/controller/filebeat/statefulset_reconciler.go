@@ -272,7 +272,7 @@ func (r *statefulsetReconciler) Read(ctx context.Context, resource object.MultiP
 	}
 
 	// Generate expected statefulset
-	expectedSts, err := buildStatefulsets(o, es, ls, secretsChecksum, configMapsChecksum, r.isOpenshift)
+	expectedSts, err := buildStatefulsets(o, es, ls, cmList.Items, secretsChecksum, configMapsChecksum, r.isOpenshift)
 	if err != nil {
 		return read, res, errors.Wrap(err, "Error when generate statefulset")
 	}

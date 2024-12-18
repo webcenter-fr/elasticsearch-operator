@@ -24,6 +24,7 @@ spec:
         filebeat.k8s.webcenter.fr: "true"
       name: test-fb
     spec:
+      serviceAccountName: test-fb
       affinity:
         podAntiAffinity:
           preferredDuringSchedulingIgnoredDuringExecution:
@@ -56,6 +57,16 @@ spec:
             fieldRef:
               apiVersion: v1
               fieldPath: metadata.namespace
+        - name: ELASTICSEARCH_USERNAME
+          valueFrom:
+            secretKeyRef:
+              name: es-credential
+              key: username
+        - name: ELASTICSEARCH_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: es-credential
+              key: password
         image: docker.elastic.co/beats/filebeat:latest
         livenessProbe:
           failureThreshold: 3
@@ -98,8 +109,8 @@ spec:
         - mountPath: /usr/share/filebeat/filebeat.yml
           name: filebeat-config
           subPath: filebeat.yml
-        - mountPath: /usr/share/filebeat/ls-custom-ca
-          name: ca-custom-logstash
+        - mountPath: /usr/share/filebeat/es-ca
+          name: ca-elasticsearch
         - mountPath: /usr/share/filebeat/data
           name: filebeat-data
         - mountPath: /usr/share/filebeat/certs
@@ -115,6 +126,7 @@ spec:
             # Set right
             echo "Set right"
             chown -v root:root /mnt/data
+
 
         image: docker.elastic.co/beats/filebeat:latest
         name: init-filesystem
@@ -152,9 +164,9 @@ spec:
       - name: filebeat-config
         configMap:
           name: test-config-fb
-      - name: ca-custom-logstash
+      - name: ca-elasticsearch
         secret:
-          secretName: custom-ca-ls
+          secretName: test-ca-es-fb
       - name: filebeat-data
         emptyDir: {}
       - name: filebeat-certs
