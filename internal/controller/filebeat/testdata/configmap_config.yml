@@ -25,10 +25,12 @@ data:
         value2: test
     output:
         elasticsearch:
-            hosts: ${ELASTICSEARCH_HOST}
+            hosts:
+                - https://test-es.default.svc:9200
             password: ${ELASTICSEARCH_PASSWORD}
             ssl:
-                certificate_authorities: ${ELASTICSEARCH_CA_PATH}
+                certificate_authorities:
+                    - /usr/share/filebeat/es-ca/ca.crt
                 enable: true
             username: ${ELASTICSEARCH_USERNAME}
     

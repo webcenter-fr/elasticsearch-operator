@@ -1,8 +1,8 @@
 package logstash
 
 import (
-	beatcrd "github.com/webcenter-fr/elasticsearch-operator/apis/beat/v1"
-	logstashcrd "github.com/webcenter-fr/elasticsearch-operator/apis/logstash/v1"
+	beatcrd "github.com/webcenter-fr/elasticsearch-operator/api/beat/v1"
+	logstashcrd "github.com/webcenter-fr/elasticsearch-operator/api/logstash/v1"
 	v1 "k8s.io/api/core/v1"
 	networkingv1 "k8s.io/api/networking/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"

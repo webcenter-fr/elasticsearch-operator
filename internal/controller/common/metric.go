@@ -8,17 +8,21 @@ import (
 var (
 	TotalErrors = prometheus.NewCounter(
 		prometheus.CounterOpts{
-			Name: "total_errors",
+			Name: "elasticsearch_operator_errors_total",
 			Help: "Number of errors from all controllers",
 		},
 	)
-	ControllerMetrics = prometheus.NewGaugeVec(prometheus.GaugeOpts{
-		Name: "resource_total",
-		Help: "Total number of resource handled per controller",
-	}, []string{"controller"})
+	ControllerErrors = prometheus.NewGaugeVec(prometheus.GaugeOpts{
+		Name: "elasticsearch_operator_errors_controller",
+		Help: "Number of errors per controllers",
+	}, []string{"controller", "namespace", "name"})
+	ControllerInstances = prometheus.NewGaugeVec(prometheus.GaugeOpts{
+		Name: "elasticsearch_operator_instances_controller",
+		Help: "Number of instance per controllers",
+	}, []string{"controller", "namespace", "name"})
 )
 
 func init() {
 	// Register custom metrics with the global prometheus registry
-	metrics.Registry.MustRegister(TotalErrors, ControllerMetrics)
+	metrics.Registry.MustRegister(TotalErrors, ControllerErrors, ControllerInstances)
 }

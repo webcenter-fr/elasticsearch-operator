@@ -5,13 +5,14 @@ import (
 
 	"github.com/disaster37/operator-sdk-extra/pkg/test"
 	"github.com/stretchr/testify/assert"
-	elasticsearchcrd "github.com/webcenter-fr/elasticsearch-operator/apis/elasticsearch/v1"
-	"github.com/webcenter-fr/elasticsearch-operator/apis/shared"
+	elasticsearchcrd "github.com/webcenter-fr/elasticsearch-operator/api/elasticsearch/v1"
+	"github.com/webcenter-fr/elasticsearch-operator/api/shared"
 	appv1 "k8s.io/api/apps/v1"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes/scheme"
+	"k8s.io/utils/ptr"
 )
 
 func TestBuildDeploymentExporter(t *testing.T) {
@@ -42,7 +43,7 @@ func TestBuildDeploymentExporter(t *testing.T) {
 		Spec: elasticsearchcrd.ElasticsearchSpec{
 			Monitoring: shared.MonitoringSpec{
 				Prometheus: &shared.MonitoringPrometheusSpec{
-					Enabled: false,
+					Enabled: ptr.To(false),
 				},
 			},
 		},
@@ -60,7 +61,7 @@ func TestBuildDeploymentExporter(t *testing.T) {
 		Spec: elasticsearchcrd.ElasticsearchSpec{
 			Monitoring: shared.MonitoringSpec{
 				Prometheus: &shared.MonitoringPrometheusSpec{
-					Enabled: true,
+					Enabled: ptr.To(true),
 				},
 			},
 		},
@@ -79,7 +80,7 @@ func TestBuildDeploymentExporter(t *testing.T) {
 		Spec: elasticsearchcrd.ElasticsearchSpec{
 			Monitoring: shared.MonitoringSpec{
 				Prometheus: &shared.MonitoringPrometheusSpec{
-					Enabled: true,
+					Enabled: ptr.To(true),
 					Version: "v1.6.0",
 					Resources: &v1.ResourceRequirements{
 						Requests: v1.ResourceList{

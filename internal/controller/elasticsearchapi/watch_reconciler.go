@@ -9,7 +9,7 @@ import (
 	"github.com/disaster37/operator-sdk-extra/pkg/object"
 	olivere "github.com/olivere/elastic/v7"
 	"github.com/sirupsen/logrus"
-	elasticsearchapicrd "github.com/webcenter-fr/elasticsearch-operator/apis/elasticsearchapi/v1"
+	elasticsearchapicrd "github.com/webcenter-fr/elasticsearch-operator/api/elasticsearchapi/v1"
 	"k8s.io/client-go/tools/record"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -17,27 +17,22 @@ import (
 
 type watchReconciler struct {
 	controller.RemoteReconcilerAction[*elasticsearchapicrd.Watch, *olivere.XPackWatch, eshandler.ElasticsearchHandler]
-	controller.BaseReconciler
+	name string
 }
 
-func newWatchReconciler(client client.Client, logger *logrus.Entry, recorder record.EventRecorder) controller.RemoteReconcilerAction[*elasticsearchapicrd.Watch, *olivere.XPackWatch, eshandler.ElasticsearchHandler] {
+func newWatchReconciler(name string, client client.Client, recorder record.EventRecorder) controller.RemoteReconcilerAction[*elasticsearchapicrd.Watch, *olivere.XPackWatch, eshandler.ElasticsearchHandler] {
 	return &watchReconciler{
 		RemoteReconcilerAction: controller.NewRemoteReconcilerAction[*elasticsearchapicrd.Watch, *olivere.XPackWatch, eshandler.ElasticsearchHandler](
 			client,
-			logger,
 			recorder,
 		),
-		BaseReconciler: controller.BaseReconciler{
-			Client:   client,
-			Log:      logger,
-			Recorder: recorder,
-		},
+		name: name,
 	}
 }
 
-func (h *watchReconciler) GetRemoteHandler(ctx context.Context, req ctrl.Request, o object.RemoteObject) (handler controller.RemoteExternalReconciler[*elasticsearchapicrd.Watch, *olivere.XPackWatch, eshandler.ElasticsearchHandler], res ctrl.Result, err error) {
+func (h *watchReconciler) GetRemoteHandler(ctx context.Context, req ctrl.Request, o object.RemoteObject, logger *logrus.Entry) (handler controller.RemoteExternalReconciler[*elasticsearchapicrd.Watch, *olivere.XPackWatch, eshandler.ElasticsearchHandler], res ctrl.Result, err error) {
 	watch := o.(*elasticsearchapicrd.Watch)
-	esClient, err := GetElasticsearchHandler(ctx, watch, watch.Spec.ElasticsearchRef, h.BaseReconciler.Client, h.BaseReconciler.Log)
+	esClient, err := GetElasticsearchHandler(ctx, watch, watch.Spec.ElasticsearchRef, h.Client(), logger)
 	if err != nil && watch.DeletionTimestamp.IsZero() {
 		return nil, res, err
 	}

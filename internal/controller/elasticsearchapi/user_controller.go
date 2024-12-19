@@ -21,8 +21,7 @@ import (
 	"github.com/disaster37/operator-sdk-extra/pkg/controller"
 	olivere "github.com/olivere/elastic/v7"
 	"github.com/sirupsen/logrus"
-	elasticsearchapicrd "github.com/webcenter-fr/elasticsearch-operator/apis/elasticsearchapi/v1"
-	"github.com/webcenter-fr/elasticsearch-operator/internal/controller/common"
+	elasticsearchapicrd "github.com/webcenter-fr/elasticsearch-operator/api/elasticsearchapi/v1"
 	core "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/fields"
 	"k8s.io/apimachinery/pkg/types"
@@ -41,13 +40,12 @@ const (
 type UserReconciler struct {
 	controller.Controller
 	controller.RemoteReconciler[*elasticsearchapicrd.User, *olivere.XPackSecurityPutUserRequest, eshandler.ElasticsearchHandler]
-	reconcilerAction controller.RemoteReconcilerAction[*elasticsearchapicrd.User, *olivere.XPackSecurityPutUserRequest, eshandler.ElasticsearchHandler]
-	controller.BaseReconciler
+	controller.RemoteReconcilerAction[*elasticsearchapicrd.User, *olivere.XPackSecurityPutUserRequest, eshandler.ElasticsearchHandler]
 	name string
 }
 
 func NewUserReconciler(client client.Client, logger *logrus.Entry, recorder record.EventRecorder) controller.Controller {
-	r := &UserReconciler{
+	return &UserReconciler{
 		Controller: controller.NewBasicController(),
 		RemoteReconciler: controller.NewBasicRemoteReconciler[*elasticsearchapicrd.User, *olivere.XPackSecurityPutUserRequest, eshandler.ElasticsearchHandler](
 			client,
@@ -56,22 +54,13 @@ func NewUserReconciler(client client.Client, logger *logrus.Entry, recorder reco
 			logger,
 			recorder,
 		),
-		reconcilerAction: newUserReconciler(
+		RemoteReconcilerAction: newUserReconciler(
+			userName,
 			client,
-			logger,
 			recorder,
 		),
-		BaseReconciler: controller.BaseReconciler{
-			Client:   client,
-			Log:      logger,
-			Recorder: recorder,
-		},
 		name: userName,
 	}
-
-	common.ControllerMetrics.WithLabelValues(r.name).Add(0)
-
-	return r
 }
 
 //+kubebuilder:rbac:groups=elasticsearchapi.k8s.webcenter.fr,resources=users,verbs=get;list;watch;create;update;patch;delete
@@ -99,7 +88,7 @@ func (r *UserReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.
 		req,
 		user,
 		data,
-		r.reconcilerAction,
+		r,
 	)
 }
 
@@ -107,7 +96,7 @@ func (r *UserReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.
 func (r *UserReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&elasticsearchapicrd.User{}).
-		Watches(&core.Secret{}, handler.EnqueueRequestsFromMapFunc(watchUserSecret(r.BaseReconciler.Client))).
+		Watches(&core.Secret{}, handler.EnqueueRequestsFromMapFunc(watchUserSecret(r.Client()))).
 		Complete(r)
 }
 

@@ -20,8 +20,7 @@ import (
 	kbhandler "github.com/disaster37/kb-handler/v8"
 	"github.com/disaster37/operator-sdk-extra/pkg/controller"
 	"github.com/sirupsen/logrus"
-	kibanaapicrd "github.com/webcenter-fr/elasticsearch-operator/apis/kibanaapi/v1"
-	"github.com/webcenter-fr/elasticsearch-operator/internal/controller/common"
+	kibanaapicrd "github.com/webcenter-fr/elasticsearch-operator/api/kibanaapi/v1"
 	"k8s.io/client-go/tools/record"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -35,12 +34,12 @@ const (
 type LogstashPipelineReconciler struct {
 	controller.Controller
 	controller.RemoteReconciler[*kibanaapicrd.LogstashPipeline, *kbapi.LogstashPipeline, kbhandler.KibanaHandler]
-	reconcilerAction controller.RemoteReconcilerAction[*kibanaapicrd.LogstashPipeline, *kbapi.LogstashPipeline, kbhandler.KibanaHandler]
-	name             string
+	controller.RemoteReconcilerAction[*kibanaapicrd.LogstashPipeline, *kbapi.LogstashPipeline, kbhandler.KibanaHandler]
+	name string
 }
 
 func NewLogstashPipelineReconciler(client client.Client, logger *logrus.Entry, recorder record.EventRecorder) controller.Controller {
-	r := &LogstashPipelineReconciler{
+	return &LogstashPipelineReconciler{
 		Controller: controller.NewBasicController(),
 		RemoteReconciler: controller.NewBasicRemoteReconciler[*kibanaapicrd.LogstashPipeline, *kbapi.LogstashPipeline, kbhandler.KibanaHandler](
 			client,
@@ -49,17 +48,13 @@ func NewLogstashPipelineReconciler(client client.Client, logger *logrus.Entry, r
 			logger,
 			recorder,
 		),
-		reconcilerAction: newLogstashPipelineReconciler(
+		RemoteReconcilerAction: newLogstashPipelineReconciler(
+			logstashPipelineName,
 			client,
-			logger,
 			recorder,
 		),
 		name: logstashPipelineName,
 	}
-
-	common.ControllerMetrics.WithLabelValues(r.name).Add(0)
-
-	return r
 }
 
 //+kubebuilder:rbac:groups=kibanaapi.k8s.webcenter.fr,resources=logstashpipelines,verbs=get;list;watch;create;update;patch;delete
@@ -88,7 +83,7 @@ func (r *LogstashPipelineReconciler) Reconcile(ctx context.Context, req ctrl.Req
 		req,
 		pipeline,
 		data,
-		r.reconcilerAction,
+		r,
 	)
 }
 

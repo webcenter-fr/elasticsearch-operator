@@ -1,0 +1,20 @@
+apiVersion: route.openshift.io/v1
+kind: Route
+metadata:
+  labels:
+    cluster: test
+    logstash.k8s.webcenter.fr: "true"
+    label1: value1
+  annotations:
+    logstash.k8s.webcenter.fr: "true"
+    anno1: value1
+  name: test-my-ingress-ls
+  namespace: default
+spec:
+  host: test.cluster.local
+  path: /
+  to:
+    kind: Service
+    name: test-my-ingress-ls
+  port:
+    targetPort: 8080

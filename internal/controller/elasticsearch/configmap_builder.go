@@ -5,7 +5,7 @@ import (
 	"strings"
 
 	"emperror.dev/errors"
-	elasticsearchcrd "github.com/webcenter-fr/elasticsearch-operator/apis/elasticsearch/v1"
+	elasticsearchcrd "github.com/webcenter-fr/elasticsearch-operator/api/elasticsearch/v1"
 	"github.com/webcenter-fr/elasticsearch-operator/pkg/helper"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -21,28 +21,28 @@ func buildConfigMaps(es *elasticsearchcrd.Elasticsearch) (configMaps []corev1.Co
 	configMaps = make([]corev1.ConfigMap, 0, len(es.Spec.NodeGroups)+1)
 
 	// Compute configmap that store Elasticsearch settings
-	injectedConfigMap := map[string]string{
-		"elasticsearch.yml": `
-xpack.security.enabled: true
-xpack.security.authc.realms.file.file1.order: -100
-xpack.security.authc.realms.native.native1.order: -99
-xpack.security.transport.ssl.enabled: true
-xpack.security.transport.ssl.verification_mode: full
-xpack.security.transport.ssl.certificate: /usr/share/elasticsearch/config/transport-cert/${POD_NAME}.crt
-xpack.security.transport.ssl.key: /usr/share/elasticsearch/config/transport-cert/${POD_NAME}.key
-xpack.security.transport.ssl.certificate_authorities: /usr/share/elasticsearch/config/transport-cert/ca.crt
-`,
+	elasticsearchConfig := map[string]any{
+		"xpack.security.enabled":                               true,
+		"xpack.security.authc.realms.file.file1.order":         -100,
+		"xpack.security.authc.realms.native.native1.order":     -99,
+		"xpack.security.transport.ssl.enabled":                 true,
+		"xpack.security.transport.ssl.verification_mode":       "full",
+		"xpack.security.transport.ssl.certificate":             "/usr/share/elasticsearch/config/transport-cert/${POD_NAME}.crt",
+		"xpack.security.transport.ssl.key":                     "/usr/share/elasticsearch/config/transport-cert/${POD_NAME}.key",
+		"xpack.security.transport.ssl.certificate_authorities": "/usr/share/elasticsearch/config/transport-cert/ca.crt",
 	}
 
 	if es.Spec.Tls.IsTlsEnabled() {
-		injectedConfigMap["elasticsearch.yml"] += `
-xpack.security.http.ssl.enabled: true
-xpack.security.http.ssl.certificate: /usr/share/elasticsearch/config/api-cert/tls.crt
-xpack.security.http.ssl.key: /usr/share/elasticsearch/config/api-cert/tls.key
-xpack.security.http.ssl.certificate_authorities: /usr/share/elasticsearch/config/api-cert/ca.crt
-`
+		elasticsearchConfig["xpack.security.http.ssl.enabled"] = true
+		elasticsearchConfig["xpack.security.http.ssl.certificate"] = "/usr/share/elasticsearch/config/api-cert/tls.crt"
+		elasticsearchConfig["xpack.security.http.ssl.key"] = "/usr/share/elasticsearch/config/api-cert/tls.key"
+		elasticsearchConfig["xpack.security.http.ssl.certificate_authorities"] = "/usr/share/elasticsearch/config/api-cert/ca.crt"
 	} else {
-		injectedConfigMap["elasticsearch.yml"] += "xpack.security.http.ssl.enabled: false\n"
+		elasticsearchConfig["xpack.security.http.ssl.enabled"] = false
+	}
+
+	injectedConfigMap := map[string]string{
+		"elasticsearch.yml": helper.ToYamlOrDie(elasticsearchConfig),
 	}
 
 	for _, nodeGroup := range es.Spec.NodeGroups {

@@ -56,8 +56,6 @@ spec:
             fieldRef:
               apiVersion: v1
               fieldPath: metadata.namespace
-        - name: LOGSTASH_HOST
-          value: 'test-beat-ls.default.svc:5002'
         image: docker.elastic.co/beats/filebeat:latest
         livenessProbe:
           failureThreshold: 3
@@ -85,6 +83,9 @@ spec:
             - ALL
           runAsNonRoot: false
           runAsUser: 0
+          runAsGroup: 1000
+          privileged: false
+          allowPrivilegeEscalation: false
         startupProbe:
           failureThreshold: 30
           initialDelaySeconds: 10
@@ -97,10 +98,12 @@ spec:
         - mountPath: /usr/share/filebeat/filebeat.yml
           name: filebeat-config
           subPath: filebeat.yml
-        - mountPath: /usr/share/filebeat/ls-ca
-          name: ca-logstash
+        - mountPath: /usr/share/filebeat/ls-custom-ca
+          name: ca-custom-logstash
         - mountPath: /usr/share/filebeat/data
           name: filebeat-data
+        - mountPath: /usr/share/filebeat/certs
+          name: filebeat-certs
       initContainers:
       - command:
         - /bin/bash
@@ -141,15 +144,19 @@ spec:
             mountPath: /mnt/data
         securityContext:
           runAsUser: 0
+          privileged: false
       securityContext:
-        fsGroup: 0
+        fsGroup: 1000
       terminationGracePeriodSeconds: 60
       volumes:
       - name: filebeat-config
         configMap:
           name: test-config-fb
-      - name: ca-logstash
+      - name: ca-custom-logstash
         secret:
           secretName: custom-ca-ls
       - name: filebeat-data
         emptyDir: {}
+      - name: filebeat-certs
+        secret:
+          secretName: test-tls-fb

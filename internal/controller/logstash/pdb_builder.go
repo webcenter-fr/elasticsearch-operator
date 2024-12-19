@@ -3,7 +3,7 @@ package logstash
 import (
 	"emperror.dev/errors"
 	"github.com/disaster37/k8sbuilder"
-	logstashcrd "github.com/webcenter-fr/elasticsearch-operator/apis/logstash/v1"
+	logstashcrd "github.com/webcenter-fr/elasticsearch-operator/api/logstash/v1"
 	policyv1 "k8s.io/api/policy/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"

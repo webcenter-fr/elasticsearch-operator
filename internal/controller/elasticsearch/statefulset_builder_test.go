@@ -6,8 +6,8 @@ import (
 
 	"github.com/disaster37/operator-sdk-extra/pkg/test"
 	"github.com/stretchr/testify/assert"
-	elasticsearchcrd "github.com/webcenter-fr/elasticsearch-operator/apis/elasticsearch/v1"
-	"github.com/webcenter-fr/elasticsearch-operator/apis/shared"
+	elasticsearchcrd "github.com/webcenter-fr/elasticsearch-operator/api/elasticsearch/v1"
+	"github.com/webcenter-fr/elasticsearch-operator/api/shared"
 	appv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
@@ -48,9 +48,36 @@ func TestBuildStatefulset(t *testing.T) {
 		},
 	}
 
-	sts, err = buildStatefulsets(o, nil, nil)
+	sts, err = buildStatefulsets(o, nil, nil, false)
 	assert.NoError(t, err)
 	test.EqualFromYamlFile[*appv1.StatefulSet](t, "testdata/statefullset-all.yml", &sts[0], scheme.Scheme)
+
+	// With default values on Openshift
+	o = &elasticsearchcrd.Elasticsearch{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: "default",
+			Name:      "test",
+		},
+		Spec: elasticsearchcrd.ElasticsearchSpec{
+			NodeGroups: []elasticsearchcrd.ElasticsearchNodeGroupSpec{
+				{
+					Name: "all",
+					Roles: []string{
+						"master",
+						"data",
+						"ingest",
+					},
+					Deployment: shared.Deployment{
+						Replicas: 1,
+					},
+				},
+			},
+		},
+	}
+
+	sts, err = buildStatefulsets(o, nil, nil, true)
+	assert.NoError(t, err)
+	test.EqualFromYamlFile[*appv1.StatefulSet](t, "testdata/statefullset_all_openshift.yml", &sts[0], scheme.Scheme)
 
 	// With complex config
 	o = &elasticsearchcrd.Elasticsearch{
@@ -239,7 +266,7 @@ func TestBuildStatefulset(t *testing.T) {
 		}
 	}
 
-	sts, err = buildStatefulsets(o, extraSecrets, extraConfigMaps)
+	sts, err = buildStatefulsets(o, extraSecrets, extraConfigMaps, false)
 	assert.NoError(t, err)
 	test.EqualFromYamlFile[*appv1.StatefulSet](t, "testdata/statefullset-master.yml", &sts[0], scheme.Scheme)
 	test.EqualFromYamlFile[*appv1.StatefulSet](t, "testdata/statefullset-data.yml", &sts[1], scheme.Scheme)
@@ -314,7 +341,7 @@ func TestBuildStatefulset(t *testing.T) {
 		}
 	}
 
-	sts, err = buildStatefulsets(o, extraSecrets, extraConfigMaps)
+	sts, err = buildStatefulsets(o, extraSecrets, extraConfigMaps, false)
 	assert.NoError(t, err)
 	test.EqualFromYamlFile[*appv1.StatefulSet](t, "testdata/statefullset-all-external-tls.yml", &sts[0], scheme.Scheme)
 }

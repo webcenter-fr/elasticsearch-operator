@@ -1,0 +1,20 @@
+apiVersion: monitoring.coreos.com/v1
+kind: PodMonitor
+metadata:
+  name: test-ls
+  namespace: default
+  labels:
+    cluster: test
+    logstash.k8s.webcenter.fr: "true"
+  annotations:
+    logstash.k8s.webcenter.fr: "true"
+spec:
+  selector:
+    matchLabels:
+      cluster: test
+      logstash.k8s.webcenter.fr: "true"
+  podMetricsEndpoints:
+  - port: exporter
+    interval: 10s
+    scheme: http
+    path: /metrics

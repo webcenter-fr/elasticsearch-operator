@@ -1,7 +1,7 @@
 package filebeat
 
 import (
-	beatcrd "github.com/webcenter-fr/elasticsearch-operator/apis/beat/v1"
+	beatcrd "github.com/webcenter-fr/elasticsearch-operator/api/beat/v1"
 	networkingv1 "k8s.io/api/networking/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )

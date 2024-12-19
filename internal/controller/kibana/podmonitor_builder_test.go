@@ -6,10 +6,11 @@ import (
 	"github.com/disaster37/operator-sdk-extra/pkg/test"
 	monitoringv1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1"
 	"github.com/stretchr/testify/assert"
-	kibanacrd "github.com/webcenter-fr/elasticsearch-operator/apis/kibana/v1"
-	"github.com/webcenter-fr/elasticsearch-operator/apis/shared"
+	kibanacrd "github.com/webcenter-fr/elasticsearch-operator/api/kibana/v1"
+	"github.com/webcenter-fr/elasticsearch-operator/api/shared"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes/scheme"
+	"k8s.io/utils/ptr"
 )
 
 func TestBuildPodMonitor(t *testing.T) {
@@ -45,7 +46,7 @@ func TestBuildPodMonitor(t *testing.T) {
 		Spec: kibanacrd.KibanaSpec{
 			Monitoring: shared.MonitoringSpec{
 				Prometheus: &shared.MonitoringPrometheusSpec{
-					Enabled: false,
+					Enabled: ptr.To(false),
 				},
 			},
 		},
@@ -63,7 +64,7 @@ func TestBuildPodMonitor(t *testing.T) {
 		Spec: kibanacrd.KibanaSpec{
 			Monitoring: shared.MonitoringSpec{
 				Prometheus: &shared.MonitoringPrometheusSpec{
-					Enabled: true,
+					Enabled: ptr.To(true),
 				},
 			},
 		},

@@ -1,0 +1,26 @@
+apiVersion: route.openshift.io/v1
+kind: Route
+metadata:
+  labels:
+    cluster: test
+    kibana.k8s.webcenter.fr: "true"
+    globalLabel: globalLabel
+    ingressLabel: ingressLabel
+  annotations:
+    annotationLabel: annotationLabel
+    kibana.k8s.webcenter.fr: "true"
+  name: test-kb
+  namespace: default
+spec:
+  host: my-test.cluster.local
+  path: /fake
+  tls:
+    termination: reencrypt
+    insecureEdgeTerminationPolicy: Redirect
+    externalCertificate: 
+      name: my-secret
+  to:
+    kind: Service
+    name: test-kb
+  port:
+    targetPort: http

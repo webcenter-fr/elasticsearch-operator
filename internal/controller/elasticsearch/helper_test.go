@@ -4,8 +4,8 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
-	elasticsearchcrd "github.com/webcenter-fr/elasticsearch-operator/apis/elasticsearch/v1"
-	"github.com/webcenter-fr/elasticsearch-operator/apis/shared"
+	elasticsearchcrd "github.com/webcenter-fr/elasticsearch-operator/api/elasticsearch/v1"
+	"github.com/webcenter-fr/elasticsearch-operator/api/shared"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/utils/ptr"
@@ -780,4 +780,16 @@ func TestGetSecretNameForCacerts(t *testing.T) {
 	}
 
 	assert.Equal(t, "test", GetSecretNameForCacerts(o))
+}
+
+func TestGetServiceAccountName(t *testing.T) {
+	o := &elasticsearchcrd.Elasticsearch{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: "default",
+			Name:      "test",
+		},
+		Spec: elasticsearchcrd.ElasticsearchSpec{},
+	}
+
+	assert.Equal(t, "test-es", GetServiceAccountName(o))
 }

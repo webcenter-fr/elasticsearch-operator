@@ -25,10 +25,12 @@ data:
         value2: test
     output:
         elasticsearch:
-            hosts: ${ELASTICSEARCH_HOST}
-            password: ${METRICBEAT_PASSWORD}
+            hosts:
+                - https://test-es.default.svc:9200
+            password: ${ELASTICSEARCH_PASSWORD}
             ssl:
-                certificate_authorities: /usr/share/metricbeat/es-ca/ca.crt
+                certificate_authorities:
+                    - /usr/share/metricbeat/es-ca/ca.crt
                 enable: true
-            username: ${METRICBEAT_USERNAME}
+            username: ${ELASTICSEARCH_USERNAME}
     

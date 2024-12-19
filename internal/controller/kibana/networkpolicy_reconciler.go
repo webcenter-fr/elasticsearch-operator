@@ -10,7 +10,7 @@ import (
 	"github.com/disaster37/operator-sdk-extra/pkg/helper"
 	"github.com/disaster37/operator-sdk-extra/pkg/object"
 	"github.com/sirupsen/logrus"
-	kibanacrd "github.com/webcenter-fr/elasticsearch-operator/apis/kibana/v1"
+	kibanacrd "github.com/webcenter-fr/elasticsearch-operator/api/kibana/v1"
 	networkingv1 "k8s.io/api/networking/v1"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/client-go/tools/record"
@@ -24,29 +24,22 @@ const (
 )
 
 type networkPolicyReconciler struct {
-	controller.BaseReconciler
 	controller.MultiPhaseStepReconcilerAction
 }
 
-func newNetworkPolicyReconciler(client client.Client, logger *logrus.Entry, recorder record.EventRecorder) (multiPhaseStepReconcilerAction controller.MultiPhaseStepReconcilerAction) {
+func newNetworkPolicyReconciler(client client.Client, recorder record.EventRecorder) (multiPhaseStepReconcilerAction controller.MultiPhaseStepReconcilerAction) {
 	return &networkPolicyReconciler{
 		MultiPhaseStepReconcilerAction: controller.NewBasicMultiPhaseStepReconcilerAction(
 			client,
 			NetworkPolicyPhase,
 			NetworkPolicyCondition,
-			logger,
 			recorder,
 		),
-		BaseReconciler: controller.BaseReconciler{
-			Client:   client,
-			Recorder: recorder,
-			Log:      logger,
-		},
 	}
 }
 
 // Read existing network policy
-func (r *networkPolicyReconciler) Read(ctx context.Context, resource object.MultiPhaseObject, data map[string]any) (read controller.MultiPhaseRead, res ctrl.Result, err error) {
+func (r *networkPolicyReconciler) Read(ctx context.Context, resource object.MultiPhaseObject, data map[string]any, logger *logrus.Entry) (read controller.MultiPhaseRead, res ctrl.Result, err error) {
 	o := resource.(*kibanacrd.Kibana)
 	npList := &networkingv1.NetworkPolicyList{}
 	read = controller.NewBasicMultiPhaseRead()
@@ -56,7 +49,7 @@ func (r *networkPolicyReconciler) Read(ctx context.Context, resource object.Mult
 	if err != nil {
 		return read, res, errors.Wrap(err, "Error when generate label selector")
 	}
-	if err = r.Client.List(ctx, npList, &client.ListOptions{Namespace: o.Namespace, LabelSelector: labelSelectors}); err != nil {
+	if err = r.Client().List(ctx, npList, &client.ListOptions{Namespace: o.Namespace, LabelSelector: labelSelectors}); err != nil {
 		return read, res, errors.Wrapf(err, "Error when read network policies")
 	}
 	read.SetCurrentObjects(helper.ToSliceOfObject(npList.Items))

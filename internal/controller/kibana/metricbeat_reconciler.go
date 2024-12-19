@@ -9,8 +9,8 @@ import (
 	"github.com/disaster37/operator-sdk-extra/pkg/helper"
 	"github.com/disaster37/operator-sdk-extra/pkg/object"
 	"github.com/sirupsen/logrus"
-	beatcrd "github.com/webcenter-fr/elasticsearch-operator/apis/beat/v1"
-	kibanacrd "github.com/webcenter-fr/elasticsearch-operator/apis/kibana/v1"
+	beatcrd "github.com/webcenter-fr/elasticsearch-operator/api/beat/v1"
+	kibanacrd "github.com/webcenter-fr/elasticsearch-operator/api/kibana/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/tools/record"
@@ -24,35 +24,28 @@ const (
 )
 
 type metricbeatReconciler struct {
-	controller.BaseReconciler
 	controller.MultiPhaseStepReconcilerAction
 }
 
-func newMetricbeatReconciler(client client.Client, logger *logrus.Entry, recorder record.EventRecorder) (multiPhaseStepReconcilerAction controller.MultiPhaseStepReconcilerAction) {
+func newMetricbeatReconciler(client client.Client, recorder record.EventRecorder) (multiPhaseStepReconcilerAction controller.MultiPhaseStepReconcilerAction) {
 	return &metricbeatReconciler{
 		MultiPhaseStepReconcilerAction: controller.NewBasicMultiPhaseStepReconcilerAction(
 			client,
 			MetricbeatPhase,
 			MetricbeatCondition,
-			logger,
 			recorder,
 		),
-		BaseReconciler: controller.BaseReconciler{
-			Client:   client,
-			Recorder: recorder,
-			Log:      logger,
-		},
 	}
 }
 
 // Read existing Metricbeat
-func (r *metricbeatReconciler) Read(ctx context.Context, resource object.MultiPhaseObject, data map[string]any) (read controller.MultiPhaseRead, res ctrl.Result, err error) {
+func (r *metricbeatReconciler) Read(ctx context.Context, resource object.MultiPhaseObject, data map[string]any, logger *logrus.Entry) (read controller.MultiPhaseRead, res ctrl.Result, err error) {
 	o := resource.(*kibanacrd.Kibana)
 	metricbeat := &beatcrd.Metricbeat{}
 	read = controller.NewBasicMultiPhaseRead()
 
 	// Read current metricbeat
-	if err = r.Client.Get(ctx, types.NamespacedName{Namespace: o.Namespace, Name: GetMetricbeatName(o)}, metricbeat); err != nil {
+	if err = r.Client().Get(ctx, types.NamespacedName{Namespace: o.Namespace, Name: GetMetricbeatName(o)}, metricbeat); err != nil {
 		if !k8serrors.IsNotFound(err) {
 			return read, res, errors.Wrapf(err, "Error when read metricbeat")
 		}

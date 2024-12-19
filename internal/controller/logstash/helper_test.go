@@ -4,7 +4,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
-	logstashcrd "github.com/webcenter-fr/elasticsearch-operator/apis/logstash/v1"
+	logstashcrd "github.com/webcenter-fr/elasticsearch-operator/api/logstash/v1"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -287,4 +287,28 @@ func TestGetSecretNameForTls(t *testing.T) {
 
 	// With default value
 	assert.Equal(t, "test-tls-ls", GetSecretNameForTls(o))
+}
+
+func TestGetServiceAccountName(t *testing.T) {
+	o := &logstashcrd.Logstash{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: "default",
+			Name:      "test",
+		},
+		Spec: logstashcrd.LogstashSpec{},
+	}
+
+	assert.Equal(t, "test-ls", GetServiceAccountName(o))
+}
+
+func TestGetConfigMapExporterName(t *testing.T) {
+	o := &logstashcrd.Logstash{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: "default",
+			Name:      "test",
+		},
+		Spec: logstashcrd.LogstashSpec{},
+	}
+
+	assert.Equal(t, "test-exporter-ls", GetConfigMapExporterName(o))
 }

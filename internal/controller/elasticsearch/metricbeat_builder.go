@@ -4,9 +4,9 @@ import (
 	"fmt"
 	"strings"
 
-	beatcrd "github.com/webcenter-fr/elasticsearch-operator/apis/beat/v1"
-	elasticsearchcrd "github.com/webcenter-fr/elasticsearch-operator/apis/elasticsearch/v1"
-	"github.com/webcenter-fr/elasticsearch-operator/apis/shared"
+	beatcrd "github.com/webcenter-fr/elasticsearch-operator/api/beat/v1"
+	elasticsearchcrd "github.com/webcenter-fr/elasticsearch-operator/api/elasticsearch/v1"
+	"github.com/webcenter-fr/elasticsearch-operator/api/shared"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"

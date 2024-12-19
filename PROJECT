@@ -24,7 +24,7 @@ resources:
   domain: k8s.webcenter.fr
   group: kibana
   kind: Kibana
-  path: github.com/webcenter-fr/elasticsearch-operator/apis/kibana/v1
+  path: github.com/webcenter-fr/elasticsearch-operator/api/kibana/v1
   version: v1
 - api:
     crdVersion: v1
@@ -33,7 +33,7 @@ resources:
   domain: k8s.webcenter.fr
   group: elasticsearchapi
   kind: User
-  path: github.com/webcenter-fr/elasticsearch-operator/apis/elasticsearchapi/v1
+  path: github.com/webcenter-fr/elasticsearch-operator/api/elasticsearchapi/v1
   version: v1
 - api:
     crdVersion: v1
@@ -42,7 +42,7 @@ resources:
   domain: k8s.webcenter.fr
   group: elasticsearchapi
   kind: License
-  path: github.com/webcenter-fr/elasticsearch-operator/apis/elasticsearchapi/v1
+  path: github.com/webcenter-fr/elasticsearch-operator/api/elasticsearchapi/v1
   version: v1
 - api:
     crdVersion: v1
@@ -51,7 +51,7 @@ resources:
   domain: k8s.webcenter.fr
   group: elasticsearchapi
   kind: Role
-  path: github.com/webcenter-fr/elasticsearch-operator/apis/elasticsearchapi/v1
+  path: github.com/webcenter-fr/elasticsearch-operator/api/elasticsearchapi/v1
   version: v1
 - api:
     crdVersion: v1
@@ -60,7 +60,7 @@ resources:
   domain: k8s.webcenter.fr
   group: elasticsearchapi
   kind: RoleMapping
-  path: github.com/webcenter-fr/elasticsearch-operator/apis/elasticsearchapi/v1
+  path: github.com/webcenter-fr/elasticsearch-operator/api/elasticsearchapi/v1
   version: v1
 - api:
     crdVersion: v1
@@ -69,7 +69,7 @@ resources:
   domain: k8s.webcenter.fr
   group: elasticsearchapi
   kind: IndexLifecyclePolicy
-  path: github.com/webcenter-fr/elasticsearch-operator/apis/elasticsearchapi/v1
+  path: github.com/webcenter-fr/elasticsearch-operator/api/elasticsearchapi/v1
   version: v1
 - api:
     crdVersion: v1
@@ -78,7 +78,7 @@ resources:
   domain: k8s.webcenter.fr
   group: elasticsearchapi
   kind: SnapshotLifecyclePolicy
-  path: github.com/webcenter-fr/elasticsearch-operator/apis/elasticsearchapi/v1
+  path: github.com/webcenter-fr/elasticsearch-operator/api/elasticsearchapi/v1
   version: v1
 - api:
     crdVersion: v1
@@ -87,7 +87,7 @@ resources:
   domain: k8s.webcenter.fr
   group: elasticsearchapi
   kind: SnapshotRepository
-  path: github.com/webcenter-fr/elasticsearch-operator/apis/elasticsearchapi/v1
+  path: github.com/webcenter-fr/elasticsearch-operator/api/elasticsearchapi/v1
   version: v1
 - api:
     crdVersion: v1
@@ -96,7 +96,7 @@ resources:
   domain: k8s.webcenter.fr
   group: elasticsearchapi
   kind: IndexTemplate
-  path: github.com/webcenter-fr/elasticsearch-operator/apis/elasticsearchapi/v1
+  path: github.com/webcenter-fr/elasticsearch-operator/api/elasticsearchapi/v1
   version: v1
 - api:
     crdVersion: v1
@@ -105,7 +105,7 @@ resources:
   domain: k8s.webcenter.fr
   group: elasticsearchapi
   kind: ComponentTemplate
-  path: github.com/webcenter-fr/elasticsearch-operator/apis/elasticsearchapi/v1
+  path: github.com/webcenter-fr/elasticsearch-operator/api/elasticsearchapi/v1
   version: v1
 - api:
     crdVersion: v1
@@ -114,7 +114,7 @@ resources:
   domain: k8s.webcenter.fr
   group: elasticsearchapi
   kind: Watch
-  path: github.com/webcenter-fr/elasticsearch-operator/apis/elasticsearchapi/v1
+  path: github.com/webcenter-fr/elasticsearch-operator/api/elasticsearchapi/v1
   version: v1
 - api:
     crdVersion: v1
@@ -123,7 +123,7 @@ resources:
   domain: k8s.webcenter.fr
   group: logstash
   kind: Logstash
-  path: github.com/webcenter-fr/elasticsearch-operator/apis/logstash/v1
+  path: github.com/webcenter-fr/elasticsearch-operator/api/logstash/v1
   version: v1
 - api:
     crdVersion: v1
@@ -132,7 +132,7 @@ resources:
   domain: k8s.webcenter.fr
   group: beat
   kind: Filebeat
-  path: github.com/webcenter-fr/elasticsearch-operator/apis/beat/v1
+  path: github.com/webcenter-fr/elasticsearch-operator/api/beat/v1
   version: v1
 - api:
     crdVersion: v1
@@ -141,7 +141,7 @@ resources:
   domain: k8s.webcenter.fr
   group: beat
   kind: Metricbeat
-  path: github.com/webcenter-fr/elasticsearch-operator/apis/beat/v1
+  path: github.com/webcenter-fr/elasticsearch-operator/api/beat/v1
   version: v1
 - api:
     crdVersion: v1
@@ -150,7 +150,7 @@ resources:
   domain: k8s.webcenter.fr
   group: cerebro
   kind: Cerebro
-  path: github.com/webcenter-fr/elasticsearch-operator/apis/cerebro/v1
+  path: github.com/webcenter-fr/elasticsearch-operator/api/cerebro/v1
   version: v1
 - api:
     crdVersion: v1
@@ -158,7 +158,7 @@ resources:
   domain: k8s.webcenter.fr
   group: cerebro
   kind: Host
-  path: github.com/webcenter-fr/elasticsearch-operator/apis/cerebro/v1
+  path: github.com/webcenter-fr/elasticsearch-operator/api/cerebro/v1
   version: v1
 - api:
     crdVersion: v1
@@ -167,7 +167,7 @@ resources:
   domain: k8s.webcenter.fr
   group: kibanaapi
   kind: UserSpace
-  path: github.com/webcenter-fr/elasticsearch-operator/apis/kibanaapi/v1
+  path: github.com/webcenter-fr/elasticsearch-operator/api/kibanaapi/v1
   version: v1
 - api:
     crdVersion: v1
@@ -176,7 +176,7 @@ resources:
   domain: k8s.webcenter.fr
   group: kibanaapi
   kind: Role
-  path: github.com/webcenter-fr/elasticsearch-operator/apis/kibanaapi/v1
+  path: github.com/webcenter-fr/elasticsearch-operator/api/kibanaapi/v1
   version: v1
 - api:
     crdVersion: v1
@@ -185,6 +185,6 @@ resources:
   domain: k8s.webcenter.fr
   group: kibanaapi
   kind: LogstashPipeline
-  path: github.com/webcenter-fr/elasticsearch-operator/apis/kibanaapi/v1
+  path: github.com/webcenter-fr/elasticsearch-operator/api/kibanaapi/v1
   version: v1
 version: "3"

@@ -1,0 +1,18 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: test-kb
+  namespace: default
+  labels:
+    cluster: test
+    kibana.k8s.webcenter.fr: "true"
+  annotations:
+   kibana.k8s.webcenter.fr: "true"
+subjects:
+- kind: ServiceAccount
+  name: test-kb
+  namespace: default
+roleRef:
+  kind: ClusterRole
+  name: system:openshift:scc:anyuid
+  apiGroup: rbac.authorization.k8s.io

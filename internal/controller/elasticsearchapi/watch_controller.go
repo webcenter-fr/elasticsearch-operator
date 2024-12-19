@@ -20,8 +20,7 @@ import (
 	"github.com/disaster37/operator-sdk-extra/pkg/controller"
 	olivere "github.com/olivere/elastic/v7"
 	"github.com/sirupsen/logrus"
-	elasticsearchapicrd "github.com/webcenter-fr/elasticsearch-operator/apis/elasticsearchapi/v1"
-	"github.com/webcenter-fr/elasticsearch-operator/internal/controller/common"
+	elasticsearchapicrd "github.com/webcenter-fr/elasticsearch-operator/api/elasticsearchapi/v1"
 	"k8s.io/client-go/tools/record"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -35,12 +34,12 @@ const (
 type WatchReconciler struct {
 	controller.Controller
 	controller.RemoteReconciler[*elasticsearchapicrd.Watch, *olivere.XPackWatch, eshandler.ElasticsearchHandler]
-	reconcilerAction controller.RemoteReconcilerAction[*elasticsearchapicrd.Watch, *olivere.XPackWatch, eshandler.ElasticsearchHandler]
-	name             string
+	controller.RemoteReconcilerAction[*elasticsearchapicrd.Watch, *olivere.XPackWatch, eshandler.ElasticsearchHandler]
+	name string
 }
 
 func NewWatchReconciler(client client.Client, logger *logrus.Entry, recorder record.EventRecorder) controller.Controller {
-	r := &WatchReconciler{
+	return &WatchReconciler{
 		Controller: controller.NewBasicController(),
 		RemoteReconciler: controller.NewBasicRemoteReconciler[*elasticsearchapicrd.Watch, *olivere.XPackWatch, eshandler.ElasticsearchHandler](
 			client,
@@ -49,17 +48,13 @@ func NewWatchReconciler(client client.Client, logger *logrus.Entry, recorder rec
 			logger,
 			recorder,
 		),
-		reconcilerAction: newWatchReconciler(
+		RemoteReconcilerAction: newWatchReconciler(
+			watchName,
 			client,
-			logger,
 			recorder,
 		),
 		name: watchName,
 	}
-
-	common.ControllerMetrics.WithLabelValues(r.name).Add(0)
-
-	return r
 }
 
 //+kubebuilder:rbac:groups=elasticsearchapi.k8s.webcenter.fr,resources=watches,verbs=get;list;watch;create;update;patch;delete
@@ -86,7 +81,7 @@ func (r *WatchReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl
 		req,
 		watch,
 		data,
-		r.reconcilerAction,
+		r,
 	)
 }
 

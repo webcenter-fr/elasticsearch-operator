@@ -19,6 +19,10 @@ spec:
       jsonPath: .status.phase
       name: Phase
       type: string
+    - description: secret ref that store certs
+      jsonPath: .status.certSecret
+      name: Certs
+      type: string
     - description: Is on error
       jsonPath: .status.isOnError
       name: Error
@@ -4252,7 +4256,7 @@ spec:
                         type: string
                     type: object
                   podTemplate:
-                    description: |-
+                    description: |
                       PodSpec is merged with expected pod
                       It usefull to add some extra properties on pod spec
                     type: object
@@ -5086,6 +5090,12 @@ spec:
                           type: object
                           x-kubernetes-map-type: atomic
                         type: array
+                      installPlugin:
+                        default: true
+                        description: |-
+                          InstallPlugin permit to install plugin
+                          Default to true
+                        type: boolean
                       resources:
                         description: |-
                           Resources permit to set ressources on Prometheus expporter container
@@ -5147,6 +5157,12 @@ spec:
                               More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/
                             type: object
                         type: object
+                      scrapInterval:
+                        default: 10s
+                        description: |-
+                          ScrapInterval is the scrap interval to collect ressource whith prometheus
+                          Default to 10 secode
+                        type: string
                       url:
                         description: Url is the plugin URL where to download exporter
                         type: string
@@ -5158,6 +5174,102 @@ spec:
                         type: string
                     type: object
                 type: object
+              pki:
+                description: |-
+                  Pki permit to manage certificates you can use for filebeat inputs
+                  It will mount them on /usr/share/filebeat/certs/
+                properties:
+                  enabled:
+                    default: true
+                    description: |-
+                      Enabled permit to enabled the internal PKI
+                      Default to true
+                    type: boolean
+                  keySize:
+                    default: 2048
+                    description: |-
+                      KeySize is the key size when generate privates keys
+                      Default to 2048
+                    type: integer
+                  renewalDays:
+                    default: 30
+                    description: |-
+                      RenewalDays is the number of days before certificate expire to become effective renewal
+                      Default to 30
+                    type: integer
+                  tls:
+                    additionalProperties:
+                      description: TlsSelfSignedCertificateSpec permit to set the
+                        the self signed certificate
+                      properties:
+                        altIPs:
+                          description: AltIps permit to set subject alt names of type
+                            ip when generate certificate
+                          items:
+                            type: string
+                          type: array
+                        altNames:
+                          description: AltNames permit to set subject alt names of
+                            type dns when generate certificate
+                          items:
+                            type: string
+                          type: array
+                      type: object
+                    description: Tls is the list of TLS certificates to manage
+                    type: object
+                  validityDays:
+                    default: 365
+                    description: |-
+                      ValidityDays is the number of days that certificates are valid
+                      Default to 365
+                    type: integer
+                type: object
+              routes:
+                description: |-
+                  Routes permit to declare some routes
+                  The name is decorated with cluster name and so on
+                items:
+                  description: Route permit to set route
+                  properties:
+                    annotations:
+                      additionalProperties:
+                        type: string
+                      description: Annotations is the extra annotations for route
+                      type: object
+                    containerPort:
+                      description: ContainerPort is the port to set when create service
+                        consumed by route
+                      format: int64
+                      type: integer
+                    containerProtocol:
+                      description: ContainerPortProtocol is the protocol to set when
+                        create service consumed by route
+                      type: string
+                    labels:
+                      additionalProperties:
+                        type: string
+                      description: Labels is the extra labels for route
+                      type: object
+                    name:
+                      description: |-
+                        Name is the route name
+                        The name is decorated with cluster name and so on
+                      type: string
+                    spec:
+                      description: |
+                        Spec is the route spec
+                      required:
+                      - to
+                      type: object
+                      x-kubernetes-preserve-unknown-fields: true
+                  required:
+                  - containerPort
+                  - containerProtocol
+                  - name
+                  - spec
+                  type: object
+                type: array
+                x-kubernetes-preserve-unknown-fields: true
               services:
                 description: |-
                   Services permit to declare some services
@@ -5539,6 +5651,10 @@ spec:
           status:
             description: FilebeatStatus defines the observed state of Filebeat
             properties:
+              certSecret:
+                description: CertSecretName is the secret name that store certs generated
+                  for inputs
+                type: string
               conditions:
                 description: List of conditions
                 items:

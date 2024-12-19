@@ -24,16 +24,20 @@ import (
 	"emperror.dev/errors"
 	"github.com/disaster37/operator-sdk-extra/pkg/controller"
 	"github.com/disaster37/operator-sdk-extra/pkg/object"
+	"github.com/elastic/go-ucfg"
+	routev1 "github.com/openshift/api/route/v1"
 	monitoringv1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1"
 	"github.com/sirupsen/logrus"
-	beatcrd "github.com/webcenter-fr/elasticsearch-operator/apis/beat/v1"
-	elasticsearchcrd "github.com/webcenter-fr/elasticsearch-operator/apis/elasticsearch/v1"
-	kibanacrd "github.com/webcenter-fr/elasticsearch-operator/apis/kibana/v1"
+	beatcrd "github.com/webcenter-fr/elasticsearch-operator/api/beat/v1"
+	elasticsearchcrd "github.com/webcenter-fr/elasticsearch-operator/api/elasticsearch/v1"
+	kibanacrd "github.com/webcenter-fr/elasticsearch-operator/api/kibana/v1"
 	"github.com/webcenter-fr/elasticsearch-operator/internal/controller/common"
+	localhelper "github.com/webcenter-fr/elasticsearch-operator/pkg/helper"
 	appv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	networkingv1 "k8s.io/api/networking/v1"
 	policyv1 "k8s.io/api/policy/v1"
+	rbacv1 "k8s.io/api/rbac/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	condition "k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -41,7 +45,9 @@ import (
 	"k8s.io/client-go/tools/record"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	k8scontroller "sigs.k8s.io/controller-runtime/pkg/controller"
 	"sigs.k8s.io/controller-runtime/pkg/handler"
+	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
 
 const (
@@ -53,17 +59,17 @@ type KibanaReconciler struct {
 	controller.Controller
 	controller.MultiPhaseReconcilerAction
 	controller.MultiPhaseReconciler
-	controller.BaseReconciler
-	name string
+	name            string
+	kubeCapability  common.KubernetesCapability
+	stepReconcilers []controller.MultiPhaseStepReconcilerAction
 }
 
-func NewKibanaReconciler(client client.Client, logger *logrus.Entry, recorder record.EventRecorder) (multiPhaseReconciler controller.Controller) {
-	multiPhaseReconciler = &KibanaReconciler{
+func NewKibanaReconciler(client client.Client, logger *logrus.Entry, recorder record.EventRecorder, kubeCapability common.KubernetesCapability) (multiPhaseReconciler controller.Controller) {
+	reconciler := &KibanaReconciler{
 		Controller: controller.NewBasicController(),
 		MultiPhaseReconcilerAction: controller.NewBasicMultiPhaseReconcilerAction(
 			client,
 			controller.ReadyCondition,
-			logger,
 			recorder,
 		),
 		MultiPhaseReconciler: controller.NewBasicMultiPhaseReconciler(
@@ -73,17 +79,36 @@ func NewKibanaReconciler(client client.Client, logger *logrus.Entry, recorder re
 			logger,
 			recorder,
 		),
-		BaseReconciler: controller.BaseReconciler{
-			Client:   client,
-			Recorder: recorder,
-			Log:      logger,
+		name:           name,
+		kubeCapability: kubeCapability,
+		stepReconcilers: []controller.MultiPhaseStepReconcilerAction{
+			newServiceAccountReconciler(client, recorder, kubeCapability.HasRoute),
+			newRoleBindingReconciler(client, recorder, kubeCapability.HasRoute),
+			newTlsReconciler(client, recorder),
+			newCAElasticsearchReconciler(client, recorder),
+			newCredentialReconciler(client, recorder),
+			newConfiMapReconciler(client, recorder),
+			newServiceReconciler(client, recorder),
+			newPdbReconciler(client, recorder),
+			newNetworkPolicyReconciler(client, recorder),
+			newDeploymentReconciler(client, recorder, kubeCapability.HasRoute),
+			newIngressReconciler(client, recorder),
+			newLoadBalancerReconciler(client, recorder),
+			newMetricbeatReconciler(client, recorder),
 		},
-		name: name,
 	}
 
-	common.ControllerMetrics.WithLabelValues(name).Add(0)
+	// Add Pod monitor reconciler is CRD exist on cluster
+	if kubeCapability.HasPrometheus {
+		reconciler.stepReconcilers = append(reconciler.stepReconcilers, newPodMonitorReconciler(client, recorder))
+	}
 
-	return multiPhaseReconciler
+	// Add route reconciler if CRD exist on cluster
+	if kubeCapability.HasRoute {
+		reconciler.stepReconcilers = append(reconciler.stepReconcilers, newRouteReconciler(client, recorder))
+	}
+
+	return reconciler
 }
 
 //+kubebuilder:rbac:groups=kibana.k8s.webcenter.fr,resources=kibanas,verbs=get;list;watch;create;update;patch;delete
@@ -100,6 +125,12 @@ func NewKibanaReconciler(client client.Client, logger *logrus.Entry, recorder re
 //+kubebuilder:rbac:groups="policy",resources=poddisruptionbudgets,verbs=get;list;watch;create;update;patch;delete
 //+kubebuilder:rbac:groups="monitoring.coreos.com",resources=podmonitors,verbs=get;list;watch;create;update;patch;delete
 //+kubebuilder:rbac:groups="beat.k8s.webcenter.fr",resources=metricbeats,verbs=get;list;watch;create;update;patch;delete
+//+kubebuilder:rbac:groups="route.openshift.io",resources=routes,verbs=get;list;watch;create;update;patch;delete
+//+kubebuilder:rbac:groups="route.openshift.io",resources=routes/custom-host,verbs=get;list;watch;create;update;patch;delete
+//+kubebuilder:rbac:groups="apiextensions.k8s.io",resources=CustomResourceDefinition,verbs=get;list;watch
+//+kubebuilder:rbac:groups="",resources=serviceaccounts,verbs=get;list;watch;create;update;patch;delete
+//+kubebuilder:rbac:groups="rbac.authorization.k8s.io",resources=rolebindings,verbs=get;list;watch;create;update;patch;delete
+//+kubebuilder:rbac:groups="security.openshift.io",resources=securitycontextconstraints,verbs=use
 
 // Reconcile is part of the main kubernetes reconciliation loop which aims to
 // move the current state of the cluster closer to the desired state.
@@ -120,72 +151,13 @@ func (r *KibanaReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 		kb,
 		data,
 		r,
-		newTlsReconciler(
-			r.Client,
-			r.Log,
-			r.Recorder,
-		),
-		newCAElasticsearchReconciler(
-			r.Client,
-			r.Log,
-			r.Recorder,
-		),
-		newCredentialReconciler(
-			r.Client,
-			r.Log,
-			r.Recorder,
-		),
-		newConfiMapReconciler(
-			r.Client,
-			r.Log,
-			r.Recorder,
-		),
-		newServiceReconciler(
-			r.Client,
-			r.Log,
-			r.Recorder,
-		),
-		newPdbReconciler(
-			r.Client,
-			r.Log,
-			r.Recorder,
-		),
-		newNetworkPolicyReconciler(
-			r.Client,
-			r.Log,
-			r.Recorder,
-		),
-		newDeploymentReconciler(
-			r.Client,
-			r.Log,
-			r.Recorder,
-		),
-		newIngressReconciler(
-			r.Client,
-			r.Log,
-			r.Recorder,
-		),
-		newLoadBalancerReconciler(
-			r.Client,
-			r.Log,
-			r.Recorder,
-		),
-		newPodMonitorReconciler(
-			r.Client,
-			r.Log,
-			r.Recorder,
-		),
-		newMetricbeatReconciler(
-			r.Client,
-			r.Log,
-			r.Recorder,
-		),
+		r.stepReconcilers...,
 	)
 }
 
 // SetupWithManager sets up the controller with the Manager.
 func (h *KibanaReconciler) SetupWithManager(mgr ctrl.Manager) error {
-	return ctrl.NewControllerManagedBy(mgr).
+	ctrlBuilder := ctrl.NewControllerManagedBy(mgr).
 		For(&kibanacrd.Kibana{}).
 		Owns(&corev1.ConfigMap{}).
 		Owns(&corev1.Secret{}).
@@ -194,31 +166,58 @@ func (h *KibanaReconciler) SetupWithManager(mgr ctrl.Manager) error {
 		Owns(&corev1.Service{}).
 		Owns(&policyv1.PodDisruptionBudget{}).
 		Owns(&appv1.Deployment{}).
+		Owns(&corev1.ServiceAccount{}).
+		Owns(&rbacv1.RoleBinding{}).
 		Owns(&beatcrd.Metricbeat{}).
-		Owns(&monitoringv1.PodMonitor{}).
-		Watches(&corev1.Secret{}, handler.EnqueueRequestsFromMapFunc(watchSecret(h.Client))).
-		Watches(&corev1.ConfigMap{}, handler.EnqueueRequestsFromMapFunc(watchConfigMap(h.Client))).
-		Watches(&elasticsearchcrd.Elasticsearch{}, handler.EnqueueRequestsFromMapFunc(watchElasticsearch(h.Client))).
-		Complete(h)
+		Watches(&corev1.Secret{}, handler.EnqueueRequestsFromMapFunc(watchSecret(h.Client()))).
+		Watches(&corev1.ConfigMap{}, handler.EnqueueRequestsFromMapFunc(watchConfigMap(h.Client()))).
+		Watches(&elasticsearchcrd.Elasticsearch{}, handler.EnqueueRequestsFromMapFunc(watchElasticsearch(h.Client()))).
+		WithOptions(k8scontroller.Options{
+			RateLimiter: common.DefaultControllerRateLimiter[reconcile.Request](),
+		})
+
+	if h.kubeCapability.HasRoute {
+		ctrlBuilder.Owns(&routev1.Route{})
+	}
+
+	if h.kubeCapability.HasPrometheus {
+		ctrlBuilder.Owns(&monitoringv1.PodMonitor{})
+	}
+
+	return ctrlBuilder.Complete(h)
 }
 
-func (h *KibanaReconciler) Delete(ctx context.Context, o object.MultiPhaseObject, data map[string]any) (err error) {
-	common.ControllerMetrics.WithLabelValues(h.name).Dec()
-	return h.MultiPhaseReconcilerAction.Delete(ctx, o, data)
+func (h *KibanaReconciler) Configure(ctx context.Context, req ctrl.Request, resource object.MultiPhaseObject, data map[string]any, logger *logrus.Entry) (res ctrl.Result, err error) {
+	// Set prometheus Metrics
+	common.ControllerInstances.WithLabelValues(h.name, resource.GetNamespace(), resource.GetName()).Set(1)
+
+	return h.MultiPhaseReconcilerAction.Configure(ctx, req, resource, data, logger)
 }
 
-func (h *KibanaReconciler) OnError(ctx context.Context, o object.MultiPhaseObject, data map[string]any, currentErr error) (res ctrl.Result, err error) {
+func (h *KibanaReconciler) Delete(ctx context.Context, o object.MultiPhaseObject, data map[string]any, logger *logrus.Entry) (err error) {
+	// Set prometheus Metrics
+	common.ControllerInstances.WithLabelValues(h.name, o.GetNamespace(), o.GetName()).Set(0)
+
+	return h.MultiPhaseReconcilerAction.Delete(ctx, o, data, logger)
+}
+
+func (h *KibanaReconciler) OnError(ctx context.Context, o object.MultiPhaseObject, data map[string]any, currentErr error, logger *logrus.Entry) (res ctrl.Result, err error) {
 	common.TotalErrors.Inc()
-	return h.MultiPhaseReconcilerAction.OnError(ctx, o, data, currentErr)
+	common.ControllerErrors.WithLabelValues(h.name, o.GetNamespace(), o.GetName()).Inc()
+
+	return h.MultiPhaseReconcilerAction.OnError(ctx, o, data, currentErr, logger)
 }
 
-func (h *KibanaReconciler) OnSuccess(ctx context.Context, r object.MultiPhaseObject, data map[string]any) (res ctrl.Result, err error) {
+func (h *KibanaReconciler) OnSuccess(ctx context.Context, r object.MultiPhaseObject, data map[string]any, logger *logrus.Entry) (res ctrl.Result, err error) {
 	o := r.(*kibanacrd.Kibana)
+
+	// Reset the current cluster errors
+	common.ControllerErrors.WithLabelValues(h.name, o.GetNamespace(), o.GetName()).Set(0)
 
 	// Not preserve condition to avoid to update status each time
 	conditions := o.GetStatus().GetConditions()
 	o.GetStatus().SetConditions(nil)
-	res, err = h.MultiPhaseReconcilerAction.OnSuccess(ctx, o, data)
+	res, err = h.MultiPhaseReconcilerAction.OnSuccess(ctx, o, data, logger)
 	if err != nil {
 		return res, err
 	}
@@ -227,7 +226,7 @@ func (h *KibanaReconciler) OnSuccess(ctx context.Context, r object.MultiPhaseObj
 	// Check adeployment is ready
 	isReady := true
 	dpl := &appv1.Deployment{}
-	if err = h.Client.Get(ctx, types.NamespacedName{Name: GetDeploymentName(o), Namespace: o.Namespace}, dpl); err != nil {
+	if err = h.Client().Get(ctx, types.NamespacedName{Name: GetDeploymentName(o), Namespace: o.Namespace}, dpl); err != nil {
 		if !k8serrors.IsNotFound(err) {
 			return res, errors.Wrapf(err, "Error when read Kibana deployment")
 		}
@@ -265,7 +264,13 @@ func (h *KibanaReconciler) OnSuccess(ctx context.Context, r object.MultiPhaseObj
 		res.RequeueAfter = time.Second * 30
 	}
 
-	url, err := h.computeKibanaUrl(ctx, o)
+	// Generate confimaps to know dashboard config (server.basePath)
+	configMaps, err := buildConfigMaps(o, nil)
+	if err != nil {
+		return res, errors.Wrap(err, "Error when generate configMap")
+	}
+
+	url, err := h.computeKibanaUrl(ctx, o, &configMaps[0])
 	if err != nil {
 		return res, err
 	}
@@ -275,11 +280,26 @@ func (h *KibanaReconciler) OnSuccess(ctx context.Context, r object.MultiPhaseObj
 }
 
 // computeKibanaUrl permit to get the public Kibana url to put it on status
-func (h *KibanaReconciler) computeKibanaUrl(ctx context.Context, kb *kibanacrd.Kibana) (target string, err error) {
+func (h *KibanaReconciler) computeKibanaUrl(ctx context.Context, kb *kibanacrd.Kibana, cm *corev1.ConfigMap) (target string, err error) {
 	var (
-		scheme string
-		url    string
+		scheme   string
+		url      string
+		basePath string
 	)
+
+	// Compute basePath
+	if cm == nil || cm.Data["kibana.yml"] == "" {
+		basePath = ""
+	} else {
+		basePath, err = localhelper.GetSetting("server.basePath", []byte(cm.Data["kibana.yml"]))
+		if err != nil {
+			if ucfg.ErrMissing == err {
+				basePath = ""
+			} else {
+				return "", err
+			}
+		}
+	}
 
 	if kb.Spec.Endpoint.IsIngressEnabled() {
 		url = kb.Spec.Endpoint.Ingress.Host
@@ -289,10 +309,19 @@ func (h *KibanaReconciler) computeKibanaUrl(ctx context.Context, kb *kibanacrd.K
 		} else {
 			scheme = "http"
 		}
+	} else if kb.Spec.Endpoint.IsRouteEnabled() {
+		url = kb.Spec.Endpoint.Route.Host
+
+		if kb.Spec.Endpoint.Route.TlsEnabled != nil && *kb.Spec.Endpoint.Route.TlsEnabled {
+			scheme = "https"
+		} else {
+			scheme = "http"
+		}
+
 	} else if kb.Spec.Endpoint.IsLoadBalancerEnabled() {
 		// Need to get lb service to get IP and port
 		service := &corev1.Service{}
-		if err = h.Client.Get(ctx, types.NamespacedName{Namespace: kb.Namespace, Name: GetLoadBalancerName(kb)}, service); err != nil {
+		if err = h.Client().Get(ctx, types.NamespacedName{Namespace: kb.Namespace, Name: GetLoadBalancerName(kb)}, service); err != nil {
 			return "", errors.Wrap(err, "Error when get Load balancer")
 		}
 
@@ -311,5 +340,5 @@ func (h *KibanaReconciler) computeKibanaUrl(ctx context.Context, kb *kibanacrd.K
 		}
 	}
 
-	return fmt.Sprintf("%s://%s", scheme, url), nil
+	return fmt.Sprintf("%s://%s%s", scheme, url, basePath), nil
 }
