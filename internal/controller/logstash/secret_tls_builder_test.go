@@ -4,8 +4,8 @@ import (
 	"testing"
 
 	"github.com/disaster37/goca"
-	logstashcrd "github.com/webcenter-fr/elasticsearch-operator/apis/logstash/v1"
-	"github.com/webcenter-fr/elasticsearch-operator/apis/shared"
+	logstashcrd "github.com/webcenter-fr/elasticsearch-operator/api/logstash/v1"
+	"github.com/webcenter-fr/elasticsearch-operator/api/shared"
 
 	"github.com/stretchr/testify/assert"
 	corev1 "k8s.io/api/core/v1"

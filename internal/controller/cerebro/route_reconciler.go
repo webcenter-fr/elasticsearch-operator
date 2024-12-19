@@ -10,7 +10,7 @@ import (
 	"github.com/disaster37/operator-sdk-extra/pkg/object"
 	routev1 "github.com/openshift/api/route/v1"
 	"github.com/sirupsen/logrus"
-	cerebrocrd "github.com/webcenter-fr/elasticsearch-operator/apis/cerebro/v1"
+	cerebrocrd "github.com/webcenter-fr/elasticsearch-operator/api/cerebro/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/tools/record"

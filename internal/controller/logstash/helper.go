@@ -4,7 +4,7 @@ import (
 	"fmt"
 
 	"github.com/thoas/go-funk"
-	logstashcrd "github.com/webcenter-fr/elasticsearch-operator/apis/logstash/v1"
+	logstashcrd "github.com/webcenter-fr/elasticsearch-operator/api/logstash/v1"
 )
 
 const (

@@ -4252,7 +4252,7 @@ spec:
                         type: string
                     type: object
                   podTemplate:
-                    description: |-
+                    description: |
                       PodSpec is merged with expected pod
                       It usefull to add some extra properties on pod spec
                     type: object

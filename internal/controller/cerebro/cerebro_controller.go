@@ -27,7 +27,7 @@ import (
 	"github.com/disaster37/operator-sdk-extra/pkg/object"
 	routev1 "github.com/openshift/api/route/v1"
 	"github.com/sirupsen/logrus"
-	cerebrocrd "github.com/webcenter-fr/elasticsearch-operator/apis/cerebro/v1"
+	cerebrocrd "github.com/webcenter-fr/elasticsearch-operator/api/cerebro/v1"
 	"github.com/webcenter-fr/elasticsearch-operator/internal/controller/common"
 	appv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"

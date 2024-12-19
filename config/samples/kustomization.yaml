@@ -1,10 +1,11 @@
 ## Append samples you want in your CSV to this file as resources ##
+#- elasticsearchapi_v1_role.yaml
+#- kibanaapi_v1_role.yaml
 resources:
 - elasticsearch_v1_elasticsearch.yaml
 - kibana_v1_kibana.yaml
 - elasticsearchapi_v1_user.yaml
 - elasticsearchapi_v1_license.yaml
-#- elasticsearchapi_v1_role.yaml
 - elasticsearchapi_v1_rolemapping.yaml
 - elasticsearchapi_v1_indexlifecyclepolicy.yaml
 - elasticsearchapi_v1_snapshotlifecyclepolicy.yaml
@@ -18,7 +19,6 @@ resources:
 - cerebro_v1_cerebro.yaml
 - cerebro_v1_host.yaml
 - kibanaapi_v1_userspace.yaml
-#- kibanaapi_v1_role.yaml
 - kibanaapi_v1_logstashpipeline.yaml
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization

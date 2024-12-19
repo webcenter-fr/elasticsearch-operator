@@ -17,7 +17,7 @@ import (
 	"github.com/disaster37/operator-sdk-extra/pkg/object"
 	"github.com/sirupsen/logrus"
 	"github.com/thoas/go-funk"
-	beatcrd "github.com/webcenter-fr/elasticsearch-operator/apis/beat/v1"
+	beatcrd "github.com/webcenter-fr/elasticsearch-operator/api/beat/v1"
 	localhelper "github.com/webcenter-fr/elasticsearch-operator/pkg/helper"
 	"github.com/webcenter-fr/elasticsearch-operator/pkg/pki"
 	corev1 "k8s.io/api/core/v1"

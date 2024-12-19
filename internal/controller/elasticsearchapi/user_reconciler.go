@@ -12,7 +12,7 @@ import (
 	olivere "github.com/olivere/elastic/v7"
 	"github.com/sethvargo/go-password/password"
 	"github.com/sirupsen/logrus"
-	elasticsearchapicrd "github.com/webcenter-fr/elasticsearch-operator/apis/elasticsearchapi/v1"
+	elasticsearchapicrd "github.com/webcenter-fr/elasticsearch-operator/api/elasticsearchapi/v1"
 	localhelper "github.com/webcenter-fr/elasticsearch-operator/pkg/helper"
 	core "k8s.io/api/core/v1"
 	corev1 "k8s.io/api/core/v1"

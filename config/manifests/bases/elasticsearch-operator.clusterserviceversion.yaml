@@ -2195,7 +2195,9 @@ spec:
         name: ""
         version: v1
       specDescriptors:
-      - description: Config is the Cerebro config The key is the file stored on kibana/config
+      - description: |-
+          Config is the Cerebro config
+          The key is the file stored on kibana/config
         displayName: Config
         path: config
       - description: Deployment permit to set the deployment settings
@@ -2220,8 +2222,10 @@ spec:
       - description: NodeSelector permit to set node selector on pod
         displayName: Node Selector
         path: deployment.nodeSelector
-      - description: PodSpec is merged with expected pod It usefull to add some extra
-          properties on pod spec
+      - description: |-
+          PodSpec is merged with expected pod
+          It usefull to add some extra properties on pod spec
+          @clean
         displayName: Pod Template
         path: deployment.podTemplate
       - description: Replicas is the number of replicas
@@ -2233,8 +2237,9 @@ spec:
       - description: Tolerations permit to set toleration on pod
         displayName: Tolerations
         path: deployment.tolerations
-      - description: Endpoint permit to set endpoints to access on Cerebro from external
-          kubernetes You can set ingress and / or load balancer
+      - description: |-
+          Endpoint permit to set endpoints to access on Cerebro from external kubernetes
+          You can set ingress and / or load balancer
         displayName: Endpoint
         path: endpoint
       - description: Ingress permit to set ingress settings
@@ -2243,8 +2248,12 @@ spec:
       - description: Load balancer permit to set load balancer settings
         displayName: Load Balancer
         path: endpoint.loadBalancer
-      - description: Image is the image to use when deploy Elasticsearch It can be
-          usefull to use internal registry or mirror
+      - description: Route permit to set route settings
+        displayName: Route
+        path: endpoint.route
+      - description: |-
+          Image is the image to use when deploy Elasticsearch
+          It can be usefull to use internal registry or mirror
         displayName: Image
         path: image
       - description: ImagePullPolicy is the image pull policy to use
@@ -2253,7 +2262,9 @@ spec:
       - description: ImagePullSecrets is the image pull secrets to use
         displayName: Image Pull Secrets
         path: imagePullSecrets
-      - description: Version is the Cerebro version to use Default is use the latest
+      - description: |-
+          Version is the Cerebro version to use
+          Default is use the latest
         displayName: Version
         path: version
       statusDescriptors:
@@ -2276,9 +2287,9 @@ spec:
       - description: ElasticsearchRef is the Elasticsearch ref to connect on.
         displayName: Elasticsearch Ref
         path: elasticsearchRef
-      - description: 'ElasticsearchCaSecretRef is the secret that store your custom
-          CA certificate to connect on Elasticsearch API. It need to have the following
-          keys: ca.crt'
+      - description: |-
+          ElasticsearchCaSecretRef is the secret that store your custom CA certificate to connect on Elasticsearch API.
+          It need to have the following keys: ca.crt
         displayName: Elasticsearch Ca Secret Ref
         path: elasticsearchRef.elasticsearchCASecretRef
       - description: ExternalElasticsearchRef is the external Elasticsearch cluster
@@ -2289,20 +2300,22 @@ spec:
           by operator
         displayName: Managed Elasticsearch Ref
         path: elasticsearchRef.managed
-      - description: SecretName is the secret that contain the setting to connect
-          on Elasticsearch. It can be auto computed for managed Elasticsearch. It
-          need to contain the keys `username` and `password`.
+      - description: |-
+          SecretName is the secret that contain the setting to connect on Elasticsearch. It can be auto computed for managed Elasticsearch.
+          It need to contain the keys `username` and `password`.
         displayName: Secret Ref
         path: elasticsearchRef.secretRef
       - description: Mappings is the component mapping
         displayName: Mappings
         path: mappings
-      - description: Name is the custom component template name If empty, it use the
-          ressource name
+      - description: |-
+          Name is the custom component template name
+          If empty, it use the ressource name
         displayName: Name
         path: name
-      - description: Template is the raw template You can use it instead to set settings,
-          mappings or aliases
+      - description: |-
+          Template is the raw template
+          You can use it instead to set settings, mappings or aliases
         displayName: Template
         path: rawTemplate
       - description: Settings is the component setting
@@ -2338,10 +2351,19 @@ spec:
       - kind: PodMonitor
         name: ""
         version: monitoring.coreos.com/v1
+      - kind: RoleBinding
+        name: ""
+        version: rbac.authorization.k8s.io/v1
+      - kind: Route
+        name: ""
+        version: route.openshift.io/v1
       - kind: Secret
         name: ""
         version: v1
       - kind: Service
+        name: ""
+        version: v1
+      - kind: ServiceAccount
         name: ""
         version: v1
       - kind: StatefulSet
@@ -2351,12 +2373,14 @@ spec:
         name: ""
         version: elasticsearchapi.k8s.webcenter.fr/v1
       specDescriptors:
-      - description: ClusterName is the Elasticsearch cluster name Default is use
-          the custom ressource name
+      - description: |-
+          ClusterName is the Elasticsearch cluster name
+          Default is use the custom ressource name
         displayName: Cluster Name
         path: clusterName
-      - description: Endpoint permit to set endpoints to access on Elasticsearch from
-          external kubernetes You can set ingress and / or load balancer
+      - description: |-
+          Endpoint permit to set endpoints to access on Elasticsearch from external kubernetes
+          You can set ingress and / or load balancer
         displayName: Endpoint
         path: endpoint
       - description: Ingress permit to set ingress settings
@@ -2365,7 +2389,9 @@ spec:
       - description: Annotations to set in ingress
         displayName: Annotations
         path: endpoint.ingress.annotations
-      - description: Enabled permit to enabled / disabled ingress Default to false
+      - description: |-
+          Enabled permit to enabled / disabled ingress
+          Default to false
         displayName: Enabled
         path: endpoint.ingress.enabled
       - description: Host is the hostname to access on
@@ -2377,9 +2403,10 @@ spec:
       - description: Labels to set in ingress
         displayName: Labels
         path: endpoint.ingress.labels
-      - description: SecretRef is the secret ref that store certificates If secret
-          not exist, it will use the default ingress certificate If secret is nil,
-          it will disable TLS on ingress spec.
+      - description: |-
+          SecretRef is the secret ref that store certificates
+          If secret not exist, it will use the default ingress certificate
+          If secret is nil, it will disable TLS on ingress spec.
         displayName: Secret Ref
         path: endpoint.ingress.secretRef
       - description: TargetNodeGroupName permit to define if specific node group is
@@ -2389,20 +2416,55 @@ spec:
       - description: Load balancer permit to set load balancer settings
         displayName: Load Balancer
         path: endpoint.loadBalancer
-      - description: Enabled permit to enabled / disabled load balancer Cloud provider
-          need to support it Default to false
+      - description: |-
+          Enabled permit to enabled / disabled load balancer
+          Cloud provider need to support it
+          Default to false
         displayName: Enabled
         path: endpoint.loadBalancer.enabled
       - description: TargetNodeGroupName permit to define if specific node group is
           responsible to receive external access, like ingest nodes
         displayName: Target Node Group Name
         path: endpoint.loadBalancer.targetNodeGroupName
+      - description: Route permit to set Openshift route settings
+        displayName: Route
+        path: endpoint.route
+      - description: Annotations to set in route
+        displayName: Annotations
+        path: endpoint.route.annotations
+      - description: |-
+          Enabled permit to enabled / disabled route
+          Default to false
+        displayName: Enabled
+        path: endpoint.route.enabled
+      - description: Host is the hostname to access on
+        displayName: Host
+        path: endpoint.route.host
+      - description: Labels to set in route
+        displayName: Labels
+        path: endpoint.route.labels
+      - description: RouteSpec it merge with expected route spec
+        displayName: Route Spec
+        path: endpoint.route.routeSpec
+      - description: |-
+          SecretRef is the secret ref that store certificates
+          If secret not exist, it will use the default route certificate
+        displayName: Secret Ref
+        path: endpoint.route.secretRef
+      - description: TargetNodeGroupName permit to define if specific node group is
+          responsible to receive external access, like ingest nodes
+        displayName: Target Node Group Name
+        path: endpoint.route.targetNodeGroupName
+      - description: Set to true to enable TLS on route
+        displayName: Tls Enabled
+        path: endpoint.route.tlsEnabled
       - description: GlobalNodeGroup permit to set some default parameters for each
           node groups
         displayName: Global Node Group
         path: globalNodeGroup
-      - description: AdditionalVolumes permit to use additionnal volumes Default is
-          empty
+      - description: |-
+          AdditionalVolumes permit to use additionnal volumes
+          Default is empty
         displayName: Additional Volumes
         path: globalNodeGroup.additionalVolumes
       - description: Name is the volume name
@@ -2414,19 +2476,22 @@ spec:
       - description: AntiAffinity permit to set anti affinity policy
         displayName: Anti Affinity
         path: globalNodeGroup.antiAffinity
-      - description: TopologyKey is the topology key to use Default to kubernetes.io/hostname
+      - description: |-
+          TopologyKey is the topology key to use
+          Default to kubernetes.io/hostname
         displayName: Topology Key
         path: globalNodeGroup.antiAffinity.topologyKey
       - description: Type permit to set anti affinity as soft or hard
         displayName: Type
         path: globalNodeGroup.antiAffinity.type
-      - description: CacertsSecretRef is the secret that store custom CA to import
-          on cacerts It usefull to access on onpremise S3 service to store snaoshot
-          and more
+      - description: |-
+          CacertsSecretRef is the secret that store custom CA to import on cacerts
+          It usefull to access on onpremise S3 service to store snaoshot and more
         displayName: Cacerts Secret Ref
         path: globalNodeGroup.caSecretRef
-      - description: Config is the Elasticsearch config dedicated for this node groups
-          like roles The key is the file stored on elasticsearch/config
+      - description: |-
+          Config is the Elasticsearch config dedicated for this node groups like roles
+          The key is the file stored on elasticsearch/config
         displayName: Config
         path: globalNodeGroup.config
       - description: Env permit to set some environment variable on containers
@@ -2439,9 +2504,9 @@ spec:
       - description: InitContainerResources permit to set resources on init containers
         displayName: Init Container Resources
         path: globalNodeGroup.initContainerResources
-      - description: Jvm permit to set extra option on JVM like memory or proxy to
-          download plugins Becarefull with memory, not forget to set the right ressource
-          on pod
+      - description: |-
+          Jvm permit to set extra option on JVM like memory or proxy to download plugins
+          Becarefull with memory, not forget to set the right ressource on pod
         displayName: Jvm
         path: globalNodeGroup.jvm
       - description: KeystoreSecretRef is the secret that store the security settings
@@ -2453,12 +2518,15 @@ spec:
       - description: PodDisruptionBudget is the pod disruption budget policy
         displayName: Pod Disruption Budget Spec
         path: globalNodeGroup.podDisruptionBudget
-      - description: PodTemplate is merged with expected pod It usefull to add some
-          extra properties on pod spec
+      - description: |-
+          PodTemplate is merged with expected pod
+          It usefull to add some extra properties on pod spec
+          @clean
         displayName: Pod Template
         path: globalNodeGroup.podTemplate
-      - description: Image is the image to use when deploy Elasticsearch It can be
-          usefull to use internal registry or mirror
+      - description: |-
+          Image is the image to use when deploy Elasticsearch
+          It can be usefull to use internal registry or mirror
         displayName: Image
         path: image
       - description: ImagePullPolicy is the image pull policy to use
@@ -2471,8 +2539,9 @@ spec:
           license on key `license`
         displayName: License Secret Ref
         path: licenseSecretRef
-      - description: Monitoring permit to monitor current cluster Default, it not
-          monitor cluster
+      - description: |-
+          Monitoring permit to monitor current cluster
+          Default, it not monitor cluster
         displayName: Monitoring
         path: monitoring
       - description: Metricbeat permit to monitor cluster with metricbeat and to dedicated
@@ -2483,8 +2552,9 @@ spec:
           (via exporter)
         displayName: Prometheus
         path: monitoring.prometheus
-      - description: NodeGroups permit to groups node per use case For exemple master,
-          data and ingest
+      - description: |-
+          NodeGroups permit to groups node per use case
+          For exemple master, data and ingest
         displayName: Node Groups
         path: nodeGroups
       - description: Annotations permit to set annotation on deployment
@@ -2493,13 +2563,16 @@ spec:
       - description: AntiAffinity permit to set anti affinity policy
         displayName: Anti Affinity
         path: nodeGroups[0].antiAffinity
-      - description: TopologyKey is the topology key to use Default to kubernetes.io/hostname
+      - description: |-
+          TopologyKey is the topology key to use
+          Default to kubernetes.io/hostname
         displayName: Topology Key
         path: nodeGroups[0].antiAffinity.topologyKey
       - description: Type permit to set anti affinity as soft or hard
         displayName: Type
         path: nodeGroups[0].antiAffinity.type
-      - description: Config is the Elasticsearch config dedicated for this node groups
+      - description: |-
+          Config is the Elasticsearch config dedicated for this node groups
           The key is the file stored on elasticsearch/config
         displayName: Config
         path: nodeGroups[0].config
@@ -2525,8 +2598,9 @@ spec:
       - description: Persistence is the spec to persist data
         displayName: Persistence
         path: nodeGroups[0].persistence
-      - description: Volume is the volume source to use instead volumeClaim It usefull
-          if you should to use hostPath
+      - description: |-
+          Volume is the volume source to use instead volumeClaim
+          It usefull if you should to use hostPath
         displayName: Volume
         path: nodeGroups[0].persistence.volume
       - description: VolumeClaim is the persistent volume claim spec use by statefullset
@@ -2535,8 +2609,10 @@ spec:
       - description: PodDisruptionBudget is the pod disruption budget policy
         displayName: Pod Disruption Budget Spec
         path: nodeGroups[0].podDisruptionBudget
-      - description: PodSpec is merged with expected pod It usefull to add some extra
-          properties on pod spec
+      - description: |-
+          PodSpec is merged with expected pod
+          It usefull to add some extra properties on pod spec
+          @clean
         displayName: Pod Template
         path: nodeGroups[0].podTemplate
       - description: Replicas is the number of replicas
@@ -2551,45 +2627,56 @@ spec:
       - description: Tolerations permit to set toleration on pod
         displayName: Tolerations
         path: nodeGroups[0].tolerations
-      - description: WaitClusterStatus permit to wait the cluster state on readyness
-          probe Default to green
+      - description: |-
+          WaitClusterStatus permit to wait the cluster state on readyness probe
+          Default to green
         displayName: Wait Cluster Status
         path: nodeGroups[0].waitClusterStatus
-      - description: PluginsList is the list of additionnal plugin to install on each
-          Elasticsearch node Default is empty
+      - description: |-
+          PluginsList is the list of additionnal plugin to install on each Elasticsearch node
+          Default is empty
         displayName: Plugins List
         path: pluginsList
-      - description: SetVMMaxMapCount permit to set the right value for VMMaxMapCount
-          on node It need to run pod as root with privileged option Default is true
+      - description: |-
+          SetVMMaxMapCount permit to set the right value for VMMaxMapCount on node
+          It need to run pod as root with privileged option
+          Default is true
         displayName: Set VMMax Map Count
         path: setVMMaxMapCount
       - description: Tls permit to set the TLS setting for API access
         displayName: Tls
         path: tls
-      - description: 'CertificateSecretRef is the secret that store your custom certificates.
-          It need to have the following keys: tls.key, tls.crt and optionally ca.crt'
+      - description: |-
+          CertificateSecretRef is the secret that store your custom certificates.
+          It need to have the following keys: tls.key, tls.crt and optionally ca.crt
         displayName: Certificate Secret Ref
         path: tls.certificateSecretRef
-      - description: Enabled permit to enabled TLS Default to false
+      - description: |-
+          Enabled permit to enabled TLS
+          Default to false
         displayName: Enabled
         path: tls.enabled
-      - description: KeySize is the key size when generate privates keys Default to
-          2048
+      - description: |-
+          KeySize is the key size when generate privates keys
+          Default to 2048
         displayName: Key Size
         path: tls.keySize
-      - description: RenewalDays is the number of days before certificate expire to
-          become effective renewal Default to 30
+      - description: |-
+          RenewalDays is the number of days before certificate expire to become effective renewal
+          Default to 30
         displayName: Renewal Days
         path: tls.renewalDays
       - description: SelfSignedCertificate permit to set self signed certificate settings
         displayName: Self Signed Certificate
         path: tls.selfSignedCertificate
-      - description: ValidityDays is the number of days that certificates are valid
+      - description: |-
+          ValidityDays is the number of days that certificates are valid
           Default to 365
         displayName: Validity Days
         path: tls.validityDays
-      - description: Version is the Elasticsearch version to use Default is use the
-          latest
+      - description: |-
+          Version is the Elasticsearch version to use
+          Default is use the latest
         displayName: Version
         path: version
       statusDescriptors:
@@ -2624,24 +2711,36 @@ spec:
       - kind: PodDisruptionBudget
         name: ""
         version: policy/v1
+      - kind: RoleBinding
+        name: ""
+        version: rbac.authorization.k8s.io/v1
+      - kind: Route
+        name: ""
+        version: route.openshift.io/v1
       - kind: Secret
         name: ""
         version: v1
       - kind: Service
         name: ""
         version: v1
+      - kind: ServiceAccount
+        name: ""
+        version: v1
       - kind: StatefulSet
         name: ""
         version: apps/v1
       specDescriptors:
-      - description: Config is the Filebeat config The key is the file stored on filebeat
+      - description: |-
+          Config is the Filebeat config
+          The key is the file stored on filebeat
         displayName: Config
         path: config
       - description: Deployment permit to set the deployment settings
         displayName: Deployment
         path: deployment
-      - description: AdditionalVolumes permit to use additionnal volumes Default is
-          empty
+      - description: |-
+          AdditionalVolumes permit to use additionnal volumes
+          Default is empty
         displayName: Additional Volumes
         path: deployment.additionalVolumes
       - description: Name is the volume name
@@ -2653,7 +2752,9 @@ spec:
       - description: AntiAffinity permit to set anti affinity policy
         displayName: Anti Affinity
         path: deployment.antiAffinity
-      - description: TopologyKey is the topology key to use Default to kubernetes.io/hostname
+      - description: |-
+          TopologyKey is the topology key to use
+          Default to kubernetes.io/hostname
         displayName: Topology Key
         path: deployment.antiAffinity.topologyKey
       - description: Type permit to set anti affinity as soft or hard
@@ -2675,11 +2776,14 @@ spec:
       - description: NodeSelector permit to set node selector on pod
         displayName: Node Selector
         path: deployment.nodeSelector
-      - description: Persistence is the spec to persist data Default is emptyDir
+      - description: |-
+          Persistence is the spec to persist data
+          Default is emptyDir
         displayName: Persistence
         path: deployment.persistence
-      - description: Volume is the volume source to use instead volumeClaim It usefull
-          if you should to use hostPath
+      - description: |-
+          Volume is the volume source to use instead volumeClaim
+          It usefull if you should to use hostPath
         displayName: Volume
         path: deployment.persistence.volume
       - description: VolumeClaim is the persistent volume claim spec use by statefullset
@@ -2688,11 +2792,14 @@ spec:
       - description: PodDisruptionBudget is the pod disruption budget policy
         displayName: Pod Disruption Budget Spec
         path: deployment.podDisruptionBudget
-      - description: PodSpec is merged with expected pod It usefull to add some extra
-          properties on pod spec
+      - description: |-
+          PodSpec is merged with expected pod
+          It usefull to add some extra properties on pod spec
+          @clean
         displayName: Pod Template
         path: deployment.podTemplate
-      - description: Ports is the list of container port to affect on filebeat container
+      - description: |-
+          Ports is the list of container port to affect on filebeat container
           It can be usefull to expose syslog input
         displayName: Ports
         path: deployment.ports
@@ -2705,13 +2812,14 @@ spec:
       - description: Tolerations permit to set toleration on pod
         displayName: Tolerations
         path: deployment.tolerations
-      - description: ElasticsearchRef is the Elasticsearch ref to connect on. It will
-          generate Elasticsearch output bas eon it
+      - description: |-
+          ElasticsearchRef is the Elasticsearch ref to connect on.
+          It will generate Elasticsearch output bas eon it
         displayName: Elasticsearch Ref
         path: elasticsearchRef
-      - description: 'ElasticsearchCaSecretRef is the secret that store your custom
-          CA certificate to connect on Elasticsearch API. It need to have the following
-          keys: ca.crt'
+      - description: |-
+          ElasticsearchCaSecretRef is the secret that store your custom CA certificate to connect on Elasticsearch API.
+          It need to have the following keys: ca.crt
         displayName: Elasticsearch Ca Secret Ref
         path: elasticsearchRef.elasticsearchCASecretRef
       - description: ExternalElasticsearchRef is the external Elasticsearch cluster
@@ -2722,13 +2830,14 @@ spec:
           by operator
         displayName: Managed Elasticsearch Ref
         path: elasticsearchRef.managed
-      - description: SecretName is the secret that contain the setting to connect
-          on Elasticsearch. It can be auto computed for managed Elasticsearch. It
-          need to contain the keys `username` and `password`.
+      - description: |-
+          SecretName is the secret that contain the setting to connect on Elasticsearch. It can be auto computed for managed Elasticsearch.
+          It need to contain the keys `username` and `password`.
         displayName: Secret Ref
         path: elasticsearchRef.secretRef
-      - description: Image is the image to use when deploy Elasticsearch It can be
-          usefull to use internal registry or mirror
+      - description: |-
+          Image is the image to use when deploy Elasticsearch
+          It can be usefull to use internal registry or mirror
         displayName: Image
         path: image
       - description: ImagePullPolicy is the image pull policy to use
@@ -2737,8 +2846,9 @@ spec:
       - description: ImagePullSecrets is the image pull secrets to use
         displayName: Image Pull Secrets
         path: imagePullSecrets
-      - description: Ingresses permit to declare some ingresses The name is decorated
-          with cluster name and so on
+      - description: |-
+          Ingresses permit to declare some ingresses
+          The name is decorated with cluster name and so on
         displayName: Ingresses
         path: ingresses
       - description: Annotations is the extra annotations for ingress
@@ -2755,15 +2865,17 @@ spec:
       - description: Labels is the extra labels for ingress
         displayName: Labels
         path: ingresses[0].labels
-      - description: Name is the ingress name The name is decorated with cluster name
-          and so on
+      - description: |-
+          Name is the ingress name
+          The name is decorated with cluster name and so on
         displayName: Name
         path: ingresses[0].name
       - description: Spec is the ingress spec
         displayName: Spec
         path: ingresses[0].spec
-      - description: LogstashRef is the Logstash ref to connect on. It will generate
-          Logstash output base on it
+      - description: |-
+          LogstashRef is the Logstash ref to connect on.
+          It will generate Logstash output base on it
         displayName: Logstash Ref
         path: logstashRef
       - description: ExternalLogstahsRef is the external Logstash instance not managed
@@ -2773,9 +2885,9 @@ spec:
       - description: Addresses is the list of Logstash addresses
         displayName: Addresses
         path: logstashRef.external.addresses
-      - description: LogstashCaSecretRef is the secret that store your custom CA certificates
-          to connect on Logstash via beat protocole. It will add all entry that finish
-          by *.crt or *.pem
+      - description: |-
+          LogstashCaSecretRef is the secret that store your custom CA certificates to connect on Logstash via beat protocole.
+          It will add all entry that finish by *.crt or *.pem
         displayName: Logstash Ca Secret Ref
         path: logstashRef.logstashCASecretRef
       - description: ManagedLogstashRef is the managed Logstash instance by operator
@@ -2784,7 +2896,8 @@ spec:
       - description: Name is the Logstash cluster deployed by operator
         displayName: Name
         path: logstashRef.managed.name
-      - description: Namespace is the namespace where Logstash is deployed by operator
+      - description: |-
+          Namespace is the namespace where Logstash is deployed by operator
           No need to set if is deployed on the same namespace
         displayName: Namespace
         path: logstashRef.managed.namespace
@@ -2794,12 +2907,14 @@ spec:
       - description: TargetService is the target service that expose the beat protocole
         displayName: Target Service
         path: logstashRef.managed.targetService
-      - description: Module is the module specification The key is the file stored
-          on filebeat/modules.d
+      - description: |-
+          Module is the module specification
+          The key is the file stored on filebeat/modules.d
         displayName: Module
         path: module
-      - description: Monitoring permit to monitor current cluster Default, it not
-          monitor cluster
+      - description: |-
+          Monitoring permit to monitor current cluster
+          Default, it not monitor cluster
         displayName: Monitoring
         path: monitoring
       - description: Metricbeat permit to monitor cluster with metricbeat and to dedicated
@@ -2810,8 +2925,74 @@ spec:
           (via exporter)
         displayName: Prometheus
         path: monitoring.prometheus
-      - description: Services permit to declare some services The name is decorated
-          with cluster name and so on
+      - description: |-
+          Pki permit to manage certificates you can use for filebeat inputs
+          It will mount them on /usr/share/filebeat/certs/
+        displayName: Pki
+        path: pki
+      - description: |-
+          Enabled permit to enabled the internal PKI
+          Default to true
+        displayName: Enabled
+        path: pki.enabled
+      - description: |-
+          KeySize is the key size when generate privates keys
+          Default to 2048
+        displayName: Key Size
+        path: pki.keySize
+      - description: |-
+          RenewalDays is the number of days before certificate expire to become effective renewal
+          Default to 30
+        displayName: Renewal Days
+        path: pki.renewalDays
+      - description: Tls is the list of TLS certificates to manage
+        displayName: Tls
+        path: pki.tls
+      - description: AltIps permit to set subject alt names of type ip when generate
+          certificate
+        displayName: Alt Ips
+        path: pki.tls.altIPs
+      - description: AltNames permit to set subject alt names of type dns when generate
+          certificate
+        displayName: Alt Names
+        path: pki.tls.altNames
+      - description: |-
+          ValidityDays is the number of days that certificates are valid
+          Default to 365
+        displayName: Validity Days
+        path: pki.validityDays
+      - description: |-
+          Routes permit to declare some routes
+          The name is decorated with cluster name and so on
+        displayName: Routes
+        path: routes
+      - description: Annotations is the extra annotations for route
+        displayName: Annotations
+        path: routes[0].annotations
+      - description: ContainerPort is the port to set when create service consumed
+          by route
+        displayName: Container Port
+        path: routes[0].containerPort
+      - description: ContainerPortProtocol is the protocol to set when create service
+          consumed by route
+        displayName: Container Port Protocol
+        path: routes[0].containerProtocol
+      - description: Labels is the extra labels for route
+        displayName: Labels
+        path: routes[0].labels
+      - description: |-
+          Name is the route name
+          The name is decorated with cluster name and so on
+        displayName: Name
+        path: routes[0].name
+      - description: |-
+          Spec is the route spec
+          @clean
+        displayName: Spec
+        path: routes[0].spec
+      - description: |-
+          Services permit to declare some services
+          The name is decorated with cluster name and so on
         displayName: Services
         path: services
       - description: Annotations is the extra annotations for ingress
@@ -2820,16 +3001,24 @@ spec:
       - description: Labels is the extra labels for ingress
         displayName: Labels
         path: services[0].labels
-      - description: Name is the service name The name is decorated with cluster name
-          and so on
+      - description: |-
+          Name is the service name
+          The name is decorated with cluster name and so on
         displayName: Name
         path: services[0].name
       - description: Spec is the service spec
         displayName: Spec
         path: services[0].spec
-      - description: Version is the Filebeat version to use Default is use the latest
+      - description: |-
+          Version is the Filebeat version to use
+          Default is use the latest
         displayName: Version
         path: version
+      statusDescriptors:
+      - description: CertSecretName is the secret name that store certs generated
+          for inputs
+        displayName: Cert Secret Name
+        path: certSecret
       version: v1
     - description: Host is the Schema for the hosts API
       displayName: Host
@@ -2880,9 +3069,9 @@ spec:
       - description: ElasticsearchRef is the Elasticsearch ref to connect on.
         displayName: Elasticsearch Ref
         path: elasticsearchRef
-      - description: 'ElasticsearchCaSecretRef is the secret that store your custom
-          CA certificate to connect on Elasticsearch API. It need to have the following
-          keys: ca.crt'
+      - description: |-
+          ElasticsearchCaSecretRef is the secret that store your custom CA certificate to connect on Elasticsearch API.
+          It need to have the following keys: ca.crt
         displayName: Elasticsearch Ca Secret Ref
         path: elasticsearchRef.elasticsearchCASecretRef
       - description: ExternalElasticsearchRef is the external Elasticsearch cluster
@@ -2893,13 +3082,14 @@ spec:
           by operator
         displayName: Managed Elasticsearch Ref
         path: elasticsearchRef.managed
-      - description: SecretName is the secret that contain the setting to connect
-          on Elasticsearch. It can be auto computed for managed Elasticsearch. It
-          need to contain the keys `username` and `password`.
+      - description: |-
+          SecretName is the secret that contain the setting to connect on Elasticsearch. It can be auto computed for managed Elasticsearch.
+          It need to contain the keys `username` and `password`.
         displayName: Secret Ref
         path: elasticsearchRef.secretRef
-      - description: Name is the custom index lifecycle policy name If empty, it use
-          the ressource name
+      - description: |-
+          Name is the custom index lifecycle policy name
+          If empty, it use the ressource name
         displayName: Name
         path: name
       - description: Policy is the raw policy on JSON
@@ -2924,9 +3114,9 @@ spec:
       - description: ElasticsearchRef is the Elasticsearch ref to connect on.
         displayName: Elasticsearch Ref
         path: elasticsearchRef
-      - description: 'ElasticsearchCaSecretRef is the secret that store your custom
-          CA certificate to connect on Elasticsearch API. It need to have the following
-          keys: ca.crt'
+      - description: |-
+          ElasticsearchCaSecretRef is the secret that store your custom CA certificate to connect on Elasticsearch API.
+          It need to have the following keys: ca.crt
         displayName: Elasticsearch Ca Secret Ref
         path: elasticsearchRef.elasticsearchCASecretRef
       - description: ExternalElasticsearchRef is the external Elasticsearch cluster
@@ -2937,9 +3127,9 @@ spec:
           by operator
         displayName: Managed Elasticsearch Ref
         path: elasticsearchRef.managed
-      - description: SecretName is the secret that contain the setting to connect
-          on Elasticsearch. It can be auto computed for managed Elasticsearch. It
-          need to contain the keys `username` and `password`.
+      - description: |-
+          SecretName is the secret that contain the setting to connect on Elasticsearch. It can be auto computed for managed Elasticsearch.
+          It need to contain the keys `username` and `password`.
         displayName: Secret Ref
         path: elasticsearchRef.secretRef
       - description: IndexPatterns is the list of index to apply this template
@@ -2948,15 +3138,17 @@ spec:
       - description: Meta is extended info as JSON string
         displayName: Meta
         path: meta
-      - description: Name is the custom index template name If empty, it use the ressource
-          name
+      - description: |-
+          Name is the custom index template name
+          If empty, it use the ressource name
         displayName: Name
         path: name
       - description: Priority is the priority to apply this template
         displayName: Priority
         path: priority
-      - description: RawTemplate is the raw template You can use it instead to set
-          indexPatterns, composedOf, priority, template etc.
+      - description: |-
+          RawTemplate is the raw template
+          You can use it instead to set indexPatterns, composedOf, priority, template etc.
         displayName: Raw Template
         path: rawTemplate
       - description: Template is the template specification
@@ -2998,14 +3190,25 @@ spec:
       - kind: PodMonitor
         name: ""
         version: monitoring.coreos.com/v1
+      - kind: RoleBinding
+        name: ""
+        version: rbac.authorization.k8s.io/v1
+      - kind: Route
+        name: ""
+        version: route.openshift.io/v1
       - kind: Secret
         name: ""
         version: v1
       - kind: Service
         name: ""
         version: v1
+      - kind: ServiceAccount
+        name: ""
+        version: v1
       specDescriptors:
-      - description: Config is the Kibana config The key is the file stored on kibana/config
+      - description: |-
+          Config is the Kibana config
+          The key is the file stored on kibana/config
         displayName: Config
         path: config
       - description: Deployment permit to set the deployment settings
@@ -3017,7 +3220,9 @@ spec:
       - description: AntiAffinity permit to set anti affinity policy
         displayName: Anti Affinity
         path: deployment.antiAffinity
-      - description: TopologyKey is the topology key to use Default to kubernetes.io/hostname
+      - description: |-
+          TopologyKey is the topology key to use
+          Default to kubernetes.io/hostname
         displayName: Topology Key
         path: deployment.antiAffinity.topologyKey
       - description: Type permit to set anti affinity as soft or hard
@@ -3045,8 +3250,10 @@ spec:
       - description: PodDisruptionBudget is the pod disruption budget policy
         displayName: Pod Disruption Budget Spec
         path: deployment.podDisruptionBudget
-      - description: PodSpec is merged with expected pod It usefull to add some extra
-          properties on pod spec
+      - description: |-
+          PodSpec is merged with expected pod
+          It usefull to add some extra properties on pod spec
+          @clean
         displayName: Pod Template
         path: deployment.podTemplate
       - description: Replicas is the number of replicas
@@ -3061,9 +3268,9 @@ spec:
       - description: ElasticsearchRef is the Elasticsearch ref to connect on.
         displayName: Elasticsearch Ref
         path: elasticsearchRef
-      - description: 'ElasticsearchCaSecretRef is the secret that store your custom
-          CA certificate to connect on Elasticsearch API. It need to have the following
-          keys: ca.crt'
+      - description: |-
+          ElasticsearchCaSecretRef is the secret that store your custom CA certificate to connect on Elasticsearch API.
+          It need to have the following keys: ca.crt
         displayName: Elasticsearch Ca Secret Ref
         path: elasticsearchRef.elasticsearchCASecretRef
       - description: ExternalElasticsearchRef is the external Elasticsearch cluster
@@ -3074,13 +3281,14 @@ spec:
           by operator
         displayName: Managed Elasticsearch Ref
         path: elasticsearchRef.managed
-      - description: SecretName is the secret that contain the setting to connect
-          on Elasticsearch. It can be auto computed for managed Elasticsearch. It
-          need to contain the keys `username` and `password`.
+      - description: |-
+          SecretName is the secret that contain the setting to connect on Elasticsearch. It can be auto computed for managed Elasticsearch.
+          It need to contain the keys `username` and `password`.
         displayName: Secret Ref
         path: elasticsearchRef.secretRef
-      - description: Endpoint permit to set endpoints to access on Kibana from external
-          kubernetes You can set ingress and / or load balancer
+      - description: |-
+          Endpoint permit to set endpoints to access on Kibana from external kubernetes
+          You can set ingress and / or load balancer
         displayName: Endpoint
         path: endpoint
       - description: Ingress permit to set ingress settings
@@ -3089,8 +3297,12 @@ spec:
       - description: Load balancer permit to set load balancer settings
         displayName: Load Balancer
         path: endpoint.loadBalancer
-      - description: Image is the image to use when deploy Elasticsearch It can be
-          usefull to use internal registry or mirror
+      - description: Route permit to set route settings
+        displayName: Route
+        path: endpoint.route
+      - description: |-
+          Image is the image to use when deploy Elasticsearch
+          It can be usefull to use internal registry or mirror
         displayName: Image
         path: image
       - description: ImagePullPolicy is the image pull policy to use
@@ -3102,8 +3314,9 @@ spec:
       - description: KeystoreSecretRef is the secret that store the security settings
         displayName: Keystore Secret Ref
         path: keystoreSecretRef
-      - description: Monitoring permit to monitor current cluster Default, it not
-          monitor cluster
+      - description: |-
+          Monitoring permit to monitor current cluster
+          Default, it not monitor cluster
         displayName: Monitoring
         path: monitoring
       - description: Metricbeat permit to monitor cluster with metricbeat and to dedicated
@@ -3114,36 +3327,45 @@ spec:
           (via exporter)
         displayName: Prometheus
         path: monitoring.prometheus
-      - description: PluginsList is the list of additionnal plugin to install on each
-          Kibana instance Default is empty
+      - description: |-
+          PluginsList is the list of additionnal plugin to install on each Kibana instance
+          Default is empty
         displayName: Plugins List
         path: pluginsList
       - description: Tls permit to set the TLS setting for Kibana access
         displayName: Tls
         path: tls
-      - description: 'CertificateSecretRef is the secret that store your custom certificates.
-          It need to have the following keys: tls.key, tls.crt and optionally ca.crt'
+      - description: |-
+          CertificateSecretRef is the secret that store your custom certificates.
+          It need to have the following keys: tls.key, tls.crt and optionally ca.crt
         displayName: Certificate Secret Ref
         path: tls.certificateSecretRef
-      - description: Enabled permit to enabled TLS Default to false
+      - description: |-
+          Enabled permit to enabled TLS
+          Default to false
         displayName: Enabled
         path: tls.enabled
-      - description: KeySize is the key size when generate privates keys Default to
-          2048
+      - description: |-
+          KeySize is the key size when generate privates keys
+          Default to 2048
         displayName: Key Size
         path: tls.keySize
-      - description: RenewalDays is the number of days before certificate expire to
-          become effective renewal Default to 30
+      - description: |-
+          RenewalDays is the number of days before certificate expire to become effective renewal
+          Default to 30
         displayName: Renewal Days
         path: tls.renewalDays
       - description: SelfSignedCertificate permit to set self signed certificate settings
         displayName: Self Signed Certificate
         path: tls.selfSignedCertificate
-      - description: ValidityDays is the number of days that certificates are valid
+      - description: |-
+          ValidityDays is the number of days that certificates are valid
           Default to 365
         displayName: Validity Days
         path: tls.validityDays
-      - description: Version is the Kibana version to use Default is use the latest
+      - description: |-
+          Version is the Kibana version to use
+          Default is use the latest
         displayName: Version
         path: version
       statusDescriptors:
@@ -3163,9 +3385,9 @@ spec:
       - description: ElasticsearchRef is the Elasticsearch ref to connect on.
         displayName: Elasticsearch Ref
         path: elasticsearchRef
-      - description: 'ElasticsearchCaSecretRef is the secret that store your custom
-          CA certificate to connect on Elasticsearch API. It need to have the following
-          keys: ca.crt'
+      - description: |-
+          ElasticsearchCaSecretRef is the secret that store your custom CA certificate to connect on Elasticsearch API.
+          It need to have the following keys: ca.crt
         displayName: Elasticsearch Ca Secret Ref
         path: elasticsearchRef.elasticsearchCASecretRef
       - description: ExternalElasticsearchRef is the external Elasticsearch cluster
@@ -3176,13 +3398,14 @@ spec:
           by operator
         displayName: Managed Elasticsearch Ref
         path: elasticsearchRef.managed
-      - description: SecretName is the secret that contain the setting to connect
-          on Elasticsearch. It can be auto computed for managed Elasticsearch. It
-          need to contain the keys `username` and `password`.
+      - description: |-
+          SecretName is the secret that contain the setting to connect on Elasticsearch. It can be auto computed for managed Elasticsearch.
+          It need to contain the keys `username` and `password`.
         displayName: Secret Ref
         path: elasticsearchRef.secretRef
-      - description: Basic permit to enable basic license Default to true if secretRef
-          not set
+      - description: |-
+          Basic permit to enable basic license
+          Default to true if secretRef not set
         displayName: Basic
         path: isBasic
       - description: SecretName is the secret that contain the license
@@ -3213,24 +3436,36 @@ spec:
       - kind: PodDisruptionBudget
         name: ""
         version: policy/v1
+      - kind: RoleBinding
+        name: ""
+        version: rbac.authorization.k8s.io/v1
+      - kind: Route
+        name: ""
+        version: route.openshift.io/v1
       - kind: Secret
         name: ""
         version: v1
       - kind: Service
         name: ""
         version: v1
+      - kind: ServiceAccount
+        name: ""
+        version: v1
       - kind: StatefulSet
         name: ""
         version: apps/v1
       specDescriptors:
-      - description: Config is the Logstash config The key is the file stored on logstash/config
+      - description: |-
+          Config is the Logstash config
+          The key is the file stored on logstash/config
         displayName: Config
         path: config
       - description: Deployment permit to set the deployment settings
         displayName: Deployment
         path: deployment
-      - description: AdditionalVolumes permit to use additionnal volumes Default is
-          empty
+      - description: |-
+          AdditionalVolumes permit to use additionnal volumes
+          Default is empty
         displayName: Additional Volumes
         path: deployment.additionalVolumes
       - description: Name is the volume name
@@ -3242,7 +3477,9 @@ spec:
       - description: AntiAffinity permit to set anti affinity policy
         displayName: Anti Affinity
         path: deployment.antiAffinity
-      - description: TopologyKey is the topology key to use Default to kubernetes.io/hostname
+      - description: |-
+          TopologyKey is the topology key to use
+          Default to kubernetes.io/hostname
         displayName: Topology Key
         path: deployment.antiAffinity.topologyKey
       - description: Type permit to set anti affinity as soft or hard
@@ -3270,8 +3507,9 @@ spec:
       - description: Persistence is the spec to persist data
         displayName: Persistence
         path: deployment.persistence
-      - description: Volume is the volume source to use instead volumeClaim It usefull
-          if you should to use hostPath
+      - description: |-
+          Volume is the volume source to use instead volumeClaim
+          It usefull if you should to use hostPath
         displayName: Volume
         path: deployment.persistence.volume
       - description: VolumeClaim is the persistent volume claim spec use by statefullset
@@ -3280,11 +3518,14 @@ spec:
       - description: PodDisruptionBudget is the pod disruption budget policy
         displayName: Pod Disruption Budget Spec
         path: deployment.podDisruptionBudget
-      - description: PodSpec is merged with expected pod It usefull to add some extra
-          properties on pod spec
+      - description: |-
+          PodSpec is merged with expected pod
+          It usefull to add some extra properties on pod spec
+          @clean
         displayName: Pod Template
         path: deployment.podTemplate
-      - description: Ports is the list of container port to affect on logstash container
+      - description: |-
+          Ports is the list of container port to affect on logstash container
           It can be usefull to expose beats input
         displayName: Ports
         path: deployment.ports
@@ -3297,14 +3538,14 @@ spec:
       - description: Tolerations permit to set toleration on pod
         displayName: Tolerations
         path: deployment.tolerations
-      - description: ElasticsearchRef is the Elasticsearch ref to connect on. It will
-          expose CA certificate and Elasticsearch URL as encironment variable to use
-          it in logstash setting
+      - description: |-
+          ElasticsearchRef is the Elasticsearch ref to connect on.
+          It will expose CA certificate and Elasticsearch URL as encironment variable to use it in logstash setting
         displayName: Elasticsearch Ref
         path: elasticsearchRef
-      - description: 'ElasticsearchCaSecretRef is the secret that store your custom
-          CA certificate to connect on Elasticsearch API. It need to have the following
-          keys: ca.crt'
+      - description: |-
+          ElasticsearchCaSecretRef is the secret that store your custom CA certificate to connect on Elasticsearch API.
+          It need to have the following keys: ca.crt
         displayName: Elasticsearch Ca Secret Ref
         path: elasticsearchRef.elasticsearchCASecretRef
       - description: ExternalElasticsearchRef is the external Elasticsearch cluster
@@ -3315,13 +3556,14 @@ spec:
           by operator
         displayName: Managed Elasticsearch Ref
         path: elasticsearchRef.managed
-      - description: SecretName is the secret that contain the setting to connect
-          on Elasticsearch. It can be auto computed for managed Elasticsearch. It
-          need to contain the keys `username` and `password`.
+      - description: |-
+          SecretName is the secret that contain the setting to connect on Elasticsearch. It can be auto computed for managed Elasticsearch.
+          It need to contain the keys `username` and `password`.
         displayName: Secret Ref
         path: elasticsearchRef.secretRef
-      - description: Image is the image to use when deploy Elasticsearch It can be
-          usefull to use internal registry or mirror
+      - description: |-
+          Image is the image to use when deploy Elasticsearch
+          It can be usefull to use internal registry or mirror
         displayName: Image
         path: image
       - description: ImagePullPolicy is the image pull policy to use
@@ -3330,8 +3572,9 @@ spec:
       - description: ImagePullSecrets is the image pull secrets to use
         displayName: Image Pull Secrets
         path: imagePullSecrets
-      - description: Ingresses permit to declare some ingresses The name is decorated
-          with cluster name and so on
+      - description: |-
+          Ingresses permit to declare some ingresses
+          The name is decorated with cluster name and so on
         displayName: Ingresses
         path: ingresses
       - description: Annotations is the extra annotations for ingress
@@ -3348,8 +3591,9 @@ spec:
       - description: Labels is the extra labels for ingress
         displayName: Labels
         path: ingresses[0].labels
-      - description: Name is the ingress name The name is decorated with cluster name
-          and so on
+      - description: |-
+          Name is the ingress name
+          The name is decorated with cluster name and so on
         displayName: Name
         path: ingresses[0].name
       - description: Spec is the ingress spec
@@ -3358,8 +3602,9 @@ spec:
       - description: KeystoreSecretRef is the secret that store the security settings
         displayName: Keystore Secret Ref
         path: keystoreSecretRef
-      - description: Monitoring permit to monitor current cluster Default, it not
-          monitor cluster
+      - description: |-
+          Monitoring permit to monitor current cluster
+          Default, it not monitor cluster
         displayName: Monitoring
         path: monitoring
       - description: Metricbeat permit to monitor cluster with metricbeat and to dedicated
@@ -3370,26 +3615,32 @@ spec:
           (via exporter)
         displayName: Prometheus
         path: monitoring.prometheus
-      - description: Patterns is the patterns specification used by grok The key is
-          the file stored on logstash/patterns
+      - description: |-
+          Patterns is the patterns specification used by grok
+          The key is the file stored on logstash/patterns
         displayName: Pattern
         path: pattern
-      - description: Pipeline is the pipeline specification The key is the file stored
-          on logstash/pipelines
+      - description: |-
+          Pipeline is the pipeline specification
+          The key is the file stored on logstash/pipelines
         displayName: Pipeline
         path: pipeline
       - description: Pki permit to manage certificates you can use for Logstash inputs
         displayName: Pki
         path: pki
-      - description: Enabled permit to enabled the internal PKI Default to true
+      - description: |-
+          Enabled permit to enabled the internal PKI
+          Default to true
         displayName: Enabled
         path: pki.enabled
-      - description: KeySize is the key size when generate privates keys Default to
-          2048
+      - description: |-
+          KeySize is the key size when generate privates keys
+          Default to 2048
         displayName: Key Size
         path: pki.keySize
-      - description: RenewalDays is the number of days before certificate expire to
-          become effective renewal Default to 30
+      - description: |-
+          RenewalDays is the number of days before certificate expire to become effective renewal
+          Default to 30
         displayName: Renewal Days
         path: pki.renewalDays
       - description: Tls is the list of TLS certificates to manage
@@ -3403,20 +3654,54 @@ spec:
           certificate
         displayName: Alt Names
         path: pki.tls.altNames
-      - description: Consumer it the service that will consume certificate It support
-          filebeat, logstash and custom Default to custom
+      - description: |-
+          Consumer it the service that will consume certificate
+          It support filebeat, logstash and custom
+          Default to custom
         displayName: Consumer
         path: pki.tls.consumer
-      - description: ValidityDays is the number of days that certificates are valid
+      - description: |-
+          ValidityDays is the number of days that certificates are valid
           Default to 365
         displayName: Validity Days
         path: pki.validityDays
-      - description: PluginsList is the list of additionnal plugin to install on each
-          logstash instance Default is empty
+      - description: |-
+          PluginsList is the list of additionnal plugin to install on each logstash instance
+          Default is empty
         displayName: Plugins List
         path: pluginsList
-      - description: Services permit to declare some services The name is decorated
-          with cluster name and so on
+      - description: |-
+          Routes permit to declare some routes
+          The name is decorated with cluster name and so on
+        displayName: Routes
+        path: routes
+      - description: Annotations is the extra annotations for route
+        displayName: Annotations
+        path: routes[0].annotations
+      - description: ContainerPort is the port to set when create service consumed
+          by route
+        displayName: Container Port
+        path: routes[0].containerPort
+      - description: ContainerPortProtocol is the protocol to set when create service
+          consumed by route
+        displayName: Container Port Protocol
+        path: routes[0].containerProtocol
+      - description: Labels is the extra labels for route
+        displayName: Labels
+        path: routes[0].labels
+      - description: |-
+          Name is the route name
+          The name is decorated with cluster name and so on
+        displayName: Name
+        path: routes[0].name
+      - description: |-
+          Spec is the route spec
+          @clean
+        displayName: Spec
+        path: routes[0].spec
+      - description: |-
+          Services permit to declare some services
+          The name is decorated with cluster name and so on
         displayName: Services
         path: services
       - description: Annotations is the extra annotations for ingress
@@ -3425,14 +3710,17 @@ spec:
       - description: Labels is the extra labels for ingress
         displayName: Labels
         path: services[0].labels
-      - description: Name is the service name The name is decorated with cluster name
-          and so on
+      - description: |-
+          Name is the service name
+          The name is decorated with cluster name and so on
         displayName: Name
         path: services[0].name
       - description: Spec is the service spec
         displayName: Spec
         path: services[0].spec
-      - description: Version is the logstash version to use Default is use the latest
+      - description: |-
+          Version is the logstash version to use
+          Default is use the latest
         displayName: Version
         path: version
       statusDescriptors:
@@ -3456,28 +3744,33 @@ spec:
       - description: KibanaRef is the Kibana ref to connect on.
         displayName: Kibana Ref
         path: kibanaRef
-      - description: KibanaCredentialSecretRef is the secret that contain credential
-          to acess on Kibana API. It need to contain the keys `username` and `password`.
+      - description: |-
+          KibanaCredentialSecretRef is the secret that contain credential to acess on Kibana API.
+          It need to contain the keys `username` and `password`.
         displayName: Kibana Credential Secret Ref
         path: kibanaRef.credentialSecretRef
       - description: ExternalKibanaRef is the external Kibana not managed by operator
         displayName: External Kibana Ref
         path: kibanaRef.external
-      - description: 'KibanaCaSecretRef is the secret that store your custom CA certificate
-          to connect on Kibana API. It need to have the following keys: ca.crt'
+      - description: |-
+          KibanaCaSecretRef is the secret that store your custom CA certificate to connect on Kibana API.
+          It need to have the following keys: ca.crt
         displayName: Kibana Ca Secret Ref
         path: kibanaRef.kibanaCASecretRef
       - description: ManagedKibanaRef is the managed Kibana by operator
         displayName: Managed Kibana Ref
         path: kibanaRef.managed
-      - description: Name is the Logstash pipeline ID If empty, it use the ressource
-          name
+      - description: |-
+          Name is the Logstash pipeline ID
+          If empty, it use the ressource name
         displayName: Name
         path: name
       - description: Pipeline is the pipeline definition
         displayName: Pipeline
         path: pipeline
-      - description: Settings is the pipeline settings It's a JSON string
+      - description: |-
+          Settings is the pipeline settings
+          It's a JSON string
         displayName: Settings
         path: settings
       version: v1
@@ -3498,25 +3791,33 @@ spec:
       - kind: PodDisruptionBudget
         name: ""
         version: policy/v1
+      - kind: RoleBinding
+        name: ""
+        version: rbac.authorization.k8s.io/v1
       - kind: Secret
         name: ""
         version: v1
       - kind: Service
         name: ""
         version: v1
+      - kind: ServiceAccount
+        name: ""
+        version: v1
       - kind: StatefulSet
         name: ""
         version: apps/v1
       specDescriptors:
-      - description: Config is the Metricbeat config The key is the file stored on
-          metricbeat
+      - description: |-
+          Config is the Metricbeat config
+          The key is the file stored on metricbeat
         displayName: Config
         path: config
       - description: Deployment permit to set the deployment settings
         displayName: Deployment
         path: deployment
-      - description: AdditionalVolumes permit to use additionnal volumes Default is
-          empty
+      - description: |-
+          AdditionalVolumes permit to use additionnal volumes
+          Default is empty
         displayName: Additional Volumes
         path: deployment.additionalVolumes
       - description: Name is the volume name
@@ -3528,7 +3829,9 @@ spec:
       - description: AntiAffinity permit to set anti affinity policy
         displayName: Anti Affinity
         path: deployment.antiAffinity
-      - description: TopologyKey is the topology key to use Default to kubernetes.io/hostname
+      - description: |-
+          TopologyKey is the topology key to use
+          Default to kubernetes.io/hostname
         displayName: Topology Key
         path: deployment.antiAffinity.topologyKey
       - description: Type permit to set anti affinity as soft or hard
@@ -3550,11 +3853,14 @@ spec:
       - description: NodeSelector permit to set node selector on pod
         displayName: Node Selector
         path: deployment.nodeSelector
-      - description: Persistence is the spec to persist data Default is emptyDir
+      - description: |-
+          Persistence is the spec to persist data
+          Default is emptyDir
         displayName: Persistence
         path: deployment.persistence
-      - description: Volume is the volume source to use instead volumeClaim It usefull
-          if you should to use hostPath
+      - description: |-
+          Volume is the volume source to use instead volumeClaim
+          It usefull if you should to use hostPath
         displayName: Volume
         path: deployment.persistence.volume
       - description: VolumeClaim is the persistent volume claim spec use by statefullset
@@ -3563,8 +3869,10 @@ spec:
       - description: PodDisruptionBudget is the pod disruption budget policy
         displayName: Pod Disruption Budget Spec
         path: deployment.podDisruptionBudget
-      - description: PodSpec is merged with expected pod It usefull to add some extra
-          properties on pod spec
+      - description: |-
+          PodSpec is merged with expected pod
+          It usefull to add some extra properties on pod spec
+          @clean
         displayName: Pod Template
         path: deployment.podTemplate
       - description: Replicas is the number of replicas
@@ -3576,13 +3884,14 @@ spec:
       - description: Tolerations permit to set toleration on pod
         displayName: Tolerations
         path: deployment.tolerations
-      - description: ElasticsearchRef is the Elasticsearch ref to connect on. It will
-          generate Elasticsearch output bas on it
+      - description: |-
+          ElasticsearchRef is the Elasticsearch ref to connect on.
+          It will generate Elasticsearch output bas on it
         displayName: Elasticsearch Ref
         path: elasticsearchRef
-      - description: 'ElasticsearchCaSecretRef is the secret that store your custom
-          CA certificate to connect on Elasticsearch API. It need to have the following
-          keys: ca.crt'
+      - description: |-
+          ElasticsearchCaSecretRef is the secret that store your custom CA certificate to connect on Elasticsearch API.
+          It need to have the following keys: ca.crt
         displayName: Elasticsearch Ca Secret Ref
         path: elasticsearchRef.elasticsearchCASecretRef
       - description: ExternalElasticsearchRef is the external Elasticsearch cluster
@@ -3593,13 +3902,14 @@ spec:
           by operator
         displayName: Managed Elasticsearch Ref
         path: elasticsearchRef.managed
-      - description: SecretName is the secret that contain the setting to connect
-          on Elasticsearch. It can be auto computed for managed Elasticsearch. It
-          need to contain the keys `username` and `password`.
+      - description: |-
+          SecretName is the secret that contain the setting to connect on Elasticsearch. It can be auto computed for managed Elasticsearch.
+          It need to contain the keys `username` and `password`.
         displayName: Secret Ref
         path: elasticsearchRef.secretRef
-      - description: Image is the image to use when deploy Elasticsearch It can be
-          usefull to use internal registry or mirror
+      - description: |-
+          Image is the image to use when deploy Elasticsearch
+          It can be usefull to use internal registry or mirror
         displayName: Image
         path: image
       - description: ImagePullPolicy is the image pull policy to use
@@ -3608,11 +3918,14 @@ spec:
       - description: ImagePullSecrets is the image pull secrets to use
         displayName: Image Pull Secrets
         path: imagePullSecrets
-      - description: Module is the module specification The key is the file stored
-          on metricbeat/modules.d
+      - description: |-
+          Module is the module specification
+          The key is the file stored on metricbeat/modules.d
         displayName: Module
         path: module
-      - description: Version is the Metricbeat version to use Default is use the latest
+      - description: |-
+          Version is the Metricbeat version to use
+          Default is use the latest
         displayName: Version
         path: version
       version: v1
@@ -3628,9 +3941,9 @@ spec:
       - description: ElasticsearchRef is the Elasticsearch ref to connect on.
         displayName: Elasticsearch Ref
         path: elasticsearchRef
-      - description: 'ElasticsearchCaSecretRef is the secret that store your custom
-          CA certificate to connect on Elasticsearch API. It need to have the following
-          keys: ca.crt'
+      - description: |-
+          ElasticsearchCaSecretRef is the secret that store your custom CA certificate to connect on Elasticsearch API.
+          It need to have the following keys: ca.crt
         displayName: Elasticsearch Ca Secret Ref
         path: elasticsearchRef.elasticsearchCASecretRef
       - description: ExternalElasticsearchRef is the external Elasticsearch cluster
@@ -3641,26 +3954,32 @@ spec:
           by operator
         displayName: Managed Elasticsearch Ref
         path: elasticsearchRef.managed
-      - description: SecretName is the secret that contain the setting to connect
-          on Elasticsearch. It can be auto computed for managed Elasticsearch. It
-          need to contain the keys `username` and `password`.
+      - description: |-
+          SecretName is the secret that contain the setting to connect on Elasticsearch. It can be auto computed for managed Elasticsearch.
+          It need to contain the keys `username` and `password`.
         displayName: Secret Ref
         path: elasticsearchRef.secretRef
-      - description: Enabled permit to enable or disable the role mapping Default
-          to true
+      - description: |-
+          Enabled permit to enable or disable the role mapping
+          Default to true
         displayName: Enabled
         path: enabled
-      - description: Metadata is the meta data JSON string
+      - description: |-
+          Metadata is the meta data
+          JSON string
         displayName: Metadata
         path: metadata
-      - description: Name is the custom role mapping name If empty, it use the ressource
-          name
+      - description: |-
+          Name is the custom role mapping name
+          If empty, it use the ressource name
         displayName: Name
         path: name
       - description: Roles is the list of role to map
         displayName: Roles
         path: roles
-      - description: Rules is the mapping rules JSON string
+      - description: |-
+          Rules is the mapping rules
+          JSON string
         displayName: Rules
         path: rules
       version: v1
@@ -3687,9 +4006,9 @@ spec:
       - description: ElasticsearchRef is the Elasticsearch ref to connect on.
         displayName: Elasticsearch Ref
         path: elasticsearchRef
-      - description: 'ElasticsearchCaSecretRef is the secret that store your custom
-          CA certificate to connect on Elasticsearch API. It need to have the following
-          keys: ca.crt'
+      - description: |-
+          ElasticsearchCaSecretRef is the secret that store your custom CA certificate to connect on Elasticsearch API.
+          It need to have the following keys: ca.crt
         displayName: Elasticsearch Ca Secret Ref
         path: elasticsearchRef.elasticsearchCASecretRef
       - description: ExternalElasticsearchRef is the external Elasticsearch cluster
@@ -3700,21 +4019,27 @@ spec:
           by operator
         displayName: Managed Elasticsearch Ref
         path: elasticsearchRef.managed
-      - description: SecretName is the secret that contain the setting to connect
-          on Elasticsearch. It can be auto computed for managed Elasticsearch. It
-          need to contain the keys `username` and `password`.
+      - description: |-
+          SecretName is the secret that contain the setting to connect on Elasticsearch. It can be auto computed for managed Elasticsearch.
+          It need to contain the keys `username` and `password`.
         displayName: Secret Ref
         path: elasticsearchRef.secretRef
-      - description: Global  defining global privileges JSON string
+      - description: |-
+          Global  defining global privileges
+          JSON string
         displayName: Global
         path: global
       - description: Indices is the list of indices permissions
         displayName: Indices
         path: indices
-      - description: Allow to manage restricted index Default to false
+      - description: |-
+          Allow to manage restricted index
+          Default to false
         displayName: Allow Restricted Indices
         path: indices[0].allowRestrictedIndices
-      - description: FieldSecurity JSON string
+      - description: |-
+          FieldSecurity
+          JSON string
         displayName: Field Security
         path: indices[0].fieldSecurity
       - description: Names
@@ -3726,16 +4051,22 @@ spec:
       - description: Query
         displayName: Query
         path: indices[0].query
-      - description: Metadata is optional meta-data JSON string
+      - description: |-
+          Metadata is optional meta-data
+          JSON string
         displayName: Metadata
         path: metadata
-      - description: Name is the custom role name If empty, it use the ressource name
+      - description: |-
+          Name is the custom role name
+          If empty, it use the ressource name
         displayName: Name
         path: name
       - description: RunAs is the list of users that the owners of this role can impersonate
         displayName: Run As
         path: runAs
-      - description: TransientMetadata JSON string
+      - description: |-
+          TransientMetadata
+          JSON string
         displayName: Transient Metadata
         path: transientMetadata
       version: v1
@@ -3757,7 +4088,9 @@ spec:
       - description: Indices is the indice privileges
         displayName: Indices
         path: elasticsearch.indices
-      - description: FieldSecurity JSON string
+      - description: |-
+          FieldSecurity
+          JSON string
         displayName: Field Security
         path: elasticsearch.indices[0].fieldSecurity
       - description: Names
@@ -3778,15 +4111,17 @@ spec:
       - description: KibanaRef is the Kibana ref to connect on.
         displayName: Kibana Ref
         path: kibanaRef
-      - description: KibanaCredentialSecretRef is the secret that contain credential
-          to acess on Kibana API. It need to contain the keys `username` and `password`.
+      - description: |-
+          KibanaCredentialSecretRef is the secret that contain credential to acess on Kibana API.
+          It need to contain the keys `username` and `password`.
         displayName: Kibana Credential Secret Ref
         path: kibanaRef.credentialSecretRef
       - description: ExternalKibanaRef is the external Kibana not managed by operator
         displayName: External Kibana Ref
         path: kibanaRef.external
-      - description: 'KibanaCaSecretRef is the secret that store your custom CA certificate
-          to connect on Kibana API. It need to have the following keys: ca.crt'
+      - description: |-
+          KibanaCaSecretRef is the secret that store your custom CA certificate to connect on Kibana API.
+          It need to have the following keys: ca.crt
         displayName: Kibana Ca Secret Ref
         path: kibanaRef.kibanaCASecretRef
       - description: ManagedKibanaRef is the managed Kibana by operator
@@ -3801,10 +4136,14 @@ spec:
       - description: Spaces is the list of space o apply the privileges to
         displayName: Spaces
         path: kibana[0].spaces
-      - description: Metadata is optional meta-data JSON string
+      - description: |-
+          Metadata is optional meta-data
+          JSON string
         displayName: Metadata
         path: metadata
-      - description: Name is the role name If empty, it use the ressource name
+      - description: |-
+          Name is the role name
+          If empty, it use the ressource name
         displayName: Name
         path: name
       - description: TransientMedata
@@ -3851,9 +4190,9 @@ spec:
       - description: ElasticsearchRef is the Elasticsearch ref to connect on.
         displayName: Elasticsearch Ref
         path: elasticsearchRef
-      - description: 'ElasticsearchCaSecretRef is the secret that store your custom
-          CA certificate to connect on Elasticsearch API. It need to have the following
-          keys: ca.crt'
+      - description: |-
+          ElasticsearchCaSecretRef is the secret that store your custom CA certificate to connect on Elasticsearch API.
+          It need to have the following keys: ca.crt
         displayName: Elasticsearch Ca Secret Ref
         path: elasticsearchRef.elasticsearchCASecretRef
       - description: ExternalElasticsearchRef is the external Elasticsearch cluster
@@ -3864,9 +4203,9 @@ spec:
           by operator
         displayName: Managed Elasticsearch Ref
         path: elasticsearchRef.managed
-      - description: SecretName is the secret that contain the setting to connect
-          on Elasticsearch. It can be auto computed for managed Elasticsearch. It
-          need to contain the keys `username` and `password`.
+      - description: |-
+          SecretName is the secret that contain the setting to connect on Elasticsearch. It can be auto computed for managed Elasticsearch.
+          It need to contain the keys `username` and `password`.
         displayName: Secret Ref
         path: elasticsearchRef.secretRef
       - description: Name is the template name to generte final name
@@ -3890,8 +4229,9 @@ spec:
       - description: Schedule is schedule policy
         displayName: Schedule
         path: schedule
-      - description: SnapshotLifecyclePolicyName is the custom snapshot lifecycle
-          policy name If empty, it use the ressource name
+      - description: |-
+          SnapshotLifecyclePolicyName is the custom snapshot lifecycle policy name
+          If empty, it use the ressource name
         displayName: Snapshot Lifecycle Policy Name
         path: snapshotLifecyclePolicyName
       version: v1
@@ -3907,9 +4247,9 @@ spec:
       - description: ElasticsearchRef is the Elasticsearch ref to connect on.
         displayName: Elasticsearch Ref
         path: elasticsearchRef
-      - description: 'ElasticsearchCaSecretRef is the secret that store your custom
-          CA certificate to connect on Elasticsearch API. It need to have the following
-          keys: ca.crt'
+      - description: |-
+          ElasticsearchCaSecretRef is the secret that store your custom CA certificate to connect on Elasticsearch API.
+          It need to have the following keys: ca.crt
         displayName: Elasticsearch Ca Secret Ref
         path: elasticsearchRef.elasticsearchCASecretRef
       - description: ExternalElasticsearchRef is the external Elasticsearch cluster
@@ -3920,13 +4260,14 @@ spec:
           by operator
         displayName: Managed Elasticsearch Ref
         path: elasticsearchRef.managed
-      - description: SecretName is the secret that contain the setting to connect
-          on Elasticsearch. It can be auto computed for managed Elasticsearch. It
-          need to contain the keys `username` and `password`.
+      - description: |-
+          SecretName is the secret that contain the setting to connect on Elasticsearch. It can be auto computed for managed Elasticsearch.
+          It need to contain the keys `username` and `password`.
         displayName: Secret Ref
         path: elasticsearchRef.secretRef
-      - description: Name is the custom snapshot repository name If empty, it use
-          the ressource name
+      - description: |-
+          Name is the custom snapshot repository name
+          If empty, it use the ressource name
         displayName: Name
         path: name
       - description: The config of snapshot repository
@@ -3945,16 +4286,17 @@ spec:
         name: None
         version: None
       specDescriptors:
-      - description: AutoGeneratePassword can permit to auto generate password if
-          true. Default to false
+      - description: |-
+          AutoGeneratePassword can permit to auto generate password if true.
+          Default to false
         displayName: Auto Generate Password
         path: autoGeneratePassword
       - description: ElasticsearchRef is the Elasticsearch ref to connect on.
         displayName: Elasticsearch Ref
         path: elasticsearchRef
-      - description: 'ElasticsearchCaSecretRef is the secret that store your custom
-          CA certificate to connect on Elasticsearch API. It need to have the following
-          keys: ca.crt'
+      - description: |-
+          ElasticsearchCaSecretRef is the secret that store your custom CA certificate to connect on Elasticsearch API.
+          It need to have the following keys: ca.crt
         displayName: Elasticsearch Ca Secret Ref
         path: elasticsearchRef.elasticsearchCASecretRef
       - description: ExternalElasticsearchRef is the external Elasticsearch cluster
@@ -3965,25 +4307,30 @@ spec:
           by operator
         displayName: Managed Elasticsearch Ref
         path: elasticsearchRef.managed
-      - description: SecretName is the secret that contain the setting to connect
-          on Elasticsearch. It can be auto computed for managed Elasticsearch. It
-          need to contain the keys `username` and `password`.
+      - description: |-
+          SecretName is the secret that contain the setting to connect on Elasticsearch. It can be auto computed for managed Elasticsearch.
+          It need to contain the keys `username` and `password`.
         displayName: Secret Ref
         path: elasticsearchRef.secretRef
       - description: Email is the email user
         displayName: Email
         path: email
-      - description: Enabled permit to enable user Default to true
+      - description: |-
+          Enabled permit to enable user
+          Default to true
         displayName: Enabled
         path: enabled
       - description: FullName is the full name
         displayName: Full Name
         path: fullName
-      - description: IsProtected must be set when you manage protected account like
-          kibana_system Default to false
+      - description: |-
+          IsProtected must be set when you manage protected account like kibana_system
+          Default to false
         displayName: Is Protected
         path: isProtected
-      - description: Metadata is the meta data Is JSON string
+      - description: |-
+          Metadata is the meta data
+          Is JSON string
         displayName: Metadata
         path: metadata
       - description: PasswordHash is the password as hash
@@ -3996,7 +4343,9 @@ spec:
           hash
         displayName: Secret Ref
         path: secretRef
-      - description: Username is the user name If empty, it use the ressource name
+      - description: |-
+          Username is the user name
+          If empty, it use the ressource name
         displayName: Username
         path: username
       statusDescriptors:
@@ -4023,7 +4372,9 @@ spec:
           space
         displayName: Disabled Features
         path: disabledFeatures
-      - description: ID is the user space ID If empty, it use the ressource name
+      - description: |-
+          ID is the user space ID
+          If empty, it use the ressource name
         displayName: ID
         path: id
       - description: Initials is the user space initials
@@ -4032,15 +4383,17 @@ spec:
       - description: KibanaRef is the Kibana ref to connect on.
         displayName: Kibana Ref
         path: kibanaRef
-      - description: KibanaCredentialSecretRef is the secret that contain credential
-          to acess on Kibana API. It need to contain the keys `username` and `password`.
+      - description: |-
+          KibanaCredentialSecretRef is the secret that contain credential to acess on Kibana API.
+          It need to contain the keys `username` and `password`.
         displayName: Kibana Credential Secret Ref
         path: kibanaRef.credentialSecretRef
       - description: ExternalKibanaRef is the external Kibana not managed by operator
         displayName: External Kibana Ref
         path: kibanaRef.external
-      - description: 'KibanaCaSecretRef is the secret that store your custom CA certificate
-          to connect on Kibana API. It need to have the following keys: ca.crt'
+      - description: |-
+          KibanaCaSecretRef is the secret that store your custom CA certificate to connect on Kibana API.
+          It need to have the following keys: ca.crt
         displayName: Kibana Ca Secret Ref
         path: kibanaRef.kibanaCASecretRef
       - description: ManagedKibanaRef is the managed Kibana by operator
@@ -4052,16 +4405,19 @@ spec:
       - description: CopyObjects permit to copy objects into current user space
         displayName: Kibana User Space Copies
         path: userSpaceCopies
-      - description: CreateNewCopies is set to true to create new copy of objects
+      - description: |-
+          CreateNewCopies is set to true to create new copy of objects
           Default to false
         displayName: Create New Copies
         path: userSpaceCopies[0].createNewCopies
-      - description: ForceUpdateWhenReconcile is set to true to force to sync objects
-          each time the operator reconcile Default to false
+      - description: |-
+          ForceUpdateWhenReconcile is set to true to force to sync objects each time the operator reconcile
+          Default to false
         displayName: Force Update When Reconcile
         path: userSpaceCopies[0].forceUpdate
-      - description: IncludeReferences is set to true to copy all references Default
-          to true
+      - description: |-
+          IncludeReferences is set to true to copy all references
+          Default to true
         displayName: Include References
         path: userSpaceCopies[0].includeReferences
       - description: KibanaObjects is the list of object to copy
@@ -4076,8 +4432,9 @@ spec:
       - description: OriginUserSpace is the user space name from copy objects
         displayName: Origin User Space
         path: userSpaceCopies[0].originUserSpace
-      - description: Overwrite is set to true to overwrite existing objects Default
-          to true
+      - description: |-
+          Overwrite is set to true to overwrite existing objects
+          Default to true
         displayName: Overwrite
         path: userSpaceCopies[0].overwrite
       version: v1
@@ -4090,18 +4447,22 @@ spec:
         name: None
         version: None
       specDescriptors:
-      - description: Actions JSON string
+      - description: |-
+          Actions
+          JSON string
         displayName: Actions
         path: actions
-      - description: Condition JSON string
+      - description: |-
+          Condition
+          JSON string
         displayName: Condition
         path: condition
       - description: ElasticsearchRef is the Elasticsearch ref to connect on.
         displayName: Elasticsearch Ref
         path: elasticsearchRef
-      - description: 'ElasticsearchCaSecretRef is the secret that store your custom
-          CA certificate to connect on Elasticsearch API. It need to have the following
-          keys: ca.crt'
+      - description: |-
+          ElasticsearchCaSecretRef is the secret that store your custom CA certificate to connect on Elasticsearch API.
+          It need to have the following keys: ca.crt
         displayName: Elasticsearch Ca Secret Ref
         path: elasticsearchRef.elasticsearchCASecretRef
       - description: ExternalElasticsearchRef is the external Elasticsearch cluster
@@ -4112,19 +4473,24 @@ spec:
           by operator
         displayName: Managed Elasticsearch Ref
         path: elasticsearchRef.managed
-      - description: SecretName is the secret that contain the setting to connect
-          on Elasticsearch. It can be auto computed for managed Elasticsearch. It
-          need to contain the keys `username` and `password`.
+      - description: |-
+          SecretName is the secret that contain the setting to connect on Elasticsearch. It can be auto computed for managed Elasticsearch.
+          It need to contain the keys `username` and `password`.
         displayName: Secret Ref
         path: elasticsearchRef.secretRef
-      - description: Input JSON string
+      - description: |-
+          Input
+          JSON string
         displayName: Input
         path: input
-      - description: Metadata JSON string
+      - description: |-
+          Metadata
+          JSON string
         displayName: Metadata
         path: metadata
-      - description: Name is the custom watch name If empty, it use the ressource
-          name
+      - description: |-
+          Name is the custom watch name
+          If empty, it use the ressource name
         displayName: Name
         path: name
       - description: ThrottlePeriod
@@ -4133,10 +4499,14 @@ spec:
       - description: ThrottlePeriodInMillis
         displayName: Throttle Period In Millis
         path: throttle_period_in_millis
-      - description: Transform JSON string
+      - description: |-
+          Transform
+          JSON string
         displayName: Transform
         path: transform
-      - description: Trigger JSON string
+      - description: |-
+          Trigger
+          JSON string
         displayName: Trigger
         path: trigger
       version: v1
