@@ -4,11 +4,13 @@ import (
 	"fmt"
 
 	"github.com/thoas/go-funk"
-	logstashcrd "github.com/webcenter-fr/elasticsearch-operator/apis/logstash/v1"
+	logstashcrd "github.com/webcenter-fr/elasticsearch-operator/api/logstash/v1"
 )
 
 const (
-	defaultImage = "docker.elastic.co/logstash/logstash"
+	defaultImage           = "docker.elastic.co/logstash/logstash"
+	defaultExporterImage   = "ghcr.io/kuskoman/logstash-exporter"
+	defaultExporterVersion = "latest"
 )
 
 // GetConfigMapConfigName permit to get the configMap name that store the config
@@ -144,4 +146,14 @@ func GetIngressName(ls *logstashcrd.Logstash, ingressName string) string {
 // GetMetricbeatName return the metricbeat namme
 func GetMetricbeatName(ls *logstashcrd.Logstash) (name string) {
 	return fmt.Sprintf("%s-metricbeat-ls", ls.Name)
+}
+
+// GetServiceAccountName return the service account name
+func GetServiceAccountName(ls *logstashcrd.Logstash) string {
+	return fmt.Sprintf("%s-ls", ls.Name)
+}
+
+// GetConfigMapExporterName permit to get the configMap name that store the config for exporter
+func GetConfigMapExporterName(ls *logstashcrd.Logstash) (configMapName string) {
+	return fmt.Sprintf("%s-exporter-ls", ls.Name)
 }

@@ -106,6 +106,9 @@ spec:
             - ALL
           runAsNonRoot: true
           runAsUser: 1000
+          runAsGroup: 1000
+          privileged: false
+          allowPrivilegeEscalation: false
         startupProbe:
           failureThreshold: 30
           initialDelaySeconds: 10
@@ -214,6 +217,7 @@ spec:
             name: logstash-data
         securityContext:
           runAsUser: 0
+          privileged: false
       - command:
         - /bin/bash
         - -c
@@ -243,6 +247,15 @@ spec:
             mountPath: /mnt/keystore
           - name: logstash-keystore
             mountPath: /mnt/keystoreSecrets
+        securityContext:
+          capabilities:
+            drop:
+            - ALL
+          runAsNonRoot: true
+          runAsUser: 1000
+          runAsGroup: 1000
+          privileged: false
+          allowPrivilegeEscalation: false
       securityContext:
         fsGroup: 1000
       terminationGracePeriodSeconds: 120

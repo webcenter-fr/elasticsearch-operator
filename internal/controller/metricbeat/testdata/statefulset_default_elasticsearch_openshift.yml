@@ -1,0 +1,166 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: test-mb
+  namespace: default
+  labels:
+    cluster: test
+    metricbeat.k8s.webcenter.fr: "true"
+  annotations:
+    metricbeat.k8s.webcenter.fr: "true"
+spec:
+  replicas: 1
+  serviceName: test-headless-mb
+  selector:
+    matchLabels:
+      cluster: test
+      metricbeat.k8s.webcenter.fr: "true"
+  template:
+    metadata:
+      labels:
+        cluster: test
+        metricbeat.k8s.webcenter.fr: "true"
+      annotations:
+        metricbeat.k8s.webcenter.fr: "true"
+      name: test-mb
+    spec:
+      serviceAccountName: test-mb
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - podAffinityTerm:
+                labelSelector:
+                  matchLabels:
+                    cluster: test
+                    metricbeat.k8s.webcenter.fr: "true"
+                topologyKey: kubernetes.io/hostname
+              weight: 10
+      containers:
+      - env:
+        - name: POD_NAME
+          valueFrom:
+            fieldRef:
+              apiVersion: v1
+              fieldPath: metadata.name
+        - name: NODE_NAME
+          valueFrom:
+            fieldRef:
+              apiVersion: v1
+              fieldPath: spec.nodeName
+        - name: POD_IP
+          valueFrom:
+            fieldRef:
+              apiVersion: v1
+              fieldPath: status.podIP
+        - name: NAMESPACE
+          valueFrom:
+            fieldRef:
+              apiVersion: v1
+              fieldPath: metadata.namespace
+        - name: ELASTICSEARCH_USERNAME
+          value: remote_monitoring_user
+        - name: ELASTICSEARCH_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: test-credential-mb
+              key: remote_monitoring_user
+        image: docker.elastic.co/beats/metricbeat:latest
+        livenessProbe:
+          failureThreshold: 3
+          periodSeconds: 30
+          successThreshold: 1
+          tcpSocket:
+            port: 5066
+          timeoutSeconds: 5
+        name: metricbeat
+        ports:
+        - containerPort: 5066
+          name: http
+          protocol: TCP
+        readinessProbe:
+          failureThreshold: 3
+          periodSeconds: 10
+          successThreshold: 1
+          httpGet:
+            path: /
+            port: 5066
+          timeoutSeconds: 5
+        securityContext:
+          capabilities:
+            drop:
+            - ALL
+          runAsNonRoot: true
+          runAsUser: 1000
+          runAsGroup: 1000
+          privileged: false
+          allowPrivilegeEscalation: false
+        startupProbe:
+          failureThreshold: 30
+          initialDelaySeconds: 10
+          periodSeconds: 10
+          successThreshold: 1
+          tcpSocket:
+            port: 5066
+          timeoutSeconds: 5
+        volumeMounts:
+        - mountPath: /usr/share/metricbeat/metricbeat.yml
+          name: metricbeat-config
+          subPath: metricbeat.yml
+        - mountPath: /usr/share/metricbeat/es-ca
+          name: ca-elasticsearch
+        - mountPath: /usr/share/metricbeat/data
+          name: metricbeat-data
+      initContainers:
+      - command:
+        - /bin/bash
+        - -c
+        - |
+            #!/usr/bin/env bash
+            set -euo pipefail
+            
+            # Set right
+            echo "Set right"
+            chown -v metricbeat:metricbeat /mnt/data
+
+
+        image: docker.elastic.co/beats/metricbeat:latest
+        name: init-filesystem
+        env:
+        - name: POD_NAME
+          valueFrom:
+            fieldRef:
+              apiVersion: v1
+              fieldPath: metadata.name
+        - name: NODE_NAME
+          valueFrom:
+            fieldRef:
+              apiVersion: v1
+              fieldPath: spec.nodeName
+        - name: POD_IP
+          valueFrom:
+            fieldRef:
+              apiVersion: v1
+              fieldPath: status.podIP
+        - name: NAMESPACE
+          valueFrom:
+            fieldRef:
+              apiVersion: v1
+              fieldPath: metadata.namespace
+        volumeMounts:
+          - name: metricbeat-data
+            mountPath: /mnt/data
+        securityContext:
+          runAsUser: 0
+          privileged: false
+      securityContext:
+        fsGroup: 1000
+      terminationGracePeriodSeconds: 60
+      volumes:
+      - name: metricbeat-config
+        configMap:
+          name: test-config-mb
+      - name: ca-elasticsearch
+        secret:
+          secretName: test-ca-es-mb
+      - name: metricbeat-data
+        emptyDir: {}

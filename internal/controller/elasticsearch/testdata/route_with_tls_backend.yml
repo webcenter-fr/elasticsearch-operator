@@ -1,0 +1,22 @@
+apiVersion: route.openshift.io/v1
+kind: Route
+metadata:
+  labels:
+    cluster: test
+    elasticsearch.k8s.webcenter.fr: "true"
+  annotations:
+    elasticsearch.k8s.webcenter.fr: "true"
+  name: test-es
+  namespace: default
+spec:
+  host: my-test.cluster.local
+  path: /
+  tls:
+    termination: reencrypt
+    insecureEdgeTerminationPolicy: Redirect 
+    destinationCACertificate: my fake certificate
+  to:
+    kind: Service
+    name: test-es
+  port:
+    targetPort: http

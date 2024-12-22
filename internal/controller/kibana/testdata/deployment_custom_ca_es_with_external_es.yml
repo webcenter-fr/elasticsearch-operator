@@ -129,6 +129,9 @@ spec:
             - ALL
           runAsNonRoot: true
           runAsUser: 1000
+          runAsGroup: 1000
+          privileged: false
+          allowPrivilegeEscalation: false
         startupProbe:
           failureThreshold: 30
           initialDelaySeconds: 10
@@ -224,6 +227,7 @@ spec:
             mountPath: /mnt/configmap
         securityContext:
           runAsUser: 0
+          privileged: false
       securityContext:
         fsGroup: 1000
       terminationGracePeriodSeconds: 30

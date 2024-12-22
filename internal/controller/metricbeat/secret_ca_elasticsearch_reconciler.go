@@ -10,8 +10,8 @@ import (
 	"github.com/disaster37/operator-sdk-extra/pkg/helper"
 	"github.com/disaster37/operator-sdk-extra/pkg/object"
 	"github.com/sirupsen/logrus"
-	beatcrd "github.com/webcenter-fr/elasticsearch-operator/apis/beat/v1"
-	elasticsearchcrd "github.com/webcenter-fr/elasticsearch-operator/apis/elasticsearch/v1"
+	beatcrd "github.com/webcenter-fr/elasticsearch-operator/api/beat/v1"
+	elasticsearchcrd "github.com/webcenter-fr/elasticsearch-operator/api/elasticsearch/v1"
 	"github.com/webcenter-fr/elasticsearch-operator/internal/controller/common"
 	elasticsearchcontrollers "github.com/webcenter-fr/elasticsearch-operator/internal/controller/elasticsearch"
 	corev1 "k8s.io/api/core/v1"
@@ -28,29 +28,22 @@ const (
 )
 
 type caElasticsearchReconciler struct {
-	controller.BaseReconciler
 	controller.MultiPhaseStepReconcilerAction
 }
 
-func newCAElasticsearchReconciler(client client.Client, logger *logrus.Entry, recorder record.EventRecorder) (multiPhaseStepReconcilerAction controller.MultiPhaseStepReconcilerAction) {
+func newCAElasticsearchReconciler(client client.Client, recorder record.EventRecorder) (multiPhaseStepReconcilerAction controller.MultiPhaseStepReconcilerAction) {
 	return &caElasticsearchReconciler{
 		MultiPhaseStepReconcilerAction: controller.NewBasicMultiPhaseStepReconcilerAction(
 			client,
 			CAElasticsearchPhase,
 			CAElasticsearchCondition,
-			logger,
 			recorder,
 		),
-		BaseReconciler: controller.BaseReconciler{
-			Client:   client,
-			Recorder: recorder,
-			Log:      logger,
-		},
 	}
 }
 
 // Read existing secret
-func (r *caElasticsearchReconciler) Read(ctx context.Context, resource object.MultiPhaseObject, data map[string]any) (read controller.MultiPhaseRead, res ctrl.Result, err error) {
+func (r *caElasticsearchReconciler) Read(ctx context.Context, resource object.MultiPhaseObject, data map[string]any, logger *logrus.Entry) (read controller.MultiPhaseRead, res ctrl.Result, err error) {
 	o := resource.(*beatcrd.Metricbeat)
 	s := &corev1.Secret{}
 	read = controller.NewBasicMultiPhaseRead()
@@ -59,7 +52,7 @@ func (r *caElasticsearchReconciler) Read(ctx context.Context, resource object.Mu
 	var es *elasticsearchcrd.Elasticsearch
 
 	// Read current secret
-	if err = r.Client.Get(ctx, types.NamespacedName{Namespace: o.Namespace, Name: GetSecretNameForCAElasticsearch(o)}, s); err != nil {
+	if err = r.Client().Get(ctx, types.NamespacedName{Namespace: o.Namespace, Name: GetSecretNameForCAElasticsearch(o)}, s); err != nil {
 		if !k8serrors.IsNotFound(err) {
 			return read, res, errors.Wrapf(err, "Error when read secret %s", GetSecretNameForCAElasticsearch(o))
 		}
@@ -72,23 +65,23 @@ func (r *caElasticsearchReconciler) Read(ctx context.Context, resource object.Mu
 	if o.Spec.ElasticsearchRef.IsManaged() {
 
 		// Read Elasticsearch
-		es, err = common.GetElasticsearchFromRef(ctx, r.Client, o, o.Spec.ElasticsearchRef)
+		es, err = common.GetElasticsearchFromRef(ctx, r.Client(), o, o.Spec.ElasticsearchRef)
 		if err != nil {
 			return read, res, errors.Wrap(err, "Error when read elasticsearchRef")
 		}
 		if es == nil {
-			r.Log.Warn("ElasticsearchRef not found, try latter")
+			logger.Warn("ElasticsearchRef not found, try latter")
 			return read, ctrl.Result{RequeueAfter: 30 * time.Second}, nil
 		}
 
 		// Check if mirror CAApiPKI from Elasticsearch CRD
 		if es.Spec.Tls.IsTlsEnabled() {
 			// Read secret that store Elasticsearch API certs
-			if err = r.Client.Get(ctx, types.NamespacedName{Namespace: es.Namespace, Name: elasticsearchcontrollers.GetSecretNameForTlsApi(es)}, sEs); err != nil {
+			if err = r.Client().Get(ctx, types.NamespacedName{Namespace: es.Namespace, Name: elasticsearchcontrollers.GetSecretNameForTlsApi(es)}, sEs); err != nil {
 				if !k8serrors.IsNotFound(err) {
 					return read, res, errors.Wrapf(err, "Error when read secret %s", elasticsearchcontrollers.GetSecretNameForTlsApi(es))
 				}
-				r.Log.Warnf("Secret not found %s, try latter", elasticsearchcontrollers.GetSecretNameForTlsApi(es))
+				logger.Warnf("Secret not found %s, try latter", elasticsearchcontrollers.GetSecretNameForTlsApi(es))
 				return read, ctrl.Result{RequeueAfter: 30 * time.Second}, nil
 			}
 		}

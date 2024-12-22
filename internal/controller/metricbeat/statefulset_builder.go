@@ -8,9 +8,8 @@ import (
 	"emperror.dev/errors"
 	"github.com/codingsince1985/checksum"
 	"github.com/disaster37/k8sbuilder"
-	beatcrd "github.com/webcenter-fr/elasticsearch-operator/apis/beat/v1"
-	elasticsearchcrd "github.com/webcenter-fr/elasticsearch-operator/apis/elasticsearch/v1"
-	elasticsearchcontrollers "github.com/webcenter-fr/elasticsearch-operator/internal/controller/elasticsearch"
+	beatcrd "github.com/webcenter-fr/elasticsearch-operator/api/beat/v1"
+	elasticsearchcrd "github.com/webcenter-fr/elasticsearch-operator/api/elasticsearch/v1"
 	appv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -20,7 +19,7 @@ import (
 )
 
 // GenerateStatefullset permit to generate statefullset
-func buildStatefulsets(mb *beatcrd.Metricbeat, es *elasticsearchcrd.Elasticsearch, secretsChecksum []corev1.Secret, configMapsChecksum []corev1.ConfigMap) (statefullsets []appv1.StatefulSet, err error) {
+func buildStatefulsets(mb *beatcrd.Metricbeat, es *elasticsearchcrd.Elasticsearch, configMaps []corev1.ConfigMap, secretsChecksum []corev1.Secret, configMapsChecksum []corev1.ConfigMap, isOpenshift bool) (statefullsets []appv1.StatefulSet, err error) {
 	// Check that secretRef is set when use External Elasticsearch
 	if mb.Spec.ElasticsearchRef.IsExternal() && mb.Spec.ElasticsearchRef.SecretRef == nil {
 		return nil, errors.New("You must set the secretRef when you use external Elasticsearch")
@@ -28,12 +27,6 @@ func buildStatefulsets(mb *beatcrd.Metricbeat, es *elasticsearchcrd.Elasticsearc
 
 	statefullsets = make([]appv1.StatefulSet, 0, 1)
 	checksumAnnotations := map[string]string{}
-
-	// Generate confimaps to know what file to mount
-	configMaps, err := buildConfigMaps(mb, es)
-	if err != nil {
-		return nil, errors.Wrap(err, "Error when generate configMaps")
-	}
 
 	// checksum for configmap
 	for _, cm := range configMapsChecksum {
@@ -119,15 +112,11 @@ func buildStatefulsets(mb *beatcrd.Metricbeat, es *elasticsearchcrd.Elasticsearc
 	if mb.Spec.ElasticsearchRef.IsManaged() {
 		cb.WithEnv([]corev1.EnvVar{
 			{
-				Name:  "ELASTICSEARCH_HOST",
-				Value: elasticsearchcontrollers.GetPublicUrl(es, mb.Spec.ElasticsearchRef.ManagedElasticsearchRef.TargetNodeGroup, false),
-			},
-			{
-				Name:  "METRICBEAT_USERNAME",
+				Name:  "ELASTICSEARCH_USERNAME",
 				Value: "remote_monitoring_user",
 			},
 			{
-				Name: "METRICBEAT_PASSWORD",
+				Name: "ELASTICSEARCH_PASSWORD",
 				ValueFrom: &corev1.EnvVarSource{
 					SecretKeyRef: &corev1.SecretKeySelector{
 						LocalObjectReference: corev1.LocalObjectReference{
@@ -141,11 +130,7 @@ func buildStatefulsets(mb *beatcrd.Metricbeat, es *elasticsearchcrd.Elasticsearc
 	} else {
 		cb.WithEnv([]corev1.EnvVar{
 			{
-				Name:  "ELASTICSEARCH_HOST",
-				Value: mb.Spec.ElasticsearchRef.ExternalElasticsearchRef.Addresses[0],
-			},
-			{
-				Name: "METRICBEAT_USERNAME",
+				Name: "ELASTICSEARCH_USERNAME",
 				ValueFrom: &corev1.EnvVarSource{
 					SecretKeyRef: &corev1.SecretKeySelector{
 						LocalObjectReference: corev1.LocalObjectReference{
@@ -156,7 +141,7 @@ func buildStatefulsets(mb *beatcrd.Metricbeat, es *elasticsearchcrd.Elasticsearc
 				},
 			},
 			{
-				Name: "METRICBEAT_PASSWORD",
+				Name: "ELASTICSEARCH_PASSWORD",
 				ValueFrom: &corev1.EnvVarSource{
 					SecretKeyRef: &corev1.SecretKeySelector{
 						LocalObjectReference: corev1.LocalObjectReference{
@@ -194,8 +179,11 @@ func buildStatefulsets(mb *beatcrd.Metricbeat, es *elasticsearchcrd.Elasticsearc
 				"ALL",
 			},
 		},
-		RunAsUser:    ptr.To[int64](1000),
-		RunAsNonRoot: ptr.To[bool](true),
+		AllowPrivilegeEscalation: ptr.To(false),
+		Privileged:               ptr.To(false),
+		RunAsUser:                ptr.To[int64](1000),
+		RunAsNonRoot:             ptr.To[bool](true),
+		RunAsGroup:               ptr.To[int64](1000),
 	}, k8sbuilder.OverwriteIfDefaultValue)
 
 	// Compute volume mount
@@ -242,7 +230,15 @@ func buildStatefulsets(mb *beatcrd.Metricbeat, es *elasticsearchcrd.Elasticsearc
 	}
 
 	// Compute mount CA elasticsearch
-	if (mb.Spec.ElasticsearchRef.IsManaged() && es.Spec.Tls.IsTlsEnabled()) || (mb.Spec.ElasticsearchRef.IsExternal() && mb.Spec.ElasticsearchRef.ElasticsearchCaSecretRef != nil) {
+	if mb.Spec.ElasticsearchRef.ElasticsearchCaSecretRef != nil {
+		cb.WithVolumeMount([]corev1.VolumeMount{
+			{
+				Name:      "ca-custom-elasticsearch",
+				MountPath: "/usr/share/metricbeat/es-custom-ca",
+			},
+		}, k8sbuilder.Merge)
+	}
+	if mb.Spec.ElasticsearchRef.IsManaged() && es.Spec.Tls.IsTlsEnabled() && es.Spec.Tls.IsSelfManagedSecretForTls() {
 		cb.WithVolumeMount([]corev1.VolumeMount{
 			{
 				Name:      "ca-elasticsearch",
@@ -338,7 +334,8 @@ func buildStatefulsets(mb *beatcrd.Metricbeat, es *elasticsearchcrd.Elasticsearc
 		Image:           GetContainerImage(mb),
 		ImagePullPolicy: mb.Spec.ImagePullPolicy,
 		SecurityContext: &corev1.SecurityContext{
-			RunAsUser: ptr.To[int64](0),
+			Privileged: ptr.To(false),
+			RunAsUser:  ptr.To[int64](0),
 		},
 		Env: []corev1.EnvVar{
 			{
@@ -468,6 +465,18 @@ chown -v metricbeat:metricbeat /mnt/data
 	}
 
 	// Elasticsearch CA secret
+	if mb.Spec.ElasticsearchRef.ElasticsearchCaSecretRef != nil {
+		ptb.WithVolumes([]corev1.Volume{
+			{
+				Name: "ca-custom-elasticsearch",
+				VolumeSource: corev1.VolumeSource{
+					Secret: &corev1.SecretVolumeSource{
+						SecretName: mb.Spec.ElasticsearchRef.ElasticsearchCaSecretRef.Name,
+					},
+				},
+			},
+		}, k8sbuilder.Merge)
+	}
 	if mb.Spec.ElasticsearchRef.IsManaged() && es.Spec.Tls.IsTlsEnabled() && es.Spec.Tls.IsSelfManagedSecretForTls() {
 		ptb.WithVolumes([]corev1.Volume{
 			{
@@ -479,23 +488,16 @@ chown -v metricbeat:metricbeat /mnt/data
 				},
 			},
 		}, k8sbuilder.Merge)
-	} else if (mb.Spec.ElasticsearchRef.IsExternal() && mb.Spec.ElasticsearchRef.ElasticsearchCaSecretRef != nil) || (mb.Spec.ElasticsearchRef.IsManaged() && es.Spec.Tls.IsTlsEnabled() && mb.Spec.ElasticsearchRef.ElasticsearchCaSecretRef != nil) {
-		ptb.WithVolumes([]corev1.Volume{
-			{
-				Name: "ca-elasticsearch",
-				VolumeSource: corev1.VolumeSource{
-					Secret: &corev1.SecretVolumeSource{
-						SecretName: mb.Spec.ElasticsearchRef.ElasticsearchCaSecretRef.Name,
-					},
-				},
-			},
-		}, k8sbuilder.Merge)
 	}
-
 	// Compute Security context
 	ptb.WithSecurityContext(&corev1.PodSecurityContext{
 		FSGroup: ptr.To[int64](1000),
 	}, k8sbuilder.Merge)
+
+	// On Openshift, we need to run Elasticsearch with specific serviceAccount that is binding to anyuid scc
+	if isOpenshift {
+		ptb.PodTemplate().Spec.ServiceAccountName = GetServiceAccountName(mb)
+	}
 
 	// Compute pod template name
 	ptb.PodTemplate().Name = GetStatefulsetName(mb)

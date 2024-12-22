@@ -11,11 +11,12 @@ import (
 	"github.com/disaster37/operator-sdk-extra/pkg/controller"
 	"github.com/disaster37/operator-sdk-extra/pkg/helper"
 	"github.com/disaster37/operator-sdk-extra/pkg/test"
+	routev1 "github.com/openshift/api/route/v1"
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
-	cerebrocrd "github.com/webcenter-fr/elasticsearch-operator/apis/cerebro/v1"
-	elasticsearchcrd "github.com/webcenter-fr/elasticsearch-operator/apis/elasticsearch/v1"
-	"github.com/webcenter-fr/elasticsearch-operator/apis/shared"
+	cerebrocrd "github.com/webcenter-fr/elasticsearch-operator/api/cerebro/v1"
+	elasticsearchcrd "github.com/webcenter-fr/elasticsearch-operator/api/elasticsearch/v1"
+	"github.com/webcenter-fr/elasticsearch-operator/api/shared"
 	appv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	networkingv1 "k8s.io/api/networking/v1"
@@ -23,6 +24,7 @@ import (
 	condition "k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -66,6 +68,11 @@ func doCreateCerebroStep() test.TestStep {
 								Name: "test-tls",
 							},
 						},
+						Route: &shared.EndpointRouteSpec{
+							Enabled:    true,
+							Host:       "test.cluster.local",
+							TlsEnabled: ptr.To[bool](true),
+						},
 						LoadBalancer: &shared.EndpointLoadBalancerSpec{
 							Enabled: true,
 						},
@@ -87,11 +94,12 @@ func doCreateCerebroStep() test.TestStep {
 		Check: func(t *testing.T, c client.Client, key types.NamespacedName, o client.Object, data map[string]any) (err error) {
 			cb := &cerebrocrd.Cerebro{}
 			var (
-				s   *corev1.Secret
-				svc *corev1.Service
-				i   *networkingv1.Ingress
-				cm  *corev1.ConfigMap
-				dpl *appv1.Deployment
+				s     *corev1.Secret
+				svc   *corev1.Service
+				i     *networkingv1.Ingress
+				cm    *corev1.ConfigMap
+				dpl   *appv1.Deployment
+				route *routev1.Route
 			)
 
 			isTimeout, err := test.RunWithTimeout(func() error {
@@ -141,6 +149,14 @@ func doCreateCerebroStep() test.TestStep {
 			}
 			assert.NotEmpty(t, i.OwnerReferences)
 			assert.NotEmpty(t, i.Annotations[patch.LastAppliedConfig])
+
+			// Route must exist
+			route = &routev1.Route{}
+			if err = c.Get(context.Background(), types.NamespacedName{Namespace: key.Namespace, Name: GetIngressName(cb)}, route); err != nil {
+				t.Fatal(err)
+			}
+			assert.NotEmpty(t, route.OwnerReferences)
+			assert.NotEmpty(t, route.Annotations[patch.LastAppliedConfig])
 
 			// ConfigMaps must exist
 			cm = &corev1.ConfigMap{}
@@ -200,11 +216,12 @@ func doUpdateCerebroStep() test.TestStep {
 			cb := &cerebrocrd.Cerebro{}
 
 			var (
-				s   *corev1.Secret
-				svc *corev1.Service
-				i   *networkingv1.Ingress
-				cm  *corev1.ConfigMap
-				dpl *appv1.Deployment
+				s     *corev1.Secret
+				svc   *corev1.Service
+				i     *networkingv1.Ingress
+				cm    *corev1.ConfigMap
+				dpl   *appv1.Deployment
+				route *routev1.Route
 			)
 
 			lastGeneration := data["lastGeneration"].(int64)
@@ -260,6 +277,15 @@ func doUpdateCerebroStep() test.TestStep {
 			assert.NotEmpty(t, i.OwnerReferences)
 			assert.NotEmpty(t, i.Annotations[patch.LastAppliedConfig])
 			assert.Equal(t, "fu", i.Labels["test"])
+
+			// Route must exist
+			route = &routev1.Route{}
+			if err = c.Get(context.Background(), types.NamespacedName{Namespace: key.Namespace, Name: GetIngressName(cb)}, route); err != nil {
+				t.Fatal(err)
+			}
+			assert.NotEmpty(t, route.OwnerReferences)
+			assert.NotEmpty(t, route.Annotations[patch.LastAppliedConfig])
+			assert.Equal(t, "fu", route.Labels["test"])
 
 			// ConfigMaps must exist
 			cm = &corev1.ConfigMap{}

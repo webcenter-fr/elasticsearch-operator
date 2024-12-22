@@ -5,9 +5,9 @@ import (
 
 	"github.com/disaster37/operator-sdk-extra/pkg/test"
 	"github.com/stretchr/testify/assert"
-	beatcrd "github.com/webcenter-fr/elasticsearch-operator/apis/beat/v1"
-	kibanacrd "github.com/webcenter-fr/elasticsearch-operator/apis/kibana/v1"
-	"github.com/webcenter-fr/elasticsearch-operator/apis/shared"
+	beatcrd "github.com/webcenter-fr/elasticsearch-operator/api/beat/v1"
+	kibanacrd "github.com/webcenter-fr/elasticsearch-operator/api/kibana/v1"
+	"github.com/webcenter-fr/elasticsearch-operator/api/shared"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -49,7 +49,7 @@ func TestBuildMetricbeat(t *testing.T) {
 		Spec: kibanacrd.KibanaSpec{
 			Monitoring: shared.MonitoringSpec{
 				Metricbeat: &shared.MonitoringMetricbeatSpec{
-					Enabled: false,
+					Enabled: ptr.To(false),
 				},
 			},
 		},
@@ -68,7 +68,7 @@ func TestBuildMetricbeat(t *testing.T) {
 		Spec: kibanacrd.KibanaSpec{
 			Monitoring: shared.MonitoringSpec{
 				Metricbeat: &shared.MonitoringMetricbeatSpec{
-					Enabled: true,
+					Enabled: ptr.To(true),
 					ElasticsearchRef: shared.ElasticsearchRef{
 						ManagedElasticsearchRef: &shared.ElasticsearchManagedRef{
 							Name:      "test",
@@ -98,7 +98,7 @@ func TestBuildMetricbeat(t *testing.T) {
 		Spec: kibanacrd.KibanaSpec{
 			Monitoring: shared.MonitoringSpec{
 				Metricbeat: &shared.MonitoringMetricbeatSpec{
-					Enabled: true,
+					Enabled: ptr.To(true),
 					Version: "1.0.0",
 					ElasticsearchRef: shared.ElasticsearchRef{
 						ManagedElasticsearchRef: &shared.ElasticsearchManagedRef{
@@ -141,7 +141,7 @@ func TestBuildMetricbeat(t *testing.T) {
 		Spec: kibanacrd.KibanaSpec{
 			Monitoring: shared.MonitoringSpec{
 				Metricbeat: &shared.MonitoringMetricbeatSpec{
-					Enabled: true,
+					Enabled: ptr.To(true),
 					ElasticsearchRef: shared.ElasticsearchRef{
 						ManagedElasticsearchRef: &shared.ElasticsearchManagedRef{
 							Name:      "test",

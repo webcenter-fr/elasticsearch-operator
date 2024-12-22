@@ -1,4 +1,0 @@
-- op: remove
-  path: /spec/versions/0/schema/openAPIV3Schema/properties/spec/properties/globalNodeGroup/properties/podTemplate/properties
-- op: remove
-  path: /spec/versions/0/schema/openAPIV3Schema/properties/spec/properties/nodeGroups/items/properties/podTemplate/properties

@@ -26,16 +26,18 @@ import (
 	// to ensure that exec-entrypoint and run can make use of them.
 	"github.com/disaster37/operator-sdk-extra/pkg/controller"
 	"github.com/disaster37/operator-sdk-extra/pkg/helper"
+	routev1 "github.com/openshift/api/route/v1"
 	monitoringv1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1"
 	"github.com/sirupsen/logrus"
-	beatcrd "github.com/webcenter-fr/elasticsearch-operator/apis/beat/v1"
-	cerebrocrd "github.com/webcenter-fr/elasticsearch-operator/apis/cerebro/v1"
-	elasticsearchcrd "github.com/webcenter-fr/elasticsearch-operator/apis/elasticsearch/v1"
-	elasticsearchapicrd "github.com/webcenter-fr/elasticsearch-operator/apis/elasticsearchapi/v1"
-	kibanacrd "github.com/webcenter-fr/elasticsearch-operator/apis/kibana/v1"
-	kibanaapicrd "github.com/webcenter-fr/elasticsearch-operator/apis/kibanaapi/v1"
-	logstashcrd "github.com/webcenter-fr/elasticsearch-operator/apis/logstash/v1"
+	beatcrd "github.com/webcenter-fr/elasticsearch-operator/api/beat/v1"
+	cerebrocrd "github.com/webcenter-fr/elasticsearch-operator/api/cerebro/v1"
+	elasticsearchcrd "github.com/webcenter-fr/elasticsearch-operator/api/elasticsearch/v1"
+	elasticsearchapicrd "github.com/webcenter-fr/elasticsearch-operator/api/elasticsearchapi/v1"
+	kibanacrd "github.com/webcenter-fr/elasticsearch-operator/api/kibana/v1"
+	kibanaapicrd "github.com/webcenter-fr/elasticsearch-operator/api/kibanaapi/v1"
+	logstashcrd "github.com/webcenter-fr/elasticsearch-operator/api/logstash/v1"
 	cerebrocontrollers "github.com/webcenter-fr/elasticsearch-operator/internal/controller/cerebro"
+	"github.com/webcenter-fr/elasticsearch-operator/internal/controller/common"
 	elasticsearchcontrollers "github.com/webcenter-fr/elasticsearch-operator/internal/controller/elasticsearch"
 	elasticsearchapicontrollers "github.com/webcenter-fr/elasticsearch-operator/internal/controller/elasticsearchapi"
 	filebeatcontrollers "github.com/webcenter-fr/elasticsearch-operator/internal/controller/filebeat"
@@ -201,6 +203,13 @@ func main() {
 		setupLog.Error(err, "unable to migrate existing Elasticsearch cluster")
 		os.Exit(1)
 	}
+	kubeCapability := common.KubernetesCapability{}
+	if helper.HasCRD(clientStd, monitoringv1.SchemeGroupVersion) {
+		kubeCapability.HasPrometheus = true
+	}
+	if helper.HasCRD(clientStd, routev1.SchemeGroupVersion) {
+		kubeCapability.HasRoute = true
+	}
 
 	// Add indexers
 	if err = controller.SetupIndexerWithManager(
@@ -219,37 +228,37 @@ func main() {
 	}
 
 	// Init controllers
-	elasticsearchController := elasticsearchcontrollers.NewElasticsearchReconciler(mgr.GetClient(), logrus.NewEntry(log), mgr.GetEventRecorderFor("elasticsearch-controller"))
+	elasticsearchController := elasticsearchcontrollers.NewElasticsearchReconciler(mgr.GetClient(), logrus.NewEntry(log), mgr.GetEventRecorderFor("elasticsearch-controller"), kubeCapability)
 	if err = elasticsearchController.SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "Elasticsearch")
 		os.Exit(1)
 	}
 
-	kibanaController := kibanacontrollers.NewKibanaReconciler(mgr.GetClient(), logrus.NewEntry(log), mgr.GetEventRecorderFor("kibana-controller"))
+	kibanaController := kibanacontrollers.NewKibanaReconciler(mgr.GetClient(), logrus.NewEntry(log), mgr.GetEventRecorderFor("kibana-controller"), kubeCapability)
 	if err = kibanaController.SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "Kibana")
 		os.Exit(1)
 	}
 
-	logstashController := logstashcontrollers.NewLogstashReconciler(mgr.GetClient(), logrus.NewEntry(log), mgr.GetEventRecorderFor("logstash-controller"))
+	logstashController := logstashcontrollers.NewLogstashReconciler(mgr.GetClient(), logrus.NewEntry(log), mgr.GetEventRecorderFor("logstash-controller"), kubeCapability)
 	if err = logstashController.SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "Logstash")
 		os.Exit(1)
 	}
 
-	filebeatController := filebeatcontrollers.NewFilebeatReconciler(mgr.GetClient(), logrus.NewEntry(log), mgr.GetEventRecorderFor("filebeat-controller"))
+	filebeatController := filebeatcontrollers.NewFilebeatReconciler(mgr.GetClient(), logrus.NewEntry(log), mgr.GetEventRecorderFor("filebeat-controller"), kubeCapability)
 	if err = filebeatController.SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "Filebeat")
 		os.Exit(1)
 	}
 
-	metricbeatController := metricbeatcontrollers.NewMetricbeatReconciler(mgr.GetClient(), logrus.NewEntry(log), mgr.GetEventRecorderFor("metricbeat-controller"))
+	metricbeatController := metricbeatcontrollers.NewMetricbeatReconciler(mgr.GetClient(), logrus.NewEntry(log), mgr.GetEventRecorderFor("metricbeat-controller"), kubeCapability)
 	if err = metricbeatController.SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "Metricbeat")
 		os.Exit(1)
 	}
 
-	cerebroController := cerebrocontrollers.NewCerebroReconciler(mgr.GetClient(), logrus.NewEntry(log), mgr.GetEventRecorderFor("cerebro-controller"))
+	cerebroController := cerebrocontrollers.NewCerebroReconciler(mgr.GetClient(), logrus.NewEntry(log), mgr.GetEventRecorderFor("cerebro-controller"), kubeCapability)
 	if err = cerebroController.SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "Cerebro")
 		os.Exit(1)

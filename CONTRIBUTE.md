@@ -12,6 +12,12 @@ You need to the following tools:
 Create a fix or feature branch and then make your stuff on it.
 After that, you are ready to make a Pull request. The PR will launch the CI and if all is right, it will publish the new catalog image that you and git owner will test before to merge the PR.
 
+### Get binaries tools on local
+
+```bash
+dagger call -m operator-sdk --src . sdk get-cli export --path ./bin
+```
+
 ### Test operator on local run
 To test it, you need to open 2 shell
 

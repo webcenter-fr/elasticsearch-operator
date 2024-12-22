@@ -12,7 +12,7 @@ import (
 	olivere "github.com/olivere/elastic/v7"
 	"github.com/sethvargo/go-password/password"
 	"github.com/sirupsen/logrus"
-	elasticsearchapicrd "github.com/webcenter-fr/elasticsearch-operator/apis/elasticsearchapi/v1"
+	elasticsearchapicrd "github.com/webcenter-fr/elasticsearch-operator/api/elasticsearchapi/v1"
 	localhelper "github.com/webcenter-fr/elasticsearch-operator/pkg/helper"
 	core "k8s.io/api/core/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -26,27 +26,22 @@ import (
 
 type userReconciler struct {
 	controller.RemoteReconcilerAction[*elasticsearchapicrd.User, *olivere.XPackSecurityPutUserRequest, eshandler.ElasticsearchHandler]
-	controller.BaseReconciler
+	name string
 }
 
-func newUserReconciler(client client.Client, logger *logrus.Entry, recorder record.EventRecorder) controller.RemoteReconcilerAction[*elasticsearchapicrd.User, *olivere.XPackSecurityPutUserRequest, eshandler.ElasticsearchHandler] {
+func newUserReconciler(name string, client client.Client, recorder record.EventRecorder) controller.RemoteReconcilerAction[*elasticsearchapicrd.User, *olivere.XPackSecurityPutUserRequest, eshandler.ElasticsearchHandler] {
 	return &userReconciler{
 		RemoteReconcilerAction: controller.NewRemoteReconcilerAction[*elasticsearchapicrd.User, *olivere.XPackSecurityPutUserRequest, eshandler.ElasticsearchHandler](
 			client,
-			logger,
 			recorder,
 		),
-		BaseReconciler: controller.BaseReconciler{
-			Client:   client,
-			Log:      logger,
-			Recorder: recorder,
-		},
+		name: name,
 	}
 }
 
-func (h *userReconciler) GetRemoteHandler(ctx context.Context, req ctrl.Request, o object.RemoteObject) (handler controller.RemoteExternalReconciler[*elasticsearchapicrd.User, *olivere.XPackSecurityPutUserRequest, eshandler.ElasticsearchHandler], res ctrl.Result, err error) {
+func (h *userReconciler) GetRemoteHandler(ctx context.Context, req ctrl.Request, o object.RemoteObject, logger *logrus.Entry) (handler controller.RemoteExternalReconciler[*elasticsearchapicrd.User, *olivere.XPackSecurityPutUserRequest, eshandler.ElasticsearchHandler], res ctrl.Result, err error) {
 	user := o.(*elasticsearchapicrd.User)
-	esClient, err := GetElasticsearchHandler(ctx, user, user.Spec.ElasticsearchRef, h.BaseReconciler.Client, h.BaseReconciler.Log)
+	esClient, err := GetElasticsearchHandler(ctx, user, user.Spec.ElasticsearchRef, h.Client(), logger)
 	if err != nil && user.DeletionTimestamp.IsZero() {
 		return nil, res, err
 	}
@@ -65,8 +60,8 @@ func (h *userReconciler) GetRemoteHandler(ctx context.Context, req ctrl.Request,
 	return handler, res, nil
 }
 
-func (h *userReconciler) Read(ctx context.Context, o object.RemoteObject, data map[string]any, handler controller.RemoteExternalReconciler[*elasticsearchapicrd.User, *olivere.XPackSecurityPutUserRequest, eshandler.ElasticsearchHandler]) (read controller.RemoteRead[*olivere.XPackSecurityPutUserRequest], res ctrl.Result, err error) {
-	read, res, err = h.RemoteReconcilerAction.Read(ctx, o, data, handler)
+func (h *userReconciler) Read(ctx context.Context, o object.RemoteObject, data map[string]any, handler controller.RemoteExternalReconciler[*elasticsearchapicrd.User, *olivere.XPackSecurityPutUserRequest, eshandler.ElasticsearchHandler], logger *logrus.Entry) (read controller.RemoteRead[*olivere.XPackSecurityPutUserRequest], res ctrl.Result, err error) {
+	read, res, err = h.RemoteReconcilerAction.Read(ctx, o, data, handler, logger)
 	if err != nil {
 		return nil, res, err
 	}
@@ -80,10 +75,10 @@ func (h *userReconciler) Read(ctx context.Context, o object.RemoteObject, data m
 			Namespace: user.Namespace,
 			Name:      user.Spec.SecretRef.Name,
 		}
-		if err = h.Get(ctx, secretNS, secret); err != nil {
+		if err = h.Client().Get(ctx, secretNS, secret); err != nil {
 			if k8serrors.IsNotFound(err) {
-				h.Log.Warnf("Secret %s not yet exist, try later", user.Spec.SecretRef.Name)
-				h.Recorder.Eventf(o, core.EventTypeWarning, "Failed", "Secret %s not yet exist", user.Spec.SecretRef.Name)
+				logger.Warnf("Secret %s not yet exist, try later", user.Spec.SecretRef.Name)
+				h.Recorder().Eventf(o, core.EventTypeWarning, "Failed", "Secret %s not yet exist", user.Spec.SecretRef.Name)
 				return nil, ctrl.Result{RequeueAfter: 30 * time.Second}, nil
 			}
 			return nil, res, errors.Wrapf(err, "Error when get secret %s", user.Spec.SecretRef.Name)
@@ -98,7 +93,7 @@ func (h *userReconciler) Read(ctx context.Context, o object.RemoteObject, data m
 	} else if user.IsAutoGeneratePassword() {
 		secret := &corev1.Secret{}
 		var expectedPassword string
-		if err = h.Get(ctx, types.NamespacedName{Namespace: user.Namespace, Name: GetUserSecretWhenAutoGeneratePassword(user)}, secret); err != nil {
+		if err = h.Client().Get(ctx, types.NamespacedName{Namespace: user.Namespace, Name: GetUserSecretWhenAutoGeneratePassword(user)}, secret); err != nil {
 			if k8serrors.IsNotFound(err) {
 				// Create secret and generate password
 				expectedPassword, err = password.Generate(64, 10, 0, false, true)
@@ -116,11 +111,11 @@ func (h *userReconciler) Read(ctx context.Context, o object.RemoteObject, data m
 					},
 				}
 				// Set owner
-				err = ctrl.SetControllerReference(o, secret, h.Client.Scheme())
+				err = ctrl.SetControllerReference(o, secret, h.Client().Scheme())
 				if err != nil {
 					return nil, res, errors.Wrapf(err, "Error when set owner reference on object '%s'", secret.GetName())
 				}
-				if err = h.Client.Create(ctx, secret); err != nil {
+				if err = h.Client().Create(ctx, secret); err != nil {
 					return nil, res, errors.Wrap(err, "Error when create secret that store auto generated password")
 				}
 
@@ -134,7 +129,7 @@ func (h *userReconciler) Read(ctx context.Context, o object.RemoteObject, data m
 			}
 			secret.Data["password"] = []byte(expectedPassword)
 			secret.Data["username"] = []byte(user.GetExternalName())
-			if err = h.Client.Update(ctx, secret); err != nil {
+			if err = h.Client().Update(ctx, secret); err != nil {
 				return nil, res, errors.Wrap(err, "Error when update secret that store auto generated password")
 			}
 
@@ -149,17 +144,17 @@ func (h *userReconciler) Read(ctx context.Context, o object.RemoteObject, data m
 	return read, res, nil
 }
 
-func (h *userReconciler) Delete(ctx context.Context, o object.RemoteObject, data map[string]any, handler controller.RemoteExternalReconciler[*elasticsearchapicrd.User, *olivere.XPackSecurityPutUserRequest, eshandler.ElasticsearchHandler]) (err error) {
+func (h *userReconciler) Delete(ctx context.Context, o object.RemoteObject, data map[string]any, handler controller.RemoteExternalReconciler[*elasticsearchapicrd.User, *olivere.XPackSecurityPutUserRequest, eshandler.ElasticsearchHandler], logger *logrus.Entry) (err error) {
 	user := o.(*elasticsearchapicrd.User)
 
 	if user.IsProtected() {
 		return nil
 	}
 
-	return h.RemoteReconcilerAction.Delete(ctx, o, data, handler)
+	return h.RemoteReconcilerAction.Delete(ctx, o, data, handler, logger)
 }
 
-func (h *userReconciler) OnSuccess(ctx context.Context, o object.RemoteObject, data map[string]any, handler controller.RemoteExternalReconciler[*elasticsearchapicrd.User, *olivere.XPackSecurityPutUserRequest, eshandler.ElasticsearchHandler], diff controller.RemoteDiff[*olivere.XPackSecurityPutUserRequest]) (res ctrl.Result, err error) {
+func (h *userReconciler) OnSuccess(ctx context.Context, o object.RemoteObject, data map[string]any, handler controller.RemoteExternalReconciler[*elasticsearchapicrd.User, *olivere.XPackSecurityPutUserRequest, eshandler.ElasticsearchHandler], diff controller.RemoteDiff[*olivere.XPackSecurityPutUserRequest], logger *logrus.Entry) (res ctrl.Result, err error) {
 	// Update passwordHash if needed on status
 	if diff.NeedCreate() || diff.NeedUpdate() {
 		user := o.(*elasticsearchapicrd.User)
@@ -189,10 +184,10 @@ func (h *userReconciler) OnSuccess(ctx context.Context, o object.RemoteObject, d
 		}
 	}
 
-	return h.RemoteReconcilerAction.OnSuccess(ctx, o, data, handler, diff)
+	return h.RemoteReconcilerAction.OnSuccess(ctx, o, data, handler, diff, logger)
 }
 
-func (h *userReconciler) Diff(ctx context.Context, o object.RemoteObject, read controller.RemoteRead[*olivere.XPackSecurityPutUserRequest], data map[string]any, handler controller.RemoteExternalReconciler[*elasticsearchapicrd.User, *olivere.XPackSecurityPutUserRequest, eshandler.ElasticsearchHandler], ignoreDiff ...patch.CalculateOption) (diff controller.RemoteDiff[*olivere.XPackSecurityPutUserRequest], res ctrl.Result, err error) {
+func (h *userReconciler) Diff(ctx context.Context, o object.RemoteObject, read controller.RemoteRead[*olivere.XPackSecurityPutUserRequest], data map[string]any, handler controller.RemoteExternalReconciler[*elasticsearchapicrd.User, *olivere.XPackSecurityPutUserRequest, eshandler.ElasticsearchHandler], logger *logrus.Entry, ignoreDiff ...patch.CalculateOption) (diff controller.RemoteDiff[*olivere.XPackSecurityPutUserRequest], res ctrl.Result, err error) {
 	user := o.(*elasticsearchapicrd.User)
 
 	var currentUser *olivere.XPackSecurityPutUserRequest
@@ -220,5 +215,5 @@ func (h *userReconciler) Diff(ctx context.Context, o object.RemoteObject, read c
 		read.GetExpectedObject().PasswordHash = ""
 	}
 
-	return h.RemoteReconcilerAction.Diff(ctx, o, read, data, handler, ignoreDiff...)
+	return h.RemoteReconcilerAction.Diff(ctx, o, read, data, handler, logger, ignoreDiff...)
 }
