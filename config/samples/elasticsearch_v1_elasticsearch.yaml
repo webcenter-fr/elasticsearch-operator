@@ -6,12 +6,7 @@ metadata:
     env: test
 spec:
   version: 8.6.0
-  setVMMaxMapCount: true
-  licenseSecretRef:
-    name: es-license
-  monitoring:
-    prometheus:
-      enabled: true
+  setVMMaxMapCount: false
   tls:
     enabled: true
     validityDays: 360
@@ -30,31 +25,9 @@ spec:
         nginx.ingress.kubernetes.io/proxy-read-timeout: "600"
         nginx.ingress.kubernetes.io/proxy-send-timeout: "600"
   globalNodeGroup:
-    additionalVolumes:
-      - name: snapshot
-        persistentVolumeClaim:
-          claimName: pvc-elasticsearch-snapshot
-        mountPath: /mnt/snapshot
     antiAffinity:
-      type: hard
+      type: soft
       topologyKey: 'topology.kubernetes.io/zone'
-    keystoreSecretRef:
-      name: es-keystore
-    envFrom:
-      - secretRef:
-          name: es-env
-    env:
-      - name: NODE_RACK
-        valueFrom:
-          fieldRef:
-            fieldPath: spec.nodeName
-    annotations:
-      co.elastic.logs.elasticsearch/multiline.pattern: '^\{'
-      co.elastic.logs.elasticsearch/multiline.negate: 'true'
-      co.elastic.logs.elasticsearch/multiline.match: 'after'
-      co.elastic.logs.elasticsearch/multiline.timeout: '5s'
-      co.elastic.logs.elasticsearch/processors.0.decode_json_fields: '{"fields": ["message"], "target": "hm.elasticsearch", "add_error_key": true, "max_depth": 10}'
-      co.elastic.logs.elasticsearch/processors.2.add_fields: '{"target": "", "fields": {"event": {"dataset": "elasticsearch"}, "service": {"type": "elasticsearch"}}}'
     initContainerResources:
       limits:
         cpu: "500m"
@@ -79,10 +52,7 @@ spec:
         http.max_content_length: 500mb
         
         # Rack awarness
-        node.attr.rack: "${NODE_RACK}"
-        cluster.routing.allocation.awareness.attributes: rack
-        path.repo:
-          - /mnt/snapshot
+        cluster.routing.allocation.awareness.attributes: node_name
         
         xpack.security.audit.enabled: true
         xpack.security.audit.logfile.events.exclude:
@@ -107,10 +77,3 @@ spec:
         limits:
           cpu: "1000m"
           memory: "2Gi"
-      persistence:
-        volumeClaim:
-          accessModes: [ "ReadWriteOnce" ]
-          storageClassName: "local-path"
-          resources:
-            requests:
-              storage: 20Gi

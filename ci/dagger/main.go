@@ -37,6 +37,7 @@ const (
 	gitUsername          string = "github"
 	gitEmail             string = "github@localhost"
 	name                        = "elasticsearch-operator"
+	defaultBranch               = "main"
 )
 
 type ElasticsearchOperator struct {
@@ -134,6 +135,10 @@ func (h *ElasticsearchOperator) CI(
 	// +optional
 	isTag bool,
 
+	// Set true if current build is a Pull request
+	// +optional
+	isPullRequest bool,
+
 	// Set true to skip test
 	// +optional
 	skipTest bool,
@@ -184,7 +189,7 @@ func (h *ElasticsearchOperator) CI(
 		return nil, errors.Wrap(err, "Error when get the target version")
 	}
 
-	dir := h.Release(
+	h.OperatorSDK = h.Release(
 		version,
 		registry,
 		repository,
@@ -199,7 +204,9 @@ func (h *ElasticsearchOperator) CI(
 			SkipBuildFromPreviousVersion: !isTag,
 		},
 	)
-	h.OperatorSDK = h.OperatorSDK.WithSource(dir)
+
+	// Put ci folder to not lost it
+	dir := h.OperatorSDK.GetSource().WithDirectory("ci", h.Src.Directory("ci"))
 
 	// Test the OLM operator
 	if ci {
@@ -241,8 +248,8 @@ func (h *ElasticsearchOperator) CI(
 
 		// Get operators logs and Elasticsearch logs
 		_, _ = kubeCtr.
-			WithExec(helper.ForgeCommand("kubectl get -n operators pods -o name | xargs -I {} kubectl logs -n operators {}")).
-			WithExec(helper.ForgeCommand("kubectl get -n default pods -o name | xargs -I {} kubectl logs -n default {}")).
+			WithExec(helper.ForgeScript("kubectl get -n operators pods -o name | xargs -I {} kubectl logs -n operators {}")).
+			WithExec(helper.ForgeScript("kubectl get -n default pods -o name | xargs -I {} kubectl logs -n default {}")).
 			Stdout(ctx)
 
 		if err != nil {
@@ -261,7 +268,37 @@ func (h *ElasticsearchOperator) CI(
 			// keep original version file
 			dir = dir.WithoutFile("VERSION")
 		}
-		if _, err = dag.Git().SetConfig(gitUsername, gitEmail, dagger.GitSetConfigOpts{BaseRepoURL: "github.com", Token: gitToken}).SetRepo(h.Src.WithDirectory(".", dir), dagger.GitSetRepoOpts{Branch: "main"}).CommitAndPush(ctx, "Commit from CI. skip ci"); err != nil {
+
+		// Compute the branch and directory
+		var branch string
+		git := dag.Git().
+			SetConfig(gitUsername, gitEmail, dagger.GitSetConfigOpts{BaseRepoURL: "github.com", Token: gitToken})
+
+		if !isTag {
+			// keep original version file
+			dir = dir.WithFile("VERSION", h.Src.File("VERSION"))
+
+			branch, _ = git.BaseContainer().WithExec(helper.ForgeCommand("git rev-parse --abbrev-ref HEAD")).Stdout(ctx)
+		} else {
+			branch = defaultBranch
+		}
+
+		if isPullRequest {
+			git = git.With(func(r *dagger.Git) *dagger.Git {
+				ctr := r.BaseContainer().
+					WithDirectory("/project", dir).
+					WithWorkdir("/project").
+					WithExec(helper.ForgeCommand("git remote -v")).
+					WithExec(helper.ForgeCommandf("git fetch origin %s:%s", branch, branch)).
+					WithExec(helper.ForgeCommandf("git checkout %s", branch))
+
+				return r.WithCustomContainer(ctr)
+
+			})
+		} else {
+			git = git.SetRepo(h.Src.WithDirectory(".", dir), dagger.GitSetRepoOpts{Branch: branch})
+		}
+		if _, err = git.CommitAndPush(ctx, "Commit from Jenkins pipeline"); err != nil {
 			return nil, errors.Wrap(err, "Error when commit and push files change")
 		}
 
