@@ -243,7 +243,7 @@ func (h *ElasticsearchOperator) CI(
 
 		_, err = kubeCtr.
 			WithExec(helper.ForgeCommand("kubectl apply -n default --server-side=true -f config/samples/elasticsearch_v1_elasticsearch.yaml")).
-			WithExec(helper.ForgeCommand("kubectl -n default wait --for=condition=Ready=True --all elasticsearch --timeout=60s")).
+			WithExec(helper.ForgeCommand("kubectl -n default wait --for=condition=Ready=True --all elasticsearch --timeout=180s")).
 			Stdout(ctx)
 
 		// Get operators logs and Elasticsearch logs
