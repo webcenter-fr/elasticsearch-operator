@@ -139,6 +139,10 @@ func (h *ElasticsearchOperator) CI(
 	// +optional
 	isPullRequest bool,
 
+	// Set the current branch name. It's needed because of CI overwrite the branch name by PR
+	// +optional
+	branchName string,
+
 	// Set true to skip test
 	// +optional
 	skipTest bool,
@@ -263,12 +267,6 @@ func (h *ElasticsearchOperator) CI(
 			}
 		}
 
-		// Commit and push only is not a PR and is CI
-		if !isTag {
-			// keep original version file
-			dir = dir.WithoutFile("VERSION")
-		}
-
 		// Compute the branch and directory
 		var branch string
 		git := dag.Git().
@@ -276,9 +274,17 @@ func (h *ElasticsearchOperator) CI(
 
 		if !isTag {
 			// keep original version file
-			dir = dir.WithFile("VERSION", h.Src.File("VERSION"))
+			versionFile, err := h.Src.File("VERSION").Sync(ctx)
+			if err == nil {
+				dir = dir.WithFile("VERSION", versionFile)
+			} else {
+				dir = dir.WithoutFile("VERSION")
+			}
 
-			branch, _ = git.BaseContainer().WithExec(helper.ForgeCommand("git rev-parse --abbrev-ref HEAD")).Stdout(ctx)
+			if branchName == "" {
+				return nil, errors.New("You need to provide the branch name")
+			}
+			branch = branchName
 		} else {
 			branch = defaultBranch
 		}
@@ -293,12 +299,11 @@ func (h *ElasticsearchOperator) CI(
 					WithExec(helper.ForgeCommandf("git checkout %s", branch))
 
 				return r.WithCustomContainer(ctr)
-
 			})
 		} else {
 			git = git.SetRepo(h.Src.WithDirectory(".", dir), dagger.GitSetRepoOpts{Branch: branch})
 		}
-		if _, err = git.CommitAndPush(ctx, "Commit from Jenkins pipeline"); err != nil {
+		if _, err = git.CommitAndPush(ctx, "Commit from CI pipeline"); err != nil {
 			return nil, errors.Wrap(err, "Error when commit and push files change")
 		}
 
