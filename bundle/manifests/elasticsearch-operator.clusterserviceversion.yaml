@@ -262,47 +262,13 @@ metadata:
               }
             },
             "globalNodeGroup": {
-              "additionalVolumes": [
-                {
-                  "mountPath": "/mnt/snapshot",
-                  "name": "snapshot",
-                  "persistentVolumeClaim": {
-                    "claimName": "pvc-elasticsearch-snapshot"
-                  }
-                }
-              ],
-              "annotations": {
-                "co.elastic.logs.elasticsearch/multiline.match": "after",
-                "co.elastic.logs.elasticsearch/multiline.negate": "true",
-                "co.elastic.logs.elasticsearch/multiline.pattern": "^\\{",
-                "co.elastic.logs.elasticsearch/multiline.timeout": "5s",
-                "co.elastic.logs.elasticsearch/processors.0.decode_json_fields": "{\"fields\": [\"message\"], \"target\": \"hm.elasticsearch\", \"add_error_key\": true, \"max_depth\": 10}",
-                "co.elastic.logs.elasticsearch/processors.2.add_fields": "{\"target\": \"\", \"fields\": {\"event\": {\"dataset\": \"elasticsearch\"}, \"service\": {\"type\": \"elasticsearch\"}}}"
-              },
               "antiAffinity": {
                 "topologyKey": "topology.kubernetes.io/zone",
-                "type": "hard"
+                "type": "soft"
               },
               "config": {
-                "elasticsearch.yml": "action.destructive_requires_name: true\ncluster.routing.allocation.disk.watermark.flood_stage: 1gb\ncluster.routing.allocation.disk.watermark.high: 1gb\ncluster.routing.allocation.disk.watermark.low: 2gb\n\ngateway.expected_data_nodes: 1\ngateway.recover_after_data_nodes: 1\ngateway.recover_after_time: 5m\nhttp.cors.allow-credentials: true\nhttp.cors.allow-headers: X-Requested-With,X-Auth-Token,Content-Type, Content-Length, Authorization\nhttp.cors.allow-origin: /.*/\nhttp.cors.enabled: true\nhttp.max_content_length: 500mb\n\n# Rack awarness\nnode.attr.rack: \"${NODE_RACK}\"\ncluster.routing.allocation.awareness.attributes: rack\npath.repo:\n  - /mnt/snapshot\n\nxpack.security.audit.enabled: true\nxpack.security.audit.logfile.events.exclude:\n  - access_granted\nxpack.security.authc:\n  anonymous:\n    authz_exception: false\n    roles: monitoring\n    username: anonymous_user\n"
+                "elasticsearch.yml": "action.destructive_requires_name: true\ncluster.routing.allocation.disk.watermark.flood_stage: 1gb\ncluster.routing.allocation.disk.watermark.high: 1gb\ncluster.routing.allocation.disk.watermark.low: 2gb\n\ngateway.expected_data_nodes: 1\ngateway.recover_after_data_nodes: 1\ngateway.recover_after_time: 5m\nhttp.cors.allow-credentials: true\nhttp.cors.allow-headers: X-Requested-With,X-Auth-Token,Content-Type, Content-Length, Authorization\nhttp.cors.allow-origin: /.*/\nhttp.cors.enabled: true\nhttp.max_content_length: 500mb\n\n# Rack awarness\ncluster.routing.allocation.awareness.attributes: node_name\n\nxpack.security.audit.enabled: true\nxpack.security.audit.logfile.events.exclude:\n  - access_granted\nxpack.security.authc:\n  anonymous:\n    authz_exception: false\n    roles: monitoring\n    username: anonymous_user\n"
               },
-              "env": [
-                {
-                  "name": "NODE_RACK",
-                  "valueFrom": {
-                    "fieldRef": {
-                      "fieldPath": "spec.nodeName"
-                    }
-                  }
-                }
-              ],
-              "envFrom": [
-                {
-                  "secretRef": {
-                    "name": "es-env"
-                  }
-                }
-              ],
               "initContainerResources": {
                 "limits": {
                   "cpu": "500m",
@@ -312,35 +278,11 @@ metadata:
                   "cpu": "25m",
                   "memory": "64Mi"
                 }
-              },
-              "keystoreSecretRef": {
-                "name": "es-keystore"
-              }
-            },
-            "licenseSecretRef": {
-              "name": "es-license"
-            },
-            "monitoring": {
-              "prometheus": {
-                "enabled": true
               }
             },
             "nodeGroups": [
               {
                 "name": "all",
-                "persistence": {
-                  "volumeClaim": {
-                    "accessModes": [
-                      "ReadWriteOnce"
-                    ],
-                    "resources": {
-                      "requests": {
-                        "storage": "20Gi"
-                      }
-                    },
-                    "storageClassName": "local-path"
-                  }
-                },
                 "replicas": 1,
                 "resources": {
                   "limits": {
@@ -360,7 +302,7 @@ metadata:
                 ]
               }
             ],
-            "setVMMaxMapCount": true,
+            "setVMMaxMapCount": false,
             "tls": {
               "enabled": true,
               "keySize": 2048,
@@ -866,10 +808,10 @@ metadata:
         }
       ]
     capabilities: Basic Install
-    createdAt: "2024-12-19T08:18:44Z"
-    operators.operatorframework.io/builder: operator-sdk-v1.38.0
+    createdAt: "2025-01-11T12:18:20Z"
+    operators.operatorframework.io/builder: operator-sdk-v1.39.0
     operators.operatorframework.io/project_layout: go.kubebuilder.io/v4
-  name: elasticsearch-operator.v0.0.72
+  name: elasticsearch-operator.v0.0.55-pr.156
   namespace: placeholder
 spec:
   apiservicedefinitions: {}
@@ -3522,7 +3464,7 @@ spec:
                   value: INFO
                 - name: LOG_FORMATTER
                   value: json
-                image: quay.io:webcenter/elasticsearch-operator:0.0.72
+                image: quay.io/webcenter/elasticsearch-operator:0.0.55-pr.156
                 livenessProbe:
                   httpGet:
                     path: /healthz
@@ -3613,4 +3555,4 @@ spec:
     name: webcenter.fr
     url: https://github.com/webcenter-fr/elasticsearch-operator
   replaces: elasticsearch-operator.v0.0.48
-  version: 0.0.72
+  version: 0.0.55-pr.156
