@@ -4,6 +4,7 @@ import (
 	monitoringv1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1"
 	logstashcrd "github.com/webcenter-fr/elasticsearch-operator/api/logstash/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/utils/ptr"
 )
 
 // BuildPodMonitor permit to build pod monitor
@@ -29,7 +30,7 @@ func buildPodMonitors(ls *logstashcrd.Logstash) (podMonitors []monitoringv1.PodM
 		Spec: monitoringv1.PodMonitorSpec{
 			PodMetricsEndpoints: []monitoringv1.PodMetricsEndpoint{
 				{
-					Port:     "exporter",
+					Port:     ptr.To("exporter"),
 					Interval: monitoringv1.Duration(scrapInterval),
 					Path:     "/metrics",
 					Scheme:   "http",

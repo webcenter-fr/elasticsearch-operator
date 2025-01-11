@@ -30,7 +30,7 @@ func buildPodMonitors(kb *kibanacrd.Kibana) (podMonitors []monitoringv1.PodMonit
 			Spec: monitoringv1.PodMonitorSpec{
 				PodMetricsEndpoints: []monitoringv1.PodMetricsEndpoint{
 					{
-						Port:     "http",
+						Port:     ptr.To("http"),
 						Interval: "10s",
 						Path:     "_prometheus/metrics",
 						BasicAuth: &monitoringv1.BasicAuth{
