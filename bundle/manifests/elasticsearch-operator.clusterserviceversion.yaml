@@ -808,7 +808,7 @@ metadata:
         }
       ]
     capabilities: Basic Install
-    createdAt: "2025-01-11T12:18:20Z"
+    createdAt: "2025-01-11T18:43:37Z"
     operators.operatorframework.io/builder: operator-sdk-v1.39.0
     operators.operatorframework.io/project_layout: go.kubebuilder.io/v4
   name: elasticsearch-operator.v0.0.55-pr.156
