@@ -59,12 +59,10 @@ spec:
             description: CerebroSpec defines the desired state of Cerebro
             properties:
               config:
-                additionalProperties:
-                  type: string
                 description: |-
                   Config is the Cerebro config
-                  The key is the file stored on kibana/config
-                type: object
+                  The key is the file stored on config folders and the data is the contend
+                type: string
               deployment:
                 description: Deployment permit to set the deployment settings
                 properties:
@@ -1213,6 +1211,13 @@ spec:
                     required:
                     - host
                     type: object
+                type: object
+              extraConfigs:
+                additionalProperties:
+                  type: string
+                description: |-
+                  ExtraConfigs is extra config files store on config directory
+                  The key is the file name and the value is the contend file
                 type: object
               image:
                 description: |-

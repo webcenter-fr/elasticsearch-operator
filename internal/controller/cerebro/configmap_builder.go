@@ -79,15 +79,19 @@ auth = {
 		config.WriteString("\n]\n")
 	}
 
-	if cb.Spec.Config != nil && cb.Spec.Config["application.conf"] != "" {
-		config.WriteString(cb.Spec.Config["application.conf"])
+	if cb.Spec.Config != nil && *cb.Spec.Config != "" {
+		config.WriteString(*cb.Spec.Config)
+		config.WriteString("\n")
+	}
+	if cb.Spec.ExtraConfigs["application.conf"] != "" {
+		config.WriteString(cb.Spec.ExtraConfigs["application.conf"])
 	}
 
 	expectedConfig = map[string]string{
 		"application.conf": config.String(),
 	}
 
-	if err = mergo.Merge(&expectedConfig, cb.Spec.Config); err != nil {
+	if err = mergo.Merge(&expectedConfig, cb.Spec.ExtraConfigs); err != nil {
 		return nil, errors.Wrap(err, "Error when merge provided config with default config")
 	}
 
