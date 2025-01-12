@@ -3,6 +3,7 @@ package metricbeat
 import (
 	"testing"
 
+	"github.com/disaster37/operator-sdk-extra/pkg/apis"
 	"github.com/disaster37/operator-sdk-extra/pkg/test"
 	"github.com/stretchr/testify/assert"
 	beatcrd "github.com/webcenter-fr/elasticsearch-operator/api/beat/v1"
@@ -257,11 +258,17 @@ func TestBuildStatefulset(t *testing.T) {
 				},
 			},
 			Version: "8.5.1",
-			Config: map[string]string{
+			ExtraConfigs: map[string]string{
 				"log4j.yaml": "my log4j",
 			},
-			Module: map[string]string{
-				"module.yaml": "my module",
+			Modules: map[string][]apis.MapAny{
+				"module.yaml": []apis.MapAny{
+					{
+						Data: map[string]any{
+							"foo": "bar",
+						},
+					},
+				},
 			},
 		},
 	}

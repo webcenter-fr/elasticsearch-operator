@@ -268,10 +268,12 @@ node.value2: test`,
 					Name: "test",
 				},
 			},
-			Modules: map[string]apis.MapAny{
-				"module.yaml": apis.MapAny{
-					Data: map[string]any{
-						"foo": "bar",
+			Modules: map[string][]apis.MapAny{
+				"module.yaml": []apis.MapAny{
+					{
+						Data: map[string]any{
+							"foo": "bar",
+						},
 					},
 				},
 			},

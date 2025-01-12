@@ -4525,7 +4525,7 @@ spec:
                   type: string
                 description: |-
                   ExtraConfigs is extra config files store on config directory
-                  The key is the file stored on filebeat and the vlue is the contend file
+                  The key is the file name and the value is the contend file
                 type: object
               image:
                 description: |-
@@ -4925,7 +4925,9 @@ spec:
                 type: object
               modules:
                 additionalProperties:
-                  type: object
+                  items:
+                    type: object
+                  type: array
                 description: |-
                   Module is the module specification
                   The key is the file stored on filebeat/modules.d

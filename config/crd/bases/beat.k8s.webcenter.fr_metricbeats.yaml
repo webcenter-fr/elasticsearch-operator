@@ -56,8 +56,6 @@ spec:
             description: MetricbeatSpec defines the desired state of Metricbeat
             properties:
               config:
-                additionalProperties:
-                  type: string
                 description: |-
                   Config is the Metricbeat config
                   The key is the file stored on metricbeat
@@ -4477,6 +4475,13 @@ spec:
                     type: object
                     x-kubernetes-map-type: atomic
                 type: object
+              extraConfigs:
+                additionalProperties:
+                  type: string
+                description: |-
+                  ExtraConfigs is extra config files store on config directory
+                  The key is the file name and the value is the contend file
+                type: object
               image:
                 description: |-
                   Image is the image to use when deploy Elasticsearch
@@ -4509,9 +4514,11 @@ spec:
                   type: object
                   x-kubernetes-map-type: atomic
                 type: array
-              module:
+              modules:
                 additionalProperties:
-                  type: string
+                  items:
+                    type: object
+                  type: array
                 description: |-
                   Module is the module specification
                   The key is the file stored on metricbeat/modules.d

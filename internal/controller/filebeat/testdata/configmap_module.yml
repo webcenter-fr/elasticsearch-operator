@@ -11,5 +11,5 @@ metadata:
   namespace: default
 data:
   module.yaml: |
-    foo: bar
+    - foo: bar
     

@@ -122,10 +122,12 @@ func doCreateFilebeatStep() test.TestStep {
 							"queue.type":       "persisted",
 						},
 					},
-					Modules: map[string]apis.MapAny{
-						"module.yaml": apis.MapAny{
-							Data: map[string]any{
-								"foo": "bar",
+					Modules: map[string][]apis.MapAny{
+						"module.yaml": []apis.MapAny{
+							{
+								Data: map[string]any{
+									"foo": "bar",
+								},
 							},
 						},
 					},
