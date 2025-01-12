@@ -6,17 +6,21 @@ import (
 	"time"
 
 	"github.com/disaster37/operator-sdk-extra/pkg/controller"
+	"github.com/disaster37/operator-sdk-extra/pkg/helper"
+	routev1 "github.com/openshift/api/route/v1"
 	monitoringv1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1"
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/suite"
-	beatcrd "github.com/webcenter-fr/elasticsearch-operator/apis/beat/v1"
-	cerebrocrd "github.com/webcenter-fr/elasticsearch-operator/apis/cerebro/v1"
-	elasticsearchcrd "github.com/webcenter-fr/elasticsearch-operator/apis/elasticsearch/v1"
-	elasticsearchapicrd "github.com/webcenter-fr/elasticsearch-operator/apis/elasticsearchapi/v1"
-	kibanacrd "github.com/webcenter-fr/elasticsearch-operator/apis/kibana/v1"
-	kibanaapicrd "github.com/webcenter-fr/elasticsearch-operator/apis/kibanaapi/v1"
-	logstashcrd "github.com/webcenter-fr/elasticsearch-operator/apis/logstash/v1"
+	beatcrd "github.com/webcenter-fr/elasticsearch-operator/api/beat/v1"
+	cerebrocrd "github.com/webcenter-fr/elasticsearch-operator/api/cerebro/v1"
+	elasticsearchcrd "github.com/webcenter-fr/elasticsearch-operator/api/elasticsearch/v1"
+	elasticsearchapicrd "github.com/webcenter-fr/elasticsearch-operator/api/elasticsearchapi/v1"
+	kibanacrd "github.com/webcenter-fr/elasticsearch-operator/api/kibana/v1"
+	kibanaapicrd "github.com/webcenter-fr/elasticsearch-operator/api/kibanaapi/v1"
+	logstashcrd "github.com/webcenter-fr/elasticsearch-operator/api/logstash/v1"
+	"github.com/webcenter-fr/elasticsearch-operator/internal/controller/common"
 	elasticsearchcontrollers "github.com/webcenter-fr/elasticsearch-operator/internal/controller/elasticsearch"
+	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/rest"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -99,6 +103,10 @@ func (t *CerebroControllerTestSuite) SetupSuite() {
 	if err != nil {
 		panic(err)
 	}
+	err = routev1.AddToScheme(scheme.Scheme)
+	if err != nil {
+		panic(err)
+	}
 
 	// Init k8smanager and k8sclient
 	k8sManager, err := ctrl.NewManager(cfg, ctrl.Options{
@@ -109,6 +117,18 @@ func (t *CerebroControllerTestSuite) SetupSuite() {
 	}
 	k8sClient := k8sManager.GetClient()
 	t.k8sClient = k8sClient
+
+	clientStd, err := kubernetes.NewForConfig(cfg)
+	if err != nil {
+		panic(err)
+	}
+	kubeCapability := common.KubernetesCapability{}
+	if helper.HasCRD(clientStd, monitoringv1.SchemeGroupVersion) {
+		kubeCapability.HasPrometheus = true
+	}
+	if helper.HasCRD(clientStd, routev1.SchemeGroupVersion) {
+		kubeCapability.HasRoute = true
+	}
 
 	// Add indexers
 	if err = controller.SetupIndexerWithManager(
@@ -127,12 +147,12 @@ func (t *CerebroControllerTestSuite) SetupSuite() {
 	}
 
 	// Init controllers
-	elasticsearchReconciler := elasticsearchcontrollers.NewElasticsearchReconciler(k8sClient, logrus.NewEntry(logrus.StandardLogger()), k8sManager.GetEventRecorderFor("elasticsearch-controller"))
+	elasticsearchReconciler := elasticsearchcontrollers.NewElasticsearchReconciler(k8sClient, logrus.NewEntry(logrus.StandardLogger()), k8sManager.GetEventRecorderFor("elasticsearch-controller"), kubeCapability)
 	if err = elasticsearchReconciler.SetupWithManager(k8sManager); err != nil {
 		panic(err)
 	}
 
-	cerebroReconciler := NewCerebroReconciler(k8sClient, logrus.NewEntry(logrus.StandardLogger()), k8sManager.GetEventRecorderFor("cerebro-controller"))
+	cerebroReconciler := NewCerebroReconciler(k8sClient, logrus.NewEntry(logrus.StandardLogger()), k8sManager.GetEventRecorderFor("cerebro-controller"), kubeCapability)
 	if err = cerebroReconciler.SetupWithManager(k8sManager); err != nil {
 		panic(err)
 	}

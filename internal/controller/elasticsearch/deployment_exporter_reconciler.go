@@ -9,7 +9,7 @@ import (
 	"github.com/disaster37/operator-sdk-extra/pkg/helper"
 	"github.com/disaster37/operator-sdk-extra/pkg/object"
 	"github.com/sirupsen/logrus"
-	elasticsearchcrd "github.com/webcenter-fr/elasticsearch-operator/apis/elasticsearch/v1"
+	elasticsearchcrd "github.com/webcenter-fr/elasticsearch-operator/api/elasticsearch/v1"
 	appv1 "k8s.io/api/apps/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/types"
@@ -24,35 +24,28 @@ const (
 )
 
 type exporterReconciler struct {
-	controller.BaseReconciler
 	controller.MultiPhaseStepReconcilerAction
 }
 
-func newExporterReconciler(client client.Client, logger *logrus.Entry, recorder record.EventRecorder) (multiPhaseStepReconcilerAction controller.MultiPhaseStepReconcilerAction) {
+func newExporterReconciler(client client.Client, recorder record.EventRecorder) (multiPhaseStepReconcilerAction controller.MultiPhaseStepReconcilerAction) {
 	return &exporterReconciler{
 		MultiPhaseStepReconcilerAction: controller.NewBasicMultiPhaseStepReconcilerAction(
 			client,
 			ExporterPhase,
 			ExporterCondition,
-			logger,
 			recorder,
 		),
-		BaseReconciler: controller.BaseReconciler{
-			Client:   client,
-			Recorder: recorder,
-			Log:      logger,
-		},
 	}
 }
 
 // Read existing deployement
-func (r *exporterReconciler) Read(ctx context.Context, resource object.MultiPhaseObject, data map[string]any) (read controller.MultiPhaseRead, res ctrl.Result, err error) {
+func (r *exporterReconciler) Read(ctx context.Context, resource object.MultiPhaseObject, data map[string]any, logger *logrus.Entry) (read controller.MultiPhaseRead, res ctrl.Result, err error) {
 	o := resource.(*elasticsearchcrd.Elasticsearch)
 	dpl := &appv1.Deployment{}
 	read = controller.NewBasicMultiPhaseRead()
 
 	// Read current deployment
-	if err = r.Client.Get(ctx, types.NamespacedName{Namespace: o.Namespace, Name: GetExporterDeployementName(o)}, dpl); err != nil {
+	if err = r.Client().Get(ctx, types.NamespacedName{Namespace: o.Namespace, Name: GetExporterDeployementName(o)}, dpl); err != nil {
 		if !k8serrors.IsNotFound(err) {
 			return read, res, errors.Wrapf(err, "Error when read exporter deployment")
 		}

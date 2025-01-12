@@ -37,6 +37,7 @@ const (
 	gitUsername          string = "github"
 	gitEmail             string = "github@localhost"
 	name                        = "elasticsearch-operator"
+	defaultBranch               = "main"
 )
 
 type ElasticsearchOperator struct {
@@ -134,6 +135,14 @@ func (h *ElasticsearchOperator) CI(
 	// +optional
 	isTag bool,
 
+	// Set true if current build is a Pull request
+	// +optional
+	isPullRequest bool,
+
+	// Set the current branch name. It's needed because of CI overwrite the branch name by PR
+	// +optional
+	branchName string,
+
 	// Set true to skip test
 	// +optional
 	skipTest bool,
@@ -184,7 +193,7 @@ func (h *ElasticsearchOperator) CI(
 		return nil, errors.Wrap(err, "Error when get the target version")
 	}
 
-	dir := h.Release(
+	h.OperatorSDK = h.Release(
 		version,
 		registry,
 		repository,
@@ -199,7 +208,9 @@ func (h *ElasticsearchOperator) CI(
 			SkipBuildFromPreviousVersion: !isTag,
 		},
 	)
-	h.OperatorSDK = h.OperatorSDK.WithSource(dir)
+
+	// Put ci folder to not lost it
+	dir := h.OperatorSDK.GetSource().WithDirectory("ci", h.Src.Directory("ci"))
 
 	// Test the OLM operator
 	if ci {
@@ -236,13 +247,13 @@ func (h *ElasticsearchOperator) CI(
 
 		_, err = kubeCtr.
 			WithExec(helper.ForgeCommand("kubectl apply -n default --server-side=true -f config/samples/elasticsearch_v1_elasticsearch.yaml")).
-			WithExec(helper.ForgeCommand("kubectl -n default wait --for=condition=Ready=True --all elasticsearch --timeout=60s")).
+			WithExec(helper.ForgeCommand("kubectl -n default wait --for=condition=Ready=True --all elasticsearch --timeout=180s")).
 			Stdout(ctx)
 
 		// Get operators logs and Elasticsearch logs
 		_, _ = kubeCtr.
-			WithExec(helper.ForgeCommand("kubectl get -n operators pods -o name | xargs -I {} kubectl logs -n operators {}")).
-			WithExec(helper.ForgeCommand("kubectl get -n default pods -o name | xargs -I {} kubectl logs -n default {}")).
+			WithExec(helper.ForgeScript("kubectl get -n operators pods -o name | xargs -I {} kubectl logs -n operators {}")).
+			WithExec(helper.ForgeScript("kubectl get -n default pods -o name | xargs -I {} kubectl logs -n default {}")).
 			Stdout(ctx)
 
 		if err != nil {
@@ -256,12 +267,43 @@ func (h *ElasticsearchOperator) CI(
 			}
 		}
 
-		// Commit and push only is not a PR and is CI
+		// Compute the branch and directory
+		var branch string
+		git := dag.Git().
+			SetConfig(gitUsername, gitEmail, dagger.GitSetConfigOpts{BaseRepoURL: "github.com", Token: gitToken})
+
 		if !isTag {
 			// keep original version file
-			dir = dir.WithoutFile("VERSION")
+			versionFile, err := h.Src.File("VERSION").Sync(ctx)
+			if err == nil {
+				dir = dir.WithFile("VERSION", versionFile)
+			} else {
+				dir = dir.WithoutFile("VERSION")
+			}
+
+			if branchName == "" {
+				return nil, errors.New("You need to provide the branch name")
+			}
+			branch = branchName
+		} else {
+			branch = defaultBranch
 		}
-		if _, err = dag.Git().SetConfig(gitUsername, gitEmail, dagger.GitSetConfigOpts{BaseRepoURL: "github.com", Token: gitToken}).SetRepo(h.Src.WithDirectory(".", dir), dagger.GitSetRepoOpts{Branch: "main"}).CommitAndPush(ctx, "Commit from CI. skip ci"); err != nil {
+
+		if isPullRequest {
+			git = git.With(func(r *dagger.Git) *dagger.Git {
+				ctr := r.BaseContainer().
+					WithDirectory("/project", dir).
+					WithWorkdir("/project").
+					WithExec(helper.ForgeCommand("git remote -v")).
+					WithExec(helper.ForgeCommandf("git fetch origin %s:%s", branch, branch)).
+					WithExec(helper.ForgeCommandf("git checkout %s", branch))
+
+				return r.WithCustomContainer(ctr)
+			})
+		} else {
+			git = git.SetRepo(h.Src.WithDirectory(".", dir), dagger.GitSetRepoOpts{Branch: branch})
+		}
+		if _, err = git.CommitAndPush(ctx, "Commit from CI pipeline"); err != nil {
 			return nil, errors.Wrap(err, "Error when commit and push files change")
 		}
 

@@ -13,10 +13,10 @@ import (
 	monitoringv1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1"
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
-	beatcrd "github.com/webcenter-fr/elasticsearch-operator/apis/beat/v1"
-	elasticsearchcrd "github.com/webcenter-fr/elasticsearch-operator/apis/elasticsearch/v1"
-	elasticsearchapicrd "github.com/webcenter-fr/elasticsearch-operator/apis/elasticsearchapi/v1"
-	"github.com/webcenter-fr/elasticsearch-operator/apis/shared"
+	beatcrd "github.com/webcenter-fr/elasticsearch-operator/api/beat/v1"
+	elasticsearchcrd "github.com/webcenter-fr/elasticsearch-operator/api/elasticsearch/v1"
+	elasticsearchapicrd "github.com/webcenter-fr/elasticsearch-operator/api/elasticsearchapi/v1"
+	"github.com/webcenter-fr/elasticsearch-operator/api/shared"
 	appv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	networkingv1 "k8s.io/api/networking/v1"
@@ -25,6 +25,7 @@ import (
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -80,10 +81,10 @@ func doCreateElasticsearchStep() test.TestStep {
 					},
 					Monitoring: shared.MonitoringSpec{
 						Prometheus: &shared.MonitoringPrometheusSpec{
-							Enabled: true,
+							Enabled: ptr.To[bool](true),
 						},
 						Metricbeat: &shared.MonitoringMetricbeatSpec{
-							Enabled: true,
+							Enabled: ptr.To(true),
 							ElasticsearchRef: shared.ElasticsearchRef{
 								ManagedElasticsearchRef: &shared.ElasticsearchManagedRef{
 									Name:      "elastic",
@@ -1546,7 +1547,7 @@ func doDeleteElasticsearchStep() test.TestStep {
 				return errors.New("Not yet deleted")
 			}, time.Second*30, time.Second*1)
 			if err != nil || isTimeout {
-				t.Fatalf("Opensearch stil exist: %s", err.Error())
+				t.Fatalf("Elasticsearch stil exist: %s", err.Error())
 			}
 
 			assert.True(t, isDeleted)

@@ -14,13 +14,13 @@ import (
 	"github.com/disaster37/operator-sdk-extra/pkg/object"
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/suite"
-	beatcrd "github.com/webcenter-fr/elasticsearch-operator/apis/beat/v1"
-	cerebrocrd "github.com/webcenter-fr/elasticsearch-operator/apis/cerebro/v1"
-	elasticsearchcrd "github.com/webcenter-fr/elasticsearch-operator/apis/elasticsearch/v1"
-	elasticsearchapicrd "github.com/webcenter-fr/elasticsearch-operator/apis/elasticsearchapi/v1"
-	kibanacrd "github.com/webcenter-fr/elasticsearch-operator/apis/kibana/v1"
-	kibanaapicrd "github.com/webcenter-fr/elasticsearch-operator/apis/kibanaapi/v1"
-	logstashcrd "github.com/webcenter-fr/elasticsearch-operator/apis/logstash/v1"
+	beatcrd "github.com/webcenter-fr/elasticsearch-operator/api/beat/v1"
+	cerebrocrd "github.com/webcenter-fr/elasticsearch-operator/api/cerebro/v1"
+	elasticsearchcrd "github.com/webcenter-fr/elasticsearch-operator/api/elasticsearch/v1"
+	elasticsearchapicrd "github.com/webcenter-fr/elasticsearch-operator/api/elasticsearchapi/v1"
+	kibanacrd "github.com/webcenter-fr/elasticsearch-operator/api/kibana/v1"
+	kibanaapicrd "github.com/webcenter-fr/elasticsearch-operator/api/kibanaapi/v1"
+	logstashcrd "github.com/webcenter-fr/elasticsearch-operator/api/logstash/v1"
 	"go.uber.org/mock/gomock"
 	"k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/rest"
@@ -141,8 +141,8 @@ func (t *KibanaapiControllerTestSuite) SetupSuite() {
 		logrus.NewEntry(logrus.StandardLogger()),
 		k8sManager.GetEventRecorderFor("kibana-role-controller"),
 	)
-	roleReconciler.(*RoleReconciler).reconcilerAction = mock.NewMockRemoteReconcilerAction[*kibanaapicrd.Role, *kbapi.KibanaRole, kbhandler.KibanaHandler](
-		roleReconciler.(*RoleReconciler).reconcilerAction,
+	roleReconciler.(*RoleReconciler).RemoteReconcilerAction = mock.NewMockRemoteReconcilerAction[*kibanaapicrd.Role, *kbapi.KibanaRole, kbhandler.KibanaHandler](
+		roleReconciler.(*RoleReconciler).RemoteReconcilerAction,
 		func(ctx context.Context, req reconcile.Request, o object.RemoteObject) (handler controller.RemoteExternalReconciler[*kibanaapicrd.Role, *kbapi.KibanaRole, kbhandler.KibanaHandler], res reconcile.Result, err error) {
 			return newRoleApiClient(t.mockKibanaHandler), res, nil
 		},
@@ -156,8 +156,8 @@ func (t *KibanaapiControllerTestSuite) SetupSuite() {
 		logrus.NewEntry(logrus.StandardLogger()),
 		k8sManager.GetEventRecorderFor("kibana-user-space-controller"),
 	)
-	spaceReconciler.(*UserSpaceReconciler).reconcilerAction = mock.NewMockRemoteReconcilerAction[*kibanaapicrd.UserSpace, *kbapi.KibanaSpace, kbhandler.KibanaHandler](
-		spaceReconciler.(*UserSpaceReconciler).reconcilerAction,
+	spaceReconciler.(*UserSpaceReconciler).RemoteReconcilerAction = mock.NewMockRemoteReconcilerAction[*kibanaapicrd.UserSpace, *kbapi.KibanaSpace, kbhandler.KibanaHandler](
+		spaceReconciler.(*UserSpaceReconciler).RemoteReconcilerAction,
 		func(ctx context.Context, req reconcile.Request, o object.RemoteObject) (handler controller.RemoteExternalReconciler[*kibanaapicrd.UserSpace, *kbapi.KibanaSpace, kbhandler.KibanaHandler], res reconcile.Result, err error) {
 			return newUserSpaceApiClient(t.mockKibanaHandler), res, nil
 		},
@@ -171,8 +171,8 @@ func (t *KibanaapiControllerTestSuite) SetupSuite() {
 		logrus.NewEntry(logrus.StandardLogger()),
 		k8sManager.GetEventRecorderFor("kibana-logstash-pipeline-controller"),
 	)
-	pipelineReconciler.(*LogstashPipelineReconciler).reconcilerAction = mock.NewMockRemoteReconcilerAction[*kibanaapicrd.LogstashPipeline, *kbapi.LogstashPipeline, kbhandler.KibanaHandler](
-		pipelineReconciler.(*LogstashPipelineReconciler).reconcilerAction,
+	pipelineReconciler.(*LogstashPipelineReconciler).RemoteReconcilerAction = mock.NewMockRemoteReconcilerAction[*kibanaapicrd.LogstashPipeline, *kbapi.LogstashPipeline, kbhandler.KibanaHandler](
+		pipelineReconciler.(*LogstashPipelineReconciler).RemoteReconcilerAction,
 		func(ctx context.Context, req reconcile.Request, o object.RemoteObject) (handler controller.RemoteExternalReconciler[*kibanaapicrd.LogstashPipeline, *kbapi.LogstashPipeline, kbhandler.KibanaHandler], res reconcile.Result, err error) {
 			return newLogstashPipelineApiClient(t.mockKibanaHandler), res, nil
 		},

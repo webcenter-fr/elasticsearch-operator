@@ -10,9 +10,9 @@ import (
 	"github.com/disaster37/k8sbuilder"
 	"github.com/disaster37/operator-sdk-extra/pkg/helper"
 	"github.com/elastic/go-ucfg"
-	elasticsearchcrd "github.com/webcenter-fr/elasticsearch-operator/apis/elasticsearch/v1"
-	kibanacrd "github.com/webcenter-fr/elasticsearch-operator/apis/kibana/v1"
-	"github.com/webcenter-fr/elasticsearch-operator/apis/shared"
+	elasticsearchcrd "github.com/webcenter-fr/elasticsearch-operator/api/elasticsearch/v1"
+	kibanacrd "github.com/webcenter-fr/elasticsearch-operator/api/kibana/v1"
+	"github.com/webcenter-fr/elasticsearch-operator/api/shared"
 	"github.com/webcenter-fr/elasticsearch-operator/internal/controller/elasticsearch"
 	localhelper "github.com/webcenter-fr/elasticsearch-operator/pkg/helper"
 	appv1 "k8s.io/api/apps/v1"
@@ -24,7 +24,7 @@ import (
 )
 
 // BuildDeployment permit to generate deployment for Kibana
-func buildDeployments(kb *kibanacrd.Kibana, es *elasticsearchcrd.Elasticsearch, secretsChecksum []corev1.Secret, configMapsChecksum []corev1.ConfigMap) (dpls []appv1.Deployment, err error) {
+func buildDeployments(kb *kibanacrd.Kibana, es *elasticsearchcrd.Elasticsearch, secretsChecksum []corev1.Secret, configMapsChecksum []corev1.ConfigMap, isOpenshift bool) (dpls []appv1.Deployment, err error) {
 	// Check the secretRef is set when use external Elasticsearch
 	if kb.Spec.ElasticsearchRef.IsExternal() && kb.Spec.ElasticsearchRef.SecretRef == nil {
 		return nil, errors.New("You must set the secretRef when you use external Elasticsearch")
@@ -243,8 +243,11 @@ func buildDeployments(kb *kibanacrd.Kibana, es *elasticsearchcrd.Elasticsearch, 
 				"ALL",
 			},
 		},
-		RunAsUser:    ptr.To[int64](1000),
-		RunAsNonRoot: ptr.To[bool](true),
+		AllowPrivilegeEscalation: ptr.To(false),
+		Privileged:               ptr.To(false),
+		RunAsNonRoot:             ptr.To(true),
+		RunAsUser:                ptr.To[int64](1000),
+		RunAsGroup:               ptr.To[int64](1000),
 	}, k8sbuilder.OverwriteIfDefaultValue)
 
 	// Compute volume mount
@@ -382,6 +385,18 @@ fi
 					MountPath: "/mnt/keystoreSecrets",
 				},
 			},
+			SecurityContext: &corev1.SecurityContext{
+				Capabilities: &corev1.Capabilities{
+					Drop: []corev1.Capability{
+						"ALL",
+					},
+				},
+				AllowPrivilegeEscalation: ptr.To(false),
+				Privileged:               ptr.To(false),
+				RunAsNonRoot:             ptr.To(true),
+				RunAsUser:                ptr.To[int64](1000),
+				RunAsGroup:               ptr.To[int64](1000),
+			},
 			Command: []string{
 				"/bin/bash",
 				"-c",
@@ -409,7 +424,8 @@ cp -a /usr/share/kibana/config/kibana.keystore /mnt/keystore/
 		Image:           GetContainerImage(kb),
 		ImagePullPolicy: kb.Spec.ImagePullPolicy,
 		SecurityContext: &corev1.SecurityContext{
-			RunAsUser: ptr.To[int64](0),
+			Privileged: ptr.To(false),
+			RunAsUser:  ptr.To[int64](0),
 		},
 		Env: []corev1.EnvVar{
 			{
@@ -646,6 +662,11 @@ fi
 	ptb.WithSecurityContext(&corev1.PodSecurityContext{
 		FSGroup: ptr.To[int64](1000),
 	}, k8sbuilder.Merge)
+
+	// On Openshift, we need to run Elasticsearch with specific serviceAccount that is binding to anyuid scc
+	if isOpenshift {
+		ptb.PodTemplate().Spec.ServiceAccountName = GetServiceAccountName(kb)
+	}
 
 	// Compute pod template name
 	ptb.PodTemplate().Name = GetDeploymentName(kb)

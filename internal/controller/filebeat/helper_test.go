@@ -4,7 +4,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
-	beatcrd "github.com/webcenter-fr/elasticsearch-operator/apis/beat/v1"
+	beatcrd "github.com/webcenter-fr/elasticsearch-operator/api/beat/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -207,4 +207,53 @@ func TestGetMetricbeatName(t *testing.T) {
 	}
 
 	assert.Equal(t, "test-metricbeat-fb", GetMetricbeatName(o))
+}
+
+func TestGetServiceAccountName(t *testing.T) {
+	o := &beatcrd.Filebeat{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: "default",
+			Name:      "test",
+		},
+		Spec: beatcrd.FilebeatSpec{},
+	}
+
+	assert.Equal(t, "test-fb", GetServiceAccountName(o))
+}
+
+func TestGetSecretNameForPki(t *testing.T) {
+	o := &beatcrd.Filebeat{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: "default",
+			Name:      "test",
+		},
+		Spec: beatcrd.FilebeatSpec{},
+	}
+
+	assert.Equal(t, "test-pki-fb", GetSecretNameForPki(o))
+}
+
+func TestGetSecretNameForTls(t *testing.T) {
+	o := &beatcrd.Filebeat{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: "default",
+			Name:      "test",
+		},
+		Spec: beatcrd.FilebeatSpec{},
+	}
+
+	// With default value
+	assert.Equal(t, "test-tls-fb", GetSecretNameForTls(o))
+}
+
+func TestGetSecretNameForCALogatsh(t *testing.T) {
+	o := &beatcrd.Filebeat{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: "default",
+			Name:      "test",
+		},
+		Spec: beatcrd.FilebeatSpec{},
+	}
+
+	assert.Equal(t, "test-ca-ls-fb", GetSecretNameForCALogstash(o))
 }

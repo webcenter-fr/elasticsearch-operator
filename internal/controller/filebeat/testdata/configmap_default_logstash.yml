@@ -19,7 +19,8 @@ data:
         host: 0.0.0.0
     output:
         logstash:
-            hosts: ${LOGSTASH_HOST}
+            hosts:
+                - test-beat-ls.default.svc:5003
             loadbalance: true
 
     

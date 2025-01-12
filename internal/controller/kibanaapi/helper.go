@@ -12,7 +12,7 @@ import (
 	"github.com/disaster37/go-kibana-rest/v8"
 	kbhandler "github.com/disaster37/kb-handler/v8"
 	"github.com/sirupsen/logrus"
-	"github.com/webcenter-fr/elasticsearch-operator/apis/shared"
+	"github.com/webcenter-fr/elasticsearch-operator/api/shared"
 	"github.com/webcenter-fr/elasticsearch-operator/internal/controller/common"
 	elasticsearchcontrollers "github.com/webcenter-fr/elasticsearch-operator/internal/controller/elasticsearch"
 	kibanacontrollers "github.com/webcenter-fr/elasticsearch-operator/internal/controller/kibana"

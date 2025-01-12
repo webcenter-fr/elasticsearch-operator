@@ -4,7 +4,7 @@ import (
 	"fmt"
 
 	"github.com/thoas/go-funk"
-	kibanacrd "github.com/webcenter-fr/elasticsearch-operator/apis/kibana/v1"
+	kibanacrd "github.com/webcenter-fr/elasticsearch-operator/api/kibana/v1"
 )
 
 const (
@@ -88,6 +88,11 @@ func GetContainerImage(kb *kibanacrd.Kibana) string {
 	}
 
 	return fmt.Sprintf("%s:%s", image, version)
+}
+
+// GetServiceAccountName return the service account name
+func GetServiceAccountName(kb *kibanacrd.Kibana) string {
+	return fmt.Sprintf("%s-kb", kb.Name)
 }
 
 // getLabels permit to return global label must be set on all resources

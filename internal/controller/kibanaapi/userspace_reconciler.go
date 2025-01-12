@@ -10,7 +10,7 @@ import (
 	"github.com/disaster37/operator-sdk-extra/pkg/controller"
 	"github.com/disaster37/operator-sdk-extra/pkg/object"
 	"github.com/sirupsen/logrus"
-	kibanaapicrd "github.com/webcenter-fr/elasticsearch-operator/apis/kibanaapi/v1"
+	kibanaapicrd "github.com/webcenter-fr/elasticsearch-operator/api/kibanaapi/v1"
 	"k8s.io/client-go/tools/record"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -18,27 +18,22 @@ import (
 
 type userSpaceReconciler struct {
 	controller.RemoteReconcilerAction[*kibanaapicrd.UserSpace, *kbapi.KibanaSpace, kbhandler.KibanaHandler]
-	controller.BaseReconciler
+	name string
 }
 
-func newUserSpaceReconciler(client client.Client, logger *logrus.Entry, recorder record.EventRecorder) controller.RemoteReconcilerAction[*kibanaapicrd.UserSpace, *kbapi.KibanaSpace, kbhandler.KibanaHandler] {
+func newUserSpaceReconciler(name string, client client.Client, recorder record.EventRecorder) controller.RemoteReconcilerAction[*kibanaapicrd.UserSpace, *kbapi.KibanaSpace, kbhandler.KibanaHandler] {
 	return &userSpaceReconciler{
 		RemoteReconcilerAction: controller.NewRemoteReconcilerAction[*kibanaapicrd.UserSpace, *kbapi.KibanaSpace, kbhandler.KibanaHandler](
 			client,
-			logger,
 			recorder,
 		),
-		BaseReconciler: controller.BaseReconciler{
-			Client:   client,
-			Log:      logger,
-			Recorder: recorder,
-		},
+		name: name,
 	}
 }
 
-func (h *userSpaceReconciler) GetRemoteHandler(ctx context.Context, req ctrl.Request, o object.RemoteObject) (handler controller.RemoteExternalReconciler[*kibanaapicrd.UserSpace, *kbapi.KibanaSpace, kbhandler.KibanaHandler], res ctrl.Result, err error) {
+func (h *userSpaceReconciler) GetRemoteHandler(ctx context.Context, req ctrl.Request, o object.RemoteObject, logger *logrus.Entry) (handler controller.RemoteExternalReconciler[*kibanaapicrd.UserSpace, *kbapi.KibanaSpace, kbhandler.KibanaHandler], res ctrl.Result, err error) {
 	space := o.(*kibanaapicrd.UserSpace)
-	kbClient, err := GetKibanaHandler(ctx, space, space.Spec.KibanaRef, h.BaseReconciler.Client, h.BaseReconciler.Log)
+	kbClient, err := GetKibanaHandler(ctx, space, space.Spec.KibanaRef, h.Client(), logger)
 	if err != nil && space.DeletionTimestamp.IsZero() {
 		return nil, res, err
 	}
@@ -57,8 +52,8 @@ func (h *userSpaceReconciler) GetRemoteHandler(ctx context.Context, req ctrl.Req
 	return handler, res, nil
 }
 
-func (h *userSpaceReconciler) Create(ctx context.Context, o object.RemoteObject, data map[string]any, handler controller.RemoteExternalReconciler[*kibanaapicrd.UserSpace, *kbapi.KibanaSpace, kbhandler.KibanaHandler], object *kbapi.KibanaSpace) (res ctrl.Result, err error) {
-	res, err = h.RemoteReconcilerAction.Create(ctx, o, data, handler, object)
+func (h *userSpaceReconciler) Create(ctx context.Context, o object.RemoteObject, data map[string]any, handler controller.RemoteExternalReconciler[*kibanaapicrd.UserSpace, *kbapi.KibanaSpace, kbhandler.KibanaHandler], object *kbapi.KibanaSpace, logger *logrus.Entry) (res ctrl.Result, err error) {
+	res, err = h.RemoteReconcilerAction.Create(ctx, o, data, handler, object, logger)
 	if err != nil {
 		return res, err
 	}

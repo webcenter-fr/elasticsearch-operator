@@ -58,10 +58,6 @@ spec:
             fieldRef:
               apiVersion: v1
               fieldPath: metadata.namespace
-        - name: ELASTICSEARCH_CA_PATH
-          value: /usr/share/filebeat/config/es-ca/ca.crt
-        - name: ELASTICSEARCH_HOST
-          value: https://test-es.default.svc:9200
         - name: ELASTICSEARCH_USERNAME
           valueFrom:
             secretKeyRef:
@@ -115,6 +111,9 @@ spec:
             - ALL
           runAsNonRoot: false
           runAsUser: 0
+          runAsGroup: 1000
+          privileged: false
+          allowPrivilegeEscalation: false
         startupProbe:
           failureThreshold: 30
           initialDelaySeconds: 10
@@ -136,6 +135,8 @@ spec:
           name: ca-elasticsearch
         - mountPath: /usr/share/filebeat/data
           name: filebeat-data
+        - mountPath: /usr/share/filebeat/certs
+          name: filebeat-certs
       initContainers:
       - command:
         - /bin/bash
@@ -188,8 +189,9 @@ spec:
             mountPath: /mnt/data
         securityContext:
           runAsUser: 0
+          privileged: false
       securityContext:
-        fsGroup: 0
+        fsGroup: 1000
       terminationGracePeriodSeconds: 60
       nodeSelector:
         project: filebeat
@@ -208,6 +210,9 @@ spec:
       - name: filebeat-module
         configMap:
           name: test-module-fb
+      - name: filebeat-certs
+        secret:
+          secretName: test-tls-fb
   volumeClaimTemplates:
   - metadata:
       creationTimestamp: null

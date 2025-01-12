@@ -17,7 +17,7 @@ import (
 	"github.com/disaster37/operator-sdk-extra/pkg/object"
 	"github.com/sirupsen/logrus"
 	"github.com/thoas/go-funk"
-	elasticsearchcrd "github.com/webcenter-fr/elasticsearch-operator/apis/elasticsearch/v1"
+	elasticsearchcrd "github.com/webcenter-fr/elasticsearch-operator/api/elasticsearch/v1"
 	localhelper "github.com/webcenter-fr/elasticsearch-operator/pkg/helper"
 	"github.com/webcenter-fr/elasticsearch-operator/pkg/pki"
 	appv1 "k8s.io/api/apps/v1"
@@ -52,29 +52,22 @@ const (
 )
 
 type tlsReconciler struct {
-	controller.BaseReconciler
 	controller.MultiPhaseStepReconcilerAction
 }
 
-func newTlsReconciler(client client.Client, logger *logrus.Entry, recorder record.EventRecorder) (multiPhaseStepReconcilerAction controller.MultiPhaseStepReconcilerAction) {
+func newTlsReconciler(client client.Client, recorder record.EventRecorder) (multiPhaseStepReconcilerAction controller.MultiPhaseStepReconcilerAction) {
 	return &tlsReconciler{
 		MultiPhaseStepReconcilerAction: controller.NewBasicMultiPhaseStepReconcilerAction(
 			client,
 			TlsPhase,
 			TlsCondition,
-			logger,
 			recorder,
 		),
-		BaseReconciler: controller.BaseReconciler{
-			Client:   client,
-			Recorder: recorder,
-			Log:      logger,
-		},
 	}
 }
 
 // Configure permit to init condition
-func (r *tlsReconciler) Configure(ctx context.Context, req ctrl.Request, resource object.MultiPhaseObject) (res ctrl.Result, err error) {
+func (r *tlsReconciler) Configure(ctx context.Context, req ctrl.Request, resource object.MultiPhaseObject, logger *logrus.Entry) (res ctrl.Result, err error) {
 	o := resource.(*elasticsearchcrd.Elasticsearch)
 
 	if condition.FindStatusCondition(o.Status.Conditions, TlsConditionGeneratePki.String()) == nil {
@@ -117,11 +110,11 @@ func (r *tlsReconciler) Configure(ctx context.Context, req ctrl.Request, resourc
 		})
 	}
 
-	return r.MultiPhaseStepReconcilerAction.Configure(ctx, req, resource)
+	return r.MultiPhaseStepReconcilerAction.Configure(ctx, req, resource, logger)
 }
 
 // Read existing transport TLS secret
-func (r *tlsReconciler) Read(ctx context.Context, resource object.MultiPhaseObject, data map[string]any) (read controller.MultiPhaseRead, res ctrl.Result, err error) {
+func (r *tlsReconciler) Read(ctx context.Context, resource object.MultiPhaseObject, data map[string]any, logger *logrus.Entry) (read controller.MultiPhaseRead, res ctrl.Result, err error) {
 	o := resource.(*elasticsearchcrd.Elasticsearch)
 	read = controller.NewBasicMultiPhaseRead()
 	sTransport := &corev1.Secret{}
@@ -138,7 +131,7 @@ func (r *tlsReconciler) Read(ctx context.Context, resource object.MultiPhaseObje
 
 	// Read transport PKI secret
 	secretName = GetSecretNameForPkiTransport(o)
-	if err = r.Client.Get(ctx, types.NamespacedName{Namespace: o.Namespace, Name: secretName}, sTransportPki); err != nil {
+	if err = r.Client().Get(ctx, types.NamespacedName{Namespace: o.Namespace, Name: secretName}, sTransportPki); err != nil {
 		if !k8serrors.IsNotFound(err) {
 			return read, res, errors.Wrapf(err, "Error when read existing secret %s", secretName)
 		}
@@ -147,7 +140,7 @@ func (r *tlsReconciler) Read(ctx context.Context, resource object.MultiPhaseObje
 
 	// Read transport secret
 	secretName = GetSecretNameForTlsTransport(o)
-	if err = r.Client.Get(ctx, types.NamespacedName{Namespace: o.Namespace, Name: secretName}, sTransport); err != nil {
+	if err = r.Client().Get(ctx, types.NamespacedName{Namespace: o.Namespace, Name: secretName}, sTransport); err != nil {
 		if !k8serrors.IsNotFound(err) {
 			return read, res, errors.Wrapf(err, "Error when read existing secret %s", secretName)
 		}
@@ -157,7 +150,7 @@ func (r *tlsReconciler) Read(ctx context.Context, resource object.MultiPhaseObje
 	if o.Spec.Tls.IsTlsEnabled() && o.Spec.Tls.IsSelfManagedSecretForTls() {
 		// Read API PKI secret
 		secretName = GetSecretNameForPkiApi(o)
-		if err = r.Client.Get(ctx, types.NamespacedName{Namespace: o.Namespace, Name: secretName}, sApiPki); err != nil {
+		if err = r.Client().Get(ctx, types.NamespacedName{Namespace: o.Namespace, Name: secretName}, sApiPki); err != nil {
 			if !k8serrors.IsNotFound(err) {
 				return read, res, errors.Wrapf(err, "Error when read existing secret %s", secretName)
 			}
@@ -166,7 +159,7 @@ func (r *tlsReconciler) Read(ctx context.Context, resource object.MultiPhaseObje
 
 		// Read API secret
 		secretName = GetSecretNameForTlsApi(o)
-		if err = r.Client.Get(ctx, types.NamespacedName{Namespace: o.Namespace, Name: secretName}, sApi); err != nil {
+		if err = r.Client().Get(ctx, types.NamespacedName{Namespace: o.Namespace, Name: secretName}, sApi); err != nil {
 			if !k8serrors.IsNotFound(err) {
 				return read, res, errors.Wrapf(err, "Error when read existing secret %s", secretName)
 			}
@@ -177,7 +170,7 @@ func (r *tlsReconciler) Read(ctx context.Context, resource object.MultiPhaseObje
 	// Load transport PKI
 	if sTransportPki != nil {
 		// Load root CA
-		transportRootCA, err = pki.LoadRootCA(sTransportPki.Data["ca.key"], sTransportPki.Data["ca.pub"], sTransportPki.Data["ca.crt"], sTransportPki.Data["ca.crl"], r.Log)
+		transportRootCA, err = pki.LoadRootCA(sTransportPki.Data["ca.key"], sTransportPki.Data["ca.pub"], sTransportPki.Data["ca.crt"], sTransportPki.Data["ca.crl"], logger)
 		if err != nil {
 			return read, res, errors.Wrap(err, "Error when load PKI for transport layout")
 		}
@@ -204,7 +197,7 @@ func (r *tlsReconciler) Read(ctx context.Context, resource object.MultiPhaseObje
 	// Load API PKI
 	if sApiPki != nil {
 		// Load root CA
-		apiRootCA, err = pki.LoadRootCA(sApiPki.Data["ca.key"], sApiPki.Data["ca.pub"], sApiPki.Data["ca.crt"], sApiPki.Data["ca.crl"], r.Log)
+		apiRootCA, err = pki.LoadRootCA(sApiPki.Data["ca.key"], sApiPki.Data["ca.pub"], sApiPki.Data["ca.crt"], sApiPki.Data["ca.crl"], logger)
 		if err != nil {
 			return read, res, errors.Wrap(err, "Error when load PKI for API layout")
 		}
@@ -231,7 +224,7 @@ func (r *tlsReconciler) Read(ctx context.Context, resource object.MultiPhaseObje
 }
 
 // Diff permit to check if transport secrets are up to date
-func (r *tlsReconciler) Diff(ctx context.Context, resource object.MultiPhaseObject, read controller.MultiPhaseRead, data map[string]any, ignoreDiff ...patch.CalculateOption) (diff controller.MultiPhaseDiff, res ctrl.Result, err error) {
+func (r *tlsReconciler) Diff(ctx context.Context, resource object.MultiPhaseObject, read controller.MultiPhaseRead, data map[string]any, logger *logrus.Entry, ignoreDiff ...patch.CalculateOption) (diff controller.MultiPhaseDiff, res ctrl.Result, err error) {
 	o := resource.(*elasticsearchcrd.Elasticsearch)
 	var (
 		d                  any
@@ -319,7 +312,7 @@ func (r *tlsReconciler) Diff(ctx context.Context, resource object.MultiPhaseObje
 
 	// Generate all certificates when bootstrap cluster or when we are on blackout
 	if isClusterBootstrap || isBlackout {
-		r.Log.Debugf("Detect phase: %s", TlsPhaseCreate)
+		logger.Debugf("Detect phase: %s", TlsPhaseCreate)
 
 		diff.AddDiff("Generate new certificates")
 
@@ -383,7 +376,7 @@ func (r *tlsReconciler) Diff(ctx context.Context, resource object.MultiPhaseObje
 	// phaseGeneratePki -> phasePropagatePKI
 	// Wait new CA propagated on all Elasticsearch instance
 	if condition.IsStatusConditionPresentAndEqual(o.Status.Conditions, TlsConditionGeneratePki.String(), metav1.ConditionTrue) && condition.IsStatusConditionPresentAndEqual(o.Status.Conditions, TlsConditionPropagatePki.String(), metav1.ConditionFalse) {
-		r.Log.Debugf("Detect phase: %s", TlsPhasePropagatePki)
+		logger.Debugf("Detect phase: %s", TlsPhasePropagatePki)
 		data["phase"] = TlsPhasePropagatePki
 		return diff, res, nil
 	}
@@ -392,7 +385,7 @@ func (r *tlsReconciler) Diff(ctx context.Context, resource object.MultiPhaseObje
 	// Generate all certificates
 	if condition.IsStatusConditionPresentAndEqual(o.Status.Conditions, TlsConditionPropagatePki.String(), metav1.ConditionTrue) && condition.IsStatusConditionPresentAndEqual(o.Status.Conditions, TlsConditionGenerateCertificate.String(), metav1.ConditionFalse) {
 
-		r.Log.Debugf("Detect phase: %s", TlsPhaseUpdateCertificates)
+		logger.Debugf("Detect phase: %s", TlsPhaseUpdateCertificates)
 
 		// Generate nodes certificates
 		tmpTransport, isUpdated, err := r.generateTransportSecretCertificates(o, sTransport, transportRootCA)
@@ -443,7 +436,7 @@ func (r *tlsReconciler) Diff(ctx context.Context, resource object.MultiPhaseObje
 	// phaseGenerateCertificate -> phasePropagateCertificate
 	// Wait new certificates propagated on all Elasticsearch instance
 	if condition.IsStatusConditionPresentAndEqual(o.Status.Conditions, TlsConditionGenerateCertificate.String(), metav1.ConditionTrue) && condition.IsStatusConditionPresentAndEqual(o.Status.Conditions, TlsConditionPropagateCertificate.String(), metav1.ConditionFalse) {
-		r.Log.Debugf("Detect phase: %s", TlsPhasePropagateCertificates)
+		logger.Debugf("Detect phase: %s", TlsPhasePropagateCertificates)
 
 		data["phase"] = TlsPhasePropagateCertificates
 		return diff, res, nil
@@ -452,7 +445,7 @@ func (r *tlsReconciler) Diff(ctx context.Context, resource object.MultiPhaseObje
 	// phaseCleanCA -> phaseNormal
 	// Remove old CA certificate
 	if condition.IsStatusConditionPresentAndEqual(o.Status.Conditions, TlsConditionPropagateCertificate.String(), metav1.ConditionTrue) && condition.IsStatusConditionPresentAndEqual(o.Status.Conditions, TlsCondition.String(), metav1.ConditionFalse) {
-		r.Log.Debugf("Detect phase: %s", TlsPhaseCleanTransportCA)
+		logger.Debugf("Detect phase: %s", TlsPhaseCleanTransportCA)
 
 		if sTransport != nil && transportRootCA != nil {
 			sTransport.Data["ca.crt"] = []byte(transportRootCA.GetCertificate())
@@ -479,7 +472,7 @@ func (r *tlsReconciler) Diff(ctx context.Context, resource object.MultiPhaseObje
 
 	// Force renew certificate by annotation
 	if o.Annotations[fmt.Sprintf("%s/renew-certificates", elasticsearchcrd.ElasticsearchAnnotationKey)] == "true" {
-		r.Log.Info("Force renew certificat by annotation")
+		logger.Info("Force renew certificat by annotation")
 		isRenew = true
 	}
 
@@ -499,7 +492,7 @@ func (r *tlsReconciler) Diff(ctx context.Context, resource object.MultiPhaseObje
 	if !isRenew {
 		// Check certificate validity if all certificates exists
 		for name, crt := range certificates {
-			needRenew, err = pki.NeedRenewCertificate(&crt, defaultRenewCertificate, r.Log)
+			needRenew, err = pki.NeedRenewCertificate(&crt, defaultRenewCertificate, logger)
 			if err != nil {
 				return diff, res, errors.Wrapf(err, "Error when check expiration of %s certificate", name)
 			}
@@ -511,7 +504,7 @@ func (r *tlsReconciler) Diff(ctx context.Context, resource object.MultiPhaseObje
 	}
 
 	if isRenew {
-		r.Log.Debugf("Detect phase: %s", TlsPhaseUpdatePki)
+		logger.Debugf("Detect phase: %s", TlsPhaseUpdatePki)
 		// Renew only pki and wait all nodes get the new CA before to upgrade certificates
 
 		// Generate transport PKI
@@ -603,7 +596,13 @@ func (r *tlsReconciler) Diff(ctx context.Context, resource object.MultiPhaseObje
 	}
 	for _, s := range secrets {
 		isUpdated := false
-		if strDiff := localhelper.DiffLabels(getLabels(o), s.Labels); strDiff != "" {
+		if s.Name == GetSecretNameForTlsApi(o) {
+			if strDiff := localhelper.DiffLabels(getLabelsForTlsSecret(o), s.Labels); strDiff != "" {
+				diff.AddDiff(strDiff)
+				s.Labels = getLabelsForTlsSecret(o)
+				isUpdated = true
+			}
+		} else if strDiff := localhelper.DiffLabels(getLabels(o), s.Labels); strDiff != "" {
 			diff.AddDiff(strDiff)
 			s.Labels = getLabels(o)
 			isUpdated = true
@@ -631,7 +630,7 @@ func (r *tlsReconciler) Diff(ctx context.Context, resource object.MultiPhaseObje
 }
 
 // OnSuccess permit to set status condition on the right state is everithink is good
-func (r *tlsReconciler) OnSuccess(ctx context.Context, resource object.MultiPhaseObject, data map[string]any, diff controller.MultiPhaseDiff) (res ctrl.Result, err error) {
+func (r *tlsReconciler) OnSuccess(ctx context.Context, resource object.MultiPhaseObject, data map[string]any, diff controller.MultiPhaseDiff, logger *logrus.Entry) (res ctrl.Result, err error) {
 	o := resource.(*elasticsearchcrd.Elasticsearch)
 	var d any
 
@@ -647,7 +646,7 @@ func (r *tlsReconciler) OnSuccess(ctx context.Context, resource object.MultiPhas
 	}
 	isTlsBlackout := d.(bool)
 
-	r.Log.Debugf("TLS phase : %s, isBlackout: %t", phase, isTlsBlackout)
+	logger.Debugf("TLS phase : %s, isBlackout: %t", phase, isTlsBlackout)
 
 	if isTlsBlackout {
 		if condition.IsStatusConditionPresentAndEqual(o.Status.Conditions, TlsConditionBlackout.String(), metav1.ConditionFalse) {
@@ -672,7 +671,7 @@ func (r *tlsReconciler) OnSuccess(ctx context.Context, resource object.MultiPhas
 	switch phase {
 	case TlsPhaseCreate:
 
-		r.Recorder.Eventf(resource, corev1.EventTypeNormal, "Completed", "Tls secrets successfully generated")
+		r.Recorder().Eventf(resource, corev1.EventTypeNormal, "Completed", "Tls secrets successfully generated")
 
 		condition.SetStatusCondition(&o.Status.Conditions, metav1.Condition{
 			Type:    TlsCondition.String(),
@@ -709,12 +708,12 @@ func (r *tlsReconciler) OnSuccess(ctx context.Context, resource object.MultiPhas
 			Message: "Certificates propagated",
 		})
 
-		r.Log.Info("Phase Create all certificates successfully finished")
+		logger.Info("Phase Create all certificates successfully finished")
 	case TlsPhaseUpdatePki:
 		// Remove force renew certificate
 		if o.Annotations[fmt.Sprintf("%s/renew-certificates", elasticsearchcrd.ElasticsearchAnnotationKey)] == "true" {
 			delete(o.Annotations, fmt.Sprintf("%s/renew-certificates", elasticsearchcrd.ElasticsearchAnnotationKey))
-			if err = r.Client.Update(ctx, o); err != nil {
+			if err = r.Client().Update(ctx, o); err != nil {
 				return res, err
 			}
 		}
@@ -755,7 +754,7 @@ func (r *tlsReconciler) OnSuccess(ctx context.Context, resource object.MultiPhas
 			Message: "Wait renew all certificates",
 		})
 
-		r.Log.Info("Phase to renew PKI successfully finished")
+		logger.Info("Phase to renew PKI successfully finished")
 
 	case TlsPhasePropagatePki:
 
@@ -772,14 +771,14 @@ func (r *tlsReconciler) OnSuccess(ctx context.Context, resource object.MultiPhas
 		if err != nil {
 			return res, errors.Wrap(err, "Error when generate label selector")
 		}
-		if err = r.Client.List(ctx, stsList, &client.ListOptions{Namespace: o.Namespace, LabelSelector: labelSelectors}); err != nil {
+		if err = r.Client().List(ctx, stsList, &client.ListOptions{Namespace: o.Namespace, LabelSelector: labelSelectors}); err != nil {
 			return res, errors.Wrapf(err, "Error when read statefulset")
 		}
 
 		for _, sts := range stsList.Items {
 			if sts.Spec.Template.Annotations[fmt.Sprintf("%s/secret-%s", elasticsearchcrd.ElasticsearchAnnotationKey, sTransport.Name)] != sequence || localhelper.IsOnStatefulSetUpgradeState(&sts) {
-				r.Log.Debugf("Expected: %s, actual: %s", sequence, sts.Spec.Template.Annotations[fmt.Sprintf("%s/secret-%s", elasticsearchcrd.ElasticsearchAnnotationKey, sTransport.Name)])
-				r.Log.Info("Phase propagate CA: wait statefullset controller finished to propagate CA certificate")
+				logger.Debugf("Expected: %s, actual: %s", sequence, sts.Spec.Template.Annotations[fmt.Sprintf("%s/secret-%s", elasticsearchcrd.ElasticsearchAnnotationKey, sTransport.Name)])
+				logger.Info("Phase propagate CA: wait statefullset controller finished to propagate CA certificate")
 				return res, nil
 			}
 		}
@@ -792,7 +791,7 @@ func (r *tlsReconciler) OnSuccess(ctx context.Context, resource object.MultiPhas
 			Message: "PKI generated",
 		})
 
-		r.Log.Info("Phase propagate CA: all statefulset restarted successfully with new CA")
+		logger.Info("Phase propagate CA: all statefulset restarted successfully with new CA")
 	case TlsPhaseUpdateCertificates:
 		// The statefullset controller will upgrade statefullset because of the checksum certificate change
 		condition.SetStatusCondition(&o.Status.Conditions, metav1.Condition{
@@ -802,7 +801,7 @@ func (r *tlsReconciler) OnSuccess(ctx context.Context, resource object.MultiPhas
 			Message: "Certificates generated",
 		})
 
-		r.Log.Info("Phase propagate certificates: all certificates have been successfully renewed")
+		logger.Info("Phase propagate certificates: all certificates have been successfully renewed")
 
 	case TlsPhasePropagateCertificates:
 		// Compute expected checksum
@@ -818,14 +817,14 @@ func (r *tlsReconciler) OnSuccess(ctx context.Context, resource object.MultiPhas
 		if err != nil {
 			return res, errors.Wrap(err, "Error when generate label selector")
 		}
-		if err = r.Client.List(ctx, stsList, &client.ListOptions{Namespace: o.Namespace, LabelSelector: labelSelectors}); err != nil {
+		if err = r.Client().List(ctx, stsList, &client.ListOptions{Namespace: o.Namespace, LabelSelector: labelSelectors}); err != nil {
 			return res, errors.Wrapf(err, "Error when read statefulset")
 		}
 
 		for _, sts := range stsList.Items {
 			if sts.Spec.Template.Annotations[fmt.Sprintf("%s/secret-%s", elasticsearchcrd.ElasticsearchAnnotationKey, sTransport.Name)] != sequence || localhelper.IsOnStatefulSetUpgradeState(&sts) {
-				r.Log.Debugf("Expected: %s, actual: %s", sequence, sts.Spec.Template.Annotations[fmt.Sprintf("%s/secret-%s", elasticsearchcrd.ElasticsearchAnnotationKey, sTransport.Name)])
-				r.Log.Info("Phase propagate certificates:  wait statefullset controller finished to propagate certificate")
+				logger.Debugf("Expected: %s, actual: %s", sequence, sts.Spec.Template.Annotations[fmt.Sprintf("%s/secret-%s", elasticsearchcrd.ElasticsearchAnnotationKey, sTransport.Name)])
+				logger.Info("Phase propagate certificates:  wait statefullset controller finished to propagate certificate")
 				return res, nil
 			}
 		}
@@ -838,7 +837,7 @@ func (r *tlsReconciler) OnSuccess(ctx context.Context, resource object.MultiPhas
 			Message: "Certificates propagated",
 		})
 
-		r.Log.Info("Phase propagate certificates: all nodes have been successfully restarted with new certificates")
+		logger.Info("Phase propagate certificates: all nodes have been successfully restarted with new certificates")
 
 	case TlsPhaseCleanTransportCA:
 		condition.SetStatusCondition(&o.Status.Conditions, metav1.Condition{
@@ -848,7 +847,7 @@ func (r *tlsReconciler) OnSuccess(ctx context.Context, resource object.MultiPhas
 			Message: "Ready",
 		})
 
-		r.Log.Info("Clean old transport CA certificate successfully")
+		logger.Info("Clean old transport CA certificate successfully")
 
 	case TlsPhaseReconcile:
 		return ctrl.Result{Requeue: true}, nil

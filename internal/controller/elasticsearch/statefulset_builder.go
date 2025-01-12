@@ -10,8 +10,8 @@ import (
 	"github.com/disaster37/k8sbuilder"
 	"github.com/disaster37/operator-sdk-extra/pkg/helper"
 	"github.com/thoas/go-funk"
-	elasticsearchcrd "github.com/webcenter-fr/elasticsearch-operator/apis/elasticsearch/v1"
-	"github.com/webcenter-fr/elasticsearch-operator/apis/shared"
+	elasticsearchcrd "github.com/webcenter-fr/elasticsearch-operator/api/elasticsearch/v1"
+	"github.com/webcenter-fr/elasticsearch-operator/api/shared"
 	appv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -35,7 +35,7 @@ var roleList = []string{
 }
 
 // GenerateStatefullsets permit to generate statefullsets for each node groups
-func buildStatefulsets(es *elasticsearchcrd.Elasticsearch, secretsChecksum []corev1.Secret, configMapsChecksum []corev1.ConfigMap) (statefullsets []appv1.StatefulSet, err error) {
+func buildStatefulsets(es *elasticsearchcrd.Elasticsearch, secretsChecksum []corev1.Secret, configMapsChecksum []corev1.ConfigMap, isOpenshift bool) (statefullsets []appv1.StatefulSet, err error) {
 	var sts *appv1.StatefulSet
 
 	checksumAnnotations := map[string]string{}
@@ -272,8 +272,11 @@ func buildStatefulsets(es *elasticsearchcrd.Elasticsearch, secretsChecksum []cor
 					"ALL",
 				},
 			},
-			RunAsUser:    ptr.To[int64](1000),
-			RunAsNonRoot: ptr.To[bool](true),
+			AllowPrivilegeEscalation: ptr.To(false),
+			Privileged:               ptr.To(false),
+			RunAsNonRoot:             ptr.To(true),
+			RunAsUser:                ptr.To[int64](1000),
+			RunAsGroup:               ptr.To[int64](1000),
 		}, k8sbuilder.OverwriteIfDefaultValue)
 
 		// Compute volume mount
@@ -450,8 +453,9 @@ fi
 				Image:           GetContainerImage(es),
 				ImagePullPolicy: es.Spec.ImagePullPolicy,
 				SecurityContext: &corev1.SecurityContext{
-					Privileged: ptr.To[bool](true),
-					RunAsUser:  ptr.To[int64](0),
+					Privileged:             ptr.To[bool](true),
+					RunAsUser:              ptr.To[int64](0),
+					ReadOnlyRootFilesystem: ptr.To(true),
 				},
 				Command: []string{
 					"sysctl",
@@ -468,6 +472,18 @@ fi
 				Name:            "init-keystore",
 				Image:           GetContainerImage(es),
 				ImagePullPolicy: es.Spec.ImagePullPolicy,
+				SecurityContext: &corev1.SecurityContext{
+					Capabilities: &corev1.Capabilities{
+						Drop: []corev1.Capability{
+							"ALL",
+						},
+					},
+					AllowPrivilegeEscalation: ptr.To(false),
+					Privileged:               ptr.To(false),
+					RunAsNonRoot:             ptr.To(true),
+					RunAsUser:                ptr.To[int64](1000),
+					RunAsGroup:               ptr.To[int64](1000),
+				},
 				VolumeMounts: []corev1.VolumeMount{
 					{
 						Name:      "keystore",
@@ -511,7 +527,16 @@ cp -a /usr/share/elasticsearch/config/elasticsearch.keystore /mnt/keystore/
 				Image:           GetContainerImage(es),
 				ImagePullPolicy: es.Spec.ImagePullPolicy,
 				SecurityContext: &corev1.SecurityContext{
-					RunAsUser: ptr.To[int64](0),
+					Capabilities: &corev1.Capabilities{
+						Drop: []corev1.Capability{
+							"ALL",
+						},
+					},
+					AllowPrivilegeEscalation: ptr.To(false),
+					Privileged:               ptr.To(false),
+					RunAsNonRoot:             ptr.To(true),
+					RunAsUser:                ptr.To[int64](1000),
+					RunAsGroup:               ptr.To[int64](1000),
 				},
 				VolumeMounts: []corev1.VolumeMount{
 					{
@@ -548,7 +573,8 @@ cp -a /usr/share/elasticsearch/jdk/lib/security/* /mnt/cacerts/
 			Image:           GetContainerImage(es),
 			ImagePullPolicy: es.Spec.ImagePullPolicy,
 			SecurityContext: &corev1.SecurityContext{
-				RunAsUser: ptr.To[int64](0),
+				Privileged: ptr.To(false),
+				RunAsUser:  ptr.To[int64](0),
 			},
 			Env: []corev1.EnvVar{
 				{
@@ -790,6 +816,11 @@ fi
 		ptb.WithSecurityContext(&corev1.PodSecurityContext{
 			FSGroup: ptr.To[int64](1000),
 		}, k8sbuilder.Merge)
+
+		// On Openshift, we need to run Elasticsearch with specific serviceAccount that is binding to anyuid scc
+		if isOpenshift {
+			ptb.PodTemplate().Spec.ServiceAccountName = GetServiceAccountName(es)
+		}
 
 		// Compute pod template name
 		ptb.PodTemplate().Name = GetNodeGroupName(es, nodeGroup.Name)

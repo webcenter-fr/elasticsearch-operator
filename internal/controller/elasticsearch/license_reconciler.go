@@ -10,8 +10,8 @@ import (
 	"github.com/disaster37/operator-sdk-extra/pkg/helper"
 	"github.com/disaster37/operator-sdk-extra/pkg/object"
 	"github.com/sirupsen/logrus"
-	elasticsearchcrd "github.com/webcenter-fr/elasticsearch-operator/apis/elasticsearch/v1"
-	elasticsearchapicrd "github.com/webcenter-fr/elasticsearch-operator/apis/elasticsearchapi/v1"
+	elasticsearchcrd "github.com/webcenter-fr/elasticsearch-operator/api/elasticsearch/v1"
+	elasticsearchapicrd "github.com/webcenter-fr/elasticsearch-operator/api/elasticsearchapi/v1"
 	corev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/types"
@@ -26,36 +26,29 @@ const (
 )
 
 type licenseReconciler struct {
-	controller.BaseReconciler
 	controller.MultiPhaseStepReconcilerAction
 }
 
-func newLicenseReconciler(client client.Client, logger *logrus.Entry, recorder record.EventRecorder) (multiPhaseStepReconcilerAction controller.MultiPhaseStepReconcilerAction) {
+func newLicenseReconciler(client client.Client, recorder record.EventRecorder) (multiPhaseStepReconcilerAction controller.MultiPhaseStepReconcilerAction) {
 	return &licenseReconciler{
 		MultiPhaseStepReconcilerAction: controller.NewBasicMultiPhaseStepReconcilerAction(
 			client,
 			LicensePhase,
 			LicenseCondition,
-			logger,
 			recorder,
 		),
-		BaseReconciler: controller.BaseReconciler{
-			Client:   client,
-			Recorder: recorder,
-			Log:      logger,
-		},
 	}
 }
 
 // Read existing license
-func (r *licenseReconciler) Read(ctx context.Context, resource object.MultiPhaseObject, data map[string]any) (read controller.MultiPhaseRead, res ctrl.Result, err error) {
+func (r *licenseReconciler) Read(ctx context.Context, resource object.MultiPhaseObject, data map[string]any, logger *logrus.Entry) (read controller.MultiPhaseRead, res ctrl.Result, err error) {
 	o := resource.(*elasticsearchcrd.Elasticsearch)
 	license := &elasticsearchapicrd.License{}
 	s := &corev1.Secret{}
 	read = controller.NewBasicMultiPhaseRead()
 
 	// Read current license
-	if err = r.Client.Get(ctx, types.NamespacedName{Namespace: o.Namespace, Name: GetLicenseName(o)}, license); err != nil {
+	if err = r.Client().Get(ctx, types.NamespacedName{Namespace: o.Namespace, Name: GetLicenseName(o)}, license); err != nil {
 		if !k8serrors.IsNotFound(err) {
 			return read, res, errors.Wrapf(err, "Error when read license")
 		}
@@ -67,11 +60,11 @@ func (r *licenseReconciler) Read(ctx context.Context, resource object.MultiPhase
 
 	// Check if license is expected
 	if o.Spec.LicenseSecretRef != nil {
-		if err = r.Client.Get(ctx, types.NamespacedName{Namespace: o.Namespace, Name: o.Spec.LicenseSecretRef.Name}, s); err != nil {
+		if err = r.Client().Get(ctx, types.NamespacedName{Namespace: o.Namespace, Name: o.Spec.LicenseSecretRef.Name}, s); err != nil {
 			if !k8serrors.IsNotFound(err) {
 				return read, res, errors.Wrapf(err, "Error when read secret %s", o.Spec.LicenseSecretRef.Name)
 			}
-			r.Log.Warnf("Secret %s not yet exist, try again later", o.Spec.LicenseSecretRef.Name)
+			logger.Warnf("Secret %s not yet exist, try again later", o.Spec.LicenseSecretRef.Name)
 			return read, ctrl.Result{RequeueAfter: 30 * time.Second}, nil
 		}
 	} else {

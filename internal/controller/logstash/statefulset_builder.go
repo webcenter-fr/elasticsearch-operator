@@ -8,8 +8,8 @@ import (
 	"emperror.dev/errors"
 	"github.com/codingsince1985/checksum"
 	"github.com/disaster37/k8sbuilder"
-	elasticsearchcrd "github.com/webcenter-fr/elasticsearch-operator/apis/elasticsearch/v1"
-	logstashcrd "github.com/webcenter-fr/elasticsearch-operator/apis/logstash/v1"
+	elasticsearchcrd "github.com/webcenter-fr/elasticsearch-operator/api/elasticsearch/v1"
+	logstashcrd "github.com/webcenter-fr/elasticsearch-operator/api/logstash/v1"
 	elasticsearchcontrollers "github.com/webcenter-fr/elasticsearch-operator/internal/controller/elasticsearch"
 	appv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -20,7 +20,7 @@ import (
 )
 
 // GenerateStatefullset permit to generate statefullset
-func buildStatefulsets(ls *logstashcrd.Logstash, es *elasticsearchcrd.Elasticsearch, secretsChecksum []corev1.Secret, configMapsChecksum []corev1.ConfigMap) (statefullsets []appv1.StatefulSet, err error) {
+func buildStatefulsets(ls *logstashcrd.Logstash, es *elasticsearchcrd.Elasticsearch, secretsChecksum []corev1.Secret, configMapsChecksum []corev1.ConfigMap, isOpenshift bool) (statefullsets []appv1.StatefulSet, err error) {
 	statefullsets = make([]appv1.StatefulSet, 0, 1)
 	checksumAnnotations := map[string]string{}
 
@@ -200,8 +200,11 @@ func buildStatefulsets(ls *logstashcrd.Logstash, es *elasticsearchcrd.Elasticsea
 				"ALL",
 			},
 		},
-		RunAsUser:    ptr.To[int64](1000),
-		RunAsNonRoot: ptr.To[bool](true),
+		AllowPrivilegeEscalation: ptr.To(false),
+		Privileged:               ptr.To(false),
+		RunAsNonRoot:             ptr.To(true),
+		RunAsUser:                ptr.To[int64](1000),
+		RunAsGroup:               ptr.To[int64](1000),
 	}, k8sbuilder.OverwriteIfDefaultValue)
 
 	// Compute volume mount
@@ -348,6 +351,86 @@ func buildStatefulsets(ls *logstashcrd.Logstash, es *elasticsearchcrd.Elasticsea
 	// Compute containers
 	ptb.WithContainers([]corev1.Container{*cb.Container()}, k8sbuilder.Merge)
 
+	// Compute Exporter container
+	if ls.Spec.Monitoring.IsPrometheusMonitoring() {
+		exporterCb := k8sbuilder.NewContainerBuilder()
+		exporterContainer := getContainer("exporter", ls.Spec.Deployment.PodTemplate)
+		if exporterContainer == nil {
+			exporterContainer = &corev1.Container{}
+		}
+
+		// Initialize exporter container from user provided
+		exporterCb.WithContainer(exporterContainer.DeepCopy()).
+			Container().Name = "exporter"
+
+		// Expose exporter port
+		exporterCb.WithPort([]corev1.ContainerPort{
+			{
+				Name:          "exporter",
+				ContainerPort: 9198,
+				Protocol:      corev1.ProtocolTCP,
+			},
+		}, k8sbuilder.Merge)
+
+		// Compute image to use
+		image := defaultExporterImage
+		version := defaultExporterVersion
+		if ls.Spec.Monitoring.Prometheus.Image != "" {
+			image = ls.Spec.Monitoring.Prometheus.Image
+		}
+		if ls.Spec.Monitoring.Prometheus.Version != "" {
+			version = ls.Spec.Monitoring.Prometheus.Version
+		}
+		exporterCb.WithImage(fmt.Sprintf("%s:%s", image, version), k8sbuilder.Overwrite)
+
+		// Compute resources
+		if ls.Spec.Monitoring.Prometheus.Resources != nil {
+			exporterCb.WithResource(ls.Spec.Monitoring.Prometheus.Resources, k8sbuilder.Overwrite)
+		}
+
+		// Compute volume mount
+		exporterCb.WithVolumeMount([]corev1.VolumeMount{
+			{
+				Name:      "exporter-config",
+				MountPath: "/app/config.yml",
+				SubPath:   "config.yml",
+			},
+		}, k8sbuilder.Overwrite)
+
+		// Compute liveness
+		exporterCb.WithLivenessProbe(&corev1.Probe{
+			InitialDelaySeconds: 30,
+			TimeoutSeconds:      5,
+			SuccessThreshold:    1,
+			FailureThreshold:    3,
+			PeriodSeconds:       30,
+			ProbeHandler: corev1.ProbeHandler{
+				HTTPGet: &corev1.HTTPGetAction{
+					Path: "/health",
+					Port: intstr.FromString("exporter"),
+				},
+			},
+		}, k8sbuilder.OverwriteIfDefaultValue)
+
+		// Compute security context
+		exporterCb.WithSecurityContext(
+			&corev1.SecurityContext{
+				Capabilities: &corev1.Capabilities{
+					Drop: []corev1.Capability{
+						"ALL",
+					},
+				},
+				AllowPrivilegeEscalation: ptr.To(false),
+				Privileged:               ptr.To(false),
+				RunAsNonRoot:             ptr.To(true),
+			},
+			k8sbuilder.Overwrite,
+		)
+
+		ptb.WithContainers([]corev1.Container{*exporterCb.Container()}, k8sbuilder.Merge)
+
+	}
+
 	// Compute init containers
 	if ls.Spec.KeystoreSecretRef != nil {
 		kcb := k8sbuilder.NewContainerBuilder().WithContainer(&corev1.Container{
@@ -363,6 +446,18 @@ func buildStatefulsets(ls *logstashcrd.Logstash, es *elasticsearchcrd.Elasticsea
 					Name:      "logstash-keystore",
 					MountPath: "/mnt/keystoreSecrets",
 				},
+			},
+			SecurityContext: &corev1.SecurityContext{
+				Capabilities: &corev1.Capabilities{
+					Drop: []corev1.Capability{
+						"ALL",
+					},
+				},
+				AllowPrivilegeEscalation: ptr.To(false),
+				Privileged:               ptr.To(false),
+				RunAsNonRoot:             ptr.To(true),
+				RunAsUser:                ptr.To[int64](1000),
+				RunAsGroup:               ptr.To[int64](1000),
 			},
 			Command: []string{
 				"/bin/bash",
@@ -390,7 +485,8 @@ cp -a /usr/share/logstash/config/logstash.keystore /mnt/keystore/
 		Image:           GetContainerImage(ls),
 		ImagePullPolicy: ls.Spec.ImagePullPolicy,
 		SecurityContext: &corev1.SecurityContext{
-			RunAsUser: ptr.To[int64](0),
+			Privileged: ptr.To(false),
+			RunAsUser:  ptr.To[int64](0),
 		},
 		Env: []corev1.EnvVar{
 			{
@@ -633,6 +729,19 @@ fi
 					},
 				},
 			}, k8sbuilder.Merge)
+		case GetConfigMapExporterName(ls):
+			ptb.WithVolumes([]corev1.Volume{
+				{
+					Name: "exporter-config",
+					VolumeSource: corev1.VolumeSource{
+						ConfigMap: &corev1.ConfigMapVolumeSource{
+							LocalObjectReference: corev1.LocalObjectReference{
+								Name: cm.Name,
+							},
+						},
+					},
+				},
+			}, k8sbuilder.Merge)
 		}
 	}
 
@@ -678,6 +787,11 @@ fi
 	ptb.WithSecurityContext(&corev1.PodSecurityContext{
 		FSGroup: ptr.To[int64](1000),
 	}, k8sbuilder.Merge)
+
+	// On Openshift, we need to run Elasticsearch with specific serviceAccount that is binding to anyuid scc
+	if isOpenshift {
+		ptb.PodTemplate().Spec.ServiceAccountName = GetServiceAccountName(ls)
+	}
 
 	// Compute pod template name
 	ptb.PodTemplate().Name = GetStatefulsetName(ls)
@@ -782,4 +896,19 @@ func computeAntiAffinity(ls *logstashcrd.Logstash) (antiAffinity *corev1.PodAnti
 	}
 
 	return antiAffinity, nil
+}
+
+// getContainer permit to get container by name from pod template
+func getContainer(name string, podTemplate *corev1.PodTemplateSpec) (container *corev1.Container) {
+	if podTemplate == nil {
+		return nil
+	}
+
+	for _, p := range podTemplate.Spec.Containers {
+		if p.Name == name {
+			return &p
+		}
+	}
+
+	return nil
 }

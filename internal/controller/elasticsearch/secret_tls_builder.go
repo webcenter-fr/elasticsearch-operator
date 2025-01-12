@@ -7,7 +7,7 @@ import (
 	"emperror.dev/errors"
 	"github.com/disaster37/goca"
 	"github.com/disaster37/operator-sdk-extra/pkg/helper"
-	elasticsearchcrd "github.com/webcenter-fr/elasticsearch-operator/apis/elasticsearch/v1"
+	elasticsearchcrd "github.com/webcenter-fr/elasticsearch-operator/api/elasticsearch/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -325,4 +325,10 @@ func updateSecret(old, new *corev1.Secret) (s *corev1.Secret, updated bool) {
 	}
 
 	return s, updated
+}
+
+func getLabelsForTlsSecret(o *elasticsearchcrd.Elasticsearch) map[string]string {
+	return getLabels(o, map[string]string{
+		fmt.Sprintf("%s/tls-certificate", elasticsearchcrd.ElasticsearchAnnotationKey): "true",
+	})
 }

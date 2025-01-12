@@ -13,7 +13,7 @@ import (
 	"github.com/disaster37/operator-sdk-extra/pkg/object"
 	olivere "github.com/olivere/elastic/v7"
 	"github.com/sirupsen/logrus"
-	elasticsearchapicrd "github.com/webcenter-fr/elasticsearch-operator/apis/elasticsearchapi/v1"
+	elasticsearchapicrd "github.com/webcenter-fr/elasticsearch-operator/api/elasticsearchapi/v1"
 	core "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/types"
@@ -24,27 +24,22 @@ import (
 
 type licenseReconciler struct {
 	controller.RemoteReconcilerAction[*elasticsearchapicrd.License, *olivere.XPackInfoLicense, eshandler.ElasticsearchHandler]
-	controller.BaseReconciler
+	name string
 }
 
-func newLicenseReconciler(client client.Client, logger *logrus.Entry, recorder record.EventRecorder) controller.RemoteReconcilerAction[*elasticsearchapicrd.License, *olivere.XPackInfoLicense, eshandler.ElasticsearchHandler] {
+func newLicenseReconciler(name string, client client.Client, recorder record.EventRecorder) controller.RemoteReconcilerAction[*elasticsearchapicrd.License, *olivere.XPackInfoLicense, eshandler.ElasticsearchHandler] {
 	return &licenseReconciler{
 		RemoteReconcilerAction: controller.NewRemoteReconcilerAction[*elasticsearchapicrd.License, *olivere.XPackInfoLicense, eshandler.ElasticsearchHandler](
 			client,
-			logger,
 			recorder,
 		),
-		BaseReconciler: controller.BaseReconciler{
-			Client:   client,
-			Log:      logger,
-			Recorder: recorder,
-		},
+		name: name,
 	}
 }
 
-func (h *licenseReconciler) GetRemoteHandler(ctx context.Context, req ctrl.Request, o object.RemoteObject) (handler controller.RemoteExternalReconciler[*elasticsearchapicrd.License, *olivere.XPackInfoLicense, eshandler.ElasticsearchHandler], res ctrl.Result, err error) {
+func (h *licenseReconciler) GetRemoteHandler(ctx context.Context, req ctrl.Request, o object.RemoteObject, logger *logrus.Entry) (handler controller.RemoteExternalReconciler[*elasticsearchapicrd.License, *olivere.XPackInfoLicense, eshandler.ElasticsearchHandler], res ctrl.Result, err error) {
 	license := o.(*elasticsearchapicrd.License)
-	esClient, err := GetElasticsearchHandler(ctx, license, license.Spec.ElasticsearchRef, h.BaseReconciler.Client, h.BaseReconciler.Log)
+	esClient, err := GetElasticsearchHandler(ctx, license, license.Spec.ElasticsearchRef, h.Client(), logger)
 	if err != nil && license.DeletionTimestamp.IsZero() {
 		return nil, res, err
 	}
@@ -63,10 +58,10 @@ func (h *licenseReconciler) GetRemoteHandler(ctx context.Context, req ctrl.Reque
 	return handler, res, nil
 }
 
-func (h *licenseReconciler) Read(ctx context.Context, o object.RemoteObject, data map[string]any, handler controller.RemoteExternalReconciler[*elasticsearchapicrd.License, *olivere.XPackInfoLicense, eshandler.ElasticsearchHandler]) (read controller.RemoteRead[*olivere.XPackInfoLicense], res ctrl.Result, err error) {
+func (h *licenseReconciler) Read(ctx context.Context, o object.RemoteObject, data map[string]any, handler controller.RemoteExternalReconciler[*elasticsearchapicrd.License, *olivere.XPackInfoLicense, eshandler.ElasticsearchHandler], logger *logrus.Entry) (read controller.RemoteRead[*olivere.XPackInfoLicense], res ctrl.Result, err error) {
 	license := o.(*elasticsearchapicrd.License)
 
-	read, res, err = h.RemoteReconcilerAction.Read(ctx, o, data, handler)
+	read, res, err = h.RemoteReconcilerAction.Read(ctx, o, data, handler, logger)
 	if err != nil {
 		return nil, res, err
 	}
@@ -81,10 +76,10 @@ func (h *licenseReconciler) Read(ctx context.Context, o object.RemoteObject, dat
 			Namespace: license.Namespace,
 			Name:      license.Spec.SecretRef.Name,
 		}
-		if err = h.Get(ctx, secretNS, secret); err != nil {
+		if err = h.Client().Get(ctx, secretNS, secret); err != nil {
 			if k8serrors.IsNotFound(err) {
-				h.Log.Warnf("Secret %s not yet exist, try later", license.Spec.SecretRef.Name)
-				h.Recorder.Eventf(o, core.EventTypeWarning, "Failed", "Secret %s not yet exist", license.Spec.SecretRef.Name)
+				logger.Warnf("Secret %s not yet exist, try later", license.Spec.SecretRef.Name)
+				h.Recorder().Eventf(o, core.EventTypeWarning, "Failed", "Secret %s not yet exist", license.Spec.SecretRef.Name)
 				return read, ctrl.Result{RequeueAfter: 30 * time.Second}, nil
 			}
 			return nil, res, errors.Wrapf(err, "Error when get secret %s", license.Spec.SecretRef.Name)
@@ -109,7 +104,7 @@ func (h *licenseReconciler) Read(ctx context.Context, o object.RemoteObject, dat
 	return read, res, nil
 }
 
-func (h *licenseReconciler) Create(ctx context.Context, o object.RemoteObject, data map[string]any, handler controller.RemoteExternalReconciler[*elasticsearchapicrd.License, *olivere.XPackInfoLicense, eshandler.ElasticsearchHandler], object *olivere.XPackInfoLicense) (res ctrl.Result, err error) {
+func (h *licenseReconciler) Create(ctx context.Context, o object.RemoteObject, data map[string]any, handler controller.RemoteExternalReconciler[*elasticsearchapicrd.License, *olivere.XPackInfoLicense, eshandler.ElasticsearchHandler], object *olivere.XPackInfoLicense, logger *logrus.Entry) (res ctrl.Result, err error) {
 	license := o.(*elasticsearchapicrd.License)
 
 	if license.IsBasicLicense() {
@@ -118,8 +113,8 @@ func (h *licenseReconciler) Create(ctx context.Context, o object.RemoteObject, d
 			return res, errors.Wrap(err, "Error when activate basic license")
 		}
 
-		h.Log.Info("Successfully enable basic license")
-		h.Recorder.Event(o, core.EventTypeNormal, "Completed", "Enable basic license")
+		logger.Info("Successfully enable basic license")
+		h.Recorder().Event(o, core.EventTypeNormal, "Completed", "Enable basic license")
 	} else {
 		// Enterprise or platinium license
 		d, err := helper.Get(data, "rawLicense")
@@ -132,18 +127,18 @@ func (h *licenseReconciler) Create(ctx context.Context, o object.RemoteObject, d
 			return res, errors.Wrap(err, "Error when add enterprise license on Elasticsearch")
 		}
 
-		h.Log.Infof("Successfully enable %s license", object.Type)
-		h.Recorder.Eventf(o, core.EventTypeNormal, "Completed", "Enable %s license", object.Type)
+		logger.Infof("Successfully enable %s license", object.Type)
+		h.Recorder().Eventf(o, core.EventTypeNormal, "Completed", "Enable %s license", object.Type)
 	}
 
 	return res, nil
 }
 
-func (h *licenseReconciler) Update(ctx context.Context, o object.RemoteObject, data map[string]any, handler controller.RemoteExternalReconciler[*elasticsearchapicrd.License, *olivere.XPackInfoLicense, eshandler.ElasticsearchHandler], object *olivere.XPackInfoLicense) (res ctrl.Result, err error) {
-	return h.Create(ctx, o, data, handler, object)
+func (h *licenseReconciler) Update(ctx context.Context, o object.RemoteObject, data map[string]any, handler controller.RemoteExternalReconciler[*elasticsearchapicrd.License, *olivere.XPackInfoLicense, eshandler.ElasticsearchHandler], object *olivere.XPackInfoLicense, logger *logrus.Entry) (res ctrl.Result, err error) {
+	return h.Create(ctx, o, data, handler, object, logger)
 }
 
-func (h *licenseReconciler) Diff(ctx context.Context, o object.RemoteObject, read controller.RemoteRead[*olivere.XPackInfoLicense], data map[string]any, handler controller.RemoteExternalReconciler[*elasticsearchapicrd.License, *olivere.XPackInfoLicense, eshandler.ElasticsearchHandler], ignoreDiff ...patch.CalculateOption) (diff controller.RemoteDiff[*olivere.XPackInfoLicense], res ctrl.Result, err error) {
+func (h *licenseReconciler) Diff(ctx context.Context, o object.RemoteObject, read controller.RemoteRead[*olivere.XPackInfoLicense], data map[string]any, handler controller.RemoteExternalReconciler[*elasticsearchapicrd.License, *olivere.XPackInfoLicense, eshandler.ElasticsearchHandler], logger *logrus.Entry, ignoreDiff ...patch.CalculateOption) (diff controller.RemoteDiff[*olivere.XPackInfoLicense], res ctrl.Result, err error) {
 	diff = controller.NewBasicRemoteDiff[*olivere.XPackInfoLicense]()
 
 	// Not yet license
@@ -161,7 +156,7 @@ func (h *licenseReconciler) Diff(ctx context.Context, o object.RemoteObject, rea
 	return diff, res, nil
 }
 
-func (h *licenseReconciler) OnSuccess(ctx context.Context, o object.RemoteObject, data map[string]any, handler controller.RemoteExternalReconciler[*elasticsearchapicrd.License, *olivere.XPackInfoLicense, eshandler.ElasticsearchHandler], diff controller.RemoteDiff[*olivere.XPackInfoLicense]) (res ctrl.Result, err error) {
+func (h *licenseReconciler) OnSuccess(ctx context.Context, o object.RemoteObject, data map[string]any, handler controller.RemoteExternalReconciler[*elasticsearchapicrd.License, *olivere.XPackInfoLicense, eshandler.ElasticsearchHandler], diff controller.RemoteDiff[*olivere.XPackInfoLicense], logger *logrus.Entry) (res ctrl.Result, err error) {
 	license := o.(*elasticsearchapicrd.License)
 
 	if license.IsBasicLicense() {
@@ -177,5 +172,5 @@ func (h *licenseReconciler) OnSuccess(ctx context.Context, o object.RemoteObject
 		license.Status.LicenseType = l.Type
 	}
 
-	return h.RemoteReconcilerAction.OnSuccess(ctx, license, data, handler, diff)
+	return h.RemoteReconcilerAction.OnSuccess(ctx, license, data, handler, diff, logger)
 }

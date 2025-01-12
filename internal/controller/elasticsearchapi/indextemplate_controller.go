@@ -20,8 +20,7 @@ import (
 	"github.com/disaster37/operator-sdk-extra/pkg/controller"
 	olivere "github.com/olivere/elastic/v7"
 	"github.com/sirupsen/logrus"
-	elasticsearchapicrd "github.com/webcenter-fr/elasticsearch-operator/apis/elasticsearchapi/v1"
-	"github.com/webcenter-fr/elasticsearch-operator/internal/controller/common"
+	elasticsearchapicrd "github.com/webcenter-fr/elasticsearch-operator/api/elasticsearchapi/v1"
 	"k8s.io/client-go/tools/record"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -35,12 +34,12 @@ const (
 type IndexTemplateReconciler struct {
 	controller.Controller
 	controller.RemoteReconciler[*elasticsearchapicrd.IndexTemplate, *olivere.IndicesGetIndexTemplate, eshandler.ElasticsearchHandler]
-	reconcilerAction controller.RemoteReconcilerAction[*elasticsearchapicrd.IndexTemplate, *olivere.IndicesGetIndexTemplate, eshandler.ElasticsearchHandler]
-	name             string
+	controller.RemoteReconcilerAction[*elasticsearchapicrd.IndexTemplate, *olivere.IndicesGetIndexTemplate, eshandler.ElasticsearchHandler]
+	name string
 }
 
 func NewIndexTemplateReconciler(client client.Client, logger *logrus.Entry, recorder record.EventRecorder) controller.Controller {
-	r := &IndexTemplateReconciler{
+	return &IndexTemplateReconciler{
 		Controller: controller.NewBasicController(),
 		RemoteReconciler: controller.NewBasicRemoteReconciler[*elasticsearchapicrd.IndexTemplate, *olivere.IndicesGetIndexTemplate, eshandler.ElasticsearchHandler](
 			client,
@@ -49,16 +48,13 @@ func NewIndexTemplateReconciler(client client.Client, logger *logrus.Entry, reco
 			logger,
 			recorder,
 		),
-		reconcilerAction: newIndexTemplateReconcilerclient(
+		RemoteReconcilerAction: newIndexTemplateReconcilerclient(
+			indexTemplateName,
 			client,
-			logger,
 			recorder,
 		),
 		name: indexTemplateName,
 	}
-	common.ControllerMetrics.WithLabelValues(r.name).Add(0)
-
-	return r
 }
 
 //+kubebuilder:rbac:groups=elasticsearchapi.k8s.webcenter.fr,resources=indextemplates,verbs=get;list;watch;create;update;patch;delete
@@ -85,7 +81,7 @@ func (r *IndexTemplateReconciler) Reconcile(ctx context.Context, req ctrl.Reques
 		req,
 		it,
 		data,
-		r.reconcilerAction,
+		r,
 	)
 }
 

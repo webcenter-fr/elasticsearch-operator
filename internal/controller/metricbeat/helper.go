@@ -4,7 +4,7 @@ import (
 	"fmt"
 
 	"github.com/thoas/go-funk"
-	beatcrd "github.com/webcenter-fr/elasticsearch-operator/apis/beat/v1"
+	beatcrd "github.com/webcenter-fr/elasticsearch-operator/api/beat/v1"
 )
 
 const (
@@ -96,4 +96,9 @@ func GetSecretNameForCredentials(mb *beatcrd.Metricbeat) (secretName string) {
 // GetNetworkPolicyElasticsearchName return the name for network policy to access on Elasticsearch
 func GetNetworkPolicyElasticsearchName(mb *beatcrd.Metricbeat) string {
 	return fmt.Sprintf("%s-allow-es-mb", mb.Name)
+}
+
+// GetServiceAccountName return the service account name
+func GetServiceAccountName(mb *beatcrd.Metricbeat) string {
+	return fmt.Sprintf("%s-mb", mb.Name)
 }

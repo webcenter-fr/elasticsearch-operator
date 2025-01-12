@@ -5,8 +5,8 @@ import (
 
 	"github.com/disaster37/operator-sdk-extra/pkg/test"
 	"github.com/stretchr/testify/assert"
-	logstashcrd "github.com/webcenter-fr/elasticsearch-operator/apis/logstash/v1"
-	"github.com/webcenter-fr/elasticsearch-operator/apis/shared"
+	logstashcrd "github.com/webcenter-fr/elasticsearch-operator/api/logstash/v1"
+	"github.com/webcenter-fr/elasticsearch-operator/api/shared"
 	policyv1 "k8s.io/api/policy/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"

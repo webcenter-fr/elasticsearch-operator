@@ -6,7 +6,7 @@ import (
 	"strings"
 
 	"github.com/thoas/go-funk"
-	elasticsearchcrd "github.com/webcenter-fr/elasticsearch-operator/apis/elasticsearch/v1"
+	elasticsearchcrd "github.com/webcenter-fr/elasticsearch-operator/api/elasticsearch/v1"
 )
 
 const (
@@ -283,4 +283,9 @@ func getAnnotations(elasticsearch *elasticsearchcrd.Elasticsearch, customAnnotat
 	}
 
 	return annotations
+}
+
+// GetServiceAccountName return the service account name
+func GetServiceAccountName(es *elasticsearchcrd.Elasticsearch) string {
+	return fmt.Sprintf("%s-es", es.Name)
 }

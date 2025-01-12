@@ -12,8 +12,8 @@ import (
 	"github.com/disaster37/operator-sdk-extra/pkg/helper"
 	"github.com/disaster37/operator-sdk-extra/pkg/object"
 	"github.com/sirupsen/logrus"
-	elasticsearchcrd "github.com/webcenter-fr/elasticsearch-operator/apis/elasticsearch/v1"
-	logstashcrd "github.com/webcenter-fr/elasticsearch-operator/apis/logstash/v1"
+	elasticsearchcrd "github.com/webcenter-fr/elasticsearch-operator/api/elasticsearch/v1"
+	logstashcrd "github.com/webcenter-fr/elasticsearch-operator/api/logstash/v1"
 	"github.com/webcenter-fr/elasticsearch-operator/internal/controller/common"
 	appv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -31,29 +31,24 @@ const (
 )
 
 type statefulsetReconciler struct {
-	controller.BaseReconciler
 	controller.MultiPhaseStepReconcilerAction
+	isOpenshift bool
 }
 
-func newStatefulsetReconciler(client client.Client, logger *logrus.Entry, recorder record.EventRecorder) (multiPhaseStepReconcilerAction controller.MultiPhaseStepReconcilerAction) {
+func newStatefulsetReconciler(client client.Client, recorder record.EventRecorder, isOpenshift bool) (multiPhaseStepReconcilerAction controller.MultiPhaseStepReconcilerAction) {
 	return &statefulsetReconciler{
 		MultiPhaseStepReconcilerAction: controller.NewBasicMultiPhaseStepReconcilerAction(
 			client,
 			StatefulsetPhase,
 			StatefulsetCondition,
-			logger,
 			recorder,
 		),
-		BaseReconciler: controller.BaseReconciler{
-			Client:   client,
-			Recorder: recorder,
-			Log:      logger,
-		},
+		isOpenshift: isOpenshift,
 	}
 }
 
 // Read existing satefulsets
-func (r *statefulsetReconciler) Read(ctx context.Context, resource object.MultiPhaseObject, data map[string]any) (read controller.MultiPhaseRead, res ctrl.Result, err error) {
+func (r *statefulsetReconciler) Read(ctx context.Context, resource object.MultiPhaseObject, data map[string]any, logger *logrus.Entry) (read controller.MultiPhaseRead, res ctrl.Result, err error) {
 	o := resource.(*logstashcrd.Logstash)
 	sts := &appv1.StatefulSet{}
 	read = controller.NewBasicMultiPhaseRead()
@@ -64,7 +59,7 @@ func (r *statefulsetReconciler) Read(ctx context.Context, resource object.MultiP
 	configMapsChecksum := make([]corev1.ConfigMap, 0)
 	secretsChecksum := make([]corev1.Secret, 0)
 
-	if err = r.Client.Get(ctx, types.NamespacedName{Namespace: o.Namespace, Name: GetStatefulsetName(o)}, sts); err != nil {
+	if err = r.Client().Get(ctx, types.NamespacedName{Namespace: o.Namespace, Name: GetStatefulsetName(o)}, sts); err != nil {
 		if !k8serrors.IsNotFound(err) {
 			return read, res, errors.Wrapf(err, "Error when read statefulset")
 		}
@@ -76,12 +71,12 @@ func (r *statefulsetReconciler) Read(ctx context.Context, resource object.MultiP
 
 	// Read Elasticsearch
 	if o.Spec.ElasticsearchRef.IsManaged() {
-		es, err = common.GetElasticsearchFromRef(ctx, r.Client, o, o.Spec.ElasticsearchRef)
+		es, err = common.GetElasticsearchFromRef(ctx, r.Client(), o, o.Spec.ElasticsearchRef)
 		if err != nil {
 			return read, res, errors.Wrap(err, "Error when read ElasticsearchRef")
 		}
 		if es == nil {
-			r.Log.Warn("ElasticsearchRef not found, try latter")
+			logger.Warn("ElasticsearchRef not found, try latter")
 			return read, ctrl.Result{RequeueAfter: 30 * time.Second}, nil
 		}
 	} else {
@@ -90,11 +85,11 @@ func (r *statefulsetReconciler) Read(ctx context.Context, resource object.MultiP
 
 	// Read keystore secret to generate checksum
 	if o.Spec.KeystoreSecretRef != nil && o.Spec.KeystoreSecretRef.Name != "" {
-		if err = r.Client.Get(ctx, types.NamespacedName{Namespace: o.Namespace, Name: o.Spec.KeystoreSecretRef.Name}, s); err != nil {
+		if err = r.Client().Get(ctx, types.NamespacedName{Namespace: o.Namespace, Name: o.Spec.KeystoreSecretRef.Name}, s); err != nil {
 			if !k8serrors.IsNotFound(err) {
 				return read, res, errors.Wrapf(err, "Error when read secret %s", o.Spec.KeystoreSecretRef.Name)
 			}
-			r.Log.Warnf("Secret %s not yet exist, try again later", o.Spec.KeystoreSecretRef.Name)
+			logger.Warnf("Secret %s not yet exist, try again later", o.Spec.KeystoreSecretRef.Name)
 			return read, ctrl.Result{RequeueAfter: 30 * time.Second}, nil
 		}
 
@@ -104,21 +99,21 @@ func (r *statefulsetReconciler) Read(ctx context.Context, resource object.MultiP
 	// Read Custom CA Elasticsearch to generate checksum
 	if (o.Spec.ElasticsearchRef.IsManaged() && es.Spec.Tls.IsTlsEnabled()) || o.Spec.ElasticsearchRef.ElasticsearchCaSecretRef != nil {
 		if o.Spec.ElasticsearchRef.IsManaged() && es.Spec.Tls.IsTlsEnabled() && es.Spec.Tls.IsSelfManagedSecretForTls() {
-			if err = r.Client.Get(ctx, types.NamespacedName{Namespace: o.Namespace, Name: GetSecretNameForCAElasticsearch(o)}, s); err != nil {
+			if err = r.Client().Get(ctx, types.NamespacedName{Namespace: o.Namespace, Name: GetSecretNameForCAElasticsearch(o)}, s); err != nil {
 				if !k8serrors.IsNotFound(err) {
 					return read, res, errors.Wrapf(err, "Error when read secret %s", GetSecretNameForCAElasticsearch(o))
 				}
-				r.Log.Warnf("Secret %s not yet exist, try again later", GetSecretNameForCAElasticsearch(o))
+				logger.Warnf("Secret %s not yet exist, try again later", GetSecretNameForCAElasticsearch(o))
 				return read, ctrl.Result{RequeueAfter: 30 * time.Second}, nil
 			}
 
 			secretsChecksum = append(secretsChecksum, *s)
 		} else {
-			if err = r.Client.Get(ctx, types.NamespacedName{Namespace: o.Namespace, Name: o.Spec.ElasticsearchRef.ElasticsearchCaSecretRef.Name}, s); err != nil {
+			if err = r.Client().Get(ctx, types.NamespacedName{Namespace: o.Namespace, Name: o.Spec.ElasticsearchRef.ElasticsearchCaSecretRef.Name}, s); err != nil {
 				if !k8serrors.IsNotFound(err) {
 					return read, res, errors.Wrapf(err, "Error when read secret %s", o.Spec.ElasticsearchRef.ElasticsearchCaSecretRef.Name)
 				}
-				r.Log.Warnf("Secret %s not yet exist, try again later", o.Spec.ElasticsearchRef.ElasticsearchCaSecretRef.Name)
+				logger.Warnf("Secret %s not yet exist, try again later", o.Spec.ElasticsearchRef.ElasticsearchCaSecretRef.Name)
 				return read, ctrl.Result{RequeueAfter: 30 * time.Second}, nil
 			}
 
@@ -135,7 +130,7 @@ func (r *statefulsetReconciler) Read(ctx context.Context, resource object.MultiP
 	if err != nil {
 		return read, res, errors.Wrap(err, "Error when generate label selector")
 	}
-	if err = r.Client.List(ctx, cmList, &client.ListOptions{Namespace: o.Namespace, LabelSelector: labelSelectors}); err != nil {
+	if err = r.Client().List(ctx, cmList, &client.ListOptions{Namespace: o.Namespace, LabelSelector: labelSelectors}); err != nil {
 		return read, res, errors.Wrapf(err, "Error when read configMaps")
 	}
 	configMapsChecksum = append(configMapsChecksum, cmList.Items...)
@@ -143,11 +138,11 @@ func (r *statefulsetReconciler) Read(ctx context.Context, resource object.MultiP
 	// Read extra volumes to generate checksum if secret or configmap
 	for _, v := range o.Spec.Deployment.AdditionalVolumes {
 		if v.ConfigMap != nil {
-			if err = r.Client.Get(ctx, types.NamespacedName{Namespace: o.Namespace, Name: v.ConfigMap.Name}, cm); err != nil {
+			if err = r.Client().Get(ctx, types.NamespacedName{Namespace: o.Namespace, Name: v.ConfigMap.Name}, cm); err != nil {
 				if !k8serrors.IsNotFound(err) {
 					return read, res, errors.Wrapf(err, "Error when read configMap %s", v.ConfigMap.Name)
 				}
-				r.Log.Warnf("ConfigMap %s not yet exist, try again later", v.ConfigMap.Name)
+				logger.Warnf("ConfigMap %s not yet exist, try again later", v.ConfigMap.Name)
 				return read, ctrl.Result{RequeueAfter: 30 * time.Second}, nil
 			}
 
@@ -156,11 +151,11 @@ func (r *statefulsetReconciler) Read(ctx context.Context, resource object.MultiP
 		}
 
 		if v.Secret != nil {
-			if err = r.Client.Get(ctx, types.NamespacedName{Namespace: o.Namespace, Name: v.Secret.SecretName}, s); err != nil {
+			if err = r.Client().Get(ctx, types.NamespacedName{Namespace: o.Namespace, Name: v.Secret.SecretName}, s); err != nil {
 				if !k8serrors.IsNotFound(err) {
 					return read, res, errors.Wrapf(err, "Error when read secret %s", v.Secret.SecretName)
 				}
-				r.Log.Warnf("Secret %s not yet exist, try again later", v.Secret.SecretName)
+				logger.Warnf("Secret %s not yet exist, try again later", v.Secret.SecretName)
 				return read, ctrl.Result{RequeueAfter: 30 * time.Second}, nil
 			}
 
@@ -172,11 +167,11 @@ func (r *statefulsetReconciler) Read(ctx context.Context, resource object.MultiP
 	// Read extra Env to generate checksum if secret or configmap
 	for _, env := range o.Spec.Deployment.Env {
 		if env.ValueFrom != nil && env.ValueFrom.SecretKeyRef != nil {
-			if err = r.Client.Get(ctx, types.NamespacedName{Namespace: o.Namespace, Name: env.ValueFrom.SecretKeyRef.Name}, s); err != nil {
+			if err = r.Client().Get(ctx, types.NamespacedName{Namespace: o.Namespace, Name: env.ValueFrom.SecretKeyRef.Name}, s); err != nil {
 				if !k8serrors.IsNotFound(err) {
 					return read, res, errors.Wrapf(err, "Error when read secret %s", env.ValueFrom.SecretKeyRef.Name)
 				}
-				r.Log.Warnf("Secret %s not yet exist, try again later", env.ValueFrom.SecretKeyRef.Name)
+				logger.Warnf("Secret %s not yet exist, try again later", env.ValueFrom.SecretKeyRef.Name)
 				return read, ctrl.Result{RequeueAfter: 30 * time.Second}, nil
 			}
 
@@ -185,11 +180,11 @@ func (r *statefulsetReconciler) Read(ctx context.Context, resource object.MultiP
 		}
 
 		if env.ValueFrom != nil && env.ValueFrom.ConfigMapKeyRef != nil {
-			if err = r.Client.Get(ctx, types.NamespacedName{Namespace: o.Namespace, Name: env.ValueFrom.ConfigMapKeyRef.Name}, cm); err != nil {
+			if err = r.Client().Get(ctx, types.NamespacedName{Namespace: o.Namespace, Name: env.ValueFrom.ConfigMapKeyRef.Name}, cm); err != nil {
 				if !k8serrors.IsNotFound(err) {
 					return read, res, errors.Wrapf(err, "Error when read configMap %s", env.ValueFrom.ConfigMapKeyRef.Name)
 				}
-				r.Log.Warnf("ConfigMap %s not yet exist, try again later", env.ValueFrom.ConfigMapKeyRef.Name)
+				logger.Warnf("ConfigMap %s not yet exist, try again later", env.ValueFrom.ConfigMapKeyRef.Name)
 				return read, ctrl.Result{RequeueAfter: 30 * time.Second}, nil
 			}
 
@@ -201,11 +196,11 @@ func (r *statefulsetReconciler) Read(ctx context.Context, resource object.MultiP
 	// Read extra Env from to generate checksum if secret or configmap
 	for _, ef := range o.Spec.Deployment.EnvFrom {
 		if ef.SecretRef != nil {
-			if err = r.Client.Get(ctx, types.NamespacedName{Namespace: o.Namespace, Name: ef.SecretRef.Name}, s); err != nil {
+			if err = r.Client().Get(ctx, types.NamespacedName{Namespace: o.Namespace, Name: ef.SecretRef.Name}, s); err != nil {
 				if !k8serrors.IsNotFound(err) {
 					return read, res, errors.Wrapf(err, "Error when read secret %s", ef.SecretRef.Name)
 				}
-				r.Log.Warnf("Secret %s not yet exist, try again later", ef.SecretRef.Name)
+				logger.Warnf("Secret %s not yet exist, try again later", ef.SecretRef.Name)
 				return read, ctrl.Result{RequeueAfter: 30 * time.Second}, nil
 			}
 
@@ -214,11 +209,11 @@ func (r *statefulsetReconciler) Read(ctx context.Context, resource object.MultiP
 		}
 
 		if ef.ConfigMapRef != nil {
-			if err = r.Client.Get(ctx, types.NamespacedName{Namespace: o.Namespace, Name: ef.ConfigMapRef.Name}, cm); err != nil {
+			if err = r.Client().Get(ctx, types.NamespacedName{Namespace: o.Namespace, Name: ef.ConfigMapRef.Name}, cm); err != nil {
 				if !k8serrors.IsNotFound(err) {
 					return read, res, errors.Wrapf(err, "Error when read configMap %s", ef.ConfigMapRef.Name)
 				}
-				r.Log.Warnf("ConfigMap %s not yet exist, try again later", ef.ConfigMapRef.Name)
+				logger.Warnf("ConfigMap %s not yet exist, try again later", ef.ConfigMapRef.Name)
 				return read, ctrl.Result{RequeueAfter: 30 * time.Second}, nil
 			}
 
@@ -230,11 +225,11 @@ func (r *statefulsetReconciler) Read(ctx context.Context, resource object.MultiP
 	// Read certificates
 	if o.Spec.Pki.IsEnabled() {
 
-		if err = r.Client.Get(ctx, types.NamespacedName{Namespace: o.Namespace, Name: GetSecretNameForTls(o)}, s); err != nil {
+		if err = r.Client().Get(ctx, types.NamespacedName{Namespace: o.Namespace, Name: GetSecretNameForTls(o)}, s); err != nil {
 			if !k8serrors.IsNotFound(err) {
 				return read, res, errors.Wrapf(err, "Error when read secret %s", GetSecretNameForTls(o))
 			}
-			r.Log.Warnf("Secret %s not yet exist, try again later", GetSecretNameForTls(o))
+			logger.Warnf("Secret %s not yet exist, try again later", GetSecretNameForTls(o))
 			return read, ctrl.Result{RequeueAfter: 30 * time.Second}, nil
 		}
 
@@ -242,7 +237,7 @@ func (r *statefulsetReconciler) Read(ctx context.Context, resource object.MultiP
 	}
 
 	// Generate expected statefulset
-	expectedSts, err := buildStatefulsets(o, es, secretsChecksum, configMapsChecksum)
+	expectedSts, err := buildStatefulsets(o, es, secretsChecksum, configMapsChecksum, r.isOpenshift)
 	if err != nil {
 		return read, res, errors.Wrap(err, "Error when generate statefulset")
 	}

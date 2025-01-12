@@ -5,9 +5,9 @@ import (
 
 	"github.com/disaster37/operator-sdk-extra/pkg/test"
 	"github.com/stretchr/testify/assert"
-	beatcrd "github.com/webcenter-fr/elasticsearch-operator/apis/beat/v1"
-	elasticsearchcrd "github.com/webcenter-fr/elasticsearch-operator/apis/elasticsearch/v1"
-	"github.com/webcenter-fr/elasticsearch-operator/apis/shared"
+	beatcrd "github.com/webcenter-fr/elasticsearch-operator/api/beat/v1"
+	elasticsearchcrd "github.com/webcenter-fr/elasticsearch-operator/api/elasticsearch/v1"
+	"github.com/webcenter-fr/elasticsearch-operator/api/shared"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes/scheme"
@@ -19,7 +19,22 @@ func TestBuildConfigMaps(t *testing.T) {
 		es         *elasticsearchcrd.Elasticsearch
 		configMaps []corev1.ConfigMap
 		err        error
+		s          *corev1.Secret
 	)
+
+	// When default value
+	o = &beatcrd.Metricbeat{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: "default",
+			Name:      "test",
+		},
+		Spec: beatcrd.MetricbeatSpec{},
+	}
+
+	configMaps, err = buildConfigMaps(o, nil, nil)
+	assert.NoError(t, err)
+	assert.Equal(t, 1, len(configMaps))
+	test.EqualFromYamlFile[*corev1.ConfigMap](t, "testdata/configmap_default.yml", &configMaps[0], scheme.Scheme)
 
 	// When default value with managed elasticsearch
 	o = &beatcrd.Metricbeat{
@@ -43,10 +58,42 @@ func TestBuildConfigMaps(t *testing.T) {
 		Spec: elasticsearchcrd.ElasticsearchSpec{},
 	}
 
-	configMaps, err = buildConfigMaps(o, es)
+	configMaps, err = buildConfigMaps(o, es, nil)
 	assert.NoError(t, err)
 	assert.Equal(t, 1, len(configMaps))
 	test.EqualFromYamlFile[*corev1.ConfigMap](t, "testdata/configmap_default_elasticsearch.yml", &configMaps[0], scheme.Scheme)
+
+	// When default value and elasticsearch output and elasticsearchCaSecretRef
+	o = &beatcrd.Metricbeat{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: "default",
+			Name:      "test",
+		},
+		Spec: beatcrd.MetricbeatSpec{
+			ElasticsearchRef: shared.ElasticsearchRef{
+				ExternalElasticsearchRef: &shared.ElasticsearchExternalRef{
+					Addresses: []string{"https://external-es"},
+				},
+				ElasticsearchCaSecretRef: &corev1.LocalObjectReference{
+					Name: "es-ca",
+				},
+			},
+		},
+	}
+	s = &corev1.Secret{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: "default",
+			Name:      "elasticsearch-ca",
+		},
+		Data: map[string][]byte{
+			"elasticsearch.crt": {},
+		},
+	}
+
+	configMaps, err = buildConfigMaps(o, nil, s)
+	assert.NoError(t, err)
+	assert.Equal(t, 1, len(configMaps))
+	test.EqualFromYamlFile[*corev1.ConfigMap](t, "testdata/configmap_default_elasticsearch_with_ca_secret.yml", &configMaps[0], scheme.Scheme)
 
 	// When config
 	o = &beatcrd.Metricbeat{
@@ -81,7 +128,7 @@ node.value2: test`,
 		Spec: elasticsearchcrd.ElasticsearchSpec{},
 	}
 
-	configMaps, err = buildConfigMaps(o, es)
+	configMaps, err = buildConfigMaps(o, es, nil)
 	assert.NoError(t, err)
 	assert.Equal(t, 1, len(configMaps))
 	test.EqualFromYamlFile[*corev1.ConfigMap](t, "testdata/configmap_config.yml", &configMaps[0], scheme.Scheme)
@@ -117,7 +164,7 @@ node.value2: test`,
 		Spec: elasticsearchcrd.ElasticsearchSpec{},
 	}
 
-	configMaps, err = buildConfigMaps(o, es)
+	configMaps, err = buildConfigMaps(o, es, nil)
 	assert.NoError(t, err)
 	assert.Equal(t, 2, len(configMaps))
 	test.EqualFromYamlFile[*corev1.ConfigMap](t, "testdata/configmap_module.yml", &configMaps[1], scheme.Scheme)

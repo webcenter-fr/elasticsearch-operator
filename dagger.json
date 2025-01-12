@@ -4,11 +4,6 @@
   "sdk": "go",
   "dependencies": [
     {
-      "name": "operator-sdk",
-      "source": "github.com/disaster37/dagger-library-go/operator-sdk",
-      "pin": "e528cbfd86fb099046e686c069c44e6e9ba00b6f"
-    },
-    {
       "name": "codecov",
       "source": "github.com/kpenfound/dagger-modules/codecov@codecov/v0.1.1",
       "pin": "9c07696ffaaecf5cb951dd846c492afdeae34456"
@@ -16,12 +11,17 @@
     {
       "name": "git",
       "source": "github.com/disaster37/dagger-library-go/git",
-      "pin": "ae7e262be93ae816a5353359fc3007767eeaabad"
+      "pin": "dafee8e572906e29bfea24a9ebef6b89b04d83a8"
     },
     {
       "name": "golang",
       "source": "github.com/disaster37/dagger-library-go/golang",
       "pin": "ae7e262be93ae816a5353359fc3007767eeaabad"
+    },
+    {
+      "name": "operator-sdk",
+      "source": "github.com/disaster37/dagger-library-go/operator-sdk",
+      "pin": "dafee8e572906e29bfea24a9ebef6b89b04d83a8"
     }
   ],
   "source": "ci/dagger"

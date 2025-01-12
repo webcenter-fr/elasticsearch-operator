@@ -4,8 +4,8 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
-	kibanacrd "github.com/webcenter-fr/elasticsearch-operator/apis/kibana/v1"
-	"github.com/webcenter-fr/elasticsearch-operator/apis/shared"
+	kibanacrd "github.com/webcenter-fr/elasticsearch-operator/api/kibana/v1"
+	"github.com/webcenter-fr/elasticsearch-operator/api/shared"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/utils/ptr"
@@ -332,4 +332,16 @@ func TestGetMetricbeatName(t *testing.T) {
 	}
 
 	assert.Equal(t, "test-metricbeat-kb", GetMetricbeatName(o))
+}
+
+func TestGetServiceAccountName(t *testing.T) {
+	o := &kibanacrd.Kibana{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: "default",
+			Name:      "test",
+		},
+		Spec: kibanacrd.KibanaSpec{},
+	}
+
+	assert.Equal(t, "test-kb", GetServiceAccountName(o))
 }

@@ -2,8 +2,9 @@ package elasticsearch
 
 import (
 	monitoringv1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1"
-	elasticsearchcrd "github.com/webcenter-fr/elasticsearch-operator/apis/elasticsearch/v1"
+	elasticsearchcrd "github.com/webcenter-fr/elasticsearch-operator/api/elasticsearch/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/utils/ptr"
 )
 
 // BuildPodMonitor permit to build pod monitor
@@ -24,7 +25,7 @@ func buildPodMonitors(es *elasticsearchcrd.Elasticsearch) (podMonitors []monitor
 			Spec: monitoringv1.PodMonitorSpec{
 				PodMetricsEndpoints: []monitoringv1.PodMetricsEndpoint{
 					{
-						Port:     "exporter",
+						Port:     ptr.To("exporter"),
 						Interval: "10s",
 					},
 				},

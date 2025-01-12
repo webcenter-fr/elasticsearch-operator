@@ -2,7 +2,7 @@ package logstash
 
 import (
 	"emperror.dev/errors"
-	logstashcrd "github.com/webcenter-fr/elasticsearch-operator/apis/logstash/v1"
+	logstashcrd "github.com/webcenter-fr/elasticsearch-operator/api/logstash/v1"
 	"github.com/webcenter-fr/elasticsearch-operator/pkg/helper"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -65,6 +65,41 @@ func buildConfigMaps(ls *logstashcrd.Logstash) (configMaps []corev1.ConfigMap, e
 				Annotations: getAnnotations(ls),
 			},
 			Data: ls.Spec.Pattern,
+		}
+
+		configMaps = append(configMaps, *cm)
+	}
+
+	// COnfigMap for Prometheus exporter
+	if ls.Spec.Monitoring.IsPrometheusMonitoring() {
+		config := map[string]any{
+			"logstash": map[string]any{
+				"servers": []map[string]any{
+					{
+						"url": "http://127.0.0.1:9600",
+					},
+				},
+				"timeout": "30s",
+			},
+			"server": map[string]any{
+				"host": "0.0.0.0",
+				"port": 9198,
+			},
+			"logging": map[string]any{
+				"level": "info",
+			},
+		}
+
+		cm = &corev1.ConfigMap{
+			ObjectMeta: metav1.ObjectMeta{
+				Namespace:   ls.Namespace,
+				Name:        GetConfigMapExporterName(ls),
+				Labels:      getLabels(ls),
+				Annotations: getAnnotations(ls),
+			},
+			Data: map[string]string{
+				"config.yml": helper.ToYamlOrDie(config),
+			},
 		}
 
 		configMaps = append(configMaps, *cm)
