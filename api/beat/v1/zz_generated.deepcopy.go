@@ -21,6 +21,7 @@ limitations under the License.
 package v1
 
 import (
+	"github.com/disaster37/operator-sdk-extra/pkg/apis"
 	"github.com/webcenter-fr/elasticsearch-operator/api/shared"
 	corev1 "k8s.io/api/core/v1"
 	policyv1 "k8s.io/api/policy/v1"
@@ -249,16 +250,20 @@ func (in *FilebeatSpec) DeepCopyInto(out *FilebeatSpec) {
 	in.LogstashRef.DeepCopyInto(&out.LogstashRef)
 	if in.Config != nil {
 		in, out := &in.Config, &out.Config
+		*out = (*in).DeepCopy()
+	}
+	if in.ExtraConfigs != nil {
+		in, out := &in.ExtraConfigs, &out.ExtraConfigs
 		*out = make(map[string]string, len(*in))
 		for key, val := range *in {
 			(*out)[key] = val
 		}
 	}
-	if in.Module != nil {
-		in, out := &in.Module, &out.Module
-		*out = make(map[string]string, len(*in))
+	if in.Modules != nil {
+		in, out := &in.Modules, &out.Modules
+		*out = make(map[string]apis.MapAny, len(*in))
 		for key, val := range *in {
-			(*out)[key] = val
+			(*out)[key] = *val.DeepCopy()
 		}
 	}
 	in.Deployment.DeepCopyInto(&out.Deployment)

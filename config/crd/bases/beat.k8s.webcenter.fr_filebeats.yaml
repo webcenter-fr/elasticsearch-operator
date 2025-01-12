@@ -60,8 +60,6 @@ spec:
             description: FilebeatSpec defines the desired state of Filebeat
             properties:
               config:
-                additionalProperties:
-                  type: string
                 description: |-
                   Config is the Filebeat config
                   The key is the file stored on filebeat
@@ -4522,6 +4520,13 @@ spec:
                     type: object
                     x-kubernetes-map-type: atomic
                 type: object
+              extraConfigs:
+                additionalProperties:
+                  type: string
+                description: |-
+                  ExtraConfigs is extra config files store on config directory
+                  The key is the file stored on filebeat and the vlue is the contend file
+                type: object
               image:
                 description: |-
                   Image is the image to use when deploy Elasticsearch
@@ -4918,9 +4923,9 @@ spec:
                     - port
                     type: object
                 type: object
-              module:
+              modules:
                 additionalProperties:
-                  type: string
+                  type: object
                 description: |-
                   Module is the module specification
                   The key is the file stored on filebeat/modules.d
