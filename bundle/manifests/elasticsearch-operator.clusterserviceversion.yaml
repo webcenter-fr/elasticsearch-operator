@@ -808,10 +808,10 @@ metadata:
         }
       ]
     capabilities: Basic Install
-    createdAt: "2025-01-11T18:43:37Z"
+    createdAt: "2025-01-12T09:42:35Z"
     operators.operatorframework.io/builder: operator-sdk-v1.39.0
     operators.operatorframework.io/project_layout: go.kubebuilder.io/v4
-  name: elasticsearch-operator.v0.0.55-pr.156
+  name: elasticsearch-operator.v0.0.55-rc.328
   namespace: placeholder
 spec:
   apiservicedefinitions: {}
@@ -3464,7 +3464,7 @@ spec:
                   value: INFO
                 - name: LOG_FORMATTER
                   value: json
-                image: quay.io/webcenter/elasticsearch-operator:0.0.55-pr.156
+                image: quay.io/webcenter/elasticsearch-operator:0.0.55-rc.328
                 livenessProbe:
                   httpGet:
                     path: /healthz
@@ -3555,4 +3555,4 @@ spec:
     name: webcenter.fr
     url: https://github.com/webcenter-fr/elasticsearch-operator
   replaces: elasticsearch-operator.v0.0.48
-  version: 0.0.55-pr.156
+  version: 0.0.55-rc.328
