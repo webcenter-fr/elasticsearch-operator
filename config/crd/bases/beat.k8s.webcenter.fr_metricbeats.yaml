@@ -60,6 +60,7 @@ spec:
                   Config is the Metricbeat config
                   The key is the file stored on metricbeat
                 type: object
+                x-kubernetes-preserve-unknown-fields: true
               deployment:
                 description: Deployment permit to set the deployment settings
                 properties:
@@ -4515,14 +4516,11 @@ spec:
                   x-kubernetes-map-type: atomic
                 type: array
               modules:
-                additionalProperties:
-                  items:
-                    type: object
-                  type: array
                 description: |-
                   Module is the module specification
                   The key is the file stored on metricbeat/modules.d
                 type: object
+                x-kubernetes-preserve-unknown-fields: true
               version:
                 default: latest
                 description: |-

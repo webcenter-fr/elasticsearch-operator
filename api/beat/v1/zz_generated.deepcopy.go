@@ -474,21 +474,7 @@ func (in *MetricbeatSpec) DeepCopyInto(out *MetricbeatSpec) {
 	}
 	if in.Modules != nil {
 		in, out := &in.Modules, &out.Modules
-		*out = make(map[string][]apis.MapAny, len(*in))
-		for key, val := range *in {
-			var outVal []apis.MapAny
-			if val == nil {
-				(*out)[key] = nil
-			} else {
-				inVal := (*in)[key]
-				in, out := &inVal, &outVal
-				*out = make([]apis.MapAny, len(*in))
-				for i := range *in {
-					(*in)[i].DeepCopyInto(&(*out)[i])
-				}
-			}
-			(*out)[key] = outVal
-		}
+		*out = (*in).DeepCopy()
 	}
 	in.Deployment.DeepCopyInto(&out.Deployment)
 }

@@ -116,6 +116,10 @@ func (in *ElasticsearchGlobalNodeGroupSpec) DeepCopyInto(out *ElasticsearchGloba
 	}
 	if in.Config != nil {
 		in, out := &in.Config, &out.Config
+		*out = (*in).DeepCopy()
+	}
+	if in.ExtraConfigs != nil {
+		in, out := &in.ExtraConfigs, &out.ExtraConfigs
 		*out = make(map[string]string, len(*in))
 		for key, val := range *in {
 			(*out)[key] = val
@@ -256,6 +260,10 @@ func (in *ElasticsearchNodeGroupSpec) DeepCopyInto(out *ElasticsearchNodeGroupSp
 	}
 	if in.Config != nil {
 		in, out := &in.Config, &out.Config
+		*out = (*in).DeepCopy()
+	}
+	if in.ExtraConfigs != nil {
+		in, out := &in.ExtraConfigs, &out.ExtraConfigs
 		*out = make(map[string]string, len(*in))
 		for key, val := range *in {
 			(*out)[key] = val

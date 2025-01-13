@@ -56,11 +56,9 @@ func buildMetricbeats(fb *beatcrd.Filebeat) (metricbeats []beatcrd.Metricbeat, e
 		Spec: beatcrd.MetricbeatSpec{
 			Version:          version,
 			ElasticsearchRef: fb.Spec.Monitoring.Metricbeat.ElasticsearchRef,
-			Modules: map[string][]apis.MapAny{
-				"beat-xpack.yml": []apis.MapAny{
-					{
-						Data: xpackModule,
-					},
+			Modules: &apis.MapAny{
+				Data: map[string]any{
+					"beat-xpack.yml": []map[string]any{xpackModule},
 				},
 			},
 			Config: &apis.MapAny{

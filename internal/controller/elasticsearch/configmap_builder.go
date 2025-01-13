@@ -9,6 +9,7 @@ import (
 	"github.com/webcenter-fr/elasticsearch-operator/pkg/helper"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"sigs.k8s.io/yaml"
 )
 
 // BuildConfigMaps permit to generate config maps for each node Groups
@@ -44,17 +45,39 @@ func buildConfigMaps(es *elasticsearchcrd.Elasticsearch) (configMaps []corev1.Co
 	injectedConfigMap := map[string]string{
 		"elasticsearch.yml": helper.ToYamlOrDie(elasticsearchConfig),
 	}
+	globalConfig, err := yaml.Marshal(es.Spec.GlobalNodeGroup.Config)
+	if err != nil {
+		return nil, errors.Wrap(err, "Error when unmarshall global config")
+	}
+	globalConfigs := map[string]string{
+		"elasticsearch.yml": string(globalConfig),
+	}
+	if es.Spec.GlobalNodeGroup.ExtraConfigs != nil {
+		globalConfigs, err = helper.MergeSettings(globalConfigs, es.Spec.GlobalNodeGroup.ExtraConfigs)
+		if err != nil {
+			return nil, errors.Wrap(err, "Error when merge global config and global extra configs")
+		}
+	}
 
 	for _, nodeGroup := range es.Spec.NodeGroups {
+		config, err := yaml.Marshal(nodeGroup.Config)
+		if err != nil {
+			return nil, errors.Wrapf(err, "Error when unmarshall config from node group %s", nodeGroup.Name)
+		}
+		configs := map[string]string{
+			"elasticsearch.yml": string(config),
+		}
+		if nodeGroup.ExtraConfigs != nil {
+			configs, err = helper.MergeSettings(configs, nodeGroup.ExtraConfigs)
+			if err != nil {
+				return nil, errors.Wrap(err, "Error when merge global config and global extra configs")
+			}
+		}
 
-		if es.Spec.GlobalNodeGroup.Config != nil {
-			expectedConfig, err = helper.MergeSettings(nodeGroup.Config, es.Spec.GlobalNodeGroup.Config)
+		expectedConfig, err = helper.MergeSettings(configs, globalConfigs)
 			if err != nil {
 				return nil, errors.Wrapf(err, "Error when merge config from global config and node group config %s", nodeGroup.Name)
 			}
-		} else {
-			expectedConfig = nodeGroup.Config
-		}
 
 		// Inject computed config
 		expectedConfig, err = helper.MergeSettings(injectedConfigMap, expectedConfig)

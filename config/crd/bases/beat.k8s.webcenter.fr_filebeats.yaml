@@ -64,6 +64,7 @@ spec:
                   Config is the Filebeat config
                   The key is the file stored on filebeat
                 type: object
+                x-kubernetes-preserve-unknown-fields: true
               deployment:
                 description: Deployment permit to set the deployment settings
                 properties:
@@ -4932,6 +4933,7 @@ spec:
                   Module is the module specification
                   The key is the file stored on filebeat/modules.d
                 type: object
+                x-kubernetes-preserve-unknown-fields: true
               monitoring:
                 description: |-
                   Monitoring permit to monitor current cluster

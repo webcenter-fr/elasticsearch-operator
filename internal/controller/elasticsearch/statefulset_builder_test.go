@@ -126,7 +126,7 @@ func TestBuildStatefulset(t *testing.T) {
 					TopologyKey: "rack",
 					Type:        "hard",
 				},
-				Config: map[string]string{
+				ExtraConfigs: map[string]string{
 					"log4j.yaml": "my log4j",
 				},
 			},

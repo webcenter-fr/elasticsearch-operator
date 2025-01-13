@@ -55,6 +55,7 @@ type MetricbeatSpec struct {
 	// The key is the file stored on metricbeat
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
 	// +optional
+	// +kubebuilder:pruning:PreserveUnknownFields
 	Config *apis.MapAny `json:"config,omitempty"`
 
 	// ExtraConfigs is extra config files store on config directory
@@ -67,7 +68,8 @@ type MetricbeatSpec struct {
 	// The key is the file stored on metricbeat/modules.d
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
 	// +optional
-	Modules map[string][]apis.MapAny `json:"modules,omitempty"`
+	// +kubebuilder:pruning:PreserveUnknownFields
+	Modules *apis.MapAny `json:"modules,omitempty"`
 
 	// Deployment permit to set the deployment settings
 	// +operator-sdk:csv:customresourcedefinitions:type=spec

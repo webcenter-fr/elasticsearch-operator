@@ -71,11 +71,9 @@ func buildMetricbeats(kb *kibanacrd.Kibana) (mbs []beatcrd.Metricbeat, err error
 		Spec: beatcrd.MetricbeatSpec{
 			Version:          version,
 			ElasticsearchRef: kb.Spec.Monitoring.Metricbeat.ElasticsearchRef,
-			Modules: map[string][]apis.MapAny{
-				"kibana-xpack.yml": []apis.MapAny{
-					{
-						Data: xpackModule,
-					},
+			Modules: &apis.MapAny{
+				Data: map[string]any{
+					"kibana-xpack.yml": []map[string]any{xpackModule},
 				},
 			},
 			Config: &apis.MapAny{

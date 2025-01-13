@@ -99,12 +99,10 @@ func doCreateMetricbeatStep() test.TestStep {
 							"queue.type":       "persisted",
 						},
 					},
-					Modules: map[string][]apis.MapAny{
-						"module.yaml": []apis.MapAny{
-							{
-								Data: map[string]any{
-									"foo": "bar",
-								},
+					Modules: &apis.MapAny{
+						Data: map[string]any{
+							"module.yaml": map[string]any{
+								"foo": "bar",
 							},
 						},
 					},

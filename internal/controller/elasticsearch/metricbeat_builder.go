@@ -70,13 +70,12 @@ func buildMetricbeats(es *elasticsearchcrd.Elasticsearch) (mbs []beatcrd.Metricb
 		Spec: beatcrd.MetricbeatSpec{
 			Version:          version,
 			ElasticsearchRef: es.Spec.Monitoring.Metricbeat.ElasticsearchRef,
-			Modules: map[string][]apis.MapAny{
-				"elasticsearch-xpack.yml": []apis.MapAny{
-					{
-						Data: xpackModule,
-					},
+			Modules: &apis.MapAny{
+				Data: map[string]any{
+					"elasticsearch-xpack.yml": []map[string]any{xpackModule},
 				},
 			},
+
 			Config: &apis.MapAny{
 				Data: metricbeatConfig,
 			},

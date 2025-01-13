@@ -22,6 +22,8 @@ data:
         name: test
         roles:
             - master
+        test: test
+        test2: test2
         value: test
         value2: test2
     xpack:

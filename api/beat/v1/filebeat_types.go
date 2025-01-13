@@ -62,6 +62,7 @@ type FilebeatSpec struct {
 	// The key is the file stored on filebeat
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
 	// +optional
+	// +kubebuilder:pruning:PreserveUnknownFields
 	Config *apis.MapAny `json:"config,omitempty"`
 
 	// ExtraConfigs is extra config files store on config directory
@@ -74,6 +75,7 @@ type FilebeatSpec struct {
 	// The key is the file stored on filebeat/modules.d
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
 	// +optional
+	// +kubebuilder:pruning:PreserveUnknownFields
 	Modules map[string][]apis.MapAny `json:"modules,omitempty"`
 
 	// Deployment permit to set the deployment settings

@@ -59,11 +59,9 @@ func buildMetricbeats(ls *logstashcrd.Logstash) (metricbeats []beatcrd.Metricbea
 		Spec: beatcrd.MetricbeatSpec{
 			Version:          version,
 			ElasticsearchRef: ls.Spec.Monitoring.Metricbeat.ElasticsearchRef,
-			Modules: map[string][]apis.MapAny{
-				"logstash-xpack.yml": []apis.MapAny{
-					{
-						Data: xpackModule,
-					},
+			Modules: &apis.MapAny{
+				Data: map[string]any{
+					"logstash-xpack.yml": []map[string]any{xpackModule},
 				},
 			},
 			Config: &apis.MapAny{

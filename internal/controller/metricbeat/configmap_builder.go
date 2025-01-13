@@ -112,9 +112,9 @@ func buildConfigMaps(mb *beatcrd.Metricbeat, es *elasticsearchcrd.Elasticsearch,
 	configMaps = append(configMaps, *cm)
 
 	// ConfigMap that store modules
-	if len(mb.Spec.Modules) > 0 {
+	if mb.Spec.Modules != nil && len(mb.Spec.Modules.Data) > 0 {
 		modules := map[string]string{}
-		for module, data := range mb.Spec.Modules {
+		for module, data := range mb.Spec.Modules.Data {
 			b, err := yaml.Marshal(data)
 			if err != nil {
 				return nil, errors.Wrapf(err, "Error when marshall module %s", module)
