@@ -76,7 +76,7 @@ type FilebeatSpec struct {
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
 	// +optional
 	// +kubebuilder:pruning:PreserveUnknownFields
-	Modules map[string][]apis.MapAny `json:"modules,omitempty"`
+	Modules *apis.MapAny `json:"modules,omitempty"`
 
 	// Deployment permit to set the deployment settings
 	// +operator-sdk:csv:customresourcedefinitions:type=spec

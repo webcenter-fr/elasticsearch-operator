@@ -59,12 +59,9 @@ spec:
             description: KibanaSpec defines the desired state of Kibana
             properties:
               config:
-                additionalProperties:
-                  type: string
-                description: |-
-                  Config is the Kibana config
-                  The key is the file stored on kibana/config
+                description: Config is the Kibana config
                 type: object
+                x-kubernetes-preserve-unknown-fields: true
               deployment:
                 description: Deployment permit to set the deployment settings
                 properties:
@@ -1465,6 +1462,13 @@ spec:
                     required:
                     - host
                     type: object
+                type: object
+              extraConfigs:
+                additionalProperties:
+                  type: string
+                description: |-
+                  ExtraConfigs is extra config files store on config directory
+                  The key is the file name and the value is the contend file
                 type: object
               image:
                 description: |-

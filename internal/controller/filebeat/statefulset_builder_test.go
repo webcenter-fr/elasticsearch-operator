@@ -380,12 +380,10 @@ func TestBuildStatefulset(t *testing.T) {
 			ExtraConfigs: map[string]string{
 				"log4j.yaml": "my log4j",
 			},
-			Modules: map[string][]apis.MapAny{
-				"module.yaml": []apis.MapAny{
-					{
-						Data: map[string]any{
-							"foo": "bar",
-						},
+			Modules: &apis.MapAny{
+				Data: map[string]any{
+					"module.yaml": map[string]any{
+						"foo": "bar",
 					},
 				},
 			},

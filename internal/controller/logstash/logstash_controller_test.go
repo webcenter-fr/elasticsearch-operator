@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/disaster37/k8s-objectmatcher/patch"
+	"github.com/disaster37/operator-sdk-extra/pkg/apis"
 	"github.com/disaster37/operator-sdk-extra/pkg/helper"
 	"github.com/disaster37/operator-sdk-extra/pkg/test"
 	"github.com/sirupsen/logrus"
@@ -97,16 +98,20 @@ func doCreateLogstashStep() test.TestStep {
 							Replicas: 2,
 						},
 					},
-					Config: map[string]string{
-						"logstash.yml": `
-pipeline.workers: 2
-queue.type: persisted
-`,
+					Config: &apis.MapAny{
+						Data: map[string]any{
+							"pipeline.workers": 2,
+							"queue.type":       "persisted",
+						},
 					},
-					Pipeline: map[string]string{
-						"test.conf": "test",
+					Pipelines: &apis.MapAny{
+						Data: map[string]any{
+							"test.yaml": map[string]any{
+								"foo": "bar",
+							},
+						},
 					},
-					Pattern: map[string]string{
+					Patterns: map[string]string{
 						"pattern.conf": "test",
 					},
 					Ingresses: []shared.Ingress{

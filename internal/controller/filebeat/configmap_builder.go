@@ -164,9 +164,9 @@ func buildConfigMaps(fb *beatcrd.Filebeat, es *elasticsearchcrd.Elasticsearch, l
 	configMaps = append(configMaps, *cm)
 
 	// ConfigMap that store modules
-	if len(fb.Spec.Modules) > 0 {
+	if fb.Spec.Modules != nil && len(fb.Spec.Modules.Data) > 0 {
 		modules := map[string]string{}
-		for module, data := range fb.Spec.Modules {
+		for module, data := range fb.Spec.Modules.Data {
 			b, err := yaml.Marshal(data)
 			if err != nil {
 				return nil, errors.Wrapf(err, "Error when marshall module %s", module)

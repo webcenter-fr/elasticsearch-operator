@@ -3,6 +3,7 @@ package kibana
 import (
 	"testing"
 
+	"github.com/disaster37/operator-sdk-extra/pkg/apis"
 	"github.com/disaster37/operator-sdk-extra/pkg/test"
 	"github.com/stretchr/testify/assert"
 	elasticsearchcrd "github.com/webcenter-fr/elasticsearch-operator/api/elasticsearch/v1"
@@ -39,7 +40,12 @@ func TestBuildConfigMaps(t *testing.T) {
 					Name: "test",
 				},
 			},
-			Config: map[string]string{
+			Config: &apis.MapAny{
+				Data: map[string]any{
+					"node.test": "test",
+				},
+			},
+			ExtraConfigs: map[string]string{
 				"kibana.yml": `node.value: test
 node.value2: test`,
 				"log4j.yml": "log.test: test\n",
@@ -83,7 +89,7 @@ node.value2: test`,
 			Tls: shared.TlsSpec{
 				Enabled: ptr.To[bool](false),
 			},
-			Config: map[string]string{
+			ExtraConfigs: map[string]string{
 				"kibana.yml": `node.value: test
 node.value2: test`,
 				"log4j.yml": "log.test: test\n",
@@ -119,7 +125,7 @@ node.value2: test`,
 			},
 		},
 		Spec: kibanacrd.KibanaSpec{
-			Config: map[string]string{
+			ExtraConfigs: map[string]string{
 				"kibana.yml": `node.value: test
 node.value2: test`,
 				"log4j.yml": "log.test: test\n",
@@ -152,7 +158,7 @@ node.value2: test`,
 			},
 		},
 		Spec: kibanacrd.KibanaSpec{
-			Config: map[string]string{
+			ExtraConfigs: map[string]string{
 				"kibana.yml": `node.value: test
 node.value2: test`,
 				"log4j.yml": "log.test: test\n",

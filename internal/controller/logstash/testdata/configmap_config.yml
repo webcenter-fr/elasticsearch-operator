@@ -14,6 +14,7 @@ data:
     log.test: test
   logstash.yml: |
     node:
+        test: test
         value: test
         value2: test
     

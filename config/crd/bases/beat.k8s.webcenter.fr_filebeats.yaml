@@ -4925,10 +4925,6 @@ spec:
                     type: object
                 type: object
               modules:
-                additionalProperties:
-                  items:
-                    type: object
-                  type: array
                 description: |-
                   Module is the module specification
                   The key is the file stored on filebeat/modules.d

@@ -3,6 +3,7 @@ package logstash
 import (
 	"testing"
 
+	"github.com/disaster37/operator-sdk-extra/pkg/apis"
 	"github.com/disaster37/operator-sdk-extra/pkg/test"
 	"github.com/stretchr/testify/assert"
 	logstashcrd "github.com/webcenter-fr/elasticsearch-operator/api/logstash/v1"
@@ -51,7 +52,12 @@ func TestBuildConfigMaps(t *testing.T) {
 					Name: "test",
 				},
 			},
-			Config: map[string]string{
+			Config: &apis.MapAny{
+				Data: map[string]any{
+					"node.test": "test",
+				},
+			},
+			ExtraConfigs: map[string]string{
 				"logstash.yml": `node.value: test
 node.value2: test`,
 				"log4j.yml": "log.test: test\n",
@@ -82,8 +88,12 @@ node.value2: test`,
 					Name: "test",
 				},
 			},
-			Pipeline: map[string]string{
-				"pipeline.conf": "foo = bar",
+			Pipelines: &apis.MapAny{
+				Data: map[string]any{
+					"pipeline.yaml": map[string]any{
+						"foo": "bar",
+					},
+				},
 			},
 		},
 	}
@@ -111,7 +121,7 @@ node.value2: test`,
 					Name: "test",
 				},
 			},
-			Pattern: map[string]string{
+			Patterns: map[string]string{
 				"pattern.conf": "foo = bar",
 			},
 		},

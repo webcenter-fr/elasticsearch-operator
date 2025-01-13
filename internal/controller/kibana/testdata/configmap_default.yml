@@ -19,6 +19,7 @@ data:
                 - /usr/share/kibana/config/es-ca/ca.crt
             verificationMode: full
     node:
+        test: test
         value: test
         value2: test
     server:

@@ -56,9 +56,7 @@ spec:
             description: MetricbeatSpec defines the desired state of Metricbeat
             properties:
               config:
-                description: |-
-                  Config is the Metricbeat config
-                  The key is the file stored on metricbeat
+                description: Config is the Metricbeat config
                 type: object
                 x-kubernetes-preserve-unknown-fields: true
               deployment:

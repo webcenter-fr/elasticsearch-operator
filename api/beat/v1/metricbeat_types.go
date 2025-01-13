@@ -52,7 +52,6 @@ type MetricbeatSpec struct {
 	Version string `json:"version,omitempty"`
 
 	// Config is the Metricbeat config
-	// The key is the file stored on metricbeat
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
 	// +optional
 	// +kubebuilder:pruning:PreserveUnknownFields
