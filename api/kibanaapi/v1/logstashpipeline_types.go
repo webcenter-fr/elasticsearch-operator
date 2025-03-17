@@ -51,10 +51,9 @@ type LogstashPipelineSpec struct {
 	Pipeline string `json:"pipeline"`
 
 	// Settings is the pipeline settings
-	// It's a JSON string
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
 	// +optional
-	Settings string `json:"settings,omitempty"`
+	Settings *apis.MapAny `json:"settings,omitempty"`
 }
 
 // LogstashPipelineStatus defines the observed state of LogstashPipeline

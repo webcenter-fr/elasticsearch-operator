@@ -62,22 +62,19 @@ type RoleSpec struct {
 	RunAs []string `json:"runAs,omitempty"`
 
 	// Global  defining global privileges
-	// JSON string
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
 	// +optional
-	Global string `json:"global,omitempty"`
+	Global *apis.MapAny `json:"global,omitempty"`
 
 	// Metadata is optional meta-data
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
-	// JSON string
 	// +optional
-	Metadata string `json:"metadata,omitempty"`
+	Metadata *apis.MapAny `json:"metadata,omitempty"`
 
 	// TransientMetadata
-	// JSON string
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
 	// +optional
-	TransientMetadata string `json:"transientMetadata,omitempty"`
+	TransientMetadata *apis.MapAny `json:"transientMetadata,omitempty"`
 }
 
 // ElasticsearchRoleSpecApplicationPrivileges is the application privileges object
@@ -108,10 +105,9 @@ type RoleSpecIndicesPermissions struct {
 	Privileges []string `json:"privileges"`
 
 	// FieldSecurity
-	// JSON string
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
 	// +optional
-	FieldSecurity string `json:"fieldSecurity,omitempty"`
+	FieldSecurity *apis.MapAny `json:"fieldSecurity,omitempty"`
 
 	// Query
 	// +operator-sdk:csv:customresourcedefinitions:type=spec

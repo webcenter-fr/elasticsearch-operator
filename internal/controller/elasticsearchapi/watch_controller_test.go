@@ -8,6 +8,7 @@ import (
 	"emperror.dev/errors"
 	"github.com/disaster37/es-handler/v8/mocks"
 	"github.com/disaster37/generic-objectmatcher/patch"
+	"github.com/disaster37/operator-sdk-extra/pkg/apis"
 	"github.com/disaster37/operator-sdk-extra/pkg/controller"
 	"github.com/disaster37/operator-sdk-extra/pkg/helper"
 	"github.com/disaster37/operator-sdk-extra/pkg/test"
@@ -197,30 +198,34 @@ func doCreateWatcherStep() test.TestStep {
 							Name: "test",
 						},
 					},
-					Trigger: `
-					{
-						"schedule" : { "cron" : "0 0/1 * * * ?" }
-					}
-					`,
-					Input: `
-					{
-						"search" : {
-						  "request" : "fake"
-						}
-					}
-					`,
-					Condition: `
-					{
-						"compare" : { "ctx.payload.hits.total" : "fake"}
-					}
-					`,
-					Actions: `
-					{
-						"email_admin" : {
-						  "email" : "fake"
-						}
-					}
-					`,
+					Trigger: &apis.MapAny{
+						Data: map[string]any{
+							"schedule": map[string]any{
+								"cron": "0 0/1 * * * ?",
+							},
+						},
+					},
+					Input: &apis.MapAny{
+						Data: map[string]any{
+							"search": map[string]any{
+								"request": "fake",
+							},
+						},
+					},
+					Condition: &apis.MapAny{
+						Data: map[string]any{
+							"compare": map[string]any{
+								"ctx.payload.hits.total": "fake",
+							},
+						},
+					},
+					Actions: &apis.MapAny{
+						Data: map[string]any{
+							"email_admin": map[string]any{
+								"email": "fake",
+							},
+						},
+					},
 				},
 			}
 
@@ -269,13 +274,13 @@ func doUpdateWatcherStep() test.TestStep {
 			watch := o.(*elasticsearchapicrd.Watch)
 
 			data["lastGeneration"] = watch.GetStatus().GetObservedGeneration()
-			watch.Spec.Actions = `
-			{
-				"email_admin" : {
-				"email" : "fake2"
-				}
+			watch.Spec.Actions = &apis.MapAny{
+				Data: map[string]any{
+					"email_admin": map[string]any{
+						"email": "fake2",
+					},
+				},
 			}
-			`
 			if err = c.Update(context.Background(), watch); err != nil {
 				return err
 			}

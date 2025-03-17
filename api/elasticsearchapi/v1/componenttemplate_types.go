@@ -44,23 +44,23 @@ type ComponentTemplateSpec struct {
 	// Settings is the component setting
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
 	// +optional
-	Settings string `json:"settings,omitempty"`
+	Settings *apis.MapAny `json:"settings,omitempty"`
 
 	// Mappings is the component mapping
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
 	// +optional
-	Mappings string `json:"mappings,omitempty"`
+	Mappings *apis.MapAny `json:"mappings,omitempty"`
 
 	// Aliases is the component aliases
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
 	// +optional
-	Aliases string `json:"aliases,omitempty"`
+	Aliases *apis.MapAny `json:"aliases,omitempty"`
 
 	// Template is the raw template
 	// You can use it instead to set settings, mappings or aliases
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
 	// +optional
-	Template string `json:"rawTemplate,omitempty"`
+	RawTemplate *string `json:"rawTemplate,omitempty"`
 }
 
 // ComponentTemplateStatus defines the observed state of ComponentTemplate

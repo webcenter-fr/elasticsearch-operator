@@ -3,6 +3,7 @@ package elasticsearchapi
 import (
 	"testing"
 
+	"github.com/disaster37/operator-sdk-extra/pkg/apis"
 	olivere "github.com/olivere/elastic/v7"
 	"github.com/stretchr/testify/assert"
 	elasticsearchapicrd "github.com/webcenter-fr/elasticsearch-operator/api/elasticsearchapi/v1"
@@ -36,22 +37,22 @@ func TestRoleMappingBuild(t *testing.T) {
 			Roles: []string{
 				"superuser",
 			},
-			Rules: `
-{
-	"any": [
-		{
-			"field": {
-				"groups": "CN=ELS_ADMINS,OU=LOCAL,OU=AD"
-			}
-		},
-		{
-			"field": {
-				"groups": "CN=ELS_OPS,OU=LOCAL,OU=AD"
-			}
-		}
-	]
-}
-			`,
+			Rules: &apis.MapAny{
+				Data: map[string]any{
+					"any": []map[string]any{
+						{
+							"field": map[string]any{
+								"groups": "CN=ELS_ADMINS,OU=LOCAL,OU=AD",
+							},
+						},
+						{
+							"field": map[string]any{
+								"groups": "CN=ELS_OPS,OU=LOCAL,OU=AD",
+							},
+						},
+					},
+				},
+			},
 		},
 	}
 
@@ -61,13 +62,13 @@ func TestRoleMappingBuild(t *testing.T) {
 			"superuser",
 		},
 		Rules: map[string]any{
-			"any": []any{
-				map[string]any{
+			"any": []map[string]any{
+				{
 					"field": map[string]any{
 						"groups": "CN=ELS_ADMINS,OU=LOCAL,OU=AD",
 					},
 				},
-				map[string]any{
+				{
 					"field": map[string]any{
 						"groups": "CN=ELS_OPS,OU=LOCAL,OU=AD",
 					},
@@ -97,27 +98,27 @@ func TestRoleMappingBuild(t *testing.T) {
 			Roles: []string{
 				"superuser",
 			},
-			Rules: `
-{
-	"any": [
-		{
-			"field": {
-				"groups": "CN=ELS_ADMINS,OU=LOCAL,OU=AD"
-			}
-		},
-		{
-			"field": {
-				"groups": "CN=ELS_OPS,OU=LOCAL,OU=AD"
-			}
-		}
-	]
-}
-			`,
-			Metadata: `
-{
-	"meta1": "data1"
-}
-			`,
+			Rules: &apis.MapAny{
+				Data: map[string]any{
+					"any": []map[string]any{
+						{
+							"field": map[string]any{
+								"groups": "CN=ELS_ADMINS,OU=LOCAL,OU=AD",
+							},
+						},
+						{
+							"field": map[string]any{
+								"groups": "CN=ELS_OPS,OU=LOCAL,OU=AD",
+							},
+						},
+					},
+				},
+			},
+			Metadata: &apis.MapAny{
+				Data: map[string]any{
+					"meta1": "data1",
+				},
+			},
 		},
 	}
 
@@ -127,13 +128,13 @@ func TestRoleMappingBuild(t *testing.T) {
 			"superuser",
 		},
 		Rules: map[string]any{
-			"any": []any{
-				map[string]any{
+			"any": []map[string]any{
+				{
 					"field": map[string]any{
 						"groups": "CN=ELS_ADMINS,OU=LOCAL,OU=AD",
 					},
 				},
-				map[string]any{
+				{
 					"field": map[string]any{
 						"groups": "CN=ELS_OPS,OU=LOCAL,OU=AD",
 					},

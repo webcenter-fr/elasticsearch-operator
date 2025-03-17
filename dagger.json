@@ -1,7 +1,9 @@
 {
   "name": "elasticsearch-operator",
-  "engineVersion": "v0.14.0",
-  "sdk": "go",
+  "engineVersion": "v0.16.1",
+  "sdk": {
+    "source": "go"
+  },
   "dependencies": [
     {
       "name": "codecov",
@@ -11,17 +13,17 @@
     {
       "name": "git",
       "source": "github.com/disaster37/dagger-library-go/git",
-      "pin": "dafee8e572906e29bfea24a9ebef6b89b04d83a8"
+      "pin": "45531f25faa4ff513fef3e8dc78cbcbebe9bd452"
     },
     {
       "name": "golang",
       "source": "github.com/disaster37/dagger-library-go/golang",
-      "pin": "ae7e262be93ae816a5353359fc3007767eeaabad"
+      "pin": "45531f25faa4ff513fef3e8dc78cbcbebe9bd452"
     },
     {
       "name": "operator-sdk",
       "source": "github.com/disaster37/dagger-library-go/operator-sdk",
-      "pin": "dafee8e572906e29bfea24a9ebef6b89b04d83a8"
+      "pin": "45531f25faa4ff513fef3e8dc78cbcbebe9bd452"
     }
   ],
   "source": "ci/dagger"

@@ -2,7 +2,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.17.0
+    controller-gen.kubebuilder.io/version: v0.17.1
   creationTimestamp: null
   name: roles.elasticsearchapi.k8s.webcenter.fr
 spec:
@@ -153,10 +153,8 @@ spec:
                     x-kubernetes-map-type: atomic
                 type: object
               global:
-                description: |-
-                  Global  defining global privileges
-                  JSON string
-                type: string
+                description: Global  defining global privileges
+                type: object
               indices:
                 description: Indices is the list of indices permissions
                 items:
@@ -169,10 +167,8 @@ spec:
                         Default to false
                       type: boolean
                     fieldSecurity:
-                      description: |-
-                        FieldSecurity
-                        JSON string
-                      type: string
+                      description: FieldSecurity
+                      type: object
                     names:
                       description: Names
                       items:
@@ -192,10 +188,8 @@ spec:
                   type: object
                 type: array
               metadata:
-                description: |-
-                  Metadata is optional meta-data
-                  JSON string
-                type: string
+                description: Metadata is optional meta-data
+                type: object
               name:
                 description: |-
                   Name is the custom role name
@@ -208,10 +202,8 @@ spec:
                   type: string
                 type: array
               transientMetadata:
-                description: |-
-                  TransientMetadata
-                  JSON string
-                type: string
+                description: TransientMetadata
+                type: object
             required:
             - elasticsearchRef
             type: object

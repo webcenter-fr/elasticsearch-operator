@@ -1,8 +1,6 @@
 package kibanaapi
 
 import (
-	"encoding/json"
-
 	"github.com/disaster37/generic-objectmatcher/patch"
 	"github.com/disaster37/go-kibana-rest/v8/kbapi"
 	kbhandler "github.com/disaster37/kb-handler/v8"
@@ -31,12 +29,8 @@ func (h *roleApiClient) Build(o *kibanaapicrd.Role) (role *kbapi.KibanaRole, err
 		}
 	}
 
-	if o.Spec.Metadata != "" {
-		meta := make(map[string]any)
-		if err := json.Unmarshal([]byte(o.Spec.Metadata), &meta); err != nil {
-			return nil, err
-		}
-		role.Metadata = meta
+	if o.Spec.Metadata != nil {
+		role.Metadata = o.Spec.Metadata.Data
 	}
 
 	if o.Spec.Elasticsearch != nil {
@@ -57,12 +51,8 @@ func (h *roleApiClient) Build(o *kibanaapicrd.Role) (role *kbapi.KibanaRole, err
 					i.Query = indice.Query
 				}
 
-				if indice.FieldSecurity != "" {
-					fs := make(map[string]any)
-					if err := json.Unmarshal([]byte(indice.FieldSecurity), &fs); err != nil {
-						return nil, err
-					}
-					i.FieldSecurity = fs
+				if indice.FieldSecurity != nil {
+					i.FieldSecurity = indice.FieldSecurity.Data
 				}
 
 				role.Elasticsearch.Indices = append(role.Elasticsearch.Indices, i)

@@ -1,6 +1,6 @@
 module github.com/webcenter-fr/elasticsearch-operator
 
-go 1.23.4
+go 1.24
 
 require (
 	dario.cat/mergo v1.0.1

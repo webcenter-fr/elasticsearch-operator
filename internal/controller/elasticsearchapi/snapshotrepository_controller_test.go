@@ -8,6 +8,7 @@ import (
 	"emperror.dev/errors"
 	"github.com/disaster37/es-handler/v8/mocks"
 	"github.com/disaster37/generic-objectmatcher/patch"
+	"github.com/disaster37/operator-sdk-extra/pkg/apis"
 	"github.com/disaster37/operator-sdk-extra/pkg/controller"
 	"github.com/disaster37/operator-sdk-extra/pkg/helper"
 	"github.com/disaster37/operator-sdk-extra/pkg/test"
@@ -150,11 +151,11 @@ func doCreateSnapshotRepositoryStep() test.TestStep {
 						},
 					},
 					Type: "url",
-					Settings: `
-					{
-						"url" : "http://fake"
-					}
-					`,
+					Settings: &apis.MapAny{
+						Data: map[string]any{
+							"url": "http://fake",
+						},
+					},
 				},
 			}
 			if err = c.Create(context.Background(), repo); err != nil {
@@ -202,11 +203,11 @@ func doUpdateSnapshotRepositoryStep() test.TestStep {
 			repo := o.(*elasticsearchapicrd.SnapshotRepository)
 
 			data["lastGeneration"] = repo.GetStatus().GetObservedGeneration()
-			repo.Spec.Settings = `
-				{
-					"url" : "http://fake2"
-				}
-			`
+			repo.Spec.Settings = &apis.MapAny{
+				Data: map[string]any{
+					"url": "http://fake2",
+				},
+			}
 			if err = c.Update(context.Background(), repo); err != nil {
 				return err
 			}

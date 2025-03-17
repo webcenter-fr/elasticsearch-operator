@@ -42,25 +42,21 @@ type WatchSpec struct {
 	Name string `json:"name,omitempty"`
 
 	// Trigger
-	// JSON string
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
-	Trigger string `json:"trigger"`
+	Trigger *apis.MapAny `json:"trigger"`
 
 	// Input
-	// JSON string
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
-	Input string `json:"input"`
+	Input *apis.MapAny `json:"input"`
 
-	// Condition
-	// JSON string
+	// Conditiong
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
-	Condition string `json:"condition"`
+	Condition *apis.MapAny `json:"condition"`
 
 	// Transform
-	// JSON string
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
 	// +optional
-	Transform string `json:"transform,omitempty"`
+	Transform *apis.MapAny `json:"transform,omitempty"`
 
 	// ThrottlePeriod
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
@@ -73,15 +69,13 @@ type WatchSpec struct {
 	ThrottlePeriodInMillis int64 `json:"throttle_period_in_millis,omitempty"`
 
 	// Actions
-	// JSON string
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
-	Actions string `json:"actions"`
+	Actions *apis.MapAny `json:"actions"`
 
 	// Metadata
-	// JSON string
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
 	// +optional
-	Metadata string `json:"metadata,omitempty"`
+	Metadata *apis.MapAny `json:"metadata,omitempty"`
 }
 
 // WatchStatus defines the observed state of Watch

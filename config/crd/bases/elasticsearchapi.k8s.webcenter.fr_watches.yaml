@@ -2,7 +2,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.17.0
+    controller-gen.kubebuilder.io/version: v0.17.1
   creationTimestamp: null
   name: watches.elasticsearchapi.k8s.webcenter.fr
 spec:
@@ -55,15 +55,11 @@ spec:
             description: WatchSpec defines the desired state of Watch
             properties:
               actions:
-                description: |-
-                  Actions
-                  JSON string
-                type: string
+                description: Actions
+                type: object
               condition:
-                description: |-
-                  Condition
-                  JSON string
-                type: string
+                description: Conditiong
+                type: object
               elasticsearchRef:
                 description: ElasticsearchRef is the Elasticsearch ref to connect
                   on.
@@ -135,15 +131,11 @@ spec:
                     x-kubernetes-map-type: atomic
                 type: object
               input:
-                description: |-
-                  Input
-                  JSON string
-                type: string
+                description: Input
+                type: object
               metadata:
-                description: |-
-                  Metadata
-                  JSON string
-                type: string
+                description: Metadata
+                type: object
               name:
                 description: |-
                   Name is the custom watch name
@@ -157,15 +149,11 @@ spec:
                 format: int64
                 type: integer
               transform:
-                description: |-
-                  Transform
-                  JSON string
-                type: string
+                description: Transform
+                type: object
               trigger:
-                description: |-
-                  Trigger
-                  JSON string
-                type: string
+                description: Trigger
+                type: object
             required:
             - actions
             - condition

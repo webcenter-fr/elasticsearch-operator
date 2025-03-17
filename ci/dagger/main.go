@@ -55,7 +55,7 @@ func New(
 ) *ElasticsearchOperator {
 	return &ElasticsearchOperator{
 		Src:         src,
-		OperatorSDK: dag.OperatorSDK(src.WithoutDirectory("ci")),
+		OperatorSDK: dag.OperatorSDK(src.WithoutDirectory("ci"), name),
 	}
 }
 

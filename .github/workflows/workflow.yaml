@@ -20,7 +20,7 @@ jobs:
       - name: Dagger
         uses: dagger/dagger-for-github@v7
         with:
-          version: 0.14.0
+          version: 0.16.1
           call: --src . ci --ci --version ${VERSION} --registry-username env:REGISTRY_USERNAME --registry-password env:REGISTRY_PASSWORD --git-token env:GITHUB_TOKEN --code-cove-token env:CODECOV_TOKEN ${BRANCH_NAME} ${IS_TAG} ${IS_PR}
           cloud-token: ${{ secrets.DAGGER_CLOUD_TOKEN }}
         env:

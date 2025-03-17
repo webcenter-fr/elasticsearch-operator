@@ -1,9 +1,6 @@
 package elasticsearchapi
 
 import (
-	"encoding/json"
-
-	"emperror.dev/errors"
 	eshandler "github.com/disaster37/es-handler/v8"
 	"github.com/disaster37/generic-objectmatcher/patch"
 	"github.com/disaster37/operator-sdk-extra/pkg/controller"
@@ -27,52 +24,40 @@ func (h *watchApiClient) Build(o *elasticsearchapicrd.Watch) (watch *olivere.XPa
 		ThrottlePeriodInMillis: o.Spec.ThrottlePeriodInMillis,
 	}
 
-	if o.Spec.Trigger != "" {
-		trigger := make(map[string]map[string]any)
-		if err := json.Unmarshal([]byte(o.Spec.Trigger), &trigger); err != nil {
-			return nil, errors.Wrap(err, "Error when decode trigger")
+	if o.Spec.Trigger != nil {
+		watch.Trigger = map[string]map[string]any{}
+		for key, data := range o.Spec.Trigger.Data {
+			watch.Trigger[key] = data.(map[string]any)
 		}
-		watch.Trigger = trigger
 	}
 
-	if o.Spec.Input != "" {
-		input := make(map[string]map[string]any)
-		if err := json.Unmarshal([]byte(o.Spec.Input), &input); err != nil {
-			return nil, errors.Wrap(err, "Error when decode input")
+	if o.Spec.Input != nil {
+		watch.Input = map[string]map[string]any{}
+		for key, data := range o.Spec.Input.Data {
+			watch.Input[key] = data.(map[string]any)
 		}
-		watch.Input = input
 	}
 
-	if o.Spec.Condition != "" {
-		condition := make(map[string]map[string]any)
-		if err := json.Unmarshal([]byte(o.Spec.Condition), &condition); err != nil {
-			return nil, errors.Wrap(err, "Error when decode condition")
+	if o.Spec.Condition != nil {
+		watch.Condition = map[string]map[string]any{}
+		for key, data := range o.Spec.Condition.Data {
+			watch.Condition[key] = data.(map[string]any)
 		}
-		watch.Condition = condition
 	}
 
-	if o.Spec.Transform != "" {
-		transform := make(map[string]any)
-		if err := json.Unmarshal([]byte(o.Spec.Transform), &transform); err != nil {
-			return nil, errors.Wrap(err, "Error when decode transform")
-		}
-		watch.Transform = transform
+	if o.Spec.Transform != nil {
+		watch.Transform = o.Spec.Condition.Data
 	}
 
-	if o.Spec.Actions != "" {
-		actions := make(map[string]map[string]any)
-		if err := json.Unmarshal([]byte(o.Spec.Actions), &actions); err != nil {
-			return nil, errors.Wrap(err, "Error when decode actions")
+	if o.Spec.Actions != nil {
+		watch.Actions = map[string]map[string]any{}
+		for key, data := range o.Spec.Actions.Data {
+			watch.Actions[key] = data.(map[string]any)
 		}
-		watch.Actions = actions
 	}
 
-	if o.Spec.Metadata != "" {
-		meta := make(map[string]any)
-		if err := json.Unmarshal([]byte(o.Spec.Metadata), &meta); err != nil {
-			return nil, errors.Wrap(err, "Error when decode metadata")
-		}
-		watch.Metadata = meta
+	if o.Spec.Metadata != nil {
+		watch.Metadata = o.Spec.Metadata.Data
 	}
 
 	return watch, nil

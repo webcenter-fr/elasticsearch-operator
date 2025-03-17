@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	"github.com/disaster37/go-kibana-rest/v8/kbapi"
+	"github.com/disaster37/operator-sdk-extra/pkg/apis"
 	"github.com/stretchr/testify/assert"
 	kibanaapicrd "github.com/webcenter-fr/elasticsearch-operator/api/kibanaapi/v1"
 	"github.com/webcenter-fr/elasticsearch-operator/api/shared"
@@ -124,11 +125,14 @@ func TestRoleBuild(t *testing.T) {
 							"view_index_metadata",
 							"monitor",
 						},
-						FieldSecurity: `
-	{
-		"grant" : [ "title", "body" ]
-	}
-						`,
+						FieldSecurity: &apis.MapAny{
+							Data: map[string]any{
+								"grant": []string{
+									"title",
+									"body",
+								},
+							},
+						},
 						Query: `
 	{
 		"match": {
@@ -138,11 +142,11 @@ func TestRoleBuild(t *testing.T) {
 					},
 				},
 			},
-			Metadata: `
-{
-	"version" : 1
-}
-			`,
+			Metadata: &apis.MapAny{
+				Data: map[string]any{
+					"version": 1,
+				},
+			},
 			TransientMedata: &kibanaapicrd.KibanaRoleTransientMetadata{
 				Enabled: true,
 			},

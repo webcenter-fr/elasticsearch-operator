@@ -8,6 +8,7 @@ import (
 	"emperror.dev/errors"
 	"github.com/disaster37/es-handler/v8/mocks"
 	"github.com/disaster37/generic-objectmatcher/patch"
+	"github.com/disaster37/operator-sdk-extra/pkg/apis"
 	"github.com/disaster37/operator-sdk-extra/pkg/controller"
 	"github.com/disaster37/operator-sdk-extra/pkg/helper"
 	"github.com/disaster37/operator-sdk-extra/pkg/test"
@@ -146,11 +147,11 @@ func doCreateComponentTemplateStep() test.TestStep {
 							Name: "test",
 						},
 					},
-					Settings: `
-					{
-						"fake": "foo"
-					}
-					`,
+					Settings: &apis.MapAny{
+						Data: map[string]any{
+							"fake": "foo",
+						},
+					},
 				},
 			}
 			if err = c.Create(context.Background(), ct); err != nil {
@@ -199,9 +200,11 @@ func doUpdateComponentTemplateStep() test.TestStep {
 			ct := o.(*elasticsearchapicrd.ComponentTemplate)
 
 			data["lastGeneration"] = ct.GetStatus().GetObservedGeneration()
-			ct.Spec.Settings = `{
-				"fake": "foo2"
-			}`
+			ct.Spec.Settings = &apis.MapAny{
+				Data: map[string]any{
+					"fake": "foo2",
+				},
+			}
 			if err = c.Update(context.Background(), ct); err != nil {
 				return err
 			}

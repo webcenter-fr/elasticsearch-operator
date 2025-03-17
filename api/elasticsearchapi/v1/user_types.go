@@ -56,10 +56,9 @@ type UserSpec struct {
 	FullName string `json:"fullName,omitempty"`
 
 	// Metadata is the meta data
-	// Is JSON string
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
 	// +optional
-	Metadata string `json:"metadata,omitempty"`
+	Metadata *apis.MapAny `json:"metadata,omitempty"`
 
 	// CredentialSecretRef permit to set password. Or you can use password hash
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
