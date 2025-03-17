@@ -31,10 +31,10 @@ require (
 	golang.org/x/crypto v0.32.0
 	golang.org/x/time v0.9.0
 	gopkg.in/yaml.v3 v3.0.1
-	k8s.io/api v0.32.0
+	k8s.io/api v0.32.3
 	k8s.io/apiextensions-apiserver v0.32.0
-	k8s.io/apimachinery v0.32.0
-	k8s.io/client-go v0.32.0
+	k8s.io/apimachinery v0.32.3
+	k8s.io/client-go v0.32.3
 	k8s.io/utils v0.0.0-20241210054802-24370beab758
 	sigs.k8s.io/controller-runtime v0.19.4
 	sigs.k8s.io/yaml v1.4.0
