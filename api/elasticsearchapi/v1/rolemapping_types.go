@@ -53,11 +53,13 @@ type RoleMappingSpec struct {
 
 	// Rules is the mapping rules
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
+	// +kubebuilder:pruning:PreserveUnknownFields
 	Rules *apis.MapAny `json:"rules"`
 
 	// Metadata is the meta data
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
 	// +optional
+	// +kubebuilder:pruning:PreserveUnknownFields
 	Metadata *apis.MapAny `json:"metadata,omitempty"`
 }
 

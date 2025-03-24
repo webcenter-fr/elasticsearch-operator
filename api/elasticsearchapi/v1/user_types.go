@@ -58,6 +58,7 @@ type UserSpec struct {
 	// Metadata is the meta data
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
 	// +optional
+	// +kubebuilder:pruning:PreserveUnknownFields
 	Metadata *apis.MapAny `json:"metadata,omitempty"`
 
 	// CredentialSecretRef permit to set password. Or you can use password hash

@@ -59,6 +59,7 @@ type RoleSpec struct {
 	// Metadata is optional meta-data
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
 	// +optional
+	// +kubebuilder:pruning:PreserveUnknownFields
 	Metadata *apis.MapAny `json:"metadata,omitempty"`
 }
 
@@ -114,6 +115,7 @@ type KibanaRoleElasticsearchIndice struct {
 	// FieldSecurity
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
 	// +optional
+	// +kubebuilder:pruning:PreserveUnknownFields
 	FieldSecurity *apis.MapAny `json:"fieldSecurity,omitempty"`
 
 	// Query

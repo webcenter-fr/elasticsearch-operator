@@ -171,7 +171,7 @@ func TestRoleBuild(t *testing.T) {
 	expectedRole = &kbapi.KibanaRole{
 		Name: "test",
 		Metadata: map[string]any{
-			"version": float64(1),
+			"version": 1,
 		},
 		TransientMedata: &kbapi.KibanaRoleTransientMetadata{
 			Enabled: true,
@@ -193,7 +193,7 @@ func TestRoleBuild(t *testing.T) {
 						"monitor",
 					},
 					FieldSecurity: map[string]any{
-						"grant": []any{
+						"grant": []string{
 							"title",
 							"body",
 						},

@@ -53,6 +53,7 @@ type LogstashPipelineSpec struct {
 	// Settings is the pipeline settings
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
 	// +optional
+	// +kubebuilder:pruning:PreserveUnknownFields
 	Settings *apis.MapAny `json:"settings,omitempty"`
 }
 

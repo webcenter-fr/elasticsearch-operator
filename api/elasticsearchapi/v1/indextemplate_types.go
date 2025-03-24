@@ -69,6 +69,7 @@ type IndexTemplateSpec struct {
 	// Meta is extended info as JSON string
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
 	// +optional
+	// +kubebuilder:pruning:PreserveUnknownFields
 	Meta *apis.MapAny `json:"meta,omitempty"`
 
 	// AllowAutoCreate permit to allow auto create index
@@ -88,16 +89,19 @@ type IndexTemplateData struct {
 	// Settings is the template setting as JSON string
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
 	// +optional
+	// +kubebuilder:pruning:PreserveUnknownFields
 	Settings *apis.MapAny `json:"settings,omitempty"`
 
 	// Mappings is the template mapping as JSON string
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
 	// +optional
+	// +kubebuilder:pruning:PreserveUnknownFields
 	Mappings *apis.MapAny `json:"mappings,omitempty"`
 
 	// Aliases is the template alias as JSON string
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
 	// +optional
+	// +kubebuilder:pruning:PreserveUnknownFields
 	Aliases *apis.MapAny `json:"aliases,omitempty"`
 }
 

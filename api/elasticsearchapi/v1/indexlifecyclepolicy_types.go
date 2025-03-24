@@ -56,6 +56,7 @@ type IndexLifecyclePolicySpecPolicy struct {
 	// Metadata
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
 	// +optional
+	// +kubebuilder:pruning:PreserveUnknownFields
 	Meta *apis.MapAny `json:"_meta,omitempty"`
 
 	// ILM phases
@@ -92,7 +93,14 @@ type IndexLifecyclePolicySpecPolicyPhases struct {
 }
 
 type IndexLifecyclePolicySpecPolicyPhasesPhase struct {
-	MinAge  *string     `json:"min_age,omitempty"`
+	// The min age to exec action
+	// +operator-sdk:csv:customresourcedefinitions:type=spec
+	// +optional
+	MinAge *string `json:"min_age,omitempty"`
+
+	//The ILM action
+	// +operator-sdk:csv:customresourcedefinitions:type=spec
+	// +kubebuilder:pruning:PreserveUnknownFields
 	Actions apis.MapAny `json:"actions"`
 }
 

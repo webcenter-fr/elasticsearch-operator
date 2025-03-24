@@ -46,7 +46,7 @@ func (h *watchApiClient) Build(o *elasticsearchapicrd.Watch) (watch *olivere.XPa
 	}
 
 	if o.Spec.Transform != nil {
-		watch.Transform = o.Spec.Condition.Data
+		watch.Transform = o.Spec.Transform.Data
 	}
 
 	if o.Spec.Actions != nil {

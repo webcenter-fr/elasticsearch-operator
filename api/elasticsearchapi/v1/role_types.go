@@ -64,16 +64,19 @@ type RoleSpec struct {
 	// Global  defining global privileges
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
 	// +optional
+	// +kubebuilder:pruning:PreserveUnknownFields
 	Global *apis.MapAny `json:"global,omitempty"`
 
 	// Metadata is optional meta-data
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
 	// +optional
+	// +kubebuilder:pruning:PreserveUnknownFields
 	Metadata *apis.MapAny `json:"metadata,omitempty"`
 
 	// TransientMetadata
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
 	// +optional
+	// +kubebuilder:pruning:PreserveUnknownFields
 	TransientMetadata *apis.MapAny `json:"transientMetadata,omitempty"`
 }
 
@@ -107,6 +110,7 @@ type RoleSpecIndicesPermissions struct {
 	// FieldSecurity
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
 	// +optional
+	// +kubebuilder:pruning:PreserveUnknownFields
 	FieldSecurity *apis.MapAny `json:"fieldSecurity,omitempty"`
 
 	// Query

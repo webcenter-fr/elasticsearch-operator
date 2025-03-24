@@ -83,7 +83,7 @@ func TestWatchBuild(t *testing.T) {
 		Condition: map[string]map[string]any{
 			"compare": {
 				"ctx.payload.hits.total": map[string]any{
-					"gt": float64(0),
+					"gt": 0,
 				},
 			},
 		},
@@ -175,7 +175,7 @@ func TestWatchBuild(t *testing.T) {
 		Condition: map[string]map[string]any{
 			"compare": {
 				"ctx.payload.hits.total": map[string]any{
-					"gt": float64(0),
+					"gt": 0,
 				},
 			},
 		},

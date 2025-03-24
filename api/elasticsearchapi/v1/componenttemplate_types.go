@@ -44,16 +44,19 @@ type ComponentTemplateSpec struct {
 	// Settings is the component setting
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
 	// +optional
+	// +kubebuilder:pruning:PreserveUnknownFields
 	Settings *apis.MapAny `json:"settings,omitempty"`
 
 	// Mappings is the component mapping
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
 	// +optional
+	// +kubebuilder:pruning:PreserveUnknownFields
 	Mappings *apis.MapAny `json:"mappings,omitempty"`
 
 	// Aliases is the component aliases
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
 	// +optional
+	// +kubebuilder:pruning:PreserveUnknownFields
 	Aliases *apis.MapAny `json:"aliases,omitempty"`
 
 	// Template is the raw template

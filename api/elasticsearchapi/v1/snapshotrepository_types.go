@@ -48,6 +48,7 @@ type SnapshotRepositorySpec struct {
 	// The config of snapshot repository
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
 	// +optional
+	// +kubebuilder:pruning:PreserveUnknownFields
 	Settings *apis.MapAny `json:"settings,omitempty"`
 }
 

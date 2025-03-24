@@ -84,7 +84,7 @@ func TestComponentTemplateBuild(t *testing.T) {
 	expectedCt = &olivere.IndicesGetComponentTemplate{
 		Template: &olivere.IndicesGetComponentTemplateData{
 			Settings: map[string]any{
-				"number_of_shards": float64(1),
+				"number_of_shards": 1,
 			},
 			Mappings: map[string]any{
 				"_source": map[string]any{

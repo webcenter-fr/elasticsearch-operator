@@ -68,7 +68,7 @@ func TestUserBuild(t *testing.T) {
 			},
 			Metadata: &apis.MapAny{
 				Data: map[string]any{
-					"fu": "bar",
+					"foo": "bar",
 				},
 			},
 		},

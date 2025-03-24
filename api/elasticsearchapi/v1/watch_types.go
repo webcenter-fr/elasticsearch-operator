@@ -43,19 +43,23 @@ type WatchSpec struct {
 
 	// Trigger
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
+	// +kubebuilder:pruning:PreserveUnknownFields
 	Trigger *apis.MapAny `json:"trigger"`
 
 	// Input
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
+	// +kubebuilder:pruning:PreserveUnknownFields
 	Input *apis.MapAny `json:"input"`
 
 	// Conditiong
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
+	// +kubebuilder:pruning:PreserveUnknownFields
 	Condition *apis.MapAny `json:"condition"`
 
 	// Transform
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
 	// +optional
+	// +kubebuilder:pruning:PreserveUnknownFields
 	Transform *apis.MapAny `json:"transform,omitempty"`
 
 	// ThrottlePeriod
@@ -70,11 +74,13 @@ type WatchSpec struct {
 
 	// Actions
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
+	// +kubebuilder:pruning:PreserveUnknownFields
 	Actions *apis.MapAny `json:"actions"`
 
 	// Metadata
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
 	// +optional
+	// +kubebuilder:pruning:PreserveUnknownFields
 	Metadata *apis.MapAny `json:"metadata,omitempty"`
 }
 
