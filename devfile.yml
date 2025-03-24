@@ -1,6 +1,6 @@
 schemaVersion: 2.2.0
 metadata:
-  name: golang2
+  name: golang
 components:
   - name: tools
     container:
