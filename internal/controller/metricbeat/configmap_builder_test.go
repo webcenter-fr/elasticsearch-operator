@@ -159,8 +159,10 @@ node.value2: test`,
 			},
 			Modules: &apis.MapAny{
 				Data: map[string]any{
-					"module.yaml": map[string]any{
-						"foo": "bar",
+					"module.yaml": []map[string]any{
+						{
+							"foo": "bar",
+						},
 					},
 				},
 			},

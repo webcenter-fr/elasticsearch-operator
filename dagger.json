@@ -22,8 +22,8 @@
     },
     {
       "name": "operator-sdk",
-      "source": "github.com/disaster37/dagger-library-go/operator-sdk",
-      "pin": "45531f25faa4ff513fef3e8dc78cbcbebe9bd452"
+      "source": "github.com/disaster37/dagger-library-go/operator-sdk@v2",
+      "pin": "9c1c54b14fb1cb7da49eeea1166aa37a5255b4da"
     }
   ],
   "source": "ci/dagger"

@@ -2,7 +2,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.17.1
+    controller-gen.kubebuilder.io/version: v0.17.2
   creationTimestamp: null
   name: indexlifecyclepolicies.elasticsearchapi.k8s.webcenter.fr
 spec:
@@ -136,6 +136,7 @@ spec:
                   _meta:
                     description: Metadata
                     type: object
+                    x-kubernetes-preserve-unknown-fields: true
                   phases:
                     description: ILM phases
                     properties:
@@ -143,8 +144,11 @@ spec:
                         description: Cold phase
                         properties:
                           actions:
+                            description: The ILM action
                             type: object
+                            x-kubernetes-preserve-unknown-fields: true
                           min_age:
+                            description: The min age to exec action
                             type: string
                         required:
                         - actions
@@ -153,8 +157,11 @@ spec:
                         description: Delete phase
                         properties:
                           actions:
+                            description: The ILM action
                             type: object
+                            x-kubernetes-preserve-unknown-fields: true
                           min_age:
+                            description: The min age to exec action
                             type: string
                         required:
                         - actions
@@ -163,8 +170,11 @@ spec:
                         description: Frozen phase
                         properties:
                           actions:
+                            description: The ILM action
                             type: object
+                            x-kubernetes-preserve-unknown-fields: true
                           min_age:
+                            description: The min age to exec action
                             type: string
                         required:
                         - actions
@@ -173,8 +183,11 @@ spec:
                         description: Hot phase
                         properties:
                           actions:
+                            description: The ILM action
                             type: object
+                            x-kubernetes-preserve-unknown-fields: true
                           min_age:
+                            description: The min age to exec action
                             type: string
                         required:
                         - actions
@@ -183,8 +196,11 @@ spec:
                         description: Warm phase
                         properties:
                           actions:
+                            description: The ILM action
                             type: object
+                            x-kubernetes-preserve-unknown-fields: true
                           min_age:
+                            description: The min age to exec action
                             type: string
                         required:
                         - actions
