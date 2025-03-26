@@ -14,7 +14,6 @@ import (
 	"github.com/stretchr/testify/assert"
 	elasticsearchcrd "github.com/webcenter-fr/elasticsearch-operator/api/elasticsearch/v1"
 	logstashcrd "github.com/webcenter-fr/elasticsearch-operator/api/logstash/v1"
-	"github.com/webcenter-fr/elasticsearch-operator/api/shared"
 	sharedcrd "github.com/webcenter-fr/elasticsearch-operator/api/shared"
 	appv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -114,7 +113,7 @@ func doCreateLogstashStep() test.TestStep {
 					Patterns: map[string]string{
 						"pattern.conf": "test",
 					},
-					Ingresses: []shared.Ingress{
+					Ingresses: []sharedcrd.Ingress{
 						{
 							Name:                  "filebeat",
 							ContainerPort:         5003,

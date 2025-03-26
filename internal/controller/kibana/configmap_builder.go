@@ -7,7 +7,6 @@ import (
 	"github.com/elastic/go-ucfg"
 	elasticsearchcrd "github.com/webcenter-fr/elasticsearch-operator/api/elasticsearch/v1"
 	kibanacrd "github.com/webcenter-fr/elasticsearch-operator/api/kibana/v1"
-	"github.com/webcenter-fr/elasticsearch-operator/pkg/helper"
 	localhelper "github.com/webcenter-fr/elasticsearch-operator/pkg/helper"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -54,21 +53,21 @@ func buildConfigMaps(kb *kibanacrd.Kibana, es *elasticsearchcrd.Elasticsearch) (
 	}
 
 	injectedConfigMap := map[string]string{
-		"kibana.yml": helper.ToYamlOrDie(kibanaConf),
+		"kibana.yml": localhelper.ToYamlOrDie(kibanaConf),
 	}
 
 	configs := map[string]string{
 		"kibana.yml": string(config),
 	}
 	if kb.Spec.ExtraConfigs != nil {
-		configs, err = helper.MergeSettings(configs, kb.Spec.ExtraConfigs)
+		configs, err = localhelper.MergeSettings(configs, kb.Spec.ExtraConfigs)
 		if err != nil {
 			return nil, errors.Wrap(err, "Error when merge config and extra configs")
 		}
 	}
 
 	// Inject computed config
-	expectedConfig, err = helper.MergeSettings(injectedConfigMap, configs)
+	expectedConfig, err = localhelper.MergeSettings(injectedConfigMap, configs)
 	if err != nil {
 		return nil, errors.Wrap(err, "Error when merge expected config with computed config")
 	}

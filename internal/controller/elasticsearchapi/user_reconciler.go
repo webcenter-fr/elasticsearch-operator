@@ -14,7 +14,6 @@ import (
 	"github.com/sirupsen/logrus"
 	elasticsearchapicrd "github.com/webcenter-fr/elasticsearch-operator/api/elasticsearchapi/v1"
 	localhelper "github.com/webcenter-fr/elasticsearch-operator/pkg/helper"
-	core "k8s.io/api/core/v1"
 	corev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -70,7 +69,7 @@ func (h *userReconciler) Read(ctx context.Context, o object.RemoteObject, data m
 
 	// Read password from secret if needed and inject it on expected user
 	if !user.IsAutoGeneratePassword() && user.Spec.SecretRef != nil {
-		secret := &core.Secret{}
+		secret := &corev1.Secret{}
 		secretNS := types.NamespacedName{
 			Namespace: user.Namespace,
 			Name:      user.Spec.SecretRef.Name,
@@ -78,7 +77,7 @@ func (h *userReconciler) Read(ctx context.Context, o object.RemoteObject, data m
 		if err = h.Client().Get(ctx, secretNS, secret); err != nil {
 			if k8serrors.IsNotFound(err) {
 				logger.Warnf("Secret %s not yet exist, try later", user.Spec.SecretRef.Name)
-				h.Recorder().Eventf(o, core.EventTypeWarning, "Failed", "Secret %s not yet exist", user.Spec.SecretRef.Name)
+				h.Recorder().Eventf(o, corev1.EventTypeWarning, "Failed", "Secret %s not yet exist", user.Spec.SecretRef.Name)
 				return nil, ctrl.Result{RequeueAfter: 30 * time.Second}, nil
 			}
 			return nil, res, errors.Wrapf(err, "Error when get secret %s", user.Spec.SecretRef.Name)

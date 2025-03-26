@@ -75,13 +75,13 @@ func (r *roleBindingReconciler) Update(ctx context.Context, o object.MultiPhaseO
 	if err != nil {
 		if k8serrors.IsForbidden(err) {
 			// Delete
-			res, err = r.MultiPhaseStepReconcilerAction.Delete(ctx, o, data, objects, logger)
+			res, err = r.Delete(ctx, o, data, objects, logger)
 			if err != nil {
 				return res, errors.Wrap(err, "Error when delete role bindins in gload to recreate it (update)")
 			}
 
 			// Create
-			res, err = r.MultiPhaseStepReconcilerAction.Create(ctx, o, data, objects, logger)
+			res, err = r.Create(ctx, o, data, objects, logger)
 			if err != nil {
 				return res, errors.Wrap(err, "Error when create role binding after delete it (update)")
 			}

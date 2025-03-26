@@ -38,8 +38,8 @@ func buildIngresses(fb *beatcrd.Filebeat) (ingresses []networkingv1.Ingress, err
 					rule.HTTP.Paths[indexPath] = path
 				}
 			}
-			if rule.IngressRuleValue.HTTP != nil && len(rule.IngressRuleValue.HTTP.Paths) > 0 {
-				for indexPath, path := range rule.IngressRuleValue.HTTP.Paths {
+			if rule.HTTP != nil && len(rule.HTTP.Paths) > 0 {
+				for indexPath, path := range rule.HTTP.Paths {
 					path.Backend = networkingv1.IngressBackend{
 						Service: &networkingv1.IngressServiceBackend{
 							Name: GetServiceName(fb, i.Name),
@@ -48,7 +48,7 @@ func buildIngresses(fb *beatcrd.Filebeat) (ingresses []networkingv1.Ingress, err
 							},
 						},
 					}
-					rule.IngressRuleValue.HTTP.Paths[indexPath] = path
+					rule.HTTP.Paths[indexPath] = path
 				}
 			}
 

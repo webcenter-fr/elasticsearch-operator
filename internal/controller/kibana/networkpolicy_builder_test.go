@@ -35,8 +35,8 @@ func TestBuildNetworkPolicies(t *testing.T) {
 	test.EqualFromYamlFile[*networkingv1.NetworkPolicy](t, "testdata/networkpolicy_not_in_pod.yml", &np[0], scheme.Scheme)
 
 	// When in pod
-	os.Setenv("POD_NAME", "test")
-	os.Setenv("POD_NAMESPACE", "test")
+	_ = os.Setenv("POD_NAME", "test")
+	_ = os.Setenv("POD_NAMESPACE", "test")
 	o = &kibanacrd.Kibana{
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: "default",
