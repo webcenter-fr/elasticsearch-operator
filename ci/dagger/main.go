@@ -268,8 +268,6 @@ func (h *ElasticsearchOperator) CI(
 
 		// Compute the branch and directory
 		var branch string
-		git := dag.Git().
-			SetConfig(gitUsername, gitEmail, dagger.GitSetConfigOpts{BaseRepoURL: "github.com", Token: gitToken})
 
 		if !isTag {
 			// keep original version file
@@ -288,21 +286,21 @@ func (h *ElasticsearchOperator) CI(
 			branch = defaultBranch
 		}
 
-		if isPullRequest {
-			git = git.With(func(r *dagger.Git) *dagger.Git {
-				ctr := r.BaseContainer().
-					WithDirectory("/project", dir).
-					WithWorkdir("/project").
-					WithExec(helper.ForgeCommand("git remote -v")).
-					WithExec(helper.ForgeCommandf("git fetch origin %s:%s", branch, branch)).
-					WithExec(helper.ForgeCommandf("git checkout %s", branch))
-
-				return r.WithCustomContainer(ctr)
+		git := dag.GitModule(dir, dagger.GitModuleOpts{Ci: "github"}).
+			SetConfig(dagger.GitModuleSetConfigOpts{
+				Username: gitUsername,
+				Email:    gitEmail,
 			})
-		} else {
-			git = git.SetRepo(h.Src.WithDirectory(".", dir), dagger.GitSetRepoOpts{Branch: branch})
-		}
-		if _, err = git.CommitAndPush(ctx, "Commit from CI pipeline"); err != nil {
+
+		if _, err = git.CommitAndPush(
+			ctx,
+			gitToken,
+			dagger.GitModuleCommitAndPushOpts{
+				BranchName: branch,
+				GitRepoURL: "https://github.com/webcenter-fr/elasticsearch-operator.git",
+				Message:    "Commit from CI",
+			},
+		); err != nil {
 			return nil, errors.Wrap(err, "Error when commit and push files change")
 		}
 
