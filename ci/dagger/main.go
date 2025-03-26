@@ -221,8 +221,7 @@ func (h *ElasticsearchOperator) CI(
 			dir,
 			codeCoveToken,
 			dagger.CodecovUploadOpts{
-				Files:   []string{"coverage.out"},
-				Verbose: true,
+				Files: []string{"coverage.out"},
 			},
 		); err != nil {
 			return nil, errors.Wrap(err, "Error when upload report on CodeCov")
