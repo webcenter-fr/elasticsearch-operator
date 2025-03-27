@@ -14,10 +14,10 @@ components:
         - name: web
           targetPort: 8080
           exposure: public
-      memoryLimit: 4Gi
+      memoryLimit: 8Gi
       cpuLimit: 4000m
       cpuRequest: 1000m
-      memoryRequest: 2Gi
+      memoryRequest: 4Gi
       mountSources: true
   - name: docker
     attributes:

@@ -5,7 +5,7 @@ You can use the following main setting to deploy Filebeat:
 - **imagePullPolicy** (string): The image pull policy. Default to `IfNotPresent`
 - **imagePullSecrets** (string): The image pull secrets to use. Default to `empty`
 - **version** (string): The image version to use. Default to `latest`
-- **config** (map of any): The config on Yaml format. Default is `empty`.
+- **config** (map of any): The config of Fielebat on Yaml format. Default is `empty`.
 - **extraConfigs** (map of string): Each key is the file store on filebeat folder. Each value is the file contend. It permit to set filebeat.yml settings.
 - **elasticsearchRef** (object): The Elasticsearch cluster ref
   - **managed** (object): Use it if cluster is deployed with this operator
