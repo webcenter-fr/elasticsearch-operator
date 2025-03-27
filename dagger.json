@@ -8,22 +8,22 @@
     {
       "name": "codecov",
       "source": "github.com/disaster37/dagger-library-go/codecov@v2",
-      "pin": "bb555c881e55b6d9791750bb99de48679ffd7ebd"
+      "pin": "5e49b4f78c709f073f0d2489a4112ae652c3e604"
     },
     {
       "name": "git-module",
       "source": "github.com/disaster37/dagger-library-go/git-module@v2",
-      "pin": "bb555c881e55b6d9791750bb99de48679ffd7ebd"
+      "pin": "5e49b4f78c709f073f0d2489a4112ae652c3e604"
     },
     {
       "name": "golang",
       "source": "github.com/disaster37/dagger-library-go/golang@v2",
-      "pin": "bb555c881e55b6d9791750bb99de48679ffd7ebd"
+      "pin": "5e49b4f78c709f073f0d2489a4112ae652c3e604"
     },
     {
       "name": "operator-sdk",
       "source": "github.com/disaster37/dagger-library-go/operator-sdk@v2",
-      "pin": "bb555c881e55b6d9791750bb99de48679ffd7ebd"
+      "pin": "5e49b4f78c709f073f0d2489a4112ae652c3e604"
     }
   ],
   "source": "ci/dagger"

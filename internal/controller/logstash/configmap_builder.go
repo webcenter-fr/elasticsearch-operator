@@ -17,18 +17,22 @@ func buildConfigMaps(ls *logstashcrd.Logstash) (configMaps []corev1.ConfigMap, e
 	// ConfigMap that store configs
 	if ls.Spec.Config != nil || len(ls.Spec.ExtraConfigs) > 0 {
 		var expectedConfig map[string]string
+		configs := map[string]string{
+			"logstash.yml": "",
+		}
 
 		injectedConfigMap := map[string]string{
 			"logstash.yml": "",
 		}
-		config, err := yaml.Marshal(ls.Spec.Config)
-		if err != nil {
-			return nil, errors.Wrap(err, "Error when unmarshall config")
+
+		if ls.Spec.Config != nil && ls.Spec.Config.Data != nil {
+			config, err := yaml.Marshal(ls.Spec.Config)
+			if err != nil {
+				return nil, errors.Wrap(err, "Error when unmarshall config")
+			}
+			configs["logstash.yml"] = string(config)
 		}
 
-		configs := map[string]string{
-			"logstash.yml": string(config),
-		}
 		if ls.Spec.ExtraConfigs != nil {
 			configs, err = helper.MergeSettings(configs, ls.Spec.ExtraConfigs)
 			if err != nil {
