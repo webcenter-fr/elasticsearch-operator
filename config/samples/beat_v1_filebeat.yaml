@@ -15,32 +15,29 @@ spec:
       name: logmanagement-dev
       port: 5003
   config:
-    filebeat.yml: |
-      filebeat:
-        shutdown_timeout: 5s
-      
-      # Logstash settings
-      output.logstash:
-        timeout: 15
-        ssl:
-          enable: false
-      logging:
-        to_stderr: true
-        level: info
-      
-      # Inputs
-      filebeat.inputs:
-        # syslog
-        - type: syslog
-          format: auto
-          protocol.tcp:
-            host: "0.0.0.0:5142"
-          fields_under_root: true
-          fields:
-            event.dataset: "syslog"
-            event.module: "syslog"
-            service.type: "syslog"
-          tags: ["syslog"]
+    filebeat:
+      shutdown_timeout: 5s
+    # Logstash settings
+    output.logstash:
+      timeout: 15
+      ssl:
+        enable: false
+    logging:
+      to_stderr: true
+      level: info
+    # Inputs
+    filebeat.inputs:
+      # syslog
+      - type: syslog
+        format: auto
+        protocol.tcp:
+          host: "0.0.0.0:5142"
+        fields_under_root: true
+        fields:
+          event.dataset: "syslog"
+          event.module: "syslog"
+          service.type: "syslog"
+        tags: ["syslog"]
   services:
     - name: syslog
       spec:
@@ -81,8 +78,3 @@ spec:
       co.elastic.logs.logstash/multiline.timeout: '5s'
       co.elastic.logs.logstash/processors.0.decode_json_fields: '{"fields": ["message"], "target": "hm.filebeat", "add_error_key": true, "max_depth": 10}'
       co.elastic.logs.logstash/processors.2.add_fields: '{"target": "", "fields": {"event": {"dataset": "filebeat"}, "service": {"type": "filebeat"}}}'
-    additionalVolumes:
-      - name: logstash-certificates
-        mountPath: /usr/share/filebeat/certs
-        secret:
-          secretName: logstash-certificates
