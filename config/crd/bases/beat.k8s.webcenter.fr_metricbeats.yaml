@@ -4002,6 +4002,11 @@ spec:
                               type: string
                             type: array
                             x-kubernetes-list-type: atomic
+                          annotations:
+                            additionalProperties:
+                              type: string
+                            description: Annotations permit to set annotation on PVC
+                            type: object
                           dataSource:
                             description: |-
                               dataSource field can be used to specify either:
@@ -4077,6 +4082,11 @@ spec:
                             required:
                             - kind
                             - name
+                            type: object
+                          labels:
+                            additionalProperties:
+                              type: string
+                            description: Labels permit to set labels on PVC
                             type: object
                           resources:
                             description: |-

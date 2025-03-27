@@ -171,6 +171,7 @@ You can read complete documentation per sub section
   - [Deployment settings](documentations/filebeat/deployment-settings.md)
   - [Endpoint settings](documentations/filebeat/endpoint-settings.md)
   - [Monitoring settings](documentations/filebeat/monitoring-settings.md)
+  - [PKI settings](documentations/filebeat/pki-settings.md)
 
 ## Deploy Metricbeat
 
