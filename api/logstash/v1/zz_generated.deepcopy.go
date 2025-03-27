@@ -199,7 +199,10 @@ func (in *LogstashSpec) DeepCopyInto(out *LogstashSpec) {
 	}
 	if in.Pipelines != nil {
 		in, out := &in.Pipelines, &out.Pipelines
-		*out = (*in).DeepCopy()
+		*out = make(map[string]string, len(*in))
+		for key, val := range *in {
+			(*out)[key] = val
+		}
 	}
 	if in.Patterns != nil {
 		in, out := &in.Patterns, &out.Patterns

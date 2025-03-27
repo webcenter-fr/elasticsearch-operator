@@ -71,11 +71,11 @@ type LogstashSpec struct {
 	ExtraConfigs map[string]string `json:"extraConfigs,omitempty"`
 
 	// Pipeline is the pipeline specification
-	// The key is the file stored on logstash/pipelines
+	// The key is the file stored on logstash/pipelines. The contend is the logstash rules as string
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
 	// +optional
 	// +kubebuilder:pruning:PreserveUnknownFields
-	Pipelines *apis.MapAny `json:"pipelines,omitempty"`
+	Pipelines map[string]string `json:"pipelines,omitempty"`
 
 	// Patterns is the patterns specification used by grok
 	// The key is the file stored on logstash/patterns

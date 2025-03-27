@@ -12,4 +12,3 @@ metadata:
 data:
   pipeline.yaml: |
     foo: bar
-    

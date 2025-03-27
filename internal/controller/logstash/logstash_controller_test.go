@@ -103,12 +103,8 @@ func doCreateLogstashStep() test.TestStep {
 							"queue.type":       "persisted",
 						},
 					},
-					Pipelines: &apis.MapAny{
-						Data: map[string]any{
-							"test.yaml": map[string]any{
-								"foo": "bar",
-							},
-						},
+					Pipelines: map[string]string{
+						"test.yaml": `"foo": "bar"`,
 					},
 					Patterns: map[string]string{
 						"pattern.conf": "test",

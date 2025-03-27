@@ -3,7 +3,6 @@ package logstash
 import (
 	"testing"
 
-	"github.com/disaster37/operator-sdk-extra/pkg/apis"
 	"github.com/disaster37/operator-sdk-extra/pkg/test"
 	"github.com/stretchr/testify/assert"
 	elasticsearchcrd "github.com/webcenter-fr/elasticsearch-operator/api/elasticsearch/v1"
@@ -252,12 +251,8 @@ func TestBuildStatefulset(t *testing.T) {
 			ExtraConfigs: map[string]string{
 				"log4j.yaml": "my log4j",
 			},
-			Pipelines: &apis.MapAny{
-				Data: map[string]any{
-					"pipeline.yaml": map[string]any{
-						"foo": "bar",
-					},
-				},
+			Pipelines: map[string]string{
+				"pipeline.yaml": `"foo": "bar"`,
 			},
 			Patterns: map[string]string{
 				"pattern.conf": "my pattern",

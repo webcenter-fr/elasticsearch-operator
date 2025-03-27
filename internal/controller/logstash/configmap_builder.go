@@ -56,15 +56,7 @@ func buildConfigMaps(ls *logstashcrd.Logstash) (configMaps []corev1.ConfigMap, e
 	}
 
 	// ConfigMap that store pipelines
-	if ls.Spec.Pipelines != nil && len(ls.Spec.Pipelines.Data) > 0 {
-		pipelines := map[string]string{}
-		for pipeline, data := range ls.Spec.Pipelines.Data {
-			b, err := yaml.Marshal(data)
-			if err != nil {
-				return nil, errors.Wrapf(err, "Error when marshall pipeline %s", pipeline)
-			}
-			pipelines[pipeline] = string(b)
-		}
+	if len(ls.Spec.Pipelines) > 0 {
 		cm = &corev1.ConfigMap{
 			ObjectMeta: metav1.ObjectMeta{
 				Namespace:   ls.Namespace,
@@ -72,7 +64,7 @@ func buildConfigMaps(ls *logstashcrd.Logstash) (configMaps []corev1.ConfigMap, e
 				Labels:      getLabels(ls),
 				Annotations: getAnnotations(ls),
 			},
-			Data: pipelines,
+			Data: ls.Spec.Pipelines,
 		}
 
 		configMaps = append(configMaps, *cm)

@@ -5181,9 +5181,11 @@ spec:
                   The key is the file stored on logstash/patterns
                 type: object
               pipelines:
+                additionalProperties:
+                  type: string
                 description: |-
                   Pipeline is the pipeline specification
-                  The key is the file stored on logstash/pipelines
+                  The key is the file stored on logstash/pipelines. The contend is the logstash rules as string
                 type: object
                 x-kubernetes-preserve-unknown-fields: true
               pki:

@@ -14,13 +14,13 @@ spec:
     managed:
       name: elasticsearch-sample
   config:
-    logstash.yml: |
-      pipeline.workers: 2
-      queue.type: persisted
-      queue.max_bytes: 5gb
-      xpack.monitoring.enabled: false
-      log.format: json
-      dead_letter_queue.enable: true
+    pipeline.workers: 2
+    queue.type: persisted
+    queue.max_bytes: 5gb
+    xpack.monitoring.enabled: false
+    log.format: json
+    dead_letter_queue.enable: true
+  extraConfigs:
     pipelines.yml: |
       - pipeline.id: "logs"
         path.config: "/usr/share/logstash/pipeline/logs/src/*.conf"
@@ -70,8 +70,3 @@ spec:
       co.elastic.logs.logstash/processors.0.decode_json_fields: '{"fields": ["message"], "target": "hm.logstash", "add_error_key": true, "max_depth": 10}'
       co.elastic.logs.logstash/processors.2.add_fields: '{"target": "", "fields": {"event": {"dataset": "logstash"}, "service": {"type": "logstash"}}}'
       build_id: ''
-    additionalVolumes:
-      - name: logstash-certificates
-        mountPath: /usr/share/logstash/certs
-        secret:
-          secretName: logstash-certificates

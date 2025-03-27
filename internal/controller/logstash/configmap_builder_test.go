@@ -88,12 +88,8 @@ node.value2: test`,
 					Name: "test",
 				},
 			},
-			Pipelines: &apis.MapAny{
-				Data: map[string]any{
-					"pipeline.yaml": map[string]any{
-						"foo": "bar",
-					},
-				},
+			Pipelines: map[string]string{
+				"pipeline.yaml": "foo: bar",
 			},
 		},
 	}
