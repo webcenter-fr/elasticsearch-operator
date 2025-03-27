@@ -45,12 +45,15 @@ func buildConfigMaps(es *elasticsearchcrd.Elasticsearch) (configMaps []corev1.Co
 	injectedConfigMap := map[string]string{
 		"elasticsearch.yml": helper.ToYamlOrDie(elasticsearchConfig),
 	}
-	globalConfig, err := yaml.Marshal(es.Spec.GlobalNodeGroup.Config)
-	if err != nil {
-		return nil, errors.Wrap(err, "Error when unmarshall global config")
-	}
 	globalConfigs := map[string]string{
-		"elasticsearch.yml": string(globalConfig),
+		"elasticsearch.yml": "",
+	}
+	if es.Spec.GlobalNodeGroup.Config != nil && es.Spec.GlobalNodeGroup.Config.Data != nil {
+		globalConfig, err := yaml.Marshal(es.Spec.GlobalNodeGroup.Config.Data)
+		if err != nil {
+			return nil, errors.Wrap(err, "Error when unmarshall global config")
+		}
+		globalConfigs["elasticsearch.yml"] = string(globalConfig)
 	}
 	if es.Spec.GlobalNodeGroup.ExtraConfigs != nil {
 		globalConfigs, err = helper.MergeSettings(globalConfigs, es.Spec.GlobalNodeGroup.ExtraConfigs)
@@ -60,12 +63,15 @@ func buildConfigMaps(es *elasticsearchcrd.Elasticsearch) (configMaps []corev1.Co
 	}
 
 	for _, nodeGroup := range es.Spec.NodeGroups {
-		config, err := yaml.Marshal(nodeGroup.Config)
-		if err != nil {
-			return nil, errors.Wrapf(err, "Error when unmarshall config from node group %s", nodeGroup.Name)
-		}
 		configs := map[string]string{
-			"elasticsearch.yml": string(config),
+			"elasticsearch.yml": "",
+		}
+		if nodeGroup.Config != nil && nodeGroup.Config.Data != nil {
+			config, err := yaml.Marshal(nodeGroup.Config.Data)
+			if err != nil {
+				return nil, errors.Wrapf(err, "Error when unmarshall config from node group %s", nodeGroup.Name)
+			}
+			configs["elasticsearch.yml"] = string(config)
 		}
 		if nodeGroup.ExtraConfigs != nil {
 			configs, err = helper.MergeSettings(configs, nodeGroup.ExtraConfigs)
@@ -75,9 +81,9 @@ func buildConfigMaps(es *elasticsearchcrd.Elasticsearch) (configMaps []corev1.Co
 		}
 
 		expectedConfig, err = helper.MergeSettings(configs, globalConfigs)
-			if err != nil {
-				return nil, errors.Wrapf(err, "Error when merge config from global config and node group config %s", nodeGroup.Name)
-			}
+		if err != nil {
+			return nil, errors.Wrapf(err, "Error when merge config from global config and node group config %s", nodeGroup.Name)
+		}
 
 		// Inject computed config
 		expectedConfig, err = helper.MergeSettings(injectedConfigMap, expectedConfig)

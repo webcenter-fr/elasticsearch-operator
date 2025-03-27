@@ -134,7 +134,7 @@ func buildConfigMaps(fb *beatcrd.Filebeat, es *elasticsearchcrd.Elasticsearch, l
 		"filebeat.yml": "",
 	}
 
-	if fb.Spec.Config != nil {
+	if fb.Spec.Config != nil && fb.Spec.Config.Data != nil {
 		config, err := yaml.Marshal(fb.Spec.Config.Data)
 		if err != nil {
 			return nil, errors.Wrap(err, "Error when unmarshall config")
