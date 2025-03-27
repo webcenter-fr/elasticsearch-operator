@@ -19,6 +19,10 @@ func buildConfigMaps(kb *kibanacrd.Kibana, es *elasticsearchcrd.Elasticsearch) (
 
 	configMaps = make([]corev1.ConfigMap, 0, 1)
 
+	configs := map[string]string{
+		"kibana.yml": "",
+	}
+
 	kibanaConf := map[string]any{}
 
 	if kb.Spec.Tls.IsTlsEnabled() {
@@ -56,8 +60,13 @@ func buildConfigMaps(kb *kibanacrd.Kibana, es *elasticsearchcrd.Elasticsearch) (
 		"kibana.yml": localhelper.ToYamlOrDie(kibanaConf),
 	}
 
-	configs := map[string]string{
-		"kibana.yml": string(config),
+	
+	if kb.Spec.Config != nil && kb.Spec.Config.Data != nil {
+		config, err := yaml.Marshal(kb.Spec.Config.Data)
+		if err != nil {
+			return nil, errors.Wrap(err, "Error when unmarshall config")
+		}
+		configs["kibana.yml"] = string(config)
 	}
 	if kb.Spec.ExtraConfigs != nil {
 		configs, err = localhelper.MergeSettings(configs, kb.Spec.ExtraConfigs)
