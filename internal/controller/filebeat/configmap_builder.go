@@ -130,14 +130,18 @@ func buildConfigMaps(fb *beatcrd.Filebeat, es *elasticsearchcrd.Elasticsearch, l
 	injectedConfigMap := map[string]string{
 		"filebeat.yml": helper.ToYamlOrDie(filebeatConf),
 	}
-	config, err := yaml.Marshal(fb.Spec.Config)
-	if err != nil {
-		return nil, errors.Wrap(err, "Error when unmarshall config")
+	configs := map[string]string{
+		"filebeat.yml": "",
 	}
 
-	configs := map[string]string{
-		"filebeat.yml": string(config),
+	if fb.Spec.Config != nil {
+		config, err := yaml.Marshal(fb.Spec.Config.Data)
+		if err != nil {
+			return nil, errors.Wrap(err, "Error when unmarshall config")
+		}
+		configs["filebeat.yml"] = string(config)
 	}
+
 	if fb.Spec.ExtraConfigs != nil {
 		configs, err = helper.MergeSettings(configs, fb.Spec.ExtraConfigs)
 		if err != nil {

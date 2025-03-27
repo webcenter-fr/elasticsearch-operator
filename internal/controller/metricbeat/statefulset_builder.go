@@ -528,13 +528,15 @@ chown -v metricbeat:metricbeat /mnt/data
 	}
 
 	// Compute persistence
-	if mb.IsPersistence() && mb.Spec.Deployment.Persistence.VolumeClaimSpec != nil {
+	if mb.IsPersistence() && mb.Spec.Deployment.Persistence.VolumeClaim != nil {
 		statefullset.Spec.VolumeClaimTemplates = []corev1.PersistentVolumeClaim{
 			{
 				ObjectMeta: metav1.ObjectMeta{
-					Name: "metricbeat-data",
+					Name:        "metricbeat-data",
+					Labels:      mb.Spec.Deployment.Persistence.VolumeClaim.Labels,
+					Annotations: mb.Spec.Deployment.Persistence.VolumeClaim.Annotations,
 				},
-				Spec: *mb.Spec.Deployment.Persistence.VolumeClaimSpec,
+				Spec: mb.Spec.Deployment.Persistence.VolumeClaim.PersistentVolumeClaimSpec,
 			},
 		}
 	}

@@ -244,14 +244,16 @@ func TestBuildStatefulset(t *testing.T) {
 				},
 
 				Persistence: &shared.DeploymentPersistenceSpec{
-					VolumeClaimSpec: &corev1.PersistentVolumeClaimSpec{
-						StorageClassName: ptr.To[string]("local-path"),
-						AccessModes: []corev1.PersistentVolumeAccessMode{
-							corev1.ReadWriteOnce,
-						},
-						Resources: corev1.VolumeResourceRequirements{
-							Requests: corev1.ResourceList{
-								corev1.ResourceStorage: resource.MustParse("5Gi"),
+					VolumeClaim: &shared.DeploymentVolumeClaim{
+						PersistentVolumeClaimSpec: corev1.PersistentVolumeClaimSpec{
+							StorageClassName: ptr.To[string]("local-path"),
+							AccessModes: []corev1.PersistentVolumeAccessMode{
+								corev1.ReadWriteOnce,
+							},
+							Resources: corev1.VolumeResourceRequirements{
+								Requests: corev1.ResourceList{
+									corev1.ResourceStorage: resource.MustParse("5Gi"),
+								},
 							},
 						},
 					},
