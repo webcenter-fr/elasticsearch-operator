@@ -37,7 +37,6 @@ const (
 	gitUsername          string = "github"
 	gitEmail             string = "github@localhost"
 	name                        = "elasticsearch-operator"
-	defaultBranch               = "main"
 )
 
 type ElasticsearchOperator struct {
@@ -139,9 +138,10 @@ func (h *ElasticsearchOperator) CI(
 	// +optional
 	isPullRequest bool,
 
-	// Set the current branch name. It's needed because of CI overwrite the branch name by PR
+	// The git branch where you should to push
+	// You need to provide it when you are on PullRequest or on Tag
 	// +optional
-	branchName string,
+	gitBranch string,
 
 	// Set true to skip test
 	// +optional
@@ -266,9 +266,6 @@ func (h *ElasticsearchOperator) CI(
 			}
 		}
 
-		// Compute the branch and directory
-		var branch string
-
 		if !isTag {
 			// keep original version file
 			versionFile, err := h.Src.File("VERSION").Sync(ctx)
@@ -277,15 +274,7 @@ func (h *ElasticsearchOperator) CI(
 			} else {
 				dir = dir.WithoutFile("VERSION")
 			}
-
-			if branchName == "" {
-				return nil, errors.New("You need to provide the branch name")
-			}
-			branch = branchName
-		} else {
-			branch = defaultBranch
 		}
-
 		git := dag.GitModule(dir, dagger.GitModuleOpts{Ci: "github"}).
 			SetConfig(dagger.GitModuleSetConfigOpts{
 				Username: gitUsername,
@@ -296,7 +285,7 @@ func (h *ElasticsearchOperator) CI(
 			ctx,
 			gitToken,
 			dagger.GitModuleCommitAndPushOpts{
-				BranchName: branch,
+				BranchName: gitBranch,
 				GitRepoURL: "https://github.com/webcenter-fr/elasticsearch-operator.git",
 				Message:    "Commit from CI",
 			},
