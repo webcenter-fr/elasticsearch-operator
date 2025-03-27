@@ -27,31 +27,28 @@ spec:
         name: es-tls
   globalNodeGroup:
     config:
-      elasticsearch.yml: |
-        action.destructive_requires_name: true
-        gateway.recover_after_time: 5m
-        http.cors.allow-credentials: true
-        http.cors.allow-headers: X-Requested-With,X-Auth-Token,Content-Type,
-        Content-Length, Authorization
-        http.cors.allow-origin: /.*/
-        http.cors.enabled: true
-        http.max_content_length: 500mb
-
-        xpack.security.audit.enabled: true
-        xpack.security.audit.logfile.events.exclude:
-          - access_granted
-        xpack.security.authc:
-          anonymous:
-            authz_exception: false
-            roles: monitoring
-            username: anonymous_user
-        
-        # Custom config
-        cluster.routing.allocation.disk.watermark.flood_stage: 1gb
-        cluster.routing.allocation.disk.watermark.high: 1gb
-        cluster.routing.allocation.disk.watermark.low: 2gb
-        gateway.expected_data_nodes: 1
-        gateway.recover_after_data_nodes: 1
+      action.destructive_requires_name: true
+      gateway.recover_after_time: 5m
+      http.cors.allow-credentials: true
+      http.cors.allow-headers: X-Requested-With,X-Auth-Token,Content-Type,
+      Content-Length, Authorization
+      http.cors.allow-origin: /.*/
+      http.cors.enabled: true
+      http.max_content_length: 500mb
+      xpack.security.audit.enabled: true
+      xpack.security.audit.logfile.events.exclude:
+        - access_granted
+      xpack.security.authc:
+        anonymous:
+          authz_exception: false
+          roles: monitoring
+          username: anonymous_user
+      # Custom config
+      cluster.routing.allocation.disk.watermark.flood_stage: 1gb
+      cluster.routing.allocation.disk.watermark.high: 1gb
+      cluster.routing.allocation.disk.watermark.low: 2gb
+      gateway.expected_data_nodes: 1
+      gateway.recover_after_data_nodes: 1
     initContainerResources:
       limits:
         cpu: 500m
@@ -112,31 +109,28 @@ spec:
         name: es-tls
   globalNodeGroup:
     config:
-      elasticsearch.yml: |
-        action.destructive_requires_name: true
-        gateway.recover_after_time: 5m
-        http.cors.allow-credentials: true
-        http.cors.allow-headers: X-Requested-With,X-Auth-Token,Content-Type,
-        Content-Length, Authorization
-        http.cors.allow-origin: /.*/
-        http.cors.enabled: true
-        http.max_content_length: 500mb
-
-        xpack.security.audit.enabled: true
-        xpack.security.audit.logfile.events.exclude:
-          - access_granted
-        xpack.security.authc:
-          anonymous:
-            authz_exception: false
-            roles: monitoring
-            username: anonymous_user
-        
-        # Custom config
-        cluster.routing.allocation.disk.watermark.flood_stage: 1gb
-        cluster.routing.allocation.disk.watermark.high: 1gb
-        cluster.routing.allocation.disk.watermark.low: 2gb
-        gateway.expected_data_nodes: 1
-        gateway.recover_after_data_nodes: 1
+      action.destructive_requires_name: true
+      gateway.recover_after_time: 5m
+      http.cors.allow-credentials: true
+      http.cors.allow-headers: X-Requested-With,X-Auth-Token,Content-Type,
+      Content-Length, Authorization
+      http.cors.allow-origin: /.*/
+      http.cors.enabled: true
+      http.max_content_length: 500mb
+      xpack.security.audit.enabled: true
+      xpack.security.audit.logfile.events.exclude:
+        - access_granted
+      xpack.security.authc:
+        anonymous:
+          authz_exception: false
+          roles: monitoring
+          username: anonymous_user
+      # Custom config
+      cluster.routing.allocation.disk.watermark.flood_stage: 1gb
+      cluster.routing.allocation.disk.watermark.high: 1gb
+      cluster.routing.allocation.disk.watermark.low: 2gb
+      gateway.expected_data_nodes: 1
+      gateway.recover_after_data_nodes: 1
     initContainerResources:
       limits:
         cpu: 500m
@@ -212,7 +206,7 @@ spec:
     managed:
       name: elasticsearch-monitoring
   module:
-    elasticsearch-xpack.yml: |
+    elasticsearch-xpack.yml:
       - module: elasticsearch
         xpack.enabled: true
         username: '${SOURCE_METRICBEAT_USERNAME}'

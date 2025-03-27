@@ -10,4 +10,5 @@ metadata:
   name: test-pipeline-ls
   namespace: default
 data:
-  pipeline.conf: 'foo = bar'
+  pipeline.yaml: |
+    foo: bar

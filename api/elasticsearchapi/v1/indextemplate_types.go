@@ -69,7 +69,8 @@ type IndexTemplateSpec struct {
 	// Meta is extended info as JSON string
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
 	// +optional
-	Meta string `json:"meta,omitempty"`
+	// +kubebuilder:pruning:PreserveUnknownFields
+	Meta *apis.MapAny `json:"meta,omitempty"`
 
 	// AllowAutoCreate permit to allow auto create index
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
@@ -80,7 +81,7 @@ type IndexTemplateSpec struct {
 	// You can use it instead to set indexPatterns, composedOf, priority, template etc.
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
 	// +optional
-	RawTemplate string `json:"rawTemplate,omitempty"`
+	RawTemplate *string `json:"rawTemplate,omitempty"`
 }
 
 // IndexTemplateData is the template specification
@@ -88,17 +89,20 @@ type IndexTemplateData struct {
 	// Settings is the template setting as JSON string
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
 	// +optional
-	Settings string `json:"settings,omitempty"`
+	// +kubebuilder:pruning:PreserveUnknownFields
+	Settings *apis.MapAny `json:"settings,omitempty"`
 
 	// Mappings is the template mapping as JSON string
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
 	// +optional
-	Mappings string `json:"mappings,omitempty"`
+	// +kubebuilder:pruning:PreserveUnknownFields
+	Mappings *apis.MapAny `json:"mappings,omitempty"`
 
 	// Aliases is the template alias as JSON string
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
 	// +optional
-	Aliases string `json:"aliases,omitempty"`
+	// +kubebuilder:pruning:PreserveUnknownFields
+	Aliases *apis.MapAny `json:"aliases,omitempty"`
 }
 
 // IndexTemplateStatus defines the observed state of IndexTemplate

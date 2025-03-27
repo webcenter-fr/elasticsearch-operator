@@ -3,13 +3,13 @@ package kibana
 import (
 	"testing"
 
+	"github.com/disaster37/operator-sdk-extra/pkg/apis"
 	"github.com/disaster37/operator-sdk-extra/pkg/test"
 	"github.com/stretchr/testify/assert"
 	elasticsearchcrd "github.com/webcenter-fr/elasticsearch-operator/api/elasticsearch/v1"
 	kibanacrd "github.com/webcenter-fr/elasticsearch-operator/api/kibana/v1"
 	"github.com/webcenter-fr/elasticsearch-operator/api/shared"
 	corev1 "k8s.io/api/core/v1"
-	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/utils/ptr"
@@ -39,7 +39,12 @@ func TestBuildConfigMaps(t *testing.T) {
 					Name: "test",
 				},
 			},
-			Config: map[string]string{
+			Config: &apis.MapAny{
+				Data: map[string]any{
+					"node.test": "test",
+				},
+			},
+			ExtraConfigs: map[string]string{
 				"kibana.yml": `node.value: test
 node.value2: test`,
 				"log4j.yml": "log.test: test\n",
@@ -83,7 +88,7 @@ node.value2: test`,
 			Tls: shared.TlsSpec{
 				Enabled: ptr.To[bool](false),
 			},
-			Config: map[string]string{
+			ExtraConfigs: map[string]string{
 				"kibana.yml": `node.value: test
 node.value2: test`,
 				"log4j.yml": "log.test: test\n",
@@ -119,7 +124,7 @@ node.value2: test`,
 			},
 		},
 		Spec: kibanacrd.KibanaSpec{
-			Config: map[string]string{
+			ExtraConfigs: map[string]string{
 				"kibana.yml": `node.value: test
 node.value2: test`,
 				"log4j.yml": "log.test: test\n",
@@ -128,7 +133,7 @@ node.value2: test`,
 				ExternalElasticsearchRef: &shared.ElasticsearchExternalRef{
 					Addresses: []string{"fake"},
 				},
-				ElasticsearchCaSecretRef: &v1.LocalObjectReference{
+				ElasticsearchCaSecretRef: &corev1.LocalObjectReference{
 					Name: "custom-ca-es",
 				},
 			},
@@ -152,7 +157,7 @@ node.value2: test`,
 			},
 		},
 		Spec: kibanacrd.KibanaSpec{
-			Config: map[string]string{
+			ExtraConfigs: map[string]string{
 				"kibana.yml": `node.value: test
 node.value2: test`,
 				"log4j.yml": "log.test: test\n",
@@ -161,7 +166,7 @@ node.value2: test`,
 				ManagedElasticsearchRef: &shared.ElasticsearchManagedRef{
 					Name: "test",
 				},
-				ElasticsearchCaSecretRef: &v1.LocalObjectReference{
+				ElasticsearchCaSecretRef: &corev1.LocalObjectReference{
 					Name: "custom-ca-es",
 				},
 			},

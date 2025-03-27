@@ -21,6 +21,7 @@ data:
             modules:
                 path: ${path.config}/modules.d/*.yml
     node:
+        foo: bar
         value: test
         value2: test
     output:

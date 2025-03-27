@@ -2,7 +2,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.17.0
+    controller-gen.kubebuilder.io/version: v0.17.2
   creationTimestamp: null
   name: roles.kibanaapi.k8s.webcenter.fr
 spec:
@@ -67,10 +67,9 @@ spec:
                     items:
                       properties:
                         fieldSecurity:
-                          description: |-
-                            FieldSecurity
-                            JSON string
-                          type: string
+                          description: FieldSecurity
+                          type: object
+                          x-kubernetes-preserve-unknown-fields: true
                         names:
                           description: Names
                           items:
@@ -180,10 +179,9 @@ spec:
                     type: object
                 type: object
               metadata:
-                description: |-
-                  Metadata is optional meta-data
-                  JSON string
-                type: string
+                description: Metadata is optional meta-data
+                type: object
+                x-kubernetes-preserve-unknown-fields: true
               name:
                 description: |-
                   Name is the role name

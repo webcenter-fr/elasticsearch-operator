@@ -3,11 +3,13 @@ package elasticsearchapi
 import (
 	"testing"
 
+	"github.com/disaster37/operator-sdk-extra/pkg/apis"
 	olivere "github.com/olivere/elastic/v7"
 	"github.com/stretchr/testify/assert"
 	elasticsearchapicrd "github.com/webcenter-fr/elasticsearch-operator/api/elasticsearchapi/v1"
 	"github.com/webcenter-fr/elasticsearch-operator/api/shared"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/utils/ptr"
 )
 
 func TestIndexLifecyclePolicyBuild(t *testing.T) {
@@ -37,7 +39,7 @@ func TestIndexLifecyclePolicyBuild(t *testing.T) {
 	}
 
 	_, err = client.Build(o)
-	assert.Error(t, err)
+	assert.NoError(t, err)
 
 	// With all parameters
 	o = &elasticsearchapicrd.IndexLifecyclePolicy{
@@ -51,22 +53,20 @@ func TestIndexLifecyclePolicyBuild(t *testing.T) {
 					Name: "test",
 				},
 			},
-			Policy: `
-{
-	"policy": {
-		"phases": {
-			"warm": {
-				"min_age": "10d",
-				"actions": {
-					"forcemerge": {
-						"max_num_segments": 1
-					}
-				}
-			}
-		}
-	}
-}
-			`,
+			Policy: &elasticsearchapicrd.IndexLifecyclePolicySpecPolicy{
+				Phases: elasticsearchapicrd.IndexLifecyclePolicySpecPolicyPhases{
+					Warm: &elasticsearchapicrd.IndexLifecyclePolicySpecPolicyPhasesPhase{
+						MinAge: ptr.To("10d"),
+						Actions: apis.MapAny{
+							Data: map[string]any{
+								"forcemerge": map[string]any{
+									"max_num_segments": 1,
+								},
+							},
+						},
+					},
+				},
+			},
 		},
 	}
 

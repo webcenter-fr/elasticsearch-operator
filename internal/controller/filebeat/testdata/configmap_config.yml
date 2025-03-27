@@ -21,6 +21,7 @@ data:
         enabled: true
         host: 0.0.0.0
     node:
+        foo: bar
         value: test
         value2: test
     output:

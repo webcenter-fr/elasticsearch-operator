@@ -2,8 +2,8 @@ package elasticsearch
 
 import (
 	"fmt"
-	"strings"
 
+	"github.com/disaster37/operator-sdk-extra/pkg/apis"
 	beatcrd "github.com/webcenter-fr/elasticsearch-operator/api/beat/v1"
 	elasticsearchcrd "github.com/webcenter-fr/elasticsearch-operator/api/elasticsearch/v1"
 	"github.com/webcenter-fr/elasticsearch-operator/api/shared"
@@ -20,44 +20,39 @@ func buildMetricbeats(es *elasticsearchcrd.Elasticsearch) (mbs []beatcrd.Metricb
 
 	mbs = make([]beatcrd.Metricbeat, 0, 1)
 
-	var sb strings.Builder
+	metricbeatConfig := map[string]any{
+		"setup.template.settings": map[string]any{
+			"index.number_of_replicas": es.Spec.Monitoring.Metricbeat.NumberOfReplica,
+		},
+	}
+
+	xpackModule := map[string]any{
+		"module":        "elasticsearch",
+		"xpack.enabled": true,
+		"username":      "${SOURCE_METRICBEAT_USERNAME}",
+		"password":      "${SOURCE_METRICBEAT_PASSWORD}",
+		"scope":         "cluster",
+	}
+
+	if es.Spec.Monitoring.Metricbeat.RefreshPeriod == "" {
+		xpackModule["period"] = "10s"
+	} else {
+		xpackModule["period"] = es.Spec.Monitoring.Metricbeat.RefreshPeriod
+	}
 
 	if es.Spec.Tls.IsTlsEnabled() {
-		sb.WriteString(`- module: elasticsearch
-  xpack.enabled: true
-  username: '${SOURCE_METRICBEAT_USERNAME}'
-  password: '${SOURCE_METRICBEAT_PASSWORD}'
-  ssl:
-    enable: true
-    certificate_authorities: '/usr/share/metricbeat/source-es-ca/ca.crt'
-    verification_mode: full
-  scope: cluster
-`)
-
-		if es.Spec.Monitoring.Metricbeat.RefreshPeriod == "" {
-			sb.WriteString("  period: 10s\n")
-		} else {
-			sb.WriteString(fmt.Sprintf("  period: %s\n", es.Spec.Monitoring.Metricbeat.RefreshPeriod))
+		xpackModule["ssl"] = map[string]any{
+			"enable":                  true,
+			"certificate_authorities": "/usr/share/metricbeat/source-es-ca/ca.crt",
+			"verification_mode":       "full",
 		}
+		xpackModule["hosts"] = fmt.Sprintf("https://%s.%s.svc:9200", GetGlobalServiceName(es), es.Namespace)
 
-		sb.WriteString(fmt.Sprintf("  hosts: https://%s.%s.svc:9200\n", GetGlobalServiceName(es), es.Namespace))
 	} else {
-		sb.WriteString(`- module: elasticsearch
-  xpack.enabled: true
-  username: '${SOURCE_METRICBEAT_USERNAME}'
-  password: '${SOURCE_METRICBEAT_PASSWORD}'
-  ssl:
-    enable: false
-  scope: cluster
-`)
-
-		if es.Spec.Monitoring.Metricbeat.RefreshPeriod == "" {
-			sb.WriteString("  period: 10s\n")
-		} else {
-			sb.WriteString(fmt.Sprintf("  period: %s\n", es.Spec.Monitoring.Metricbeat.RefreshPeriod))
+		xpackModule["ssl"] = map[string]any{
+			"enable": false,
 		}
-
-		sb.WriteString(fmt.Sprintf("  hosts: http://%s.%s.svc:9200\n", GetGlobalServiceName(es), es.Namespace))
+		xpackModule["hosts"] = fmt.Sprintf("http://%s.%s.svc:9200", GetGlobalServiceName(es), es.Namespace)
 	}
 
 	version := es.Spec.Version
@@ -75,11 +70,14 @@ func buildMetricbeats(es *elasticsearchcrd.Elasticsearch) (mbs []beatcrd.Metricb
 		Spec: beatcrd.MetricbeatSpec{
 			Version:          version,
 			ElasticsearchRef: es.Spec.Monitoring.Metricbeat.ElasticsearchRef,
-			Module: map[string]string{
-				"elasticsearch-xpack.yml": sb.String(),
+			Modules: &apis.MapAny{
+				Data: map[string]any{
+					"elasticsearch-xpack.yml": []map[string]any{xpackModule},
+				},
 			},
-			Config: map[string]string{
-				"metricbeat.yml": fmt.Sprintf("setup.template.settings:\n  index.number_of_replicas: %d", es.Spec.Monitoring.Metricbeat.NumberOfReplica),
+
+			Config: &apis.MapAny{
+				Data: metricbeatConfig,
 			},
 			Deployment: beatcrd.MetricbeatDeploymentSpec{
 				Deployment: shared.Deployment{

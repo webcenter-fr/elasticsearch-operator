@@ -19,5 +19,5 @@ func (o *IndexTemplate) GetExternalName() string {
 
 // IsRawTemplate return true if raw template is set
 func (o *IndexTemplate) IsRawTemplate() bool {
-	return o.Spec.RawTemplate != ""
+	return o.Spec.RawTemplate != nil
 }

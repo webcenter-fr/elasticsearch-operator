@@ -6,7 +6,8 @@ You can use the following main setting to deploy Logstash:
 - **imagePullSecrets** (string): The image pull secrets to use. Default to `empty`
 - **version** (string): The image version to use. Default to `latest`
 - **pluginsList** (slice of string): The list of plugins to install on runtime (just before run Logstash). Use it for test purpose. For production, please build custom image to embedded your plugins. Default to `empty`.
-- **config** (map of string): Each key is the file store on config folder. Each value is the file contend. It permit to set logstash.yml settings. Default is `empty`.
+- **config** (map of any): The Logstash config on YAML Format. Default is `empty`.
+- **extraConfigs** (map of string): Each key is the file store on config folder. Each value is the file contend. It permit to set logstash.yml settings. Default is `empty`.
 - **keystoreSecretRef** (object): The secrets to inject on keystore on runtime. Each keys / values is injected on Java Keystore. Default to `empty`.
 - **elasticsearchRef** (object): The Elasticsearch cluster ref
   - **managed** (object): Use it if cluster is deployed with this operator
@@ -19,8 +20,8 @@ You can use the following main setting to deploy Logstash:
     - **name** (string / require): The secret name.
   - **elasticsearchCASecretRef** (object). It's the secret that store custom CA to connect on Elasticsearch cluster.
     - **name** (string / require): The secret name
-- **pipeline** (map of string): Each key is the file store on pipeline folder. Each value is the file contend. It permit to set your pipeline spec. Default is `empty`.
-- **pattern** (map of string): Each key is the file store on pattern folder. Each value is the file contend. It permit to set your custom grok patterns. Default is `empty`.
+- **pipelines** (map of any): Each key is the file store on pipeline folder. Each value is the config on YAML format. It permit to set your pipeline spec. Default is `empty`.
+- **patterns** (map of string): Each key is the file store on pattern folder. Each value is the file contend. It permit to set your custom grok patterns. Default is `empty`.
 
 > The Logstash output is directly managed by your pipelines. So, the operator can't configure output for you.
 > Moreover, you need to create a dedicated account for your Logstash Pipeline.
@@ -41,25 +42,23 @@ metadata:
   namespace: cluster-dev
 spec:
   config:
-    logstash.yml: |
-      queue.type: persisted
-      log.format: json
-      dead_letter_queue.enable: true
-      monitoring.enabled: false
-      xpack.monitoring.enabled: false
+    queue.type: persisted
+    log.format: json
+    dead_letter_queue.enable: true
+    monitoring.enabled: false
+    xpack.monitoring.enabled: false
+    # Custom config
+    pipeline.workers: 8
+    queue.max_bytes: 20gb
 
-      # Custom config
-      pipeline.workers: 8
-      queue.max_bytes: 20gb
-
-      api.http.host: 0.0.0.0
-  pipeline:
+    api.http.host: 0.0.0.0
+  pipelines:
     log.yml: |
       input { stdin { } }
       output {
         stdout { codec => rubydebug }
       }
-  pattern:
+  patterns:
     postfix: |
       POSTFIX_QUEUEID [0-9A-F]{10,11}
   elasticsearchRef:

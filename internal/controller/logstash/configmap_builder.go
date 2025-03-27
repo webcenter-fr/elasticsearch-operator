@@ -6,6 +6,7 @@ import (
 	"github.com/webcenter-fr/elasticsearch-operator/pkg/helper"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"sigs.k8s.io/yaml"
 )
 
 // BuildConfigMap permit to generate config maps
@@ -14,15 +15,33 @@ func buildConfigMaps(ls *logstashcrd.Logstash) (configMaps []corev1.ConfigMap, e
 	var cm *corev1.ConfigMap
 
 	// ConfigMap that store configs
-	if len(ls.Spec.Config) > 0 {
+	if ls.Spec.Config != nil || len(ls.Spec.ExtraConfigs) > 0 {
 		var expectedConfig map[string]string
+		configs := map[string]string{
+			"logstash.yml": "",
+		}
 
 		injectedConfigMap := map[string]string{
 			"logstash.yml": "",
 		}
 
+		if ls.Spec.Config != nil && ls.Spec.Config.Data != nil {
+			config, err := yaml.Marshal(ls.Spec.Config)
+			if err != nil {
+				return nil, errors.Wrap(err, "Error when unmarshall config")
+			}
+			configs["logstash.yml"] = string(config)
+		}
+
+		if ls.Spec.ExtraConfigs != nil {
+			configs, err = helper.MergeSettings(configs, ls.Spec.ExtraConfigs)
+			if err != nil {
+				return nil, errors.Wrap(err, "Error when merge config and extra configs")
+			}
+		}
+
 		// Inject computed config
-		expectedConfig, err = helper.MergeSettings(injectedConfigMap, ls.Spec.Config)
+		expectedConfig, err = helper.MergeSettings(injectedConfigMap, configs)
 		if err != nil {
 			return nil, errors.Wrap(err, "Error when merge expected config with computed config")
 		}
@@ -41,7 +60,7 @@ func buildConfigMaps(ls *logstashcrd.Logstash) (configMaps []corev1.ConfigMap, e
 	}
 
 	// ConfigMap that store pipelines
-	if len(ls.Spec.Pipeline) > 0 {
+	if len(ls.Spec.Pipelines) > 0 {
 		cm = &corev1.ConfigMap{
 			ObjectMeta: metav1.ObjectMeta{
 				Namespace:   ls.Namespace,
@@ -49,14 +68,14 @@ func buildConfigMaps(ls *logstashcrd.Logstash) (configMaps []corev1.ConfigMap, e
 				Labels:      getLabels(ls),
 				Annotations: getAnnotations(ls),
 			},
-			Data: ls.Spec.Pipeline,
+			Data: ls.Spec.Pipelines,
 		}
 
 		configMaps = append(configMaps, *cm)
 	}
 
 	// ConfigMap that store pattern
-	if len(ls.Spec.Pattern) > 0 {
+	if len(ls.Spec.Patterns) > 0 {
 		cm = &corev1.ConfigMap{
 			ObjectMeta: metav1.ObjectMeta{
 				Namespace:   ls.Namespace,
@@ -64,7 +83,7 @@ func buildConfigMaps(ls *logstashcrd.Logstash) (configMaps []corev1.ConfigMap, e
 				Labels:      getLabels(ls),
 				Annotations: getAnnotations(ls),
 			},
-			Data: ls.Spec.Pattern,
+			Data: ls.Spec.Patterns,
 		}
 
 		configMaps = append(configMaps, *cm)

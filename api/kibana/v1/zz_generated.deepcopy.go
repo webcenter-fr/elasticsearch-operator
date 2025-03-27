@@ -130,6 +130,10 @@ func (in *KibanaSpec) DeepCopyInto(out *KibanaSpec) {
 	in.Endpoint.DeepCopyInto(&out.Endpoint)
 	if in.Config != nil {
 		in, out := &in.Config, &out.Config
+		*out = (*in).DeepCopy()
+	}
+	if in.ExtraConfigs != nil {
+		in, out := &in.ExtraConfigs, &out.ExtraConfigs
 		*out = make(map[string]string, len(*in))
 		for key, val := range *in {
 			(*out)[key] = val

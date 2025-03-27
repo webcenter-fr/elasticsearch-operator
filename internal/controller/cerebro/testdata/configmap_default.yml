@@ -44,5 +44,6 @@ data:
         password = ${?BASIC_AUTH_PWD}
       }
     }
+    test2 = test2
     test = test
     

@@ -107,6 +107,11 @@ func (in *CerebroSpec) DeepCopyInto(out *CerebroSpec) {
 	in.Endpoint.DeepCopyInto(&out.Endpoint)
 	if in.Config != nil {
 		in, out := &in.Config, &out.Config
+		*out = new(string)
+		**out = **in
+	}
+	if in.ExtraConfigs != nil {
+		in, out := &in.ExtraConfigs, &out.ExtraConfigs
 		*out = make(map[string]string, len(*in))
 		for key, val := range *in {
 			(*out)[key] = val

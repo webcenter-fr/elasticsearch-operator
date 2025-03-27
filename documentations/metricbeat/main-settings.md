@@ -5,7 +5,8 @@ You can use the following main setting to deploy Metricbeat:
 - **imagePullPolicy** (string): The image pull policy. Default to `IfNotPresent`
 - **imagePullSecrets** (string): The image pull secrets to use. Default to `empty`
 - **version** (string): The image version to use. Default to `latest`
-- **config** (map of string): Each key is the file store on metricbeat folder. Each value is the file contend. It permit to set metricbeat.yml settings. Default is `empty`.
+- **config** (map of any): The config or Metricbeat on YAML format. Default is `empty`.
+- **extraConfigs** (map of string): Each key is the file store on metricbeat folder. Each value is the file contend. It permit to set metricbeat.yml settings. Default is `empty`.
 - **elasticsearchRef** (object): The Elasticsearch cluster ref
   - **managed** (object): Use it if cluster is deployed with this operator
     - **name** (string / required): The name of elasticsearch resource.
@@ -15,9 +16,9 @@ You can use the following main setting to deploy Metricbeat:
     - **addresses** (slice of string): The list of IPs, DNS, URL to access on cluster
   - **secretRef** (object): The secret ref that store the credentials to connect on Elasticsearch. It need to contain the keys `username` and `password`. It only used for external Elasticsearch.
       - **name** (string / require): The secret name.
-  - **elasticsearchCASecretRef** (object). It's the secret that store custom CA to connect on Elasticsearch cluster.
+  - **elasticsearchCASecretRef** (object). It's the secret that store custom CA to connect on Elasticsearch cluster. The key must be `ca.crt`
     - **name** (string / require): The secret name
-- **module** (map of string): Each key is the file store on modules.d folder. Each value is the file contend. It permit to enable and configure modules. Default is `empty`.
+- **module** (map of any): Each key is the file store on modules.d folder. Each value is the config on YAML format. It permit to enable and configure modules. Default is `empty`.
 
 
 **metricbeat.yaml**:
@@ -45,10 +46,9 @@ spec:
   imagePullSecrets:
     - name: my-pull-secret
   config:
-    metricbeat.yml: |
-      tags: ["service-X", "web-tier"]
+    tags: ["service-X", "web-tier"]
   module:
-    elasticsearch-xpack.yml: |
+    elasticsearch-xpack.yml:
       - module: elasticsearch
         xpack.enabled: true
         username: '${SOURCE_METRICBEAT_USERNAME}'

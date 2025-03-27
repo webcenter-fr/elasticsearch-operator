@@ -47,7 +47,7 @@ func (h *Elasticsearch) IsSetVMMaxMapCount() bool {
 
 // IsPersistence return true if persistence is enabled
 func (h ElasticsearchNodeGroupSpec) IsPersistence() bool {
-	if h.Persistence != nil && (h.Persistence.Volume != nil || h.Persistence.VolumeClaimSpec != nil) {
+	if h.Persistence != nil && (h.Persistence.Volume != nil || h.Persistence.VolumeClaim != nil) {
 		return true
 	}
 

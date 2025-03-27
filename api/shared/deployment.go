@@ -57,13 +57,28 @@ type DeploymentPersistenceSpec struct {
 	// VolumeClaim is the persistent volume claim spec use by statefullset
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
 	// +optional
-	VolumeClaimSpec *corev1.PersistentVolumeClaimSpec `json:"volumeClaim,omitempty"`
+	VolumeClaim *DeploymentVolumeClaim `json:"volumeClaim,omitempty"`
 
 	// Volume is the volume source to use instead volumeClaim
 	// It usefull if you should to use hostPath
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
 	// +optional
 	Volume *corev1.VolumeSource `json:"volume,omitempty"`
+}
+
+// DeploymentVolumeClaim permit to set volume claim
+type DeploymentVolumeClaim struct {
+	// Labels permit to set labels on PVC
+	// +operator-sdk:csv:customresourcedefinitions:type=spec
+	// +optional
+	Labels map[string]string `json:"labels,omitempty"`
+
+	// Annotations permit to set annotation on PVC
+	// +operator-sdk:csv:customresourcedefinitions:type=spec
+	// +optional
+	Annotations map[string]string `json:"annotations,omitempty"`
+
+	corev1.PersistentVolumeClaimSpec `json:",inline"`
 }
 
 // DeploymentVolumeSpec permit to set volume

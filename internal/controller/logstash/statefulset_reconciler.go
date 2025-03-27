@@ -125,6 +125,19 @@ func (r *statefulsetReconciler) Read(ctx context.Context, resource object.MultiP
 		}
 	}
 
+	// Read secret credential to generate checksum
+	if o.Spec.ElasticsearchRef.SecretRef != nil {
+		if err = r.Client().Get(ctx, types.NamespacedName{Namespace: o.Namespace, Name: o.Spec.ElasticsearchRef.SecretRef.Name}, s); err != nil {
+			if !k8serrors.IsNotFound(err) {
+				return read, res, errors.Wrapf(err, "Error when read secret %s", o.Spec.ElasticsearchRef.SecretRef.Name)
+			}
+			logger.Warnf("Secret %s not yet exist, try again later", o.Spec.ElasticsearchRef.SecretRef.Name)
+			return read, ctrl.Result{RequeueAfter: 30 * time.Second}, nil
+		}
+
+		secretsChecksum = append(secretsChecksum, *s)
+	}
+
 	// Read configMaps to generate checksum
 	labelSelectors, err := labels.Parse(fmt.Sprintf("cluster=%s,%s=true", o.Name, logstashcrd.LogstashAnnotationKey))
 	if err != nil {

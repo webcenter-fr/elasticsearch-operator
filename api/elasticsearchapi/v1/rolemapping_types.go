@@ -52,15 +52,15 @@ type RoleMappingSpec struct {
 	Roles []string `json:"roles"`
 
 	// Rules is the mapping rules
-	// JSON string
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
-	Rules string `json:"rules"`
+	// +kubebuilder:pruning:PreserveUnknownFields
+	Rules *apis.MapAny `json:"rules"`
 
 	// Metadata is the meta data
-	// JSON string
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
 	// +optional
-	Metadata string `json:"metadata,omitempty"`
+	// +kubebuilder:pruning:PreserveUnknownFields
+	Metadata *apis.MapAny `json:"metadata,omitempty"`
 }
 
 // RoleMappingStatus defines the observed state of RoleMapping

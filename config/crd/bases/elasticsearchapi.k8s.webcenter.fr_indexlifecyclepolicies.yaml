@@ -2,7 +2,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.17.0
+    controller-gen.kubebuilder.io/version: v0.17.2
   creationTimestamp: null
   name: indexlifecyclepolicies.elasticsearchapi.k8s.webcenter.fr
 spec:
@@ -131,11 +131,87 @@ spec:
                   If empty, it use the ressource name
                 type: string
               policy:
+                description: Policy is the ILM policy
+                properties:
+                  _meta:
+                    description: Metadata
+                    type: object
+                    x-kubernetes-preserve-unknown-fields: true
+                  phases:
+                    description: ILM phases
+                    properties:
+                      cold:
+                        description: Cold phase
+                        properties:
+                          actions:
+                            description: The ILM action
+                            type: object
+                            x-kubernetes-preserve-unknown-fields: true
+                          min_age:
+                            description: The min age to exec action
+                            type: string
+                        required:
+                        - actions
+                        type: object
+                      delete:
+                        description: Delete phase
+                        properties:
+                          actions:
+                            description: The ILM action
+                            type: object
+                            x-kubernetes-preserve-unknown-fields: true
+                          min_age:
+                            description: The min age to exec action
+                            type: string
+                        required:
+                        - actions
+                        type: object
+                      frozen:
+                        description: Frozen phase
+                        properties:
+                          actions:
+                            description: The ILM action
+                            type: object
+                            x-kubernetes-preserve-unknown-fields: true
+                          min_age:
+                            description: The min age to exec action
+                            type: string
+                        required:
+                        - actions
+                        type: object
+                      hot:
+                        description: Hot phase
+                        properties:
+                          actions:
+                            description: The ILM action
+                            type: object
+                            x-kubernetes-preserve-unknown-fields: true
+                          min_age:
+                            description: The min age to exec action
+                            type: string
+                        required:
+                        - actions
+                        type: object
+                      warm:
+                        description: Warm phase
+                        properties:
+                          actions:
+                            description: The ILM action
+                            type: object
+                            x-kubernetes-preserve-unknown-fields: true
+                          min_age:
+                            description: The min age to exec action
+                            type: string
+                        required:
+                        - actions
+                        type: object
+                    type: object
+                type: object
+              rawPolicy:
                 description: Policy is the raw policy on JSON
                 type: string
             required:
             - elasticsearchRef
-            - policy
             type: object
           status:
             description: IndexLifecyclePolicyStatus defines the observed state of

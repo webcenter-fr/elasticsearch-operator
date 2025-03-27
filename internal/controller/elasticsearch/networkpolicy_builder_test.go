@@ -39,8 +39,8 @@ func TestBuildNetworkPolicy(t *testing.T) {
 	test.EqualFromYamlFile[*networkingv1.NetworkPolicy](t, "testdata/networkpolicy_not_in_pod.yml", &nps[0], scheme.Scheme)
 
 	// When in pod
-	os.Setenv("POD_NAME", "test")
-	os.Setenv("POD_NAMESPACE", "test")
+	_ = os.Setenv("POD_NAME", "test")
+	_ =os.Setenv("POD_NAMESPACE", "test")
 	o = &elasticsearchcrd.Elasticsearch{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "test",
@@ -55,8 +55,8 @@ func TestBuildNetworkPolicy(t *testing.T) {
 	test.EqualFromYamlFile[*networkingv1.NetworkPolicy](t, "testdata/networkpolicy_in_pod.yml", &nps[0], scheme.Scheme)
 
 	// When in pod and external referers
-	os.Setenv("POD_NAME", "test")
-	os.Setenv("POD_NAMESPACE", "test")
+	_ = os.Setenv("POD_NAME", "test")
+	_ = os.Setenv("POD_NAMESPACE", "test")
 	o = &elasticsearchcrd.Elasticsearch{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "test",

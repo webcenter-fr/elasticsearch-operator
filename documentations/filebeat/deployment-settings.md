@@ -21,7 +21,7 @@ You can use the following setting to drive how to deploy Filebeat:
   - **volumeMount** (string / required): The path to mount the volume inside the pod
   - **volumeSource** (object / required): The pod volume source. Read the [official doc to know the properties](https://kubernetes.io/fr/docs/concepts/storage/volumes/)
 - **persistence** (object): The persistent volume to use to store Elasticsearch data. Default is `emptyDir` (not peristent)
-  - **volumeClaim** (object): Use it if you should to use PVC. Read the [official doc to know the properties](https://kubernetes.io/docs/concepts/storage/persistent-volumes/)
+  - **volumeClaim** (object): Use it if you should to use PVC. Read the [official doc to know the properties](https://kubernetes.io/docs/concepts/storage/persistent-volumes/).You can set here `labels` and `annotations`.
   - **volume** (object): Use it if you should to use existing volume or hostPath. Read the [official doc to know the properties](https://kubernetes.io/fr/docs/concepts/storage/volumes/)
 - **ports** (slice of object): It permit to set container ports on Pod. Default to `empty`. Read the [official doc to know the properties](https://kubernetes.io/docs/concepts/workloads/pods/)
 

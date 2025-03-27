@@ -271,6 +271,7 @@ func (h *ElasticsearchReconciler) OnError(ctx context.Context, o object.MultiPha
 
 func (h *ElasticsearchReconciler) OnSuccess(ctx context.Context, r object.MultiPhaseObject, data map[string]any, logger *logrus.Entry) (res ctrl.Result, err error) {
 	o := r.(*elasticsearchcrd.Elasticsearch)
+	isReady := true
 
 	// Reset the current cluster errors
 	common.ControllerErrors.WithLabelValues(h.name, o.GetNamespace(), o.GetName()).Set(0)
@@ -294,7 +295,6 @@ func (h *ElasticsearchReconciler) OnSuccess(ctx context.Context, r object.MultiP
 		return res, errors.Wrapf(err, "Error when read Elasticsearch statefullsets")
 	}
 
-	isReady := true
 	if len(stsList.Items) == 0 {
 		isReady = false
 	}

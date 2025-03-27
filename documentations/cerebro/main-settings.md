@@ -5,7 +5,8 @@ You can use the following main setting to deploy Cerebro:
 - **imagePullPolicy** (string): The image pull policy. Default to `IfNotPresent`
 - **imagePullSecrets** (string): The image pull secrets to use. Default to `empty`
 - **version** (string): The image version to use. Default to `latest`
-- **config** (map of string): Each key is the file store on config folder. Each value is the file contend. It permit to set cerebro settings. Default is `empty`.
+- **config** (string): The cerebro settings. Default is `empty`.
+- **extraConfigs** (map of string): Each key is the file store on config folder. Each value is the file contend. It permit to set cerebro settings. Default is `empty`.
 
 **cerebro.yaml**:
 ```yaml
@@ -20,9 +21,8 @@ spec:
   imagePullPolicy: IfNotPresent
   imagePullSecrets:
     - name: my-pull-secret
-  config:
-    application.conf: |
-      rest.history.size = 100
+  config: |
+    rest.history.size = 100
 ```
 
 **my-pull-secret.yaml**:

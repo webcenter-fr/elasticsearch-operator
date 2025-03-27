@@ -13,17 +13,15 @@ metadata:
   namespace: cluster-dev
 spec:
   config:
-    logstash.yml: |
-      queue.type: persisted
-      log.format: json
-      dead_letter_queue.enable: true
-      monitoring.enabled: false
-      xpack.monitoring.enabled: false
-
-      # Custom config
-      pipeline.workers: 8
-      queue.max_bytes: 20gb
-  pipeline:
+    queue.type: persisted
+    log.format: json
+    dead_letter_queue.enable: true
+    monitoring.enabled: false
+    xpack.monitoring.enabled: false
+    # Custom config
+    pipeline.workers: 8
+    queue.max_bytes: 20gb
+  pipelines:
     log.yml: |
       input { stdin { } }
       output {

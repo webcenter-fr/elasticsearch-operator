@@ -66,7 +66,7 @@ func TestMetricbeatIsPersistence(t *testing.T) {
 		Spec: MetricbeatSpec{
 			Deployment: MetricbeatDeploymentSpec{
 				Persistence: &shared.DeploymentPersistenceSpec{
-					VolumeClaimSpec: &v1.PersistentVolumeClaimSpec{},
+					VolumeClaim: &shared.DeploymentVolumeClaim{},
 				},
 			},
 		},

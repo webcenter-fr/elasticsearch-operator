@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	eshandler "github.com/disaster37/es-handler/v8"
+	"github.com/disaster37/operator-sdk-extra/pkg/apis"
 	"github.com/stretchr/testify/assert"
 	elasticsearchapicrd "github.com/webcenter-fr/elasticsearch-operator/api/elasticsearchapi/v1"
 	"github.com/webcenter-fr/elasticsearch-operator/api/shared"
@@ -95,11 +96,14 @@ func TestRoleBuild(t *testing.T) {
 						"monitor",
 					},
 					AllowRestrictedIndices: true,
-					FieldSecurity: `
-{
-	"grant" : [ "title", "body" ]
-}
-					`,
+					FieldSecurity: &apis.MapAny{
+						Data: map[string]any{
+							"grant": []string{
+								"title",
+								"body",
+							},
+						},
+					},
 					Query: `
 {
 	"match": {
@@ -123,16 +127,16 @@ func TestRoleBuild(t *testing.T) {
 			RunAs: []string{
 				"other_user",
 			},
-			Metadata: `
-{
-	"version" : 1
-}
-			`,
-			TransientMetadata: `
-{
-	"key": "value"
-}
-			`,
+			Metadata: &apis.MapAny{
+				Data: map[string]any{
+					"version": 1,
+				},
+			},
+			TransientMetadata: &apis.MapAny{
+				Data: map[string]any{
+					"key": "value",
+				},
+			},
 		},
 	}
 
@@ -151,7 +155,7 @@ func TestRoleBuild(t *testing.T) {
 				},
 				AllowRestrictedIndices: true,
 				FieldSecurity: map[string]any{
-					"grant": []any{
+					"grant": []string{
 						"title",
 						"body",
 					},
@@ -180,7 +184,7 @@ func TestRoleBuild(t *testing.T) {
 			"other_user",
 		},
 		Metadata: map[string]any{
-			"version": float64(1),
+			"version": 1,
 		},
 		TransientMetadata: map[string]any{
 			"key": "value",

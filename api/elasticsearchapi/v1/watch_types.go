@@ -42,25 +42,25 @@ type WatchSpec struct {
 	Name string `json:"name,omitempty"`
 
 	// Trigger
-	// JSON string
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
-	Trigger string `json:"trigger"`
+	// +kubebuilder:pruning:PreserveUnknownFields
+	Trigger *apis.MapAny `json:"trigger"`
 
 	// Input
-	// JSON string
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
-	Input string `json:"input"`
+	// +kubebuilder:pruning:PreserveUnknownFields
+	Input *apis.MapAny `json:"input"`
 
-	// Condition
-	// JSON string
+	// Conditiong
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
-	Condition string `json:"condition"`
+	// +kubebuilder:pruning:PreserveUnknownFields
+	Condition *apis.MapAny `json:"condition"`
 
 	// Transform
-	// JSON string
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
 	// +optional
-	Transform string `json:"transform,omitempty"`
+	// +kubebuilder:pruning:PreserveUnknownFields
+	Transform *apis.MapAny `json:"transform,omitempty"`
 
 	// ThrottlePeriod
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
@@ -73,15 +73,15 @@ type WatchSpec struct {
 	ThrottlePeriodInMillis int64 `json:"throttle_period_in_millis,omitempty"`
 
 	// Actions
-	// JSON string
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
-	Actions string `json:"actions"`
+	// +kubebuilder:pruning:PreserveUnknownFields
+	Actions *apis.MapAny `json:"actions"`
 
 	// Metadata
-	// JSON string
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
 	// +optional
-	Metadata string `json:"metadata,omitempty"`
+	// +kubebuilder:pruning:PreserveUnknownFields
+	Metadata *apis.MapAny `json:"metadata,omitempty"`
 }
 
 // WatchStatus defines the observed state of Watch

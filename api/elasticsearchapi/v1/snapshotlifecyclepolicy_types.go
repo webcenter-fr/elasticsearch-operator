@@ -93,7 +93,8 @@ type SLMConfig struct {
 	// Metadata
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
 	// +optional
-	Metadata map[string]string `json:"metadata,omitempty"`
+	// +kubebuilder:pruning:PreserveUnknownFields
+	Metadata *apis.MapAny `json:"metadata,omitempty"`
 
 	// Partial
 	// +operator-sdk:csv:customresourcedefinitions:type=spec

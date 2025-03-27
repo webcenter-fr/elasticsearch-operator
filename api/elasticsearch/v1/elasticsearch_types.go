@@ -181,11 +181,18 @@ type ElasticsearchGlobalNodeGroupSpec struct {
 	// +optional
 	Jvm string `json:"jvm,omitempty"`
 
-	// Config is the Elasticsearch config dedicated for this node groups like roles
-	// The key is the file stored on elasticsearch/config
+	// Config is the global Elasticsearch config
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
 	// +optional
-	Config map[string]string `json:"config,omitempty"`
+	// +kubebuilder:pruning:PreserveUnknownFields
+	Config *apis.MapAny `json:"config,omitempty"`
+
+	// ExtraConfigs is extra config files store on config directory
+	// The key is the file stored on elasticsearch/config
+	// The key is the file name and the value is the contend file
+	// +operator-sdk:csv:customresourcedefinitions:type=spec
+	// +optional
+	ExtraConfigs map[string]string `json:"extraConfigs,omitempty"`
 
 	// KeystoreSecretRef is the secret that store the security settings
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
@@ -246,10 +253,17 @@ type ElasticsearchNodeGroupSpec struct {
 	Jvm string `json:"jvm,omitempty"`
 
 	// Config is the Elasticsearch config dedicated for this node groups
-	// The key is the file stored on elasticsearch/config
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
 	// +optional
-	Config map[string]string `json:"config,omitempty"`
+	// +kubebuilder:pruning:PreserveUnknownFields
+	Config *apis.MapAny `json:"config,omitempty"`
+
+	// ExtraConfigs is extra config files store on config directory
+	// The key is the file stored on elasticsearch/config
+	// The key is the file name and the value is the contend file
+	// +operator-sdk:csv:customresourcedefinitions:type=spec
+	// +optional
+	ExtraConfigs map[string]string `json:"extraConfigs,omitempty"`
 
 	// PodDisruptionBudget is the pod disruption budget policy
 	// +operator-sdk:csv:customresourcedefinitions:type=spec

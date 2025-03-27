@@ -8,8 +8,8 @@ spec:
     managed:
       name: test
       namespace: monitoring
-  module:
-    'logstash-xpack.yml': |
+  modules:
+    'logstash-xpack.yml':
       - module: logstash
         xpack.enabled: true
         username: '${SOURCE_METRICBEAT_USERNAME}'
@@ -20,9 +20,8 @@ spec:
         period: 10s
         hosts: [http://test-ls-0.test-headless-ls.default.svc:9600]
   config:
-    'metricbeat.yml': |-
-      setup.template.settings:
-        index.number_of_replicas: 0
+    setup.template.settings:
+      index.number_of_replicas: 0
   deployment:
     replicas: 1
     env:

@@ -231,14 +231,16 @@ func TestBuildStatefulset(t *testing.T) {
 				},
 
 				Persistence: &shared.DeploymentPersistenceSpec{
-					VolumeClaimSpec: &corev1.PersistentVolumeClaimSpec{
-						StorageClassName: ptr.To[string]("local-path"),
-						AccessModes: []corev1.PersistentVolumeAccessMode{
-							corev1.ReadWriteOnce,
-						},
-						Resources: corev1.VolumeResourceRequirements{
-							Requests: corev1.ResourceList{
-								corev1.ResourceStorage: resource.MustParse("5Gi"),
+					VolumeClaim: &shared.DeploymentVolumeClaim{
+						PersistentVolumeClaimSpec: corev1.PersistentVolumeClaimSpec{
+							StorageClassName: ptr.To[string]("local-path"),
+							AccessModes: []corev1.PersistentVolumeAccessMode{
+								corev1.ReadWriteOnce,
+							},
+							Resources: corev1.VolumeResourceRequirements{
+								Requests: corev1.ResourceList{
+									corev1.ResourceStorage: resource.MustParse("5Gi"),
+								},
 							},
 						},
 					},
@@ -248,13 +250,13 @@ func TestBuildStatefulset(t *testing.T) {
 			KeystoreSecretRef: &corev1.LocalObjectReference{
 				Name: "keystore",
 			},
-			Config: map[string]string{
+			ExtraConfigs: map[string]string{
 				"log4j.yaml": "my log4j",
 			},
-			Pipeline: map[string]string{
-				"pipeline.yaml": "my pipeline",
+			Pipelines: map[string]string{
+				"pipeline.yaml": `"foo": "bar"`,
 			},
-			Pattern: map[string]string{
+			Patterns: map[string]string{
 				"pattern.conf": "my pattern",
 			},
 		},

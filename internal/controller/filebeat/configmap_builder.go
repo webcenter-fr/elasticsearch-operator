@@ -13,6 +13,7 @@ import (
 	"github.com/webcenter-fr/elasticsearch-operator/pkg/helper"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"sigs.k8s.io/yaml"
 )
 
 // BuildConfigMap permit to generate config maps
@@ -129,14 +130,27 @@ func buildConfigMaps(fb *beatcrd.Filebeat, es *elasticsearchcrd.Elasticsearch, l
 	injectedConfigMap := map[string]string{
 		"filebeat.yml": helper.ToYamlOrDie(filebeatConf),
 	}
-
-	// Inject computed config
-	if fb.Spec.Config != nil {
-		expectedConfig, err = helper.MergeSettings(injectedConfigMap, fb.Spec.Config)
-	} else {
-		expectedConfig, err = helper.MergeSettings(injectedConfigMap, map[string]string{"filebeat.yml": ""})
+	configs := map[string]string{
+		"filebeat.yml": "",
 	}
 
+	if fb.Spec.Config != nil && fb.Spec.Config.Data != nil {
+		config, err := yaml.Marshal(fb.Spec.Config.Data)
+		if err != nil {
+			return nil, errors.Wrap(err, "Error when unmarshall config")
+		}
+		configs["filebeat.yml"] = string(config)
+	}
+
+	if fb.Spec.ExtraConfigs != nil {
+		configs, err = helper.MergeSettings(configs, fb.Spec.ExtraConfigs)
+		if err != nil {
+			return nil, errors.Wrap(err, "Error when merge config and extra configs")
+		}
+	}
+
+	// Inject computed config
+	expectedConfig, err = helper.MergeSettings(injectedConfigMap, configs)
 	if err != nil {
 		return nil, errors.Wrap(err, "Error when merge expected config with computed config")
 	}
@@ -154,7 +168,15 @@ func buildConfigMaps(fb *beatcrd.Filebeat, es *elasticsearchcrd.Elasticsearch, l
 	configMaps = append(configMaps, *cm)
 
 	// ConfigMap that store modules
-	if len(fb.Spec.Module) > 0 {
+	if fb.Spec.Modules != nil && len(fb.Spec.Modules.Data) > 0 {
+		modules := map[string]string{}
+		for module, data := range fb.Spec.Modules.Data {
+			b, err := yaml.Marshal(data)
+			if err != nil {
+				return nil, errors.Wrapf(err, "Error when marshall module %s", module)
+			}
+			modules[module] = string(b)
+		}
 		cm = &corev1.ConfigMap{
 			ObjectMeta: metav1.ObjectMeta{
 				Namespace:   fb.Namespace,
@@ -162,7 +184,7 @@ func buildConfigMaps(fb *beatcrd.Filebeat, es *elasticsearchcrd.Elasticsearch, l
 				Labels:      getLabels(fb),
 				Annotations: getAnnotations(fb),
 			},
-			Data: fb.Spec.Module,
+			Data: modules,
 		}
 
 		configMaps = append(configMaps, *cm)

@@ -1,9 +1,6 @@
 package elasticsearchapi
 
 import (
-	"encoding/json"
-
-	"emperror.dev/errors"
 	eshandler "github.com/disaster37/es-handler/v8"
 	"github.com/disaster37/generic-objectmatcher/patch"
 	"github.com/disaster37/operator-sdk-extra/pkg/controller"
@@ -22,17 +19,12 @@ func newSnapshotRepositoryApiClient(client eshandler.ElasticsearchHandler) contr
 }
 
 func (h *snapshotRepositoryApiClient) Build(o *elasticsearchapicrd.SnapshotRepository) (sr *olivere.SnapshotRepositoryMetaData, err error) {
-	settings := map[string]any{}
-
-	if o.Spec.Settings != "" {
-		if err = json.Unmarshal([]byte(o.Spec.Settings), &settings); err != nil {
-			return nil, errors.Wrap(err, "Unable to generate snapshot repository")
-		}
+	sr = &olivere.SnapshotRepositoryMetaData{
+		Type: o.Spec.Type,
 	}
 
-	sr = &olivere.SnapshotRepositoryMetaData{
-		Type:     o.Spec.Type,
-		Settings: settings,
+	if o.Spec.Settings != nil {
+		sr.Settings = o.Spec.Settings.Data
 	}
 
 	return sr, nil

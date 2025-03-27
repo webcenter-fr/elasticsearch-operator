@@ -6,6 +6,7 @@ import (
 	"github.com/disaster37/operator-sdk-extra/pkg/apis"
 	"github.com/stretchr/testify/assert"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/utils/ptr"
 )
 
 func TestIndexTemplateGetStatus(t *testing.T) {
@@ -63,7 +64,7 @@ func TestIndexIsRawTemplate(t *testing.T) {
 			Name:      "test",
 		},
 		Spec: IndexTemplateSpec{
-			RawTemplate: "test",
+			RawTemplate: ptr.To("test"),
 		},
 	}
 

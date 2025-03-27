@@ -1,8 +1,6 @@
 package elasticsearchapi
 
 import (
-	"encoding/json"
-
 	eshandler "github.com/disaster37/es-handler/v8"
 	"github.com/disaster37/generic-objectmatcher/patch"
 	"github.com/disaster37/operator-sdk-extra/pkg/controller"
@@ -33,12 +31,8 @@ func (h *userApiClient) Build(o *elasticsearchapicrd.User) (user *olivere.XPackS
 		user.PasswordHash = o.Spec.PasswordHash
 	}
 
-	if o.Spec.Metadata != "" {
-		meta := make(map[string]any)
-		if err := json.Unmarshal([]byte(o.Spec.Metadata), &meta); err != nil {
-			return nil, err
-		}
-		user.Metadata = meta
+	if o.Spec.Metadata != nil {
+		user.Metadata = o.Spec.Metadata.Data
 	}
 
 	return user, nil

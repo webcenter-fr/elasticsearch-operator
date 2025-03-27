@@ -110,7 +110,7 @@ func TestBuildDeployment(t *testing.T) {
 				},
 			},
 			Version: "8.5.1",
-			Config: map[string]string{
+			ExtraConfigs: map[string]string{
 				"log4j.yaml": "my log4j",
 			},
 		},

@@ -6,6 +6,7 @@ import (
 	"github.com/disaster37/operator-sdk-extra/pkg/apis"
 	"github.com/stretchr/testify/assert"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/utils/ptr"
 )
 
 func TestIndexLifecyclePolicyGetStatus(t *testing.T) {
@@ -51,4 +52,32 @@ func TestIndexLifecyclePolicyGetExternalName(t *testing.T) {
 	}
 
 	assert.Equal(t, "test", o.GetExternalName())
+}
+
+func TestIndexStateManagemenIsRawPolicy(t *testing.T) {
+	var o *IndexLifecyclePolicy
+
+	// When not raw policy
+	o = &IndexLifecyclePolicy{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: "default",
+			Name:      "test",
+		},
+		Spec: IndexLifecyclePolicySpec{},
+	}
+
+	assert.False(t, o.IsRawPolicy())
+
+	// When is raw policy
+	o = &IndexLifecyclePolicy{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: "default",
+			Name:      "test",
+		},
+		Spec: IndexLifecyclePolicySpec{
+			RawPolicy: ptr.To("test"),
+		},
+	}
+
+	assert.True(t, o.IsRawPolicy())
 }

@@ -23,7 +23,7 @@ func newComponentTemplateApiClient(client eshandler.ElasticsearchHandler) contro
 func (h *componentTemplateApiClient) Build(o *elasticsearchapicrd.ComponentTemplate) (componentTemplate *olivere.IndicesGetComponentTemplate, err error) {
 	if o.IsRawTemplate() {
 		componentTemplate = &olivere.IndicesGetComponentTemplate{}
-		if err := json.Unmarshal([]byte(o.Spec.Template), componentTemplate); err != nil {
+		if err := json.Unmarshal([]byte(*o.Spec.RawTemplate), componentTemplate); err != nil {
 			return nil, err
 		}
 	} else {
@@ -35,22 +35,16 @@ func (h *componentTemplateApiClient) Build(o *elasticsearchapicrd.ComponentTempl
 			},
 		}
 
-		if o.Spec.Mappings != "" {
-			if err := json.Unmarshal([]byte(o.Spec.Mappings), &componentTemplate.Template.Mappings); err != nil {
-				return nil, err
-			}
+		if o.Spec.Mappings != nil && o.Spec.Mappings.Data != nil {
+			componentTemplate.Template.Mappings = o.Spec.Mappings.Data
 		}
 
-		if o.Spec.Settings != "" {
-			if err := json.Unmarshal([]byte(o.Spec.Settings), &componentTemplate.Template.Settings); err != nil {
-				return nil, err
-			}
+		if o.Spec.Settings != nil && o.Spec.Settings.Data != nil {
+			componentTemplate.Template.Settings = o.Spec.Settings.Data
 		}
 
-		if o.Spec.Aliases != "" {
-			if err := json.Unmarshal([]byte(o.Spec.Aliases), &componentTemplate.Template.Aliases); err != nil {
-				return nil, err
-			}
+		if o.Spec.Aliases != nil && o.Spec.Aliases.Data != nil {
+			componentTemplate.Template.Aliases = o.Spec.Aliases.Data
 		}
 	}
 

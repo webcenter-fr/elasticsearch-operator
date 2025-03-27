@@ -9,6 +9,7 @@ import (
 	"github.com/disaster37/operator-sdk-extra/pkg/controller"
 	olivere "github.com/olivere/elastic/v7"
 	elasticsearchapicrd "github.com/webcenter-fr/elasticsearch-operator/api/elasticsearchapi/v1"
+	"sigs.k8s.io/yaml"
 )
 
 type indexLifecyclePolicyApiClient struct {
@@ -22,13 +23,23 @@ func newIndexLifecyclePolicyApiClient(client eshandler.ElasticsearchHandler) con
 }
 
 func (h *indexLifecyclePolicyApiClient) Build(o *elasticsearchapicrd.IndexLifecyclePolicy) (ilm *olivere.XPackIlmGetLifecycleResponse, err error) {
-	if o.Spec.Policy == "" {
-		return nil, errors.New("The ILM policy must be provided")
-	}
-
-	ilm = &olivere.XPackIlmGetLifecycleResponse{}
-	if err = json.Unmarshal([]byte(o.Spec.Policy), ilm); err != nil {
-		return nil, errors.Wrap(err, "Unable to convert expected policy to object")
+	if (o.Spec.RawPolicy != nil) && (*o.Spec.RawPolicy != "") {
+		ilm = &olivere.XPackIlmGetLifecycleResponse{}
+		if err = json.Unmarshal([]byte(*o.Spec.RawPolicy), ilm); err != nil {
+			return nil, errors.Wrap(err, "Unable to convert expected policy to object")
+		}
+	} else {
+		policy := map[string]any{}
+		b, err := yaml.Marshal(o.Spec.Policy)
+		if err != nil {
+			return nil, errors.Wrap(err, "Error when marshal policy")
+		}
+		if err = yaml.Unmarshal(b, &policy); err != nil {
+			return nil, errors.Wrap(err, "Error when unmarshall policy")
+		}
+		ilm = &olivere.XPackIlmGetLifecycleResponse{
+			Policy: policy,
+		}
 	}
 
 	return ilm, nil

@@ -8,6 +8,7 @@ import (
 	"emperror.dev/errors"
 	"github.com/disaster37/es-handler/v8/mocks"
 	"github.com/disaster37/generic-objectmatcher/patch"
+	"github.com/disaster37/operator-sdk-extra/pkg/apis"
 	"github.com/disaster37/operator-sdk-extra/pkg/controller"
 	"github.com/disaster37/operator-sdk-extra/pkg/helper"
 	"github.com/disaster37/operator-sdk-extra/pkg/test"
@@ -154,9 +155,11 @@ func doCreateRoleMappingStep() test.TestStep {
 					},
 					Enabled: true,
 					Roles:   []string{"superuser"},
-					Rules: `{
-						"foo": "bar"
-					}`,
+					Rules: &apis.MapAny{
+						Data: map[string]any{
+							"foo": "bar",
+						},
+					},
 				},
 			}
 			if err = c.Create(context.Background(), rm); err != nil {

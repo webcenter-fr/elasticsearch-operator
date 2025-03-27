@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	"github.com/disaster37/go-kibana-rest/v8/kbapi"
+	"github.com/disaster37/operator-sdk-extra/pkg/apis"
 	"github.com/stretchr/testify/assert"
 	kibanaapicrd "github.com/webcenter-fr/elasticsearch-operator/api/kibanaapi/v1"
 	"github.com/webcenter-fr/elasticsearch-operator/api/shared"
@@ -60,11 +61,11 @@ func TestLogstashPipelineBuild(t *testing.T) {
 			},
 			Pipeline:    "input { stdin {} } output { stdout {} }",
 			Description: "my description",
-			Settings: `
-{
-	"queue.type": "persisted"
-}
-			`,
+			Settings: &apis.MapAny{
+				Data: map[string]any{
+					"queue.type": "persisted",
+				},
+			},
 		},
 	}
 

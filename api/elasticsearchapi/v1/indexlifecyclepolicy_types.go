@@ -43,7 +43,65 @@ type IndexLifecyclePolicySpec struct {
 
 	// Policy is the raw policy on JSON
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
-	Policy string `json:"policy"`
+	// +optional
+	RawPolicy *string `json:"rawPolicy"`
+
+	// Policy is the ILM policy
+	// +operator-sdk:csv:customresourcedefinitions:type=spec
+	// +optional
+	Policy *IndexLifecyclePolicySpecPolicy `json:"policy,omitempty"`
+}
+
+type IndexLifecyclePolicySpecPolicy struct {
+	// Metadata
+	// +operator-sdk:csv:customresourcedefinitions:type=spec
+	// +optional
+	// +kubebuilder:pruning:PreserveUnknownFields
+	Meta *apis.MapAny `json:"_meta,omitempty"`
+
+	// ILM phases
+	// +operator-sdk:csv:customresourcedefinitions:type=spec
+	// +optional
+	Phases IndexLifecyclePolicySpecPolicyPhases `json:"phases"`
+}
+
+type IndexLifecyclePolicySpecPolicyPhases struct {
+	// Hot phase
+	// +operator-sdk:csv:customresourcedefinitions:type=spec
+	// +optional
+	Hot *IndexLifecyclePolicySpecPolicyPhasesPhase `json:"hot,omitempty"`
+
+	// Warm phase
+	// +operator-sdk:csv:customresourcedefinitions:type=spec
+	// +optional
+	Warm *IndexLifecyclePolicySpecPolicyPhasesPhase `json:"warm,omitempty"`
+
+	// Cold phase
+	// +operator-sdk:csv:customresourcedefinitions:type=spec
+	// +optional
+	Cold *IndexLifecyclePolicySpecPolicyPhasesPhase `json:"cold,omitempty"`
+
+	// Frozen phase
+	// +operator-sdk:csv:customresourcedefinitions:type=spec
+	// +optional
+	Frozen *IndexLifecyclePolicySpecPolicyPhasesPhase `json:"frozen,omitempty"`
+
+	// Delete phase
+	// +operator-sdk:csv:customresourcedefinitions:type=spec
+	// +optional
+	Delete *IndexLifecyclePolicySpecPolicyPhasesPhase `json:"delete,omitempty"`
+}
+
+type IndexLifecyclePolicySpecPolicyPhasesPhase struct {
+	// The min age to exec action
+	// +operator-sdk:csv:customresourcedefinitions:type=spec
+	// +optional
+	MinAge *string `json:"min_age,omitempty"`
+
+	//The ILM action
+	// +operator-sdk:csv:customresourcedefinitions:type=spec
+	// +kubebuilder:pruning:PreserveUnknownFields
+	Actions apis.MapAny `json:"actions"`
 }
 
 // IndexLifecyclePolicyStatus defines the observed state of IndexLifecyclePolicy

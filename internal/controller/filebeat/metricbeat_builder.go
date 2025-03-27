@@ -2,8 +2,8 @@ package filebeat
 
 import (
 	"fmt"
-	"strings"
 
+	"github.com/disaster37/operator-sdk-extra/pkg/apis"
 	beatcrd "github.com/webcenter-fr/elasticsearch-operator/api/beat/v1"
 	"github.com/webcenter-fr/elasticsearch-operator/api/shared"
 	corev1 "k8s.io/api/core/v1"
@@ -19,22 +19,27 @@ func buildMetricbeats(fb *beatcrd.Filebeat) (metricbeats []beatcrd.Metricbeat, e
 
 	metricbeats = make([]beatcrd.Metricbeat, 0, 1)
 
-	var sb strings.Builder
-
-	sb.WriteString(`- module: beat
-  xpack.enabled: true
-  metricsets:
-    - stats
-    - state
-`)
-
-	if fb.Spec.Monitoring.Metricbeat.RefreshPeriod == "" {
-		sb.WriteString("  period: 10s\n")
-	} else {
-		sb.WriteString(fmt.Sprintf("  period: %s\n", fb.Spec.Monitoring.Metricbeat.RefreshPeriod))
+	metricbeatConfig := map[string]any{
+		"setup.template.settings": map[string]any{
+			"index.number_of_replicas": fb.Spec.Monitoring.Metricbeat.NumberOfReplica,
+		},
 	}
 
-	sb.WriteString(fmt.Sprintf("  hosts: [%s]\n", strings.Join(getFilebeatTargets(fb), ", ")))
+	xpackModule := map[string]any{
+		"module":        "beat",
+		"xpack.enabled": true,
+		"metricsets": []string{
+			"stats",
+			"state",
+		},
+		"hosts": getFilebeatTargets(fb),
+	}
+
+	if fb.Spec.Monitoring.Metricbeat.RefreshPeriod == "" {
+		xpackModule["period"] = "10s"
+	} else {
+		xpackModule["period"] = fb.Spec.Monitoring.Metricbeat.RefreshPeriod
+	}
 
 	version := fb.Spec.Version
 	if fb.Spec.Monitoring.Metricbeat.Version != "" {
@@ -51,11 +56,13 @@ func buildMetricbeats(fb *beatcrd.Filebeat) (metricbeats []beatcrd.Metricbeat, e
 		Spec: beatcrd.MetricbeatSpec{
 			Version:          version,
 			ElasticsearchRef: fb.Spec.Monitoring.Metricbeat.ElasticsearchRef,
-			Module: map[string]string{
-				"beat-xpack.yml": sb.String(),
+			Modules: &apis.MapAny{
+				Data: map[string]any{
+					"beat-xpack.yml": []map[string]any{xpackModule},
+				},
 			},
-			Config: map[string]string{
-				"metricbeat.yml": fmt.Sprintf("setup.template.settings:\n  index.number_of_replicas: %d", fb.Spec.Monitoring.Metricbeat.NumberOfReplica),
+			Config: &apis.MapAny{
+				Data: metricbeatConfig,
 			},
 			Deployment: beatcrd.MetricbeatDeploymentSpec{
 				Deployment: shared.Deployment{

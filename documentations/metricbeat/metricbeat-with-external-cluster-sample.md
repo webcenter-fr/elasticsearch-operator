@@ -46,7 +46,7 @@ spec:
     elasticsearchCASecretRef:
       name: custom-ca-elasticsearch
   module:
-    elasticsearch-xpack.yml: |
+    elasticsearch-xpack.yml:
       - module: elasticsearch
         xpack.enabled: true
         username: '${SOURCE_METRICBEAT_USERNAME}'

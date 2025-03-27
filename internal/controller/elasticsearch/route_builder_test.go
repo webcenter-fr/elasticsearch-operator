@@ -9,7 +9,6 @@ import (
 	elasticsearchcrd "github.com/webcenter-fr/elasticsearch-operator/api/elasticsearch/v1"
 	"github.com/webcenter-fr/elasticsearch-operator/api/shared"
 	corev1 "k8s.io/api/core/v1"
-	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/utils/ptr"
@@ -150,7 +149,7 @@ func TestBuildRoute(t *testing.T) {
 					EndpointRouteSpec: shared.EndpointRouteSpec{
 						Enabled: true,
 						Host:    "my-test.cluster.local",
-						SecretRef: &v1.LocalObjectReference{
+						SecretRef: &corev1.LocalObjectReference{
 							Name: "my-secret",
 						},
 						TlsEnabled: ptr.To(true),

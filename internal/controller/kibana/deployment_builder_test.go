@@ -283,7 +283,7 @@ func TestBuildDeployment(t *testing.T) {
 			KeystoreSecretRef: &corev1.LocalObjectReference{
 				Name: "keystore",
 			},
-			Config: map[string]string{
+			ExtraConfigs: map[string]string{
 				"log4j.yaml": "my log4j",
 			},
 			Monitoring: shared.MonitoringSpec{

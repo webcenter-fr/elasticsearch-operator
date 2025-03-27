@@ -249,17 +249,18 @@ func (in *FilebeatSpec) DeepCopyInto(out *FilebeatSpec) {
 	in.LogstashRef.DeepCopyInto(&out.LogstashRef)
 	if in.Config != nil {
 		in, out := &in.Config, &out.Config
+		*out = (*in).DeepCopy()
+	}
+	if in.ExtraConfigs != nil {
+		in, out := &in.ExtraConfigs, &out.ExtraConfigs
 		*out = make(map[string]string, len(*in))
 		for key, val := range *in {
 			(*out)[key] = val
 		}
 	}
-	if in.Module != nil {
-		in, out := &in.Module, &out.Module
-		*out = make(map[string]string, len(*in))
-		for key, val := range *in {
-			(*out)[key] = val
-		}
+	if in.Modules != nil {
+		in, out := &in.Modules, &out.Modules
+		*out = (*in).DeepCopy()
 	}
 	in.Deployment.DeepCopyInto(&out.Deployment)
 	in.Monitoring.DeepCopyInto(&out.Monitoring)
@@ -447,17 +448,18 @@ func (in *MetricbeatSpec) DeepCopyInto(out *MetricbeatSpec) {
 	in.ElasticsearchRef.DeepCopyInto(&out.ElasticsearchRef)
 	if in.Config != nil {
 		in, out := &in.Config, &out.Config
+		*out = (*in).DeepCopy()
+	}
+	if in.ExtraConfigs != nil {
+		in, out := &in.ExtraConfigs, &out.ExtraConfigs
 		*out = make(map[string]string, len(*in))
 		for key, val := range *in {
 			(*out)[key] = val
 		}
 	}
-	if in.Module != nil {
-		in, out := &in.Module, &out.Module
-		*out = make(map[string]string, len(*in))
-		for key, val := range *in {
-			(*out)[key] = val
-		}
+	if in.Modules != nil {
+		in, out := &in.Modules, &out.Modules
+		*out = (*in).DeepCopy()
 	}
 	in.Deployment.DeepCopyInto(&out.Deployment)
 }

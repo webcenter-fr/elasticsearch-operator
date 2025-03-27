@@ -16,3 +16,11 @@ func (o *IndexLifecyclePolicy) GetExternalName() string {
 
 	return o.Spec.Name
 }
+
+// IsRawPolicy return true if raw policy is supplied
+func (o *IndexLifecyclePolicy) IsRawPolicy() bool {
+	if o.Spec.RawPolicy != nil && *o.Spec.RawPolicy != "" {
+		return true
+	}
+	return false
+}

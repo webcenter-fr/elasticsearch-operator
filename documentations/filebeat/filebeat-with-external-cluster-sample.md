@@ -13,29 +13,25 @@ metadata:
   namespace: cluster-dev
 spec:
   config:
-    filebeat.yml: |
-      filebeat:
-        shutdown_timeout: 5s
-
-      logging:
-        to_stderr: true
-        level: info
-
-      monitoring.enabled: false
-
-      # Inputs
-      filebeat.inputs:
-        # Linux
-        - type: syslog
-          format: auto
-          protocol.tcp:
-            host: "0.0.0.0:5144"
-          fields_under_root: true
-          fields:
-            event.dataset: "syslog_linux"
-            event.module: "linux"
-            service.type: "linux"
-          tags: ["syslog"]
+    filebeat:
+      shutdown_timeout: 5s
+    logging:
+      to_stderr: true
+      level: info
+    monitoring.enabled: false
+    # Inputs
+    filebeat.inputs:
+      # Linux
+      - type: syslog
+        format: auto
+        protocol.tcp:
+          host: "0.0.0.0:5144"
+        fields_under_root: true
+        fields:
+          event.dataset: "syslog_linux"
+          event.module: "linux"
+          service.type: "linux"
+        tags: ["syslog"]
   deployment:
     initContainerResources:
       limits:

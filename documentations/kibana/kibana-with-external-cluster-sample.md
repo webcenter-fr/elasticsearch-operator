@@ -14,12 +14,11 @@ metadata:
   namespace: cluster-dev
 spec:
   config:
-    kibana.yml: |
-      elasticsearch.requestTimeout: 300000
-      unifiedSearch.autocomplete.valueSuggestions.timeout: 3000
-      xpack.reporting.roles.enabled: false
-      monitoring.kibana.collection.enabled: false
-      monitoring.ui.enabled: false
+    elasticsearch.requestTimeout: 300000
+    unifiedSearch.autocomplete.valueSuggestions.timeout: 3000
+    xpack.reporting.roles.enabled: false
+    monitoring.kibana.collection.enabled: false
+    monitoring.ui.enabled: false
   deployment:
     initContainerResources:
       limits:

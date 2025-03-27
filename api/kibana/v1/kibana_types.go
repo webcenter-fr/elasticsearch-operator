@@ -63,10 +63,16 @@ type KibanaSpec struct {
 	Endpoint shared.EndpointSpec `json:"endpoint,omitempty"`
 
 	// Config is the Kibana config
-	// The key is the file stored on kibana/config
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
 	// +optional
-	Config map[string]string `json:"config,omitempty"`
+	// +kubebuilder:pruning:PreserveUnknownFields
+	Config *apis.MapAny `json:"config,omitempty"`
+
+	// ExtraConfigs is extra config files store on config directory
+	// The key is the file name and the value is the contend file
+	// +operator-sdk:csv:customresourcedefinitions:type=spec
+	// +optional
+	ExtraConfigs map[string]string `json:"extraConfigs,omitempty"`
 
 	// KeystoreSecretRef is the secret that store the security settings
 	// +operator-sdk:csv:customresourcedefinitions:type=spec

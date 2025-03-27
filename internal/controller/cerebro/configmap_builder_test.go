@@ -10,6 +10,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes/scheme"
+	"k8s.io/utils/ptr"
 )
 
 func TestBuildConfigMap(t *testing.T) {
@@ -33,7 +34,8 @@ func TestBuildConfigMap(t *testing.T) {
 			},
 		},
 		Spec: cerebrocrd.CerebroSpec{
-			Config: map[string]string{
+			Config: ptr.To(`test2 = test2`),
+			ExtraConfigs: map[string]string{
 				"application.conf": "test = test\n",
 				"log4j.yml":        "log.test: test\n",
 			},

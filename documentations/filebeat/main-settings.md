@@ -5,17 +5,18 @@ You can use the following main setting to deploy Filebeat:
 - **imagePullPolicy** (string): The image pull policy. Default to `IfNotPresent`
 - **imagePullSecrets** (string): The image pull secrets to use. Default to `empty`
 - **version** (string): The image version to use. Default to `latest`
-- **config** (map of string): Each key is the file store on filebeat folder. Each value is the file contend. It permit to set filebeat.yml settings. Default is `empty`.
+- **config** (map of any): The config of Fielebat on Yaml format. Default is `empty`.
+- **extraConfigs** (map of string): Each key is the file store on filebeat folder. Each value is the file contend. It permit to set filebeat.yml settings.
 - **elasticsearchRef** (object): The Elasticsearch cluster ref
   - **managed** (object): Use it if cluster is deployed with this operator
     - **name** (string / required): The name of elasticsearch resource.
     - **namespace** (string): The namespace where cluster is deployed on. Not needed if is on same namespace.
     - **targetNodeGroup** (string): The node group where Metricbeat connect on. Default is used all node groups.
   - **external** (object): Use it if cluster is not deployed with this operator.
-    - **addresses** (slice of string): The list of IPs, DNS, URL to access on cluster
+    - **addresses** (slice of string): The list of IPs, DNS, URL to access on cluster 
   - **secretRef** (object / require): The secret ref that store the credentials to connect on Elasticsearch. It need to contain the keys `username` and `password`.
     - **name** (string / require): The secret name.
-  - **elasticsearchCASecretRef** (object). It's the secret that store custom CA to connect on Elasticsearch cluster.
+  - **elasticsearchCASecretRef** (object). The secret ref that store the CA certificate to connect on Elasticsearch. It need to contain the keys `ca.crt`.
     - **name** (string / require): The secret name
 - **logstashRef** (object): The Logstash instance ref
   - **managed** (object): Use it if Logstash is deployed with this operator
@@ -25,9 +26,9 @@ You can use the following main setting to deploy Filebeat:
     - **port** (number / require): The port to connect on
   - **external** (object): Use it if Logstash is not deployed with this operator.
     - **addresses** (slice of string): The list of IPs, DNS, URL to access on Logstash
-  - **logstashCASecretRef** (object). It's the secret that store custom CA to connect on Logstash instance.
+  - **logstashCASecretRef** (object). It's the secret that store custom CA to connect on Logstash instance. If you set managed Logstash, and you have enabled internal PKI on Logstash, it will inject automatically the CA certificate on POD and configure the Logstash output with it.
     - **name** (string / require): The secret name
-- **module** (map of string): Each key is the file store on modules.d folder. Each value is the file contend. It permit to enable and configure modules. Default is `empty`.
+- **modules** (map of any): Each key is the file store on modules.d folder. Each value is the YAML contend. It permit to enable and configure modules. Default is `empty`.
 
 
 **filebeat.yaml**:
@@ -39,37 +40,32 @@ metadata:
   namespace: cluster-dev
 spec:
   config:
-    filebeat.yml: |
-      filebeat:
-        shutdown_timeout: 5s
-
-      logging:
-        to_stderr: true
-        level: info
-
-      monitoring.enabled: false
-
-      # Logstash settings
-      output.logstash:
-        timeout: 15
-        ssl:
-          enable: true
-          certificate_authorities:
-            - /usr/share/filebeat/certs/filebeat.crt
-
-      # Inputs
-      filebeat.inputs:
-        # Linux
-        - type: syslog
-          format: auto
-          protocol.tcp:
-            host: "0.0.0.0:5144"
-          fields_under_root: true
-          fields:
-            event.dataset: "syslog_linux"
-            event.module: "linux"
-            service.type: "linux"
-          tags: ["syslog"]
+    filebeat:
+      shutdown_timeout: 5s
+    logging:
+      to_stderr: true
+      level: info
+    monitoring.enabled: false
+    # Logstash settings
+    output.logstash:
+      timeout: 15
+      ssl:
+        enable: true
+        certificate_authorities:
+          - /usr/share/filebeat/certs/filebeat.crt
+    # Inputs
+    filebeat.inputs:
+      # Linux
+      - type: syslog
+        format: auto
+        protocol.tcp:
+          host: "0.0.0.0:5144"
+        fields_under_root: true
+        fields:
+          event.dataset: "syslog_linux"
+          event.module: "linux"
+          service.type: "linux"
+        tags: ["syslog"]
   logstashRef:
     managed:
       name: logstash-log
@@ -97,11 +93,11 @@ spec:
     - name: my-pull-secret
   version: 8.7.1
   module:
-    iptables.yml: |
-      log:
-        enabled: true
-        var.paths: ["/var/log/iptables.log"]
-        var.input: "file"
+    iptables.yml:
+      - log:
+          enabled: true
+          var.paths: ["/var/log/iptables.log"]
+          var.input: "file"
 ```
 
 **my-pull-secret.yaml**:
