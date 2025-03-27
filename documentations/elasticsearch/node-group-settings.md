@@ -19,7 +19,8 @@ You can use the following setting for each node group:
   - **topologyKey**: The toplogy key to use to compute anti affinity. Default to `kubernetes.io/hostname`.
 - **resources** (object): The default resources for Elasticsearch pods. Default is empty. Read the [official doc to know the properties](https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/)
 - **jvm** (string): Set additionnal JVM options. Default is `empty`.
-- **config** (map of string): Each key is the file store on config folder. Each value is the file contend. It permit to set elasticsearch.yml settings. Default is `empty`.
+- **config** (map of any): The config of Elasticsearch on YAML format. Default is `empty`.
+- **extraConfigs** (map of string): Each key is the file store on config folder. Each value is the file contend. It permit to set elasticsearch.yml settings. Default is `empty`.
 - **podDisruptionBudget** (object): The pod disruption budget to use. Default it allow to lost one pod per node groups. The selector is automatically set. Read the [official doc to know the properties](https://kubernetes.io/docs/tasks/run-application/configure-pdb/)
 - **podTemplate** (object): The pod template to merge with the Elasticsearch pod template. Default is empty. Read the [official doc to know the properties](https://kubernetes.io/docs/concepts/workloads/pods/)
 - **labels** (map of string): The labels to merge on pod. Default to `empty`.
@@ -91,8 +92,7 @@ spec:
           operator: Equal
           value: cluster-prd-hot
       config:
-        elasticsearch.yml: |
-          node.attr.data: "warm"
+        node.attr.data: "warm"
       antiAffinity:
         topologyKey: topology.kubernetes.io/zone
         type: hard
