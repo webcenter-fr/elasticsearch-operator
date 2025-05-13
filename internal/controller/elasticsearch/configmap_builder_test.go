@@ -3,6 +3,7 @@ package elasticsearch
 import (
 	"testing"
 
+	"github.com/disaster37/operator-sdk-extra/pkg/apis"
 	"github.com/disaster37/operator-sdk-extra/pkg/test"
 	"github.com/stretchr/testify/assert"
 	elasticsearchcrd "github.com/webcenter-fr/elasticsearch-operator/api/elasticsearch/v1"
@@ -30,7 +31,12 @@ func TestBuildConfigMaps(t *testing.T) {
 		},
 		Spec: elasticsearchcrd.ElasticsearchSpec{
 			GlobalNodeGroup: elasticsearchcrd.ElasticsearchGlobalNodeGroupSpec{
-				Config: map[string]string{
+				Config: &apis.MapAny{
+					Data: map[string]any{
+						"node.test": "test",
+					},
+				},
+				ExtraConfigs: map[string]string{
 					"elasticsearch.yml": `node.value: test
 node.value2: test`,
 					"log4j.yml": "log.test: test\n",
@@ -39,7 +45,12 @@ node.value2: test`,
 			NodeGroups: []elasticsearchcrd.ElasticsearchNodeGroupSpec{
 				{
 					Name: "master",
-					Config: map[string]string{
+					Config: &apis.MapAny{
+						Data: map[string]any{
+							"node.test2": "test2",
+						},
+					},
+					ExtraConfigs: map[string]string{
 						"elasticsearch.yml": `
 key.value: fake
 node:
@@ -74,7 +85,7 @@ node:
 				Enabled: ptr.To[bool](false),
 			},
 			GlobalNodeGroup: elasticsearchcrd.ElasticsearchGlobalNodeGroupSpec{
-				Config: map[string]string{
+				ExtraConfigs: map[string]string{
 					"elasticsearch.yml": `node.value: test
 node.value2: test`,
 					"log4j.yml": "log.test: test\n",
@@ -83,7 +94,7 @@ node.value2: test`,
 			NodeGroups: []elasticsearchcrd.ElasticsearchNodeGroupSpec{
 				{
 					Name: "master",
-					Config: map[string]string{
+					ExtraConfigs: map[string]string{
 						"elasticsearch.yml": `
 key.value: fake
 node:

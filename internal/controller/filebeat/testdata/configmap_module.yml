@@ -10,4 +10,6 @@ metadata:
   name: test-module-fb
   namespace: default
 data:
-  module.conf: 'foo = bar'
+  module.yaml: |
+    - foo: bar
+    

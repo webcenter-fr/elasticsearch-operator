@@ -2,8 +2,8 @@ package logstash
 
 import (
 	"fmt"
-	"strings"
 
+	"github.com/disaster37/operator-sdk-extra/pkg/apis"
 	beatcrd "github.com/webcenter-fr/elasticsearch-operator/api/beat/v1"
 	logstashcrd "github.com/webcenter-fr/elasticsearch-operator/api/logstash/v1"
 	"github.com/webcenter-fr/elasticsearch-operator/api/shared"
@@ -18,25 +18,31 @@ func buildMetricbeats(ls *logstashcrd.Logstash) (metricbeats []beatcrd.Metricbea
 		return nil, nil
 	}
 
-	var sb strings.Builder
 	metricbeats = make([]beatcrd.Metricbeat, 0, 1)
 
-	sb.WriteString(`- module: logstash
-  xpack.enabled: true
-  username: '${SOURCE_METRICBEAT_USERNAME}'
-  password: '${SOURCE_METRICBEAT_PASSWORD}'
-  metricsets:
-    - node
-    - node_stats
-`)
-
-	if ls.Spec.Monitoring.Metricbeat.RefreshPeriod == "" {
-		sb.WriteString("  period: 10s\n")
-	} else {
-		sb.WriteString(fmt.Sprintf("  period: %s\n", ls.Spec.Monitoring.Metricbeat.RefreshPeriod))
+	metricbeatConfig := map[string]any{
+		"setup.template.settings": map[string]any{
+			"index.number_of_replicas": ls.Spec.Monitoring.Metricbeat.NumberOfReplica,
+		},
 	}
 
-	sb.WriteString(fmt.Sprintf("  hosts: [%s]\n", strings.Join(getLogstashTargets(ls), ", ")))
+	xpackModule := map[string]any{
+		"module":        "logstash",
+		"xpack.enabled": true,
+		"username":      "${SOURCE_METRICBEAT_USERNAME}",
+		"password":      "${SOURCE_METRICBEAT_PASSWORD}",
+		"metricsets": []string{
+			"node",
+			"node_stats",
+		},
+		"hosts": getLogstashTargets(ls),
+	}
+
+	if ls.Spec.Monitoring.Metricbeat.RefreshPeriod == "" {
+		xpackModule["period"] = "10s"
+	} else {
+		xpackModule["period"] = ls.Spec.Monitoring.Metricbeat.RefreshPeriod
+	}
 
 	version := ls.Spec.Version
 	if ls.Spec.Monitoring.Metricbeat.Version != "" {
@@ -53,11 +59,13 @@ func buildMetricbeats(ls *logstashcrd.Logstash) (metricbeats []beatcrd.Metricbea
 		Spec: beatcrd.MetricbeatSpec{
 			Version:          version,
 			ElasticsearchRef: ls.Spec.Monitoring.Metricbeat.ElasticsearchRef,
-			Module: map[string]string{
-				"logstash-xpack.yml": sb.String(),
+			Modules: &apis.MapAny{
+				Data: map[string]any{
+					"logstash-xpack.yml": []map[string]any{xpackModule},
+				},
 			},
-			Config: map[string]string{
-				"metricbeat.yml": fmt.Sprintf("setup.template.settings:\n  index.number_of_replicas: %d", ls.Spec.Monitoring.Metricbeat.NumberOfReplica),
+			Config: &apis.MapAny{
+				Data: metricbeatConfig,
 			},
 			Deployment: beatcrd.MetricbeatDeploymentSpec{
 				Deployment: shared.Deployment{

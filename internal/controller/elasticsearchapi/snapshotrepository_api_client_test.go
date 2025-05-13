@@ -3,6 +3,7 @@ package elasticsearchapi
 import (
 	"testing"
 
+	"github.com/disaster37/operator-sdk-extra/pkg/apis"
 	olivere "github.com/olivere/elastic/v7"
 	"github.com/stretchr/testify/assert"
 	elasticsearchapicrd "github.com/webcenter-fr/elasticsearch-operator/api/elasticsearchapi/v1"
@@ -36,9 +37,7 @@ func TestSnapshotRepositoryBuild(t *testing.T) {
 		},
 	}
 
-	expectedSr = &olivere.SnapshotRepositoryMetaData{
-		Settings: map[string]any{},
-	}
+	expectedSr = &olivere.SnapshotRepositoryMetaData{}
 
 	sr, err = client.Build(o)
 	assert.NoError(t, err)
@@ -57,11 +56,11 @@ func TestSnapshotRepositoryBuild(t *testing.T) {
 				},
 			},
 			Type: "fs",
-			Settings: `
-{
-	"location": "/snapshot"
-}
-			`,
+			Settings: &apis.MapAny{
+				Data: map[string]any{
+					"location": "/snapshot",
+				},
+			},
 		},
 	}
 

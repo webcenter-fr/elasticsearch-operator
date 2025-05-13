@@ -854,13 +854,15 @@ fi
 		}
 
 		// Compute persistence
-		if nodeGroup.IsPersistence() && nodeGroup.Persistence.VolumeClaimSpec != nil {
+		if nodeGroup.IsPersistence() && nodeGroup.Persistence.VolumeClaim != nil {
 			sts.Spec.VolumeClaimTemplates = []corev1.PersistentVolumeClaim{
 				{
 					ObjectMeta: metav1.ObjectMeta{
-						Name: "elasticsearch-data",
+						Name:        "elasticsearch-data",
+						Labels:      nodeGroup.Persistence.VolumeClaim.Labels,
+						Annotations: nodeGroup.Persistence.VolumeClaim.Annotations,
 					},
-					Spec: *nodeGroup.Persistence.VolumeClaimSpec,
+					Spec: nodeGroup.Persistence.VolumeClaim.PersistentVolumeClaimSpec,
 				},
 			}
 		}

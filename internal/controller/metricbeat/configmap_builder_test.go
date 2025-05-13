@@ -3,6 +3,7 @@ package metricbeat
 import (
 	"testing"
 
+	"github.com/disaster37/operator-sdk-extra/pkg/apis"
 	"github.com/disaster37/operator-sdk-extra/pkg/test"
 	"github.com/stretchr/testify/assert"
 	beatcrd "github.com/webcenter-fr/elasticsearch-operator/api/beat/v1"
@@ -113,7 +114,12 @@ func TestBuildConfigMaps(t *testing.T) {
 					Name: "test",
 				},
 			},
-			Config: map[string]string{
+			Config: &apis.MapAny{
+				Data: map[string]any{
+					"node.foo": "bar",
+				},
+			},
+			ExtraConfigs: map[string]string{
 				"metricbeat.yml": `node.value: test
 node.value2: test`,
 				"log4j.yml": "log.test: test\n",
@@ -151,8 +157,14 @@ node.value2: test`,
 					Name: "test",
 				},
 			},
-			Module: map[string]string{
-				"module.conf": "foo = bar",
+			Modules: &apis.MapAny{
+				Data: map[string]any{
+					"module.yaml": []map[string]any{
+						{
+							"foo": "bar",
+						},
+					},
+				},
 			},
 		},
 	}

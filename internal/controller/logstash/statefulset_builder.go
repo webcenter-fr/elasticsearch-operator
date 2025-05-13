@@ -822,13 +822,15 @@ fi
 	}
 
 	// Compute persistence
-	if ls.IsPersistence() && ls.Spec.Deployment.Persistence.VolumeClaimSpec != nil {
+	if ls.IsPersistence() && ls.Spec.Deployment.Persistence.VolumeClaim != nil {
 		statefullset.Spec.VolumeClaimTemplates = []corev1.PersistentVolumeClaim{
 			{
 				ObjectMeta: metav1.ObjectMeta{
-					Name: "logstash-data",
+					Name:        "logstash-data",
+					Labels:      ls.Spec.Deployment.Persistence.VolumeClaim.Labels,
+					Annotations: ls.Spec.Deployment.Persistence.VolumeClaim.Annotations,
 				},
-				Spec: *ls.Spec.Deployment.Persistence.VolumeClaimSpec,
+				Spec: ls.Spec.Deployment.Persistence.VolumeClaim.PersistentVolumeClaimSpec,
 			},
 		}
 	}

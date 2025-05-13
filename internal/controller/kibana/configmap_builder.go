@@ -7,10 +7,10 @@ import (
 	"github.com/elastic/go-ucfg"
 	elasticsearchcrd "github.com/webcenter-fr/elasticsearch-operator/api/elasticsearch/v1"
 	kibanacrd "github.com/webcenter-fr/elasticsearch-operator/api/kibana/v1"
-	"github.com/webcenter-fr/elasticsearch-operator/pkg/helper"
 	localhelper "github.com/webcenter-fr/elasticsearch-operator/pkg/helper"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"sigs.k8s.io/yaml"
 )
 
 // BuildConfigMap permit to generate config map
@@ -19,7 +19,9 @@ func buildConfigMaps(kb *kibanacrd.Kibana, es *elasticsearchcrd.Elasticsearch) (
 
 	configMaps = make([]corev1.ConfigMap, 0, 1)
 
-	injectedConfigMap := map[string]string{}
+	configs := map[string]string{
+		"kibana.yml": "",
+	}
 
 	kibanaConf := map[string]any{}
 
@@ -36,9 +38,14 @@ func buildConfigMaps(kb *kibanacrd.Kibana, es *elasticsearchcrd.Elasticsearch) (
 		kibanaConf["elasticsearch.ssl.certificateAuthorities"] = []string{"/usr/share/kibana/config/es-ca/ca.crt"}
 	}
 
+	config, err := yaml.Marshal(kb.Spec.Config)
+	if err != nil {
+		return nil, errors.Wrap(err, "Error when unmarshall config")
+	}
+
 	if kb.Spec.Endpoint.IsIngressEnabled() {
 		var path string
-		path, err = localhelper.GetSetting("server.basePath", []byte(kb.Spec.Config["kibana.yml"]))
+		path, err = localhelper.GetSetting("server.basePath", config)
 		if err != nil && ucfg.ErrMissing != err {
 			return nil, errors.Wrap(err, "Error when search property 'server.basePath' on kibana setting")
 		}
@@ -49,10 +56,27 @@ func buildConfigMaps(kb *kibanacrd.Kibana, es *elasticsearchcrd.Elasticsearch) (
 		kibanaConf["server.publicBaseUrl"] = fmt.Sprintf(": %s://%s%s", scheme, kb.Spec.Endpoint.Ingress.Host, path)
 	}
 
-	injectedConfigMap["kibana.yml"] = helper.ToYamlOrDie(kibanaConf)
+	injectedConfigMap := map[string]string{
+		"kibana.yml": localhelper.ToYamlOrDie(kibanaConf),
+	}
+
+	
+	if kb.Spec.Config != nil && kb.Spec.Config.Data != nil {
+		config, err := yaml.Marshal(kb.Spec.Config.Data)
+		if err != nil {
+			return nil, errors.Wrap(err, "Error when unmarshall config")
+		}
+		configs["kibana.yml"] = string(config)
+	}
+	if kb.Spec.ExtraConfigs != nil {
+		configs, err = localhelper.MergeSettings(configs, kb.Spec.ExtraConfigs)
+		if err != nil {
+			return nil, errors.Wrap(err, "Error when merge config and extra configs")
+		}
+	}
 
 	// Inject computed config
-	expectedConfig, err = helper.MergeSettings(injectedConfigMap, kb.Spec.Config)
+	expectedConfig, err = localhelper.MergeSettings(injectedConfigMap, configs)
 	if err != nil {
 		return nil, errors.Wrap(err, "Error when merge expected config with computed config")
 	}

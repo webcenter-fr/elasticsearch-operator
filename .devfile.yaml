@@ -8,20 +8,16 @@ components:
     container:
       image: quay.io/webcenter/developer-image:golang-ubi9-latest
       env:
-        - name: GOPATH
-          value: /projects:/home/user/go
-        - name: GOCACHE
-          value: /tmp/.cache
         - name: DOCKER_HOST
           value: tcp://localhost:2375
       endpoints:
         - name: web
           targetPort: 8080
           exposure: public
-      memoryLimit: 4Gi
+      memoryLimit: 8Gi
       cpuLimit: 4000m
       cpuRequest: 1000m
-      memoryRequest: 2Gi
+      memoryRequest: 4Gi
       mountSources: true
   - name: docker
     attributes:

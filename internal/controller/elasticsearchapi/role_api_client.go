@@ -1,8 +1,6 @@
 package elasticsearchapi
 
 import (
-	"encoding/json"
-
 	eshandler "github.com/disaster37/es-handler/v8"
 	"github.com/disaster37/generic-objectmatcher/patch"
 	"github.com/disaster37/operator-sdk-extra/pkg/controller"
@@ -25,28 +23,16 @@ func (h *roleApiClient) Build(o *elasticsearchapicrd.Role) (role *eshandler.XPac
 		RunAs:   o.Spec.RunAs,
 	}
 
-	if o.Spec.Global != "" {
-		global := make(map[string]any)
-		if err := json.Unmarshal([]byte(o.Spec.Global), &global); err != nil {
-			return nil, err
-		}
-		role.Global = global
+	if o.Spec.Global != nil {
+		role.Global = o.Spec.Global.Data
 	}
 
-	if o.Spec.Metadata != "" {
-		meta := make(map[string]any)
-		if err := json.Unmarshal([]byte(o.Spec.Metadata), &meta); err != nil {
-			return nil, err
-		}
-		role.Metadata = meta
+	if o.Spec.Metadata != nil {
+		role.Metadata = o.Spec.Metadata.Data
 	}
 
-	if o.Spec.TransientMetadata != "" {
-		tm := make(map[string]any)
-		if err := json.Unmarshal([]byte(o.Spec.TransientMetadata), &tm); err != nil {
-			return nil, err
-		}
-		role.TransientMetadata = tm
+	if o.Spec.TransientMetadata != nil {
+		role.TransientMetadata = o.Spec.TransientMetadata.Data
 	}
 
 	if o.Spec.Applications != nil {
@@ -69,12 +55,8 @@ func (h *roleApiClient) Build(o *elasticsearchapicrd.Role) (role *eshandler.XPac
 				Query:                  indice.Query,
 				AllowRestrictedIndices: indice.AllowRestrictedIndices,
 			}
-			if indice.FieldSecurity != "" {
-				fs := make(map[string]any)
-				if err := json.Unmarshal([]byte(indice.FieldSecurity), &fs); err != nil {
-					return nil, err
-				}
-				i.FieldSecurity = fs
+			if indice.FieldSecurity != nil {
+				i.FieldSecurity = indice.FieldSecurity.Data
 			}
 			role.Indices = append(role.Indices, i)
 		}

@@ -54,57 +54,51 @@ spec:
     caSecretRef:
       name: custom-ca
     config:
-      elasticsearch.yml: |
-        action.destructive_requires_name: true
-        gateway.recover_after_time: 5m
-        http.cors.allow-credentials: true
-        http.cors.allow-headers: X-Requested-With,X-Auth-Token,Content-Type,
-        Content-Length, Authorization
-        http.cors.allow-origin: /.*/
-        http.cors.enabled: true
-        http.max_content_length: 500mb
-
-
-        # Rack awarness
-        cluster.routing.allocation.awareness.attributes: node_name
-
-        # Repository
-        path.repo:
-          - /mnt/snapshot
-
-        xpack.security.audit.enabled: true
-        xpack.security.audit.logfile.events.exclude:
-          - access_granted
-        xpack.security.authc:
-          anonymous:
-            authz_exception: false
-            roles: monitoring
-            username: anonymous_user
-          realms:
-            active_directory.active_directory:
-              order: 2
-              url:
-                - "ldap://dc1.domain.local:389"
-                - "ldap://dc2.domain.local:389"
-              load_balance.type: "failover"
-              follow_referrals: true
-              bind_dn: "${ELASTICSEARCH_LDAP_USER}"
-              timeout.ldap_search: 60s
-              domain_name: DOMAIN
-              user_search:
-                base_dn: "DC=DOMAIN,DC=LOCAL"
-                scope: sub_tree
-              group_search:
-                base_dn: "OU=Users,DC=DOMAIN,DC=LOCAL"
-                scope: sub_tree
-              unmapped_groups_as_roles: false
-        
-        # Custom config
-        gateway.expected_data_nodes: 3
-        gateway.recover_after_data_nodes: 2
-        cluster.routing.allocation.disk.watermark.low: 50gb
-        cluster.routing.allocation.disk.watermark.high: 20gb
-        cluster.routing.allocation.disk.watermark.flood_stage: 10gb
+      action.destructive_requires_name: true
+      gateway.recover_after_time: 5m
+      http.cors.allow-credentials: true
+      http.cors.allow-headers: X-Requested-With,X-Auth-Token,Content-Type,
+      Content-Length, Authorization
+      http.cors.allow-origin: /.*/
+      http.cors.enabled: true
+      http.max_content_length: 500mb
+      # Rack awarness
+      cluster.routing.allocation.awareness.attributes: node_name
+      # Repository
+      path.repo:
+        - /mnt/snapshot
+      xpack.security.audit.enabled: true
+      xpack.security.audit.logfile.events.exclude:
+        - access_granted
+      xpack.security.authc:
+        anonymous:
+          authz_exception: false
+          roles: monitoring
+          username: anonymous_user
+        realms:
+          active_directory.active_directory:
+            order: 2
+            url:
+              - "ldap://dc1.domain.local:389"
+              - "ldap://dc2.domain.local:389"
+            load_balance.type: "failover"
+            follow_referrals: true
+            bind_dn: "${ELASTICSEARCH_LDAP_USER}"
+            timeout.ldap_search: 60s
+            domain_name: DOMAIN
+            user_search:
+              base_dn: "DC=DOMAIN,DC=LOCAL"
+              scope: sub_tree
+            group_search:
+              base_dn: "OU=Users,DC=DOMAIN,DC=LOCAL"
+              scope: sub_tree
+            unmapped_groups_as_roles: false
+      # Custom config
+      gateway.expected_data_nodes: 3
+      gateway.recover_after_data_nodes: 2
+      cluster.routing.allocation.disk.watermark.low: 50gb
+      cluster.routing.allocation.disk.watermark.high: 20gb
+      cluster.routing.allocation.disk.watermark.flood_stage: 10gb
     envFrom:
       - secretRef:
           name: elasticsearch-env

@@ -10,7 +10,7 @@ func IsOnStatefulSetUpgradeState(o *appv1.StatefulSet) bool {
 		return false
 	}
 
-	if o.ObjectMeta.Generation != o.Status.ObservedGeneration {
+	if o.Generation != o.Status.ObservedGeneration {
 		return true
 	}
 

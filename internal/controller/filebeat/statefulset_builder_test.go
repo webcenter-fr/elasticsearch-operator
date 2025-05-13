@@ -3,6 +3,7 @@ package filebeat
 import (
 	"testing"
 
+	"github.com/disaster37/operator-sdk-extra/pkg/apis"
 	"github.com/disaster37/operator-sdk-extra/pkg/test"
 	"github.com/stretchr/testify/assert"
 	beatcrd "github.com/webcenter-fr/elasticsearch-operator/api/beat/v1"
@@ -362,25 +363,37 @@ func TestBuildStatefulset(t *testing.T) {
 					},
 				},
 				Persistence: &shared.DeploymentPersistenceSpec{
-					VolumeClaimSpec: &corev1.PersistentVolumeClaimSpec{
-						StorageClassName: ptr.To[string]("local-path"),
-						AccessModes: []corev1.PersistentVolumeAccessMode{
-							corev1.ReadWriteOnce,
-						},
-						Resources: corev1.VolumeResourceRequirements{
-							Requests: corev1.ResourceList{
-								corev1.ResourceStorage: resource.MustParse("5Gi"),
+					VolumeClaim: &shared.DeploymentVolumeClaim{
+						PersistentVolumeClaimSpec: corev1.PersistentVolumeClaimSpec{
+							StorageClassName: ptr.To[string]("local-path"),
+							AccessModes: []corev1.PersistentVolumeAccessMode{
+								corev1.ReadWriteOnce,
+							},
+							Resources: corev1.VolumeResourceRequirements{
+								Requests: corev1.ResourceList{
+									corev1.ResourceStorage: resource.MustParse("5Gi"),
+								},
 							},
 						},
 					},
 				},
 			},
 			Version: "8.5.1",
-			Config: map[string]string{
+			ExtraConfigs: map[string]string{
 				"log4j.yaml": "my log4j",
 			},
-			Module: map[string]string{
-				"module.yaml": "my module",
+			Modules: &apis.MapAny{
+				Data: map[string]any{
+					"module.yaml": map[string]any{
+						"foo": "bar",
+					},
+				},
+			},
+			Pki: beatcrd.FilebeatPkiSpec{
+				Enabled: ptr.To(true),
+				Tls: map[string]shared.TlsSelfSignedCertificateSpec{
+					"nxlog": {},
+				},
 			},
 		},
 	}

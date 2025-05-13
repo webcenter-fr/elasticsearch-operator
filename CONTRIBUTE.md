@@ -118,7 +118,7 @@ dagger call --src . sdk run --cmd version stdout
 ### Generate SDK manifests
 
 ```bash
-dagger call -m operator-sdk --src . sdk generate-manifests export --path .
+dagger call -m operator-sdk --src . --cluster-name elasticsearch-operator sdk generate-manifests export --path .
 ```
 
 

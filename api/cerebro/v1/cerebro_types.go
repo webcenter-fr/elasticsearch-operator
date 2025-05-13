@@ -51,10 +51,16 @@ type CerebroSpec struct {
 	Endpoint shared.EndpointSpec `json:"endpoint,omitempty"`
 
 	// Config is the Cerebro config
-	// The key is the file stored on kibana/config
+	// The key is the file stored on config folders and the data is the contend
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
 	// +optional
-	Config map[string]string `json:"config,omitempty"`
+	Config *string `json:"config,omitempty"`
+
+	// ExtraConfigs is extra config files store on config directory
+	// The key is the file name and the value is the contend file
+	// +operator-sdk:csv:customresourcedefinitions:type=spec
+	// +optional
+	ExtraConfigs map[string]string `json:"extraConfigs,omitempty"`
 
 	// Deployment permit to set the deployment settings
 	// +operator-sdk:csv:customresourcedefinitions:type=spec

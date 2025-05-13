@@ -26,7 +26,7 @@ spec:
         elasticsearch.k8s.webcenter.fr: "true"
       annotations:
         elasticsearch.k8s.webcenter.fr: "true"
-        elasticsearch.k8s.webcenter.fr/configmap-test-all-config-es: "4ddf32c9073c54bd03f996f5a2789d67f3b1b2c273148dab0ea8803bc6126d84"
+        elasticsearch.k8s.webcenter.fr/configmap-test-all-config-es: "14d9b8d7611b79eeb55052c063d7a579cedc66ce930e9a173b09546dcc951c9e"
         elasticsearch.k8s.webcenter.fr/secret-api-certificates: "53b47b289c9912c920ad03f4c114537fe6f9480756f7034cf9fd19017aaad026"
         elasticsearch.k8s.webcenter.fr/secret-transport-certificates: "testsequence"
       name: test-all-es

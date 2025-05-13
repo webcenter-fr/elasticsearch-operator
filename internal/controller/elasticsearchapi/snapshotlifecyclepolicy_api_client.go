@@ -28,9 +28,15 @@ func (h *snapshotLifecyclePolicyApiClient) Build(o *elasticsearchapicrd.Snapshot
 			IncludeGlobalState: o.Spec.Config.IncludeGlobalState,
 			Indices:            o.Spec.Config.Indices,
 			FeatureStates:      o.Spec.Config.FeatureStates,
-			Metadata:           o.Spec.Config.Metadata,
 			Partial:            o.Spec.Config.Partial,
 		},
+	}
+
+	if o.Spec.Config.Metadata != nil {
+		slm.Config.Metadata = map[string]string{}
+		for key, value := range o.Spec.Config.Metadata.Data {
+			slm.Config.Metadata[key] = value.(string)
+		}
 	}
 
 	if o.Spec.Retention != nil {

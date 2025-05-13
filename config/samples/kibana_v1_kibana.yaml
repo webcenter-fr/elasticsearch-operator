@@ -32,10 +32,9 @@ spec:
   keystoreSecretRef:
     name: kb-keystore
   config:
-    kibana.yml: |
-      elasticsearch.requestTimeout: 300000
-      unifiedSearch.autocomplete.valueSuggestions.timeout: 3000
-      xpack.reporting.roles.enabled: false
+    elasticsearch.requestTimeout: 300000
+    unifiedSearch.autocomplete.valueSuggestions.timeout: 3000
+    xpack.reporting.roles.enabled: false
   deployment:
     replicas: 1
     resources:

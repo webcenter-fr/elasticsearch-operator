@@ -136,7 +136,7 @@ func TestIsPersistence(t *testing.T) {
 	// When claim PVC is set
 	o = &ElasticsearchNodeGroupSpec{
 		Persistence: &shared.DeploymentPersistenceSpec{
-			VolumeClaimSpec: &v1.PersistentVolumeClaimSpec{},
+			VolumeClaim: &shared.DeploymentVolumeClaim{},
 		},
 	}
 

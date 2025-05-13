@@ -67,7 +67,7 @@ func TestIsPersistence(t *testing.T) {
 		Spec: LogstashSpec{
 			Deployment: LogstashDeploymentSpec{
 				Persistence: &shared.DeploymentPersistenceSpec{
-					VolumeClaimSpec: &v1.PersistentVolumeClaimSpec{},
+					VolumeClaim: &shared.DeploymentVolumeClaim{},
 				},
 			},
 		},

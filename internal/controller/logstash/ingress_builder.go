@@ -39,8 +39,8 @@ func buildIngresses(ls *logstashcrd.Logstash) (ingresses []networkingv1.Ingress,
 					rule.HTTP.Paths[indexPath] = path
 				}
 			}
-			if rule.IngressRuleValue.HTTP != nil && len(rule.IngressRuleValue.HTTP.Paths) > 0 {
-				for indexPath, path := range rule.IngressRuleValue.HTTP.Paths {
+			if rule.HTTP != nil && len(rule.HTTP.Paths) > 0 {
+				for indexPath, path := range rule.HTTP.Paths {
 					path.Backend = networkingv1.IngressBackend{
 						Service: &networkingv1.IngressServiceBackend{
 							Name: GetServiceName(ls, i.Name),
@@ -49,7 +49,7 @@ func buildIngresses(ls *logstashcrd.Logstash) (ingresses []networkingv1.Ingress,
 							},
 						},
 					}
-					rule.IngressRuleValue.HTTP.Paths[indexPath] = path
+					rule.HTTP.Paths[indexPath] = path
 				}
 			}
 

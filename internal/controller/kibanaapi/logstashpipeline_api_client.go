@@ -1,8 +1,6 @@
 package kibanaapi
 
 import (
-	"encoding/json"
-
 	"github.com/disaster37/generic-objectmatcher/patch"
 	"github.com/disaster37/go-kibana-rest/v8/kbapi"
 	kbhandler "github.com/disaster37/kb-handler/v8"
@@ -27,13 +25,8 @@ func (h *logstashPipelineApiClient) Build(o *kibanaapicrd.LogstashPipeline) (pip
 		Pipeline:    o.Spec.Pipeline,
 	}
 
-	if o.Spec.Settings != "" {
-		s := make(map[string]any)
-		if err := json.Unmarshal([]byte(o.Spec.Settings), &s); err != nil {
-			return nil, err
-		}
-
-		pipeline.Settings = s
+	if o.Spec.Settings != nil {
+		pipeline.Settings = o.Spec.Settings.Data
 	}
 
 	return pipeline, nil

@@ -3,6 +3,7 @@ package elasticsearchapi
 import (
 	"testing"
 
+	"github.com/disaster37/operator-sdk-extra/pkg/apis"
 	olivere "github.com/olivere/elastic/v7"
 	"github.com/stretchr/testify/assert"
 	elasticsearchapicrd "github.com/webcenter-fr/elasticsearch-operator/api/elasticsearchapi/v1"
@@ -32,25 +33,39 @@ func TestWatchBuild(t *testing.T) {
 					Name: "test",
 				},
 			},
-			Trigger: `{
-				"schedule" : { "cron" : "0 0/1 * * * ?" }
-			}`,
-			Input: `{
-				"search": {
-					"key": "value"
-				}	
-			}`,
-			Condition: `{
-				"compare" : { "ctx.payload.hits.total" : { "gt" : 0 }}
-			}`,
-			Actions: `{
-				"email_admin" : {
-				  "email" : {
-					"to" : "admin@domain.host.com",
-					"subject" : "404 recently encountered"
-				  }
-				}
-			}`,
+			Trigger: &apis.MapAny{
+				Data: map[string]any{
+					"schedule": map[string]any{
+						"cron": "0 0/1 * * * ?",
+					},
+				},
+			},
+			Input: &apis.MapAny{
+				Data: map[string]any{
+					"search": map[string]any{
+						"key": "value",
+					},
+				},
+			},
+			Condition: &apis.MapAny{
+				Data: map[string]any{
+					"compare": map[string]any{
+						"ctx.payload.hits.total": map[string]any{
+							"gt": 0,
+						},
+					},
+				},
+			},
+			Actions: &apis.MapAny{
+				Data: map[string]any{
+					"email_admin": map[string]any{
+						"email": map[string]any{
+							"to":      "admin@domain.host.com",
+							"subject": "404 recently encountered",
+						},
+					},
+				},
+			},
 		},
 	}
 
@@ -68,7 +83,7 @@ func TestWatchBuild(t *testing.T) {
 		Condition: map[string]map[string]any{
 			"compare": {
 				"ctx.payload.hits.total": map[string]any{
-					"gt": float64(0),
+					"gt": 0,
 				},
 			},
 		},
@@ -98,33 +113,51 @@ func TestWatchBuild(t *testing.T) {
 					Name: "test",
 				},
 			},
-			Trigger: `{
-				"schedule" : { "cron" : "0 0/1 * * * ?" }
-			}`,
-			Input: `{
-				"search": {
-					"key": "value"
-				}	
-			}`,
-			Condition: `{
-				"compare" : { "ctx.payload.hits.total" : { "gt" : 0 }}
-			}`,
-			Actions: `{
-				"email_admin" : {
-				  "email" : {
-					"to" : "admin@domain.host.com",
-					"subject" : "404 recently encountered"
-				  }
-				}
-			}`,
-			Transform: `{
-				"key3": "value3"	
-			}`,
+			Trigger: &apis.MapAny{
+				Data: map[string]any{
+					"schedule": map[string]any{
+						"cron": "0 0/1 * * * ?",
+					},
+				},
+			},
+			Input: &apis.MapAny{
+				Data: map[string]any{
+					"search": map[string]any{
+						"key": "value",
+					},
+				},
+			},
+			Condition: &apis.MapAny{
+				Data: map[string]any{
+					"compare": map[string]any{
+						"ctx.payload.hits.total": map[string]any{
+							"gt": 0,
+						},
+					},
+				},
+			},
+			Actions: &apis.MapAny{
+				Data: map[string]any{
+					"email_admin": map[string]any{
+						"email": map[string]any{
+							"to":      "admin@domain.host.com",
+							"subject": "404 recently encountered",
+						},
+					},
+				},
+			},
+			Transform: &apis.MapAny{
+				Data: map[string]any{
+					"key3": "value3",
+				},
+			},
 			ThrottlePeriod:         "1d",
 			ThrottlePeriodInMillis: 10,
-			Metadata: `{
-				"key2": "value2"
-			}`,
+			Metadata: &apis.MapAny{
+				Data: map[string]any{
+					"key2": "value2",
+				},
+			},
 		},
 	}
 
@@ -142,7 +175,7 @@ func TestWatchBuild(t *testing.T) {
 		Condition: map[string]map[string]any{
 			"compare": {
 				"ctx.payload.hits.total": map[string]any{
-					"gt": float64(0),
+					"gt": 0,
 				},
 			},
 		},

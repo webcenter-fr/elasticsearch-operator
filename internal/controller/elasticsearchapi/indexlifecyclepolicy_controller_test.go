@@ -9,6 +9,7 @@ import (
 	"emperror.dev/errors"
 	"github.com/disaster37/es-handler/v8/mocks"
 	"github.com/disaster37/generic-objectmatcher/patch"
+	"github.com/disaster37/operator-sdk-extra/pkg/apis"
 	"github.com/disaster37/operator-sdk-extra/pkg/controller"
 	"github.com/disaster37/operator-sdk-extra/pkg/helper"
 	"github.com/disaster37/operator-sdk-extra/pkg/test"
@@ -22,6 +23,7 @@ import (
 	condition "k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -213,29 +215,30 @@ func doCreateILMStep() test.TestStep {
 							Name: "test",
 						},
 					},
-					Policy: `
-					{
-						"policy": {
-							"phases": {
-								"warm": {
-									"min_age": "10d",
-									"actions": {
-										"forcemerge": {
-											"max_num_segments": 1
-										}
-									}
+					Policy: &elasticsearchapicrd.IndexLifecyclePolicySpecPolicy{
+						Phases: elasticsearchapicrd.IndexLifecyclePolicySpecPolicyPhases{
+							Warm: &elasticsearchapicrd.IndexLifecyclePolicySpecPolicyPhasesPhase{
+								MinAge: ptr.To("10d"),
+								Actions: apis.MapAny{
+									Data: map[string]any{
+										"forcemerge": map[string]any{
+											"max_num_segments": 1,
+										},
+									},
 								},
-								"delete": {
-									"min_age": "31d",
-									"actions": {
-										"delete": {
-											"delete_searchable_snapshot": true
-										}
-									}
-								}
-							}
-						}
-					}`,
+							},
+							Delete: &elasticsearchapicrd.IndexLifecyclePolicySpecPolicyPhasesPhase{
+								MinAge: ptr.To("31d"),
+								Actions: apis.MapAny{
+									Data: map[string]any{
+										"delete": map[string]any{
+											"delete_searchable_snapshot": true,
+										},
+									},
+								},
+							},
+						},
+					},
 				},
 			}
 			if err = c.Create(context.Background(), ilm); err != nil {
@@ -283,28 +286,30 @@ func doUpdateILMStep() test.TestStep {
 			ilm := o.(*elasticsearchapicrd.IndexLifecyclePolicy)
 
 			data["lastGeneration"] = ilm.GetStatus().GetObservedGeneration()
-			ilm.Spec.Policy = `{
-				"policy": {
-					"phases": {
-						"warm": {
-							"min_age": "30d",
-							"actions": {
-								"forcemerge": {
-									"max_num_segments": 1
-								}
-							}
+			ilm.Spec.Policy = &elasticsearchapicrd.IndexLifecyclePolicySpecPolicy{
+				Phases: elasticsearchapicrd.IndexLifecyclePolicySpecPolicyPhases{
+					Warm: &elasticsearchapicrd.IndexLifecyclePolicySpecPolicyPhasesPhase{
+						MinAge: ptr.To("30d"),
+						Actions: apis.MapAny{
+							Data: map[string]any{
+								"forcemerge": map[string]any{
+									"max_num_segments": 1,
+								},
+							},
 						},
-						"delete": {
-							"min_age": "31d",
-							"actions": {
-								"delete": {
-									"delete_searchable_snapshot": true
-								}
-							}
-						}
-					}
-				}
-			}`
+					},
+					Delete: &elasticsearchapicrd.IndexLifecyclePolicySpecPolicyPhasesPhase{
+						MinAge: ptr.To("31d"),
+						Actions: apis.MapAny{
+							Data: map[string]any{
+								"delete": map[string]any{
+									"delete_searchable_snapshot": true,
+								},
+							},
+						},
+					},
+				},
+			}
 			if err = c.Update(context.Background(), ilm); err != nil {
 				return err
 			}

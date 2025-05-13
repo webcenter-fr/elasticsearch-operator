@@ -59,22 +59,29 @@ type LogstashSpec struct {
 	PluginsList []string `json:"pluginsList,omitempty"`
 
 	// Config is the Logstash config
-	// The key is the file stored on logstash/config
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
 	// +optional
-	Config map[string]string `json:"config,omitempty"`
+	// +kubebuilder:pruning:PreserveUnknownFields
+	Config *apis.MapAny `json:"config,omitempty"`
+
+	// ExtraConfigs is extra config files store on config directory
+	// The key is the file name and the value is the contend file
+	// +operator-sdk:csv:customresourcedefinitions:type=spec
+	// +optional
+	ExtraConfigs map[string]string `json:"extraConfigs,omitempty"`
 
 	// Pipeline is the pipeline specification
-	// The key is the file stored on logstash/pipelines
+	// The key is the file stored on logstash/pipelines. The contend is the logstash rules as string
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
 	// +optional
-	Pipeline map[string]string `json:"pipeline,omitempty"`
+	// +kubebuilder:pruning:PreserveUnknownFields
+	Pipelines map[string]string `json:"pipelines,omitempty"`
 
 	// Patterns is the patterns specification used by grok
 	// The key is the file stored on logstash/patterns
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
 	// +optional
-	Pattern map[string]string `json:"pattern,omitempty"`
+	Patterns map[string]string `json:"patterns,omitempty"`
 
 	// KeystoreSecretRef is the secret that store the security settings
 	// +operator-sdk:csv:customresourcedefinitions:type=spec

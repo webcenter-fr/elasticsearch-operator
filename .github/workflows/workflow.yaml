@@ -20,8 +20,8 @@ jobs:
       - name: Dagger
         uses: dagger/dagger-for-github@v7
         with:
-          version: 0.14.0
-          call: --src . ci --ci --version ${VERSION} --registry-username env:REGISTRY_USERNAME --registry-password env:REGISTRY_PASSWORD --git-token env:GITHUB_TOKEN --code-cove-token env:CODECOV_TOKEN ${BRANCH_NAME} ${IS_TAG} ${IS_PR}
+          version: 0.16.1
+          call: --src . ci --ci --version ${VERSION} --registry-username env:REGISTRY_USERNAME --registry-password env:REGISTRY_PASSWORD --git-token env:GITHUB_TOKEN --code-cove-token env:CODECOV_TOKEN --git-branch ${BRANCH_NAME} ${IS_TAG} ${IS_PR}
           cloud-token: ${{ secrets.DAGGER_CLOUD_TOKEN }}
         env:
           REGISTRY_USERNAME: ${{ secrets.REGISTRY_USERNAME }}
@@ -31,4 +31,4 @@ jobs:
           VERSION: ${{ github.ref_type == 'tag' && github.ref_name || github.event_name == 'pull_request' && format('pr.{0}', github.event.number) || format('rc.{0}', github.run_number) }}
           IS_TAG: ${{ github.ref_type == 'tag' && '--is-tag' || '' }}
           IS_PR: ${{ github.event_name == 'pull_request' && '--is-pull-request' || '' }}
-          BRANCH_NAME: ${{ github.event_name == 'pull_request' && format('--branch-name {0}', github.head_ref) || format('--branch-name {0}', github.ref) }}
+          BRANCH_NAME: ${{ github.event_name == 'pull_request' && github.head_ref || github.ref_type == 'tag' && 'main' || github.ref_name }}

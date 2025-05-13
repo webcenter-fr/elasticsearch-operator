@@ -583,13 +583,15 @@ chown -v root:root /mnt/data
 	}
 
 	// Compute persistence
-	if fb.IsPersistence() && fb.Spec.Deployment.Persistence.VolumeClaimSpec != nil {
+	if fb.IsPersistence() && fb.Spec.Deployment.Persistence.VolumeClaim != nil {
 		statefullset.Spec.VolumeClaimTemplates = []corev1.PersistentVolumeClaim{
 			{
 				ObjectMeta: metav1.ObjectMeta{
-					Name: "filebeat-data",
+					Name:        "filebeat-data",
+					Labels:      fb.Spec.Deployment.Persistence.VolumeClaim.Labels,
+					Annotations: fb.Spec.Deployment.Persistence.VolumeClaim.Annotations,
 				},
-				Spec: *fb.Spec.Deployment.Persistence.VolumeClaimSpec,
+				Spec: fb.Spec.Deployment.Persistence.VolumeClaim.PersistentVolumeClaimSpec,
 			},
 		}
 	}

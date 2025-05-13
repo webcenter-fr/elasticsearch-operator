@@ -12,16 +12,14 @@ metadata:
   namespace: cluster-dev
 spec:
   config:
-    logstash.yml: |
-      queue.type: persisted
-      log.format: json
-      dead_letter_queue.enable: true
-      monitoring.enabled: false
-      xpack.monitoring.enabled: false
-
-      # Custom config
-      pipeline.workers: 8
-      queue.max_bytes: 20gb
+    queue.type: persisted
+    log.format: json
+    dead_letter_queue.enable: true
+    monitoring.enabled: false
+    xpack.monitoring.enabled: false
+    # Custom config
+    pipeline.workers: 8
+    queue.max_bytes: 20gb
   pipeline:
     log.yml: |
       input { stdin { } }
@@ -101,29 +99,25 @@ metadata:
   namespace: cluster-dev
 spec:
   config:
-    filebeat.yml: |
-      filebeat:
-        shutdown_timeout: 5s
-
-      logging:
-        to_stderr: true
-        level: info
-
-      monitoring.enabled: false
-
-      # Inputs
-      filebeat.inputs:
-        # Linux
-        - type: syslog
-          format: auto
-          protocol.tcp:
-            host: "0.0.0.0:5144"
-          fields_under_root: true
-          fields:
-            event.dataset: "syslog_linux"
-            event.module: "linux"
-            service.type: "linux"
-          tags: ["syslog"]
+    filebeat:
+      shutdown_timeout: 5s
+    logging:
+      to_stderr: true
+      level: info
+    monitoring.enabled: false
+    # Inputs
+    filebeat.inputs:
+      # Linux
+      - type: syslog
+        format: auto
+        protocol.tcp:
+          host: "0.0.0.0:5144"
+        fields_under_root: true
+        fields:
+          event.dataset: "syslog_linux"
+          event.module: "linux"
+          service.type: "linux"
+        tags: ["syslog"]
   deployment:
     initContainerResources:
       limits:

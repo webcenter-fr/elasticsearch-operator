@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/disaster37/k8s-objectmatcher/patch"
+	"github.com/disaster37/operator-sdk-extra/pkg/apis"
 	"github.com/disaster37/operator-sdk-extra/pkg/helper"
 	"github.com/disaster37/operator-sdk-extra/pkg/test"
 	routev1 "github.com/openshift/api/route/v1"
@@ -115,14 +116,18 @@ func doCreateFilebeatStep() test.TestStep {
 							Replicas: 2,
 						},
 					},
-					Config: map[string]string{
-						"filebeat.yml": `
-pipeline.workers: 2
-queue.type: persisted
-`,
+					Config: &apis.MapAny{
+						Data: map[string]any{
+							"pipeline.workers": 2,
+							"queue.type":       "persisted",
+						},
 					},
-					Module: map[string]string{
-						"test.conf": "test",
+					Modules: &apis.MapAny{
+						Data: map[string]any{
+							"module.yaml": map[string]any{
+								"foo": "bar",
+							},
+						},
 					},
 					Ingresses: []sharedcrd.Ingress{
 						{

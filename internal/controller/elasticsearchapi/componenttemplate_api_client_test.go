@@ -3,6 +3,7 @@ package elasticsearchapi
 import (
 	"testing"
 
+	"github.com/disaster37/operator-sdk-extra/pkg/apis"
 	olivere "github.com/olivere/elastic/v7"
 	"github.com/stretchr/testify/assert"
 	elasticsearchapicrd "github.com/webcenter-fr/elasticsearch-operator/api/elasticsearchapi/v1"
@@ -60,24 +61,30 @@ func TestComponentTemplateBuild(t *testing.T) {
 					Name: "test",
 				},
 			},
-			Settings: `{
-				"number_of_shards": 1
-			}`,
-			Mappings: `{
-				"_source": {
-				  "enabled": false
-				}
-			}`,
-			Aliases: `{
-				"key": "value"	
-			}`,
+			Settings: &apis.MapAny{
+				Data: map[string]any{
+					"number_of_shards": 1,
+				},
+			},
+			Mappings: &apis.MapAny{
+				Data: map[string]any{
+					"_source": map[string]any{
+						"enabled": false,
+					},
+				},
+			},
+			Aliases: &apis.MapAny{
+				Data: map[string]any{
+					"key": "value",
+				},
+			},
 		},
 	}
 
 	expectedCt = &olivere.IndicesGetComponentTemplate{
 		Template: &olivere.IndicesGetComponentTemplateData{
 			Settings: map[string]any{
-				"number_of_shards": float64(1),
+				"number_of_shards": 1,
 			},
 			Mappings: map[string]any{
 				"_source": map[string]any{

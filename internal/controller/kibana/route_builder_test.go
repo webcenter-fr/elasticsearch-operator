@@ -9,7 +9,6 @@ import (
 	kibanacrd "github.com/webcenter-fr/elasticsearch-operator/api/kibana/v1"
 	"github.com/webcenter-fr/elasticsearch-operator/api/shared"
 	corev1 "k8s.io/api/core/v1"
-	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/utils/ptr"
@@ -94,7 +93,7 @@ func TestBuildRoute(t *testing.T) {
 				Route: &shared.EndpointRouteSpec{
 					Enabled: true,
 					Host:    "my-test.cluster.local",
-					SecretRef: &v1.LocalObjectReference{
+					SecretRef: &corev1.LocalObjectReference{
 						Name: "my-secret",
 					},
 					Labels: map[string]string{

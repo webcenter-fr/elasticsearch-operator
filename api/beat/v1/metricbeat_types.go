@@ -52,16 +52,23 @@ type MetricbeatSpec struct {
 	Version string `json:"version,omitempty"`
 
 	// Config is the Metricbeat config
-	// The key is the file stored on metricbeat
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
 	// +optional
-	Config map[string]string `json:"config,omitempty"`
+	// +kubebuilder:pruning:PreserveUnknownFields
+	Config *apis.MapAny `json:"config,omitempty"`
+
+	// ExtraConfigs is extra config files store on config directory
+	// The key is the file name and the value is the contend file
+	// +operator-sdk:csv:customresourcedefinitions:type=spec
+	// +optional
+	ExtraConfigs map[string]string `json:"extraConfigs,omitempty"`
 
 	// Module is the module specification
 	// The key is the file stored on metricbeat/modules.d
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
 	// +optional
-	Module map[string]string `json:"module,omitempty"`
+	// +kubebuilder:pruning:PreserveUnknownFields
+	Modules *apis.MapAny `json:"modules,omitempty"`
 
 	// Deployment permit to set the deployment settings
 	// +operator-sdk:csv:customresourcedefinitions:type=spec

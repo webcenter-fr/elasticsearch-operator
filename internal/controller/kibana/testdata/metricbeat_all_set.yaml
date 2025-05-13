@@ -9,8 +9,8 @@ spec:
     managed:
       name: test
       namespace: monitoring
-  module:
-    'kibana-xpack.yml': |
+  modules:
+    'kibana-xpack.yml':
       - module: kibana
         xpack.enabled: true
         username: '${SOURCE_METRICBEAT_USERNAME}'
@@ -24,9 +24,8 @@ spec:
         period: 5s
         hosts: https://test-kb.default.svc:5601
   config:
-    'metricbeat.yml': |-
-      setup.template.settings:
-        index.number_of_replicas: 1
+    setup.template.settings:
+      index.number_of_replicas: 1
   deployment:
     replicas: 1
     env:

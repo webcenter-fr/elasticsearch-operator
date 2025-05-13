@@ -67,7 +67,7 @@ func TestFilebeatIsPersistence(t *testing.T) {
 		Spec: FilebeatSpec{
 			Deployment: FilebeatDeploymentSpec{
 				Persistence: &shared.DeploymentPersistenceSpec{
-					VolumeClaimSpec: &v1.PersistentVolumeClaimSpec{},
+					VolumeClaim: &shared.DeploymentVolumeClaim{},
 				},
 			},
 		},

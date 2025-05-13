@@ -1,5 +1,7 @@
 {
     "editor.tabCompletion": "on",
     "diffEditor.codeLens": true,
-    "MutableAI.upsell": true
+    "MutableAI.upsell": true,
+    "files.simpleDialog.enable": false,
+    "makefile.configureOnOpen": false
 }

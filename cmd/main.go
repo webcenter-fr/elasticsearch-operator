@@ -83,7 +83,6 @@ func init() {
 }
 
 func main() {
-	os.Setenv("CAPATH", "/dev/null")
 	var metricsAddr string
 	var enableLeaderElection bool
 	var secureMetrics bool

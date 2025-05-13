@@ -11,7 +11,7 @@ func (h *Filebeat) GetStatus() object.MultiPhaseObjectStatus {
 
 // IsPersistence return true if persistence is enabled
 func (h *Filebeat) IsPersistence() bool {
-	if h.Spec.Deployment.Persistence != nil && (h.Spec.Deployment.Persistence.Volume != nil || h.Spec.Deployment.Persistence.VolumeClaimSpec != nil) {
+	if h.Spec.Deployment.Persistence != nil && (h.Spec.Deployment.Persistence.Volume != nil || h.Spec.Deployment.Persistence.VolumeClaim != nil) {
 		return true
 	}
 

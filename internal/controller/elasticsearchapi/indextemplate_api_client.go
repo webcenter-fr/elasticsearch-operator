@@ -23,7 +23,7 @@ func newIndexTemplateApiClient(client eshandler.ElasticsearchHandler) controller
 func (h *indexTemplateApiClient) Build(o *elasticsearchapicrd.IndexTemplate) (indexTemplate *olivere.IndicesGetIndexTemplate, err error) {
 	if o.IsRawTemplate() {
 		indexTemplate = &olivere.IndicesGetIndexTemplate{}
-		if err := json.Unmarshal([]byte(o.Spec.RawTemplate), indexTemplate); err != nil {
+		if err := json.Unmarshal([]byte(*o.Spec.RawTemplate), indexTemplate); err != nil {
 			return nil, err
 		}
 	} else {
@@ -37,23 +37,14 @@ func (h *indexTemplateApiClient) Build(o *elasticsearchapicrd.IndexTemplate) (in
 
 		if o.Spec.Template != nil {
 			var settings, mappings, aliases map[string]any
-			if o.Spec.Template.Settings != "" {
-				settings = make(map[string]any)
-				if err := json.Unmarshal([]byte(o.Spec.Template.Settings), &settings); err != nil {
-					return nil, err
-				}
+			if o.Spec.Template.Settings != nil {
+				settings = o.Spec.Template.Settings.Data
 			}
-			if o.Spec.Template.Mappings != "" {
-				mappings = make(map[string]any)
-				if err := json.Unmarshal([]byte(o.Spec.Template.Mappings), &mappings); err != nil {
-					return nil, err
-				}
+			if o.Spec.Template.Mappings != nil {
+				mappings = o.Spec.Template.Mappings.Data
 			}
-			if o.Spec.Template.Aliases != "" {
-				aliases = make(map[string]any)
-				if err := json.Unmarshal([]byte(o.Spec.Template.Aliases), &aliases); err != nil {
-					return nil, err
-				}
+			if o.Spec.Template.Aliases != nil {
+				aliases = o.Spec.Template.Aliases.Data
 			}
 			indexTemplate.Template = &olivere.IndicesGetIndexTemplateData{
 				Settings: settings,
@@ -62,12 +53,8 @@ func (h *indexTemplateApiClient) Build(o *elasticsearchapicrd.IndexTemplate) (in
 			}
 		}
 
-		if o.Spec.Meta != "" {
-			meta := make(map[string]any)
-			if err := json.Unmarshal([]byte(o.Spec.Meta), &meta); err != nil {
-				return nil, err
-			}
-			indexTemplate.Meta = meta
+		if o.Spec.Meta != nil {
+			indexTemplate.Meta = o.Spec.Meta.Data
 		}
 	}
 
