@@ -4,7 +4,7 @@ import (
 	"os"
 	"testing"
 
-	"github.com/disaster37/operator-sdk-extra/pkg/test"
+	"github.com/disaster37/operator-sdk-extra/v2/pkg/test"
 	"github.com/stretchr/testify/assert"
 	beatcrd "github.com/webcenter-fr/elasticsearch-operator/api/beat/v1"
 	elasticsearchcrd "github.com/webcenter-fr/elasticsearch-operator/api/elasticsearch/v1"
@@ -20,7 +20,7 @@ func TestBuildNetworkPolicy(t *testing.T) {
 	var (
 		err   error
 		o     *elasticsearchcrd.Elasticsearch
-		nps   []networkingv1.NetworkPolicy
+		nps   []*networkingv1.NetworkPolicy
 		oList []client.Object
 	)
 
@@ -36,11 +36,11 @@ func TestBuildNetworkPolicy(t *testing.T) {
 	nps, err = buildNetworkPolicies(o, nil)
 
 	assert.NoError(t, err)
-	test.EqualFromYamlFile[*networkingv1.NetworkPolicy](t, "testdata/networkpolicy_not_in_pod.yml", &nps[0], scheme.Scheme)
+	test.EqualFromYamlFile[*networkingv1.NetworkPolicy](t, "testdata/networkpolicy_not_in_pod.yml", nps[0], scheme.Scheme)
 
 	// When in pod
 	_ = os.Setenv("POD_NAME", "test")
-	_ =os.Setenv("POD_NAMESPACE", "test")
+	_ = os.Setenv("POD_NAMESPACE", "test")
 	o = &elasticsearchcrd.Elasticsearch{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "test",
@@ -52,7 +52,7 @@ func TestBuildNetworkPolicy(t *testing.T) {
 	nps, err = buildNetworkPolicies(o, nil)
 
 	assert.NoError(t, err)
-	test.EqualFromYamlFile[*networkingv1.NetworkPolicy](t, "testdata/networkpolicy_in_pod.yml", &nps[0], scheme.Scheme)
+	test.EqualFromYamlFile[*networkingv1.NetworkPolicy](t, "testdata/networkpolicy_in_pod.yml", nps[0], scheme.Scheme)
 
 	// When in pod and external referers
 	_ = os.Setenv("POD_NAME", "test")
@@ -107,5 +107,5 @@ func TestBuildNetworkPolicy(t *testing.T) {
 	nps, err = buildNetworkPolicies(o, oList)
 
 	assert.NoError(t, err)
-	test.EqualFromYamlFile[*networkingv1.NetworkPolicy](t, "testdata/networkpolicy_referer.yml", &nps[0], scheme.Scheme)
+	test.EqualFromYamlFile[*networkingv1.NetworkPolicy](t, "testdata/networkpolicy_referer.yml", nps[0], scheme.Scheme)
 }

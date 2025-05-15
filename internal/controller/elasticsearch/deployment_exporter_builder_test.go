@@ -3,7 +3,7 @@ package elasticsearch
 import (
 	"testing"
 
-	"github.com/disaster37/operator-sdk-extra/pkg/test"
+	"github.com/disaster37/operator-sdk-extra/v2/pkg/test"
 	"github.com/stretchr/testify/assert"
 	elasticsearchcrd "github.com/webcenter-fr/elasticsearch-operator/api/elasticsearch/v1"
 	"github.com/webcenter-fr/elasticsearch-operator/api/shared"
@@ -19,7 +19,7 @@ func TestBuildDeploymentExporter(t *testing.T) {
 	var (
 		err  error
 		o    *elasticsearchcrd.Elasticsearch
-		dpls []appv1.Deployment
+		dpls []*appv1.Deployment
 	)
 
 	// With default values
@@ -69,7 +69,7 @@ func TestBuildDeploymentExporter(t *testing.T) {
 	dpls, err = buildDeploymentExporters(o)
 
 	assert.NoError(t, err)
-	test.EqualFromYamlFile[*appv1.Deployment](t, "testdata/deployment_exporter.yml", &dpls[0], scheme.Scheme)
+	test.EqualFromYamlFile[*appv1.Deployment](t, "testdata/deployment_exporter.yml", dpls[0], scheme.Scheme)
 
 	// When prometheus monitoring is enabled and set image version and requirements
 	o = &elasticsearchcrd.Elasticsearch{
@@ -99,5 +99,5 @@ func TestBuildDeploymentExporter(t *testing.T) {
 	dpls, err = buildDeploymentExporters(o)
 
 	assert.NoError(t, err)
-	test.EqualFromYamlFile[*appv1.Deployment](t, "testdata/deployment_exporter_resources.yml", &dpls[0], scheme.Scheme)
+	test.EqualFromYamlFile[*appv1.Deployment](t, "testdata/deployment_exporter_resources.yml", dpls[0], scheme.Scheme)
 }

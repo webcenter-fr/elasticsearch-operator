@@ -3,7 +3,7 @@ package elasticsearch
 import (
 	"testing"
 
-	"github.com/disaster37/operator-sdk-extra/pkg/test"
+	"github.com/disaster37/operator-sdk-extra/v2/pkg/test"
 	"github.com/stretchr/testify/assert"
 	elasticsearchcrd "github.com/webcenter-fr/elasticsearch-operator/api/elasticsearch/v1"
 	elasticsearchapicrd "github.com/webcenter-fr/elasticsearch-operator/api/elasticsearchapi/v1"
@@ -16,7 +16,7 @@ func TestBuildLicense(t *testing.T) {
 	var (
 		o        *elasticsearchcrd.Elasticsearch
 		s        *corev1.Secret
-		licenses []elasticsearchapicrd.License
+		licenses []*elasticsearchapicrd.License
 	)
 	sch := scheme.Scheme
 	if err := elasticsearchapicrd.AddToScheme(sch); err != nil {
@@ -48,7 +48,7 @@ func TestBuildLicense(t *testing.T) {
 
 	licenses, err := buildLicenses(o, s)
 	assert.NoError(t, err)
-	test.EqualFromYamlFile[*elasticsearchapicrd.License](t, "testdata/license.yml", &licenses[0], sch)
+	test.EqualFromYamlFile[*elasticsearchapicrd.License](t, "testdata/license.yml", licenses[0], sch)
 
 	// When no license is expected
 	o = &elasticsearchcrd.Elasticsearch{

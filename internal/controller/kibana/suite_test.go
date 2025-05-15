@@ -5,8 +5,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/disaster37/operator-sdk-extra/pkg/controller"
-	"github.com/disaster37/operator-sdk-extra/pkg/helper"
+	"github.com/disaster37/operator-sdk-extra/v2/pkg/controller"
+	"github.com/disaster37/operator-sdk-extra/v2/pkg/helper"
 	routev1 "github.com/openshift/api/route/v1"
 	monitoringv1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1"
 	"github.com/sirupsen/logrus"
@@ -164,6 +164,9 @@ func (t *KibanaControllerTestSuite) SetupSuite() {
 			panic(err)
 		}
 	}()
+
+	// Wait for the cache to be ready.
+	time.Sleep(10 * time.Second)
 }
 
 func (t *KibanaControllerTestSuite) TearDownSuite() {

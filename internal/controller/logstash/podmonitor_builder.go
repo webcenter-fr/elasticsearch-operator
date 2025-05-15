@@ -9,18 +9,18 @@ import (
 
 // BuildPodMonitor permit to build pod monitor
 // It return nil if prometheus monitoring is disabled
-func buildPodMonitors(ls *logstashcrd.Logstash) (podMonitors []monitoringv1.PodMonitor, err error) {
+func buildPodMonitors(ls *logstashcrd.Logstash) (podMonitors []*monitoringv1.PodMonitor, err error) {
 	if !ls.Spec.Monitoring.IsPrometheusMonitoring() {
 		return nil, nil
 	}
 
-	podMonitors = make([]monitoringv1.PodMonitor, 0, 1)
+	podMonitors = make([]*monitoringv1.PodMonitor, 0, 1)
 	scrapInterval := "10s"
 	if ls.Spec.Monitoring.Prometheus.ScrapInterval != nil && *ls.Spec.Monitoring.Prometheus.ScrapInterval != "" {
 		scrapInterval = *ls.Spec.Monitoring.Prometheus.ScrapInterval
 	}
 
-	podMonitor := monitoringv1.PodMonitor{
+	podMonitor := &monitoringv1.PodMonitor{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:        GetPodMonitorName(ls),
 			Namespace:   ls.Namespace,

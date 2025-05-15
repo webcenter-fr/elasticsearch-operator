@@ -17,13 +17,16 @@ import (
 	"context"
 
 	eshandler "github.com/disaster37/es-handler/v8"
-	"github.com/disaster37/operator-sdk-extra/pkg/controller"
+	"github.com/disaster37/operator-sdk-extra/v2/pkg/controller"
+	"github.com/disaster37/operator-sdk-extra/v2/pkg/controller/remote"
 	olivere "github.com/olivere/elastic/v7"
 	"github.com/sirupsen/logrus"
 	elasticsearchapicrd "github.com/webcenter-fr/elasticsearch-operator/api/elasticsearchapi/v1"
 	"k8s.io/client-go/tools/record"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	k8scontroller "sigs.k8s.io/controller-runtime/pkg/controller"
+	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
 
 const (
@@ -33,15 +36,15 @@ const (
 // SnapshotRepositoryReconciler reconciles a SnapshotRepository object
 type SnapshotRepositoryReconciler struct {
 	controller.Controller
-	controller.RemoteReconciler[*elasticsearchapicrd.SnapshotRepository, *olivere.SnapshotRepositoryMetaData, eshandler.ElasticsearchHandler]
-	controller.RemoteReconcilerAction[*elasticsearchapicrd.SnapshotRepository, *olivere.SnapshotRepositoryMetaData, eshandler.ElasticsearchHandler]
+	remote.RemoteReconciler[*elasticsearchapicrd.SnapshotRepository, *olivere.SnapshotRepositoryMetaData, eshandler.ElasticsearchHandler]
+	remote.RemoteReconcilerAction[*elasticsearchapicrd.SnapshotRepository, *olivere.SnapshotRepositoryMetaData, eshandler.ElasticsearchHandler]
 	name string
 }
 
 func NewSnapshotRepositoryReconciler(client client.Client, logger *logrus.Entry, recorder record.EventRecorder) controller.Controller {
 	return &SnapshotRepositoryReconciler{
-		Controller: controller.NewBasicController(),
-		RemoteReconciler: controller.NewBasicRemoteReconciler[*elasticsearchapicrd.SnapshotRepository, *olivere.SnapshotRepositoryMetaData, eshandler.ElasticsearchHandler](
+		Controller: controller.NewController(),
+		RemoteReconciler: remote.NewRemoteReconciler[*elasticsearchapicrd.SnapshotRepository, *olivere.SnapshotRepositoryMetaData, eshandler.ElasticsearchHandler](
 			client,
 			snapshotRepositoryName,
 			"snapshotrepository.elasticsearchapi.k8s.webcenter.fr/finalizer",
@@ -72,7 +75,7 @@ func NewSnapshotRepositoryReconciler(client client.Client, logger *logrus.Entry,
 //
 // For more details, check Reconcile and its Result here:
 // - https://pkg.go.dev/sigs.k8s.io/controller-runtime@v0.11.0/pkg/reconcile
-func (r *SnapshotRepositoryReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
+func (r *SnapshotRepositoryReconciler) Reconcile(ctx context.Context, req reconcile.Request) (reconcile.Result, error) {
 	sr := &elasticsearchapicrd.SnapshotRepository{}
 	data := map[string]any{}
 
@@ -89,5 +92,17 @@ func (r *SnapshotRepositoryReconciler) Reconcile(ctx context.Context, req ctrl.R
 func (r *SnapshotRepositoryReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&elasticsearchapicrd.SnapshotRepository{}).
+		WithOptions(k8scontroller.Options{
+			RateLimiter: controller.DefaultControllerRateLimiter[reconcile.Request](),
+		}).
 		Complete(r)
 }
+
+func (h *SnapshotRepositoryReconciler) Client() client.Client {
+	return h.RemoteReconcilerAction.Client()
+}
+
+func (h *SnapshotRepositoryReconciler) Recorder() record.EventRecorder {
+	return h.RemoteReconcilerAction.Recorder()
+}
+

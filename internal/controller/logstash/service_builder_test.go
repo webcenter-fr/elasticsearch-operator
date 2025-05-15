@@ -3,7 +3,7 @@ package logstash
 import (
 	"testing"
 
-	"github.com/disaster37/operator-sdk-extra/pkg/test"
+	"github.com/disaster37/operator-sdk-extra/v2/pkg/test"
 	routev1 "github.com/openshift/api/route/v1"
 	"github.com/stretchr/testify/assert"
 	logstashcrd "github.com/webcenter-fr/elasticsearch-operator/api/logstash/v1"
@@ -18,7 +18,7 @@ import (
 func TestBuildServices(t *testing.T) {
 	var (
 		err      error
-		services []corev1.Service
+		services []*corev1.Service
 		o        *logstashcrd.Logstash
 	)
 
@@ -36,7 +36,7 @@ func TestBuildServices(t *testing.T) {
 	services, err = buildServices(o)
 	assert.NoError(t, err)
 	assert.NotEmpty(t, services)
-	test.EqualFromYamlFile[*corev1.Service](t, "testdata/service_default.yaml", &services[0], scheme.Scheme)
+	test.EqualFromYamlFile[*corev1.Service](t, "testdata/service_default.yaml", services[0], scheme.Scheme)
 
 	// When service is specified
 	o = &logstashcrd.Logstash{
@@ -74,7 +74,7 @@ func TestBuildServices(t *testing.T) {
 	services, err = buildServices(o)
 	assert.NoError(t, err)
 	assert.Equal(t, 2, len(services))
-	test.EqualFromYamlFile[*corev1.Service](t, "testdata/service_custom.yaml", &services[0], scheme.Scheme)
+	test.EqualFromYamlFile[*corev1.Service](t, "testdata/service_custom.yaml", services[0], scheme.Scheme)
 
 	// When ingress is specified
 	o = &logstashcrd.Logstash{
@@ -125,7 +125,7 @@ func TestBuildServices(t *testing.T) {
 	services, err = buildServices(o)
 	assert.NoError(t, err)
 	assert.Equal(t, 2, len(services))
-	test.EqualFromYamlFile[*corev1.Service](t, "testdata/service_ingress.yaml", &services[0], scheme.Scheme)
+	test.EqualFromYamlFile[*corev1.Service](t, "testdata/service_ingress.yaml", services[0], scheme.Scheme)
 
 	// When route is specified
 	o = &logstashcrd.Logstash{
@@ -164,5 +164,5 @@ func TestBuildServices(t *testing.T) {
 	services, err = buildServices(o)
 	assert.NoError(t, err)
 	assert.Equal(t, 2, len(services))
-	test.EqualFromYamlFile[*corev1.Service](t, "testdata/service_route.yaml", &services[0], scheme.Scheme)
+	test.EqualFromYamlFile[*corev1.Service](t, "testdata/service_route.yaml", services[0], scheme.Scheme)
 }

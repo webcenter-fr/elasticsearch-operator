@@ -17,13 +17,16 @@ import (
 	"context"
 
 	eshandler "github.com/disaster37/es-handler/v8"
-	"github.com/disaster37/operator-sdk-extra/pkg/controller"
+	"github.com/disaster37/operator-sdk-extra/v2/pkg/controller"
+	"github.com/disaster37/operator-sdk-extra/v2/pkg/controller/remote"
 	olivere "github.com/olivere/elastic/v7"
 	"github.com/sirupsen/logrus"
 	elasticsearchapicrd "github.com/webcenter-fr/elasticsearch-operator/api/elasticsearchapi/v1"
 	"k8s.io/client-go/tools/record"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	k8scontroller "sigs.k8s.io/controller-runtime/pkg/controller"
+	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
 
 const (
@@ -33,15 +36,15 @@ const (
 // ComponentTemplateReconciler reconciles a component template object
 type ComponentTemplateReconciler struct {
 	controller.Controller
-	controller.RemoteReconciler[*elasticsearchapicrd.ComponentTemplate, *olivere.IndicesGetComponentTemplate, eshandler.ElasticsearchHandler]
-	controller.RemoteReconcilerAction[*elasticsearchapicrd.ComponentTemplate, *olivere.IndicesGetComponentTemplate, eshandler.ElasticsearchHandler]
+	remote.RemoteReconciler[*elasticsearchapicrd.ComponentTemplate, *olivere.IndicesGetComponentTemplate, eshandler.ElasticsearchHandler]
+	remote.RemoteReconcilerAction[*elasticsearchapicrd.ComponentTemplate, *olivere.IndicesGetComponentTemplate, eshandler.ElasticsearchHandler]
 	name string
 }
 
 func NewComponentTemplateReconciler(client client.Client, logger *logrus.Entry, recorder record.EventRecorder) controller.Controller {
 	return &ComponentTemplateReconciler{
-		Controller: controller.NewBasicController(),
-		RemoteReconciler: controller.NewBasicRemoteReconciler[*elasticsearchapicrd.ComponentTemplate, *olivere.IndicesGetComponentTemplate, eshandler.ElasticsearchHandler](
+		Controller: controller.NewController(),
+		RemoteReconciler: remote.NewRemoteReconciler[*elasticsearchapicrd.ComponentTemplate, *olivere.IndicesGetComponentTemplate, eshandler.ElasticsearchHandler](
 			client,
 			componentTemplateName,
 			"componenttemplate.elasticsearchapi.k8s.webcenter.fr/finalizer",
@@ -72,7 +75,7 @@ func NewComponentTemplateReconciler(client client.Client, logger *logrus.Entry, 
 //
 // For more details, check Reconcile and its Result here:
 // - https://pkg.go.dev/sigs.k8s.io/controller-runtime@v0.11.0/pkg/reconcile
-func (r *ComponentTemplateReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
+func (r *ComponentTemplateReconciler) Reconcile(ctx context.Context, req reconcile.Request) (reconcile.Result, error) {
 	ct := &elasticsearchapicrd.ComponentTemplate{}
 	data := map[string]any{}
 
@@ -89,5 +92,16 @@ func (r *ComponentTemplateReconciler) Reconcile(ctx context.Context, req ctrl.Re
 func (r *ComponentTemplateReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&elasticsearchapicrd.ComponentTemplate{}).
+		WithOptions(k8scontroller.Options{
+			RateLimiter: controller.DefaultControllerRateLimiter[reconcile.Request](),
+		}).
 		Complete(r)
+}
+
+func (h *ComponentTemplateReconciler) Client() client.Client {
+	return h.RemoteReconcilerAction.Client()
+}
+
+func (h *ComponentTemplateReconciler) Recorder() record.EventRecorder {
+	return h.RemoteReconcilerAction.Recorder()
 }

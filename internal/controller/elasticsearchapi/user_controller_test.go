@@ -8,9 +8,9 @@ import (
 	"emperror.dev/errors"
 	"github.com/disaster37/es-handler/v8/mocks"
 	"github.com/disaster37/generic-objectmatcher/patch"
-	"github.com/disaster37/operator-sdk-extra/pkg/controller"
-	"github.com/disaster37/operator-sdk-extra/pkg/helper"
-	"github.com/disaster37/operator-sdk-extra/pkg/test"
+	"github.com/disaster37/operator-sdk-extra/v2/pkg/controller"
+	"github.com/disaster37/operator-sdk-extra/v2/pkg/helper"
+	"github.com/disaster37/operator-sdk-extra/v2/pkg/test"
 	olivere "github.com/olivere/elastic/v7"
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
@@ -31,11 +31,10 @@ func (t *ElasticsearchapiControllerTestSuite) TestUserReconciler() {
 		Name:      "t-user-" + helper.RandomString(10),
 		Namespace: "default",
 	}
-	user := &elasticsearchapicrd.User{}
 	data := map[string]any{}
 
-	testCase := test.NewTestCase(t.T(), t.k8sClient, key, user, 5*time.Second, data)
-	testCase.Steps = []test.TestStep{
+	testCase := test.NewTestCase[*elasticsearchapicrd.User](t.T(), t.k8sClient, key, 5*time.Second, data)
+	testCase.Steps = []test.TestStep[*elasticsearchapicrd.User]{
 		doCreateUserStep(),
 		doUpdateUserStep(),
 		doUpdateUserPasswordHashStep(),
@@ -225,10 +224,10 @@ func doMockUser(mockES *mocks.MockElasticsearchHandler) func(stepName *string, d
 	}
 }
 
-func doCreateUserStep() test.TestStep {
-	return test.TestStep{
+func doCreateUserStep() test.TestStep[*elasticsearchapicrd.User] {
+	return test.TestStep[*elasticsearchapicrd.User]{
 		Name: "create",
-		Do: func(c client.Client, key types.NamespacedName, o client.Object, data map[string]any) (err error) {
+		Do: func(c client.Client, key types.NamespacedName, o *elasticsearchapicrd.User, data map[string]any) (err error) {
 			logrus.Infof("=== Add new user %s/%s ===\n\n", key.Namespace, key.Name)
 
 			user := &elasticsearchapicrd.User{
@@ -254,7 +253,7 @@ func doCreateUserStep() test.TestStep {
 
 			return nil
 		},
-		Check: func(t *testing.T, c client.Client, key types.NamespacedName, o client.Object, data map[string]any) (err error) {
+		Check: func(t *testing.T, c client.Client, key types.NamespacedName, o *elasticsearchapicrd.User, data map[string]any) (err error) {
 			user := &elasticsearchapicrd.User{}
 			isCreated := false
 
@@ -281,26 +280,25 @@ func doCreateUserStep() test.TestStep {
 	}
 }
 
-func doUpdateUserStep() test.TestStep {
-	return test.TestStep{
+func doUpdateUserStep() test.TestStep[*elasticsearchapicrd.User] {
+	return test.TestStep[*elasticsearchapicrd.User]{
 		Name: "update",
-		Do: func(c client.Client, key types.NamespacedName, o client.Object, data map[string]any) (err error) {
+		Do: func(c client.Client, key types.NamespacedName, o *elasticsearchapicrd.User, data map[string]any) (err error) {
 			logrus.Infof("=== Update user %s/%s ===\n\n", key.Namespace, key.Name)
 
 			if o == nil {
 				return errors.New("User is null")
 			}
-			user := o.(*elasticsearchapicrd.User)
 
-			data["lastGeneration"] = user.GetStatus().GetObservedGeneration()
-			user.Spec.Enabled = false
-			if err = c.Update(context.Background(), user); err != nil {
+			data["lastGeneration"] = o.GetStatus().GetObservedGeneration()
+			o.Spec.Enabled = false
+			if err = c.Update(context.Background(), o); err != nil {
 				return err
 			}
 
 			return nil
 		},
-		Check: func(t *testing.T, c client.Client, key types.NamespacedName, o client.Object, data map[string]any) (err error) {
+		Check: func(t *testing.T, c client.Client, key types.NamespacedName, o *elasticsearchapicrd.User, data map[string]any) (err error) {
 			user := &elasticsearchapicrd.User{}
 			isUpdated := false
 
@@ -329,26 +327,25 @@ func doUpdateUserStep() test.TestStep {
 	}
 }
 
-func doUpdateUserPasswordHashStep() test.TestStep {
-	return test.TestStep{
+func doUpdateUserPasswordHashStep() test.TestStep[*elasticsearchapicrd.User] {
+	return test.TestStep[*elasticsearchapicrd.User]{
 		Name: "update_password_hash",
-		Do: func(c client.Client, key types.NamespacedName, o client.Object, data map[string]any) (err error) {
+		Do: func(c client.Client, key types.NamespacedName, o *elasticsearchapicrd.User, data map[string]any) (err error) {
 			logrus.Infof("=== Update user (password hash) %s/%s ===\n\n", key.Namespace, key.Name)
 
 			if o == nil {
 				return errors.New("User is null")
 			}
-			user := o.(*elasticsearchapicrd.User)
 
-			data["lastGeneration"] = user.GetStatus().GetObservedGeneration()
-			user.Spec.PasswordHash = "test2"
-			if err = c.Update(context.Background(), user); err != nil {
+			data["lastGeneration"] = o.GetStatus().GetObservedGeneration()
+			o.Spec.PasswordHash = "test2"
+			if err = c.Update(context.Background(), o); err != nil {
 				return err
 			}
 
 			return nil
 		},
-		Check: func(t *testing.T, c client.Client, key types.NamespacedName, o client.Object, data map[string]any) (err error) {
+		Check: func(t *testing.T, c client.Client, key types.NamespacedName, o *elasticsearchapicrd.User, data map[string]any) (err error) {
 			user := &elasticsearchapicrd.User{}
 			isUpdated := false
 
@@ -377,25 +374,24 @@ func doUpdateUserPasswordHashStep() test.TestStep {
 	}
 }
 
-func doDeleteUserStep() test.TestStep {
-	return test.TestStep{
+func doDeleteUserStep() test.TestStep[*elasticsearchapicrd.User] {
+	return test.TestStep[*elasticsearchapicrd.User]{
 		Name: "delete",
-		Do: func(c client.Client, key types.NamespacedName, o client.Object, data map[string]any) (err error) {
+		Do: func(c client.Client, key types.NamespacedName, o *elasticsearchapicrd.User, data map[string]any) (err error) {
 			logrus.Infof("=== Delete user %s/%s ===\n\n", key.Namespace, key.Name)
 
 			if o == nil {
 				return errors.New("User is null")
 			}
-			user := o.(*elasticsearchapicrd.User)
 
 			wait := int64(0)
-			if err = c.Delete(context.Background(), user, &client.DeleteOptions{GracePeriodSeconds: &wait}); err != nil {
+			if err = c.Delete(context.Background(), o, &client.DeleteOptions{GracePeriodSeconds: &wait}); err != nil {
 				return err
 			}
 
 			return nil
 		},
-		Check: func(t *testing.T, c client.Client, key types.NamespacedName, o client.Object, data map[string]any) (err error) {
+		Check: func(t *testing.T, c client.Client, key types.NamespacedName, o *elasticsearchapicrd.User, data map[string]any) (err error) {
 			user := &elasticsearchapicrd.User{}
 			isDeleted := false
 
@@ -420,10 +416,10 @@ func doDeleteUserStep() test.TestStep {
 	}
 }
 
-func doCreateUserWithPasswordStep() test.TestStep {
-	return test.TestStep{
+func doCreateUserWithPasswordStep() test.TestStep[*elasticsearchapicrd.User] {
+	return test.TestStep[*elasticsearchapicrd.User]{
 		Name: "createWithPassword",
-		Do: func(c client.Client, key types.NamespacedName, o client.Object, data map[string]any) (err error) {
+		Do: func(c client.Client, key types.NamespacedName, o *elasticsearchapicrd.User, data map[string]any) (err error) {
 			logrus.Infof("=== Add new user with password %s/%s ===\n\n", key.Namespace, key.Name)
 
 			// Create secret that store the user credentials
@@ -468,7 +464,7 @@ func doCreateUserWithPasswordStep() test.TestStep {
 
 			return nil
 		},
-		Check: func(t *testing.T, c client.Client, key types.NamespacedName, o client.Object, data map[string]any) (err error) {
+		Check: func(t *testing.T, c client.Client, key types.NamespacedName, o *elasticsearchapicrd.User, data map[string]any) (err error) {
 			user := &elasticsearchapicrd.User{}
 			isCreated := false
 
@@ -496,17 +492,16 @@ func doCreateUserWithPasswordStep() test.TestStep {
 	}
 }
 
-func doUpdateUserPasswordStep() test.TestStep {
-	return test.TestStep{
+func doUpdateUserPasswordStep() test.TestStep[*elasticsearchapicrd.User] {
+	return test.TestStep[*elasticsearchapicrd.User]{
 		Name: "update_password",
-		Do: func(c client.Client, key types.NamespacedName, o client.Object, data map[string]any) (err error) {
+		Do: func(c client.Client, key types.NamespacedName, o *elasticsearchapicrd.User, data map[string]any) (err error) {
 			logrus.Infof("=== Update user (password) %s/%s ===\n\n", key.Namespace, key.Name)
 
 			if o == nil {
 				return errors.New("User is null")
 			}
-			user := o.(*elasticsearchapicrd.User)
-			data["currentPasswordHash"] = user.Status.PasswordHash
+			data["currentPasswordHash"] = o.Status.PasswordHash
 
 			// Update password on secret
 			secret := corev1.Secret{}
@@ -526,7 +521,7 @@ func doUpdateUserPasswordStep() test.TestStep {
 
 			return nil
 		},
-		Check: func(t *testing.T, c client.Client, key types.NamespacedName, o client.Object, data map[string]any) (err error) {
+		Check: func(t *testing.T, c client.Client, key types.NamespacedName, o *elasticsearchapicrd.User, data map[string]any) (err error) {
 			user := &elasticsearchapicrd.User{}
 			isUpdated := false
 
@@ -556,10 +551,10 @@ func doUpdateUserPasswordStep() test.TestStep {
 	}
 }
 
-func doCreateUserWithAutoGeneratedPassword() test.TestStep {
-	return test.TestStep{
+func doCreateUserWithAutoGeneratedPassword() test.TestStep[*elasticsearchapicrd.User] {
+	return test.TestStep[*elasticsearchapicrd.User]{
 		Name: "createWithAutoGeneratePassword",
-		Do: func(c client.Client, key types.NamespacedName, o client.Object, data map[string]any) (err error) {
+		Do: func(c client.Client, key types.NamespacedName, o *elasticsearchapicrd.User, data map[string]any) (err error) {
 			logrus.Infof("=== Add new user with auto generate password %s/%s ===\n\n", key.Namespace, key.Name)
 
 			// Create user with auto generated password
@@ -585,7 +580,7 @@ func doCreateUserWithAutoGeneratedPassword() test.TestStep {
 
 			return nil
 		},
-		Check: func(t *testing.T, c client.Client, key types.NamespacedName, o client.Object, data map[string]any) (err error) {
+		Check: func(t *testing.T, c client.Client, key types.NamespacedName, o *elasticsearchapicrd.User, data map[string]any) (err error) {
 			user := &elasticsearchapicrd.User{}
 			isCreated := false
 

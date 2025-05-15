@@ -18,12 +18,15 @@ import (
 
 	"github.com/disaster37/go-kibana-rest/v8/kbapi"
 	kbhandler "github.com/disaster37/kb-handler/v8"
-	"github.com/disaster37/operator-sdk-extra/pkg/controller"
+	"github.com/disaster37/operator-sdk-extra/v2/pkg/controller"
+	"github.com/disaster37/operator-sdk-extra/v2/pkg/controller/remote"
 	"github.com/sirupsen/logrus"
 	kibanaapicrd "github.com/webcenter-fr/elasticsearch-operator/api/kibanaapi/v1"
 	"k8s.io/client-go/tools/record"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	k8scontroller "sigs.k8s.io/controller-runtime/pkg/controller"
+	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
 
 const (
@@ -33,15 +36,15 @@ const (
 // LogstashPipelineReconciler reconciles a Logstash pipeline object
 type LogstashPipelineReconciler struct {
 	controller.Controller
-	controller.RemoteReconciler[*kibanaapicrd.LogstashPipeline, *kbapi.LogstashPipeline, kbhandler.KibanaHandler]
-	controller.RemoteReconcilerAction[*kibanaapicrd.LogstashPipeline, *kbapi.LogstashPipeline, kbhandler.KibanaHandler]
+	remote.RemoteReconciler[*kibanaapicrd.LogstashPipeline, *kbapi.LogstashPipeline, kbhandler.KibanaHandler]
+	remote.RemoteReconcilerAction[*kibanaapicrd.LogstashPipeline, *kbapi.LogstashPipeline, kbhandler.KibanaHandler]
 	name string
 }
 
 func NewLogstashPipelineReconciler(client client.Client, logger *logrus.Entry, recorder record.EventRecorder) controller.Controller {
 	return &LogstashPipelineReconciler{
-		Controller: controller.NewBasicController(),
-		RemoteReconciler: controller.NewBasicRemoteReconciler[*kibanaapicrd.LogstashPipeline, *kbapi.LogstashPipeline, kbhandler.KibanaHandler](
+		Controller: controller.NewController(),
+		RemoteReconciler: remote.NewRemoteReconciler[*kibanaapicrd.LogstashPipeline, *kbapi.LogstashPipeline, kbhandler.KibanaHandler](
 			client,
 			logstashPipelineName,
 			"pipeline.kibanaapi.k8s.webcenter.fr/finalizer",
@@ -74,7 +77,7 @@ func NewLogstashPipelineReconciler(client client.Client, logger *logrus.Entry, r
 //
 // For more details, check Reconcile and its Result here:
 // - https://pkg.go.dev/sigs.k8s.io/controller-runtime@v0.11.0/pkg/reconcile
-func (r *LogstashPipelineReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
+func (r *LogstashPipelineReconciler) Reconcile(ctx context.Context, req reconcile.Request) (reconcile.Result, error) {
 	pipeline := &kibanaapicrd.LogstashPipeline{}
 	data := map[string]any{}
 
@@ -91,5 +94,16 @@ func (r *LogstashPipelineReconciler) Reconcile(ctx context.Context, req ctrl.Req
 func (r *LogstashPipelineReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&kibanaapicrd.LogstashPipeline{}).
+		WithOptions(k8scontroller.Options{
+			RateLimiter: controller.DefaultControllerRateLimiter[reconcile.Request](),
+		}).
 		Complete(r)
+}
+
+func (h *LogstashPipelineReconciler) Client() client.Client {
+	return h.RemoteReconcilerAction.Client()
+}
+
+func (h *LogstashPipelineReconciler) Recorder() record.EventRecorder {
+	return h.RemoteReconcilerAction.Recorder()
 }

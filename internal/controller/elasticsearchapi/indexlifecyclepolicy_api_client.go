@@ -6,19 +6,19 @@ import (
 	"emperror.dev/errors"
 	eshandler "github.com/disaster37/es-handler/v8"
 	"github.com/disaster37/generic-objectmatcher/patch"
-	"github.com/disaster37/operator-sdk-extra/pkg/controller"
+	"github.com/disaster37/operator-sdk-extra/v2/pkg/controller/remote"
 	olivere "github.com/olivere/elastic/v7"
 	elasticsearchapicrd "github.com/webcenter-fr/elasticsearch-operator/api/elasticsearchapi/v1"
 	"sigs.k8s.io/yaml"
 )
 
 type indexLifecyclePolicyApiClient struct {
-	*controller.BasicRemoteExternalReconciler[*elasticsearchapicrd.IndexLifecyclePolicy, *olivere.XPackIlmGetLifecycleResponse, eshandler.ElasticsearchHandler]
+	remote.RemoteExternalReconciler[*elasticsearchapicrd.IndexLifecyclePolicy, *olivere.XPackIlmGetLifecycleResponse, eshandler.ElasticsearchHandler]
 }
 
-func newIndexLifecyclePolicyApiClient(client eshandler.ElasticsearchHandler) controller.RemoteExternalReconciler[*elasticsearchapicrd.IndexLifecyclePolicy, *olivere.XPackIlmGetLifecycleResponse, eshandler.ElasticsearchHandler] {
+func newIndexLifecyclePolicyApiClient(client eshandler.ElasticsearchHandler) remote.RemoteExternalReconciler[*elasticsearchapicrd.IndexLifecyclePolicy, *olivere.XPackIlmGetLifecycleResponse, eshandler.ElasticsearchHandler] {
 	return &indexLifecyclePolicyApiClient{
-		BasicRemoteExternalReconciler: controller.NewBasicRemoteExternalReconciler[*elasticsearchapicrd.IndexLifecyclePolicy, *olivere.XPackIlmGetLifecycleResponse, eshandler.ElasticsearchHandler](client),
+		RemoteExternalReconciler: remote.NewRemoteExternalReconciler[*elasticsearchapicrd.IndexLifecyclePolicy, *olivere.XPackIlmGetLifecycleResponse, eshandler.ElasticsearchHandler](client),
 	}
 }
 
@@ -61,6 +61,6 @@ func (h *indexLifecyclePolicyApiClient) Delete(o *elasticsearchapicrd.IndexLifec
 	return h.Client().ILMDelete(o.GetExternalName())
 }
 
-func (h *indexLifecyclePolicyApiClient) Diff(currentOject *olivere.XPackIlmGetLifecycleResponse, expectedObject *olivere.XPackIlmGetLifecycleResponse, originalObject *olivere.XPackIlmGetLifecycleResponse, ignoresDiff ...patch.CalculateOption) (patchResult *patch.PatchResult, err error) {
+func (h *indexLifecyclePolicyApiClient) Diff(currentOject *olivere.XPackIlmGetLifecycleResponse, expectedObject *olivere.XPackIlmGetLifecycleResponse, originalObject *olivere.XPackIlmGetLifecycleResponse, o *elasticsearchapicrd.IndexLifecyclePolicy, ignoresDiff ...patch.CalculateOption) (patchResult *patch.PatchResult, err error) {
 	return h.Client().ILMDiff(currentOject, expectedObject, originalObject)
 }

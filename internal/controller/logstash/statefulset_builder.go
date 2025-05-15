@@ -20,8 +20,8 @@ import (
 )
 
 // GenerateStatefullset permit to generate statefullset
-func buildStatefulsets(ls *logstashcrd.Logstash, es *elasticsearchcrd.Elasticsearch, secretsChecksum []corev1.Secret, configMapsChecksum []corev1.ConfigMap, isOpenshift bool) (statefullsets []appv1.StatefulSet, err error) {
-	statefullsets = make([]appv1.StatefulSet, 0, 1)
+func buildStatefulsets(ls *logstashcrd.Logstash, es *elasticsearchcrd.Elasticsearch, secretsChecksum []*corev1.Secret, configMapsChecksum []*corev1.ConfigMap, isOpenshift bool) (statefullsets []*appv1.StatefulSet, err error) {
+	statefullsets = make([]*appv1.StatefulSet, 0, 1)
 	checksumAnnotations := map[string]string{}
 
 	// Generate confimaps to know what file to mount
@@ -835,7 +835,7 @@ fi
 		}
 	}
 
-	statefullsets = append(statefullsets, *statefullset)
+	statefullsets = append(statefullsets, statefullset)
 
 	return statefullsets, nil
 }

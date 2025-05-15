@@ -3,7 +3,7 @@ package elasticsearch
 import (
 	"testing"
 
-	"github.com/disaster37/operator-sdk-extra/pkg/test"
+	"github.com/disaster37/operator-sdk-extra/v2/pkg/test"
 	"github.com/stretchr/testify/assert"
 	elasticsearchcrd "github.com/webcenter-fr/elasticsearch-operator/api/elasticsearch/v1"
 	elasticsearchapicrd "github.com/webcenter-fr/elasticsearch-operator/api/elasticsearchapi/v1"
@@ -16,7 +16,7 @@ func TestBuildUserSystem(t *testing.T) {
 	var (
 		o     *elasticsearchcrd.Elasticsearch
 		s     *corev1.Secret
-		users []elasticsearchapicrd.User
+		users []*elasticsearchapicrd.User
 	)
 	sch := scheme.Scheme
 	if err := elasticsearchapicrd.AddToScheme(sch); err != nil {
@@ -44,5 +44,5 @@ func TestBuildUserSystem(t *testing.T) {
 
 	users, err := buildSystemUsers(o, s)
 	assert.NoError(t, err)
-	test.EqualFromYamlFile[*elasticsearchapicrd.User](t, "testdata/user_kibana.yml", &users[0], sch)
+	test.EqualFromYamlFile[*elasticsearchapicrd.User](t, "testdata/user_kibana.yml", users[0], sch)
 }

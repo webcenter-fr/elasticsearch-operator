@@ -15,8 +15,8 @@ import (
 )
 
 // BuildConfigMap permit to generate config maps
-func buildConfigMaps(mb *beatcrd.Metricbeat, es *elasticsearchcrd.Elasticsearch, elasticsearchCASecret *corev1.Secret) (configMaps []corev1.ConfigMap, err error) {
-	configMaps = make([]corev1.ConfigMap, 0, 1)
+func buildConfigMaps(mb *beatcrd.Metricbeat, es *elasticsearchcrd.Elasticsearch, elasticsearchCASecret *corev1.Secret) (configMaps []*corev1.ConfigMap, err error) {
+	configMaps = make([]*corev1.ConfigMap, 0, 1)
 	var cm *corev1.ConfigMap
 
 	// ConfigMap that store configs
@@ -109,7 +109,7 @@ func buildConfigMaps(mb *beatcrd.Metricbeat, es *elasticsearchcrd.Elasticsearch,
 		Data: expectedConfig,
 	}
 
-	configMaps = append(configMaps, *cm)
+	configMaps = append(configMaps, cm)
 
 	// ConfigMap that store modules
 	if mb.Spec.Modules != nil && len(mb.Spec.Modules.Data) > 0 {
@@ -131,7 +131,7 @@ func buildConfigMaps(mb *beatcrd.Metricbeat, es *elasticsearchcrd.Elasticsearch,
 			Data: modules,
 		}
 
-		configMaps = append(configMaps, *cm)
+		configMaps = append(configMaps, cm)
 	}
 
 	return configMaps, nil

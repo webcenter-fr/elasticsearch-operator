@@ -3,8 +3,8 @@ package filebeat
 import (
 	"testing"
 
-	"github.com/disaster37/operator-sdk-extra/pkg/apis"
-	"github.com/disaster37/operator-sdk-extra/pkg/test"
+	"github.com/disaster37/operator-sdk-extra/v2/pkg/apis"
+	"github.com/disaster37/operator-sdk-extra/v2/pkg/test"
 	"github.com/stretchr/testify/assert"
 	beatcrd "github.com/webcenter-fr/elasticsearch-operator/api/beat/v1"
 	elasticsearchcrd "github.com/webcenter-fr/elasticsearch-operator/api/elasticsearch/v1"
@@ -19,7 +19,7 @@ func TestBuildConfigMaps(t *testing.T) {
 	var (
 		o          *beatcrd.Filebeat
 		es         *elasticsearchcrd.Elasticsearch
-		configMaps []corev1.ConfigMap
+		configMaps []*corev1.ConfigMap
 		err        error
 		s          *corev1.Secret
 		ls         *logstashcrd.Logstash
@@ -37,7 +37,7 @@ func TestBuildConfigMaps(t *testing.T) {
 	configMaps, err = buildConfigMaps(o, nil, nil, nil, nil)
 	assert.NoError(t, err)
 	assert.Equal(t, 1, len(configMaps))
-	test.EqualFromYamlFile[*corev1.ConfigMap](t, "testdata/configmap_default.yml", &configMaps[0], scheme.Scheme)
+	test.EqualFromYamlFile[*corev1.ConfigMap](t, "testdata/configmap_default.yml", configMaps[0], scheme.Scheme)
 
 	// When default value and logstasgh output
 	o = &beatcrd.Filebeat{
@@ -66,7 +66,7 @@ func TestBuildConfigMaps(t *testing.T) {
 	configMaps, err = buildConfigMaps(o, nil, ls, nil, nil)
 	assert.NoError(t, err)
 	assert.Equal(t, 1, len(configMaps))
-	test.EqualFromYamlFile[*corev1.ConfigMap](t, "testdata/configmap_default_logstash.yml", &configMaps[0], scheme.Scheme)
+	test.EqualFromYamlFile[*corev1.ConfigMap](t, "testdata/configmap_default_logstash.yml", configMaps[0], scheme.Scheme)
 
 	// When logstasgh output that managed pki with beat certificates
 	o = &beatcrd.Filebeat{
@@ -104,7 +104,7 @@ func TestBuildConfigMaps(t *testing.T) {
 	configMaps, err = buildConfigMaps(o, nil, ls, nil, nil)
 	assert.NoError(t, err)
 	assert.Equal(t, 1, len(configMaps))
-	test.EqualFromYamlFile[*corev1.ConfigMap](t, "testdata/configmap_pki_logstash.yml", &configMaps[0], scheme.Scheme)
+	test.EqualFromYamlFile[*corev1.ConfigMap](t, "testdata/configmap_pki_logstash.yml", configMaps[0], scheme.Scheme)
 
 	// When default value and logstasgh output and logstashCaSecretRef
 	o = &beatcrd.Filebeat{
@@ -146,7 +146,7 @@ func TestBuildConfigMaps(t *testing.T) {
 	configMaps, err = buildConfigMaps(o, nil, ls, nil, s)
 	assert.NoError(t, err)
 	assert.Equal(t, 1, len(configMaps))
-	test.EqualFromYamlFile[*corev1.ConfigMap](t, "testdata/configmap_default_logstash_with_ca_secret.yml", &configMaps[0], scheme.Scheme)
+	test.EqualFromYamlFile[*corev1.ConfigMap](t, "testdata/configmap_default_logstash_with_ca_secret.yml", configMaps[0], scheme.Scheme)
 
 	// When default value and elasticsearch output
 	o = &beatcrd.Filebeat{
@@ -173,7 +173,7 @@ func TestBuildConfigMaps(t *testing.T) {
 	configMaps, err = buildConfigMaps(o, es, nil, nil, nil)
 	assert.NoError(t, err)
 	assert.Equal(t, 1, len(configMaps))
-	test.EqualFromYamlFile[*corev1.ConfigMap](t, "testdata/configmap_default_elasticsearch.yml", &configMaps[0], scheme.Scheme)
+	test.EqualFromYamlFile[*corev1.ConfigMap](t, "testdata/configmap_default_elasticsearch.yml", configMaps[0], scheme.Scheme)
 
 	// When default value and elasticsearch output and elasticsearchCaSecretRef
 	o = &beatcrd.Filebeat{
@@ -205,7 +205,7 @@ func TestBuildConfigMaps(t *testing.T) {
 	configMaps, err = buildConfigMaps(o, nil, nil, s, nil)
 	assert.NoError(t, err)
 	assert.Equal(t, 1, len(configMaps))
-	test.EqualFromYamlFile[*corev1.ConfigMap](t, "testdata/configmap_default_elasticsearch_with_ca_secret.yml", &configMaps[0], scheme.Scheme)
+	test.EqualFromYamlFile[*corev1.ConfigMap](t, "testdata/configmap_default_elasticsearch_with_ca_secret.yml", configMaps[0], scheme.Scheme)
 
 	// When config
 	o = &beatcrd.Filebeat{
@@ -248,7 +248,7 @@ node.value2: test`,
 	configMaps, err = buildConfigMaps(o, es, nil, nil, nil)
 	assert.NoError(t, err)
 	assert.Equal(t, 1, len(configMaps))
-	test.EqualFromYamlFile[*corev1.ConfigMap](t, "testdata/configmap_config.yml", &configMaps[0], scheme.Scheme)
+	test.EqualFromYamlFile[*corev1.ConfigMap](t, "testdata/configmap_config.yml", configMaps[0], scheme.Scheme)
 
 	// When module
 	o = &beatcrd.Filebeat{
@@ -283,5 +283,5 @@ node.value2: test`,
 	configMaps, err = buildConfigMaps(o, nil, nil, nil, nil)
 	assert.NoError(t, err)
 	assert.Equal(t, 2, len(configMaps))
-	test.EqualFromYamlFile[*corev1.ConfigMap](t, "testdata/configmap_module.yml", &configMaps[1], scheme.Scheme)
+	test.EqualFromYamlFile[*corev1.ConfigMap](t, "testdata/configmap_module.yml", configMaps[1], scheme.Scheme)
 }

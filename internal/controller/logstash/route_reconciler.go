@@ -5,17 +5,16 @@ import (
 	"fmt"
 
 	"emperror.dev/errors"
-	"github.com/disaster37/operator-sdk-extra/pkg/apis/shared"
-	"github.com/disaster37/operator-sdk-extra/pkg/controller"
-	"github.com/disaster37/operator-sdk-extra/pkg/helper"
-	"github.com/disaster37/operator-sdk-extra/pkg/object"
+	"github.com/disaster37/operator-sdk-extra/v2/pkg/apis/shared"
+	"github.com/disaster37/operator-sdk-extra/v2/pkg/controller/multiphase"
+	"github.com/disaster37/operator-sdk-extra/v2/pkg/helper"
 	routev1 "github.com/openshift/api/route/v1"
 	"github.com/sirupsen/logrus"
 	logstashcrd "github.com/webcenter-fr/elasticsearch-operator/api/logstash/v1"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/client-go/tools/record"
-	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
 
 const (
@@ -24,12 +23,12 @@ const (
 )
 
 type routeReconciler struct {
-	controller.MultiPhaseStepReconcilerAction
+	multiphase.MultiPhaseStepReconcilerAction[*logstashcrd.Logstash, *routev1.Route]
 }
 
-func newRouteReconciler(client client.Client, recorder record.EventRecorder) (multiPhaseStepReconcilerAction controller.MultiPhaseStepReconcilerAction) {
+func newRouteReconciler(client client.Client, recorder record.EventRecorder) (multiPhaseStepReconcilerAction multiphase.MultiPhaseStepReconcilerAction[*logstashcrd.Logstash, *routev1.Route]) {
 	return &routeReconciler{
-		MultiPhaseStepReconcilerAction: controller.NewBasicMultiPhaseStepReconcilerAction(
+		MultiPhaseStepReconcilerAction: multiphase.NewMultiPhaseStepReconcilerAction[*logstashcrd.Logstash, *routev1.Route](
 			client,
 			RoutePhase,
 			RouteCondition,
@@ -39,10 +38,9 @@ func newRouteReconciler(client client.Client, recorder record.EventRecorder) (mu
 }
 
 // Read existing route
-func (r *routeReconciler) Read(ctx context.Context, resource object.MultiPhaseObject, data map[string]any, logger *logrus.Entry) (read controller.MultiPhaseRead, res ctrl.Result, err error) {
-	o := resource.(*logstashcrd.Logstash)
+func (r *routeReconciler) Read(ctx context.Context, o *logstashcrd.Logstash, data map[string]any, logger *logrus.Entry) (read multiphase.MultiPhaseRead[*routev1.Route], res reconcile.Result, err error) {
 	routeList := &routev1.RouteList{}
-	read = controller.NewBasicMultiPhaseRead()
+	read = multiphase.NewMultiPhaseRead[*routev1.Route]()
 
 	// Read current route
 	labelSelectors, err := labels.Parse(fmt.Sprintf("cluster=%s,%s=true", o.Name, logstashcrd.LogstashAnnotationKey))
@@ -52,14 +50,14 @@ func (r *routeReconciler) Read(ctx context.Context, resource object.MultiPhaseOb
 	if err = r.Client().List(ctx, routeList, &client.ListOptions{Namespace: o.Namespace, LabelSelector: labelSelectors}); err != nil {
 		return read, res, errors.Wrapf(err, "Error when read route")
 	}
-	read.SetCurrentObjects(helper.ToSliceOfObject(routeList.Items))
+	read.SetCurrentObjects(helper.ToSlicePtr(routeList.Items))
 
 	// Generate expected route
 	expectedRoutes, err := buildRoutes(o)
 	if err != nil {
 		return read, res, errors.Wrap(err, "Error when generate route")
 	}
-	read.SetExpectedObjects(helper.ToSliceOfObject(expectedRoutes))
+	read.SetExpectedObjects(expectedRoutes)
 
 	return read, res, nil
 }

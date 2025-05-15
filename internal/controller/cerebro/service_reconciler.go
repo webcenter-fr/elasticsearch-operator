@@ -4,18 +4,16 @@ import (
 	"context"
 
 	"emperror.dev/errors"
-	"github.com/disaster37/operator-sdk-extra/pkg/apis/shared"
-	"github.com/disaster37/operator-sdk-extra/pkg/controller"
-	"github.com/disaster37/operator-sdk-extra/pkg/helper"
-	"github.com/disaster37/operator-sdk-extra/pkg/object"
+	"github.com/disaster37/operator-sdk-extra/v2/pkg/apis/shared"
+	"github.com/disaster37/operator-sdk-extra/v2/pkg/controller/multiphase"
 	"github.com/sirupsen/logrus"
 	cerebrocrd "github.com/webcenter-fr/elasticsearch-operator/api/cerebro/v1"
 	corev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/tools/record"
-	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
 
 const (
@@ -24,12 +22,12 @@ const (
 )
 
 type serviceReconciler struct {
-	controller.MultiPhaseStepReconcilerAction
+	multiphase.MultiPhaseStepReconcilerAction[*cerebrocrd.Cerebro, *corev1.Service]
 }
 
-func newServiceReconciler(client client.Client, recorder record.EventRecorder) (multiPhaseStepReconcilerAction controller.MultiPhaseStepReconcilerAction) {
+func newServiceReconciler(client client.Client, recorder record.EventRecorder) (multiPhaseStepReconcilerAction multiphase.MultiPhaseStepReconcilerAction[*cerebrocrd.Cerebro, *corev1.Service]) {
 	return &serviceReconciler{
-		MultiPhaseStepReconcilerAction: controller.NewBasicMultiPhaseStepReconcilerAction(
+		MultiPhaseStepReconcilerAction: multiphase.NewMultiPhaseStepReconcilerAction[*cerebrocrd.Cerebro, *corev1.Service](
 			client,
 			ServicePhase,
 			ServiceCondition,
@@ -39,10 +37,9 @@ func newServiceReconciler(client client.Client, recorder record.EventRecorder) (
 }
 
 // Read existing services
-func (r *serviceReconciler) Read(ctx context.Context, resource object.MultiPhaseObject, data map[string]any, logger *logrus.Entry) (read controller.MultiPhaseRead, res ctrl.Result, err error) {
-	o := resource.(*cerebrocrd.Cerebro)
+func (r *serviceReconciler) Read(ctx context.Context, o *cerebrocrd.Cerebro, data map[string]any, logger *logrus.Entry) (read multiphase.MultiPhaseRead[*corev1.Service], res reconcile.Result, err error) {
 	service := &corev1.Service{}
-	read = controller.NewBasicMultiPhaseRead()
+	read = multiphase.NewMultiPhaseRead[*corev1.Service]()
 
 	// Read current service
 	if err = r.Client().Get(ctx, types.NamespacedName{Namespace: o.Namespace, Name: GetServiceName(o)}, service); err != nil {
@@ -52,7 +49,7 @@ func (r *serviceReconciler) Read(ctx context.Context, resource object.MultiPhase
 		service = nil
 	}
 	if service != nil {
-		read.SetCurrentObjects([]client.Object{service})
+		read.AddCurrentObject(service)
 	}
 
 	// Generate expected service
@@ -60,7 +57,7 @@ func (r *serviceReconciler) Read(ctx context.Context, resource object.MultiPhase
 	if err != nil {
 		return read, res, errors.Wrap(err, "Error when generate service")
 	}
-	read.SetExpectedObjects(helper.ToSliceOfObject(expectedServices))
+	read.SetExpectedObjects(expectedServices)
 
 	return read, res, nil
 }

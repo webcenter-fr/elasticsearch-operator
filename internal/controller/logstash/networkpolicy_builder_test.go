@@ -3,7 +3,7 @@ package logstash
 import (
 	"testing"
 
-	"github.com/disaster37/operator-sdk-extra/pkg/test"
+	"github.com/disaster37/operator-sdk-extra/v2/pkg/test"
 	"github.com/stretchr/testify/assert"
 	beatcrd "github.com/webcenter-fr/elasticsearch-operator/api/beat/v1"
 	logstashcrd "github.com/webcenter-fr/elasticsearch-operator/api/logstash/v1"
@@ -18,7 +18,7 @@ func TestBuildNetworkPolicies(t *testing.T) {
 	var (
 		err   error
 		o     *logstashcrd.Logstash
-		nps   []networkingv1.NetworkPolicy
+		nps   []*networkingv1.NetworkPolicy
 		oList []client.Object
 	)
 
@@ -72,5 +72,5 @@ func TestBuildNetworkPolicies(t *testing.T) {
 	nps, err = buildNetworkPolicies(o, oList)
 
 	assert.NoError(t, err)
-	test.EqualFromYamlFile[*networkingv1.NetworkPolicy](t, "testdata/networkpolicy_referer.yml", &nps[0], scheme.Scheme)
+	test.EqualFromYamlFile[*networkingv1.NetworkPolicy](t, "testdata/networkpolicy_referer.yml", nps[0], scheme.Scheme)
 }

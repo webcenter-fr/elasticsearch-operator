@@ -1,6 +1,6 @@
 package v1
 
-import "github.com/disaster37/operator-sdk-extra/pkg/object"
+import "github.com/disaster37/operator-sdk-extra/v2/pkg/object"
 
 // GetStatus return the status object
 func (o *RoleMapping) GetStatus() object.RemoteObjectStatus {

@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/disaster37/operator-sdk-extra/pkg/test"
+	"github.com/disaster37/operator-sdk-extra/v2/pkg/test"
 	"github.com/stretchr/testify/assert"
 	elasticsearchcrd "github.com/webcenter-fr/elasticsearch-operator/api/elasticsearch/v1"
 	"github.com/webcenter-fr/elasticsearch-operator/api/shared"
@@ -20,9 +20,9 @@ func TestBuildStatefulset(t *testing.T) {
 	var (
 		o               *elasticsearchcrd.Elasticsearch
 		err             error
-		sts             []appv1.StatefulSet
-		extraSecrets    []corev1.Secret
-		extraConfigMaps []corev1.ConfigMap
+		sts             []*appv1.StatefulSet
+		extraSecrets    []*corev1.Secret
+		extraConfigMaps []*corev1.ConfigMap
 	)
 
 	// With default values
@@ -50,7 +50,7 @@ func TestBuildStatefulset(t *testing.T) {
 
 	sts, err = buildStatefulsets(o, nil, nil, false)
 	assert.NoError(t, err)
-	test.EqualFromYamlFile[*appv1.StatefulSet](t, "testdata/statefullset-all.yml", &sts[0], scheme.Scheme)
+	test.EqualFromYamlFile[*appv1.StatefulSet](t, "testdata/statefullset-all.yml", sts[0], scheme.Scheme)
 
 	// With default values on Openshift
 	o = &elasticsearchcrd.Elasticsearch{
@@ -77,7 +77,7 @@ func TestBuildStatefulset(t *testing.T) {
 
 	sts, err = buildStatefulsets(o, nil, nil, true)
 	assert.NoError(t, err)
-	test.EqualFromYamlFile[*appv1.StatefulSet](t, "testdata/statefullset_all_openshift.yml", &sts[0], scheme.Scheme)
+	test.EqualFromYamlFile[*appv1.StatefulSet](t, "testdata/statefullset_all_openshift.yml", sts[0], scheme.Scheme)
 
 	// With complex config
 	o = &elasticsearchcrd.Elasticsearch{
@@ -246,7 +246,7 @@ func TestBuildStatefulset(t *testing.T) {
 		},
 	}
 
-	extraSecrets = []corev1.Secret{
+	extraSecrets = []*corev1.Secret{
 		{
 			ObjectMeta: metav1.ObjectMeta{
 				Namespace: "default",
@@ -263,7 +263,7 @@ func TestBuildStatefulset(t *testing.T) {
 	if err != nil {
 		t.Fatal(err.Error())
 	}
-	extraConfigMaps = make([]corev1.ConfigMap, 0, len(extraConfigMapsTmp))
+	extraConfigMaps = make([]*corev1.ConfigMap, 0, len(extraConfigMapsTmp))
 	for _, cm := range extraConfigMapsTmp {
 		if cm.Annotations[fmt.Sprintf("%s/type", elasticsearchcrd.ElasticsearchAnnotationKey)] == "config" {
 			extraConfigMaps = append(extraConfigMaps, cm)
@@ -272,9 +272,9 @@ func TestBuildStatefulset(t *testing.T) {
 
 	sts, err = buildStatefulsets(o, extraSecrets, extraConfigMaps, false)
 	assert.NoError(t, err)
-	test.EqualFromYamlFile[*appv1.StatefulSet](t, "testdata/statefullset-master.yml", &sts[0], scheme.Scheme)
-	test.EqualFromYamlFile[*appv1.StatefulSet](t, "testdata/statefullset-data.yml", &sts[1], scheme.Scheme)
-	test.EqualFromYamlFile[*appv1.StatefulSet](t, "testdata/statefullset-client.yml", &sts[2], scheme.Scheme)
+	test.EqualFromYamlFile[*appv1.StatefulSet](t, "testdata/statefullset-master.yml", sts[0], scheme.Scheme)
+	test.EqualFromYamlFile[*appv1.StatefulSet](t, "testdata/statefullset-data.yml", sts[1], scheme.Scheme)
+	test.EqualFromYamlFile[*appv1.StatefulSet](t, "testdata/statefullset-client.yml", sts[2], scheme.Scheme)
 
 	// When secret for certificates is set
 	o = &elasticsearchcrd.Elasticsearch{
@@ -305,7 +305,7 @@ func TestBuildStatefulset(t *testing.T) {
 		},
 	}
 
-	extraSecrets = []corev1.Secret{
+	extraSecrets = []*corev1.Secret{
 		{
 			ObjectMeta: metav1.ObjectMeta{
 				Namespace: "default",
@@ -338,7 +338,7 @@ func TestBuildStatefulset(t *testing.T) {
 	if err != nil {
 		t.Fatal(err.Error())
 	}
-	extraConfigMaps = make([]corev1.ConfigMap, 0, len(extraConfigMapsTmp))
+	extraConfigMaps = make([]*corev1.ConfigMap, 0, len(extraConfigMapsTmp))
 	for _, cm := range extraConfigMapsTmp {
 		if cm.Annotations[fmt.Sprintf("%s/type", elasticsearchcrd.ElasticsearchAnnotationKey)] == "config" {
 			extraConfigMaps = append(extraConfigMaps, cm)
@@ -347,7 +347,7 @@ func TestBuildStatefulset(t *testing.T) {
 
 	sts, err = buildStatefulsets(o, extraSecrets, extraConfigMaps, false)
 	assert.NoError(t, err)
-	test.EqualFromYamlFile[*appv1.StatefulSet](t, "testdata/statefullset-all-external-tls.yml", &sts[0], scheme.Scheme)
+	test.EqualFromYamlFile[*appv1.StatefulSet](t, "testdata/statefullset-all-external-tls.yml", sts[0], scheme.Scheme)
 }
 
 func TestComputeJavaOpts(t *testing.T) {

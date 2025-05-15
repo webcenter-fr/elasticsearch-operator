@@ -9,7 +9,7 @@ import (
 // buildRoleBindings permit to generate RoleBinding object
 // It return nil if we are not on Openshift
 // We only need roleBinding on Openshift because of we need to binding it with scc
-func buildRoleBindings(es *elasticsearchcrd.Elasticsearch, isOpenshift bool) (rolesBindings []rbacv1.RoleBinding, err error) {
+func buildRoleBindings(es *elasticsearchcrd.Elasticsearch, isOpenshift bool) (rolesBindings []*rbacv1.RoleBinding, err error) {
 	if !isOpenshift {
 		return nil, nil
 	}
@@ -19,7 +19,7 @@ func buildRoleBindings(es *elasticsearchcrd.Elasticsearch, isOpenshift bool) (ro
 		clusterRoleName = "system:openshift:scc:privileged"
 	}
 
-	rolesBindings = []rbacv1.RoleBinding{
+	rolesBindings = []*rbacv1.RoleBinding{
 		{
 			ObjectMeta: metav1.ObjectMeta{
 				Namespace:   es.Namespace,

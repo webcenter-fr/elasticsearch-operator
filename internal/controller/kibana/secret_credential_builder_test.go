@@ -12,7 +12,7 @@ import (
 func TestBuildCredentialSecret(t *testing.T) {
 	var (
 		err      error
-		s        []corev1.Secret
+		s        []*corev1.Secret
 		o        *kibanacrd.Kibana
 		esSecret *corev1.Secret
 	)

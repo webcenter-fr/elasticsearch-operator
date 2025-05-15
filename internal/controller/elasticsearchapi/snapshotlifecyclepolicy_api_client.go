@@ -3,17 +3,17 @@ package elasticsearchapi
 import (
 	eshandler "github.com/disaster37/es-handler/v8"
 	"github.com/disaster37/generic-objectmatcher/patch"
-	"github.com/disaster37/operator-sdk-extra/pkg/controller"
+	"github.com/disaster37/operator-sdk-extra/v2/pkg/controller/remote"
 	elasticsearchapicrd "github.com/webcenter-fr/elasticsearch-operator/api/elasticsearchapi/v1"
 )
 
 type snapshotLifecyclePolicyApiClient struct {
-	*controller.BasicRemoteExternalReconciler[*elasticsearchapicrd.SnapshotLifecyclePolicy, *eshandler.SnapshotLifecyclePolicySpec, eshandler.ElasticsearchHandler]
+	remote.RemoteExternalReconciler[*elasticsearchapicrd.SnapshotLifecyclePolicy, *eshandler.SnapshotLifecyclePolicySpec, eshandler.ElasticsearchHandler]
 }
 
-func newSnapshotLifecyclePolicyApiClient(client eshandler.ElasticsearchHandler) controller.RemoteExternalReconciler[*elasticsearchapicrd.SnapshotLifecyclePolicy, *eshandler.SnapshotLifecyclePolicySpec, eshandler.ElasticsearchHandler] {
+func newSnapshotLifecyclePolicyApiClient(client eshandler.ElasticsearchHandler) remote.RemoteExternalReconciler[*elasticsearchapicrd.SnapshotLifecyclePolicy, *eshandler.SnapshotLifecyclePolicySpec, eshandler.ElasticsearchHandler] {
 	return &snapshotLifecyclePolicyApiClient{
-		BasicRemoteExternalReconciler: controller.NewBasicRemoteExternalReconciler[*elasticsearchapicrd.SnapshotLifecyclePolicy, *eshandler.SnapshotLifecyclePolicySpec, eshandler.ElasticsearchHandler](client),
+		RemoteExternalReconciler: remote.NewRemoteExternalReconciler[*elasticsearchapicrd.SnapshotLifecyclePolicy, *eshandler.SnapshotLifecyclePolicySpec, eshandler.ElasticsearchHandler](client),
 	}
 }
 
@@ -66,6 +66,6 @@ func (h *snapshotLifecyclePolicyApiClient) Delete(o *elasticsearchapicrd.Snapsho
 	return h.Client().SLMDelete(o.GetExternalName())
 }
 
-func (h *snapshotLifecyclePolicyApiClient) Diff(currentOject *eshandler.SnapshotLifecyclePolicySpec, expectedObject *eshandler.SnapshotLifecyclePolicySpec, originalObject *eshandler.SnapshotLifecyclePolicySpec, ignoresDiff ...patch.CalculateOption) (patchResult *patch.PatchResult, err error) {
+func (h *snapshotLifecyclePolicyApiClient) Diff(currentOject *eshandler.SnapshotLifecyclePolicySpec, expectedObject *eshandler.SnapshotLifecyclePolicySpec, originalObject *eshandler.SnapshotLifecyclePolicySpec, o *elasticsearchapicrd.SnapshotLifecyclePolicy, ignoresDiff ...patch.CalculateOption) (patchResult *patch.PatchResult, err error) {
 	return h.Client().SLMDiff(currentOject, expectedObject, originalObject)
 }

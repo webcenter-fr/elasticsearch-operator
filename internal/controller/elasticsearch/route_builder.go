@@ -13,12 +13,12 @@ import (
 // buildRoutes permit to generate Route object
 // It return error if route spec is not provided
 // It return nil if route is disabled
-func buildRoutes(es *elasticsearchcrd.Elasticsearch, secretTlsApi *corev1.Secret) (routes []routev1.Route, err error) {
+func buildRoutes(es *elasticsearchcrd.Elasticsearch, secretTlsApi *corev1.Secret) (routes []*routev1.Route, err error) {
 	if !es.IsRouteEnabled() {
 		return nil, nil
 	}
 
-	routes = make([]routev1.Route, 0, 1)
+	routes = make([]*routev1.Route, 0, 1)
 
 	if es.Spec.Endpoint.Route.Host == "" {
 		return nil, errors.New("endpoint.route.host must be provided")
@@ -96,7 +96,7 @@ func buildRoutes(es *elasticsearchcrd.Elasticsearch, secretTlsApi *corev1.Secret
 		}
 	}
 
-	routes = append(routes, *route)
+	routes = append(routes, route)
 
 	return routes, nil
 }

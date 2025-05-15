@@ -11,8 +11,8 @@ import (
 )
 
 // BuildNetworkPolicy permit to generate Network policy object
-func buildNetworkPolicies(kb *kibanacrd.Kibana) (networkPolicies []networkingv1.NetworkPolicy, err error) {
-	networkPolicies = make([]networkingv1.NetworkPolicy, 0, 1)
+func buildNetworkPolicies(kb *kibanacrd.Kibana) (networkPolicies []*networkingv1.NetworkPolicy, err error) {
+	networkPolicies = make([]*networkingv1.NetworkPolicy, 0, 1)
 	tcpProtocol := v1.ProtocolTCP
 
 	// Compute network policy to allow operator to access on Kibana API
@@ -71,7 +71,7 @@ func buildNetworkPolicies(kb *kibanacrd.Kibana) (networkPolicies []networkingv1.
 		}
 	}
 
-	networkPolicies = append(networkPolicies, *networkPolicy)
+	networkPolicies = append(networkPolicies, networkPolicy)
 
 	return networkPolicies, nil
 }

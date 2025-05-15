@@ -4,18 +4,16 @@ import (
 	"context"
 
 	"emperror.dev/errors"
-	"github.com/disaster37/operator-sdk-extra/pkg/apis/shared"
-	"github.com/disaster37/operator-sdk-extra/pkg/controller"
-	"github.com/disaster37/operator-sdk-extra/pkg/helper"
-	"github.com/disaster37/operator-sdk-extra/pkg/object"
+	"github.com/disaster37/operator-sdk-extra/v2/pkg/apis/shared"
+	"github.com/disaster37/operator-sdk-extra/v2/pkg/controller/multiphase"
 	"github.com/sirupsen/logrus"
 	elasticsearchcrd "github.com/webcenter-fr/elasticsearch-operator/api/elasticsearch/v1"
 	networkingv1 "k8s.io/api/networking/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/tools/record"
-	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
 
 const (
@@ -24,12 +22,12 @@ const (
 )
 
 type ingressReconciler struct {
-	controller.MultiPhaseStepReconcilerAction
+	multiphase.MultiPhaseStepReconcilerAction[*elasticsearchcrd.Elasticsearch, *networkingv1.Ingress]
 }
 
-func newIngressReconciler(client client.Client, recorder record.EventRecorder) (multiPhaseStepReconcilerAction controller.MultiPhaseStepReconcilerAction) {
+func newIngressReconciler(client client.Client, recorder record.EventRecorder) (multiPhaseStepReconcilerAction multiphase.MultiPhaseStepReconcilerAction[*elasticsearchcrd.Elasticsearch, *networkingv1.Ingress]) {
 	return &ingressReconciler{
-		MultiPhaseStepReconcilerAction: controller.NewBasicMultiPhaseStepReconcilerAction(
+		MultiPhaseStepReconcilerAction: multiphase.NewMultiPhaseStepReconcilerAction[*elasticsearchcrd.Elasticsearch, *networkingv1.Ingress](
 			client,
 			IngressPhase,
 			IngressCondition,
@@ -39,10 +37,9 @@ func newIngressReconciler(client client.Client, recorder record.EventRecorder) (
 }
 
 // Read existing ingress
-func (r *ingressReconciler) Read(ctx context.Context, resource object.MultiPhaseObject, data map[string]any, logger *logrus.Entry) (read controller.MultiPhaseRead, res ctrl.Result, err error) {
-	o := resource.(*elasticsearchcrd.Elasticsearch)
+func (r *ingressReconciler) Read(ctx context.Context, o *elasticsearchcrd.Elasticsearch, data map[string]any, logger *logrus.Entry) (read multiphase.MultiPhaseRead[*networkingv1.Ingress], res reconcile.Result, err error) {
 	ingress := &networkingv1.Ingress{}
-	read = controller.NewBasicMultiPhaseRead()
+	read = multiphase.NewMultiPhaseRead[*networkingv1.Ingress]()
 
 	// Read current ingress
 	if err = r.Client().Get(ctx, types.NamespacedName{Namespace: o.Namespace, Name: GetIngressName(o)}, ingress); err != nil {
@@ -52,7 +49,7 @@ func (r *ingressReconciler) Read(ctx context.Context, resource object.MultiPhase
 		ingress = nil
 	}
 	if ingress != nil {
-		read.SetCurrentObjects([]client.Object{ingress})
+		read.AddCurrentObject(ingress)
 	}
 
 	// Generate expected ingress
@@ -60,7 +57,7 @@ func (r *ingressReconciler) Read(ctx context.Context, resource object.MultiPhase
 	if err != nil {
 		return read, res, errors.Wrap(err, "Error when generate ingress")
 	}
-	read.SetExpectedObjects(helper.ToSliceOfObject(expectedIngresses))
+	read.SetExpectedObjects(expectedIngresses)
 
 	return read, res, nil
 }

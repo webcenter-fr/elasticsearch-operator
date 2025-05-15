@@ -9,9 +9,9 @@ import (
 	eshandler "github.com/disaster37/es-handler/v8"
 	"github.com/disaster37/es-handler/v8/mocks"
 	"github.com/disaster37/generic-objectmatcher/patch"
-	"github.com/disaster37/operator-sdk-extra/pkg/controller"
-	"github.com/disaster37/operator-sdk-extra/pkg/helper"
-	"github.com/disaster37/operator-sdk-extra/pkg/test"
+	"github.com/disaster37/operator-sdk-extra/v2/pkg/controller"
+	"github.com/disaster37/operator-sdk-extra/v2/pkg/helper"
+	"github.com/disaster37/operator-sdk-extra/v2/pkg/test"
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
 	elasticsearchapicrd "github.com/webcenter-fr/elasticsearch-operator/api/elasticsearchapi/v1"
@@ -29,11 +29,10 @@ func (t *ElasticsearchapiControllerTestSuite) TestRoleReconciler() {
 		Name:      "t-role-" + helper.RandomString(10),
 		Namespace: "default",
 	}
-	role := &elasticsearchapicrd.Role{}
 	data := map[string]any{}
 
-	testCase := test.NewTestCase(t.T(), t.k8sClient, key, role, 5*time.Second, data)
-	testCase.Steps = []test.TestStep{
+	testCase := test.NewTestCase[*elasticsearchapicrd.Role](t.T(), t.k8sClient, key, 5*time.Second, data)
+	testCase.Steps = []test.TestStep[*elasticsearchapicrd.Role]{
 		doCreateRoleStep(),
 		doUpdateRoleStep(),
 		doDeleteRoleStep(),
@@ -124,10 +123,10 @@ func doMockRole(mockES *mocks.MockElasticsearchHandler) func(stepName *string, d
 	}
 }
 
-func doCreateRoleStep() test.TestStep {
-	return test.TestStep{
+func doCreateRoleStep() test.TestStep[*elasticsearchapicrd.Role] {
+	return test.TestStep[*elasticsearchapicrd.Role]{
 		Name: "create",
-		Do: func(c client.Client, key types.NamespacedName, o client.Object, data map[string]any) (err error) {
+		Do: func(c client.Client, key types.NamespacedName, o *elasticsearchapicrd.Role, data map[string]any) (err error) {
 			logrus.Infof("=== Add new role %s/%s ===\n\n", key.Namespace, key.Name)
 
 			role := &elasticsearchapicrd.Role{
@@ -150,7 +149,7 @@ func doCreateRoleStep() test.TestStep {
 
 			return nil
 		},
-		Check: func(t *testing.T, c client.Client, key types.NamespacedName, o client.Object, data map[string]any) (err error) {
+		Check: func(t *testing.T, c client.Client, key types.NamespacedName, o *elasticsearchapicrd.Role, data map[string]any) (err error) {
 			role := &elasticsearchapicrd.Role{}
 			isCreated := false
 
@@ -177,26 +176,25 @@ func doCreateRoleStep() test.TestStep {
 	}
 }
 
-func doUpdateRoleStep() test.TestStep {
-	return test.TestStep{
+func doUpdateRoleStep() test.TestStep[*elasticsearchapicrd.Role] {
+	return test.TestStep[*elasticsearchapicrd.Role]{
 		Name: "update",
-		Do: func(c client.Client, key types.NamespacedName, o client.Object, data map[string]any) (err error) {
+		Do: func(c client.Client, key types.NamespacedName, o *elasticsearchapicrd.Role, data map[string]any) (err error) {
 			logrus.Infof("=== Update role %s/%s ===\n\n", key.Namespace, key.Name)
 
 			if o == nil {
 				return errors.New("Role is null")
 			}
-			role := o.(*elasticsearchapicrd.Role)
 
-			data["lastGeneration"] = role.GetStatus().GetObservedGeneration()
-			role.Spec.RunAs = []string{"test2"}
-			if err = c.Update(context.Background(), role); err != nil {
+			data["lastGeneration"] = o.GetStatus().GetObservedGeneration()
+			o.Spec.RunAs = []string{"test2"}
+			if err = c.Update(context.Background(), o); err != nil {
 				return err
 			}
 
 			return nil
 		},
-		Check: func(t *testing.T, c client.Client, key types.NamespacedName, o client.Object, data map[string]any) (err error) {
+		Check: func(t *testing.T, c client.Client, key types.NamespacedName, o *elasticsearchapicrd.Role, data map[string]any) (err error) {
 			role := &elasticsearchapicrd.Role{}
 			isUpdated := false
 
@@ -225,25 +223,24 @@ func doUpdateRoleStep() test.TestStep {
 	}
 }
 
-func doDeleteRoleStep() test.TestStep {
-	return test.TestStep{
+func doDeleteRoleStep() test.TestStep[*elasticsearchapicrd.Role] {
+	return test.TestStep[*elasticsearchapicrd.Role]{
 		Name: "delete",
-		Do: func(c client.Client, key types.NamespacedName, o client.Object, data map[string]any) (err error) {
+		Do: func(c client.Client, key types.NamespacedName, o *elasticsearchapicrd.Role, data map[string]any) (err error) {
 			logrus.Infof("=== Delete role %s/%s ===\n\n", key.Namespace, key.Name)
 
 			if o == nil {
 				return errors.New("Role is null")
 			}
-			role := o.(*elasticsearchapicrd.Role)
 
 			wait := int64(0)
-			if err = c.Delete(context.Background(), role, &client.DeleteOptions{GracePeriodSeconds: &wait}); err != nil {
+			if err = c.Delete(context.Background(), o, &client.DeleteOptions{GracePeriodSeconds: &wait}); err != nil {
 				return err
 			}
 
 			return nil
 		},
-		Check: func(t *testing.T, c client.Client, key types.NamespacedName, o client.Object, data map[string]any) (err error) {
+		Check: func(t *testing.T, c client.Client, key types.NamespacedName, o *elasticsearchapicrd.Role, data map[string]any) (err error) {
 			role := &elasticsearchapicrd.Role{}
 			isDeleted := false
 

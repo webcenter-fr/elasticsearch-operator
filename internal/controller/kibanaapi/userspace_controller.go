@@ -18,12 +18,15 @@ import (
 
 	"github.com/disaster37/go-kibana-rest/v8/kbapi"
 	kbhandler "github.com/disaster37/kb-handler/v8"
-	"github.com/disaster37/operator-sdk-extra/pkg/controller"
+	"github.com/disaster37/operator-sdk-extra/v2/pkg/controller"
+	"github.com/disaster37/operator-sdk-extra/v2/pkg/controller/remote"
 	"github.com/sirupsen/logrus"
 	kibanaapicrd "github.com/webcenter-fr/elasticsearch-operator/api/kibanaapi/v1"
 	"k8s.io/client-go/tools/record"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	k8scontroller "sigs.k8s.io/controller-runtime/pkg/controller"
+	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
 
 const (
@@ -33,15 +36,15 @@ const (
 // UserSpaceReconciler reconciles a user space object
 type UserSpaceReconciler struct {
 	controller.Controller
-	controller.RemoteReconciler[*kibanaapicrd.UserSpace, *kbapi.KibanaSpace, kbhandler.KibanaHandler]
-	controller.RemoteReconcilerAction[*kibanaapicrd.UserSpace, *kbapi.KibanaSpace, kbhandler.KibanaHandler]
+	remote.RemoteReconciler[*kibanaapicrd.UserSpace, *kbapi.KibanaSpace, kbhandler.KibanaHandler]
+	remote.RemoteReconcilerAction[*kibanaapicrd.UserSpace, *kbapi.KibanaSpace, kbhandler.KibanaHandler]
 	name string
 }
 
 func NewUserSpaceReconciler(client client.Client, logger *logrus.Entry, recorder record.EventRecorder) controller.Controller {
 	return &UserSpaceReconciler{
-		Controller: controller.NewBasicController(),
-		RemoteReconciler: controller.NewBasicRemoteReconciler[*kibanaapicrd.UserSpace, *kbapi.KibanaSpace, kbhandler.KibanaHandler](
+		Controller: controller.NewController(),
+		RemoteReconciler: remote.NewRemoteReconciler[*kibanaapicrd.UserSpace, *kbapi.KibanaSpace, kbhandler.KibanaHandler](
 			client,
 			userSpaceName,
 			"space.kibanaapi.k8s.webcenter.fr/finalizer",
@@ -74,7 +77,7 @@ func NewUserSpaceReconciler(client client.Client, logger *logrus.Entry, recorder
 //
 // For more details, check Reconcile and its Result here:
 // - https://pkg.go.dev/sigs.k8s.io/controller-runtime@v0.11.0/pkg/reconcile
-func (r *UserSpaceReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
+func (r *UserSpaceReconciler) Reconcile(ctx context.Context, req reconcile.Request) (reconcile.Result, error) {
 	space := &kibanaapicrd.UserSpace{}
 	data := map[string]any{}
 
@@ -91,5 +94,16 @@ func (r *UserSpaceReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 func (r *UserSpaceReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&kibanaapicrd.UserSpace{}).
+		WithOptions(k8scontroller.Options{
+			RateLimiter: controller.DefaultControllerRateLimiter[reconcile.Request](),
+		}).
 		Complete(r)
+}
+
+func (h *UserSpaceReconciler) Client() client.Client {
+	return h.RemoteReconcilerAction.Client()
+}
+
+func (h *UserSpaceReconciler) Recorder() record.EventRecorder {
+	return h.RemoteReconcilerAction.Recorder()
 }

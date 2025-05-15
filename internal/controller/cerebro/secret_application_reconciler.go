@@ -4,18 +4,16 @@ import (
 	"context"
 
 	"emperror.dev/errors"
-	"github.com/disaster37/operator-sdk-extra/pkg/apis/shared"
-	"github.com/disaster37/operator-sdk-extra/pkg/controller"
-	"github.com/disaster37/operator-sdk-extra/pkg/helper"
-	"github.com/disaster37/operator-sdk-extra/pkg/object"
+	"github.com/disaster37/operator-sdk-extra/v2/pkg/apis/shared"
+	"github.com/disaster37/operator-sdk-extra/v2/pkg/controller/multiphase"
 	"github.com/sirupsen/logrus"
 	cerebrocrd "github.com/webcenter-fr/elasticsearch-operator/api/cerebro/v1"
 	corev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/tools/record"
-	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
 
 const (
@@ -24,12 +22,12 @@ const (
 )
 
 type applicationSecretReconciler struct {
-	controller.MultiPhaseStepReconcilerAction
+	multiphase.MultiPhaseStepReconcilerAction[*cerebrocrd.Cerebro, *corev1.Secret]
 }
 
-func newApplicationSecretReconciler(client client.Client, recorder record.EventRecorder) (multiPhaseStepReconcilerAction controller.MultiPhaseStepReconcilerAction) {
+func newApplicationSecretReconciler(client client.Client, recorder record.EventRecorder) (multiPhaseStepReconcilerAction multiphase.MultiPhaseStepReconcilerAction[*cerebrocrd.Cerebro, *corev1.Secret]) {
 	return &applicationSecretReconciler{
-		MultiPhaseStepReconcilerAction: controller.NewBasicMultiPhaseStepReconcilerAction(
+		MultiPhaseStepReconcilerAction: multiphase.NewMultiPhaseStepReconcilerAction[*cerebrocrd.Cerebro, *corev1.Secret](
 			client,
 			ApplicationSecretPhase,
 			ApplicationSecretCondition,
@@ -39,10 +37,9 @@ func newApplicationSecretReconciler(client client.Client, recorder record.EventR
 }
 
 // Read existing secret
-func (r *applicationSecretReconciler) Read(ctx context.Context, resource object.MultiPhaseObject, data map[string]any, logger *logrus.Entry) (read controller.MultiPhaseRead, res ctrl.Result, err error) {
-	o := resource.(*cerebrocrd.Cerebro)
+func (r *applicationSecretReconciler) Read(ctx context.Context, o *cerebrocrd.Cerebro, data map[string]any, logger *logrus.Entry) (read multiphase.MultiPhaseRead[*corev1.Secret], res reconcile.Result, err error) {
 	currentApplicationSecret := &corev1.Secret{}
-	read = controller.NewBasicMultiPhaseRead()
+	read = multiphase.NewMultiPhaseRead[*corev1.Secret]()
 
 	// Read current secret
 	if err = r.Client().Get(ctx, types.NamespacedName{Namespace: o.Namespace, Name: GetSecretNameForApplication(o)}, currentApplicationSecret); err != nil {
@@ -52,7 +49,7 @@ func (r *applicationSecretReconciler) Read(ctx context.Context, resource object.
 		currentApplicationSecret = nil
 	}
 	if currentApplicationSecret != nil {
-		read.SetCurrentObjects([]client.Object{currentApplicationSecret})
+		read.AddCurrentObject(currentApplicationSecret)
 	}
 
 	// Generate expected secret
@@ -66,7 +63,7 @@ func (r *applicationSecretReconciler) Read(ctx context.Context, resource object.
 		expectedApplicationSecrets[0].Data = currentApplicationSecret.Data
 	}
 
-	read.SetExpectedObjects(helper.ToSliceOfObject(expectedApplicationSecrets))
+	read.SetExpectedObjects(expectedApplicationSecrets)
 
 	return read, res, nil
 }

@@ -8,8 +8,8 @@ import (
 	"time"
 
 	"github.com/disaster37/k8s-objectmatcher/patch"
-	"github.com/disaster37/operator-sdk-extra/pkg/helper"
-	"github.com/disaster37/operator-sdk-extra/pkg/test"
+	"github.com/disaster37/operator-sdk-extra/v2/pkg/helper"
+	"github.com/disaster37/operator-sdk-extra/v2/pkg/test"
 	monitoringv1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1"
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
@@ -34,11 +34,10 @@ func (t *ElasticsearchControllerTestSuite) TestElasticsearchController() {
 		Name:      "t-es-" + helper.RandomString(10),
 		Namespace: "default",
 	}
-	es := &elasticsearchcrd.Elasticsearch{}
 	data := map[string]any{}
 
-	testCase := test.NewTestCase(t.T(), t.k8sClient, key, es, 5*time.Second, data)
-	testCase.Steps = []test.TestStep{
+	testCase := test.NewTestCase[*elasticsearchcrd.Elasticsearch](t.T(), t.k8sClient, key, 5*time.Second, data)
+	testCase.Steps = []test.TestStep[*elasticsearchcrd.Elasticsearch]{
 		doCreateElasticsearchStep(),
 		doUpdateElasticsearchStep(),
 		doUpdateElasticsearchIncreaseNodeGroupStep(),
@@ -51,10 +50,10 @@ func (t *ElasticsearchControllerTestSuite) TestElasticsearchController() {
 	testCase.Run()
 }
 
-func doCreateElasticsearchStep() test.TestStep {
-	return test.TestStep{
+func doCreateElasticsearchStep() test.TestStep[*elasticsearchcrd.Elasticsearch] {
+	return test.TestStep[*elasticsearchcrd.Elasticsearch]{
 		Name: "create",
-		Do: func(c client.Client, key types.NamespacedName, o client.Object, data map[string]any) (err error) {
+		Do: func(c client.Client, key types.NamespacedName, o *elasticsearchcrd.Elasticsearch, data map[string]any) (err error) {
 			logrus.Infof("=== Add new Elasticsearch cluster %s/%s ===\n\n", key.Namespace, key.Name)
 
 			es := &elasticsearchcrd.Elasticsearch{
@@ -125,7 +124,7 @@ func doCreateElasticsearchStep() test.TestStep {
 
 			return nil
 		},
-		Check: func(t *testing.T, c client.Client, key types.NamespacedName, o client.Object, data map[string]any) (err error) {
+		Check: func(t *testing.T, c client.Client, key types.NamespacedName, o *elasticsearchcrd.Elasticsearch, data map[string]any) (err error) {
 			es := &elasticsearchcrd.Elasticsearch{}
 			var (
 				s          *corev1.Secret
@@ -330,35 +329,34 @@ func doCreateElasticsearchStep() test.TestStep {
 	}
 }
 
-func doUpdateElasticsearchStep() test.TestStep {
-	return test.TestStep{
+func doUpdateElasticsearchStep() test.TestStep[*elasticsearchcrd.Elasticsearch] {
+	return test.TestStep[*elasticsearchcrd.Elasticsearch]{
 		Name: "update",
-		Do: func(c client.Client, key types.NamespacedName, o client.Object, data map[string]any) (err error) {
+		Do: func(c client.Client, key types.NamespacedName, o *elasticsearchcrd.Elasticsearch, data map[string]any) (err error) {
 			logrus.Infof("=== Update Elasticsearch cluster %s/%s ===\n\n", key.Namespace, key.Name)
 
 			if o == nil {
 				return errors.New("Elasticsearch is null")
 			}
-			es := o.(*elasticsearchcrd.Elasticsearch)
 
 			// Add labels must force to update all resources
-			es.Labels = map[string]string{
+			o.Labels = map[string]string{
 				"test": "fu",
 			}
 			// Change spec to track generation
-			es.Spec.GlobalNodeGroup.Labels = map[string]string{
+			o.Spec.GlobalNodeGroup.Labels = map[string]string{
 				"test": "fu",
 			}
 
-			data["lastGeneration"] = es.GetStatus().GetObservedGeneration()
+			data["lastGeneration"] = o.GetStatus().GetObservedGeneration()
 
-			if err = c.Update(context.Background(), es); err != nil {
+			if err = c.Update(context.Background(), o); err != nil {
 				return err
 			}
 
 			return nil
 		},
-		Check: func(t *testing.T, c client.Client, key types.NamespacedName, o client.Object, data map[string]any) (err error) {
+		Check: func(t *testing.T, c client.Client, key types.NamespacedName, o *elasticsearchcrd.Elasticsearch, data map[string]any) (err error) {
 			es := &elasticsearchcrd.Elasticsearch{}
 
 			var (
@@ -584,19 +582,18 @@ func doUpdateElasticsearchStep() test.TestStep {
 	}
 }
 
-func doUpdateElasticsearchIncreaseNodeGroupStep() test.TestStep {
-	return test.TestStep{
+func doUpdateElasticsearchIncreaseNodeGroupStep() test.TestStep[*elasticsearchcrd.Elasticsearch] {
+	return test.TestStep[*elasticsearchcrd.Elasticsearch]{
 		Name: "update",
-		Do: func(c client.Client, key types.NamespacedName, o client.Object, data map[string]any) (err error) {
+		Do: func(c client.Client, key types.NamespacedName, o *elasticsearchcrd.Elasticsearch, data map[string]any) (err error) {
 			logrus.Infof("=== Increase NodeGroup on Elasticsearch cluster %s/%s ===\n\n", key.Namespace, key.Name)
 
 			if o == nil {
 				return errors.New("Elasticsearch is null")
 			}
-			es := o.(*elasticsearchcrd.Elasticsearch)
 
 			// Add labels must force to update all resources
-			es.Spec.NodeGroups = append(es.Spec.NodeGroups, elasticsearchcrd.ElasticsearchNodeGroupSpec{
+			o.Spec.NodeGroups = append(o.Spec.NodeGroups, elasticsearchcrd.ElasticsearchNodeGroupSpec{
 				Name: "data",
 				Roles: []string{
 					"data",
@@ -606,15 +603,15 @@ func doUpdateElasticsearchIncreaseNodeGroupStep() test.TestStep {
 				},
 			})
 
-			data["lastGeneration"] = es.GetStatus().GetObservedGeneration()
+			data["lastGeneration"] = o.GetStatus().GetObservedGeneration()
 
-			if err = c.Update(context.Background(), es); err != nil {
+			if err = c.Update(context.Background(), o); err != nil {
 				return err
 			}
 
 			return nil
 		},
-		Check: func(t *testing.T, c client.Client, key types.NamespacedName, o client.Object, data map[string]any) (err error) {
+		Check: func(t *testing.T, c client.Client, key types.NamespacedName, o *elasticsearchcrd.Elasticsearch, data map[string]any) (err error) {
 			es := &elasticsearchcrd.Elasticsearch{}
 
 			var (
@@ -822,32 +819,31 @@ func doUpdateElasticsearchIncreaseNodeGroupStep() test.TestStep {
 	}
 }
 
-func doUpdateElasticsearchDecreaseNodeGroupStep() test.TestStep {
-	return test.TestStep{
+func doUpdateElasticsearchDecreaseNodeGroupStep() test.TestStep[*elasticsearchcrd.Elasticsearch] {
+	return test.TestStep[*elasticsearchcrd.Elasticsearch]{
 		Name: "update",
-		Do: func(c client.Client, key types.NamespacedName, o client.Object, data map[string]any) (err error) {
+		Do: func(c client.Client, key types.NamespacedName, o *elasticsearchcrd.Elasticsearch, data map[string]any) (err error) {
 			logrus.Infof("=== Decrease nodeGroup on Elasticsearch cluster %s/%s ===\n\n", key.Namespace, key.Name)
 
 			if o == nil {
 				return errors.New("Elasticsearch is null")
 			}
-			es := o.(*elasticsearchcrd.Elasticsearch)
 
-			data["lastGeneration"] = es.GetStatus().GetObservedGeneration()
-			data["oldES"] = es.DeepCopy()
+			data["lastGeneration"] = o.GetStatus().GetObservedGeneration()
+			data["oldES"] = o.DeepCopy()
 
 			// Add labels must force to update all resources
-			es.Spec.NodeGroups = []elasticsearchcrd.ElasticsearchNodeGroupSpec{
-				es.Spec.NodeGroups[0],
+			o.Spec.NodeGroups = []elasticsearchcrd.ElasticsearchNodeGroupSpec{
+				o.Spec.NodeGroups[0],
 			}
 
-			if err = c.Update(context.Background(), es); err != nil {
+			if err = c.Update(context.Background(), o); err != nil {
 				return err
 			}
 
 			return nil
 		},
-		Check: func(t *testing.T, c client.Client, key types.NamespacedName, o client.Object, data map[string]any) (err error) {
+		Check: func(t *testing.T, c client.Client, key types.NamespacedName, o *elasticsearchcrd.Elasticsearch, data map[string]any) (err error) {
 			es := &elasticsearchcrd.Elasticsearch{}
 
 			var (
@@ -1111,25 +1107,24 @@ func doUpdateElasticsearchDecreaseNodeGroupStep() test.TestStep {
 	}
 }
 
-func doUpdateElasticsearchAddLicenseStep() test.TestStep {
-	return test.TestStep{
+func doUpdateElasticsearchAddLicenseStep() test.TestStep[*elasticsearchcrd.Elasticsearch] {
+	return test.TestStep[*elasticsearchcrd.Elasticsearch]{
 		Name: "update",
-		Do: func(c client.Client, key types.NamespacedName, o client.Object, data map[string]any) (err error) {
+		Do: func(c client.Client, key types.NamespacedName, o *elasticsearchcrd.Elasticsearch, data map[string]any) (err error) {
 			logrus.Infof("=== Add license on Elasticsearch cluster %s/%s ===\n\n", key.Namespace, key.Name)
 
 			if o == nil {
 				return errors.New("Elasticsearch is null")
 			}
-			es := o.(*elasticsearchcrd.Elasticsearch)
 
-			data["lastGeneration"] = es.GetStatus().GetObservedGeneration()
-			data["oldES"] = es.DeepCopy()
+			data["lastGeneration"] = o.GetStatus().GetObservedGeneration()
+			data["oldES"] = o.DeepCopy()
 
 			// Add secret that contain license
 			s := &corev1.Secret{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "license",
-					Namespace: es.Namespace,
+					Namespace: o.Namespace,
 				},
 				Type: corev1.SecretTypeOpaque,
 				Data: map[string][]byte{
@@ -1140,17 +1135,17 @@ func doUpdateElasticsearchAddLicenseStep() test.TestStep {
 				return err
 			}
 
-			es.Spec.LicenseSecretRef = &corev1.LocalObjectReference{
+			o.Spec.LicenseSecretRef = &corev1.LocalObjectReference{
 				Name: "license",
 			}
 
-			if err = c.Update(context.Background(), es); err != nil {
+			if err = c.Update(context.Background(), o); err != nil {
 				return err
 			}
 
 			return nil
 		},
-		Check: func(t *testing.T, c client.Client, key types.NamespacedName, o client.Object, data map[string]any) (err error) {
+		Check: func(t *testing.T, c client.Client, key types.NamespacedName, o *elasticsearchcrd.Elasticsearch, data map[string]any) (err error) {
 			es := &elasticsearchcrd.Elasticsearch{}
 
 			var (
@@ -1422,22 +1417,21 @@ func doUpdateElasticsearchAddLicenseStep() test.TestStep {
 	}
 }
 
-func doUpdateElasticsearchAddKeystoreStep() test.TestStep {
-	return test.TestStep{
+func doUpdateElasticsearchAddKeystoreStep() test.TestStep[*elasticsearchcrd.Elasticsearch] {
+	return test.TestStep[*elasticsearchcrd.Elasticsearch]{
 		Name: "update",
-		Do: func(c client.Client, key types.NamespacedName, o client.Object, data map[string]any) (err error) {
+		Do: func(c client.Client, key types.NamespacedName, o *elasticsearchcrd.Elasticsearch, data map[string]any) (err error) {
 			logrus.Infof("=== Add keystore and cacerts on Elasticsearch cluster %s/%s ===\n\n", key.Namespace, key.Name)
 
 			if o == nil {
 				return errors.New("Elasticsearch is null")
 			}
-			es := o.(*elasticsearchcrd.Elasticsearch)
 
 			// Add secret that contain keysyore secret
 			s := &corev1.Secret{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "keystore",
-					Namespace: es.Namespace,
+					Namespace: o.Namespace,
 				},
 				Type: corev1.SecretTypeOpaque,
 				Data: map[string][]byte{
@@ -1453,7 +1447,7 @@ func doUpdateElasticsearchAddKeystoreStep() test.TestStep {
 			s = &corev1.Secret{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "custom-ca",
-					Namespace: es.Namespace,
+					Namespace: o.Namespace,
 				},
 				Type: corev1.SecretTypeOpaque,
 				Data: map[string][]byte{
@@ -1464,22 +1458,22 @@ func doUpdateElasticsearchAddKeystoreStep() test.TestStep {
 				return err
 			}
 
-			es.Spec.GlobalNodeGroup.KeystoreSecretRef = &corev1.LocalObjectReference{
+			o.Spec.GlobalNodeGroup.KeystoreSecretRef = &corev1.LocalObjectReference{
 				Name: "keystore",
 			}
-			es.Spec.GlobalNodeGroup.CacertsSecretRef = &corev1.LocalObjectReference{
+			o.Spec.GlobalNodeGroup.CacertsSecretRef = &corev1.LocalObjectReference{
 				Name: "custom-ca",
 			}
 
-			data["lastGeneration"] = es.GetStatus().GetObservedGeneration()
+			data["lastGeneration"] = o.GetStatus().GetObservedGeneration()
 
-			if err = c.Update(context.Background(), es); err != nil {
+			if err = c.Update(context.Background(), o); err != nil {
 				return err
 			}
 
 			return nil
 		},
-		Check: func(t *testing.T, c client.Client, key types.NamespacedName, o client.Object, data map[string]any) (err error) {
+		Check: func(t *testing.T, c client.Client, key types.NamespacedName, o *elasticsearchcrd.Elasticsearch, data map[string]any) (err error) {
 			es := &elasticsearchcrd.Elasticsearch{}
 
 			lastGeneration := data["lastGeneration"].(int64)
@@ -1511,25 +1505,24 @@ func doUpdateElasticsearchAddKeystoreStep() test.TestStep {
 	}
 }
 
-func doDeleteElasticsearchStep() test.TestStep {
-	return test.TestStep{
+func doDeleteElasticsearchStep() test.TestStep[*elasticsearchcrd.Elasticsearch] {
+	return test.TestStep[*elasticsearchcrd.Elasticsearch]{
 		Name: "delete",
-		Do: func(c client.Client, key types.NamespacedName, o client.Object, data map[string]any) (err error) {
+		Do: func(c client.Client, key types.NamespacedName, o *elasticsearchcrd.Elasticsearch, data map[string]any) (err error) {
 			logrus.Infof("=== Delete Elasticsearch cluster %s/%s ===\n\n", key.Namespace, key.Name)
 
 			if o == nil {
 				return errors.New("Elasticsearch is null")
 			}
-			es := o.(*elasticsearchcrd.Elasticsearch)
 
 			wait := int64(0)
-			if err = c.Delete(context.Background(), es, &client.DeleteOptions{GracePeriodSeconds: &wait}); err != nil {
+			if err = c.Delete(context.Background(), o, &client.DeleteOptions{GracePeriodSeconds: &wait}); err != nil {
 				return err
 			}
 
 			return nil
 		},
-		Check: func(t *testing.T, c client.Client, key types.NamespacedName, o client.Object, data map[string]any) (err error) {
+		Check: func(t *testing.T, c client.Client, key types.NamespacedName, o *elasticsearchcrd.Elasticsearch, data map[string]any) (err error) {
 			es := &elasticsearchcrd.Elasticsearch{}
 			isDeleted := false
 

@@ -9,9 +9,9 @@ import (
 	"github.com/disaster37/go-kibana-rest/v8/kbapi"
 	kbhandler "github.com/disaster37/kb-handler/v8"
 	"github.com/disaster37/kb-handler/v8/mocks"
-	"github.com/disaster37/operator-sdk-extra/pkg/controller"
-	"github.com/disaster37/operator-sdk-extra/pkg/mock"
-	"github.com/disaster37/operator-sdk-extra/pkg/object"
+	"github.com/disaster37/operator-sdk-extra/v2/pkg/controller"
+	"github.com/disaster37/operator-sdk-extra/v2/pkg/controller/remote"
+	"github.com/disaster37/operator-sdk-extra/v2/pkg/mock"
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/suite"
 	beatcrd "github.com/webcenter-fr/elasticsearch-operator/api/beat/v1"
@@ -143,7 +143,7 @@ func (t *KibanaapiControllerTestSuite) SetupSuite() {
 	)
 	roleReconciler.(*RoleReconciler).RemoteReconcilerAction = mock.NewMockRemoteReconcilerAction[*kibanaapicrd.Role, *kbapi.KibanaRole, kbhandler.KibanaHandler](
 		roleReconciler.(*RoleReconciler).RemoteReconcilerAction,
-		func(ctx context.Context, req reconcile.Request, o object.RemoteObject) (handler controller.RemoteExternalReconciler[*kibanaapicrd.Role, *kbapi.KibanaRole, kbhandler.KibanaHandler], res reconcile.Result, err error) {
+		func(ctx context.Context, req reconcile.Request, o *kibanaapicrd.Role, logger *logrus.Entry) (handler remote.RemoteExternalReconciler[*kibanaapicrd.Role, *kbapi.KibanaRole, kbhandler.KibanaHandler], res reconcile.Result, err error) {
 			return newRoleApiClient(t.mockKibanaHandler), res, nil
 		},
 	)
@@ -158,7 +158,7 @@ func (t *KibanaapiControllerTestSuite) SetupSuite() {
 	)
 	spaceReconciler.(*UserSpaceReconciler).RemoteReconcilerAction = mock.NewMockRemoteReconcilerAction[*kibanaapicrd.UserSpace, *kbapi.KibanaSpace, kbhandler.KibanaHandler](
 		spaceReconciler.(*UserSpaceReconciler).RemoteReconcilerAction,
-		func(ctx context.Context, req reconcile.Request, o object.RemoteObject) (handler controller.RemoteExternalReconciler[*kibanaapicrd.UserSpace, *kbapi.KibanaSpace, kbhandler.KibanaHandler], res reconcile.Result, err error) {
+		func(ctx context.Context, req reconcile.Request, o *kibanaapicrd.UserSpace, logger *logrus.Entry) (handler remote.RemoteExternalReconciler[*kibanaapicrd.UserSpace, *kbapi.KibanaSpace, kbhandler.KibanaHandler], res reconcile.Result, err error) {
 			return newUserSpaceApiClient(t.mockKibanaHandler), res, nil
 		},
 	)
@@ -173,7 +173,7 @@ func (t *KibanaapiControllerTestSuite) SetupSuite() {
 	)
 	pipelineReconciler.(*LogstashPipelineReconciler).RemoteReconcilerAction = mock.NewMockRemoteReconcilerAction[*kibanaapicrd.LogstashPipeline, *kbapi.LogstashPipeline, kbhandler.KibanaHandler](
 		pipelineReconciler.(*LogstashPipelineReconciler).RemoteReconcilerAction,
-		func(ctx context.Context, req reconcile.Request, o object.RemoteObject) (handler controller.RemoteExternalReconciler[*kibanaapicrd.LogstashPipeline, *kbapi.LogstashPipeline, kbhandler.KibanaHandler], res reconcile.Result, err error) {
+		func(ctx context.Context, req reconcile.Request, o *kibanaapicrd.LogstashPipeline, logger *logrus.Entry) (handler remote.RemoteExternalReconciler[*kibanaapicrd.LogstashPipeline, *kbapi.LogstashPipeline, kbhandler.KibanaHandler], res reconcile.Result, err error) {
 			return newLogstashPipelineApiClient(t.mockKibanaHandler), res, nil
 		},
 	)
@@ -187,6 +187,9 @@ func (t *KibanaapiControllerTestSuite) SetupSuite() {
 			panic(err)
 		}
 	}()
+
+	// Wait for the cache to be ready.
+	time.Sleep(10 * time.Second)
 }
 
 func (t *KibanaapiControllerTestSuite) TearDownSuite() {

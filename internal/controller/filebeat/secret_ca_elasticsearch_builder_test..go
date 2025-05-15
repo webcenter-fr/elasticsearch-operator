@@ -12,7 +12,7 @@ import (
 func TestBuildCAElasticsearchSecret(t *testing.T) {
 	var (
 		err      error
-		s        []corev1.Secret
+		s        []*corev1.Secret
 		o        *beatcrd.Filebeat
 		esSecret *corev1.Secret
 	)

@@ -18,12 +18,15 @@ import (
 
 	"github.com/disaster37/go-kibana-rest/v8/kbapi"
 	kbhandler "github.com/disaster37/kb-handler/v8"
-	"github.com/disaster37/operator-sdk-extra/pkg/controller"
+	"github.com/disaster37/operator-sdk-extra/v2/pkg/controller"
+	"github.com/disaster37/operator-sdk-extra/v2/pkg/controller/remote"
 	"github.com/sirupsen/logrus"
 	kibanaapicrd "github.com/webcenter-fr/elasticsearch-operator/api/kibanaapi/v1"
 	"k8s.io/client-go/tools/record"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	k8scontroller "sigs.k8s.io/controller-runtime/pkg/controller"
+	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
 
 const (
@@ -33,15 +36,15 @@ const (
 // RoleReconciler reconciles a Role object
 type RoleReconciler struct {
 	controller.Controller
-	controller.RemoteReconciler[*kibanaapicrd.Role, *kbapi.KibanaRole, kbhandler.KibanaHandler]
-	controller.RemoteReconcilerAction[*kibanaapicrd.Role, *kbapi.KibanaRole, kbhandler.KibanaHandler]
+	remote.RemoteReconciler[*kibanaapicrd.Role, *kbapi.KibanaRole, kbhandler.KibanaHandler]
+	remote.RemoteReconcilerAction[*kibanaapicrd.Role, *kbapi.KibanaRole, kbhandler.KibanaHandler]
 	name string
 }
 
 func NewRoleReconciler(client client.Client, logger *logrus.Entry, recorder record.EventRecorder) controller.Controller {
 	return &RoleReconciler{
-		Controller: controller.NewBasicController(),
-		RemoteReconciler: controller.NewBasicRemoteReconciler[*kibanaapicrd.Role, *kbapi.KibanaRole, kbhandler.KibanaHandler](
+		Controller: controller.NewController(),
+		RemoteReconciler: remote.NewRemoteReconciler[*kibanaapicrd.Role, *kbapi.KibanaRole, kbhandler.KibanaHandler](
 			client,
 			roleName,
 			"role.kibanaapi.k8s.webcenter.fr/finalizer",
@@ -74,7 +77,7 @@ func NewRoleReconciler(client client.Client, logger *logrus.Entry, recorder reco
 //
 // For more details, check Reconcile and its Result here:
 // - https://pkg.go.dev/sigs.k8s.io/controller-runtime@v0.11.0/pkg/reconcile
-func (r *RoleReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
+func (r *RoleReconciler) Reconcile(ctx context.Context, req reconcile.Request) (reconcile.Result, error) {
 	role := &kibanaapicrd.Role{}
 	data := map[string]any{}
 
@@ -92,5 +95,17 @@ func (r *RoleReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
 		Named("kibana-role").
 		For(&kibanaapicrd.Role{}).
+		WithOptions(k8scontroller.Options{
+			RateLimiter: controller.DefaultControllerRateLimiter[reconcile.Request](),
+		}).
 		Complete(r)
 }
+
+func (h *RoleReconciler) Client() client.Client {
+	return h.RemoteReconcilerAction.Client()
+}
+
+func (h *RoleReconciler) Recorder() record.EventRecorder {
+	return h.RemoteReconcilerAction.Recorder()
+}
+

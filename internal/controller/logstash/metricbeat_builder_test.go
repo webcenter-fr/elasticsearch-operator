@@ -3,7 +3,7 @@ package logstash
 import (
 	"testing"
 
-	"github.com/disaster37/operator-sdk-extra/pkg/test"
+	"github.com/disaster37/operator-sdk-extra/v2/pkg/test"
 	"github.com/stretchr/testify/assert"
 	beatcrd "github.com/webcenter-fr/elasticsearch-operator/api/beat/v1"
 	logstashcrd "github.com/webcenter-fr/elasticsearch-operator/api/logstash/v1"
@@ -18,7 +18,7 @@ import (
 func TestBuildMetricbeat(t *testing.T) {
 	var (
 		err error
-		mbs []beatcrd.Metricbeat
+		mbs []*beatcrd.Metricbeat
 		o   *logstashcrd.Logstash
 	)
 
@@ -87,7 +87,7 @@ func TestBuildMetricbeat(t *testing.T) {
 
 	mbs, err = buildMetricbeats(o)
 	assert.NoError(t, err)
-	test.EqualFromYamlFile[*beatcrd.Metricbeat](t, "testdata/metricbeat_default.yaml", &mbs[0], sch)
+	test.EqualFromYamlFile[*beatcrd.Metricbeat](t, "testdata/metricbeat_default.yaml", mbs[0], sch)
 
 	// When metricbeat is enabled with all set
 	o = &logstashcrd.Logstash{
@@ -130,5 +130,5 @@ func TestBuildMetricbeat(t *testing.T) {
 
 	mbs, err = buildMetricbeats(o)
 	assert.NoError(t, err)
-	test.EqualFromYamlFile[*beatcrd.Metricbeat](t, "testdata/metricbeat_all_set.yaml", &mbs[0], sch)
+	test.EqualFromYamlFile[*beatcrd.Metricbeat](t, "testdata/metricbeat_all_set.yaml", mbs[0], sch)
 }

@@ -8,8 +8,8 @@ import (
 
 // BuildIngresses permit to generate Ingresses object
 // It will overwrite the target service
-func buildIngresses(fb *beatcrd.Filebeat) (ingresses []networkingv1.Ingress, err error) {
-	ingresses = make([]networkingv1.Ingress, 0, len(fb.Spec.Ingresses))
+func buildIngresses(fb *beatcrd.Filebeat) (ingresses []*networkingv1.Ingress, err error) {
+	ingresses = make([]*networkingv1.Ingress, 0, len(fb.Spec.Ingresses))
 	var ingress *networkingv1.Ingress
 
 	for _, i := range fb.Spec.Ingresses {
@@ -55,7 +55,7 @@ func buildIngresses(fb *beatcrd.Filebeat) (ingresses []networkingv1.Ingress, err
 			ingress.Spec.Rules[indexRule] = rule
 		}
 
-		ingresses = append(ingresses, *ingress)
+		ingresses = append(ingresses, ingress)
 
 	}
 

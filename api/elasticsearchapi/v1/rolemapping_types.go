@@ -17,7 +17,8 @@ limitations under the License.
 package v1
 
 import (
-	"github.com/disaster37/operator-sdk-extra/pkg/apis"
+	"github.com/disaster37/operator-sdk-extra/v2/pkg/apis"
+	"github.com/disaster37/operator-sdk-extra/v2/pkg/apis/remote"
 	"github.com/webcenter-fr/elasticsearch-operator/api/shared"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -68,7 +69,7 @@ type RoleMappingStatus struct {
 	// INSERT ADDITIONAL STATUS FIELD - define observed state of cluster
 	// Important: Run "make" to regenerate code after modifying this file
 
-	apis.BasicRemoteObjectStatus `json:",inline"`
+	remote.DefaultRemoteObjectStatus `json:",inline"`
 }
 
 //+kubebuilder:object:root=true

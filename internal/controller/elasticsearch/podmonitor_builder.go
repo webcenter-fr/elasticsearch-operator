@@ -9,12 +9,12 @@ import (
 
 // BuildPodMonitor permit to build pod monitor
 // It return nil if prometheus monitoring is disabled
-func buildPodMonitors(es *elasticsearchcrd.Elasticsearch) (podMonitors []monitoringv1.PodMonitor, err error) {
+func buildPodMonitors(es *elasticsearchcrd.Elasticsearch) (podMonitors []*monitoringv1.PodMonitor, err error) {
 	if !es.Spec.Monitoring.IsPrometheusMonitoring() {
 		return nil, nil
 	}
 
-	podMonitors = []monitoringv1.PodMonitor{
+	podMonitors = []*monitoringv1.PodMonitor{
 		{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:        GetPodMonitorName(es),

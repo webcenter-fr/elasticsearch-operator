@@ -8,10 +8,10 @@ import (
 	"emperror.dev/errors"
 	"github.com/disaster37/es-handler/v8/mocks"
 	"github.com/disaster37/generic-objectmatcher/patch"
-	"github.com/disaster37/operator-sdk-extra/pkg/apis"
-	"github.com/disaster37/operator-sdk-extra/pkg/controller"
-	"github.com/disaster37/operator-sdk-extra/pkg/helper"
-	"github.com/disaster37/operator-sdk-extra/pkg/test"
+	"github.com/disaster37/operator-sdk-extra/v2/pkg/apis"
+	"github.com/disaster37/operator-sdk-extra/v2/pkg/controller"
+	"github.com/disaster37/operator-sdk-extra/v2/pkg/helper"
+	"github.com/disaster37/operator-sdk-extra/v2/pkg/test"
 	olivere "github.com/olivere/elastic/v7"
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
@@ -30,11 +30,10 @@ func (t *ElasticsearchapiControllerTestSuite) TestComponentTemplateReconciler() 
 		Name:      "t-componenttemplate-" + helper.RandomString(10),
 		Namespace: "default",
 	}
-	ct := &elasticsearchapicrd.ComponentTemplate{}
 	data := map[string]any{}
 
-	testCase := test.NewTestCase(t.T(), t.k8sClient, key, ct, 5*time.Second, data)
-	testCase.Steps = []test.TestStep{
+	testCase := test.NewTestCase[*elasticsearchapicrd.ComponentTemplate](t.T(), t.k8sClient, key, 5*time.Second, data)
+	testCase.Steps = []test.TestStep[*elasticsearchapicrd.ComponentTemplate]{
 		doCreateComponentTemplateStep(),
 		doUpdateComponentTemplateStep(),
 		doDeleteComponentTemplateStep(),
@@ -130,10 +129,10 @@ func doMockComponentTemplate(mockES *mocks.MockElasticsearchHandler) func(stepNa
 	}
 }
 
-func doCreateComponentTemplateStep() test.TestStep {
-	return test.TestStep{
+func doCreateComponentTemplateStep() test.TestStep[*elasticsearchapicrd.ComponentTemplate] {
+	return test.TestStep[*elasticsearchapicrd.ComponentTemplate]{
 		Name: "create",
-		Do: func(c client.Client, key types.NamespacedName, o client.Object, data map[string]any) (err error) {
+		Do: func(c client.Client, key types.NamespacedName, o *elasticsearchapicrd.ComponentTemplate, data map[string]any) (err error) {
 			logrus.Infof("=== Add new component template %s/%s ===\n\n", key.Namespace, key.Name)
 
 			ct := &elasticsearchapicrd.ComponentTemplate{
@@ -160,7 +159,7 @@ func doCreateComponentTemplateStep() test.TestStep {
 
 			return nil
 		},
-		Check: func(t *testing.T, c client.Client, key types.NamespacedName, o client.Object, data map[string]any) (err error) {
+		Check: func(t *testing.T, c client.Client, key types.NamespacedName, o *elasticsearchapicrd.ComponentTemplate, data map[string]any) (err error) {
 			ct := &elasticsearchapicrd.ComponentTemplate{}
 			isCreated := false
 
@@ -188,30 +187,29 @@ func doCreateComponentTemplateStep() test.TestStep {
 	}
 }
 
-func doUpdateComponentTemplateStep() test.TestStep {
-	return test.TestStep{
+func doUpdateComponentTemplateStep() test.TestStep[*elasticsearchapicrd.ComponentTemplate] {
+	return test.TestStep[*elasticsearchapicrd.ComponentTemplate]{
 		Name: "update",
-		Do: func(c client.Client, key types.NamespacedName, o client.Object, data map[string]any) (err error) {
+		Do: func(c client.Client, key types.NamespacedName, o *elasticsearchapicrd.ComponentTemplate, data map[string]any) (err error) {
 			logrus.Infof("=== Update component template %s/%s ===\n\n", key.Namespace, key.Name)
 
 			if o == nil {
 				return errors.New("Component template is null")
 			}
-			ct := o.(*elasticsearchapicrd.ComponentTemplate)
 
-			data["lastGeneration"] = ct.GetStatus().GetObservedGeneration()
-			ct.Spec.Settings = &apis.MapAny{
+			data["lastGeneration"] = o.GetStatus().GetObservedGeneration()
+			o.Spec.Settings = &apis.MapAny{
 				Data: map[string]any{
 					"fake": "foo2",
 				},
 			}
-			if err = c.Update(context.Background(), ct); err != nil {
+			if err = c.Update(context.Background(), o); err != nil {
 				return err
 			}
 
 			return nil
 		},
-		Check: func(t *testing.T, c client.Client, key types.NamespacedName, o client.Object, data map[string]any) (err error) {
+		Check: func(t *testing.T, c client.Client, key types.NamespacedName, o *elasticsearchapicrd.ComponentTemplate, data map[string]any) (err error) {
 			ct := &elasticsearchapicrd.ComponentTemplate{}
 			isUpdated := false
 
@@ -240,25 +238,24 @@ func doUpdateComponentTemplateStep() test.TestStep {
 	}
 }
 
-func doDeleteComponentTemplateStep() test.TestStep {
-	return test.TestStep{
+func doDeleteComponentTemplateStep() test.TestStep[*elasticsearchapicrd.ComponentTemplate] {
+	return test.TestStep[*elasticsearchapicrd.ComponentTemplate]{
 		Name: "delete",
-		Do: func(c client.Client, key types.NamespacedName, o client.Object, data map[string]any) (err error) {
+		Do: func(c client.Client, key types.NamespacedName, o *elasticsearchapicrd.ComponentTemplate, data map[string]any) (err error) {
 			logrus.Infof("=== Delete component template %s/%s ===\n\n", key.Namespace, key.Name)
 
 			if o == nil {
 				return errors.New("Component template is null")
 			}
-			ct := o.(*elasticsearchapicrd.ComponentTemplate)
 
 			wait := int64(0)
-			if err = c.Delete(context.Background(), ct, &client.DeleteOptions{GracePeriodSeconds: &wait}); err != nil {
+			if err = c.Delete(context.Background(), o, &client.DeleteOptions{GracePeriodSeconds: &wait}); err != nil {
 				return err
 			}
 
 			return nil
 		},
-		Check: func(t *testing.T, c client.Client, key types.NamespacedName, o client.Object, data map[string]any) (err error) {
+		Check: func(t *testing.T, c client.Client, key types.NamespacedName, o *elasticsearchapicrd.ComponentTemplate, data map[string]any) (err error) {
 			ct := &elasticsearchapicrd.ComponentTemplate{}
 			isDeleted := false
 

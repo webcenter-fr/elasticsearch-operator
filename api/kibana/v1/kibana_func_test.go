@@ -3,7 +3,7 @@ package v1
 import (
 	"testing"
 
-	"github.com/disaster37/operator-sdk-extra/pkg/apis"
+	"github.com/disaster37/operator-sdk-extra/v2/pkg/apis/multiphase"
 	"github.com/stretchr/testify/assert"
 	"github.com/webcenter-fr/elasticsearch-operator/api/shared"
 	policyv1 "k8s.io/api/policy/v1"
@@ -12,7 +12,7 @@ import (
 
 func TestGetStatus(t *testing.T) {
 	status := KibanaStatus{
-		BasicMultiPhaseObjectStatus: apis.BasicMultiPhaseObjectStatus{
+		DefaultMultiPhaseObjectStatus: multiphase.DefaultMultiPhaseObjectStatus{
 			PhaseName: "test",
 		},
 	}

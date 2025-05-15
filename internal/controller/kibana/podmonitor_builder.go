@@ -10,7 +10,7 @@ import (
 
 // BuildPodMonitor permit to build pod monitor
 // It return nil if prometheus monitoring is disabled
-func buildPodMonitors(kb *kibanacrd.Kibana) (podMonitors []monitoringv1.PodMonitor, err error) {
+func buildPodMonitors(kb *kibanacrd.Kibana) (podMonitors []*monitoringv1.PodMonitor, err error) {
 	if !kb.Spec.Monitoring.IsPrometheusMonitoring() {
 		return nil, nil
 	}
@@ -19,7 +19,7 @@ func buildPodMonitors(kb *kibanacrd.Kibana) (podMonitors []monitoringv1.PodMonit
 		scheme = "http"
 	}
 
-	podMonitors = []monitoringv1.PodMonitor{
+	podMonitors = []*monitoringv1.PodMonitor{
 		{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:        GetPodMonitorName(kb),

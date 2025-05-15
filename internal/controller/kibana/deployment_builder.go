@@ -8,7 +8,7 @@ import (
 	"emperror.dev/errors"
 	"github.com/codingsince1985/checksum"
 	"github.com/disaster37/k8sbuilder"
-	"github.com/disaster37/operator-sdk-extra/pkg/helper"
+	"github.com/disaster37/operator-sdk-extra/v2/pkg/helper"
 	"github.com/elastic/go-ucfg"
 	elasticsearchcrd "github.com/webcenter-fr/elasticsearch-operator/api/elasticsearch/v1"
 	kibanacrd "github.com/webcenter-fr/elasticsearch-operator/api/kibana/v1"
@@ -24,13 +24,13 @@ import (
 )
 
 // BuildDeployment permit to generate deployment for Kibana
-func buildDeployments(kb *kibanacrd.Kibana, es *elasticsearchcrd.Elasticsearch, secretsChecksum []corev1.Secret, configMapsChecksum []corev1.ConfigMap, isOpenshift bool) (dpls []appv1.Deployment, err error) {
+func buildDeployments(kb *kibanacrd.Kibana, es *elasticsearchcrd.Elasticsearch, secretsChecksum []*corev1.Secret, configMapsChecksum []*corev1.ConfigMap, isOpenshift bool) (dpls []*appv1.Deployment, err error) {
 	// Check the secretRef is set when use external Elasticsearch
 	if kb.Spec.ElasticsearchRef.IsExternal() && kb.Spec.ElasticsearchRef.SecretRef == nil {
 		return nil, errors.New("You must set the secretRef when you use external Elasticsearch")
 	}
 
-	dpls = make([]appv1.Deployment, 0, 1)
+	dpls = make([]*appv1.Deployment, 0, 1)
 
 	checksumAnnotations := map[string]string{}
 
@@ -86,7 +86,7 @@ func buildDeployments(kb *kibanacrd.Kibana, es *elasticsearchcrd.Elasticsearch, 
 	cb.WithEnvFrom(kb.Spec.Deployment.EnvFrom, k8sbuilder.Merge)
 
 	// Compute Env
-	probePath, err := computeProbePath(&configMaps[0])
+	probePath, err := computeProbePath(configMaps[0])
 	if err != nil {
 		return nil, errors.Wrap(err, "Error when get probe path to use from kibana config")
 	}
@@ -695,7 +695,7 @@ fi
 		},
 	}
 
-	dpls = append(dpls, *dpl)
+	dpls = append(dpls, dpl)
 
 	return dpls, nil
 }

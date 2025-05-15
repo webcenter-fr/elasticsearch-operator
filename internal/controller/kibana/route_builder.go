@@ -13,12 +13,12 @@ import (
 // buildRoutes permit to generate Route object
 // It return error if route spec is not provided
 // It return nil if route is disabled
-func buildRoutes(kb *kibanacrd.Kibana, secretTlsApi *corev1.Secret) (routes []routev1.Route, err error) {
+func buildRoutes(kb *kibanacrd.Kibana, secretTlsApi *corev1.Secret) (routes []*routev1.Route, err error) {
 	if !kb.Spec.Endpoint.IsRouteEnabled() {
 		return nil, nil
 	}
 
-	routes = make([]routev1.Route, 0, 1)
+	routes = make([]*routev1.Route, 0, 1)
 
 	if kb.Spec.Endpoint.Route.Host == "" {
 		return nil, errors.New("endpoint.route.host must be provided")
@@ -78,7 +78,7 @@ func buildRoutes(kb *kibanacrd.Kibana, secretTlsApi *corev1.Secret) (routes []ro
 		}
 	}
 
-	routes = append(routes, *route)
+	routes = append(routes, route)
 
 	return routes, nil
 }

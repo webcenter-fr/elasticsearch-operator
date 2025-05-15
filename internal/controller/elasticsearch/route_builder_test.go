@@ -3,7 +3,7 @@ package elasticsearch
 import (
 	"testing"
 
-	"github.com/disaster37/operator-sdk-extra/pkg/test"
+	"github.com/disaster37/operator-sdk-extra/v2/pkg/test"
 	routev1 "github.com/openshift/api/route/v1"
 	"github.com/stretchr/testify/assert"
 	elasticsearchcrd "github.com/webcenter-fr/elasticsearch-operator/api/elasticsearch/v1"
@@ -18,7 +18,7 @@ func TestBuildRoute(t *testing.T) {
 	var (
 		err error
 		o   *elasticsearchcrd.Elasticsearch
-		r   []routev1.Route
+		r   []*routev1.Route
 	)
 
 	sch := scheme.Scheme
@@ -93,7 +93,7 @@ func TestBuildRoute(t *testing.T) {
 	r, err = buildRoutes(o, nil)
 
 	assert.NoError(t, err)
-	test.EqualFromYamlFile[*routev1.Route](t, "testdata/route_with_target.yml", &r[0], sch)
+	test.EqualFromYamlFile[*routev1.Route](t, "testdata/route_with_target.yml", r[0], sch)
 
 	// When route is enabled without specify TargetNodeGroupName
 	o = &elasticsearchcrd.Elasticsearch{
@@ -129,7 +129,7 @@ func TestBuildRoute(t *testing.T) {
 	r, err = buildRoutes(o, nil)
 
 	assert.NoError(t, err)
-	test.EqualFromYamlFile[*routev1.Route](t, "testdata/route_without_target.yml", &r[0], sch)
+	test.EqualFromYamlFile[*routev1.Route](t, "testdata/route_without_target.yml", r[0], sch)
 
 	// When route is enabled and specify all options
 	o = &elasticsearchcrd.Elasticsearch{
@@ -185,7 +185,7 @@ func TestBuildRoute(t *testing.T) {
 	r, err = buildRoutes(o, nil)
 
 	assert.NoError(t, err)
-	test.EqualFromYamlFile[*routev1.Route](t, "testdata/route_with_all_options.yml", &r[0], sch)
+	test.EqualFromYamlFile[*routev1.Route](t, "testdata/route_with_all_options.yml", r[0], sch)
 
 	// When target nodeGroup not exist
 	// When route is enabled
@@ -246,5 +246,5 @@ func TestBuildRoute(t *testing.T) {
 	r, err = buildRoutes(o, secretTls)
 
 	assert.NoError(t, err)
-	test.EqualFromYamlFile[*routev1.Route](t, "testdata/route_with_tls_backend.yml", &r[0], sch)
+	test.EqualFromYamlFile[*routev1.Route](t, "testdata/route_with_tls_backend.yml", r[0], sch)
 }

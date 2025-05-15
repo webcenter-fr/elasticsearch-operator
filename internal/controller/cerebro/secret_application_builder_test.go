@@ -12,7 +12,7 @@ import (
 func TestBuildApplicationSecret(t *testing.T) {
 	var (
 		err error
-		s   []corev1.Secret
+		s   []*corev1.Secret
 		o   *cerebrocrd.Cerebro
 	)
 

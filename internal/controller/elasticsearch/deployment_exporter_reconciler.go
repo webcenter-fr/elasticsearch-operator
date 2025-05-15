@@ -4,18 +4,16 @@ import (
 	"context"
 
 	"emperror.dev/errors"
-	"github.com/disaster37/operator-sdk-extra/pkg/apis/shared"
-	"github.com/disaster37/operator-sdk-extra/pkg/controller"
-	"github.com/disaster37/operator-sdk-extra/pkg/helper"
-	"github.com/disaster37/operator-sdk-extra/pkg/object"
+	"github.com/disaster37/operator-sdk-extra/v2/pkg/apis/shared"
+	"github.com/disaster37/operator-sdk-extra/v2/pkg/controller/multiphase"
 	"github.com/sirupsen/logrus"
 	elasticsearchcrd "github.com/webcenter-fr/elasticsearch-operator/api/elasticsearch/v1"
 	appv1 "k8s.io/api/apps/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/tools/record"
-	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
 
 const (
@@ -24,12 +22,12 @@ const (
 )
 
 type exporterReconciler struct {
-	controller.MultiPhaseStepReconcilerAction
+	multiphase.MultiPhaseStepReconcilerAction[*elasticsearchcrd.Elasticsearch, *appv1.Deployment]
 }
 
-func newExporterReconciler(client client.Client, recorder record.EventRecorder) (multiPhaseStepReconcilerAction controller.MultiPhaseStepReconcilerAction) {
+func newExporterReconciler(client client.Client, recorder record.EventRecorder) (multiPhaseStepReconcilerAction multiphase.MultiPhaseStepReconcilerAction[*elasticsearchcrd.Elasticsearch, *appv1.Deployment]) {
 	return &exporterReconciler{
-		MultiPhaseStepReconcilerAction: controller.NewBasicMultiPhaseStepReconcilerAction(
+		MultiPhaseStepReconcilerAction: multiphase.NewMultiPhaseStepReconcilerAction[*elasticsearchcrd.Elasticsearch, *appv1.Deployment](
 			client,
 			ExporterPhase,
 			ExporterCondition,
@@ -39,10 +37,9 @@ func newExporterReconciler(client client.Client, recorder record.EventRecorder) 
 }
 
 // Read existing deployement
-func (r *exporterReconciler) Read(ctx context.Context, resource object.MultiPhaseObject, data map[string]any, logger *logrus.Entry) (read controller.MultiPhaseRead, res ctrl.Result, err error) {
-	o := resource.(*elasticsearchcrd.Elasticsearch)
+func (r *exporterReconciler) Read(ctx context.Context, o *elasticsearchcrd.Elasticsearch, data map[string]any, logger *logrus.Entry) (read multiphase.MultiPhaseRead[*appv1.Deployment], res reconcile.Result, err error) {
 	dpl := &appv1.Deployment{}
-	read = controller.NewBasicMultiPhaseRead()
+	read = multiphase.NewMultiPhaseRead[*appv1.Deployment]()
 
 	// Read current deployment
 	if err = r.Client().Get(ctx, types.NamespacedName{Namespace: o.Namespace, Name: GetExporterDeployementName(o)}, dpl); err != nil {
@@ -52,7 +49,7 @@ func (r *exporterReconciler) Read(ctx context.Context, resource object.MultiPhas
 		dpl = nil
 	}
 	if dpl != nil {
-		read.SetCurrentObjects([]client.Object{dpl})
+		read.AddCurrentObject(dpl)
 	}
 
 	// Generate expected deployement
@@ -60,7 +57,7 @@ func (r *exporterReconciler) Read(ctx context.Context, resource object.MultiPhas
 	if err != nil {
 		return read, res, errors.Wrap(err, "Error when generate exporter deployment")
 	}
-	read.SetExpectedObjects(helper.ToSliceOfObject(expectedExporters))
+	read.SetExpectedObjects(expectedExporters)
 
 	return read, res, nil
 }

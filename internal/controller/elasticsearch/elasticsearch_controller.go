@@ -26,9 +26,9 @@ import (
 
 	"emperror.dev/errors"
 	eshandler "github.com/disaster37/es-handler/v8"
-	"github.com/disaster37/operator-sdk-extra/pkg/apis/shared"
-	"github.com/disaster37/operator-sdk-extra/pkg/controller"
-	"github.com/disaster37/operator-sdk-extra/pkg/object"
+	"github.com/disaster37/operator-sdk-extra/v2/pkg/apis/shared"
+	"github.com/disaster37/operator-sdk-extra/v2/pkg/controller"
+	"github.com/disaster37/operator-sdk-extra/v2/pkg/controller/multiphase"
 	"github.com/elastic/elastic-transport-go/v8/elastictransport"
 	elastic "github.com/elastic/go-elasticsearch/v8"
 	routev1 "github.com/openshift/api/route/v1"
@@ -68,58 +68,58 @@ const (
 // ElasticsearchReconciler reconciles a Elasticsearch object
 type ElasticsearchReconciler struct {
 	controller.Controller
-	controller.MultiPhaseReconcilerAction
-	controller.MultiPhaseReconciler
+	multiphase.MultiPhaseReconciler[*elasticsearchcrd.Elasticsearch]
+	multiphase.MultiPhaseReconcilerAction[*elasticsearchcrd.Elasticsearch]
 	name            string
+	stepReconcilers []multiphase.MultiPhaseStepReconcilerAction[*elasticsearchcrd.Elasticsearch, client.Object]
 	kubeCapability  common.KubernetesCapability
-	stepReconcilers []controller.MultiPhaseStepReconcilerAction
 }
 
 // NewElasticsearchReconciler is the default constructor for Elasticsearch controller
-func NewElasticsearchReconciler(client client.Client, logger *logrus.Entry, recorder record.EventRecorder, kubeCapability common.KubernetesCapability) (multiPhaseReconciler controller.Controller) {
+func NewElasticsearchReconciler(c client.Client, logger *logrus.Entry, recorder record.EventRecorder, kubeCapability common.KubernetesCapability) (multiPhaseReconciler controller.Controller) {
 	reconciler := &ElasticsearchReconciler{
-		Controller: controller.NewBasicController(),
-		MultiPhaseReconcilerAction: controller.NewBasicMultiPhaseReconcilerAction(
-			client,
-			controller.ReadyCondition,
-			recorder,
-		),
-		MultiPhaseReconciler: controller.NewBasicMultiPhaseReconciler(
-			client,
+		Controller: controller.NewController(),
+		MultiPhaseReconciler: multiphase.NewMultiPhaseReconciler[*elasticsearchcrd.Elasticsearch](
+			c,
 			name,
 			elasticsearchFinalizer,
 			logger,
 			recorder,
 		),
+		MultiPhaseReconcilerAction: multiphase.NewMultiPhaseReconcilerAction[*elasticsearchcrd.Elasticsearch](
+			c,
+			controller.ReadyCondition,
+			recorder,
+		),
 		name:           name,
 		kubeCapability: kubeCapability,
-		stepReconcilers: []controller.MultiPhaseStepReconcilerAction{
-			newServiceAccountReconciler(client, recorder, kubeCapability.HasRoute),
-			newRoleBindingReconciler(client, recorder, kubeCapability.HasRoute),
-			newTlsReconciler(client, recorder),
-			newCredentialReconciler(client, recorder),
-			newLicenseReconciler(client, recorder),
-			newConfiMapReconciler(client, recorder),
-			newServiceReconciler(client, recorder),
-			newPdbReconciler(client, recorder),
-			newNetworkPolicyReconciler(client, recorder),
-			newStatefulsetReconciler(client, recorder, kubeCapability.HasRoute),
-			newSystemUserReconciler(client, recorder),
-			newIngressReconciler(client, recorder),
-			newLoadBalancerReconciler(client, recorder),
-			newMetricbeatReconciler(client, recorder),
-			newExporterReconciler(client, recorder),
+		stepReconcilers: []multiphase.MultiPhaseStepReconcilerAction[*elasticsearchcrd.Elasticsearch, client.Object]{
+			multiphase.NewObjectMultiPhaseStepReconcilerAction[*elasticsearchcrd.Elasticsearch, *corev1.ServiceAccount, client.Object](newServiceAccountReconciler(c, recorder, kubeCapability.HasRoute)),
+			multiphase.NewObjectMultiPhaseStepReconcilerAction[*elasticsearchcrd.Elasticsearch, *rbacv1.RoleBinding, client.Object](newRoleBindingReconciler(c, recorder, kubeCapability.HasRoute)),
+			multiphase.NewObjectMultiPhaseStepReconcilerAction[*elasticsearchcrd.Elasticsearch, *corev1.Secret, client.Object](newTlsReconciler(c, recorder)),
+			multiphase.NewObjectMultiPhaseStepReconcilerAction[*elasticsearchcrd.Elasticsearch, *corev1.Secret, client.Object](newCredentialReconciler(c, recorder)),
+			multiphase.NewObjectMultiPhaseStepReconcilerAction[*elasticsearchcrd.Elasticsearch, *elasticsearchapicrd.License, client.Object](newLicenseReconciler(c, recorder)),
+			multiphase.NewObjectMultiPhaseStepReconcilerAction[*elasticsearchcrd.Elasticsearch, *corev1.ConfigMap, client.Object](newConfiMapReconciler(c, recorder)),
+			multiphase.NewObjectMultiPhaseStepReconcilerAction[*elasticsearchcrd.Elasticsearch, *corev1.Service, client.Object](newServiceReconciler(c, recorder)),
+			multiphase.NewObjectMultiPhaseStepReconcilerAction[*elasticsearchcrd.Elasticsearch, *policyv1.PodDisruptionBudget, client.Object](newPdbReconciler(c, recorder)),
+			multiphase.NewObjectMultiPhaseStepReconcilerAction[*elasticsearchcrd.Elasticsearch, *networkingv1.NetworkPolicy, client.Object](newNetworkPolicyReconciler(c, recorder)),
+			multiphase.NewObjectMultiPhaseStepReconcilerAction[*elasticsearchcrd.Elasticsearch, *appv1.StatefulSet, client.Object](newStatefulsetReconciler(c, recorder, kubeCapability.HasRoute)),
+			multiphase.NewObjectMultiPhaseStepReconcilerAction[*elasticsearchcrd.Elasticsearch, *elasticsearchapicrd.User, client.Object](newSystemUserReconciler(c, recorder)),
+			multiphase.NewObjectMultiPhaseStepReconcilerAction[*elasticsearchcrd.Elasticsearch, *networkingv1.Ingress, client.Object](newIngressReconciler(c, recorder)),
+			multiphase.NewObjectMultiPhaseStepReconcilerAction[*elasticsearchcrd.Elasticsearch, *corev1.Service, client.Object](newLoadBalancerReconciler(c, recorder)),
+			multiphase.NewObjectMultiPhaseStepReconcilerAction[*elasticsearchcrd.Elasticsearch, *beatcrd.Metricbeat, client.Object](newMetricbeatReconciler(c, recorder)),
+			multiphase.NewObjectMultiPhaseStepReconcilerAction[*elasticsearchcrd.Elasticsearch, *appv1.Deployment, client.Object](newExporterReconciler(c, recorder)),
 		},
 	}
 
 	// Add Pod monitor reconciler is CRD exist on cluster
 	if kubeCapability.HasPrometheus {
-		reconciler.stepReconcilers = append(reconciler.stepReconcilers, newPodMonitorReconciler(client, recorder))
+		reconciler.stepReconcilers = append(reconciler.stepReconcilers, multiphase.NewObjectMultiPhaseStepReconcilerAction[*elasticsearchcrd.Elasticsearch, *monitoringv1.PodMonitor, client.Object](newPodMonitorReconciler(c, recorder)))
 	}
 
 	// Add route reconciler if CRD exist on cluster
 	if kubeCapability.HasRoute {
-		reconciler.stepReconcilers = append(reconciler.stepReconcilers, newRouteReconciler(client, recorder))
+		reconciler.stepReconcilers = append(reconciler.stepReconcilers, multiphase.NewObjectMultiPhaseStepReconcilerAction[*elasticsearchcrd.Elasticsearch, *routev1.Route, client.Object](newRouteReconciler(c, recorder)))
 	}
 
 	return reconciler
@@ -158,7 +158,7 @@ func NewElasticsearchReconciler(client client.Client, logger *logrus.Entry, reco
 //
 // For more details, check Reconcile and its Result here:
 // - https://pkg.go.dev/sigs.k8s.io/controller-runtime@v0.12.2/pkg/reconcile
-func (r *ElasticsearchReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
+func (r *ElasticsearchReconciler) Reconcile(ctx context.Context, req reconcile.Request) (reconcile.Result, error) {
 	es := &elasticsearchcrd.Elasticsearch{}
 	data := map[string]any{}
 
@@ -194,7 +194,7 @@ func (h *ElasticsearchReconciler) SetupWithManager(mgr ctrl.Manager) error {
 		Watches(&elasticsearchcrd.Elasticsearch{}, handler.EnqueueRequestsFromMapFunc(watchElasticsearchMonitoring(h.Client()))).
 		Watches(&cerebrocrd.Host{}, handler.EnqueueRequestsFromMapFunc(watchHost(h.Client()))).
 		WithOptions(k8scontroller.Options{
-			RateLimiter: common.DefaultControllerRateLimiter[reconcile.Request](),
+			RateLimiter: controller.DefaultControllerRateLimiter[reconcile.Request](),
 		})
 
 	if h.kubeCapability.HasRoute {
@@ -208,8 +208,20 @@ func (h *ElasticsearchReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrlBuilder.Complete(h)
 }
 
-func (h *ElasticsearchReconciler) Configure(ctx context.Context, req ctrl.Request, resource object.MultiPhaseObject, data map[string]any, logger *logrus.Entry) (res ctrl.Result, err error) {
-	o := resource.(*elasticsearchcrd.Elasticsearch)
+func (h *ElasticsearchReconciler) Client() client.Client {
+	return h.MultiPhaseReconcilerAction.Client()
+}
+
+/*************  ✨ Windsurf Command ⭐  *************/
+// Recorder returns the event recorder associated with the ElasticsearchReconciler.
+// This recorder is used to generate Kubernetes events for the reconciler's actions.
+
+/*******  9fb4ec25-b46a-4c4e-984b-89dd1f4e34fa  *******/
+func (h *ElasticsearchReconciler) Recorder() record.EventRecorder {
+	return h.MultiPhaseReconcilerAction.Recorder()
+}
+
+func (h *ElasticsearchReconciler) Configure(ctx context.Context, req reconcile.Request, o *elasticsearchcrd.Elasticsearch, data map[string]any, logger *logrus.Entry) (res reconcile.Result, err error) {
 
 	// Set prometheus Metrics
 	common.ControllerInstances.WithLabelValues(h.name, o.Namespace, o.Name).Set(1)
@@ -242,7 +254,7 @@ func (h *ElasticsearchReconciler) Configure(ctx context.Context, req ctrl.Reques
 	return h.MultiPhaseReconcilerAction.Configure(ctx, req, o, data, logger)
 }
 
-func (h *ElasticsearchReconciler) Delete(ctx context.Context, o object.MultiPhaseObject, data map[string]any, logger *logrus.Entry) (err error) {
+func (h *ElasticsearchReconciler) Delete(ctx context.Context, o *elasticsearchcrd.Elasticsearch, data map[string]any, logger *logrus.Entry) (err error) {
 	// Set prometheus Metrics
 	common.ControllerInstances.WithLabelValues(h.name, o.GetNamespace(), o.GetName()).Set(0)
 
@@ -262,15 +274,14 @@ func (h *ElasticsearchReconciler) Delete(ctx context.Context, o object.MultiPhas
 	return h.MultiPhaseReconcilerAction.Delete(ctx, o, data, logger)
 }
 
-func (h *ElasticsearchReconciler) OnError(ctx context.Context, o object.MultiPhaseObject, data map[string]any, currentErr error, logger *logrus.Entry) (res ctrl.Result, err error) {
+func (h *ElasticsearchReconciler) OnError(ctx context.Context, o *elasticsearchcrd.Elasticsearch, data map[string]any, currentErr error, logger *logrus.Entry) (res reconcile.Result, err error) {
 	common.TotalErrors.Inc()
 	common.ControllerErrors.WithLabelValues(h.name, o.GetNamespace(), o.GetName()).Inc()
 
 	return h.MultiPhaseReconcilerAction.OnError(ctx, o, data, currentErr, logger)
 }
 
-func (h *ElasticsearchReconciler) OnSuccess(ctx context.Context, r object.MultiPhaseObject, data map[string]any, logger *logrus.Entry) (res ctrl.Result, err error) {
-	o := r.(*elasticsearchcrd.Elasticsearch)
+func (h *ElasticsearchReconciler) OnSuccess(ctx context.Context, o *elasticsearchcrd.Elasticsearch, data map[string]any, logger *logrus.Entry) (res reconcile.Result, err error) {
 	isReady := true
 
 	// Reset the current cluster errors

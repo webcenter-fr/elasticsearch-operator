@@ -3,7 +3,7 @@ package cerebro
 import (
 	"testing"
 
-	"github.com/disaster37/operator-sdk-extra/pkg/test"
+	"github.com/disaster37/operator-sdk-extra/v2/pkg/test"
 	"github.com/stretchr/testify/assert"
 	cerebrocrd "github.com/webcenter-fr/elasticsearch-operator/api/cerebro/v1"
 	"github.com/webcenter-fr/elasticsearch-operator/api/shared"
@@ -18,9 +18,9 @@ func TestBuildDeployment(t *testing.T) {
 	var (
 		o               *cerebrocrd.Cerebro
 		err             error
-		dpls            []appv1.Deployment
-		checksumSecrets []corev1.Secret
-		checksumCms     []corev1.ConfigMap
+		dpls            []*appv1.Deployment
+		checksumSecrets []*corev1.Secret
+		checksumCms     []*corev1.ConfigMap
 	)
 
 	// With default values and elasticsearch managed by operator
@@ -40,7 +40,7 @@ func TestBuildDeployment(t *testing.T) {
 
 	dpls, err = buildDeployments(o, nil, nil, false)
 	assert.NoError(t, err)
-	test.EqualFromYamlFile[*appv1.Deployment](t, "testdata/deployment_default.yml", &dpls[0], scheme.Scheme)
+	test.EqualFromYamlFile[*appv1.Deployment](t, "testdata/deployment_default.yml", dpls[0], scheme.Scheme)
 
 	// With default values on Openshift
 	o = &cerebrocrd.Cerebro{
@@ -59,7 +59,7 @@ func TestBuildDeployment(t *testing.T) {
 
 	dpls, err = buildDeployments(o, nil, nil, true)
 	assert.NoError(t, err)
-	test.EqualFromYamlFile[*appv1.Deployment](t, "testdata/deployment_default_openshift.yml", &dpls[0], scheme.Scheme)
+	test.EqualFromYamlFile[*appv1.Deployment](t, "testdata/deployment_default_openshift.yml", dpls[0], scheme.Scheme)
 
 	// With complexe sample
 	o = &cerebrocrd.Cerebro{
@@ -115,7 +115,7 @@ func TestBuildDeployment(t *testing.T) {
 			},
 		},
 	}
-	checksumSecrets = []corev1.Secret{
+	checksumSecrets = []*corev1.Secret{
 		{
 			ObjectMeta: metav1.ObjectMeta{
 				Namespace: "default",
@@ -135,5 +135,5 @@ func TestBuildDeployment(t *testing.T) {
 
 	dpls, err = buildDeployments(o, checksumSecrets, checksumCms, false)
 	assert.NoError(t, err)
-	test.EqualFromYamlFile[*appv1.Deployment](t, "testdata/deployment_complet.yml", &dpls[0], scheme.Scheme)
+	test.EqualFromYamlFile[*appv1.Deployment](t, "testdata/deployment_complet.yml", dpls[0], scheme.Scheme)
 }

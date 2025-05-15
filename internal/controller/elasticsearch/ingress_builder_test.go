@@ -3,7 +3,7 @@ package elasticsearch
 import (
 	"testing"
 
-	"github.com/disaster37/operator-sdk-extra/pkg/test"
+	"github.com/disaster37/operator-sdk-extra/v2/pkg/test"
 	"github.com/stretchr/testify/assert"
 	elasticsearchcrd "github.com/webcenter-fr/elasticsearch-operator/api/elasticsearch/v1"
 	"github.com/webcenter-fr/elasticsearch-operator/api/shared"
@@ -18,7 +18,7 @@ func TestBuildIngress(t *testing.T) {
 	var (
 		err error
 		o   *elasticsearchcrd.Elasticsearch
-		i   []networkingv1.Ingress
+		i   []*networkingv1.Ingress
 	)
 
 	// With default values
@@ -88,7 +88,7 @@ func TestBuildIngress(t *testing.T) {
 	i, err = buildIngresses(o)
 
 	assert.NoError(t, err)
-	test.EqualFromYamlFile[*networkingv1.Ingress](t, "testdata/ingress_with_target.yml", &i[0], scheme.Scheme)
+	test.EqualFromYamlFile[*networkingv1.Ingress](t, "testdata/ingress_with_target.yml", i[0], scheme.Scheme)
 
 	// When ingress is enabled without specify TargetNodeGroupName
 	o = &elasticsearchcrd.Elasticsearch{
@@ -124,7 +124,7 @@ func TestBuildIngress(t *testing.T) {
 	i, err = buildIngresses(o)
 
 	assert.NoError(t, err)
-	test.EqualFromYamlFile[*networkingv1.Ingress](t, "testdata/ingress_without_target.yml", &i[0], scheme.Scheme)
+	test.EqualFromYamlFile[*networkingv1.Ingress](t, "testdata/ingress_without_target.yml", i[0], scheme.Scheme)
 
 	// When ingress is enabled and specify all options
 	o = &elasticsearchcrd.Elasticsearch{
@@ -179,7 +179,7 @@ func TestBuildIngress(t *testing.T) {
 	i, err = buildIngresses(o)
 
 	assert.NoError(t, err)
-	test.EqualFromYamlFile[*networkingv1.Ingress](t, "testdata/ingress_with_all_options.yml", &i[0], scheme.Scheme)
+	test.EqualFromYamlFile[*networkingv1.Ingress](t, "testdata/ingress_with_all_options.yml", i[0], scheme.Scheme)
 
 	// When target nodeGroup not exist
 	// When ingress is enabled

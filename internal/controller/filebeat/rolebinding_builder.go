@@ -9,12 +9,12 @@ import (
 // buildRoleBindings permit to generate RoleBinding object
 // It return nil if we are not on Openshift
 // We only need roleBinding on Openshift because of we need to binding it with scc
-func buildRoleBindings(fb *beatcrd.Filebeat, isOpenshift bool) (rolesBindings []rbacv1.RoleBinding, err error) {
+func buildRoleBindings(fb *beatcrd.Filebeat, isOpenshift bool) (rolesBindings []*rbacv1.RoleBinding, err error) {
 	if !isOpenshift {
 		return nil, nil
 	}
 
-	rolesBindings = []rbacv1.RoleBinding{
+	rolesBindings = []*rbacv1.RoleBinding{
 		{
 			ObjectMeta: metav1.ObjectMeta{
 				Namespace:   fb.Namespace,

@@ -7,12 +7,12 @@ import (
 )
 
 // BuildCAElasticsearchSecret permit to build CA secret from Elasticsearch ApiPKI
-func buildCAElasticsearchSecrets(fb *beatcrd.Filebeat, secretCaElasticsearch *corev1.Secret) (secrets []corev1.Secret, err error) {
+func buildCAElasticsearchSecrets(fb *beatcrd.Filebeat, secretCaElasticsearch *corev1.Secret) (secrets []*corev1.Secret, err error) {
 	if secretCaElasticsearch == nil {
 		return nil, nil
 	}
 
-	secrets = []corev1.Secret{
+	secrets = []*corev1.Secret{
 		{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:        GetSecretNameForCAElasticsearch(fb),

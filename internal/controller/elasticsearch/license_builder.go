@@ -10,7 +10,7 @@ import (
 )
 
 // BuildUserSystem permit to generate system users
-func buildLicenses(es *elasticsearchcrd.Elasticsearch, s *corev1.Secret) (licenses []elasticsearchapicrd.License, err error) {
+func buildLicenses(es *elasticsearchcrd.Elasticsearch, s *corev1.Secret) (licenses []*elasticsearchapicrd.License, err error) {
 	if es.Spec.LicenseSecretRef == nil || es.Spec.LicenseSecretRef.Name == "" {
 		return nil, nil
 	}
@@ -19,7 +19,7 @@ func buildLicenses(es *elasticsearchcrd.Elasticsearch, s *corev1.Secret) (licens
 		return nil, errors.New("The secret must have `license` key")
 	}
 
-	licenses = []elasticsearchapicrd.License{
+	licenses = []*elasticsearchapicrd.License{
 		{
 			ObjectMeta: metav1.ObjectMeta{
 				Namespace:   es.Namespace,

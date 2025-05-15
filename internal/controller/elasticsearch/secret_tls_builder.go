@@ -6,10 +6,12 @@ import (
 
 	"emperror.dev/errors"
 	"github.com/disaster37/goca"
-	"github.com/disaster37/operator-sdk-extra/pkg/helper"
+	"github.com/disaster37/operator-sdk-extra/v2/pkg/helper"
 	elasticsearchcrd "github.com/webcenter-fr/elasticsearch-operator/api/elasticsearch/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime"
+	ctrl "sigs.k8s.io/controller-runtime"
 )
 
 const (
@@ -312,7 +314,7 @@ func generateApiCertificate(o *elasticsearchcrd.Elasticsearch, rootCA *goca.CA) 
 
 // updateSecret return true if update existing secret
 // It return false if new secret
-func updateSecret(old, new *corev1.Secret) (s *corev1.Secret, updated bool) {
+func updateSecret(o *elasticsearchcrd.Elasticsearch, old, new *corev1.Secret, scheme *runtime.Scheme) (s *corev1.Secret, updated bool, err error) {
 	if old != nil {
 		old.Labels = new.Labels
 		old.Annotations = new.Annotations
@@ -324,7 +326,12 @@ func updateSecret(old, new *corev1.Secret) (s *corev1.Secret, updated bool) {
 		updated = false
 	}
 
-	return s, updated
+	// Set ownerReferences on expected object before to diff them
+	if err = ctrl.SetControllerReference(o, s, scheme); err != nil {
+		return nil, updated, errors.Wrapf(err, "Error when set owner reference on object '%s'", s.GetName())
+	}
+
+	return s, updated, nil
 }
 
 func getLabelsForTlsSecret(o *elasticsearchcrd.Elasticsearch) map[string]string {

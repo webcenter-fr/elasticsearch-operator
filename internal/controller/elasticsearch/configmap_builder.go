@@ -13,13 +13,13 @@ import (
 )
 
 // BuildConfigMaps permit to generate config maps for each node Groups
-func buildConfigMaps(es *elasticsearchcrd.Elasticsearch) (configMaps []corev1.ConfigMap, err error) {
+func buildConfigMaps(es *elasticsearchcrd.Elasticsearch) (configMaps []*corev1.ConfigMap, err error) {
 	var (
-		configMap      corev1.ConfigMap
+		configMap      *corev1.ConfigMap
 		expectedConfig map[string]string
 	)
 
-	configMaps = make([]corev1.ConfigMap, 0, len(es.Spec.NodeGroups)+1)
+	configMaps = make([]*corev1.ConfigMap, 0, len(es.Spec.NodeGroups)+1)
 
 	// Compute configmap that store Elasticsearch settings
 	elasticsearchConfig := map[string]any{
@@ -91,7 +91,7 @@ func buildConfigMaps(es *elasticsearchcrd.Elasticsearch) (configMaps []corev1.Co
 			return nil, errors.Wrapf(err, "Error when merge expected config with computed config on node group %s", nodeGroup.Name)
 		}
 
-		configMap = corev1.ConfigMap{
+		configMap = &corev1.ConfigMap{
 			ObjectMeta: metav1.ObjectMeta{
 				Namespace: es.Namespace,
 				Name:      GetNodeGroupConfigMapName(es, nodeGroup.Name),
@@ -106,7 +106,7 @@ func buildConfigMaps(es *elasticsearchcrd.Elasticsearch) (configMaps []corev1.Co
 	}
 
 	// Compute configmap that store the bootstrapping properties
-	configMap = corev1.ConfigMap{
+	configMap = &corev1.ConfigMap{
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: es.Namespace,
 			Name:      GetBootstrappingConfigMapName(es),

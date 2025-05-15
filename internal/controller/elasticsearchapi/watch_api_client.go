@@ -3,18 +3,18 @@ package elasticsearchapi
 import (
 	eshandler "github.com/disaster37/es-handler/v8"
 	"github.com/disaster37/generic-objectmatcher/patch"
-	"github.com/disaster37/operator-sdk-extra/pkg/controller"
+	"github.com/disaster37/operator-sdk-extra/v2/pkg/controller/remote"
 	olivere "github.com/olivere/elastic/v7"
 	elasticsearchapicrd "github.com/webcenter-fr/elasticsearch-operator/api/elasticsearchapi/v1"
 )
 
 type watchApiClient struct {
-	*controller.BasicRemoteExternalReconciler[*elasticsearchapicrd.Watch, *olivere.XPackWatch, eshandler.ElasticsearchHandler]
+	remote.RemoteExternalReconciler[*elasticsearchapicrd.Watch, *olivere.XPackWatch, eshandler.ElasticsearchHandler]
 }
 
-func newWatchApiClient(client eshandler.ElasticsearchHandler) controller.RemoteExternalReconciler[*elasticsearchapicrd.Watch, *olivere.XPackWatch, eshandler.ElasticsearchHandler] {
+func newWatchApiClient(client eshandler.ElasticsearchHandler) remote.RemoteExternalReconciler[*elasticsearchapicrd.Watch, *olivere.XPackWatch, eshandler.ElasticsearchHandler] {
 	return &watchApiClient{
-		BasicRemoteExternalReconciler: controller.NewBasicRemoteExternalReconciler[*elasticsearchapicrd.Watch, *olivere.XPackWatch, eshandler.ElasticsearchHandler](client),
+		RemoteExternalReconciler: remote.NewRemoteExternalReconciler[*elasticsearchapicrd.Watch, *olivere.XPackWatch, eshandler.ElasticsearchHandler](client),
 	}
 }
 
@@ -79,6 +79,6 @@ func (h *watchApiClient) Delete(o *elasticsearchapicrd.Watch) (err error) {
 	return h.Client().WatchDelete(o.GetExternalName())
 }
 
-func (h *watchApiClient) Diff(currentOject *olivere.XPackWatch, expectedObject *olivere.XPackWatch, originalObject *olivere.XPackWatch, ignoresDiff ...patch.CalculateOption) (patchResult *patch.PatchResult, err error) {
+func (h *watchApiClient) Diff(currentOject *olivere.XPackWatch, expectedObject *olivere.XPackWatch, originalObject *olivere.XPackWatch, o *elasticsearchapicrd.Watch, ignoresDiff ...patch.CalculateOption) (patchResult *patch.PatchResult, err error) {
 	return h.Client().WatchDiff(currentOject, expectedObject, originalObject)
 }

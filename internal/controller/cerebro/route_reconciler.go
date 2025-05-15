@@ -4,18 +4,16 @@ import (
 	"context"
 
 	"emperror.dev/errors"
-	"github.com/disaster37/operator-sdk-extra/pkg/apis/shared"
-	"github.com/disaster37/operator-sdk-extra/pkg/controller"
-	"github.com/disaster37/operator-sdk-extra/pkg/helper"
-	"github.com/disaster37/operator-sdk-extra/pkg/object"
+	"github.com/disaster37/operator-sdk-extra/v2/pkg/apis/shared"
+	"github.com/disaster37/operator-sdk-extra/v2/pkg/controller/multiphase"
 	routev1 "github.com/openshift/api/route/v1"
 	"github.com/sirupsen/logrus"
 	cerebrocrd "github.com/webcenter-fr/elasticsearch-operator/api/cerebro/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/tools/record"
-	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
 
 const (
@@ -24,12 +22,12 @@ const (
 )
 
 type routeReconciler struct {
-	controller.MultiPhaseStepReconcilerAction
+	multiphase.MultiPhaseStepReconcilerAction[*cerebrocrd.Cerebro, *routev1.Route]
 }
 
-func newRouteReconciler(client client.Client, recorder record.EventRecorder) (multiPhaseStepReconcilerAction controller.MultiPhaseStepReconcilerAction) {
+func newRouteReconciler(client client.Client, recorder record.EventRecorder) (multiPhaseStepReconcilerAction multiphase.MultiPhaseStepReconcilerAction[*cerebrocrd.Cerebro, *routev1.Route]) {
 	return &routeReconciler{
-		MultiPhaseStepReconcilerAction: controller.NewBasicMultiPhaseStepReconcilerAction(
+		MultiPhaseStepReconcilerAction: multiphase.NewMultiPhaseStepReconcilerAction[*cerebrocrd.Cerebro, *routev1.Route](
 			client,
 			RoutePhase,
 			RouteCondition,
@@ -39,10 +37,9 @@ func newRouteReconciler(client client.Client, recorder record.EventRecorder) (mu
 }
 
 // Read existing route
-func (r *routeReconciler) Read(ctx context.Context, resource object.MultiPhaseObject, data map[string]any, logger *logrus.Entry) (read controller.MultiPhaseRead, res ctrl.Result, err error) {
-	o := resource.(*cerebrocrd.Cerebro)
+func (r *routeReconciler) Read(ctx context.Context, o *cerebrocrd.Cerebro, data map[string]any, logger *logrus.Entry) (read multiphase.MultiPhaseRead[*routev1.Route], res reconcile.Result, err error) {
 	route := &routev1.Route{}
-	read = controller.NewBasicMultiPhaseRead()
+	read = multiphase.NewMultiPhaseRead[*routev1.Route]()
 
 	// Read current route
 	if err = r.Client().Get(ctx, types.NamespacedName{Namespace: o.Namespace, Name: GetIngressName(o)}, route); err != nil {
@@ -52,7 +49,7 @@ func (r *routeReconciler) Read(ctx context.Context, resource object.MultiPhaseOb
 		route = nil
 	}
 	if route != nil {
-		read.SetCurrentObjects([]client.Object{route})
+		read.AddCurrentObject(route)
 	}
 
 	// Generate expected route
@@ -60,7 +57,7 @@ func (r *routeReconciler) Read(ctx context.Context, resource object.MultiPhaseOb
 	if err != nil {
 		return read, res, errors.Wrap(err, "Error when generate route")
 	}
-	read.SetExpectedObjects(helper.ToSliceOfObject(expectedRoutes))
+	read.SetExpectedObjects(expectedRoutes)
 
 	return read, res, nil
 }

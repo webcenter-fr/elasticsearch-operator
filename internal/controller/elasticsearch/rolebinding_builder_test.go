@@ -3,7 +3,7 @@ package elasticsearch
 import (
 	"testing"
 
-	"github.com/disaster37/operator-sdk-extra/pkg/test"
+	"github.com/disaster37/operator-sdk-extra/v2/pkg/test"
 	"github.com/stretchr/testify/assert"
 	elasticsearchcrd "github.com/webcenter-fr/elasticsearch-operator/api/elasticsearch/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
@@ -15,7 +15,7 @@ import (
 func TestBuildRoleBindings(t *testing.T) {
 	var (
 		err          error
-		roleBindings []rbacv1.RoleBinding
+		roleBindings []*rbacv1.RoleBinding
 		o            *elasticsearchcrd.Elasticsearch
 	)
 
@@ -44,7 +44,7 @@ func TestBuildRoleBindings(t *testing.T) {
 	roleBindings, err = buildRoleBindings(o, true)
 	assert.NoError(t, err)
 	assert.Equal(t, 1, len(roleBindings))
-	test.EqualFromYamlFile[*rbacv1.RoleBinding](t, "testdata/rolebinding_default.yml", &roleBindings[0], scheme.Scheme)
+	test.EqualFromYamlFile[*rbacv1.RoleBinding](t, "testdata/rolebinding_default.yml", roleBindings[0], scheme.Scheme)
 
 	// When on Openshift and disable SetVMMaxMapCoun
 	o = &elasticsearchcrd.Elasticsearch{
@@ -60,5 +60,5 @@ func TestBuildRoleBindings(t *testing.T) {
 	roleBindings, err = buildRoleBindings(o, true)
 	assert.NoError(t, err)
 	assert.Equal(t, 1, len(roleBindings))
-	test.EqualFromYamlFile[*rbacv1.RoleBinding](t, "testdata/rolebinding_anyuid.yml", &roleBindings[0], scheme.Scheme)
+	test.EqualFromYamlFile[*rbacv1.RoleBinding](t, "testdata/rolebinding_anyuid.yml", roleBindings[0], scheme.Scheme)
 }

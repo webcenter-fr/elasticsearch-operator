@@ -4,7 +4,7 @@ import (
 	"os"
 	"testing"
 
-	"github.com/disaster37/operator-sdk-extra/pkg/test"
+	"github.com/disaster37/operator-sdk-extra/v2/pkg/test"
 	"github.com/stretchr/testify/assert"
 	kibanacrd "github.com/webcenter-fr/elasticsearch-operator/api/kibana/v1"
 	networkingv1 "k8s.io/api/networking/v1"
@@ -16,7 +16,7 @@ func TestBuildNetworkPolicies(t *testing.T) {
 	var (
 		err error
 		o   *kibanacrd.Kibana
-		np  []networkingv1.NetworkPolicy
+		np  []*networkingv1.NetworkPolicy
 	)
 
 	// When not in pod
@@ -32,7 +32,7 @@ func TestBuildNetworkPolicies(t *testing.T) {
 
 	assert.NoError(t, err)
 	assert.Equal(t, 1, len(np))
-	test.EqualFromYamlFile[*networkingv1.NetworkPolicy](t, "testdata/networkpolicy_not_in_pod.yml", &np[0], scheme.Scheme)
+	test.EqualFromYamlFile[*networkingv1.NetworkPolicy](t, "testdata/networkpolicy_not_in_pod.yml", np[0], scheme.Scheme)
 
 	// When in pod
 	_ = os.Setenv("POD_NAME", "test")
@@ -49,5 +49,5 @@ func TestBuildNetworkPolicies(t *testing.T) {
 
 	assert.NoError(t, err)
 	assert.Equal(t, 1, len(np))
-	test.EqualFromYamlFile[*networkingv1.NetworkPolicy](t, "testdata/networkpolicy_in_pod.yml", &np[0], scheme.Scheme)
+	test.EqualFromYamlFile[*networkingv1.NetworkPolicy](t, "testdata/networkpolicy_in_pod.yml", np[0], scheme.Scheme)
 }

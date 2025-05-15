@@ -14,7 +14,7 @@ limitations under the License.
 package v1
 
 import (
-	"github.com/disaster37/operator-sdk-extra/pkg/apis"
+	"github.com/disaster37/operator-sdk-extra/v2/pkg/apis/remote"
 	"github.com/webcenter-fr/elasticsearch-operator/api/shared"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -55,7 +55,7 @@ type LicenseStatus struct {
 	// +operator-sdk:csv:customresourcedefinitions:type=status
 	ExpireAt string `json:"expireAt,omitempty"`
 
-	apis.BasicRemoteObjectStatus `json:",inline"`
+	remote.DefaultRemoteObjectStatus `json:",inline"`
 }
 
 //+kubebuilder:object:root=true

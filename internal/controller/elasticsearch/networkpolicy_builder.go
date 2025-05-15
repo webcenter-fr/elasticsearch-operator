@@ -16,7 +16,7 @@ import (
 )
 
 // BuildNetworkPolicy permit to generate Network policy object
-func buildNetworkPolicies(es *elasticsearchcrd.Elasticsearch, listCaller []client.Object) (networkPolices []networkingv1.NetworkPolicy, err error) {
+func buildNetworkPolicies(es *elasticsearchcrd.Elasticsearch, listCaller []client.Object) (networkPolices []*networkingv1.NetworkPolicy, err error) {
 	var npp networkingv1.NetworkPolicyPeer
 
 	npps := make([]networkingv1.NetworkPolicyPeer, 0, len(listCaller)+1)
@@ -78,7 +78,7 @@ func buildNetworkPolicies(es *elasticsearchcrd.Elasticsearch, listCaller []clien
 
 	tcpProtocol := v1.ProtocolTCP
 
-	networkPolices = []networkingv1.NetworkPolicy{
+	networkPolices = []*networkingv1.NetworkPolicy{
 		{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:        GetNetworkPolicyName(es),

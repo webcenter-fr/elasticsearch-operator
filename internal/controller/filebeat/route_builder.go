@@ -9,8 +9,8 @@ import (
 
 // buildRoutes permit to generate Route object
 // It will overwrite the target service
-func buildRoutes(fb *beatcrd.Filebeat) (routes []routev1.Route, err error) {
-	routes = make([]routev1.Route, 0, len(fb.Spec.Routes))
+func buildRoutes(fb *beatcrd.Filebeat) (routes []*routev1.Route, err error) {
+	routes = make([]*routev1.Route, 0, len(fb.Spec.Routes))
 	var route *routev1.Route
 
 	for _, i := range fb.Spec.Routes {
@@ -33,7 +33,7 @@ func buildRoutes(fb *beatcrd.Filebeat) (routes []routev1.Route, err error) {
 			TargetPort: intstr.FromInt(int(i.ContainerPort)),
 		}
 
-		routes = append(routes, *route)
+		routes = append(routes, route)
 
 	}
 

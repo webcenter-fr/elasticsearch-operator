@@ -22,9 +22,9 @@ import (
 	"time"
 
 	"emperror.dev/errors"
-	"github.com/disaster37/operator-sdk-extra/pkg/apis/shared"
-	"github.com/disaster37/operator-sdk-extra/pkg/controller"
-	"github.com/disaster37/operator-sdk-extra/pkg/object"
+	"github.com/disaster37/operator-sdk-extra/v2/pkg/apis/shared"
+	"github.com/disaster37/operator-sdk-extra/v2/pkg/controller"
+	"github.com/disaster37/operator-sdk-extra/v2/pkg/controller/multiphase"
 	routev1 "github.com/openshift/api/route/v1"
 	"github.com/sirupsen/logrus"
 	cerebrocrd "github.com/webcenter-fr/elasticsearch-operator/api/cerebro/v1"
@@ -35,11 +35,13 @@ import (
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	condition "k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/fields"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/tools/record"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	k8scontroller "sigs.k8s.io/controller-runtime/pkg/controller"
+	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 	"sigs.k8s.io/controller-runtime/pkg/handler"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
@@ -52,42 +54,42 @@ const (
 // CerebroReconciler reconciles a Cerebro objectFHost
 type CerebroReconciler struct {
 	controller.Controller
-	controller.MultiPhaseReconcilerAction
-	controller.MultiPhaseReconciler
+	multiphase.MultiPhaseReconciler[*cerebrocrd.Cerebro]
+	multiphase.MultiPhaseReconcilerAction[*cerebrocrd.Cerebro]
 	name            string
+	stepReconcilers []multiphase.MultiPhaseStepReconcilerAction[*cerebrocrd.Cerebro, client.Object]
 	kubeCapability  common.KubernetesCapability
-	stepReconcilers []controller.MultiPhaseStepReconcilerAction
 }
 
-func NewCerebroReconciler(client client.Client, logger *logrus.Entry, recorder record.EventRecorder, kubeCapability common.KubernetesCapability) (multiPhaseReconciler controller.Controller) {
+func NewCerebroReconciler(c client.Client, logger *logrus.Entry, recorder record.EventRecorder, kubeCapability common.KubernetesCapability) (multiPhaseReconciler controller.Controller) {
 	reconciler := &CerebroReconciler{
-		Controller: controller.NewBasicController(),
-		MultiPhaseReconcilerAction: controller.NewBasicMultiPhaseReconcilerAction(
-			client,
-			controller.ReadyCondition,
-			recorder,
-		),
-		MultiPhaseReconciler: controller.NewBasicMultiPhaseReconciler(
-			client,
+		Controller: controller.NewController(),
+		MultiPhaseReconciler: multiphase.NewMultiPhaseReconciler[*cerebrocrd.Cerebro](
+			c,
 			name,
 			finalizer,
 			logger,
 			recorder,
 		),
+		MultiPhaseReconcilerAction: multiphase.NewMultiPhaseReconcilerAction[*cerebrocrd.Cerebro](
+			c,
+			controller.ReadyCondition,
+			recorder,
+		),
 		name:           name,
 		kubeCapability: kubeCapability,
-		stepReconcilers: []controller.MultiPhaseStepReconcilerAction{
-			newApplicationSecretReconciler(client, recorder),
-			newConfiMapReconciler(client, recorder),
-			newServiceReconciler(client, recorder),
-			newDeploymentReconciler(client, recorder, kubeCapability.HasRoute),
-			newIngressReconciler(client, recorder),
-			newLoadBalancerReconciler(client, recorder),
+		stepReconcilers: []multiphase.MultiPhaseStepReconcilerAction[*cerebrocrd.Cerebro, client.Object]{
+			multiphase.NewObjectMultiPhaseStepReconcilerAction[*cerebrocrd.Cerebro, *corev1.Secret, client.Object](newApplicationSecretReconciler(c, recorder)),
+			multiphase.NewObjectMultiPhaseStepReconcilerAction[*cerebrocrd.Cerebro, *corev1.ConfigMap, client.Object](newConfiMapReconciler(c, recorder)),
+			multiphase.NewObjectMultiPhaseStepReconcilerAction[*cerebrocrd.Cerebro, *corev1.Service, client.Object](newServiceReconciler(c, recorder)),
+			multiphase.NewObjectMultiPhaseStepReconcilerAction[*cerebrocrd.Cerebro, *appv1.Deployment, client.Object](newDeploymentReconciler(c, recorder, kubeCapability.HasRoute)),
+			multiphase.NewObjectMultiPhaseStepReconcilerAction[*cerebrocrd.Cerebro, *networkingv1.Ingress, client.Object](newIngressReconciler(c, recorder)),
+			multiphase.NewObjectMultiPhaseStepReconcilerAction[*cerebrocrd.Cerebro, *corev1.Service, client.Object](newLoadBalancerReconciler(c, recorder)),
 		},
 	}
 
 	if kubeCapability.HasRoute {
-		reconciler.stepReconcilers = append(reconciler.stepReconcilers, newRouteReconciler(client, recorder))
+		reconciler.stepReconcilers = append(reconciler.stepReconcilers, multiphase.NewObjectMultiPhaseStepReconcilerAction[*cerebrocrd.Cerebro, *routev1.Route, client.Object](newRouteReconciler(c, recorder)))
 	}
 
 	return reconciler
@@ -117,7 +119,7 @@ func NewCerebroReconciler(client client.Client, logger *logrus.Entry, recorder r
 //
 // For more details, check Reconcile and its Result here:
 // - https://pkg.go.dev/sigs.k8s.io/controller-runtime@v0.13.0/pkg/reconcile
-func (r *CerebroReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
+func (r *CerebroReconciler) Reconcile(ctx context.Context, req reconcile.Request) (reconcile.Result, error) {
 	cb := &cerebrocrd.Cerebro{}
 	data := map[string]any{}
 
@@ -144,7 +146,7 @@ func (h *CerebroReconciler) SetupWithManager(mgr ctrl.Manager) error {
 		Watches(&corev1.ConfigMap{}, handler.EnqueueRequestsFromMapFunc(watchConfigMap(h.Client()))).
 		Watches(&cerebrocrd.Host{}, handler.EnqueueRequestsFromMapFunc(watchHost(h.Client()))).
 		WithOptions(k8scontroller.Options{
-			RateLimiter: common.DefaultControllerRateLimiter[reconcile.Request](),
+			RateLimiter: controller.DefaultControllerRateLimiter[reconcile.Request](),
 		})
 
 	if h.kubeCapability.HasRoute {
@@ -154,30 +156,54 @@ func (h *CerebroReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrlBuilder.Complete(h)
 }
 
-func (h *CerebroReconciler) Configure(ctx context.Context, req ctrl.Request, resource object.MultiPhaseObject, data map[string]any, logger *logrus.Entry) (res ctrl.Result, err error) {
-	// Set prometheus Metrics
-	common.ControllerInstances.WithLabelValues(h.name, resource.GetNamespace(), resource.GetName()).Set(1)
-
-	return h.MultiPhaseReconcilerAction.Configure(ctx, req, resource, data, logger)
+func (h *CerebroReconciler) Client() client.Client {
+	return h.MultiPhaseReconcilerAction.Client()
 }
 
-func (h *CerebroReconciler) Delete(ctx context.Context, o object.MultiPhaseObject, data map[string]any, logger *logrus.Entry) (err error) {
+func (h *CerebroReconciler) Recorder() record.EventRecorder {
+	return h.MultiPhaseReconcilerAction.Recorder()
+}
+
+func (h *CerebroReconciler) Configure(ctx context.Context, req reconcile.Request, o *cerebrocrd.Cerebro, data map[string]any, logger *logrus.Entry) (res reconcile.Result, err error) {
+	// Set prometheus Metrics
+	common.ControllerInstances.WithLabelValues(h.name, o.GetNamespace(), o.GetName()).Set(1)
+
+	return h.MultiPhaseReconcilerAction.Configure(ctx, req, o, data, logger)
+}
+
+func (h *CerebroReconciler) Delete(ctx context.Context, o *cerebrocrd.Cerebro, data map[string]any, logger *logrus.Entry) (err error) {
 	// Set prometheus Metrics
 	common.ControllerInstances.WithLabelValues(h.name, o.GetNamespace(), o.GetName()).Set(0)
-	common.ControllerErrors.WithLabelValues(h.name, o.GetNamespace(), o.GetName()).Inc()
 
-	return h.MultiPhaseReconcilerAction.Delete(ctx, o, data, logger)
+	err = h.MultiPhaseReconcilerAction.Delete(ctx, o, data, logger)
+	if err != nil {
+		return err
+	}
+
+	// Remove fializer on hosts resources linked to this cerebro
+	hostList := &cerebrocrd.HostList{}
+	fs := fields.ParseSelectorOrDie(fmt.Sprintf("spec.cerebroRef.fullname=%s/%s", o.GetNamespace(), o.GetName()))
+	if err = h.Client().List(ctx, hostList, &client.ListOptions{FieldSelector: fs}); err != nil {
+		return errors.Wrap(err, "error when read Cerebro hosts")
+	}
+	for _, host := range hostList.Items {
+		controllerutil.RemoveFinalizer(&host, finalizer.String())
+		if err = h.Client().Update(ctx, &host); err != nil {
+			return errors.Wrapf(err, "Error when remove finalizer on Host %s", host.Name)
+		}
+	}
+
+	return nil
 }
 
-func (h *CerebroReconciler) OnError(ctx context.Context, o object.MultiPhaseObject, data map[string]any, currentErr error, logger *logrus.Entry) (res ctrl.Result, err error) {
+func (h *CerebroReconciler) OnError(ctx context.Context, o *cerebrocrd.Cerebro, data map[string]any, currentErr error, logger *logrus.Entry) (res reconcile.Result, err error) {
 	common.TotalErrors.Inc()
 	common.ControllerErrors.WithLabelValues(h.name, o.GetNamespace(), o.GetName()).Inc()
 
 	return h.MultiPhaseReconcilerAction.OnError(ctx, o, data, currentErr, logger)
 }
 
-func (h *CerebroReconciler) OnSuccess(ctx context.Context, r object.MultiPhaseObject, data map[string]any, logger *logrus.Entry) (res ctrl.Result, err error) {
-	o := r.(*cerebrocrd.Cerebro)
+func (h *CerebroReconciler) OnSuccess(ctx context.Context, o *cerebrocrd.Cerebro, data map[string]any, logger *logrus.Entry) (res reconcile.Result, err error) {
 
 	// Reset the current cluster errors
 	common.ControllerErrors.WithLabelValues(h.name, o.GetNamespace(), o.GetName()).Set(0)

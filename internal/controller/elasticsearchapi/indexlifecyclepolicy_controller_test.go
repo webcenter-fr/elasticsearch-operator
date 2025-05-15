@@ -9,10 +9,10 @@ import (
 	"emperror.dev/errors"
 	"github.com/disaster37/es-handler/v8/mocks"
 	"github.com/disaster37/generic-objectmatcher/patch"
-	"github.com/disaster37/operator-sdk-extra/pkg/apis"
-	"github.com/disaster37/operator-sdk-extra/pkg/controller"
-	"github.com/disaster37/operator-sdk-extra/pkg/helper"
-	"github.com/disaster37/operator-sdk-extra/pkg/test"
+	"github.com/disaster37/operator-sdk-extra/v2/pkg/apis"
+	"github.com/disaster37/operator-sdk-extra/v2/pkg/controller"
+	"github.com/disaster37/operator-sdk-extra/v2/pkg/helper"
+	"github.com/disaster37/operator-sdk-extra/v2/pkg/test"
 	olivere "github.com/olivere/elastic/v7"
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
@@ -32,11 +32,10 @@ func (t *ElasticsearchapiControllerTestSuite) TestIndexLifecyclePolicyReconciler
 		Name:      "t-ilm-" + helper.RandomString(10),
 		Namespace: "default",
 	}
-	ilm := &elasticsearchapicrd.IndexLifecyclePolicy{}
 	data := map[string]any{}
 
-	testCase := test.NewTestCase(t.T(), t.k8sClient, key, ilm, 5*time.Second, data)
-	testCase.Steps = []test.TestStep{
+	testCase := test.NewTestCase[*elasticsearchapicrd.IndexLifecyclePolicy](t.T(), t.k8sClient, key, 5*time.Second, data)
+	testCase.Steps = []test.TestStep[*elasticsearchapicrd.IndexLifecyclePolicy]{
 		doCreateILMStep(),
 		doUpdateILMStep(),
 		doDeleteILMStep(),
@@ -199,10 +198,10 @@ func doMockILM(mockES *mocks.MockElasticsearchHandler) func(stepName *string, da
 	}
 }
 
-func doCreateILMStep() test.TestStep {
-	return test.TestStep{
+func doCreateILMStep() test.TestStep[*elasticsearchapicrd.IndexLifecyclePolicy] {
+	return test.TestStep[*elasticsearchapicrd.IndexLifecyclePolicy]{
 		Name: "create",
-		Do: func(c client.Client, key types.NamespacedName, o client.Object, data map[string]any) (err error) {
+		Do: func(c client.Client, key types.NamespacedName, o *elasticsearchapicrd.IndexLifecyclePolicy, data map[string]any) (err error) {
 			logrus.Infof("=== Add new ILM policy %s/%s ===\n\n", key.Namespace, key.Name)
 			ilm := &elasticsearchapicrd.IndexLifecyclePolicy{
 				ObjectMeta: metav1.ObjectMeta{
@@ -247,7 +246,7 @@ func doCreateILMStep() test.TestStep {
 
 			return nil
 		},
-		Check: func(t *testing.T, c client.Client, key types.NamespacedName, o client.Object, data map[string]any) (err error) {
+		Check: func(t *testing.T, c client.Client, key types.NamespacedName, o *elasticsearchapicrd.IndexLifecyclePolicy, data map[string]any) (err error) {
 			ilm := &elasticsearchapicrd.IndexLifecyclePolicy{}
 			isCreated := false
 
@@ -274,19 +273,18 @@ func doCreateILMStep() test.TestStep {
 	}
 }
 
-func doUpdateILMStep() test.TestStep {
-	return test.TestStep{
+func doUpdateILMStep() test.TestStep[*elasticsearchapicrd.IndexLifecyclePolicy] {
+	return test.TestStep[*elasticsearchapicrd.IndexLifecyclePolicy]{
 		Name: "update",
-		Do: func(c client.Client, key types.NamespacedName, o client.Object, data map[string]any) (err error) {
+		Do: func(c client.Client, key types.NamespacedName, o *elasticsearchapicrd.IndexLifecyclePolicy, data map[string]any) (err error) {
 			logrus.Infof("=== Update ILM policy %s/%s ===\n\n", key.Namespace, key.Name)
 
 			if o == nil {
 				return errors.New("ILM is null")
 			}
-			ilm := o.(*elasticsearchapicrd.IndexLifecyclePolicy)
 
-			data["lastGeneration"] = ilm.GetStatus().GetObservedGeneration()
-			ilm.Spec.Policy = &elasticsearchapicrd.IndexLifecyclePolicySpecPolicy{
+			data["lastGeneration"] = o.GetStatus().GetObservedGeneration()
+			o.Spec.Policy = &elasticsearchapicrd.IndexLifecyclePolicySpecPolicy{
 				Phases: elasticsearchapicrd.IndexLifecyclePolicySpecPolicyPhases{
 					Warm: &elasticsearchapicrd.IndexLifecyclePolicySpecPolicyPhasesPhase{
 						MinAge: ptr.To("30d"),
@@ -310,13 +308,13 @@ func doUpdateILMStep() test.TestStep {
 					},
 				},
 			}
-			if err = c.Update(context.Background(), ilm); err != nil {
+			if err = c.Update(context.Background(), o); err != nil {
 				return err
 			}
 
 			return nil
 		},
-		Check: func(t *testing.T, c client.Client, key types.NamespacedName, o client.Object, data map[string]any) error {
+		Check: func(t *testing.T, c client.Client, key types.NamespacedName, o *elasticsearchapicrd.IndexLifecyclePolicy, data map[string]any) error {
 			ilm := &elasticsearchapicrd.IndexLifecyclePolicy{}
 			isUpdated := false
 
@@ -346,25 +344,24 @@ func doUpdateILMStep() test.TestStep {
 	}
 }
 
-func doDeleteILMStep() test.TestStep {
-	return test.TestStep{
+func doDeleteILMStep() test.TestStep[*elasticsearchapicrd.IndexLifecyclePolicy] {
+	return test.TestStep[*elasticsearchapicrd.IndexLifecyclePolicy]{
 		Name: "delete",
-		Do: func(c client.Client, key types.NamespacedName, o client.Object, data map[string]any) (err error) {
+		Do: func(c client.Client, key types.NamespacedName, o *elasticsearchapicrd.IndexLifecyclePolicy, data map[string]any) (err error) {
 			logrus.Infof("=== Delete ILM policy %s/%s ===\n\n", key.Namespace, key.Name)
 
 			if o == nil {
 				return errors.New("ILM is null")
 			}
-			ilm := o.(*elasticsearchapicrd.IndexLifecyclePolicy)
 
 			wait := int64(0)
-			if err = c.Delete(context.Background(), ilm, &client.DeleteOptions{GracePeriodSeconds: &wait}); err != nil {
+			if err = c.Delete(context.Background(), o, &client.DeleteOptions{GracePeriodSeconds: &wait}); err != nil {
 				return err
 			}
 
 			return nil
 		},
-		Check: func(t *testing.T, c client.Client, key types.NamespacedName, o client.Object, data map[string]any) (err error) {
+		Check: func(t *testing.T, c client.Client, key types.NamespacedName, o *elasticsearchapicrd.IndexLifecyclePolicy, data map[string]any) (err error) {
 			ilm := &elasticsearchapicrd.IndexLifecyclePolicy{}
 			isDeleted := false
 

@@ -5,7 +5,7 @@ import (
 	"fmt"
 
 	"emperror.dev/errors"
-	"github.com/disaster37/operator-sdk-extra/pkg/helper"
+	"github.com/disaster37/operator-sdk-extra/v2/pkg/helper"
 	"github.com/sirupsen/logrus"
 	elasticsearchcrd "github.com/webcenter-fr/elasticsearch-operator/api/elasticsearch/v1"
 	"github.com/webcenter-fr/elasticsearch-operator/internal/controller/elasticsearch"

@@ -5,10 +5,8 @@ import (
 	"time"
 
 	"emperror.dev/errors"
-	"github.com/disaster37/operator-sdk-extra/pkg/apis/shared"
-	"github.com/disaster37/operator-sdk-extra/pkg/controller"
-	"github.com/disaster37/operator-sdk-extra/pkg/helper"
-	"github.com/disaster37/operator-sdk-extra/pkg/object"
+	"github.com/disaster37/operator-sdk-extra/v2/pkg/apis/shared"
+	"github.com/disaster37/operator-sdk-extra/v2/pkg/controller/multiphase"
 	"github.com/sirupsen/logrus"
 	elasticsearchcrd "github.com/webcenter-fr/elasticsearch-operator/api/elasticsearch/v1"
 	kibanacrd "github.com/webcenter-fr/elasticsearch-operator/api/kibana/v1"
@@ -17,8 +15,8 @@ import (
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/tools/record"
-	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
 
 const (
@@ -27,12 +25,12 @@ const (
 )
 
 type configMapReconciler struct {
-	controller.MultiPhaseStepReconcilerAction
+	multiphase.MultiPhaseStepReconcilerAction[*kibanacrd.Kibana, *corev1.ConfigMap]
 }
 
-func newConfiMapReconciler(client client.Client, recorder record.EventRecorder) (multiPhaseStepReconcilerAction controller.MultiPhaseStepReconcilerAction) {
+func newConfiMapReconciler(client client.Client, recorder record.EventRecorder) (multiPhaseStepReconcilerAction multiphase.MultiPhaseStepReconcilerAction[*kibanacrd.Kibana, *corev1.ConfigMap]) {
 	return &configMapReconciler{
-		MultiPhaseStepReconcilerAction: controller.NewBasicMultiPhaseStepReconcilerAction(
+		MultiPhaseStepReconcilerAction: multiphase.NewMultiPhaseStepReconcilerAction[*kibanacrd.Kibana, *corev1.ConfigMap](
 			client,
 			ConfigmapPhase,
 			ConfigmapCondition,
@@ -42,10 +40,9 @@ func newConfiMapReconciler(client client.Client, recorder record.EventRecorder) 
 }
 
 // Read existing configmaps
-func (r *configMapReconciler) Read(ctx context.Context, resource object.MultiPhaseObject, data map[string]any, logger *logrus.Entry) (read controller.MultiPhaseRead, res ctrl.Result, err error) {
-	o := resource.(*kibanacrd.Kibana)
+func (r *configMapReconciler) Read(ctx context.Context, o *kibanacrd.Kibana, data map[string]any, logger *logrus.Entry) (read multiphase.MultiPhaseRead[*corev1.ConfigMap], res reconcile.Result, err error) {
 	cm := &corev1.ConfigMap{}
-	read = controller.NewBasicMultiPhaseRead()
+	read = multiphase.NewMultiPhaseRead[*corev1.ConfigMap]()
 	var es *elasticsearchcrd.Elasticsearch
 
 	if err = r.Client().Get(ctx, types.NamespacedName{Namespace: o.Namespace, Name: GetConfigMapName(o)}, cm); err != nil {
@@ -55,7 +52,7 @@ func (r *configMapReconciler) Read(ctx context.Context, resource object.MultiPha
 		cm = nil
 	}
 	if cm != nil {
-		read.SetCurrentObjects([]client.Object{cm})
+		read.AddCurrentObject(cm)
 	}
 
 	// Read Elasticsearch
@@ -66,7 +63,7 @@ func (r *configMapReconciler) Read(ctx context.Context, resource object.MultiPha
 		}
 		if es == nil {
 			logger.Warn("ElasticsearchRef not found, try latter")
-			return read, ctrl.Result{RequeueAfter: 30 * time.Second}, nil
+			return read, reconcile.Result{RequeueAfter: 30 * time.Second}, nil
 		}
 	} else {
 		es = nil
@@ -77,7 +74,7 @@ func (r *configMapReconciler) Read(ctx context.Context, resource object.MultiPha
 	if err != nil {
 		return read, res, errors.Wrap(err, "Error when generate config maps")
 	}
-	read.SetExpectedObjects(helper.ToSliceOfObject(expectedCms))
+	read.SetExpectedObjects(expectedCms)
 
 	return read, res, nil
 }

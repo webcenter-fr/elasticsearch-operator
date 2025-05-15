@@ -3,7 +3,7 @@ package v1
 import (
 	"testing"
 
-	"github.com/disaster37/operator-sdk-extra/pkg/apis"
+	"github.com/disaster37/operator-sdk-extra/v2/pkg/apis/multiphase"
 	"github.com/stretchr/testify/assert"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -11,7 +11,7 @@ import (
 
 func TestHostGetStatus(t *testing.T) {
 	status := HostStatus{
-		BasicMultiPhaseObjectStatus: apis.BasicMultiPhaseObjectStatus{
+		DefaultMultiPhaseObjectStatus: multiphase.DefaultMultiPhaseObjectStatus{
 			PhaseName: "test",
 		},
 	}

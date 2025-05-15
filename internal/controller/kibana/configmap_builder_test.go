@@ -3,8 +3,8 @@ package kibana
 import (
 	"testing"
 
-	"github.com/disaster37/operator-sdk-extra/pkg/apis"
-	"github.com/disaster37/operator-sdk-extra/pkg/test"
+	"github.com/disaster37/operator-sdk-extra/v2/pkg/apis"
+	"github.com/disaster37/operator-sdk-extra/v2/pkg/test"
 	"github.com/stretchr/testify/assert"
 	elasticsearchcrd "github.com/webcenter-fr/elasticsearch-operator/api/elasticsearch/v1"
 	kibanacrd "github.com/webcenter-fr/elasticsearch-operator/api/kibana/v1"
@@ -65,7 +65,7 @@ node.value2: test`,
 
 	configMaps, err := buildConfigMaps(o, es)
 	assert.NoError(t, err)
-	test.EqualFromYamlFile[*corev1.ConfigMap](t, "testdata/configmap_default.yml", &configMaps[0], scheme.Scheme)
+	test.EqualFromYamlFile[*corev1.ConfigMap](t, "testdata/configmap_default.yml", configMaps[0], scheme.Scheme)
 
 	// When TLS is disabled
 	o = &kibanacrd.Kibana{
@@ -109,7 +109,7 @@ node.value2: test`,
 
 	configMaps, err = buildConfigMaps(o, es)
 	assert.NoError(t, err)
-	test.EqualFromYamlFile[*corev1.ConfigMap](t, "testdata/configmap_tls_disabled.yml", &configMaps[0], scheme.Scheme)
+	test.EqualFromYamlFile[*corev1.ConfigMap](t, "testdata/configmap_tls_disabled.yml", configMaps[0], scheme.Scheme)
 
 	// When external elasticsearch with custom CA elasticsearch
 	o = &kibanacrd.Kibana{
@@ -142,7 +142,7 @@ node.value2: test`,
 
 	configMaps, err = buildConfigMaps(o, nil)
 	assert.NoError(t, err)
-	test.EqualFromYamlFile[*corev1.ConfigMap](t, "testdata/configmap_external_es_custom_ca_es.yml", &configMaps[0], scheme.Scheme)
+	test.EqualFromYamlFile[*corev1.ConfigMap](t, "testdata/configmap_external_es_custom_ca_es.yml", configMaps[0], scheme.Scheme)
 
 	// When managed elasticsearch with custom CA elasticsearch
 	o = &kibanacrd.Kibana{
@@ -175,5 +175,5 @@ node.value2: test`,
 
 	configMaps, err = buildConfigMaps(o, nil)
 	assert.NoError(t, err)
-	test.EqualFromYamlFile[*corev1.ConfigMap](t, "testdata/configmap_managed_es_custom_ca_es.yml", &configMaps[0], scheme.Scheme)
+	test.EqualFromYamlFile[*corev1.ConfigMap](t, "testdata/configmap_managed_es_custom_ca_es.yml", configMaps[0], scheme.Scheme)
 }

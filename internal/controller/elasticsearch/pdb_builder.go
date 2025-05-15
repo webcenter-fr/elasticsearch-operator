@@ -10,8 +10,8 @@ import (
 )
 
 // GeneratePodDisruptionBudget permit to generate pod disruption budgets for each node group
-func buildPodDisruptionBudgets(es *elasticsearchcrd.Elasticsearch) (podDisruptionBudgets []policyv1.PodDisruptionBudget, err error) {
-	podDisruptionBudgets = make([]policyv1.PodDisruptionBudget, 0, len(es.Spec.NodeGroups))
+func buildPodDisruptionBudgets(es *elasticsearchcrd.Elasticsearch) (podDisruptionBudgets []*policyv1.PodDisruptionBudget, err error) {
+	podDisruptionBudgets = make([]*policyv1.PodDisruptionBudget, 0, len(es.Spec.NodeGroups))
 	var pdb *policyv1.PodDisruptionBudget
 
 	maxUnavailable := intstr.FromInt(1)
@@ -49,7 +49,7 @@ func buildPodDisruptionBudgets(es *elasticsearchcrd.Elasticsearch) (podDisruptio
 			pdb.Spec.MaxUnavailable = &maxUnavailable
 		}
 
-		podDisruptionBudgets = append(podDisruptionBudgets, *pdb)
+		podDisruptionBudgets = append(podDisruptionBudgets, pdb)
 	}
 
 	return podDisruptionBudgets, nil

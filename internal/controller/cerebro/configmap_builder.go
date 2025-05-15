@@ -14,13 +14,13 @@ import (
 )
 
 // BuildConfigMap permit to generate config map
-func buildConfigMaps(cb *cerebrocrd.Cerebro, esList []elasticsearchcrd.Elasticsearch, externalList []cerebrocrd.ElasticsearchExternalRef) (configMaps []corev1.ConfigMap, err error) {
+func buildConfigMaps(cb *cerebrocrd.Cerebro, esList []elasticsearchcrd.Elasticsearch, externalList []cerebrocrd.ElasticsearchExternalRef) (configMaps []*corev1.ConfigMap, err error) {
 	var (
 		expectedConfig map[string]string
 		name           string
 	)
 
-	configMaps = make([]corev1.ConfigMap, 0, 1)
+	configMaps = make([]*corev1.ConfigMap, 0, 1)
 
 	var config strings.Builder
 
@@ -105,7 +105,7 @@ auth = {
 		Data: expectedConfig,
 	}
 
-	configMaps = append(configMaps, *configMap)
+	configMaps = append(configMaps, configMap)
 
 	return configMaps, nil
 }

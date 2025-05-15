@@ -10,8 +10,8 @@ import (
 // BuilderServices permit to generate service
 // It also generate service needed by ingress
 // It inject the right selector for Logstash pods
-func buildServices(fb *beatcrd.Filebeat) (services []corev1.Service, err error) {
-	services = make([]corev1.Service, 0, len(fb.Spec.Services))
+func buildServices(fb *beatcrd.Filebeat) (services []*corev1.Service, err error) {
+	services = make([]*corev1.Service, 0, len(fb.Spec.Services))
 	var service *corev1.Service
 	computedPort := make([]corev1.ServicePort, 0, len(fb.Spec.Services)+len(fb.Spec.Ingresses)+len(fb.Spec.Deployment.Ports))
 	var isPortAlreadyUsed bool
@@ -40,7 +40,7 @@ func buildServices(fb *beatcrd.Filebeat) (services []corev1.Service, err error) 
 			"cluster":                     fb.Name,
 		}
 
-		services = append(services, *service)
+		services = append(services, service)
 
 		for _, port := range service.Spec.Ports {
 			isPortAlreadyUsed = false
@@ -91,7 +91,7 @@ func buildServices(fb *beatcrd.Filebeat) (services []corev1.Service, err error) 
 			},
 		}
 
-		services = append(services, *service)
+		services = append(services, service)
 
 		isPortAlreadyUsed = false
 		for _, portUsed := range computedPort {
@@ -138,7 +138,7 @@ func buildServices(fb *beatcrd.Filebeat) (services []corev1.Service, err error) 
 			},
 		}
 
-		services = append(services, *service)
+		services = append(services, service)
 
 		isPortAlreadyUsed = false
 		for _, portUsed := range computedPort {
@@ -197,7 +197,7 @@ func buildServices(fb *beatcrd.Filebeat) (services []corev1.Service, err error) 
 		},
 	}
 
-	services = append(services, *service)
+	services = append(services, service)
 
 	return services, nil
 }

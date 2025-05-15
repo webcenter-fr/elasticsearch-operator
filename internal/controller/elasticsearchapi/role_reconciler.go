@@ -5,23 +5,22 @@ import (
 	"time"
 
 	eshandler "github.com/disaster37/es-handler/v8"
-	"github.com/disaster37/operator-sdk-extra/pkg/controller"
-	"github.com/disaster37/operator-sdk-extra/pkg/object"
+	"github.com/disaster37/operator-sdk-extra/v2/pkg/controller/remote"
 	"github.com/sirupsen/logrus"
 	elasticsearchapicrd "github.com/webcenter-fr/elasticsearch-operator/api/elasticsearchapi/v1"
 	"k8s.io/client-go/tools/record"
-	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
 
 type roleReconciler struct {
-	controller.RemoteReconcilerAction[*elasticsearchapicrd.Role, *eshandler.XPackSecurityRole, eshandler.ElasticsearchHandler]
+	remote.RemoteReconcilerAction[*elasticsearchapicrd.Role, *eshandler.XPackSecurityRole, eshandler.ElasticsearchHandler]
 	name string
 }
 
-func newRoleReconciler(name string, client client.Client, recorder record.EventRecorder) controller.RemoteReconcilerAction[*elasticsearchapicrd.Role, *eshandler.XPackSecurityRole, eshandler.ElasticsearchHandler] {
+func newRoleReconciler(name string, client client.Client, recorder record.EventRecorder) remote.RemoteReconcilerAction[*elasticsearchapicrd.Role, *eshandler.XPackSecurityRole, eshandler.ElasticsearchHandler] {
 	return &roleReconciler{
-		RemoteReconcilerAction: controller.NewRemoteReconcilerAction[*elasticsearchapicrd.Role, *eshandler.XPackSecurityRole, eshandler.ElasticsearchHandler](
+		RemoteReconcilerAction: remote.NewRemoteReconcilerAction[*elasticsearchapicrd.Role, *eshandler.XPackSecurityRole, eshandler.ElasticsearchHandler](
 			client,
 			recorder,
 		),
@@ -29,17 +28,16 @@ func newRoleReconciler(name string, client client.Client, recorder record.EventR
 	}
 }
 
-func (h *roleReconciler) GetRemoteHandler(ctx context.Context, req ctrl.Request, o object.RemoteObject, logger *logrus.Entry) (handler controller.RemoteExternalReconciler[*elasticsearchapicrd.Role, *eshandler.XPackSecurityRole, eshandler.ElasticsearchHandler], res ctrl.Result, err error) {
-	role := o.(*elasticsearchapicrd.Role)
-	esClient, err := GetElasticsearchHandler(ctx, role, role.Spec.ElasticsearchRef, h.Client(), logger)
-	if err != nil && role.DeletionTimestamp.IsZero() {
+func (h *roleReconciler) GetRemoteHandler(ctx context.Context, req reconcile.Request, o *elasticsearchapicrd.Role, logger *logrus.Entry) (handler remote.RemoteExternalReconciler[*elasticsearchapicrd.Role, *eshandler.XPackSecurityRole, eshandler.ElasticsearchHandler], res reconcile.Result, err error) {
+	esClient, err := GetElasticsearchHandler(ctx, o, o.Spec.ElasticsearchRef, h.Client(), logger)
+	if err != nil && o.DeletionTimestamp.IsZero() {
 		return nil, res, err
 	}
 
 	// Elastic not ready
 	if esClient == nil {
-		if role.DeletionTimestamp.IsZero() {
-			return nil, ctrl.Result{RequeueAfter: 60 * time.Second}, nil
+		if o.DeletionTimestamp.IsZero() {
+			return nil, reconcile.Result{RequeueAfter: 60 * time.Second}, nil
 		}
 
 		return nil, res, nil

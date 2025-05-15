@@ -9,7 +9,7 @@ import (
 )
 
 // BuildCredentialSecret permit to build credential secret
-func buildCredentialSecrets(o *elasticsearchcrd.Elasticsearch) (secrets []corev1.Secret, err error) {
+func buildCredentialSecrets(o *elasticsearchcrd.Elasticsearch) (secrets []*corev1.Secret, err error) {
 	var (
 		esPassword  string
 		kbPassword  string
@@ -44,7 +44,7 @@ func buildCredentialSecrets(o *elasticsearchcrd.Elasticsearch) (secrets []corev1
 		return nil, errors.Wrap(err, "Error when generate remote_monitoring_user password")
 	}
 
-	secrets = []corev1.Secret{
+	secrets = []*corev1.Secret{
 		{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:        GetSecretNameForCredentials(o),

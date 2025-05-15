@@ -8,10 +8,10 @@ import (
 	"emperror.dev/errors"
 	"github.com/disaster37/es-handler/v8/mocks"
 	"github.com/disaster37/generic-objectmatcher/patch"
-	"github.com/disaster37/operator-sdk-extra/pkg/apis"
-	"github.com/disaster37/operator-sdk-extra/pkg/controller"
-	"github.com/disaster37/operator-sdk-extra/pkg/helper"
-	"github.com/disaster37/operator-sdk-extra/pkg/test"
+	"github.com/disaster37/operator-sdk-extra/v2/pkg/apis"
+	"github.com/disaster37/operator-sdk-extra/v2/pkg/controller"
+	"github.com/disaster37/operator-sdk-extra/v2/pkg/helper"
+	"github.com/disaster37/operator-sdk-extra/v2/pkg/test"
 	olivere "github.com/olivere/elastic/v7"
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
@@ -30,11 +30,10 @@ func (t *ElasticsearchapiControllerTestSuite) TestRoleMappingReconciler() {
 		Name:      "t-rolemapping-" + helper.RandomString(10),
 		Namespace: "default",
 	}
-	rm := &elasticsearchapicrd.RoleMapping{}
 	data := map[string]any{}
 
-	testCase := test.NewTestCase(t.T(), t.k8sClient, key, rm, 5*time.Second, data)
-	testCase.Steps = []test.TestStep{
+	testCase := test.NewTestCase[*elasticsearchapicrd.RoleMapping](t.T(), t.k8sClient, key, 5*time.Second, data)
+	testCase.Steps = []test.TestStep[*elasticsearchapicrd.RoleMapping]{
 		doCreateRoleMappingStep(),
 		doUpdateRoleMappingStep(),
 		doDeleteRoleMappingStep(),
@@ -136,10 +135,10 @@ func doMockRoleMapping(mockES *mocks.MockElasticsearchHandler) func(stepName *st
 	}
 }
 
-func doCreateRoleMappingStep() test.TestStep {
-	return test.TestStep{
+func doCreateRoleMappingStep() test.TestStep[*elasticsearchapicrd.RoleMapping] {
+	return test.TestStep[*elasticsearchapicrd.RoleMapping]{
 		Name: "create",
-		Do: func(c client.Client, key types.NamespacedName, o client.Object, data map[string]any) (err error) {
+		Do: func(c client.Client, key types.NamespacedName, o *elasticsearchapicrd.RoleMapping, data map[string]any) (err error) {
 			logrus.Infof("=== Add new role mapping %s/%s ===\n\n", key.Namespace, key.Name)
 
 			rm := &elasticsearchapicrd.RoleMapping{
@@ -168,7 +167,7 @@ func doCreateRoleMappingStep() test.TestStep {
 
 			return nil
 		},
-		Check: func(t *testing.T, c client.Client, key types.NamespacedName, o client.Object, data map[string]any) (err error) {
+		Check: func(t *testing.T, c client.Client, key types.NamespacedName, o *elasticsearchapicrd.RoleMapping, data map[string]any) (err error) {
 			rm := &elasticsearchapicrd.RoleMapping{}
 			isCreated := false
 
@@ -195,26 +194,25 @@ func doCreateRoleMappingStep() test.TestStep {
 	}
 }
 
-func doUpdateRoleMappingStep() test.TestStep {
-	return test.TestStep{
+func doUpdateRoleMappingStep() test.TestStep[*elasticsearchapicrd.RoleMapping] {
+	return test.TestStep[*elasticsearchapicrd.RoleMapping]{
 		Name: "update",
-		Do: func(c client.Client, key types.NamespacedName, o client.Object, data map[string]any) (err error) {
+		Do: func(c client.Client, key types.NamespacedName, o *elasticsearchapicrd.RoleMapping, data map[string]any) (err error) {
 			logrus.Infof("=== Update role mapping %s/%s ===\n\n", key.Namespace, key.Name)
 
 			if o == nil {
 				return errors.New("Role mapping is null")
 			}
-			rm := o.(*elasticsearchapicrd.RoleMapping)
 
-			data["lastGeneration"] = rm.GetStatus().GetObservedGeneration()
-			rm.Spec.Enabled = false
-			if err = c.Update(context.Background(), rm); err != nil {
+			data["lastGeneration"] = o.GetStatus().GetObservedGeneration()
+			o.Spec.Enabled = false
+			if err = c.Update(context.Background(), o); err != nil {
 				return err
 			}
 
 			return nil
 		},
-		Check: func(t *testing.T, c client.Client, key types.NamespacedName, o client.Object, data map[string]any) (err error) {
+		Check: func(t *testing.T, c client.Client, key types.NamespacedName, o *elasticsearchapicrd.RoleMapping, data map[string]any) (err error) {
 			rm := &elasticsearchapicrd.RoleMapping{}
 			isUpdated := false
 
@@ -243,25 +241,24 @@ func doUpdateRoleMappingStep() test.TestStep {
 	}
 }
 
-func doDeleteRoleMappingStep() test.TestStep {
-	return test.TestStep{
+func doDeleteRoleMappingStep() test.TestStep[*elasticsearchapicrd.RoleMapping] {
+	return test.TestStep[*elasticsearchapicrd.RoleMapping]{
 		Name: "delete",
-		Do: func(c client.Client, key types.NamespacedName, o client.Object, data map[string]any) (err error) {
+		Do: func(c client.Client, key types.NamespacedName, o *elasticsearchapicrd.RoleMapping, data map[string]any) (err error) {
 			logrus.Infof("=== Delete role mapping %s/%s ===\n\n", key.Namespace, key.Name)
 
 			if o == nil {
 				return errors.New("Role mapping is null")
 			}
-			rm := o.(*elasticsearchapicrd.RoleMapping)
 
 			wait := int64(0)
-			if err = c.Delete(context.Background(), rm, &client.DeleteOptions{GracePeriodSeconds: &wait}); err != nil {
+			if err = c.Delete(context.Background(), o, &client.DeleteOptions{GracePeriodSeconds: &wait}); err != nil {
 				return err
 			}
 
 			return nil
 		},
-		Check: func(t *testing.T, c client.Client, key types.NamespacedName, o client.Object, data map[string]any) (err error) {
+		Check: func(t *testing.T, c client.Client, key types.NamespacedName, o *elasticsearchapicrd.RoleMapping, data map[string]any) (err error) {
 			rm := &elasticsearchapicrd.RoleMapping{}
 			isDeleted := false
 

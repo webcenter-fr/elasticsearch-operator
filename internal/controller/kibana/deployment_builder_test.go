@@ -3,7 +3,7 @@ package kibana
 import (
 	"testing"
 
-	"github.com/disaster37/operator-sdk-extra/pkg/test"
+	"github.com/disaster37/operator-sdk-extra/v2/pkg/test"
 	"github.com/stretchr/testify/assert"
 	elasticsearchcrd "github.com/webcenter-fr/elasticsearch-operator/api/elasticsearch/v1"
 	kibanacrd "github.com/webcenter-fr/elasticsearch-operator/api/kibana/v1"
@@ -21,9 +21,9 @@ func TestBuildDeployment(t *testing.T) {
 		o               *kibanacrd.Kibana
 		es              *elasticsearchcrd.Elasticsearch
 		err             error
-		dpls            []appv1.Deployment
-		checksumSecrets []corev1.Secret
-		checksumCms     []corev1.ConfigMap
+		dpls            []*appv1.Deployment
+		checksumSecrets []*corev1.Secret
+		checksumCms     []*corev1.ConfigMap
 	)
 
 	// With default values
@@ -55,7 +55,7 @@ func TestBuildDeployment(t *testing.T) {
 
 	dpls, err = buildDeployments(o, es, nil, nil, false)
 	assert.NoError(t, err)
-	test.EqualFromYamlFile[*appv1.Deployment](t, "testdata/deployment_default.yml", &dpls[0], scheme.Scheme)
+	test.EqualFromYamlFile[*appv1.Deployment](t, "testdata/deployment_default.yml", dpls[0], scheme.Scheme)
 
 	// With default values on Openshift
 	o = &kibanacrd.Kibana{
@@ -86,7 +86,7 @@ func TestBuildDeployment(t *testing.T) {
 
 	dpls, err = buildDeployments(o, es, nil, nil, true)
 	assert.NoError(t, err)
-	test.EqualFromYamlFile[*appv1.Deployment](t, "testdata/deployment_default_openshift.yml", &dpls[0], scheme.Scheme)
+	test.EqualFromYamlFile[*appv1.Deployment](t, "testdata/deployment_default_openshift.yml", dpls[0], scheme.Scheme)
 
 	// With default values and external elasticsearch
 	o = &kibanacrd.Kibana{
@@ -115,7 +115,7 @@ func TestBuildDeployment(t *testing.T) {
 
 	dpls, err = buildDeployments(o, nil, nil, nil, false)
 	assert.NoError(t, err)
-	test.EqualFromYamlFile[*appv1.Deployment](t, "testdata/deployment_default_with_external_es.yml", &dpls[0], scheme.Scheme)
+	test.EqualFromYamlFile[*appv1.Deployment](t, "testdata/deployment_default_with_external_es.yml", dpls[0], scheme.Scheme)
 
 	// With default values and external elasticsearch and custom CA Elasticsearch
 	o = &kibanacrd.Kibana{
@@ -144,7 +144,7 @@ func TestBuildDeployment(t *testing.T) {
 			},
 		},
 	}
-	checksumSecrets = []corev1.Secret{
+	checksumSecrets = []*corev1.Secret{
 		{
 			ObjectMeta: metav1.ObjectMeta{
 				Namespace: "default",
@@ -158,7 +158,7 @@ func TestBuildDeployment(t *testing.T) {
 
 	dpls, err = buildDeployments(o, nil, checksumSecrets, nil, false)
 	assert.NoError(t, err)
-	test.EqualFromYamlFile[*appv1.Deployment](t, "testdata/deployment_custom_ca_es_with_external_es.yml", &dpls[0], scheme.Scheme)
+	test.EqualFromYamlFile[*appv1.Deployment](t, "testdata/deployment_custom_ca_es_with_external_es.yml", dpls[0], scheme.Scheme)
 
 	// When use external API cert
 	o = &kibanacrd.Kibana{
@@ -191,7 +191,7 @@ func TestBuildDeployment(t *testing.T) {
 		},
 		Spec: elasticsearchcrd.ElasticsearchSpec{},
 	}
-	checksumSecrets = []corev1.Secret{
+	checksumSecrets = []*corev1.Secret{
 		{
 			ObjectMeta: metav1.ObjectMeta{
 				Namespace: "default",
@@ -207,7 +207,7 @@ func TestBuildDeployment(t *testing.T) {
 
 	dpls, err = buildDeployments(o, es, checksumSecrets, nil, false)
 	assert.NoError(t, err)
-	test.EqualFromYamlFile[*appv1.Deployment](t, "testdata/deployment_with_external_certs.yml", &dpls[0], scheme.Scheme)
+	test.EqualFromYamlFile[*appv1.Deployment](t, "testdata/deployment_with_external_certs.yml", dpls[0], scheme.Scheme)
 
 	// With complexe sample
 	o = &kibanacrd.Kibana{
@@ -300,7 +300,7 @@ func TestBuildDeployment(t *testing.T) {
 		},
 		Spec: elasticsearchcrd.ElasticsearchSpec{},
 	}
-	checksumSecrets = []corev1.Secret{
+	checksumSecrets = []*corev1.Secret{
 		{
 			ObjectMeta: metav1.ObjectMeta{
 				Namespace: "default",
@@ -320,5 +320,5 @@ func TestBuildDeployment(t *testing.T) {
 
 	dpls, err = buildDeployments(o, es, checksumSecrets, checksumCms, false)
 	assert.NoError(t, err)
-	test.EqualFromYamlFile[*appv1.Deployment](t, "testdata/deployment_complet.yml", &dpls[0], scheme.Scheme)
+	test.EqualFromYamlFile[*appv1.Deployment](t, "testdata/deployment_complet.yml", dpls[0], scheme.Scheme)
 }

@@ -7,9 +7,9 @@ import (
 
 	"emperror.dev/errors"
 	"github.com/disaster37/es-handler/v8/mocks"
-	"github.com/disaster37/operator-sdk-extra/pkg/controller"
-	"github.com/disaster37/operator-sdk-extra/pkg/helper"
-	"github.com/disaster37/operator-sdk-extra/pkg/test"
+	"github.com/disaster37/operator-sdk-extra/v2/pkg/controller"
+	"github.com/disaster37/operator-sdk-extra/v2/pkg/helper"
+	"github.com/disaster37/operator-sdk-extra/v2/pkg/test"
 	olivere "github.com/olivere/elastic/v7"
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
@@ -30,11 +30,10 @@ func (t *ElasticsearchapiControllerTestSuite) TestLicenseReconciler() {
 		Name:      "t-license-" + helper.RandomString(10),
 		Namespace: "default",
 	}
-	license := &elasticsearchapicrd.License{}
 	data := map[string]any{}
 
-	testCase := test.NewTestCase(t.T(), t.k8sClient, key, license, 5*time.Second, data)
-	testCase.Steps = []test.TestStep{
+	testCase := test.NewTestCase[*elasticsearchapicrd.License](t.T(), t.k8sClient, key, 5*time.Second, data)
+	testCase.Steps = []test.TestStep[*elasticsearchapicrd.License]{
 		doEnableBasicLicenseStep(),
 		doDeleteBasicLicenseStep(),
 		doUpdateToEnterpriseLicenseStep(),
@@ -151,10 +150,10 @@ func doMockLicense(mockES *mocks.MockElasticsearchHandler) func(stepName *string
 	}
 }
 
-func doEnableBasicLicenseStep() test.TestStep {
-	return test.TestStep{
+func doEnableBasicLicenseStep() test.TestStep[*elasticsearchapicrd.License] {
+	return test.TestStep[*elasticsearchapicrd.License]{
 		Name: "create_basic_license",
-		Do: func(c client.Client, key types.NamespacedName, o client.Object, data map[string]any) (err error) {
+		Do: func(c client.Client, key types.NamespacedName, o *elasticsearchapicrd.License, data map[string]any) (err error) {
 			logrus.Infof("=== Enable basic license %s/%s ===\n\n", key.Namespace, key.Name)
 
 			license := &elasticsearchapicrd.License{
@@ -181,7 +180,7 @@ func doEnableBasicLicenseStep() test.TestStep {
 
 			return nil
 		},
-		Check: func(t *testing.T, c client.Client, key types.NamespacedName, o client.Object, data map[string]any) (err error) {
+		Check: func(t *testing.T, c client.Client, key types.NamespacedName, o *elasticsearchapicrd.License, data map[string]any) (err error) {
 			license := &elasticsearchapicrd.License{}
 
 			isTimeout, err := test.RunWithTimeout(func() error {
@@ -206,25 +205,24 @@ func doEnableBasicLicenseStep() test.TestStep {
 	}
 }
 
-func doDeleteBasicLicenseStep() test.TestStep {
-	return test.TestStep{
+func doDeleteBasicLicenseStep() test.TestStep[*elasticsearchapicrd.License] {
+	return test.TestStep[*elasticsearchapicrd.License]{
 		Name: "delete_basic_license",
-		Do: func(c client.Client, key types.NamespacedName, o client.Object, data map[string]any) (err error) {
+		Do: func(c client.Client, key types.NamespacedName, o *elasticsearchapicrd.License, data map[string]any) (err error) {
 			logrus.Infof("=== Delete basic license %s/%s ===\n\n", key.Namespace, key.Name)
 
 			if o == nil {
 				return errors.New("License is null")
 			}
-			license := o.(*elasticsearchapicrd.License)
 
 			wait := int64(0)
-			if err = c.Delete(context.Background(), license, &client.DeleteOptions{GracePeriodSeconds: &wait}); err != nil {
+			if err = c.Delete(context.Background(), o, &client.DeleteOptions{GracePeriodSeconds: &wait}); err != nil {
 				return err
 			}
 
 			return nil
 		},
-		Check: func(t *testing.T, c client.Client, key types.NamespacedName, o client.Object, data map[string]any) (err error) {
+		Check: func(t *testing.T, c client.Client, key types.NamespacedName, o *elasticsearchapicrd.License, data map[string]any) (err error) {
 			license := &elasticsearchapicrd.License{}
 			isDeleted := false
 
@@ -250,10 +248,10 @@ func doDeleteBasicLicenseStep() test.TestStep {
 	}
 }
 
-func doUpdateToEnterpriseLicenseStep() test.TestStep {
-	return test.TestStep{
+func doUpdateToEnterpriseLicenseStep() test.TestStep[*elasticsearchapicrd.License] {
+	return test.TestStep[*elasticsearchapicrd.License]{
 		Name: "update_to_enterprise_license",
-		Do: func(c client.Client, key types.NamespacedName, o client.Object, data map[string]any) (err error) {
+		Do: func(c client.Client, key types.NamespacedName, o *elasticsearchapicrd.License, data map[string]any) (err error) {
 			logrus.Infof("=== Update to enterprise %s/%s ===\n\n", key.Namespace, key.Name)
 
 			licenseJson := `
@@ -306,7 +304,7 @@ func doUpdateToEnterpriseLicenseStep() test.TestStep {
 
 			return nil
 		},
-		Check: func(t *testing.T, c client.Client, key types.NamespacedName, o client.Object, data map[string]any) (err error) {
+		Check: func(t *testing.T, c client.Client, key types.NamespacedName, o *elasticsearchapicrd.License, data map[string]any) (err error) {
 			license := &elasticsearchapicrd.License{}
 
 			isTimeout, err := test.RunWithTimeout(func() error {
@@ -331,10 +329,10 @@ func doUpdateToEnterpriseLicenseStep() test.TestStep {
 	}
 }
 
-func doUpdateEnterpriseLicenseStep() test.TestStep {
-	return test.TestStep{
+func doUpdateEnterpriseLicenseStep() test.TestStep[*elasticsearchapicrd.License] {
+	return test.TestStep[*elasticsearchapicrd.License]{
 		Name: "update_enterprise_license",
-		Do: func(c client.Client, key types.NamespacedName, o client.Object, data map[string]any) (err error) {
+		Do: func(c client.Client, key types.NamespacedName, o *elasticsearchapicrd.License, data map[string]any) (err error) {
 			logrus.Infof("=== Update license %s/%s ===\n\n", key.Namespace, key.Name)
 
 			if o == nil {
@@ -368,7 +366,7 @@ func doUpdateEnterpriseLicenseStep() test.TestStep {
 
 			return nil
 		},
-		Check: func(t *testing.T, c client.Client, key types.NamespacedName, o client.Object, data map[string]any) (err error) {
+		Check: func(t *testing.T, c client.Client, key types.NamespacedName, o *elasticsearchapicrd.License, data map[string]any) (err error) {
 			license := &elasticsearchapicrd.License{}
 			isUpdated := false
 
@@ -397,25 +395,24 @@ func doUpdateEnterpriseLicenseStep() test.TestStep {
 	}
 }
 
-func doDeleteEnterpriseLicenseStep() test.TestStep {
-	return test.TestStep{
+func doDeleteEnterpriseLicenseStep() test.TestStep[*elasticsearchapicrd.License] {
+	return test.TestStep[*elasticsearchapicrd.License]{
 		Name: "delete_enterprise_license",
-		Do: func(c client.Client, key types.NamespacedName, o client.Object, data map[string]any) (err error) {
+		Do: func(c client.Client, key types.NamespacedName, o *elasticsearchapicrd.License, data map[string]any) (err error) {
 			logrus.Infof("=== Delete enterprise license %s/%s ===\n\n", key.Namespace, key.Name)
 
 			if o == nil {
 				return errors.New("License is null")
 			}
-			license := o.(*elasticsearchapicrd.License)
 
 			wait := int64(0)
-			if err = c.Delete(context.Background(), license, &client.DeleteOptions{GracePeriodSeconds: &wait}); err != nil {
+			if err = c.Delete(context.Background(), o, &client.DeleteOptions{GracePeriodSeconds: &wait}); err != nil {
 				return err
 			}
 
 			return nil
 		},
-		Check: func(t *testing.T, c client.Client, key types.NamespacedName, o client.Object, data map[string]any) (err error) {
+		Check: func(t *testing.T, c client.Client, key types.NamespacedName, o *elasticsearchapicrd.License, data map[string]any) (err error) {
 			license := &elasticsearchapicrd.License{}
 			isDeleted := false
 

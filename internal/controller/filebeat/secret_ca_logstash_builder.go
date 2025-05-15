@@ -7,12 +7,12 @@ import (
 )
 
 // BuildCALogstashSecret permit to build CA secret from Logstash
-func buildCALogstashSecrets(fb *beatcrd.Filebeat, secretCaLogstash *corev1.Secret) (secrets []corev1.Secret, err error) {
+func buildCALogstashSecrets(fb *beatcrd.Filebeat, secretCaLogstash *corev1.Secret) (secrets []*corev1.Secret, err error) {
 	if secretCaLogstash == nil {
 		return nil, nil
 	}
 
-	secrets = []corev1.Secret{
+	secrets = []*corev1.Secret{
 		{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:        GetSecretNameForCALogstash(fb),

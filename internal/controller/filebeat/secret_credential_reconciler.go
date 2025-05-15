@@ -5,10 +5,8 @@ import (
 	"time"
 
 	"emperror.dev/errors"
-	"github.com/disaster37/operator-sdk-extra/pkg/apis/shared"
-	"github.com/disaster37/operator-sdk-extra/pkg/controller"
-	"github.com/disaster37/operator-sdk-extra/pkg/helper"
-	"github.com/disaster37/operator-sdk-extra/pkg/object"
+	"github.com/disaster37/operator-sdk-extra/v2/pkg/apis/shared"
+	"github.com/disaster37/operator-sdk-extra/v2/pkg/controller/multiphase"
 	"github.com/sirupsen/logrus"
 	beatcrd "github.com/webcenter-fr/elasticsearch-operator/api/beat/v1"
 	elasticsearchcrd "github.com/webcenter-fr/elasticsearch-operator/api/elasticsearch/v1"
@@ -18,8 +16,8 @@ import (
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/tools/record"
-	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
 
 const (
@@ -28,12 +26,12 @@ const (
 )
 
 type credentialReconciler struct {
-	controller.MultiPhaseStepReconcilerAction
+	multiphase.MultiPhaseStepReconcilerAction[*beatcrd.Filebeat, *corev1.Secret]
 }
 
-func newCredentialReconciler(client client.Client, recorder record.EventRecorder) (multiPhaseStepReconcilerAction controller.MultiPhaseStepReconcilerAction) {
+func newCredentialReconciler(client client.Client, recorder record.EventRecorder) (multiPhaseStepReconcilerAction multiphase.MultiPhaseStepReconcilerAction[*beatcrd.Filebeat, *corev1.Secret]) {
 	return &credentialReconciler{
-		MultiPhaseStepReconcilerAction: controller.NewBasicMultiPhaseStepReconcilerAction(
+		MultiPhaseStepReconcilerAction: multiphase.NewMultiPhaseStepReconcilerAction[*beatcrd.Filebeat, *corev1.Secret](
 			client,
 			CredentialPhase,
 			CredentialCondition,
@@ -43,10 +41,9 @@ func newCredentialReconciler(client client.Client, recorder record.EventRecorder
 }
 
 // Read existing secret
-func (r *credentialReconciler) Read(ctx context.Context, resource object.MultiPhaseObject, data map[string]any, logger *logrus.Entry) (read controller.MultiPhaseRead, res ctrl.Result, err error) {
-	o := resource.(*beatcrd.Filebeat)
+func (r *credentialReconciler) Read(ctx context.Context, o *beatcrd.Filebeat, data map[string]any, logger *logrus.Entry) (read multiphase.MultiPhaseRead[*corev1.Secret], res reconcile.Result, err error) {
 	s := &corev1.Secret{}
-	read = controller.NewBasicMultiPhaseRead()
+	read = multiphase.NewMultiPhaseRead[*corev1.Secret]()
 	sEs := &corev1.Secret{}
 
 	var es *elasticsearchcrd.Elasticsearch
@@ -59,7 +56,7 @@ func (r *credentialReconciler) Read(ctx context.Context, resource object.MultiPh
 		s = nil
 	}
 	if s != nil {
-		read.SetCurrentObjects([]client.Object{s})
+		read.AddCurrentObject(s)
 	}
 
 	if o.Spec.ElasticsearchRef.IsManaged() {
@@ -71,7 +68,7 @@ func (r *credentialReconciler) Read(ctx context.Context, resource object.MultiPh
 		}
 		if es == nil {
 			logger.Warn("ElasticsearchRef not found, try latter")
-			return read, ctrl.Result{RequeueAfter: 30 * time.Second}, nil
+			return read, reconcile.Result{RequeueAfter: 30 * time.Second}, nil
 		}
 
 		// Read secret that store Elasticsearch crdentials
@@ -80,7 +77,7 @@ func (r *credentialReconciler) Read(ctx context.Context, resource object.MultiPh
 				return read, res, errors.Wrapf(err, "Error when read secret %s", elasticsearchcontrollers.GetSecretNameForCredentials(es))
 			}
 			logger.Warnf("Secret not found %s/%s, try latter", es.Namespace, elasticsearchcontrollers.GetSecretNameForCredentials(es))
-			return read, ctrl.Result{RequeueAfter: 30 * time.Second}, nil
+			return read, reconcile.Result{RequeueAfter: 30 * time.Second}, nil
 		}
 	}
 
@@ -89,7 +86,7 @@ func (r *credentialReconciler) Read(ctx context.Context, resource object.MultiPh
 	if err != nil {
 		return read, res, errors.Wrapf(err, "Error when generate secret %s", GetSecretNameForCredentials(o))
 	}
-	read.SetExpectedObjects(helper.ToSliceOfObject(expectedSecretCredentials))
+	read.SetExpectedObjects(expectedSecretCredentials)
 
 	return read, res, nil
 }

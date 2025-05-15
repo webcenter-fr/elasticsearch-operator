@@ -4,17 +4,17 @@ import (
 	"github.com/disaster37/generic-objectmatcher/patch"
 	"github.com/disaster37/go-kibana-rest/v8/kbapi"
 	kbhandler "github.com/disaster37/kb-handler/v8"
-	"github.com/disaster37/operator-sdk-extra/pkg/controller"
+	"github.com/disaster37/operator-sdk-extra/v2/pkg/controller/remote"
 	kibanaapicrd "github.com/webcenter-fr/elasticsearch-operator/api/kibanaapi/v1"
 )
 
 type userSpaceApiClient struct {
-	*controller.BasicRemoteExternalReconciler[*kibanaapicrd.UserSpace, *kbapi.KibanaSpace, kbhandler.KibanaHandler]
+	remote.RemoteExternalReconciler[*kibanaapicrd.UserSpace, *kbapi.KibanaSpace, kbhandler.KibanaHandler]
 }
 
-func newUserSpaceApiClient(client kbhandler.KibanaHandler) controller.RemoteExternalReconciler[*kibanaapicrd.UserSpace, *kbapi.KibanaSpace, kbhandler.KibanaHandler] {
+func newUserSpaceApiClient(client kbhandler.KibanaHandler) remote.RemoteExternalReconciler[*kibanaapicrd.UserSpace, *kbapi.KibanaSpace, kbhandler.KibanaHandler] {
 	return &userSpaceApiClient{
-		BasicRemoteExternalReconciler: controller.NewBasicRemoteExternalReconciler[*kibanaapicrd.UserSpace, *kbapi.KibanaSpace, kbhandler.KibanaHandler](client),
+		RemoteExternalReconciler: remote.NewRemoteExternalReconciler[*kibanaapicrd.UserSpace, *kbapi.KibanaSpace, kbhandler.KibanaHandler](client),
 	}
 }
 
@@ -47,6 +47,6 @@ func (h *userSpaceApiClient) Delete(o *kibanaapicrd.UserSpace) (err error) {
 	return h.Client().UserSpaceDelete(o.GetExternalName())
 }
 
-func (h *userSpaceApiClient) Diff(currentOject *kbapi.KibanaSpace, expectedObject *kbapi.KibanaSpace, originalObject *kbapi.KibanaSpace, ignoresDiff ...patch.CalculateOption) (patchResult *patch.PatchResult, err error) {
+func (h *userSpaceApiClient) Diff(currentOject *kbapi.KibanaSpace, expectedObject *kbapi.KibanaSpace, originalObject *kbapi.KibanaSpace, o *kibanaapicrd.UserSpace, ignoresDiff ...patch.CalculateOption) (patchResult *patch.PatchResult, err error) {
 	return h.Client().UserSpaceDiff(currentOject, expectedObject, originalObject)
 }

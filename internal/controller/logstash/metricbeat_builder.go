@@ -3,7 +3,7 @@ package logstash
 import (
 	"fmt"
 
-	"github.com/disaster37/operator-sdk-extra/pkg/apis"
+	"github.com/disaster37/operator-sdk-extra/v2/pkg/apis"
 	beatcrd "github.com/webcenter-fr/elasticsearch-operator/api/beat/v1"
 	logstashcrd "github.com/webcenter-fr/elasticsearch-operator/api/logstash/v1"
 	"github.com/webcenter-fr/elasticsearch-operator/api/shared"
@@ -13,12 +13,12 @@ import (
 )
 
 // BuildMetricbeat permit to generate metricbeat
-func buildMetricbeats(ls *logstashcrd.Logstash) (metricbeats []beatcrd.Metricbeat, err error) {
+func buildMetricbeats(ls *logstashcrd.Logstash) (metricbeats []*beatcrd.Metricbeat, err error) {
 	if !ls.Spec.Monitoring.IsMetricbeatMonitoring(ls.Spec.Deployment.Replicas) {
 		return nil, nil
 	}
 
-	metricbeats = make([]beatcrd.Metricbeat, 0, 1)
+	metricbeats = make([]*beatcrd.Metricbeat, 0, 1)
 
 	metricbeatConfig := map[string]any{
 		"setup.template.settings": map[string]any{
@@ -108,7 +108,7 @@ func buildMetricbeats(ls *logstashcrd.Logstash) (metricbeats []beatcrd.Metricbea
 		}
 	}
 
-	metricbeats = append(metricbeats, *mb)
+	metricbeats = append(metricbeats, mb)
 
 	return metricbeats, nil
 }

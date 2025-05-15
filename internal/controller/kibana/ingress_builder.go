@@ -11,12 +11,12 @@ import (
 // BuildIngress permit to generate Ingress object
 // It return error if ingress spec is not provided
 // It return nil if ingress is disabled
-func buildIngresses(kb *kibanacrd.Kibana) (ingresses []networkingv1.Ingress, err error) {
+func buildIngresses(kb *kibanacrd.Kibana) (ingresses []*networkingv1.Ingress, err error) {
 	if !kb.Spec.Endpoint.IsIngressEnabled() {
 		return nil, nil
 	}
 
-	ingresses = make([]networkingv1.Ingress, 0, 1)
+	ingresses = make([]*networkingv1.Ingress, 0, 1)
 
 	if kb.Spec.Endpoint.Ingress.Host == "" {
 		return nil, errors.New("endpoint.ingress.host must be provided")
@@ -85,7 +85,7 @@ func buildIngresses(kb *kibanacrd.Kibana) (ingresses []networkingv1.Ingress, err
 		return nil, errors.Wrap(err, "Error when merge ingress spec")
 	}
 
-	ingresses = append(ingresses, *ingress)
+	ingresses = append(ingresses, ingress)
 
 	return ingresses, nil
 }

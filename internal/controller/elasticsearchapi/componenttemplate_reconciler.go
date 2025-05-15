@@ -5,24 +5,23 @@ import (
 	"time"
 
 	eshandler "github.com/disaster37/es-handler/v8"
-	"github.com/disaster37/operator-sdk-extra/pkg/controller"
-	"github.com/disaster37/operator-sdk-extra/pkg/object"
+	"github.com/disaster37/operator-sdk-extra/v2/pkg/controller/remote"
 	olivere "github.com/olivere/elastic/v7"
 	"github.com/sirupsen/logrus"
 	elasticsearchapicrd "github.com/webcenter-fr/elasticsearch-operator/api/elasticsearchapi/v1"
 	"k8s.io/client-go/tools/record"
-	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
 
 type componentTemplateReconciler struct {
-	controller.RemoteReconcilerAction[*elasticsearchapicrd.ComponentTemplate, *olivere.IndicesGetComponentTemplate, eshandler.ElasticsearchHandler]
+	remote.RemoteReconcilerAction[*elasticsearchapicrd.ComponentTemplate, *olivere.IndicesGetComponentTemplate, eshandler.ElasticsearchHandler]
 	name string
 }
 
-func newComponentTemplateReconciler(name string, client client.Client, recorder record.EventRecorder) controller.RemoteReconcilerAction[*elasticsearchapicrd.ComponentTemplate, *olivere.IndicesGetComponentTemplate, eshandler.ElasticsearchHandler] {
+func newComponentTemplateReconciler(name string, client client.Client, recorder record.EventRecorder) remote.RemoteReconcilerAction[*elasticsearchapicrd.ComponentTemplate, *olivere.IndicesGetComponentTemplate, eshandler.ElasticsearchHandler] {
 	return &componentTemplateReconciler{
-		RemoteReconcilerAction: controller.NewRemoteReconcilerAction[*elasticsearchapicrd.ComponentTemplate, *olivere.IndicesGetComponentTemplate, eshandler.ElasticsearchHandler](
+		RemoteReconcilerAction: remote.NewRemoteReconcilerAction[*elasticsearchapicrd.ComponentTemplate, *olivere.IndicesGetComponentTemplate, eshandler.ElasticsearchHandler](
 			client,
 			recorder,
 		),
@@ -30,17 +29,16 @@ func newComponentTemplateReconciler(name string, client client.Client, recorder 
 	}
 }
 
-func (h *componentTemplateReconciler) GetRemoteHandler(ctx context.Context, req ctrl.Request, o object.RemoteObject, logger *logrus.Entry) (handler controller.RemoteExternalReconciler[*elasticsearchapicrd.ComponentTemplate, *olivere.IndicesGetComponentTemplate, eshandler.ElasticsearchHandler], res ctrl.Result, err error) {
-	ct := o.(*elasticsearchapicrd.ComponentTemplate)
-	esClient, err := GetElasticsearchHandler(ctx, ct, ct.Spec.ElasticsearchRef, h.Client(), logger)
-	if err != nil && ct.DeletionTimestamp.IsZero() {
+func (h *componentTemplateReconciler) GetRemoteHandler(ctx context.Context, req reconcile.Request, o *elasticsearchapicrd.ComponentTemplate, logger *logrus.Entry) (handler remote.RemoteExternalReconciler[*elasticsearchapicrd.ComponentTemplate, *olivere.IndicesGetComponentTemplate, eshandler.ElasticsearchHandler], res reconcile.Result, err error) {
+	esClient, err := GetElasticsearchHandler(ctx, o, o.Spec.ElasticsearchRef, h.Client(), logger)
+	if err != nil && o.DeletionTimestamp.IsZero() {
 		return nil, res, err
 	}
 
 	// Elastic not ready
 	if esClient == nil {
-		if ct.DeletionTimestamp.IsZero() {
-			return nil, ctrl.Result{RequeueAfter: 60 * time.Second}, nil
+		if o.DeletionTimestamp.IsZero() {
+			return nil, reconcile.Result{RequeueAfter: 60 * time.Second}, nil
 		}
 
 		return nil, res, nil

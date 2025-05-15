@@ -5,18 +5,18 @@ import (
 
 	eshandler "github.com/disaster37/es-handler/v8"
 	"github.com/disaster37/generic-objectmatcher/patch"
-	"github.com/disaster37/operator-sdk-extra/pkg/controller"
+	"github.com/disaster37/operator-sdk-extra/v2/pkg/controller/remote"
 	olivere "github.com/olivere/elastic/v7"
 	elasticsearchapicrd "github.com/webcenter-fr/elasticsearch-operator/api/elasticsearchapi/v1"
 )
 
 type componentTemplateApiClient struct {
-	*controller.BasicRemoteExternalReconciler[*elasticsearchapicrd.ComponentTemplate, *olivere.IndicesGetComponentTemplate, eshandler.ElasticsearchHandler]
+	remote.RemoteExternalReconciler[*elasticsearchapicrd.ComponentTemplate, *olivere.IndicesGetComponentTemplate, eshandler.ElasticsearchHandler]
 }
 
-func newComponentTemplateApiClient(client eshandler.ElasticsearchHandler) controller.RemoteExternalReconciler[*elasticsearchapicrd.ComponentTemplate, *olivere.IndicesGetComponentTemplate, eshandler.ElasticsearchHandler] {
+func newComponentTemplateApiClient(client eshandler.ElasticsearchHandler) remote.RemoteExternalReconciler[*elasticsearchapicrd.ComponentTemplate, *olivere.IndicesGetComponentTemplate, eshandler.ElasticsearchHandler] {
 	return &componentTemplateApiClient{
-		BasicRemoteExternalReconciler: controller.NewBasicRemoteExternalReconciler[*elasticsearchapicrd.ComponentTemplate, *olivere.IndicesGetComponentTemplate, eshandler.ElasticsearchHandler](client),
+		RemoteExternalReconciler: remote.NewRemoteExternalReconciler[*elasticsearchapicrd.ComponentTemplate, *olivere.IndicesGetComponentTemplate, eshandler.ElasticsearchHandler](client),
 	}
 }
 
@@ -67,6 +67,6 @@ func (h *componentTemplateApiClient) Delete(o *elasticsearchapicrd.ComponentTemp
 	return h.Client().ComponentTemplateDelete(o.GetExternalName())
 }
 
-func (h *componentTemplateApiClient) Diff(currentOject *olivere.IndicesGetComponentTemplate, expectedObject *olivere.IndicesGetComponentTemplate, originalObject *olivere.IndicesGetComponentTemplate, ignoresDiff ...patch.CalculateOption) (patchResult *patch.PatchResult, err error) {
+func (h *componentTemplateApiClient) Diff(currentOject *olivere.IndicesGetComponentTemplate, expectedObject *olivere.IndicesGetComponentTemplate, originalObject *olivere.IndicesGetComponentTemplate, o *elasticsearchapicrd.ComponentTemplate, ignoresDiff ...patch.CalculateOption) (patchResult *patch.PatchResult, err error) {
 	return h.Client().ComponentTemplateDiff(currentOject, expectedObject, originalObject)
 }

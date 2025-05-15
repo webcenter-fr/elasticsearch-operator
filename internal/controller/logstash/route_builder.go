@@ -9,8 +9,8 @@ import (
 
 // buildRoutes permit to generate Route object
 // It will overwrite the target service
-func buildRoutes(ls *logstashcrd.Logstash) (routes []routev1.Route, err error) {
-	routes = make([]routev1.Route, 0, len(ls.Spec.Routes))
+func buildRoutes(ls *logstashcrd.Logstash) (routes []*routev1.Route, err error) {
+	routes = make([]*routev1.Route, 0, len(ls.Spec.Routes))
 	var route *routev1.Route
 
 	for _, i := range ls.Spec.Routes {
@@ -33,7 +33,7 @@ func buildRoutes(ls *logstashcrd.Logstash) (routes []routev1.Route, err error) {
 			TargetPort: intstr.FromInt(int(i.ContainerPort)),
 		}
 
-		routes = append(routes, *route)
+		routes = append(routes, route)
 
 	}
 

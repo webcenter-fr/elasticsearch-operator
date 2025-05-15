@@ -11,12 +11,12 @@ import (
 )
 
 // BuildNetworkPolicy permit to generate Network policy object
-func buildNetworkPolicies(ls *logstashcrd.Logstash, listCaller []client.Object) (networkPolicies []networkingv1.NetworkPolicy, err error) {
+func buildNetworkPolicies(ls *logstashcrd.Logstash, listCaller []client.Object) (networkPolicies []*networkingv1.NetworkPolicy, err error) {
 	if len(listCaller) == 0 {
 		return nil, nil
 	}
 
-	networkPolicies = make([]networkingv1.NetworkPolicy, 0, 1)
+	networkPolicies = make([]*networkingv1.NetworkPolicy, 0, 1)
 	tcpProtocol := v1.ProtocolTCP
 	var npp networkingv1.NetworkPolicyPeer
 	ports := make([]networkingv1.NetworkPolicyPort, 0)
@@ -85,7 +85,7 @@ func buildNetworkPolicies(ls *logstashcrd.Logstash, listCaller []client.Object) 
 		},
 	}
 
-	networkPolicies = append(networkPolicies, *networkPolicy)
+	networkPolicies = append(networkPolicies, networkPolicy)
 
 	return networkPolicies, nil
 }

@@ -4,17 +4,17 @@ import (
 	"github.com/disaster37/generic-objectmatcher/patch"
 	"github.com/disaster37/go-kibana-rest/v8/kbapi"
 	kbhandler "github.com/disaster37/kb-handler/v8"
-	"github.com/disaster37/operator-sdk-extra/pkg/controller"
+	"github.com/disaster37/operator-sdk-extra/v2/pkg/controller/remote"
 	kibanaapicrd "github.com/webcenter-fr/elasticsearch-operator/api/kibanaapi/v1"
 )
 
 type roleApiClient struct {
-	*controller.BasicRemoteExternalReconciler[*kibanaapicrd.Role, *kbapi.KibanaRole, kbhandler.KibanaHandler]
+	remote.RemoteExternalReconciler[*kibanaapicrd.Role, *kbapi.KibanaRole, kbhandler.KibanaHandler]
 }
 
-func newRoleApiClient(client kbhandler.KibanaHandler) controller.RemoteExternalReconciler[*kibanaapicrd.Role, *kbapi.KibanaRole, kbhandler.KibanaHandler] {
+func newRoleApiClient(client kbhandler.KibanaHandler) remote.RemoteExternalReconciler[*kibanaapicrd.Role, *kbapi.KibanaRole, kbhandler.KibanaHandler] {
 	return &roleApiClient{
-		BasicRemoteExternalReconciler: controller.NewBasicRemoteExternalReconciler[*kibanaapicrd.Role, *kbapi.KibanaRole, kbhandler.KibanaHandler](client),
+		RemoteExternalReconciler: remote.NewRemoteExternalReconciler[*kibanaapicrd.Role, *kbapi.KibanaRole, kbhandler.KibanaHandler](client),
 	}
 }
 
@@ -90,7 +90,7 @@ func (h *roleApiClient) Delete(o *kibanaapicrd.Role) (err error) {
 	return h.Client().RoleDelete(o.GetExternalName())
 }
 
-func (h *roleApiClient) Diff(currentOject *kbapi.KibanaRole, expectedObject *kbapi.KibanaRole, originalObject *kbapi.KibanaRole, ignoresDiff ...patch.CalculateOption) (patchResult *patch.PatchResult, err error) {
+func (h *roleApiClient) Diff(currentOject *kbapi.KibanaRole, expectedObject *kbapi.KibanaRole, originalObject *kbapi.KibanaRole, o *kibanaapicrd.Role, ignoresDiff ...patch.CalculateOption) (patchResult *patch.PatchResult, err error) {
 	patchResult, err = h.Client().RoleDiff(currentOject, expectedObject, originalObject)
 
 	if err == nil && patchResult == nil {

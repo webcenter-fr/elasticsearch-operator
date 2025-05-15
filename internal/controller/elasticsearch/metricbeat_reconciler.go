@@ -4,18 +4,16 @@ import (
 	"context"
 
 	"emperror.dev/errors"
-	"github.com/disaster37/operator-sdk-extra/pkg/apis/shared"
-	"github.com/disaster37/operator-sdk-extra/pkg/controller"
-	"github.com/disaster37/operator-sdk-extra/pkg/helper"
-	"github.com/disaster37/operator-sdk-extra/pkg/object"
+	"github.com/disaster37/operator-sdk-extra/v2/pkg/apis/shared"
+	"github.com/disaster37/operator-sdk-extra/v2/pkg/controller/multiphase"
 	"github.com/sirupsen/logrus"
 	beatcrd "github.com/webcenter-fr/elasticsearch-operator/api/beat/v1"
 	elasticsearchcrd "github.com/webcenter-fr/elasticsearch-operator/api/elasticsearch/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/tools/record"
-	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
 
 const (
@@ -24,12 +22,12 @@ const (
 )
 
 type metricbeatReconciler struct {
-	controller.MultiPhaseStepReconcilerAction
+	multiphase.MultiPhaseStepReconcilerAction[*elasticsearchcrd.Elasticsearch, *beatcrd.Metricbeat]
 }
 
-func newMetricbeatReconciler(client client.Client, recorder record.EventRecorder) (multiPhaseStepReconcilerAction controller.MultiPhaseStepReconcilerAction) {
+func newMetricbeatReconciler(client client.Client, recorder record.EventRecorder) (multiPhaseStepReconcilerAction multiphase.MultiPhaseStepReconcilerAction[*elasticsearchcrd.Elasticsearch, *beatcrd.Metricbeat]) {
 	return &metricbeatReconciler{
-		MultiPhaseStepReconcilerAction: controller.NewBasicMultiPhaseStepReconcilerAction(
+		MultiPhaseStepReconcilerAction: multiphase.NewMultiPhaseStepReconcilerAction[*elasticsearchcrd.Elasticsearch, *beatcrd.Metricbeat](
 			client,
 			MetricbeatPhase,
 			MetricbeatCondition,
@@ -39,10 +37,9 @@ func newMetricbeatReconciler(client client.Client, recorder record.EventRecorder
 }
 
 // Read existing Metricbeat
-func (r *metricbeatReconciler) Read(ctx context.Context, resource object.MultiPhaseObject, data map[string]any, logger *logrus.Entry) (read controller.MultiPhaseRead, res ctrl.Result, err error) {
-	o := resource.(*elasticsearchcrd.Elasticsearch)
+func (r *metricbeatReconciler) Read(ctx context.Context, o *elasticsearchcrd.Elasticsearch, data map[string]any, logger *logrus.Entry) (read multiphase.MultiPhaseRead[*beatcrd.Metricbeat], res reconcile.Result, err error) {
 	metricbeat := &beatcrd.Metricbeat{}
-	read = controller.NewBasicMultiPhaseRead()
+	read = multiphase.NewMultiPhaseRead[*beatcrd.Metricbeat]()
 
 	// Read current metricbeat
 	if err = r.Client().Get(ctx, types.NamespacedName{Namespace: o.Namespace, Name: GetMetricbeatName(o)}, metricbeat); err != nil {
@@ -52,7 +49,7 @@ func (r *metricbeatReconciler) Read(ctx context.Context, resource object.MultiPh
 		metricbeat = nil
 	}
 	if metricbeat != nil {
-		read.SetCurrentObjects([]client.Object{metricbeat})
+		read.AddCurrentObject(metricbeat)
 	}
 
 	// Generate expected metricbeat
@@ -60,7 +57,7 @@ func (r *metricbeatReconciler) Read(ctx context.Context, resource object.MultiPh
 	if err != nil {
 		return read, res, errors.Wrap(err, "Error when generate metricbeat")
 	}
-	read.SetExpectedObjects(helper.ToSliceOfObject(expectedMetricbeats))
+	read.SetExpectedObjects(expectedMetricbeats)
 
 	return read, res, nil
 }

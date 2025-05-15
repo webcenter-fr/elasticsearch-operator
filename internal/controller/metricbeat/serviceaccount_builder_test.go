@@ -3,7 +3,7 @@ package metricbeat
 import (
 	"testing"
 
-	"github.com/disaster37/operator-sdk-extra/pkg/test"
+	"github.com/disaster37/operator-sdk-extra/v2/pkg/test"
 	"github.com/stretchr/testify/assert"
 	beatcrd "github.com/webcenter-fr/elasticsearch-operator/api/beat/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -14,7 +14,7 @@ import (
 func TestBuildServiceAccounts(t *testing.T) {
 	var (
 		err             error
-		serviceAccounts []corev1.ServiceAccount
+		serviceAccounts []*corev1.ServiceAccount
 		o               *beatcrd.Metricbeat
 	)
 
@@ -43,5 +43,5 @@ func TestBuildServiceAccounts(t *testing.T) {
 	serviceAccounts, err = buildServiceAccounts(o, true)
 	assert.NoError(t, err)
 	assert.Equal(t, 1, len(serviceAccounts))
-	test.EqualFromYamlFile[*corev1.ServiceAccount](t, "testdata/serviceaccount_default.yml", &serviceAccounts[0], scheme.Scheme)
+	test.EqualFromYamlFile[*corev1.ServiceAccount](t, "testdata/serviceaccount_default.yml", serviceAccounts[0], scheme.Scheme)
 }

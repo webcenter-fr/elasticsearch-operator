@@ -9,10 +9,9 @@ import (
 	"emperror.dev/errors"
 	elasticsearchhandler "github.com/disaster37/es-handler/v8"
 	"github.com/disaster37/k8s-objectmatcher/patch"
-	"github.com/disaster37/operator-sdk-extra/pkg/apis/shared"
-	"github.com/disaster37/operator-sdk-extra/pkg/controller"
-	"github.com/disaster37/operator-sdk-extra/pkg/helper"
-	"github.com/disaster37/operator-sdk-extra/pkg/object"
+	"github.com/disaster37/operator-sdk-extra/v2/pkg/apis/shared"
+	"github.com/disaster37/operator-sdk-extra/v2/pkg/controller/multiphase"
+	"github.com/disaster37/operator-sdk-extra/v2/pkg/helper"
 	"github.com/sirupsen/logrus"
 	elasticsearchcrd "github.com/webcenter-fr/elasticsearch-operator/api/elasticsearch/v1"
 	localhelper "github.com/webcenter-fr/elasticsearch-operator/pkg/helper"
@@ -26,6 +25,7 @@ import (
 	"k8s.io/client-go/tools/record"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
 
 const (
@@ -39,13 +39,13 @@ const (
 )
 
 type statefulsetReconciler struct {
-	controller.MultiPhaseStepReconcilerAction
+	multiphase.MultiPhaseStepReconcilerAction[*elasticsearchcrd.Elasticsearch, *appv1.StatefulSet]
 	isOpenshift bool
 }
 
-func newStatefulsetReconciler(client client.Client, recorder record.EventRecorder, isOpenshift bool) (multiPhaseStepReconcilerAction controller.MultiPhaseStepReconcilerAction) {
+func newStatefulsetReconciler(client client.Client, recorder record.EventRecorder, isOpenshift bool) (multiPhaseStepReconcilerAction multiphase.MultiPhaseStepReconcilerAction[*elasticsearchcrd.Elasticsearch, *appv1.StatefulSet]) {
 	return &statefulsetReconciler{
-		MultiPhaseStepReconcilerAction: controller.NewBasicMultiPhaseStepReconcilerAction(
+		MultiPhaseStepReconcilerAction: multiphase.NewMultiPhaseStepReconcilerAction[*elasticsearchcrd.Elasticsearch, *appv1.StatefulSet](
 			client,
 			StatefulsetPhase,
 			StatefulsetCondition,
@@ -56,15 +56,14 @@ func newStatefulsetReconciler(client client.Client, recorder record.EventRecorde
 }
 
 // Read existing satefulsets
-func (r *statefulsetReconciler) Read(ctx context.Context, resource object.MultiPhaseObject, data map[string]any, logger *logrus.Entry) (read controller.MultiPhaseRead, res ctrl.Result, err error) {
-	o := resource.(*elasticsearchcrd.Elasticsearch)
+func (r *statefulsetReconciler) Read(ctx context.Context, o *elasticsearchcrd.Elasticsearch, data map[string]any, logger *logrus.Entry) (read multiphase.MultiPhaseRead[*appv1.StatefulSet], res reconcile.Result, err error) {
 	stsList := &appv1.StatefulSetList{}
-	read = controller.NewBasicMultiPhaseRead()
+	read = multiphase.NewMultiPhaseRead[*appv1.StatefulSet]()
 	s := &corev1.Secret{}
 	cm := &corev1.ConfigMap{}
 	cmList := &corev1.ConfigMapList{}
-	configMapsChecksum := make([]corev1.ConfigMap, 0)
-	secretsChecksum := make([]corev1.Secret, 0)
+	configMapsChecksum := make([]*corev1.ConfigMap, 0)
+	secretsChecksum := make([]*corev1.Secret, 0)
 
 	// Read current satefulsets
 	labelSelectors, err := labels.Parse(fmt.Sprintf("cluster=%s,%s=true", o.Name, elasticsearchcrd.ElasticsearchAnnotationKey))
@@ -74,7 +73,7 @@ func (r *statefulsetReconciler) Read(ctx context.Context, resource object.MultiP
 	if err = r.Client().List(ctx, stsList, &client.ListOptions{Namespace: o.Namespace, LabelSelector: labelSelectors}); err != nil {
 		return read, res, errors.Wrapf(err, "Error when read statefulset")
 	}
-	read.SetCurrentObjects(helper.ToSliceOfObject(stsList.Items))
+	read.SetCurrentObjects(helper.ToSlicePtr(stsList.Items))
 
 	// Read keystore secret if needed
 	if o.Spec.GlobalNodeGroup.KeystoreSecretRef != nil && o.Spec.GlobalNodeGroup.KeystoreSecretRef.Name != "" {
@@ -83,10 +82,10 @@ func (r *statefulsetReconciler) Read(ctx context.Context, resource object.MultiP
 				return read, res, errors.Wrapf(err, "Error when read secret %s", o.Spec.GlobalNodeGroup.KeystoreSecretRef.Name)
 			}
 			logger.Warnf("Secret %s not yet exist, try again later", o.Spec.GlobalNodeGroup.KeystoreSecretRef.Name)
-			return read, ctrl.Result{RequeueAfter: 30 * time.Second}, nil
+			return read, reconcile.Result{RequeueAfter: 30 * time.Second}, nil
 		}
 
-		secretsChecksum = append(secretsChecksum, *s)
+		secretsChecksum = append(secretsChecksum, s)
 	}
 
 	// Read cacerts secret if needed
@@ -96,10 +95,10 @@ func (r *statefulsetReconciler) Read(ctx context.Context, resource object.MultiP
 				return read, res, errors.Wrapf(err, "Error when read secret %s", o.Spec.GlobalNodeGroup.CacertsSecretRef.Name)
 			}
 			logger.Warnf("Secret %s not yet exist, try again later", o.Spec.GlobalNodeGroup.CacertsSecretRef.Name)
-			return read, ctrl.Result{RequeueAfter: 30 * time.Second}, nil
+			return read, reconcile.Result{RequeueAfter: 30 * time.Second}, nil
 		}
 
-		secretsChecksum = append(secretsChecksum, *s)
+		secretsChecksum = append(secretsChecksum, s)
 	}
 
 	// Read API certificate secret if needed
@@ -110,20 +109,20 @@ func (r *statefulsetReconciler) Read(ctx context.Context, resource object.MultiP
 					return read, res, errors.Wrapf(err, "Error when read secret %s", GetSecretNameForTlsApi(o))
 				}
 				logger.Warnf("Secret %s not yet exist, try again later", GetSecretNameForTlsApi(o))
-				return read, ctrl.Result{RequeueAfter: 30 * time.Second}, nil
+				return read, reconcile.Result{RequeueAfter: 30 * time.Second}, nil
 			}
 
-			secretsChecksum = append(secretsChecksum, *s)
+			secretsChecksum = append(secretsChecksum, s)
 		} else {
 			if err = r.Client().Get(ctx, types.NamespacedName{Namespace: o.Namespace, Name: o.Spec.Tls.CertificateSecretRef.Name}, s); err != nil {
 				if !k8serrors.IsNotFound(err) {
 					return read, res, errors.Wrapf(err, "Error when read secret %s", o.Spec.Tls.CertificateSecretRef.Name)
 				}
 				logger.Warnf("Secret %s not yet exist, try again later", o.Spec.Tls.CertificateSecretRef.Name)
-				return read, ctrl.Result{RequeueAfter: 30 * time.Second}, nil
+				return read, reconcile.Result{RequeueAfter: 30 * time.Second}, nil
 			}
 
-			secretsChecksum = append(secretsChecksum, *s)
+			secretsChecksum = append(secretsChecksum, s)
 		}
 	}
 
@@ -133,9 +132,9 @@ func (r *statefulsetReconciler) Read(ctx context.Context, resource object.MultiP
 			return read, res, errors.Wrapf(err, "Error when read secret %s", GetSecretNameForTlsTransport(o))
 		}
 		logger.Warnf("Secret %s not yet exist, try again later", GetSecretNameForTlsTransport(o))
-		return read, ctrl.Result{RequeueAfter: 30 * time.Second}, nil
+		return read, reconcile.Result{RequeueAfter: 30 * time.Second}, nil
 	}
-	secretsChecksum = append(secretsChecksum, *s)
+	secretsChecksum = append(secretsChecksum, s)
 
 	// Read configMaps to generate checksum
 	// Keep only configmap of type config
@@ -148,7 +147,7 @@ func (r *statefulsetReconciler) Read(ctx context.Context, resource object.MultiP
 	}
 	for _, cm := range cmList.Items {
 		if cm.Annotations[fmt.Sprintf("%s/type", elasticsearchcrd.ElasticsearchAnnotationKey)] == "config" {
-			configMapsChecksum = append(configMapsChecksum, cm)
+			configMapsChecksum = append(configMapsChecksum, &cm)
 		}
 	}
 
@@ -160,10 +159,10 @@ func (r *statefulsetReconciler) Read(ctx context.Context, resource object.MultiP
 					return read, res, errors.Wrapf(err, "Error when read configMap %s", v.ConfigMap.Name)
 				}
 				logger.Warnf("ConfigMap %s not yet exist, try again later", v.ConfigMap.Name)
-				return read, ctrl.Result{RequeueAfter: 30 * time.Second}, nil
+				return read, reconcile.Result{RequeueAfter: 30 * time.Second}, nil
 			}
 
-			configMapsChecksum = append(configMapsChecksum, *cm)
+			configMapsChecksum = append(configMapsChecksum, cm)
 			break
 		}
 
@@ -173,10 +172,10 @@ func (r *statefulsetReconciler) Read(ctx context.Context, resource object.MultiP
 					return read, res, errors.Wrapf(err, "Error when read secret %s", v.Secret.SecretName)
 				}
 				logger.Warnf("Secret %s not yet exist, try again later", v.Secret.SecretName)
-				return read, ctrl.Result{RequeueAfter: 30 * time.Second}, nil
+				return read, reconcile.Result{RequeueAfter: 30 * time.Second}, nil
 			}
 
-			secretsChecksum = append(secretsChecksum, *s)
+			secretsChecksum = append(secretsChecksum, s)
 			break
 		}
 	}
@@ -200,10 +199,10 @@ func (r *statefulsetReconciler) Read(ctx context.Context, resource object.MultiP
 					return read, res, errors.Wrapf(err, "Error when read secret %s", env.ValueFrom.SecretKeyRef.Name)
 				}
 				logger.Warnf("Secret %s not yet exist, try again later", env.ValueFrom.SecretKeyRef.Name)
-				return read, ctrl.Result{RequeueAfter: 30 * time.Second}, nil
+				return read, reconcile.Result{RequeueAfter: 30 * time.Second}, nil
 			}
 
-			secretsChecksum = append(secretsChecksum, *s)
+			secretsChecksum = append(secretsChecksum, s)
 			break
 		}
 
@@ -213,10 +212,10 @@ func (r *statefulsetReconciler) Read(ctx context.Context, resource object.MultiP
 					return read, res, errors.Wrapf(err, "Error when read configMap %s", env.ValueFrom.ConfigMapKeyRef.Name)
 				}
 				logger.Warnf("ConfigMap %s not yet exist, try again later", env.ValueFrom.ConfigMapKeyRef.Name)
-				return read, ctrl.Result{RequeueAfter: 30 * time.Second}, nil
+				return read, reconcile.Result{RequeueAfter: 30 * time.Second}, nil
 			}
 
-			configMapsChecksum = append(configMapsChecksum, *cm)
+			configMapsChecksum = append(configMapsChecksum, cm)
 			break
 		}
 	}
@@ -229,10 +228,10 @@ func (r *statefulsetReconciler) Read(ctx context.Context, resource object.MultiP
 					return read, res, errors.Wrapf(err, "Error when read secret %s", ef.SecretRef.Name)
 				}
 				logger.Warnf("Secret %s not yet exist, try again later", ef.SecretRef.Name)
-				return read, ctrl.Result{RequeueAfter: 30 * time.Second}, nil
+				return read, reconcile.Result{RequeueAfter: 30 * time.Second}, nil
 			}
 
-			secretsChecksum = append(secretsChecksum, *s)
+			secretsChecksum = append(secretsChecksum, s)
 			break
 		}
 
@@ -242,10 +241,10 @@ func (r *statefulsetReconciler) Read(ctx context.Context, resource object.MultiP
 					return read, res, errors.Wrapf(err, "Error when read configMap %s", ef.ConfigMapRef.Name)
 				}
 				logger.Warnf("ConfigMap %s not yet exist, try again later", ef.ConfigMapRef.Name)
-				return read, ctrl.Result{RequeueAfter: 30 * time.Second}, nil
+				return read, reconcile.Result{RequeueAfter: 30 * time.Second}, nil
 			}
 
-			configMapsChecksum = append(configMapsChecksum, *cm)
+			configMapsChecksum = append(configMapsChecksum, cm)
 			break
 		}
 	}
@@ -255,28 +254,23 @@ func (r *statefulsetReconciler) Read(ctx context.Context, resource object.MultiP
 	if err != nil {
 		return read, res, errors.Wrap(err, "Error when generate statefulsets")
 	}
-	read.SetExpectedObjects(helper.ToSliceOfObject(expectedSts))
+	read.SetExpectedObjects(expectedSts)
 
 	return read, res, nil
 }
 
 // Diff permit to check if statefulset is up to date
-func (r *statefulsetReconciler) Diff(ctx context.Context, resource object.MultiPhaseObject, read controller.MultiPhaseRead, data map[string]any, logger *logrus.Entry, ignoreDiff ...patch.CalculateOption) (diff controller.MultiPhaseDiff, res ctrl.Result, err error) {
-	o := resource.(*elasticsearchcrd.Elasticsearch)
+func (r *statefulsetReconciler) Diff(ctx context.Context, o *elasticsearchcrd.Elasticsearch, read multiphase.MultiPhaseRead[*appv1.StatefulSet], data map[string]any, logger *logrus.Entry, ignoreDiff ...patch.CalculateOption) (diff multiphase.MultiPhaseDiff[*appv1.StatefulSet], res reconcile.Result, err error) {
 	var esHandler elasticsearchhandler.ElasticsearchHandler
 	var v any
 
 	currentStatefulsets := read.GetCurrentObjects()
-	copyCurrentStatefulsets := make([]client.Object, len(currentStatefulsets))
+	copyCurrentStatefulsets := make([]*appv1.StatefulSet, len(currentStatefulsets))
 	copy(copyCurrentStatefulsets, currentStatefulsets)
-
 	expectedStatefulsets := read.GetExpectedObjects()
 
-	diff = controller.NewBasicMultiPhaseDiff()
-
-	stsToUpdate := make([]client.Object, 0)
+	diff = multiphase.NewMultiPhaseDiff[*appv1.StatefulSet]()
 	stsToExpectedUpdated := make([]*appv1.StatefulSet, 0)
-	stsToCreate := make([]client.Object, 0)
 	data["phase"] = StatefulsetPhaseNormal
 	v, err = helper.Get(data, "esHandler")
 	if err == nil {
@@ -290,6 +284,13 @@ func (r *statefulsetReconciler) Diff(ctx context.Context, resource object.MultiP
 	// Then we only update Statefullset curretly being upgraded or wait is finished
 	for indexExpectedSts, expectedSts := range expectedStatefulsets {
 		isFound := false
+
+		// Set ownerReferences on expected object before to diff them
+		err = ctrl.SetControllerReference(o, expectedSts, r.Client().Scheme())
+		if err != nil {
+			return diff, res, errors.Wrapf(err, "Error when set owner reference on object '%s'", expectedSts.GetName())
+		}
+
 		for i, currentSts := range copyCurrentStatefulsets {
 			// Need compare statefulset
 			if currentSts.GetName() == expectedSts.GetName() {
@@ -307,7 +308,7 @@ func (r *statefulsetReconciler) Diff(ctx context.Context, resource object.MultiP
 				}
 
 				// Remove items found
-				copyCurrentStatefulsets = helper.DeleteItemFromSlice(copyCurrentStatefulsets, i).([]client.Object)
+				copyCurrentStatefulsets = helper.DeleteItemFromSlice(copyCurrentStatefulsets, i)
 
 				break
 			}
@@ -318,7 +319,7 @@ func (r *statefulsetReconciler) Diff(ctx context.Context, resource object.MultiP
 			// Need create statefulset
 			diff.AddDiff(fmt.Sprintf("Statefulset %s not yet exist", sts.GetName()))
 
-			stsToCreate = append(stsToCreate, sts)
+			diff.AddObjectToCreate(sts)
 
 			logger.Debugf("Need create statefulset %s", sts.GetName())
 		}
@@ -334,7 +335,7 @@ func (r *statefulsetReconciler) Diff(ctx context.Context, resource object.MultiP
 	if condition.IsStatusConditionPresentAndEqual(o.Status.Conditions, TlsConditionBlackout.String(), metav1.ConditionTrue) {
 		logger.Info("Detect we are on TLS blackout. Reconcile all statefulset")
 		for _, sts := range stsToExpectedUpdated {
-			stsToUpdate = append(stsToUpdate, sts)
+			diff.AddObjectToUpdate(sts)
 		}
 	} else {
 		// Check if on current upgrade phase, to only upgrade the statefullset currently being upgraded
@@ -344,8 +345,7 @@ func (r *statefulsetReconciler) Diff(ctx context.Context, resource object.MultiP
 			logger.Debugf("Detect phase: %s", StatefulsetPhaseUpgrade)
 
 			// Upgrade only one active statefulset or current upgrade
-			for _, object := range currentStatefulsets {
-				sts := object.(*appv1.StatefulSet)
+			for _, sts := range currentStatefulsets {
 
 				// Not found a way to detect that we are on envtest, so without kubelet. We use env TEST to to that.
 				// It avoid to stuck test on this phase
@@ -357,7 +357,7 @@ func (r *statefulsetReconciler) Diff(ctx context.Context, resource object.MultiP
 					for _, stsNeedUpgraded := range stsToExpectedUpdated {
 						if stsNeedUpgraded.GetName() == sts.Name {
 							logger.Infof("Detect we need to upgrade Statefullset %s that being already on upgrade state", sts.Name)
-							stsToUpdate = append(stsToUpdate, stsNeedUpgraded)
+							diff.AddObjectToUpdate(stsNeedUpgraded)
 							break
 						}
 					}
@@ -367,8 +367,7 @@ func (r *statefulsetReconciler) Diff(ctx context.Context, resource object.MultiP
 			}
 
 			// Allow upgrade no active statefulset
-			for _, object := range currentStatefulsets {
-				sts := object.(*appv1.StatefulSet)
+			for _, sts := range currentStatefulsets {
 
 				// Not found a way to detect that we are on envtest, so without kubelet. We use env TEST to to that.
 				// It avoid to stuck test on this phase
@@ -378,7 +377,7 @@ func (r *statefulsetReconciler) Diff(ctx context.Context, resource object.MultiP
 						if stsNeedUpgraded.GetName() == sts.Name {
 							data["phase"] = StatefulsetPhaseUpgrade
 							logger.Infof("Detect we need to upgrade Statefullset %s that not yet active (replica 0)", sts.Name)
-							stsToUpdate = append(stsToUpdate, stsNeedUpgraded)
+							diff.AddObjectToUpdate(stsNeedUpgraded)
 							break
 						}
 					}
@@ -407,11 +406,11 @@ func (r *statefulsetReconciler) Diff(ctx context.Context, resource object.MultiP
 
 			for _, sts := range stsToExpectedUpdated {
 				if *sts.Spec.Replicas == 0 {
-					stsToUpdate = append(stsToUpdate, sts)
+					diff.AddObjectToUpdate(sts)
 				} else if !activeStateFulsetAlreadyUpgraded {
 					data["phase"] = StatefulsetPhaseUpgradeStarted
 					activeStateFulsetAlreadyUpgraded = true
-					stsToUpdate = append(stsToUpdate, sts)
+					diff.AddObjectToUpdate(sts)
 
 					// We need to disable balancing before upgrade
 					// We not need to block if error
@@ -429,16 +428,13 @@ func (r *statefulsetReconciler) Diff(ctx context.Context, resource object.MultiP
 
 	logger.Debugf("Phase after diff: %s", data["phase"])
 
-	diff.SetObjectsToCreate(stsToCreate)
-	diff.SetObjectsToUpdate(stsToUpdate)
 	diff.SetObjectsToDelete(copyCurrentStatefulsets)
 
 	return diff, res, nil
 }
 
 // OnSuccess permit to set status condition on the right state is everithink is good
-func (r *statefulsetReconciler) OnSuccess(ctx context.Context, resource object.MultiPhaseObject, data map[string]any, diff controller.MultiPhaseDiff, logger *logrus.Entry) (res ctrl.Result, err error) {
-	o := resource.(*elasticsearchcrd.Elasticsearch)
+func (r *statefulsetReconciler) OnSuccess(ctx context.Context, o *elasticsearchcrd.Elasticsearch, data map[string]any, diff multiphase.MultiPhaseDiff[*appv1.StatefulSet], logger *logrus.Entry) (res reconcile.Result, err error) {
 	var d any
 
 	d, err = helper.Get(data, "phase")
@@ -486,12 +482,12 @@ func (r *statefulsetReconciler) OnSuccess(ctx context.Context, resource object.M
 			Message: "Statefulsets are being upgraded",
 		})
 
-		r.Recorder().Eventf(resource, corev1.EventTypeNormal, "Completed", "Statefulsets are being upgraded")
+		r.Recorder().Eventf(o, corev1.EventTypeNormal, "Completed", "Statefulsets are being upgraded")
 
-		return ctrl.Result{RequeueAfter: time.Second * 30}, nil
+		return reconcile.Result{RequeueAfter: time.Second * 30}, nil
 
 	case StatefulsetPhaseUpgrade:
-		return ctrl.Result{RequeueAfter: time.Second * 30}, nil
+		return reconcile.Result{RequeueAfter: time.Second * 30}, nil
 
 	case StatefulsetPhaseUpgradeFinished:
 		condition.SetStatusCondition(&o.Status.Conditions, metav1.Condition{
@@ -508,14 +504,14 @@ func (r *statefulsetReconciler) OnSuccess(ctx context.Context, resource object.M
 			Message: "Statefulsets are finished to be upgraded",
 		})
 
-		r.Recorder().Eventf(resource, corev1.EventTypeNormal, "Completed", "Statefulsets are finished to be upgraded")
+		r.Recorder().Eventf(o, corev1.EventTypeNormal, "Completed", "Statefulsets are finished to be upgraded")
 
-		return ctrl.Result{Requeue: true}, nil
+		return reconcile.Result{Requeue: true}, nil
 
 	}
 
 	if diff.NeedCreate() || diff.NeedUpdate() || diff.NeedDelete() {
-		r.Recorder().Eventf(resource, corev1.EventTypeNormal, "Completed", "Statefulsets successfully updated")
+		r.Recorder().Eventf(o, corev1.EventTypeNormal, "Completed", "Statefulsets successfully updated")
 	}
 
 	// Update condition status if needed

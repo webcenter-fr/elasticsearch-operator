@@ -8,7 +8,7 @@ import (
 	"emperror.dev/errors"
 	"github.com/codingsince1985/checksum"
 	"github.com/disaster37/k8sbuilder"
-	"github.com/disaster37/operator-sdk-extra/pkg/helper"
+	"github.com/disaster37/operator-sdk-extra/v2/pkg/helper"
 	"github.com/thoas/go-funk"
 	elasticsearchcrd "github.com/webcenter-fr/elasticsearch-operator/api/elasticsearch/v1"
 	"github.com/webcenter-fr/elasticsearch-operator/api/shared"
@@ -35,7 +35,7 @@ var roleList = []string{
 }
 
 // GenerateStatefullsets permit to generate statefullsets for each node groups
-func buildStatefulsets(es *elasticsearchcrd.Elasticsearch, secretsChecksum []corev1.Secret, configMapsChecksum []corev1.ConfigMap, isOpenshift bool) (statefullsets []appv1.StatefulSet, err error) {
+func buildStatefulsets(es *elasticsearchcrd.Elasticsearch, secretsChecksum []*corev1.Secret, configMapsChecksum []*corev1.ConfigMap, isOpenshift bool) (statefullsets []*appv1.StatefulSet, err error) {
 	var sts *appv1.StatefulSet
 
 	checksumAnnotations := map[string]string{}
@@ -867,7 +867,7 @@ fi
 			}
 		}
 
-		statefullsets = append(statefullsets, *sts)
+		statefullsets = append(statefullsets, sts)
 	}
 
 	return statefullsets, nil

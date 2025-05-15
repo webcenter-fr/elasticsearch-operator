@@ -21,8 +21,9 @@ import (
 	"time"
 
 	"emperror.dev/errors"
-	"github.com/disaster37/operator-sdk-extra/pkg/controller"
-	"github.com/disaster37/operator-sdk-extra/pkg/object"
+	"github.com/disaster37/operator-sdk-extra/v2/pkg/apis/shared"
+	"github.com/disaster37/operator-sdk-extra/v2/pkg/controller"
+	"github.com/disaster37/operator-sdk-extra/v2/pkg/controller/multiphase"
 	routev1 "github.com/openshift/api/route/v1"
 	"github.com/sirupsen/logrus"
 	beatcrd "github.com/webcenter-fr/elasticsearch-operator/api/beat/v1"
@@ -47,55 +48,57 @@ import (
 )
 
 const (
-	name string = "filebeat"
+	name              string               = "filebeat"
+	filebeatFinalizer shared.FinalizerName = "filebeat.k8s.webcenter.fr/finalizer"
 )
 
 // FilebeatReconciler reconciles a Filebeat object
 type FilebeatReconciler struct {
 	controller.Controller
-	controller.MultiPhaseReconcilerAction
-	controller.MultiPhaseReconciler
+	multiphase.MultiPhaseReconciler[*beatcrd.Filebeat]
+	multiphase.MultiPhaseReconcilerAction[*beatcrd.Filebeat]
 	name            string
+	stepReconcilers []multiphase.MultiPhaseStepReconcilerAction[*beatcrd.Filebeat, client.Object]
 	kubeCapability  common.KubernetesCapability
-	stepReconcilers []controller.MultiPhaseStepReconcilerAction
 }
 
-func NewFilebeatReconciler(client client.Client, logger *logrus.Entry, recorder record.EventRecorder, kubeCapability common.KubernetesCapability) (multiPhaseReconciler controller.Controller) {
+func NewFilebeatReconciler(c client.Client, logger *logrus.Entry, recorder record.EventRecorder, kubeCapability common.KubernetesCapability) (multiPhaseReconciler controller.Controller) {
 	reconciler := &FilebeatReconciler{
-		Controller: controller.NewBasicController(),
-		MultiPhaseReconcilerAction: controller.NewBasicMultiPhaseReconcilerAction(
-			client,
-			controller.ReadyCondition,
-			recorder,
-		),
-		MultiPhaseReconciler: controller.NewBasicMultiPhaseReconciler(
-			client,
+		Controller: controller.NewController(),
+		MultiPhaseReconciler: multiphase.NewMultiPhaseReconciler[*beatcrd.Filebeat](
+			c,
 			name,
-			"filebeat.k8s.webcenter.fr/finalizer",
+			filebeatFinalizer,
 			logger,
 			recorder,
 		),
+		MultiPhaseReconcilerAction: multiphase.NewMultiPhaseReconcilerAction[*beatcrd.Filebeat](
+			c,
+			controller.ReadyCondition,
+			recorder,
+		),
+
 		name:           name,
 		kubeCapability: kubeCapability,
-		stepReconcilers: []controller.MultiPhaseStepReconcilerAction{
-			newServiceAccountReconciler(client, recorder, kubeCapability.HasRoute),
-			newRoleBindingReconciler(client, recorder, kubeCapability.HasRoute),
-			newTlsReconciler(client, recorder),
-			newCAElasticsearchReconciler(client, recorder),
-			newCredentialReconciler(client, recorder),
-			newCALogstashReconciler(client, recorder),
-			newConfiMapReconciler(client, recorder),
-			newServiceReconciler(client, recorder),
-			newPdbReconciler(client, recorder),
-			newStatefulsetReconciler(client, recorder, kubeCapability.HasRoute),
-			newIngressReconciler(client, recorder),
-			newMetricbeatReconciler(client, recorder),
+		stepReconcilers: []multiphase.MultiPhaseStepReconcilerAction[*beatcrd.Filebeat, client.Object]{
+			multiphase.NewObjectMultiPhaseStepReconcilerAction[*beatcrd.Filebeat, *corev1.ServiceAccount, client.Object](newServiceAccountReconciler(c, recorder, kubeCapability.HasRoute)),
+			multiphase.NewObjectMultiPhaseStepReconcilerAction[*beatcrd.Filebeat, *rbacv1.RoleBinding, client.Object](newRoleBindingReconciler(c, recorder, kubeCapability.HasRoute)),
+			multiphase.NewObjectMultiPhaseStepReconcilerAction[*beatcrd.Filebeat, *corev1.Secret, client.Object](newTlsReconciler(c, recorder)),
+			multiphase.NewObjectMultiPhaseStepReconcilerAction[*beatcrd.Filebeat, *corev1.Secret, client.Object](newCALogstashReconciler(c, recorder)),
+			multiphase.NewObjectMultiPhaseStepReconcilerAction[*beatcrd.Filebeat, *corev1.Secret, client.Object](newCAElasticsearchReconciler(c, recorder)),
+			multiphase.NewObjectMultiPhaseStepReconcilerAction[*beatcrd.Filebeat, *corev1.Secret, client.Object](newCredentialReconciler(c, recorder)),
+			multiphase.NewObjectMultiPhaseStepReconcilerAction[*beatcrd.Filebeat, *corev1.ConfigMap, client.Object](newConfiMapReconciler(c, recorder)),
+			multiphase.NewObjectMultiPhaseStepReconcilerAction[*beatcrd.Filebeat, *corev1.Service, client.Object](newServiceReconciler(c, recorder)),
+			multiphase.NewObjectMultiPhaseStepReconcilerAction[*beatcrd.Filebeat, *policyv1.PodDisruptionBudget, client.Object](newPdbReconciler(c, recorder)),
+			multiphase.NewObjectMultiPhaseStepReconcilerAction[*beatcrd.Filebeat, *appv1.StatefulSet, client.Object](newStatefulsetReconciler(c, recorder, kubeCapability.HasRoute)),
+			multiphase.NewObjectMultiPhaseStepReconcilerAction[*beatcrd.Filebeat, *networkingv1.Ingress, client.Object](newIngressReconciler(c, recorder)),
+			multiphase.NewObjectMultiPhaseStepReconcilerAction[*beatcrd.Filebeat, *beatcrd.Metricbeat, client.Object](newMetricbeatReconciler(c, recorder)),
 		},
 	}
 
 	// Add route reconciler if CRD exist on cluster
 	if kubeCapability.HasRoute {
-		reconciler.stepReconcilers = append(reconciler.stepReconcilers, newRouteReconciler(client, recorder))
+		reconciler.stepReconcilers = append(reconciler.stepReconcilers, multiphase.NewObjectMultiPhaseStepReconcilerAction[*beatcrd.Filebeat, *routev1.Route, client.Object](newRouteReconciler(c, recorder)))
 	}
 
 	return reconciler
@@ -129,7 +132,7 @@ func NewFilebeatReconciler(client client.Client, logger *logrus.Entry, recorder 
 //
 // For more details, check Reconcile and its Result here:
 // - https://pkg.go.dev/sigs.k8s.io/controller-runtime@v0.13.0/pkg/reconcile
-func (r *FilebeatReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
+func (r *FilebeatReconciler) Reconcile(ctx context.Context, req reconcile.Request) (reconcile.Result, error) {
 	fb := &beatcrd.Filebeat{}
 	data := map[string]any{}
 
@@ -161,7 +164,7 @@ func (h *FilebeatReconciler) SetupWithManager(mgr ctrl.Manager) error {
 		Watches(&elasticsearchcrd.Elasticsearch{}, handler.EnqueueRequestsFromMapFunc(watchElasticsearch(h.Client()))).
 		Watches(&logstashcrd.Logstash{}, handler.EnqueueRequestsFromMapFunc(watchLogstash(h.Client()))).
 		WithOptions(k8scontroller.Options{
-			RateLimiter: common.DefaultControllerRateLimiter[reconcile.Request](),
+			RateLimiter: controller.DefaultControllerRateLimiter[reconcile.Request](),
 		})
 
 	if h.kubeCapability.HasRoute {
@@ -171,29 +174,36 @@ func (h *FilebeatReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrlBuilder.Complete(h)
 }
 
-func (h *FilebeatReconciler) Configure(ctx context.Context, req ctrl.Request, resource object.MultiPhaseObject, data map[string]any, logger *logrus.Entry) (res ctrl.Result, err error) {
-	// Set prometheus Metrics
-	common.ControllerInstances.WithLabelValues(h.name, resource.GetNamespace(), resource.GetName()).Set(1)
-
-	return h.MultiPhaseReconcilerAction.Configure(ctx, req, resource, data, logger)
+func (h *FilebeatReconciler) Client() client.Client {
+	return h.MultiPhaseReconcilerAction.Client()
 }
 
-func (h *FilebeatReconciler) Delete(ctx context.Context, o object.MultiPhaseObject, data map[string]any, logger *logrus.Entry) (err error) {
+func (h *FilebeatReconciler) Recorder() record.EventRecorder {
+	return h.MultiPhaseReconcilerAction.Recorder()
+}
+
+func (h *FilebeatReconciler) Configure(ctx context.Context, req reconcile.Request, o *beatcrd.Filebeat, data map[string]any, logger *logrus.Entry) (res reconcile.Result, err error) {
+	// Set prometheus Metrics
+	common.ControllerInstances.WithLabelValues(h.name, o.GetNamespace(), o.GetName()).Set(1)
+
+	return h.MultiPhaseReconcilerAction.Configure(ctx, req, o, data, logger)
+}
+
+func (h *FilebeatReconciler) Delete(ctx context.Context, o *beatcrd.Filebeat, data map[string]any, logger *logrus.Entry) (err error) {
 	// Set prometheus Metrics
 	common.ControllerInstances.WithLabelValues(h.name, o.GetNamespace(), o.GetName()).Set(0)
 
 	return h.MultiPhaseReconcilerAction.Delete(ctx, o, data, logger)
 }
 
-func (h *FilebeatReconciler) OnError(ctx context.Context, o object.MultiPhaseObject, data map[string]any, currentErr error, logger *logrus.Entry) (res ctrl.Result, err error) {
+func (h *FilebeatReconciler) OnError(ctx context.Context, o *beatcrd.Filebeat, data map[string]any, currentErr error, logger *logrus.Entry) (res reconcile.Result, err error) {
 	common.TotalErrors.Inc()
 	common.ControllerErrors.WithLabelValues(h.name, o.GetNamespace(), o.GetName()).Inc()
 
 	return h.MultiPhaseReconcilerAction.OnError(ctx, o, data, currentErr, logger)
 }
 
-func (h *FilebeatReconciler) OnSuccess(ctx context.Context, r object.MultiPhaseObject, data map[string]any, logger *logrus.Entry) (res ctrl.Result, err error) {
-	o := r.(*beatcrd.Filebeat)
+func (h *FilebeatReconciler) OnSuccess(ctx context.Context, o *beatcrd.Filebeat, data map[string]any, logger *logrus.Entry) (res reconcile.Result, err error) {
 
 	// Reset the current cluster errors
 	common.ControllerErrors.WithLabelValues(h.name, o.GetNamespace(), o.GetName()).Set(0)

@@ -10,8 +10,8 @@ import (
 // BuilderServices permit to generate service
 // It also generate service needed by ingress
 // It inject the right selector for Logstash pods
-func buildServices(ls *logstashcrd.Logstash) (services []corev1.Service, err error) {
-	services = make([]corev1.Service, 0, len(ls.Spec.Services))
+func buildServices(ls *logstashcrd.Logstash) (services []*corev1.Service, err error) {
+	services = make([]*corev1.Service, 0, len(ls.Spec.Services))
 	var service *corev1.Service
 	computedPort := make([]corev1.ServicePort, 0, len(ls.Spec.Services)+len(ls.Spec.Ingresses)+len(ls.Spec.Deployment.Ports))
 	var isPortAlreadyUsed bool
@@ -40,7 +40,7 @@ func buildServices(ls *logstashcrd.Logstash) (services []corev1.Service, err err
 			"cluster":                         ls.Name,
 		}
 
-		services = append(services, *service)
+		services = append(services, service)
 
 		for _, port := range service.Spec.Ports {
 			isPortAlreadyUsed = false
@@ -90,7 +90,7 @@ func buildServices(ls *logstashcrd.Logstash) (services []corev1.Service, err err
 			},
 		}
 
-		services = append(services, *service)
+		services = append(services, service)
 
 		isPortAlreadyUsed = false
 		for _, portUsed := range computedPort {
@@ -136,7 +136,7 @@ func buildServices(ls *logstashcrd.Logstash) (services []corev1.Service, err err
 			},
 		}
 
-		services = append(services, *service)
+		services = append(services, service)
 
 		isPortAlreadyUsed = false
 		for _, portUsed := range computedPort {
@@ -195,7 +195,7 @@ func buildServices(ls *logstashcrd.Logstash) (services []corev1.Service, err err
 		},
 	}
 
-	services = append(services, *service)
+	services = append(services, service)
 
 	return services, nil
 }

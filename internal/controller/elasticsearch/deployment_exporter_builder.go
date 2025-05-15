@@ -14,12 +14,12 @@ import (
 )
 
 // BuildDeploymentExporter permit to generate deployment for exporter
-func buildDeploymentExporters(es *elasticsearchcrd.Elasticsearch) (dpls []appv1.Deployment, err error) {
+func buildDeploymentExporters(es *elasticsearchcrd.Elasticsearch) (dpls []*appv1.Deployment, err error) {
 	if !es.Spec.Monitoring.IsPrometheusMonitoring() {
 		return nil, nil
 	}
 
-	dpls = make([]appv1.Deployment, 0, 1)
+	dpls = make([]*appv1.Deployment, 0, 1)
 
 	cb := k8sbuilder.NewContainerBuilder()
 	ptb := k8sbuilder.NewPodTemplateBuilder()
@@ -191,7 +191,7 @@ func buildDeploymentExporters(es *elasticsearchcrd.Elasticsearch) (dpls []appv1.
 		},
 	}
 
-	dpls = append(dpls, *dpl)
+	dpls = append(dpls, dpl)
 
 	return dpls, nil
 }

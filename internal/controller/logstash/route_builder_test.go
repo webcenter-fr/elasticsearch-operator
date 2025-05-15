@@ -3,7 +3,7 @@ package logstash
 import (
 	"testing"
 
-	"github.com/disaster37/operator-sdk-extra/pkg/test"
+	"github.com/disaster37/operator-sdk-extra/v2/pkg/test"
 	routev1 "github.com/openshift/api/route/v1"
 	"github.com/stretchr/testify/assert"
 	logstashcrd "github.com/webcenter-fr/elasticsearch-operator/api/logstash/v1"
@@ -18,7 +18,7 @@ func TestBuildRoutes(t *testing.T) {
 	var (
 		err    error
 		o      *logstashcrd.Logstash
-		routes []routev1.Route
+		routes []*routev1.Route
 	)
 
 	sch := scheme.Scheme
@@ -75,5 +75,5 @@ func TestBuildRoutes(t *testing.T) {
 
 	assert.NoError(t, err)
 	assert.Equal(t, 1, len(routes))
-	test.EqualFromYamlFile[*routev1.Route](t, "testdata/route_default.yml", &routes[0], sch)
+	test.EqualFromYamlFile[*routev1.Route](t, "testdata/route_default.yml", routes[0], sch)
 }

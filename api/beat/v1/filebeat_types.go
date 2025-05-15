@@ -17,7 +17,8 @@ limitations under the License.
 package v1
 
 import (
-	"github.com/disaster37/operator-sdk-extra/pkg/apis"
+	"github.com/disaster37/operator-sdk-extra/v2/pkg/apis"
+	"github.com/disaster37/operator-sdk-extra/v2/pkg/apis/multiphase"
 	"github.com/webcenter-fr/elasticsearch-operator/api/shared"
 	corev1 "k8s.io/api/core/v1"
 	policyv1 "k8s.io/api/policy/v1"
@@ -237,7 +238,7 @@ type FilebeatStatus struct {
 	// INSERT ADDITIONAL STATUS FIELD - define observed state of cluster
 	// Important: Run "make" to regenerate code after modifying this file
 
-	apis.BasicMultiPhaseObjectStatus `json:",inline"`
+	multiphase.DefaultMultiPhaseObjectStatus `json:",inline"`
 
 	// CertSecretName is the secret name that store certs generated for inputs
 	// +operator-sdk:csv:customresourcedefinitions:type=status
