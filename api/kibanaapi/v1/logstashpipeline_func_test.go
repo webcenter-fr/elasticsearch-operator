@@ -3,14 +3,14 @@ package v1
 import (
 	"testing"
 
-	"github.com/disaster37/operator-sdk-extra/pkg/apis"
+	"github.com/disaster37/operator-sdk-extra/v2/pkg/apis/remote"
 	"github.com/stretchr/testify/assert"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 func TestLogstashPipelineGetStatus(t *testing.T) {
 	status := LogstashPipelineStatus{
-		BasicRemoteObjectStatus: apis.BasicRemoteObjectStatus{
+		DefaultRemoteObjectStatus: remote.DefaultRemoteObjectStatus{
 			LastAppliedConfiguration: "test",
 		},
 	}

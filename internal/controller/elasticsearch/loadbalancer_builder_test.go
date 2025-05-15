@@ -3,7 +3,7 @@ package elasticsearch
 import (
 	"testing"
 
-	"github.com/disaster37/operator-sdk-extra/pkg/test"
+	"github.com/disaster37/operator-sdk-extra/v2/pkg/test"
 	"github.com/stretchr/testify/assert"
 	elasticsearchcrd "github.com/webcenter-fr/elasticsearch-operator/api/elasticsearch/v1"
 	"github.com/webcenter-fr/elasticsearch-operator/api/shared"
@@ -15,7 +15,7 @@ import (
 func TestBuildLoadbalancer(t *testing.T) {
 	var (
 		err      error
-		services []corev1.Service
+		services []*corev1.Service
 		o        *elasticsearchcrd.Elasticsearch
 	)
 
@@ -87,7 +87,7 @@ func TestBuildLoadbalancer(t *testing.T) {
 
 	services, err = buildLoadbalancers(o)
 	assert.NoError(t, err)
-	test.EqualFromYamlFile[*corev1.Service](t, "testdata/loadbalancer_with_target.yaml", &services[0], scheme.Scheme)
+	test.EqualFromYamlFile[*corev1.Service](t, "testdata/loadbalancer_with_target.yaml", services[0], scheme.Scheme)
 
 	// When load balancer is enabled without target node group
 	o = &elasticsearchcrd.Elasticsearch{
@@ -122,7 +122,7 @@ func TestBuildLoadbalancer(t *testing.T) {
 
 	services, err = buildLoadbalancers(o)
 	assert.NoError(t, err)
-	test.EqualFromYamlFile[*corev1.Service](t, "testdata/loadbalancer_without_target.yaml", &services[0], scheme.Scheme)
+	test.EqualFromYamlFile[*corev1.Service](t, "testdata/loadbalancer_without_target.yaml", services[0], scheme.Scheme)
 
 	// When load balancer is enabled with target node group that not exist
 	o = &elasticsearchcrd.Elasticsearch{

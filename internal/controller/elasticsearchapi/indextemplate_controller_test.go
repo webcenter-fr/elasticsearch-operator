@@ -8,9 +8,9 @@ import (
 	"emperror.dev/errors"
 	"github.com/disaster37/es-handler/v8/mocks"
 	"github.com/disaster37/generic-objectmatcher/patch"
-	"github.com/disaster37/operator-sdk-extra/pkg/controller"
-	"github.com/disaster37/operator-sdk-extra/pkg/helper"
-	"github.com/disaster37/operator-sdk-extra/pkg/test"
+	"github.com/disaster37/operator-sdk-extra/v2/pkg/controller"
+	"github.com/disaster37/operator-sdk-extra/v2/pkg/helper"
+	"github.com/disaster37/operator-sdk-extra/v2/pkg/test"
 	olivere "github.com/olivere/elastic/v7"
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
@@ -29,11 +29,10 @@ func (t *ElasticsearchapiControllerTestSuite) TestIndexTemplateReconciler() {
 		Name:      "t-indextemplate-" + helper.RandomString(10),
 		Namespace: "default",
 	}
-	it := &elasticsearchapicrd.IndexTemplate{}
 	data := map[string]any{}
 
-	testCase := test.NewTestCase(t.T(), t.k8sClient, key, it, 5*time.Second, data)
-	testCase.Steps = []test.TestStep{
+	testCase := test.NewTestCase[*elasticsearchapicrd.IndexTemplate](t.T(), t.k8sClient, key, 5*time.Second, data)
+	testCase.Steps = []test.TestStep[*elasticsearchapicrd.IndexTemplate]{
 		doCreateIndexTemplateStep(),
 		doUpdateIndexTemplateStep(),
 		doDeleteIndexTemplateStep(),
@@ -124,10 +123,10 @@ func doMockIndexTemplate(mockES *mocks.MockElasticsearchHandler) func(stepName *
 	}
 }
 
-func doCreateIndexTemplateStep() test.TestStep {
-	return test.TestStep{
+func doCreateIndexTemplateStep() test.TestStep[*elasticsearchapicrd.IndexTemplate] {
+	return test.TestStep[*elasticsearchapicrd.IndexTemplate]{
 		Name: "create",
-		Do: func(c client.Client, key types.NamespacedName, o client.Object, data map[string]any) (err error) {
+		Do: func(c client.Client, key types.NamespacedName, o *elasticsearchapicrd.IndexTemplate, data map[string]any) (err error) {
 			logrus.Infof("=== Add new index template %s/%s ===\n\n", key.Namespace, key.Name)
 
 			template := &elasticsearchapicrd.IndexTemplate{
@@ -150,7 +149,7 @@ func doCreateIndexTemplateStep() test.TestStep {
 
 			return nil
 		},
-		Check: func(t *testing.T, c client.Client, key types.NamespacedName, o client.Object, data map[string]any) (err error) {
+		Check: func(t *testing.T, c client.Client, key types.NamespacedName, o *elasticsearchapicrd.IndexTemplate, data map[string]any) (err error) {
 			template := &elasticsearchapicrd.IndexTemplate{}
 			isCreated := false
 
@@ -177,26 +176,25 @@ func doCreateIndexTemplateStep() test.TestStep {
 	}
 }
 
-func doUpdateIndexTemplateStep() test.TestStep {
-	return test.TestStep{
+func doUpdateIndexTemplateStep() test.TestStep[*elasticsearchapicrd.IndexTemplate] {
+	return test.TestStep[*elasticsearchapicrd.IndexTemplate]{
 		Name: "update",
-		Do: func(c client.Client, key types.NamespacedName, o client.Object, data map[string]any) (err error) {
+		Do: func(c client.Client, key types.NamespacedName, o *elasticsearchapicrd.IndexTemplate, data map[string]any) (err error) {
 			logrus.Infof("=== Update index template %s/%s ===\n\n", key.Namespace, key.Name)
 
 			if o == nil {
 				return errors.New("Index template is null")
 			}
-			template := o.(*elasticsearchapicrd.IndexTemplate)
 
-			data["lastGeneration"] = template.GetStatus().GetObservedGeneration()
-			template.Spec.IndexPatterns = []string{"test2"}
-			if err = c.Update(context.Background(), template); err != nil {
+			data["lastGeneration"] = o.GetStatus().GetObservedGeneration()
+			o.Spec.IndexPatterns = []string{"test2"}
+			if err = c.Update(context.Background(), o); err != nil {
 				return err
 			}
 
 			return nil
 		},
-		Check: func(t *testing.T, c client.Client, key types.NamespacedName, o client.Object, data map[string]any) (err error) {
+		Check: func(t *testing.T, c client.Client, key types.NamespacedName, o *elasticsearchapicrd.IndexTemplate, data map[string]any) (err error) {
 			template := &elasticsearchapicrd.IndexTemplate{}
 			isUpdated := false
 
@@ -225,25 +223,24 @@ func doUpdateIndexTemplateStep() test.TestStep {
 	}
 }
 
-func doDeleteIndexTemplateStep() test.TestStep {
-	return test.TestStep{
+func doDeleteIndexTemplateStep() test.TestStep[*elasticsearchapicrd.IndexTemplate] {
+	return test.TestStep[*elasticsearchapicrd.IndexTemplate]{
 		Name: "delete",
-		Do: func(c client.Client, key types.NamespacedName, o client.Object, data map[string]any) (err error) {
+		Do: func(c client.Client, key types.NamespacedName, o *elasticsearchapicrd.IndexTemplate, data map[string]any) (err error) {
 			logrus.Infof("=== Delete index template %s/%s ===\n\n", key.Namespace, key.Name)
 
 			if o == nil {
 				return errors.New("Index template is null")
 			}
-			template := o.(*elasticsearchapicrd.IndexTemplate)
 
 			wait := int64(0)
-			if err = c.Delete(context.Background(), template, &client.DeleteOptions{GracePeriodSeconds: &wait}); err != nil {
+			if err = c.Delete(context.Background(), o, &client.DeleteOptions{GracePeriodSeconds: &wait}); err != nil {
 				return err
 			}
 
 			return nil
 		},
-		Check: func(t *testing.T, c client.Client, key types.NamespacedName, o client.Object, data map[string]any) (err error) {
+		Check: func(t *testing.T, c client.Client, key types.NamespacedName, o *elasticsearchapicrd.IndexTemplate, data map[string]any) (err error) {
 			template := &elasticsearchapicrd.IndexTemplate{}
 			isDeleted := false
 

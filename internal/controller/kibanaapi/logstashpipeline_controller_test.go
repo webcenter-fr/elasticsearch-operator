@@ -9,9 +9,9 @@ import (
 	"github.com/disaster37/generic-objectmatcher/patch"
 	"github.com/disaster37/go-kibana-rest/v8/kbapi"
 	"github.com/disaster37/kb-handler/v8/mocks"
-	"github.com/disaster37/operator-sdk-extra/pkg/controller"
-	"github.com/disaster37/operator-sdk-extra/pkg/helper"
-	"github.com/disaster37/operator-sdk-extra/pkg/test"
+	"github.com/disaster37/operator-sdk-extra/v2/pkg/controller"
+	"github.com/disaster37/operator-sdk-extra/v2/pkg/helper"
+	"github.com/disaster37/operator-sdk-extra/v2/pkg/test"
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
 	kibanaapicrd "github.com/webcenter-fr/elasticsearch-operator/api/kibanaapi/v1"
@@ -29,11 +29,10 @@ func (t *KibanaapiControllerTestSuite) TestKibanaLogstashPipelineReconciler() {
 		Name:      "t-pipeline-" + helper.RandomString(10),
 		Namespace: "default",
 	}
-	pipeline := &kibanaapicrd.LogstashPipeline{}
 	data := map[string]any{}
 
-	testCase := test.NewTestCase(t.T(), t.k8sClient, key, pipeline, 5*time.Second, data)
-	testCase.Steps = []test.TestStep{
+	testCase := test.NewTestCase[*kibanaapicrd.LogstashPipeline](t.T(), t.k8sClient, key, 5*time.Second, data)
+	testCase.Steps = []test.TestStep[*kibanaapicrd.LogstashPipeline]{
 		doCreateLogstashPipelineStep(),
 		doUpdateLogstashPipelineStep(),
 		doDeleteLogstashPipelineStep(),
@@ -127,10 +126,10 @@ func doMockLogstashPipeline(mockKB *mocks.MockKibanaHandler) func(stepName *stri
 	}
 }
 
-func doCreateLogstashPipelineStep() test.TestStep {
-	return test.TestStep{
+func doCreateLogstashPipelineStep() test.TestStep[*kibanaapicrd.LogstashPipeline] {
+	return test.TestStep[*kibanaapicrd.LogstashPipeline]{
 		Name: "create",
-		Do: func(c client.Client, key types.NamespacedName, o client.Object, data map[string]any) (err error) {
+		Do: func(c client.Client, key types.NamespacedName, o *kibanaapicrd.LogstashPipeline, data map[string]any) (err error) {
 			logrus.Infof("=== Add new logstash pipeline %s/%s ===\n\n", key.Namespace, key.Name)
 
 			pipeline := &kibanaapicrd.LogstashPipeline{
@@ -154,7 +153,7 @@ func doCreateLogstashPipelineStep() test.TestStep {
 
 			return nil
 		},
-		Check: func(t *testing.T, c client.Client, key types.NamespacedName, o client.Object, data map[string]any) (err error) {
+		Check: func(t *testing.T, c client.Client, key types.NamespacedName, o *kibanaapicrd.LogstashPipeline, data map[string]any) (err error) {
 			pipeline := &kibanaapicrd.LogstashPipeline{}
 			isCreated := false
 
@@ -181,26 +180,25 @@ func doCreateLogstashPipelineStep() test.TestStep {
 	}
 }
 
-func doUpdateLogstashPipelineStep() test.TestStep {
-	return test.TestStep{
+func doUpdateLogstashPipelineStep() test.TestStep[*kibanaapicrd.LogstashPipeline] {
+	return test.TestStep[*kibanaapicrd.LogstashPipeline]{
 		Name: "update",
-		Do: func(c client.Client, key types.NamespacedName, o client.Object, data map[string]any) (err error) {
+		Do: func(c client.Client, key types.NamespacedName, o *kibanaapicrd.LogstashPipeline, data map[string]any) (err error) {
 			logrus.Infof("=== Update logstash pipeline %s/%s ===\n\n", key.Namespace, key.Name)
 
 			if o == nil {
 				return errors.New("Logstash pipeline is null")
 			}
-			pipeline := o.(*kibanaapicrd.LogstashPipeline)
 
-			data["lastGeneration"] = pipeline.GetStatus().GetObservedGeneration()
-			pipeline.Spec.Description = "test2"
-			if err = c.Update(context.Background(), pipeline); err != nil {
+			data["lastGeneration"] = o.GetStatus().GetObservedGeneration()
+			o.Spec.Description = "test2"
+			if err = c.Update(context.Background(), o); err != nil {
 				return err
 			}
 
 			return nil
 		},
-		Check: func(t *testing.T, c client.Client, key types.NamespacedName, o client.Object, data map[string]any) (err error) {
+		Check: func(t *testing.T, c client.Client, key types.NamespacedName, o *kibanaapicrd.LogstashPipeline, data map[string]any) (err error) {
 			pipeline := &kibanaapicrd.LogstashPipeline{}
 			isUpdated := false
 
@@ -229,25 +227,24 @@ func doUpdateLogstashPipelineStep() test.TestStep {
 	}
 }
 
-func doDeleteLogstashPipelineStep() test.TestStep {
-	return test.TestStep{
+func doDeleteLogstashPipelineStep() test.TestStep[*kibanaapicrd.LogstashPipeline] {
+	return test.TestStep[*kibanaapicrd.LogstashPipeline]{
 		Name: "delete",
-		Do: func(c client.Client, key types.NamespacedName, o client.Object, data map[string]any) (err error) {
+		Do: func(c client.Client, key types.NamespacedName, o *kibanaapicrd.LogstashPipeline, data map[string]any) (err error) {
 			logrus.Infof("=== Delete logstash pipeline %s/%s ===\n\n", key.Namespace, key.Name)
 
 			if o == nil {
 				return errors.New("Logstash pipeline is null")
 			}
-			pipeline := o.(*kibanaapicrd.LogstashPipeline)
 
 			wait := int64(0)
-			if err = c.Delete(context.Background(), pipeline, &client.DeleteOptions{GracePeriodSeconds: &wait}); err != nil {
+			if err = c.Delete(context.Background(), o, &client.DeleteOptions{GracePeriodSeconds: &wait}); err != nil {
 				return err
 			}
 
 			return nil
 		},
-		Check: func(t *testing.T, c client.Client, key types.NamespacedName, o client.Object, data map[string]any) (err error) {
+		Check: func(t *testing.T, c client.Client, key types.NamespacedName, o *kibanaapicrd.LogstashPipeline, data map[string]any) (err error) {
 			pipeline := &kibanaapicrd.LogstashPipeline{}
 			isDeleted := false
 

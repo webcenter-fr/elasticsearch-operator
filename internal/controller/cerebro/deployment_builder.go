@@ -17,8 +17,8 @@ import (
 )
 
 // BuildDeployment permit to generate deployment
-func buildDeployments(cerebro *cerebrocrd.Cerebro, secretsChecksum []corev1.Secret, configMapsChecksum []corev1.ConfigMap, isOpenshift bool) (dpls []appv1.Deployment, err error) {
-	dpls = make([]appv1.Deployment, 0, 1)
+func buildDeployments(cerebro *cerebrocrd.Cerebro, secretsChecksum []*corev1.Secret, configMapsChecksum []*corev1.ConfigMap, isOpenshift bool) (dpls []*appv1.Deployment, err error) {
+	dpls = make([]*appv1.Deployment, 0, 1)
 	checksumAnnotations := map[string]string{}
 
 	// checksum for configmap
@@ -321,7 +321,7 @@ func buildDeployments(cerebro *cerebrocrd.Cerebro, secretsChecksum []corev1.Secr
 		},
 	}
 
-	dpls = append(dpls, *dpl)
+	dpls = append(dpls, dpl)
 
 	return dpls, nil
 }

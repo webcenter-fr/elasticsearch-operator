@@ -9,7 +9,7 @@ import (
 )
 
 // BuildApplicationSecret permit to build credential secret
-func buildApplicationSecrets(o *cerebrocrd.Cerebro) (secrets []corev1.Secret, err error) {
+func buildApplicationSecrets(o *cerebrocrd.Cerebro) (secrets []*corev1.Secret, err error) {
 	var applicationSecret string
 
 	applicationSecret, err = password.Generate(64, 10, 0, false, true)
@@ -17,7 +17,7 @@ func buildApplicationSecrets(o *cerebrocrd.Cerebro) (secrets []corev1.Secret, er
 		return nil, errors.Wrap(err, "Error when generate secret for application")
 	}
 
-	secrets = []corev1.Secret{
+	secrets = []*corev1.Secret{
 		{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:        GetSecretNameForApplication(o),

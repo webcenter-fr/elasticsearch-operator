@@ -10,8 +10,8 @@ import (
 )
 
 // BuilderService permit to generate service
-func buildServices(kb *kibanacrd.Kibana) (services []corev1.Service, err error) {
-	services = []corev1.Service{
+func buildServices(kb *kibanacrd.Kibana) (services []*corev1.Service, err error) {
+	services = []*corev1.Service{
 		{
 			ObjectMeta: metav1.ObjectMeta{
 				Namespace: kb.Namespace,

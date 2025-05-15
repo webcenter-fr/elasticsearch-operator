@@ -10,12 +10,12 @@ import (
 )
 
 // GeneratePodDisruptionBudget permit to generate pod disruption budgets
-func buildPodDisruptionBudgets(mb *beatcrd.Metricbeat) (pdbs []policyv1.PodDisruptionBudget, err error) {
+func buildPodDisruptionBudgets(mb *beatcrd.Metricbeat) (pdbs []*policyv1.PodDisruptionBudget, err error) {
 	if !mb.IsPdb() {
 		return nil, nil
 	}
 
-	pdbs = make([]policyv1.PodDisruptionBudget, 0, 1)
+	pdbs = make([]*policyv1.PodDisruptionBudget, 0, 1)
 
 	maxUnavailable := intstr.FromInt(1)
 	pdb := &policyv1.PodDisruptionBudget{
@@ -43,7 +43,7 @@ func buildPodDisruptionBudgets(mb *beatcrd.Metricbeat) (pdbs []policyv1.PodDisru
 		pdb.Spec.MaxUnavailable = &maxUnavailable
 	}
 
-	pdbs = append(pdbs, *pdb)
+	pdbs = append(pdbs, pdb)
 
 	return pdbs, nil
 }

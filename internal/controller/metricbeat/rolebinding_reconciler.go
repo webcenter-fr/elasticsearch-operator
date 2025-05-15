@@ -4,18 +4,16 @@ import (
 	"context"
 
 	"emperror.dev/errors"
-	"github.com/disaster37/operator-sdk-extra/pkg/apis/shared"
-	"github.com/disaster37/operator-sdk-extra/pkg/controller"
-	"github.com/disaster37/operator-sdk-extra/pkg/helper"
-	"github.com/disaster37/operator-sdk-extra/pkg/object"
+	"github.com/disaster37/operator-sdk-extra/v2/pkg/apis/shared"
+	"github.com/disaster37/operator-sdk-extra/v2/pkg/controller/multiphase"
 	"github.com/sirupsen/logrus"
 	beatcrd "github.com/webcenter-fr/elasticsearch-operator/api/beat/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/tools/record"
-	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
 
 const (
@@ -24,13 +22,13 @@ const (
 )
 
 type roleBindingReconciler struct {
-	controller.MultiPhaseStepReconcilerAction
+	multiphase.MultiPhaseStepReconcilerAction[*beatcrd.Metricbeat, *rbacv1.RoleBinding]
 	isOpenshift bool
 }
 
-func newRoleBindingReconciler(client client.Client, recorder record.EventRecorder, isOpenshift bool) (multiPhaseStepReconcilerAction controller.MultiPhaseStepReconcilerAction) {
+func newRoleBindingReconciler(client client.Client, recorder record.EventRecorder, isOpenshift bool) (multiPhaseStepReconcilerAction multiphase.MultiPhaseStepReconcilerAction[*beatcrd.Metricbeat, *rbacv1.RoleBinding]) {
 	return &roleBindingReconciler{
-		MultiPhaseStepReconcilerAction: controller.NewBasicMultiPhaseStepReconcilerAction(
+		MultiPhaseStepReconcilerAction: multiphase.NewMultiPhaseStepReconcilerAction[*beatcrd.Metricbeat, *rbacv1.RoleBinding](
 			client,
 			RoleBindingPhase,
 			RoleBindingCondition,
@@ -41,10 +39,9 @@ func newRoleBindingReconciler(client client.Client, recorder record.EventRecorde
 }
 
 // Read existing service account
-func (r *roleBindingReconciler) Read(ctx context.Context, resource object.MultiPhaseObject, data map[string]any, logger *logrus.Entry) (read controller.MultiPhaseRead, res ctrl.Result, err error) {
-	o := resource.(*beatcrd.Metricbeat)
+func (r *roleBindingReconciler) Read(ctx context.Context, o *beatcrd.Metricbeat, data map[string]any, logger *logrus.Entry) (read multiphase.MultiPhaseRead[*rbacv1.RoleBinding], res reconcile.Result, err error) {
 	roleBinding := &rbacv1.RoleBinding{}
-	read = controller.NewBasicMultiPhaseRead()
+	read = multiphase.NewMultiPhaseRead[*rbacv1.RoleBinding]()
 
 	// Read current service account
 	if err = r.Client().Get(ctx, types.NamespacedName{Namespace: o.Namespace, Name: GetServiceAccountName(o)}, roleBinding); err != nil {
@@ -54,7 +51,7 @@ func (r *roleBindingReconciler) Read(ctx context.Context, resource object.MultiP
 		roleBinding = nil
 	}
 	if roleBinding != nil {
-		read.SetCurrentObjects([]client.Object{roleBinding})
+		read.AddCurrentObject(roleBinding)
 	}
 
 	// Generate expected service account
@@ -62,14 +59,14 @@ func (r *roleBindingReconciler) Read(ctx context.Context, resource object.MultiP
 	if err != nil {
 		return read, res, errors.Wrap(err, "Error when generate role bindings")
 	}
-	read.SetExpectedObjects(helper.ToSliceOfObject(expectedRoleBindings))
+	read.SetExpectedObjects(expectedRoleBindings)
 
 	return read, res, nil
 }
 
 // Update permit to handle how to update role binding
 // RoleRef is immutable. So if we update it, we need to recreate it
-func (r *roleBindingReconciler) Update(ctx context.Context, o object.MultiPhaseObject, data map[string]any, objects []client.Object, logger *logrus.Entry) (res ctrl.Result, err error) {
+func (r *roleBindingReconciler) Update(ctx context.Context, o *beatcrd.Metricbeat, data map[string]any, objects []*rbacv1.RoleBinding, logger *logrus.Entry) (res reconcile.Result, err error) {
 	// First, we try to update it
 	res, err = r.MultiPhaseStepReconcilerAction.Update(ctx, o, data, objects, logger)
 	if err != nil {

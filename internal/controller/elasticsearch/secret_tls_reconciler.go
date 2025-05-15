@@ -11,10 +11,9 @@ import (
 	"github.com/disaster37/goca"
 	"github.com/disaster37/goca/cert"
 	"github.com/disaster37/k8s-objectmatcher/patch"
-	"github.com/disaster37/operator-sdk-extra/pkg/apis/shared"
-	"github.com/disaster37/operator-sdk-extra/pkg/controller"
-	"github.com/disaster37/operator-sdk-extra/pkg/helper"
-	"github.com/disaster37/operator-sdk-extra/pkg/object"
+	"github.com/disaster37/operator-sdk-extra/v2/pkg/apis/shared"
+	"github.com/disaster37/operator-sdk-extra/v2/pkg/controller/multiphase"
+	"github.com/disaster37/operator-sdk-extra/v2/pkg/helper"
 	"github.com/sirupsen/logrus"
 	"github.com/thoas/go-funk"
 	elasticsearchcrd "github.com/webcenter-fr/elasticsearch-operator/api/elasticsearch/v1"
@@ -30,6 +29,7 @@ import (
 	"k8s.io/client-go/tools/record"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
 
 const (
@@ -52,12 +52,12 @@ const (
 )
 
 type tlsReconciler struct {
-	controller.MultiPhaseStepReconcilerAction
+	multiphase.MultiPhaseStepReconcilerAction[*elasticsearchcrd.Elasticsearch, *corev1.Secret]
 }
 
-func newTlsReconciler(client client.Client, recorder record.EventRecorder) (multiPhaseStepReconcilerAction controller.MultiPhaseStepReconcilerAction) {
+func newTlsReconciler(client client.Client, recorder record.EventRecorder) (multiPhaseStepReconcilerAction multiphase.MultiPhaseStepReconcilerAction[*elasticsearchcrd.Elasticsearch, *corev1.Secret]) {
 	return &tlsReconciler{
-		MultiPhaseStepReconcilerAction: controller.NewBasicMultiPhaseStepReconcilerAction(
+		MultiPhaseStepReconcilerAction: multiphase.NewMultiPhaseStepReconcilerAction[*elasticsearchcrd.Elasticsearch, *corev1.Secret](
 			client,
 			TlsPhase,
 			TlsCondition,
@@ -67,8 +67,7 @@ func newTlsReconciler(client client.Client, recorder record.EventRecorder) (mult
 }
 
 // Configure permit to init condition
-func (r *tlsReconciler) Configure(ctx context.Context, req ctrl.Request, resource object.MultiPhaseObject, logger *logrus.Entry) (res ctrl.Result, err error) {
-	o := resource.(*elasticsearchcrd.Elasticsearch)
+func (r *tlsReconciler) Configure(ctx context.Context, req reconcile.Request, o *elasticsearchcrd.Elasticsearch, logger *logrus.Entry) (res reconcile.Result, err error) {
 
 	if condition.FindStatusCondition(o.Status.Conditions, TlsConditionGeneratePki.String()) == nil {
 		condition.SetStatusCondition(&o.Status.Conditions, metav1.Condition{
@@ -110,13 +109,12 @@ func (r *tlsReconciler) Configure(ctx context.Context, req ctrl.Request, resourc
 		})
 	}
 
-	return r.MultiPhaseStepReconcilerAction.Configure(ctx, req, resource, logger)
+	return r.MultiPhaseStepReconcilerAction.Configure(ctx, req, o, logger)
 }
 
 // Read existing transport TLS secret
-func (r *tlsReconciler) Read(ctx context.Context, resource object.MultiPhaseObject, data map[string]any, logger *logrus.Entry) (read controller.MultiPhaseRead, res ctrl.Result, err error) {
-	o := resource.(*elasticsearchcrd.Elasticsearch)
-	read = controller.NewBasicMultiPhaseRead()
+func (r *tlsReconciler) Read(ctx context.Context, o *elasticsearchcrd.Elasticsearch, data map[string]any, logger *logrus.Entry) (read multiphase.MultiPhaseRead[*corev1.Secret], res reconcile.Result, err error) {
+	read = multiphase.NewMultiPhaseRead[*corev1.Secret]()
 	sTransport := &corev1.Secret{}
 	sTransportPki := &corev1.Secret{}
 	sApi := &corev1.Secret{}
@@ -224,8 +222,7 @@ func (r *tlsReconciler) Read(ctx context.Context, resource object.MultiPhaseObje
 }
 
 // Diff permit to check if transport secrets are up to date
-func (r *tlsReconciler) Diff(ctx context.Context, resource object.MultiPhaseObject, read controller.MultiPhaseRead, data map[string]any, logger *logrus.Entry, ignoreDiff ...patch.CalculateOption) (diff controller.MultiPhaseDiff, res ctrl.Result, err error) {
-	o := resource.(*elasticsearchcrd.Elasticsearch)
+func (r *tlsReconciler) Diff(ctx context.Context, o *elasticsearchcrd.Elasticsearch, read multiphase.MultiPhaseRead[*corev1.Secret], data map[string]any, logger *logrus.Entry, ignoreDiff ...patch.CalculateOption) (diff multiphase.MultiPhaseDiff[*corev1.Secret], res reconcile.Result, err error) {
 	var (
 		d                  any
 		needRenew          bool
@@ -287,10 +284,7 @@ func (r *tlsReconciler) Diff(ctx context.Context, resource object.MultiPhaseObje
 	}
 	sApi := d.(*corev1.Secret)
 
-	diff = controller.NewBasicMultiPhaseDiff()
-	secretToUpdate := make([]client.Object, 0)
-	secretToCreate := make([]client.Object, 0)
-	secretToDelete := make([]client.Object, 0)
+	diff = multiphase.NewMultiPhaseDiff[*corev1.Secret]()
 
 	data["isTlsBlackout"] = false
 
@@ -315,14 +309,14 @@ func (r *tlsReconciler) Diff(ctx context.Context, resource object.MultiPhaseObje
 		logger.Debugf("Detect phase: %s", TlsPhaseCreate)
 
 		diff.AddDiff("Generate new certificates")
-
+		secretToUpdate := make([]*corev1.Secret, 0)
+		secretToCreate := make([]*corev1.Secret, 0)
 		if secretToCreate, secretToUpdate, err = r.generateAllSecretsCertificates(o, sTransportPki, sTransport, sApiPki, sApi, secretToCreate, secretToUpdate); err != nil {
 			return diff, res, err
 		}
 
 		diff.SetObjectsToCreate(secretToCreate)
 		diff.SetObjectsToUpdate(secretToUpdate)
-		diff.SetObjectsToDelete(secretToDelete)
 		data["phase"] = TlsPhaseCreate
 		data["isTlsBlackout"] = isBlackout
 
@@ -340,9 +334,9 @@ func (r *tlsReconciler) Diff(ctx context.Context, resource object.MultiPhaseObje
 				return diff, res, err
 			}
 			if !isUpdated {
-				secretToCreate = append(secretToCreate, sApiPki)
+				diff.AddObjectToCreate(sApiPki)
 			} else {
-				secretToUpdate = append(secretToUpdate, sApiPki)
+				diff.AddObjectToUpdate(sApiPki)
 			}
 
 			diff.AddDiff("Generate new API PKI")
@@ -357,9 +351,9 @@ func (r *tlsReconciler) Diff(ctx context.Context, resource object.MultiPhaseObje
 				return diff, res, err
 			}
 			if !isUpdated {
-				secretToCreate = append(secretToCreate, sApi)
+				diff.AddObjectToCreate(sApi)
 			} else {
-				secretToUpdate = append(secretToUpdate, sApi)
+				diff.AddObjectToUpdate(sApi)
 			}
 
 			diff.AddDiff("Generate new API certificate")
@@ -398,9 +392,9 @@ func (r *tlsReconciler) Diff(ctx context.Context, resource object.MultiPhaseObje
 
 		sTransport = tmpTransport
 		if !isUpdated {
-			secretToCreate = append(secretToCreate, sTransport)
+			diff.AddObjectToCreate(sTransport)
 		} else {
-			secretToUpdate = append(secretToUpdate, sTransport)
+			diff.AddObjectToUpdate(sTransport)
 		}
 
 		diff.AddDiff("Generate new transport certificates")
@@ -417,17 +411,14 @@ func (r *tlsReconciler) Diff(ctx context.Context, resource object.MultiPhaseObje
 
 			sApi = tmpApi
 			if !isUpdated {
-				secretToCreate = append(secretToCreate, sApi)
+				diff.AddObjectToCreate(sApi)
 			} else {
-				secretToUpdate = append(secretToUpdate, sApi)
+				diff.AddObjectToUpdate(sApi)
 			}
 
 			diff.AddDiff("Generate new API certificate")
 		}
 
-		diff.SetObjectsToCreate(secretToCreate)
-		diff.SetObjectsToUpdate(secretToUpdate)
-		diff.SetObjectsToDelete(secretToDelete)
 		data["phase"] = TlsPhaseUpdateCertificates
 
 		return diff, res, nil
@@ -449,19 +440,16 @@ func (r *tlsReconciler) Diff(ctx context.Context, resource object.MultiPhaseObje
 
 		if sTransport != nil && transportRootCA != nil {
 			sTransport.Data["ca.crt"] = []byte(transportRootCA.GetCertificate())
-			secretToUpdate = append(secretToUpdate, sTransport)
+			diff.AddObjectToUpdate(sTransport)
 			diff.AddDiff(fmt.Sprintf("Clean old ca certificate from secret %s", sTransport.Name))
 		}
 
 		if sApi != nil && apiRootCA != nil {
 			sApi.Data["ca.crt"] = []byte(apiRootCA.GetCertificate())
-			secretToUpdate = append(secretToUpdate, sApi)
+			diff.AddObjectToUpdate(sApi)
 			diff.AddDiff(fmt.Sprintf("Clean old ca certificate from secret %s", sApi.Name))
 		}
 
-		diff.SetObjectsToCreate(secretToCreate)
-		diff.SetObjectsToUpdate(secretToUpdate)
-		diff.SetObjectsToDelete(secretToDelete)
 		data["phase"] = TlsPhaseCleanTransportCA
 
 		return diff, res, nil
@@ -513,16 +501,16 @@ func (r *tlsReconciler) Diff(ctx context.Context, resource object.MultiPhaseObje
 			return diff, res, err
 		}
 		if !isUpdated {
-			secretToCreate = append(secretToCreate, sTransportPki)
+			diff.AddObjectToCreate(sTransportPki)
 		} else {
-			secretToUpdate = append(secretToUpdate, sTransportPki)
+			diff.AddObjectToUpdate(sTransportPki)
 		}
 		diff.AddDiff("Renew transport PKI")
 
 		// Append new CA with others CA and change sequence to propagate it on pod (rolling restart)
 		sTransport.Data["ca.crt"] = []byte(fmt.Sprintf("%s\n%s", string(sTransport.Data["ca.crt"]), transportRootCA.GetCertificate()))
 		sTransport.Annotations[fmt.Sprintf("%s/sequence", elasticsearchcrd.ElasticsearchAnnotationKey)] = helper.RandomString(64)
-		secretToUpdate = append(secretToUpdate, sTransport)
+		diff.AddObjectToUpdate(sTransport)
 
 		// API PKI
 		if o.Spec.Tls.IsTlsEnabled() && o.Spec.Tls.IsSelfManagedSecretForTls() {
@@ -532,21 +520,18 @@ func (r *tlsReconciler) Diff(ctx context.Context, resource object.MultiPhaseObje
 				return diff, res, err
 			}
 			if !isUpdated {
-				secretToCreate = append(secretToCreate, sApiPki)
+				diff.AddObjectToCreate(sApiPki)
 			} else {
-				secretToUpdate = append(secretToUpdate, sApiPki)
+				diff.AddObjectToUpdate(sApiPki)
 			}
 			diff.AddDiff("Renew Api PKI")
 
 			// Append new CA with others CA and change sequence to propagate it on pod (rolling restart)
 			sApi.Data["ca.crt"] = []byte(fmt.Sprintf("%s\n%s", string(sApi.Data["ca.crt"]), apiRootCA.GetCertificate()))
 			sApi.Annotations[fmt.Sprintf("%s/sequence", elasticsearchcrd.ElasticsearchAnnotationKey)] = helper.RandomString(64)
-			secretToUpdate = append(secretToUpdate, sApi)
+			diff.AddObjectToUpdate(sApi)
 		}
 
-		diff.SetObjectsToCreate(secretToCreate)
-		diff.SetObjectsToUpdate(secretToUpdate)
-		diff.SetObjectsToDelete(secretToDelete)
 		data["phase"] = TlsPhaseUpdatePki
 
 		return diff, res, nil
@@ -580,7 +565,7 @@ func (r *tlsReconciler) Diff(ctx context.Context, resource object.MultiPhaseObje
 		if err := patch.DefaultAnnotator.SetLastAppliedAnnotation(sTransport); err != nil {
 			return diff, res, errors.Wrapf(err, "Error when set diff annotation on secret %s", sTransport.Name)
 		}
-		secretToUpdate = append(secretToUpdate, sTransport)
+		diff.AddObjectToUpdate(sTransport)
 	}
 
 	// Check if labels or annotations need to bu upgraded
@@ -612,26 +597,34 @@ func (r *tlsReconciler) Diff(ctx context.Context, resource object.MultiPhaseObje
 			s.Annotations = getAnnotations(o)
 			isUpdated = true
 		}
+		strDiff, err := helper.DiffOwnerReferences(o, s)
+		if err != nil {
+			return diff, res, errors.Wrapf(err, "Error when diff owner references on secret %s", s.Name)
+		}
+		if strDiff != "" {
+			diff.AddDiff(strDiff)
+			// Set ownerReferences
+			if err = ctrl.SetControllerReference(o, s, r.Client().Scheme()); err != nil {
+				return diff, res, errors.Wrapf(err, "Error when set owner reference on object '%s'", s.GetName())
+			}
+			isUpdated = true
+		}
 
 		if isUpdated {
 			if err := patch.DefaultAnnotator.SetLastAppliedAnnotation(s); err != nil {
 				return diff, res, errors.Wrapf(err, "Error when set diff annotation on secret %s", s.Name)
 			}
-			secretToUpdate = append(secretToUpdate, s)
+			diff.AddObjectToUpdate(s)
 		}
 	}
 
-	diff.SetObjectsToCreate(secretToCreate)
-	diff.SetObjectsToUpdate(secretToUpdate)
-	diff.SetObjectsToDelete(secretToDelete)
 	data["phase"] = TlsPhaseNormal
 
 	return diff, res, nil
 }
 
 // OnSuccess permit to set status condition on the right state is everithink is good
-func (r *tlsReconciler) OnSuccess(ctx context.Context, resource object.MultiPhaseObject, data map[string]any, diff controller.MultiPhaseDiff, logger *logrus.Entry) (res ctrl.Result, err error) {
-	o := resource.(*elasticsearchcrd.Elasticsearch)
+func (r *tlsReconciler) OnSuccess(ctx context.Context, o *elasticsearchcrd.Elasticsearch, data map[string]any, diff multiphase.MultiPhaseDiff[*corev1.Secret], logger *logrus.Entry) (res reconcile.Result, err error) {
 	var d any
 
 	d, err = helper.Get(data, "phase")
@@ -671,7 +664,7 @@ func (r *tlsReconciler) OnSuccess(ctx context.Context, resource object.MultiPhas
 	switch phase {
 	case TlsPhaseCreate:
 
-		r.Recorder().Eventf(resource, corev1.EventTypeNormal, "Completed", "Tls secrets successfully generated")
+		r.Recorder().Eventf(o, corev1.EventTypeNormal, "Completed", "Tls secrets successfully generated")
 
 		condition.SetStatusCondition(&o.Status.Conditions, metav1.Condition{
 			Type:    TlsCondition.String(),
@@ -850,7 +843,7 @@ func (r *tlsReconciler) OnSuccess(ctx context.Context, resource object.MultiPhas
 		logger.Info("Clean old transport CA certificate successfully")
 
 	case TlsPhaseReconcile:
-		return ctrl.Result{Requeue: true}, nil
+		return reconcile.Result{Requeue: true}, nil
 	}
 
 	return res, nil
@@ -861,7 +854,10 @@ func (r *tlsReconciler) generateTransportSecretPki(o *elasticsearchcrd.Elasticse
 	if err != nil {
 		return nil, nil, isUpdated, errors.Wrap(err, "Error when generate transport PKI")
 	}
-	sTransportPkiRes, isUpdated = updateSecret(sTransportPki, tmpTransportPki)
+	sTransportPkiRes, isUpdated, err = updateSecret(o, sTransportPki, tmpTransportPki, r.Client().Scheme())
+	if err != nil {
+		return nil, nil, isUpdated, errors.Wrap(err, "Error when update secret of transport PKI")
+	}
 	if err := patch.DefaultAnnotator.SetLastAppliedAnnotation(sTransportPkiRes); err != nil {
 		return nil, nil, isUpdated, errors.Wrapf(err, "Error when set diff annotation on secret %s", sTransportPkiRes.Name)
 	}
@@ -874,7 +870,10 @@ func (r *tlsReconciler) generateTransportSecretCertificates(o *elasticsearchcrd.
 	if err != nil {
 		return nil, isUpdated, errors.Wrap(err, "Error when generate nodes certificates")
 	}
-	sTransportRes, isUpdated = updateSecret(sTransport, tmpTransport)
+	sTransportRes, isUpdated, err = updateSecret(o, sTransport, tmpTransport, r.Client().Scheme())
+	if err != nil {
+		return nil, isUpdated, errors.Wrap(err, "Error when update secret of nodes certificates")
+	}
 	if err := patch.DefaultAnnotator.SetLastAppliedAnnotation(sTransportRes); err != nil {
 		return nil, isUpdated, errors.Wrapf(err, "Error when set diff annotation on secret %s", sTransportRes.Name)
 	}
@@ -887,7 +886,10 @@ func (r *tlsReconciler) generateAPISecretPki(o *elasticsearchcrd.Elasticsearch, 
 	if err != nil {
 		return nil, nil, isUpdated, errors.Wrap(err, "Error when generate API PKI")
 	}
-	sApiPkiRes, isUpdated = updateSecret(sApiPki, tmpApiPki)
+	sApiPkiRes, isUpdated, err = updateSecret(o, sApiPki, tmpApiPki, r.Client().Scheme())
+	if err != nil {
+		return nil, nil, isUpdated, errors.Wrap(err, "Error when update secret of API PKI")
+	}
 	if err := patch.DefaultAnnotator.SetLastAppliedAnnotation(sApiPkiRes); err != nil {
 		return nil, nil, isUpdated, errors.Wrapf(err, "Error when set diff annotation on secret %s", sApiPkiRes.Name)
 	}
@@ -900,7 +902,10 @@ func (r *tlsReconciler) generateApiSecretCertificate(o *elasticsearchcrd.Elastic
 	if err != nil {
 		return nil, isUpdated, errors.Wrap(err, "Error when generate API certificate")
 	}
-	sApiRes, isUpdated = updateSecret(sApi, tmpApi)
+	sApiRes, isUpdated, err = updateSecret(o, sApi, tmpApi, r.Client().Scheme())
+	if err != nil {
+		return nil, isUpdated, errors.Wrap(err, "Error when update secret of API certificate")
+	}
 	if err := patch.DefaultAnnotator.SetLastAppliedAnnotation(sApiRes); err != nil {
 		return nil, isUpdated, errors.Wrapf(err, "Error when set diff annotation on secret %s", sApiRes.Name)
 	}
@@ -908,7 +913,7 @@ func (r *tlsReconciler) generateApiSecretCertificate(o *elasticsearchcrd.Elastic
 	return sApiRes, isUpdated, nil
 }
 
-func (r *tlsReconciler) generateAllSecretsCertificates(o *elasticsearchcrd.Elasticsearch, sTransportPki *corev1.Secret, sTransport *corev1.Secret, sApiPki *corev1.Secret, sApi *corev1.Secret, secretToCreate []client.Object, secretToUpdate []client.Object) (secretToCreateRes []client.Object, secretToUpdateRes []client.Object, err error) {
+func (r *tlsReconciler) generateAllSecretsCertificates(o *elasticsearchcrd.Elasticsearch, sTransportPki *corev1.Secret, sTransport *corev1.Secret, sApiPki *corev1.Secret, sApi *corev1.Secret, secretToCreate []*corev1.Secret, secretToUpdate []*corev1.Secret) (secretToCreateRes []*corev1.Secret, secretToUpdateRes []*corev1.Secret, err error) {
 	// Generate transport PKI
 	sTransportPki, transportRootCA, isUpdated, err := r.generateTransportSecretPki(o, sTransportPki)
 	if err != nil {

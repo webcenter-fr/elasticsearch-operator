@@ -3,7 +3,7 @@ package filebeat
 import (
 	"fmt"
 
-	"github.com/disaster37/operator-sdk-extra/pkg/apis"
+	"github.com/disaster37/operator-sdk-extra/v2/pkg/apis"
 	beatcrd "github.com/webcenter-fr/elasticsearch-operator/api/beat/v1"
 	"github.com/webcenter-fr/elasticsearch-operator/api/shared"
 	corev1 "k8s.io/api/core/v1"
@@ -12,12 +12,12 @@ import (
 )
 
 // BuildMetricbeat permit to generate metricbeat
-func buildMetricbeats(fb *beatcrd.Filebeat) (metricbeats []beatcrd.Metricbeat, err error) {
+func buildMetricbeats(fb *beatcrd.Filebeat) (metricbeats []*beatcrd.Metricbeat, err error) {
 	if !fb.Spec.Monitoring.IsMetricbeatMonitoring(fb.Spec.Deployment.Replicas) {
 		return nil, nil
 	}
 
-	metricbeats = make([]beatcrd.Metricbeat, 0, 1)
+	metricbeats = make([]*beatcrd.Metricbeat, 0, 1)
 
 	metricbeatConfig := map[string]any{
 		"setup.template.settings": map[string]any{
@@ -105,7 +105,7 @@ func buildMetricbeats(fb *beatcrd.Filebeat) (metricbeats []beatcrd.Metricbeat, e
 		}
 	}
 
-	metricbeats = append(metricbeats, *mb)
+	metricbeats = append(metricbeats, mb)
 
 	return metricbeats, nil
 }

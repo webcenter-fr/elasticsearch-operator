@@ -7,9 +7,9 @@ import (
 	"time"
 
 	"github.com/disaster37/k8s-objectmatcher/patch"
-	"github.com/disaster37/operator-sdk-extra/pkg/apis"
-	"github.com/disaster37/operator-sdk-extra/pkg/helper"
-	"github.com/disaster37/operator-sdk-extra/pkg/test"
+	"github.com/disaster37/operator-sdk-extra/v2/pkg/apis"
+	"github.com/disaster37/operator-sdk-extra/v2/pkg/helper"
+	"github.com/disaster37/operator-sdk-extra/v2/pkg/test"
 	routev1 "github.com/openshift/api/route/v1"
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
@@ -33,11 +33,10 @@ func (t *FilebeatControllerTestSuite) TestFilebeatController() {
 		Name:      "t-fb-" + helper.RandomString(10),
 		Namespace: "default",
 	}
-	fb := &beatcrd.Filebeat{}
 	data := map[string]any{}
 
-	testCase := test.NewTestCase(t.T(), t.k8sClient, key, fb, 5*time.Second, data)
-	testCase.Steps = []test.TestStep{
+	testCase := test.NewTestCase[*beatcrd.Filebeat](t.T(), t.k8sClient, key, 5*time.Second, data)
+	testCase.Steps = []test.TestStep[*beatcrd.Filebeat]{
 		doCreateFilebeatStep(),
 		doUpdateFilebeatStep(),
 		doDeleteFilebeatStep(),
@@ -46,10 +45,10 @@ func (t *FilebeatControllerTestSuite) TestFilebeatController() {
 	testCase.Run()
 }
 
-func doCreateFilebeatStep() test.TestStep {
-	return test.TestStep{
+func doCreateFilebeatStep() test.TestStep[*beatcrd.Filebeat] {
+	return test.TestStep[*beatcrd.Filebeat]{
 		Name: "create",
-		Do: func(c client.Client, key types.NamespacedName, o client.Object, data map[string]any) (err error) {
+		Do: func(c client.Client, key types.NamespacedName, o *beatcrd.Filebeat, data map[string]any) (err error) {
 			logrus.Infof("=== Add new Filebeat %s/%s ===\n\n", key.Namespace, key.Name)
 
 			// First, create Elasticsearch
@@ -185,7 +184,7 @@ func doCreateFilebeatStep() test.TestStep {
 
 			return nil
 		},
-		Check: func(t *testing.T, c client.Client, key types.NamespacedName, o client.Object, data map[string]any) (err error) {
+		Check: func(t *testing.T, c client.Client, key types.NamespacedName, o *beatcrd.Filebeat, data map[string]any) (err error) {
 			fb := &beatcrd.Filebeat{}
 			var (
 				s              *corev1.Secret
@@ -346,35 +345,34 @@ func doCreateFilebeatStep() test.TestStep {
 	}
 }
 
-func doUpdateFilebeatStep() test.TestStep {
-	return test.TestStep{
+func doUpdateFilebeatStep() test.TestStep[*beatcrd.Filebeat] {
+	return test.TestStep[*beatcrd.Filebeat]{
 		Name: "update",
-		Do: func(c client.Client, key types.NamespacedName, o client.Object, data map[string]any) (err error) {
+		Do: func(c client.Client, key types.NamespacedName, o *beatcrd.Filebeat, data map[string]any) (err error) {
 			logrus.Infof("=== Update Filebeat cluster %s/%s ===\n\n", key.Namespace, key.Name)
 
 			if o == nil {
 				return errors.New("Filebeat is null")
 			}
-			fb := o.(*beatcrd.Filebeat)
 
 			// Add labels must force to update all resources
-			fb.Labels = map[string]string{
+			o.Labels = map[string]string{
 				"test": "fu",
 			}
 			// Change spec to track generation
-			fb.Spec.Deployment.Labels = map[string]string{
+			o.Spec.Deployment.Labels = map[string]string{
 				"test": "fu",
 			}
 
-			data["lastGeneration"] = fb.GetStatus().GetObservedGeneration()
+			data["lastGeneration"] = o.GetStatus().GetObservedGeneration()
 
-			if err = c.Update(context.Background(), fb); err != nil {
+			if err = c.Update(context.Background(), o); err != nil {
 				return err
 			}
 
 			return nil
 		},
-		Check: func(t *testing.T, c client.Client, key types.NamespacedName, o client.Object, data map[string]any) (err error) {
+		Check: func(t *testing.T, c client.Client, key types.NamespacedName, o *beatcrd.Filebeat, data map[string]any) (err error) {
 			fb := &beatcrd.Filebeat{}
 
 			var (
@@ -553,25 +551,24 @@ func doUpdateFilebeatStep() test.TestStep {
 	}
 }
 
-func doDeleteFilebeatStep() test.TestStep {
-	return test.TestStep{
+func doDeleteFilebeatStep() test.TestStep[*beatcrd.Filebeat] {
+	return test.TestStep[*beatcrd.Filebeat]{
 		Name: "delete",
-		Do: func(c client.Client, key types.NamespacedName, o client.Object, data map[string]any) (err error) {
+		Do: func(c client.Client, key types.NamespacedName, o *beatcrd.Filebeat, data map[string]any) (err error) {
 			logrus.Infof("=== Delete Filebeat cluster %s/%s ===\n\n", key.Namespace, key.Name)
 
 			if o == nil {
 				return errors.New("Filebeat is null")
 			}
-			ls := o.(*beatcrd.Filebeat)
 
 			wait := int64(0)
-			if err = c.Delete(context.Background(), ls, &client.DeleteOptions{GracePeriodSeconds: &wait}); err != nil {
+			if err = c.Delete(context.Background(), o, &client.DeleteOptions{GracePeriodSeconds: &wait}); err != nil {
 				return err
 			}
 
 			return nil
 		},
-		Check: func(t *testing.T, c client.Client, key types.NamespacedName, o client.Object, data map[string]any) (err error) {
+		Check: func(t *testing.T, c client.Client, key types.NamespacedName, o *beatcrd.Filebeat, data map[string]any) (err error) {
 			fb := &beatcrd.Filebeat{}
 			isDeleted := false
 

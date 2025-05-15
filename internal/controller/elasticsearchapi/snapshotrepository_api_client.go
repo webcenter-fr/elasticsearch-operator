@@ -3,18 +3,18 @@ package elasticsearchapi
 import (
 	eshandler "github.com/disaster37/es-handler/v8"
 	"github.com/disaster37/generic-objectmatcher/patch"
-	"github.com/disaster37/operator-sdk-extra/pkg/controller"
+	"github.com/disaster37/operator-sdk-extra/v2/pkg/controller/remote"
 	olivere "github.com/olivere/elastic/v7"
 	elasticsearchapicrd "github.com/webcenter-fr/elasticsearch-operator/api/elasticsearchapi/v1"
 )
 
 type snapshotRepositoryApiClient struct {
-	*controller.BasicRemoteExternalReconciler[*elasticsearchapicrd.SnapshotRepository, *olivere.SnapshotRepositoryMetaData, eshandler.ElasticsearchHandler]
+	remote.RemoteExternalReconciler[*elasticsearchapicrd.SnapshotRepository, *olivere.SnapshotRepositoryMetaData, eshandler.ElasticsearchHandler]
 }
 
-func newSnapshotRepositoryApiClient(client eshandler.ElasticsearchHandler) controller.RemoteExternalReconciler[*elasticsearchapicrd.SnapshotRepository, *olivere.SnapshotRepositoryMetaData, eshandler.ElasticsearchHandler] {
+func newSnapshotRepositoryApiClient(client eshandler.ElasticsearchHandler) remote.RemoteExternalReconciler[*elasticsearchapicrd.SnapshotRepository, *olivere.SnapshotRepositoryMetaData, eshandler.ElasticsearchHandler] {
 	return &snapshotRepositoryApiClient{
-		BasicRemoteExternalReconciler: controller.NewBasicRemoteExternalReconciler[*elasticsearchapicrd.SnapshotRepository, *olivere.SnapshotRepositoryMetaData, eshandler.ElasticsearchHandler](client),
+		RemoteExternalReconciler: remote.NewRemoteExternalReconciler[*elasticsearchapicrd.SnapshotRepository, *olivere.SnapshotRepositoryMetaData, eshandler.ElasticsearchHandler](client),
 	}
 }
 
@@ -46,6 +46,6 @@ func (h *snapshotRepositoryApiClient) Delete(o *elasticsearchapicrd.SnapshotRepo
 	return h.Client().SnapshotRepositoryDelete(o.GetExternalName())
 }
 
-func (h *snapshotRepositoryApiClient) Diff(currentOject *olivere.SnapshotRepositoryMetaData, expectedObject *olivere.SnapshotRepositoryMetaData, originalObject *olivere.SnapshotRepositoryMetaData, ignoresDiff ...patch.CalculateOption) (patchResult *patch.PatchResult, err error) {
+func (h *snapshotRepositoryApiClient) Diff(currentOject *olivere.SnapshotRepositoryMetaData, expectedObject *olivere.SnapshotRepositoryMetaData, originalObject *olivere.SnapshotRepositoryMetaData, o *elasticsearchapicrd.SnapshotRepository, ignoresDiff ...patch.CalculateOption) (patchResult *patch.PatchResult, err error) {
 	return h.Client().SnapshotRepositoryDiff(currentOject, expectedObject, originalObject)
 }

@@ -12,8 +12,8 @@ import (
 // BuilderServices permit to generate services
 // It generate one for all cluster and for each node group
 // For each node groups, it also generate headless services
-func buildServices(es *elasticsearchcrd.Elasticsearch) (services []corev1.Service, err error) {
-	services = make([]corev1.Service, 0, (1+len(es.Spec.NodeGroups))*2)
+func buildServices(es *elasticsearchcrd.Elasticsearch) (services []*corev1.Service, err error) {
+	services = make([]*corev1.Service, 0, (1+len(es.Spec.NodeGroups))*2)
 	var (
 		service         *corev1.Service
 		headlessService *corev1.Service
@@ -57,7 +57,7 @@ func buildServices(es *elasticsearchcrd.Elasticsearch) (services []corev1.Servic
 		},
 	}
 
-	services = append(services, *service)
+	services = append(services, service)
 
 	// Generate service for each node group
 	for _, nodeGroup := range es.Spec.NodeGroups {
@@ -133,7 +133,7 @@ func buildServices(es *elasticsearchcrd.Elasticsearch) (services []corev1.Servic
 			},
 		}
 
-		services = append(services, *service, *headlessService)
+		services = append(services, service, headlessService)
 	}
 
 	return services, nil

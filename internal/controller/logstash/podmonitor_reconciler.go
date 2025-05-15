@@ -4,18 +4,16 @@ import (
 	"context"
 
 	"emperror.dev/errors"
-	"github.com/disaster37/operator-sdk-extra/pkg/apis/shared"
-	"github.com/disaster37/operator-sdk-extra/pkg/controller"
-	"github.com/disaster37/operator-sdk-extra/pkg/helper"
-	"github.com/disaster37/operator-sdk-extra/pkg/object"
+	"github.com/disaster37/operator-sdk-extra/v2/pkg/apis/shared"
+	"github.com/disaster37/operator-sdk-extra/v2/pkg/controller/multiphase"
 	monitoringv1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1"
 	"github.com/sirupsen/logrus"
 	logstashcrd "github.com/webcenter-fr/elasticsearch-operator/api/logstash/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/tools/record"
-	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
 
 const (
@@ -24,12 +22,12 @@ const (
 )
 
 type podMonitorReconciler struct {
-	controller.MultiPhaseStepReconcilerAction
+	multiphase.MultiPhaseStepReconcilerAction[*logstashcrd.Logstash, *monitoringv1.PodMonitor]
 }
 
-func newPodMonitorReconciler(client client.Client, recorder record.EventRecorder) (multiPhaseStepReconcilerAction controller.MultiPhaseStepReconcilerAction) {
+func newPodMonitorReconciler(client client.Client, recorder record.EventRecorder) (multiPhaseStepReconcilerAction multiphase.MultiPhaseStepReconcilerAction[*logstashcrd.Logstash, *monitoringv1.PodMonitor]) {
 	return &podMonitorReconciler{
-		MultiPhaseStepReconcilerAction: controller.NewBasicMultiPhaseStepReconcilerAction(
+		MultiPhaseStepReconcilerAction: multiphase.NewMultiPhaseStepReconcilerAction[*logstashcrd.Logstash, *monitoringv1.PodMonitor](
 			client,
 			PodMonitorPhase,
 			PodMonitorCondition,
@@ -39,10 +37,9 @@ func newPodMonitorReconciler(client client.Client, recorder record.EventRecorder
 }
 
 // Read existing podMonitor
-func (r *podMonitorReconciler) Read(ctx context.Context, resource object.MultiPhaseObject, data map[string]any, logger *logrus.Entry) (read controller.MultiPhaseRead, res ctrl.Result, err error) {
-	o := resource.(*logstashcrd.Logstash)
+func (r *podMonitorReconciler) Read(ctx context.Context, o *logstashcrd.Logstash, data map[string]any, logger *logrus.Entry) (read multiphase.MultiPhaseRead[*monitoringv1.PodMonitor], res reconcile.Result, err error) {
 	pm := &monitoringv1.PodMonitor{}
-	read = controller.NewBasicMultiPhaseRead()
+	read = multiphase.NewMultiPhaseRead[*monitoringv1.PodMonitor]()
 
 	// Read current podMonitor
 	// We read it always, even if disabled to delete it
@@ -53,7 +50,7 @@ func (r *podMonitorReconciler) Read(ctx context.Context, resource object.MultiPh
 		pm = nil
 	}
 	if pm != nil {
-		read.SetCurrentObjects([]client.Object{pm})
+		read.AddCurrentObject(pm)
 	}
 
 	// Generate expected podMonitor
@@ -61,7 +58,7 @@ func (r *podMonitorReconciler) Read(ctx context.Context, resource object.MultiPh
 	if err != nil {
 		return read, res, errors.Wrap(err, "Error when generate podMonitor")
 	}
-	read.SetExpectedObjects(helper.ToSliceOfObject(expectedPm))
+	read.SetExpectedObjects(expectedPm)
 
 	return read, res, nil
 }

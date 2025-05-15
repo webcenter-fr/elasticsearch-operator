@@ -4,7 +4,7 @@ import (
 	"testing"
 
 	"github.com/disaster37/go-kibana-rest/v8/kbapi"
-	"github.com/disaster37/operator-sdk-extra/pkg/apis"
+	"github.com/disaster37/operator-sdk-extra/v2/pkg/apis"
 	"github.com/stretchr/testify/assert"
 	kibanaapicrd "github.com/webcenter-fr/elasticsearch-operator/api/kibanaapi/v1"
 	"github.com/webcenter-fr/elasticsearch-operator/api/shared"

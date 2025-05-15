@@ -20,13 +20,13 @@ import (
 )
 
 // GenerateStatefullset permit to generate statefullset
-func buildStatefulsets(fb *beatcrd.Filebeat, es *elasticsearchcrd.Elasticsearch, ls *logstashcrd.Logstash, configMaps []corev1.ConfigMap, secretsChecksum []corev1.Secret, configMapsChecksum []corev1.ConfigMap, isOpenshift bool) (statefullsets []appv1.StatefulSet, err error) {
+func buildStatefulsets(fb *beatcrd.Filebeat, es *elasticsearchcrd.Elasticsearch, ls *logstashcrd.Logstash, configMaps []*corev1.ConfigMap, secretsChecksum []*corev1.Secret, configMapsChecksum []*corev1.ConfigMap, isOpenshift bool) (statefullsets []*appv1.StatefulSet, err error) {
 	// Check the secretRef is set when use Elasticsearch output
 	if (fb.Spec.ElasticsearchRef.IsManaged() || fb.Spec.ElasticsearchRef.IsExternal()) && fb.Spec.ElasticsearchRef.SecretRef == nil {
 		return nil, errors.New("You must set the secretRef when you use ElasticsearchRef")
 	}
 
-	statefullsets = make([]appv1.StatefulSet, 0, 1)
+	statefullsets = make([]*appv1.StatefulSet, 0, 1)
 	checksumAnnotations := map[string]string{}
 
 	// checksum for configmap
@@ -596,7 +596,7 @@ chown -v root:root /mnt/data
 		}
 	}
 
-	statefullsets = append(statefullsets, *statefullset)
+	statefullsets = append(statefullsets, statefullset)
 
 	return statefullsets, nil
 }

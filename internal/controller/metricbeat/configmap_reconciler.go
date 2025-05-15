@@ -6,10 +6,9 @@ import (
 	"time"
 
 	"emperror.dev/errors"
-	"github.com/disaster37/operator-sdk-extra/pkg/apis/shared"
-	"github.com/disaster37/operator-sdk-extra/pkg/controller"
-	"github.com/disaster37/operator-sdk-extra/pkg/helper"
-	"github.com/disaster37/operator-sdk-extra/pkg/object"
+	"github.com/disaster37/operator-sdk-extra/v2/pkg/apis/shared"
+	"github.com/disaster37/operator-sdk-extra/v2/pkg/controller/multiphase"
+	"github.com/disaster37/operator-sdk-extra/v2/pkg/helper"
 	"github.com/sirupsen/logrus"
 	beatcrd "github.com/webcenter-fr/elasticsearch-operator/api/beat/v1"
 	elasticsearchcrd "github.com/webcenter-fr/elasticsearch-operator/api/elasticsearch/v1"
@@ -19,8 +18,8 @@ import (
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/tools/record"
-	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
 
 const (
@@ -29,12 +28,12 @@ const (
 )
 
 type configMapReconciler struct {
-	controller.MultiPhaseStepReconcilerAction
+	multiphase.MultiPhaseStepReconcilerAction[*beatcrd.Metricbeat, *corev1.ConfigMap]
 }
 
-func newConfiMapReconciler(client client.Client, recorder record.EventRecorder) (multiPhaseStepReconcilerAction controller.MultiPhaseStepReconcilerAction) {
+func newConfiMapReconciler(client client.Client, recorder record.EventRecorder) (multiPhaseStepReconcilerAction multiphase.MultiPhaseStepReconcilerAction[*beatcrd.Metricbeat, *corev1.ConfigMap]) {
 	return &configMapReconciler{
-		MultiPhaseStepReconcilerAction: controller.NewBasicMultiPhaseStepReconcilerAction(
+		MultiPhaseStepReconcilerAction: multiphase.NewMultiPhaseStepReconcilerAction[*beatcrd.Metricbeat, *corev1.ConfigMap](
 			client,
 			ConfigmapPhase,
 			ConfigmapCondition,
@@ -44,10 +43,9 @@ func newConfiMapReconciler(client client.Client, recorder record.EventRecorder) 
 }
 
 // Read existing configmaps
-func (r *configMapReconciler) Read(ctx context.Context, resource object.MultiPhaseObject, data map[string]any, logger *logrus.Entry) (read controller.MultiPhaseRead, res ctrl.Result, err error) {
-	o := resource.(*beatcrd.Metricbeat)
+func (r *configMapReconciler) Read(ctx context.Context, o *beatcrd.Metricbeat, data map[string]any, logger *logrus.Entry) (read multiphase.MultiPhaseRead[*corev1.ConfigMap], res reconcile.Result, err error) {
 	cmList := &corev1.ConfigMapList{}
-	read = controller.NewBasicMultiPhaseRead()
+	read = multiphase.NewMultiPhaseRead[*corev1.ConfigMap]()
 	var (
 		es                    *elasticsearchcrd.Elasticsearch
 		elasticsearchCASecret *corev1.Secret
@@ -60,7 +58,7 @@ func (r *configMapReconciler) Read(ctx context.Context, resource object.MultiPha
 	if err = r.Client().List(ctx, cmList, &client.ListOptions{Namespace: o.Namespace, LabelSelector: labelSelectors}); err != nil {
 		return read, res, errors.Wrapf(err, "Error when read configMap")
 	}
-	read.SetCurrentObjects(helper.ToSliceOfObject(cmList.Items))
+	read.SetCurrentObjects(helper.ToSlicePtr(cmList.Items))
 
 	// Read Elasticsearch
 	if o.Spec.ElasticsearchRef.IsManaged() {
@@ -70,7 +68,7 @@ func (r *configMapReconciler) Read(ctx context.Context, resource object.MultiPha
 		}
 		if es == nil {
 			logger.Warn("ElasticsearchRef not found, try latter")
-			return read, ctrl.Result{RequeueAfter: 30 * time.Second}, nil
+			return read, reconcile.Result{RequeueAfter: 30 * time.Second}, nil
 		}
 	} else {
 		es = nil
@@ -84,7 +82,7 @@ func (r *configMapReconciler) Read(ctx context.Context, resource object.MultiPha
 				return read, res, errors.Wrapf(err, "Error when read elasticsearchCASecret %s", o.Spec.ElasticsearchRef.ElasticsearchCaSecretRef.Name)
 			}
 			logger.Warnf("elasticsearchCASecret %s not yet exist, try again later", o.Spec.ElasticsearchRef.ElasticsearchCaSecretRef.Name)
-			return read, ctrl.Result{RequeueAfter: 30 * time.Second}, nil
+			return read, reconcile.Result{RequeueAfter: 30 * time.Second}, nil
 		}
 	}
 
@@ -93,7 +91,7 @@ func (r *configMapReconciler) Read(ctx context.Context, resource object.MultiPha
 	if err != nil {
 		return read, res, errors.Wrap(err, "Error when generate configmaps")
 	}
-	read.SetExpectedObjects(helper.ToSliceOfObject(expectedCms))
+	read.SetExpectedObjects(expectedCms)
 
 	return read, res, nil
 }

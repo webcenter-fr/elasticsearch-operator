@@ -11,12 +11,12 @@ import (
 // BuildIngress permit to generate Ingress object
 // It return error if ingress spec is not provided
 // It return nil if ingress is disabled
-func buildIngresses(es *elasticsearchcrd.Elasticsearch) (ingresses []networkingv1.Ingress, err error) {
+func buildIngresses(es *elasticsearchcrd.Elasticsearch) (ingresses []*networkingv1.Ingress, err error) {
 	if !es.IsIngressEnabled() {
 		return nil, nil
 	}
 
-	ingresses = make([]networkingv1.Ingress, 0, 1)
+	ingresses = make([]*networkingv1.Ingress, 0, 1)
 
 	if es.Spec.Endpoint.Ingress.Host == "" {
 		return nil, errors.New("endpoint.ingress.host must be provided")
@@ -100,7 +100,7 @@ func buildIngresses(es *elasticsearchcrd.Elasticsearch) (ingresses []networkingv
 		return nil, errors.Wrap(err, "Error when merge ingress spec")
 	}
 
-	ingresses = append(ingresses, *ingress)
+	ingresses = append(ingresses, ingress)
 
 	return ingresses, nil
 }

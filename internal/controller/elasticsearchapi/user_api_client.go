@@ -3,18 +3,18 @@ package elasticsearchapi
 import (
 	eshandler "github.com/disaster37/es-handler/v8"
 	"github.com/disaster37/generic-objectmatcher/patch"
-	"github.com/disaster37/operator-sdk-extra/pkg/controller"
+	"github.com/disaster37/operator-sdk-extra/v2/pkg/controller/remote"
 	olivere "github.com/olivere/elastic/v7"
 	elasticsearchapicrd "github.com/webcenter-fr/elasticsearch-operator/api/elasticsearchapi/v1"
 )
 
 type userApiClient struct {
-	*controller.BasicRemoteExternalReconciler[*elasticsearchapicrd.User, *olivere.XPackSecurityPutUserRequest, eshandler.ElasticsearchHandler]
+	remote.RemoteExternalReconciler[*elasticsearchapicrd.User, *olivere.XPackSecurityPutUserRequest, eshandler.ElasticsearchHandler]
 }
 
-func newUserApiClient(client eshandler.ElasticsearchHandler) controller.RemoteExternalReconciler[*elasticsearchapicrd.User, *olivere.XPackSecurityPutUserRequest, eshandler.ElasticsearchHandler] {
+func newUserApiClient(client eshandler.ElasticsearchHandler) remote.RemoteExternalReconciler[*elasticsearchapicrd.User, *olivere.XPackSecurityPutUserRequest, eshandler.ElasticsearchHandler] {
 	return &userApiClient{
-		BasicRemoteExternalReconciler: controller.NewBasicRemoteExternalReconciler[*elasticsearchapicrd.User, *olivere.XPackSecurityPutUserRequest, eshandler.ElasticsearchHandler](client),
+		RemoteExternalReconciler: remote.NewRemoteExternalReconciler[*elasticsearchapicrd.User, *olivere.XPackSecurityPutUserRequest, eshandler.ElasticsearchHandler](client),
 	}
 }
 
@@ -72,6 +72,6 @@ func (h *userApiClient) Delete(o *elasticsearchapicrd.User) (err error) {
 	return h.Client().UserDelete(o.GetExternalName())
 }
 
-func (h *userApiClient) Diff(currentOject *olivere.XPackSecurityPutUserRequest, expectedObject *olivere.XPackSecurityPutUserRequest, originalObject *olivere.XPackSecurityPutUserRequest, ignoresDiff ...patch.CalculateOption) (patchResult *patch.PatchResult, err error) {
+func (h *userApiClient) Diff(currentOject *olivere.XPackSecurityPutUserRequest, expectedObject *olivere.XPackSecurityPutUserRequest, originalObject *olivere.XPackSecurityPutUserRequest, o *elasticsearchapicrd.User, ignoresDiff ...patch.CalculateOption) (patchResult *patch.PatchResult, err error) {
 	return h.Client().UserDiff(currentOject, expectedObject, originalObject)
 }

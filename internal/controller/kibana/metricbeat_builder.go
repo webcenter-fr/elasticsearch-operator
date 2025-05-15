@@ -3,7 +3,7 @@ package kibana
 import (
 	"fmt"
 
-	"github.com/disaster37/operator-sdk-extra/pkg/apis"
+	"github.com/disaster37/operator-sdk-extra/v2/pkg/apis"
 	beatcrd "github.com/webcenter-fr/elasticsearch-operator/api/beat/v1"
 	kibanacrd "github.com/webcenter-fr/elasticsearch-operator/api/kibana/v1"
 	"github.com/webcenter-fr/elasticsearch-operator/api/shared"
@@ -13,12 +13,12 @@ import (
 )
 
 // BuildMetricbeat permit to generate metricbeat
-func buildMetricbeats(kb *kibanacrd.Kibana) (mbs []beatcrd.Metricbeat, err error) {
+func buildMetricbeats(kb *kibanacrd.Kibana) (mbs []*beatcrd.Metricbeat, err error) {
 	if !kb.Spec.Monitoring.IsMetricbeatMonitoring(kb.Spec.Deployment.Replicas) {
 		return nil, nil
 	}
 
-	mbs = make([]beatcrd.Metricbeat, 0, 1)
+	mbs = make([]*beatcrd.Metricbeat, 0, 1)
 
 	metricbeatConfig := map[string]any{
 		"setup.template.settings": map[string]any{
@@ -143,7 +143,7 @@ func buildMetricbeats(kb *kibanacrd.Kibana) (mbs []beatcrd.Metricbeat, err error
 		}
 	}
 
-	mbs = append(mbs, *mb)
+	mbs = append(mbs, mb)
 
 	return mbs, nil
 }

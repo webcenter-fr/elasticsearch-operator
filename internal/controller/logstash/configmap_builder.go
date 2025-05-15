@@ -10,8 +10,8 @@ import (
 )
 
 // BuildConfigMap permit to generate config maps
-func buildConfigMaps(ls *logstashcrd.Logstash) (configMaps []corev1.ConfigMap, err error) {
-	configMaps = make([]corev1.ConfigMap, 0)
+func buildConfigMaps(ls *logstashcrd.Logstash) (configMaps []*corev1.ConfigMap, err error) {
+	configMaps = make([]*corev1.ConfigMap, 0)
 	var cm *corev1.ConfigMap
 
 	// ConfigMap that store configs
@@ -56,7 +56,7 @@ func buildConfigMaps(ls *logstashcrd.Logstash) (configMaps []corev1.ConfigMap, e
 			Data: expectedConfig,
 		}
 
-		configMaps = append(configMaps, *cm)
+		configMaps = append(configMaps, cm)
 	}
 
 	// ConfigMap that store pipelines
@@ -71,7 +71,7 @@ func buildConfigMaps(ls *logstashcrd.Logstash) (configMaps []corev1.ConfigMap, e
 			Data: ls.Spec.Pipelines,
 		}
 
-		configMaps = append(configMaps, *cm)
+		configMaps = append(configMaps, cm)
 	}
 
 	// ConfigMap that store pattern
@@ -86,7 +86,7 @@ func buildConfigMaps(ls *logstashcrd.Logstash) (configMaps []corev1.ConfigMap, e
 			Data: ls.Spec.Patterns,
 		}
 
-		configMaps = append(configMaps, *cm)
+		configMaps = append(configMaps, cm)
 	}
 
 	// COnfigMap for Prometheus exporter
@@ -121,7 +121,7 @@ func buildConfigMaps(ls *logstashcrd.Logstash) (configMaps []corev1.ConfigMap, e
 			},
 		}
 
-		configMaps = append(configMaps, *cm)
+		configMaps = append(configMaps, cm)
 	}
 
 	return configMaps, nil

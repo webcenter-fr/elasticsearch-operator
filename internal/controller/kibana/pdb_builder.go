@@ -10,12 +10,12 @@ import (
 )
 
 // GeneratePodDisruptionBudget permit to generate pod disruption budgets for each node group
-func buildPodDisruptionBudgets(kb *kibanacrd.Kibana) (pdbs []policyv1.PodDisruptionBudget, err error) {
+func buildPodDisruptionBudgets(kb *kibanacrd.Kibana) (pdbs []*policyv1.PodDisruptionBudget, err error) {
 	if !kb.IsPdb() {
 		return nil, nil
 	}
 
-	pdbs = make([]policyv1.PodDisruptionBudget, 0, 1)
+	pdbs = make([]*policyv1.PodDisruptionBudget, 0, 1)
 
 	maxUnavailable := intstr.FromInt(1)
 	pdb := &policyv1.PodDisruptionBudget{
@@ -43,7 +43,7 @@ func buildPodDisruptionBudgets(kb *kibanacrd.Kibana) (pdbs []policyv1.PodDisrupt
 		pdb.Spec.MaxUnavailable = &maxUnavailable
 	}
 
-	pdbs = append(pdbs, *pdb)
+	pdbs = append(pdbs, pdb)
 
 	return pdbs, nil
 }

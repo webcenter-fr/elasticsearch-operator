@@ -5,10 +5,8 @@ import (
 	"time"
 
 	"emperror.dev/errors"
-	"github.com/disaster37/operator-sdk-extra/pkg/apis/shared"
-	"github.com/disaster37/operator-sdk-extra/pkg/controller"
-	"github.com/disaster37/operator-sdk-extra/pkg/helper"
-	"github.com/disaster37/operator-sdk-extra/pkg/object"
+	"github.com/disaster37/operator-sdk-extra/v2/pkg/apis/shared"
+	"github.com/disaster37/operator-sdk-extra/v2/pkg/controller/multiphase"
 	routev1 "github.com/openshift/api/route/v1"
 	"github.com/sirupsen/logrus"
 	elasticsearchcrd "github.com/webcenter-fr/elasticsearch-operator/api/elasticsearch/v1"
@@ -16,8 +14,8 @@ import (
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/tools/record"
-	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
 
 const (
@@ -26,12 +24,12 @@ const (
 )
 
 type routeReconciler struct {
-	controller.MultiPhaseStepReconcilerAction
+	multiphase.MultiPhaseStepReconcilerAction[*elasticsearchcrd.Elasticsearch, *routev1.Route]
 }
 
-func newRouteReconciler(client client.Client, recorder record.EventRecorder) (multiPhaseStepReconcilerAction controller.MultiPhaseStepReconcilerAction) {
+func newRouteReconciler(client client.Client, recorder record.EventRecorder) (multiPhaseStepReconcilerAction multiphase.MultiPhaseStepReconcilerAction[*elasticsearchcrd.Elasticsearch, *routev1.Route]) {
 	return &routeReconciler{
-		MultiPhaseStepReconcilerAction: controller.NewBasicMultiPhaseStepReconcilerAction(
+		MultiPhaseStepReconcilerAction: multiphase.NewMultiPhaseStepReconcilerAction[*elasticsearchcrd.Elasticsearch, *routev1.Route](
 			client,
 			RoutePhase,
 			RouteCondition,
@@ -41,10 +39,9 @@ func newRouteReconciler(client client.Client, recorder record.EventRecorder) (mu
 }
 
 // Read existing route
-func (r *routeReconciler) Read(ctx context.Context, resource object.MultiPhaseObject, data map[string]any, logger *logrus.Entry) (read controller.MultiPhaseRead, res ctrl.Result, err error) {
-	o := resource.(*elasticsearchcrd.Elasticsearch)
+func (r *routeReconciler) Read(ctx context.Context, o *elasticsearchcrd.Elasticsearch, data map[string]any, logger *logrus.Entry) (read multiphase.MultiPhaseRead[*routev1.Route], res reconcile.Result, err error) {
 	route := &routev1.Route{}
-	read = controller.NewBasicMultiPhaseRead()
+	read = multiphase.NewMultiPhaseRead[*routev1.Route]()
 	var secretTlsAPI *corev1.Secret
 
 	// Read current route
@@ -55,7 +52,7 @@ func (r *routeReconciler) Read(ctx context.Context, resource object.MultiPhaseOb
 		route = nil
 	}
 	if route != nil {
-		read.SetCurrentObjects([]client.Object{route})
+		read.AddCurrentObject(route)
 	}
 
 	// Read API certificate secret if needed
@@ -67,7 +64,7 @@ func (r *routeReconciler) Read(ctx context.Context, resource object.MultiPhaseOb
 					return read, res, errors.Wrapf(err, "Error when read secret %s", GetSecretNameForTlsApi(o))
 				}
 				logger.Warnf("Secret %s not yet exist, try again later", GetSecretNameForTlsApi(o))
-				return read, ctrl.Result{RequeueAfter: 30 * time.Second}, nil
+				return read, reconcile.Result{RequeueAfter: 30 * time.Second}, nil
 			}
 		} else {
 			if err = r.Client().Get(ctx, types.NamespacedName{Namespace: o.Namespace, Name: o.Spec.Tls.CertificateSecretRef.Name}, secretTlsAPI); err != nil {
@@ -75,7 +72,7 @@ func (r *routeReconciler) Read(ctx context.Context, resource object.MultiPhaseOb
 					return read, res, errors.Wrapf(err, "Error when read secret %s", o.Spec.Tls.CertificateSecretRef.Name)
 				}
 				logger.Warnf("Secret %s not yet exist, try again later", o.Spec.Tls.CertificateSecretRef.Name)
-				return read, ctrl.Result{RequeueAfter: 30 * time.Second}, nil
+				return read, reconcile.Result{RequeueAfter: 30 * time.Second}, nil
 			}
 		}
 	}
@@ -85,7 +82,7 @@ func (r *routeReconciler) Read(ctx context.Context, resource object.MultiPhaseOb
 	if err != nil {
 		return read, res, errors.Wrap(err, "Error when generate route")
 	}
-	read.SetExpectedObjects(helper.ToSliceOfObject(expectedRoutes))
+	read.SetExpectedObjects(expectedRoutes)
 
 	return read, res, nil
 }

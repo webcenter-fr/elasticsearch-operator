@@ -11,12 +11,12 @@ import (
 // BuildIngress permit to generate Ingress object
 // It return error if ingress spec is not provided
 // It return nil if ingress is disabled
-func buildIngresses(cb *cerebrocrd.Cerebro) (ingresses []networkingv1.Ingress, err error) {
+func buildIngresses(cb *cerebrocrd.Cerebro) (ingresses []*networkingv1.Ingress, err error) {
 	if !cb.Spec.Endpoint.IsIngressEnabled() {
 		return nil, nil
 	}
 
-	ingresses = make([]networkingv1.Ingress, 0, 1)
+	ingresses = make([]*networkingv1.Ingress, 0, 1)
 
 	if cb.Spec.Endpoint.Ingress.Host == "" {
 		return nil, errors.New("endpoint.ingress.host must be provided")
@@ -78,7 +78,7 @@ func buildIngresses(cb *cerebrocrd.Cerebro) (ingresses []networkingv1.Ingress, e
 		return nil, errors.Wrap(err, "Error when merge ingress spec")
 	}
 
-	ingresses = append(ingresses, *ingress)
+	ingresses = append(ingresses, ingress)
 
 	return ingresses, nil
 }

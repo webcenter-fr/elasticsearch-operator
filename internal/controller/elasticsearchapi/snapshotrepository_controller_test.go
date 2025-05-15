@@ -8,10 +8,10 @@ import (
 	"emperror.dev/errors"
 	"github.com/disaster37/es-handler/v8/mocks"
 	"github.com/disaster37/generic-objectmatcher/patch"
-	"github.com/disaster37/operator-sdk-extra/pkg/apis"
-	"github.com/disaster37/operator-sdk-extra/pkg/controller"
-	"github.com/disaster37/operator-sdk-extra/pkg/helper"
-	"github.com/disaster37/operator-sdk-extra/pkg/test"
+	"github.com/disaster37/operator-sdk-extra/v2/pkg/apis"
+	"github.com/disaster37/operator-sdk-extra/v2/pkg/controller"
+	"github.com/disaster37/operator-sdk-extra/v2/pkg/helper"
+	"github.com/disaster37/operator-sdk-extra/v2/pkg/test"
 	olivere "github.com/olivere/elastic/v7"
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
@@ -30,11 +30,10 @@ func (t *ElasticsearchapiControllerTestSuite) TestSnapshotRepositoryReconciler()
 		Name:      "t-snapshotrepository-" + helper.RandomString(10),
 		Namespace: "default",
 	}
-	sr := &elasticsearchapicrd.SnapshotRepository{}
 	data := map[string]any{}
 
-	testCase := test.NewTestCase(t.T(), t.k8sClient, key, sr, 5*time.Second, data)
-	testCase.Steps = []test.TestStep{
+	testCase := test.NewTestCase[*elasticsearchapicrd.SnapshotRepository](t.T(), t.k8sClient, key, 5*time.Second, data)
+	testCase.Steps = []test.TestStep[*elasticsearchapicrd.SnapshotRepository]{
 		doCreateSnapshotRepositoryStep(),
 		doUpdateSnapshotRepositoryStep(),
 		doDeleteSnapshotRepositoryStep(),
@@ -133,10 +132,10 @@ func doMockSnapshotRepository(mockES *mocks.MockElasticsearchHandler) func(stepN
 	}
 }
 
-func doCreateSnapshotRepositoryStep() test.TestStep {
-	return test.TestStep{
+func doCreateSnapshotRepositoryStep() test.TestStep[*elasticsearchapicrd.SnapshotRepository] {
+	return test.TestStep[*elasticsearchapicrd.SnapshotRepository]{
 		Name: "create",
-		Do: func(c client.Client, key types.NamespacedName, o client.Object, data map[string]any) (err error) {
+		Do: func(c client.Client, key types.NamespacedName, o *elasticsearchapicrd.SnapshotRepository, data map[string]any) (err error) {
 			logrus.Infof("=== Add new snapshot repository %s/%s ===\n\n", key.Namespace, key.Name)
 
 			repo := &elasticsearchapicrd.SnapshotRepository{
@@ -164,7 +163,7 @@ func doCreateSnapshotRepositoryStep() test.TestStep {
 
 			return nil
 		},
-		Check: func(t *testing.T, c client.Client, key types.NamespacedName, o client.Object, data map[string]any) (err error) {
+		Check: func(t *testing.T, c client.Client, key types.NamespacedName, o *elasticsearchapicrd.SnapshotRepository, data map[string]any) (err error) {
 			repo := &elasticsearchapicrd.SnapshotRepository{}
 			isCreated := false
 
@@ -191,30 +190,29 @@ func doCreateSnapshotRepositoryStep() test.TestStep {
 	}
 }
 
-func doUpdateSnapshotRepositoryStep() test.TestStep {
-	return test.TestStep{
+func doUpdateSnapshotRepositoryStep() test.TestStep[*elasticsearchapicrd.SnapshotRepository] {
+	return test.TestStep[*elasticsearchapicrd.SnapshotRepository]{
 		Name: "update",
-		Do: func(c client.Client, key types.NamespacedName, o client.Object, data map[string]any) (err error) {
+		Do: func(c client.Client, key types.NamespacedName, o *elasticsearchapicrd.SnapshotRepository, data map[string]any) (err error) {
 			logrus.Infof("=== Update snapshot repository %s/%s ===\n\n", key.Namespace, key.Name)
 
 			if o == nil {
 				return errors.New("Snapshot repo is null")
 			}
-			repo := o.(*elasticsearchapicrd.SnapshotRepository)
 
-			data["lastGeneration"] = repo.GetStatus().GetObservedGeneration()
-			repo.Spec.Settings = &apis.MapAny{
+			data["lastGeneration"] = o.GetStatus().GetObservedGeneration()
+			o.Spec.Settings = &apis.MapAny{
 				Data: map[string]any{
 					"url": "http://fake2",
 				},
 			}
-			if err = c.Update(context.Background(), repo); err != nil {
+			if err = c.Update(context.Background(), o); err != nil {
 				return err
 			}
 
 			return nil
 		},
-		Check: func(t *testing.T, c client.Client, key types.NamespacedName, o client.Object, data map[string]any) (err error) {
+		Check: func(t *testing.T, c client.Client, key types.NamespacedName, o *elasticsearchapicrd.SnapshotRepository, data map[string]any) (err error) {
 			repo := &elasticsearchapicrd.SnapshotRepository{}
 			isUpdated := false
 
@@ -243,25 +241,24 @@ func doUpdateSnapshotRepositoryStep() test.TestStep {
 	}
 }
 
-func doDeleteSnapshotRepositoryStep() test.TestStep {
-	return test.TestStep{
+func doDeleteSnapshotRepositoryStep() test.TestStep[*elasticsearchapicrd.SnapshotRepository] {
+	return test.TestStep[*elasticsearchapicrd.SnapshotRepository]{
 		Name: "delete",
-		Do: func(c client.Client, key types.NamespacedName, o client.Object, data map[string]any) (err error) {
+		Do: func(c client.Client, key types.NamespacedName, o *elasticsearchapicrd.SnapshotRepository, data map[string]any) (err error) {
 			logrus.Infof("=== Delete snapshot repository %s/%s ===\n\n", key.Namespace, key.Name)
 
 			if o == nil {
 				return errors.New("Snapshot repo is null")
 			}
-			repo := o.(*elasticsearchapicrd.SnapshotRepository)
 
 			wait := int64(0)
-			if err = c.Delete(context.Background(), repo, &client.DeleteOptions{GracePeriodSeconds: &wait}); err != nil {
+			if err = c.Delete(context.Background(), o, &client.DeleteOptions{GracePeriodSeconds: &wait}); err != nil {
 				return err
 			}
 
 			return nil
 		},
-		Check: func(t *testing.T, c client.Client, key types.NamespacedName, o client.Object, data map[string]any) (err error) {
+		Check: func(t *testing.T, c client.Client, key types.NamespacedName, o *elasticsearchapicrd.SnapshotRepository, data map[string]any) (err error) {
 			repo := &elasticsearchapicrd.SnapshotRepository{}
 			isDeleted := false
 

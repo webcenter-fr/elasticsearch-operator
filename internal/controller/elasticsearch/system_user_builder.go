@@ -10,12 +10,12 @@ import (
 )
 
 // BuildUserSystem permit to generate system users
-func buildSystemUsers(es *elasticsearchcrd.Elasticsearch, s *corev1.Secret) (users []elasticsearchapicrd.User, err error) {
-	users = make([]elasticsearchapicrd.User, 0, len(s.Data))
+func buildSystemUsers(es *elasticsearchcrd.Elasticsearch, s *corev1.Secret) (users []*elasticsearchapicrd.User, err error) {
+	users = make([]*elasticsearchapicrd.User, 0, len(s.Data))
 
 	for key := range s.Data {
 		if key != "elastic" {
-			user := elasticsearchapicrd.User{
+			user := &elasticsearchapicrd.User{
 				ObjectMeta: metav1.ObjectMeta{
 					Namespace:   es.Namespace,
 					Name:        GetUserSystemName(es, key),

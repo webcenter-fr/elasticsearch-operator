@@ -3,7 +3,7 @@ package cerebro
 import (
 	"testing"
 
-	"github.com/disaster37/operator-sdk-extra/pkg/test"
+	"github.com/disaster37/operator-sdk-extra/v2/pkg/test"
 	"github.com/stretchr/testify/assert"
 	cerebrocrd "github.com/webcenter-fr/elasticsearch-operator/api/cerebro/v1"
 	elasticsearchcrd "github.com/webcenter-fr/elasticsearch-operator/api/elasticsearch/v1"
@@ -18,7 +18,7 @@ func TestBuildConfigMap(t *testing.T) {
 		o          *cerebrocrd.Cerebro
 		esList     []elasticsearchcrd.Elasticsearch
 		err        error
-		configMaps []corev1.ConfigMap
+		configMaps []*corev1.ConfigMap
 	)
 
 	// When no target elasticsearch
@@ -44,7 +44,7 @@ func TestBuildConfigMap(t *testing.T) {
 
 	configMaps, err = buildConfigMaps(o, nil, nil)
 	assert.NoError(t, err)
-	test.EqualFromYamlFile[*corev1.ConfigMap](t, "testdata/configmap_default.yml", &configMaps[0], scheme.Scheme)
+	test.EqualFromYamlFile[*corev1.ConfigMap](t, "testdata/configmap_default.yml", configMaps[0], scheme.Scheme)
 
 	// When some elasticsearch targets
 	o = &cerebrocrd.Cerebro{
@@ -77,7 +77,7 @@ func TestBuildConfigMap(t *testing.T) {
 	configMaps, err = buildConfigMaps(o, esList, nil)
 
 	assert.NoError(t, err)
-	test.EqualFromYamlFile[*corev1.ConfigMap](t, "testdata/configmap_elasticsearch_targets.yml", &configMaps[0], scheme.Scheme)
+	test.EqualFromYamlFile[*corev1.ConfigMap](t, "testdata/configmap_elasticsearch_targets.yml", configMaps[0], scheme.Scheme)
 
 	// When some external
 	o = &cerebrocrd.Cerebro{
@@ -102,5 +102,5 @@ func TestBuildConfigMap(t *testing.T) {
 	configMaps, err = buildConfigMaps(o, nil, esExternal)
 
 	assert.NoError(t, err)
-	test.EqualFromYamlFile[*corev1.ConfigMap](t, "testdata/configmap_elasticsearch_external_targets.yml", &configMaps[0], scheme.Scheme)
+	test.EqualFromYamlFile[*corev1.ConfigMap](t, "testdata/configmap_elasticsearch_external_targets.yml", configMaps[0], scheme.Scheme)
 }

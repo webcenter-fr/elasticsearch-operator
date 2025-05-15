@@ -8,9 +8,9 @@ import (
 	"time"
 
 	"github.com/disaster37/k8s-objectmatcher/patch"
-	"github.com/disaster37/operator-sdk-extra/pkg/controller"
-	"github.com/disaster37/operator-sdk-extra/pkg/helper"
-	"github.com/disaster37/operator-sdk-extra/pkg/test"
+	"github.com/disaster37/operator-sdk-extra/v2/pkg/controller"
+	"github.com/disaster37/operator-sdk-extra/v2/pkg/helper"
+	"github.com/disaster37/operator-sdk-extra/v2/pkg/test"
 	routev1 "github.com/openshift/api/route/v1"
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
@@ -33,11 +33,10 @@ func (t *CerebroControllerTestSuite) TestCerebroController() {
 		Name:      "t-cb-" + helper.RandomString(10),
 		Namespace: "default",
 	}
-	cb := &cerebrocrd.Cerebro{}
 	data := map[string]any{}
 
-	testCase := test.NewTestCase(t.T(), t.k8sClient, key, cb, 5*time.Second, data)
-	testCase.Steps = []test.TestStep{
+	testCase := test.NewTestCase[*cerebrocrd.Cerebro](t.T(), t.k8sClient, key, 5*time.Second, data)
+	testCase.Steps = []test.TestStep[*cerebrocrd.Cerebro]{
 		doCreateCerebroStep(),
 		doUpdateCerebroStep(),
 		doAddHostStep(),
@@ -47,10 +46,10 @@ func (t *CerebroControllerTestSuite) TestCerebroController() {
 	testCase.Run()
 }
 
-func doCreateCerebroStep() test.TestStep {
-	return test.TestStep{
+func doCreateCerebroStep() test.TestStep[*cerebrocrd.Cerebro] {
+	return test.TestStep[*cerebrocrd.Cerebro]{
 		Name: "create",
-		Do: func(c client.Client, key types.NamespacedName, o client.Object, data map[string]any) (err error) {
+		Do: func(c client.Client, key types.NamespacedName, o *cerebrocrd.Cerebro, data map[string]any) (err error) {
 			logrus.Infof("=== Add new Cerebro %s/%s ===\n\n", key.Namespace, key.Name)
 
 			cb := &cerebrocrd.Cerebro{
@@ -91,7 +90,7 @@ func doCreateCerebroStep() test.TestStep {
 
 			return nil
 		},
-		Check: func(t *testing.T, c client.Client, key types.NamespacedName, o client.Object, data map[string]any) (err error) {
+		Check: func(t *testing.T, c client.Client, key types.NamespacedName, o *cerebrocrd.Cerebro, data map[string]any) (err error) {
 			cb := &cerebrocrd.Cerebro{}
 			var (
 				s     *corev1.Secret
@@ -184,35 +183,34 @@ func doCreateCerebroStep() test.TestStep {
 	}
 }
 
-func doUpdateCerebroStep() test.TestStep {
-	return test.TestStep{
+func doUpdateCerebroStep() test.TestStep[*cerebrocrd.Cerebro] {
+	return test.TestStep[*cerebrocrd.Cerebro]{
 		Name: "update",
-		Do: func(c client.Client, key types.NamespacedName, o client.Object, data map[string]any) (err error) {
+		Do: func(c client.Client, key types.NamespacedName, o *cerebrocrd.Cerebro, data map[string]any) (err error) {
 			logrus.Infof("=== Update Cerebro cluster %s/%s ===\n\n", key.Namespace, key.Name)
 
 			if o == nil {
 				return errors.New("Cerebro is null")
 			}
-			cb := o.(*cerebrocrd.Cerebro)
 
 			// Add labels must force to update all resources
-			cb.Labels = map[string]string{
+			o.Labels = map[string]string{
 				"test": "fu",
 			}
 			// Change spec to track generation
-			cb.Spec.Deployment.Labels = map[string]string{
+			o.Spec.Deployment.Labels = map[string]string{
 				"test": "fu",
 			}
 
-			data["lastGeneration"] = cb.GetStatus().GetObservedGeneration()
+			data["lastGeneration"] = o.GetStatus().GetObservedGeneration()
 
-			if err = c.Update(context.Background(), cb); err != nil {
+			if err = c.Update(context.Background(), o); err != nil {
 				return err
 			}
 
 			return nil
 		},
-		Check: func(t *testing.T, c client.Client, key types.NamespacedName, o client.Object, data map[string]any) (err error) {
+		Check: func(t *testing.T, c client.Client, key types.NamespacedName, o *cerebrocrd.Cerebro, data map[string]any) (err error) {
 			cb := &cerebrocrd.Cerebro{}
 
 			var (
@@ -315,19 +313,18 @@ func doUpdateCerebroStep() test.TestStep {
 	}
 }
 
-func doAddHostStep() test.TestStep {
-	return test.TestStep{
+func doAddHostStep() test.TestStep[*cerebrocrd.Cerebro] {
+	return test.TestStep[*cerebrocrd.Cerebro]{
 		Name: "addHost",
-		Do: func(c client.Client, key types.NamespacedName, o client.Object, data map[string]any) (err error) {
+		Do: func(c client.Client, key types.NamespacedName, o *cerebrocrd.Cerebro, data map[string]any) (err error) {
 			logrus.Infof("=== Add Cerebro host %s/%s ===\n\n", key.Namespace, key.Name)
 
 			if o == nil {
 				return errors.New("Cerebro is null")
 			}
-			cb := o.(*cerebrocrd.Cerebro)
 
 			cm := &corev1.ConfigMap{}
-			if err = c.Get(context.Background(), types.NamespacedName{Namespace: key.Namespace, Name: GetConfigMapName(cb)}, cm); err != nil {
+			if err = c.Get(context.Background(), types.NamespacedName{Namespace: key.Namespace, Name: GetConfigMapName(o)}, cm); err != nil {
 				return err
 			}
 
@@ -382,12 +379,12 @@ func doAddHostStep() test.TestStep {
 			host := &cerebrocrd.Host{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "test",
-					Namespace: cb.Namespace,
+					Namespace: o.Namespace,
 				},
 				Spec: cerebrocrd.HostSpec{
 					CerebroRef: cerebrocrd.HostCerebroRef{
-						Name:      cb.Name,
-						Namespace: cb.Namespace,
+						Name:      o.Name,
+						Namespace: o.Namespace,
 					},
 					ElasticsearchRef: cerebrocrd.ElasticsearchRef{
 						ManagedElasticsearchRef: &corev1.LocalObjectReference{
@@ -409,7 +406,7 @@ func doAddHostStep() test.TestStep {
 
 			return nil
 		},
-		Check: func(t *testing.T, c client.Client, key types.NamespacedName, o client.Object, data map[string]any) (err error) {
+		Check: func(t *testing.T, c client.Client, key types.NamespacedName, o *cerebrocrd.Cerebro, data map[string]any) (err error) {
 			cb := &cerebrocrd.Cerebro{}
 			cm := &corev1.ConfigMap{}
 
@@ -445,25 +442,24 @@ func doAddHostStep() test.TestStep {
 	}
 }
 
-func doDeleteCerebroStep() test.TestStep {
-	return test.TestStep{
+func doDeleteCerebroStep() test.TestStep[*cerebrocrd.Cerebro] {
+	return test.TestStep[*cerebrocrd.Cerebro]{
 		Name: "delete",
-		Do: func(c client.Client, key types.NamespacedName, o client.Object, data map[string]any) (err error) {
+		Do: func(c client.Client, key types.NamespacedName, o *cerebrocrd.Cerebro, data map[string]any) (err error) {
 			logrus.Infof("=== Delete Cerebro cluster %s/%s ===\n\n", key.Namespace, key.Name)
 
 			if o == nil {
 				return errors.New("Cerebro is null")
 			}
-			cb := o.(*cerebrocrd.Cerebro)
 
 			wait := int64(0)
-			if err = c.Delete(context.Background(), cb, &client.DeleteOptions{GracePeriodSeconds: &wait}); err != nil {
+			if err = c.Delete(context.Background(), o, &client.DeleteOptions{GracePeriodSeconds: &wait}); err != nil {
 				return err
 			}
 
 			return nil
 		},
-		Check: func(t *testing.T, c client.Client, key types.NamespacedName, o client.Object, data map[string]any) (err error) {
+		Check: func(t *testing.T, c client.Client, key types.NamespacedName, o *cerebrocrd.Cerebro, data map[string]any) (err error) {
 			cb := &cerebrocrd.Cerebro{}
 			isDeleted := false
 

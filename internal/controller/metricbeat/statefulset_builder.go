@@ -19,13 +19,13 @@ import (
 )
 
 // GenerateStatefullset permit to generate statefullset
-func buildStatefulsets(mb *beatcrd.Metricbeat, es *elasticsearchcrd.Elasticsearch, configMaps []corev1.ConfigMap, secretsChecksum []corev1.Secret, configMapsChecksum []corev1.ConfigMap, isOpenshift bool) (statefullsets []appv1.StatefulSet, err error) {
+func buildStatefulsets(mb *beatcrd.Metricbeat, es *elasticsearchcrd.Elasticsearch, configMaps []*corev1.ConfigMap, secretsChecksum []*corev1.Secret, configMapsChecksum []*corev1.ConfigMap, isOpenshift bool) (statefullsets []*appv1.StatefulSet, err error) {
 	// Check that secretRef is set when use External Elasticsearch
 	if mb.Spec.ElasticsearchRef.IsExternal() && mb.Spec.ElasticsearchRef.SecretRef == nil {
 		return nil, errors.New("You must set the secretRef when you use external Elasticsearch")
 	}
 
-	statefullsets = make([]appv1.StatefulSet, 0, 1)
+	statefullsets = make([]*appv1.StatefulSet, 0, 1)
 	checksumAnnotations := map[string]string{}
 
 	// checksum for configmap
@@ -541,7 +541,7 @@ chown -v metricbeat:metricbeat /mnt/data
 		}
 	}
 
-	statefullsets = append(statefullsets, *statefullset)
+	statefullsets = append(statefullsets, statefullset)
 
 	return statefullsets, nil
 }

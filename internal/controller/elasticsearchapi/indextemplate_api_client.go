@@ -5,18 +5,18 @@ import (
 
 	eshandler "github.com/disaster37/es-handler/v8"
 	"github.com/disaster37/generic-objectmatcher/patch"
-	"github.com/disaster37/operator-sdk-extra/pkg/controller"
+	"github.com/disaster37/operator-sdk-extra/v2/pkg/controller/remote"
 	olivere "github.com/olivere/elastic/v7"
 	elasticsearchapicrd "github.com/webcenter-fr/elasticsearch-operator/api/elasticsearchapi/v1"
 )
 
 type indexTemplateApiClient struct {
-	*controller.BasicRemoteExternalReconciler[*elasticsearchapicrd.IndexTemplate, *olivere.IndicesGetIndexTemplate, eshandler.ElasticsearchHandler]
+	remote.RemoteExternalReconciler[*elasticsearchapicrd.IndexTemplate, *olivere.IndicesGetIndexTemplate, eshandler.ElasticsearchHandler]
 }
 
-func newIndexTemplateApiClient(client eshandler.ElasticsearchHandler) controller.RemoteExternalReconciler[*elasticsearchapicrd.IndexTemplate, *olivere.IndicesGetIndexTemplate, eshandler.ElasticsearchHandler] {
+func newIndexTemplateApiClient(client eshandler.ElasticsearchHandler) remote.RemoteExternalReconciler[*elasticsearchapicrd.IndexTemplate, *olivere.IndicesGetIndexTemplate, eshandler.ElasticsearchHandler] {
 	return &indexTemplateApiClient{
-		BasicRemoteExternalReconciler: controller.NewBasicRemoteExternalReconciler[*elasticsearchapicrd.IndexTemplate, *olivere.IndicesGetIndexTemplate, eshandler.ElasticsearchHandler](client),
+		RemoteExternalReconciler: remote.NewRemoteExternalReconciler[*elasticsearchapicrd.IndexTemplate, *olivere.IndicesGetIndexTemplate, eshandler.ElasticsearchHandler](client),
 	}
 }
 
@@ -77,6 +77,6 @@ func (h *indexTemplateApiClient) Delete(o *elasticsearchapicrd.IndexTemplate) (e
 	return h.Client().IndexTemplateDelete(o.GetExternalName())
 }
 
-func (h *indexTemplateApiClient) Diff(currentOject *olivere.IndicesGetIndexTemplate, expectedObject *olivere.IndicesGetIndexTemplate, originalObject *olivere.IndicesGetIndexTemplate, ignoresDiff ...patch.CalculateOption) (patchResult *patch.PatchResult, err error) {
+func (h *indexTemplateApiClient) Diff(currentOject *olivere.IndicesGetIndexTemplate, expectedObject *olivere.IndicesGetIndexTemplate, originalObject *olivere.IndicesGetIndexTemplate, o *elasticsearchapicrd.IndexTemplate, ignoresDiff ...patch.CalculateOption) (patchResult *patch.PatchResult, err error) {
 	return h.Client().IndexTemplateDiff(currentOject, expectedObject, originalObject)
 }

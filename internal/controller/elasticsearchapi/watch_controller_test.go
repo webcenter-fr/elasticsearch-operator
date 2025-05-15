@@ -8,10 +8,10 @@ import (
 	"emperror.dev/errors"
 	"github.com/disaster37/es-handler/v8/mocks"
 	"github.com/disaster37/generic-objectmatcher/patch"
-	"github.com/disaster37/operator-sdk-extra/pkg/apis"
-	"github.com/disaster37/operator-sdk-extra/pkg/controller"
-	"github.com/disaster37/operator-sdk-extra/pkg/helper"
-	"github.com/disaster37/operator-sdk-extra/pkg/test"
+	"github.com/disaster37/operator-sdk-extra/v2/pkg/apis"
+	"github.com/disaster37/operator-sdk-extra/v2/pkg/controller"
+	"github.com/disaster37/operator-sdk-extra/v2/pkg/helper"
+	"github.com/disaster37/operator-sdk-extra/v2/pkg/test"
 	olivere "github.com/olivere/elastic/v7"
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
@@ -30,11 +30,10 @@ func (t *ElasticsearchapiControllerTestSuite) TestWatchReconciler() {
 		Name:      "t-watch-" + helper.RandomString(10),
 		Namespace: "default",
 	}
-	watch := &elasticsearchapicrd.Watch{}
 	data := map[string]any{}
 
-	testCase := test.NewTestCase(t.T(), t.k8sClient, key, watch, 5*time.Second, data)
-	testCase.Steps = []test.TestStep{
+	testCase := test.NewTestCase[*elasticsearchapicrd.Watch](t.T(), t.k8sClient, key, 5*time.Second, data)
+	testCase.Steps = []test.TestStep[*elasticsearchapicrd.Watch]{
 		doCreateWatcherStep(),
 		doUpdateWatcherStep(),
 		doDeleteWatcherStep(),
@@ -181,10 +180,10 @@ func doMockWatcher(mockES *mocks.MockElasticsearchHandler) func(stepName *string
 	}
 }
 
-func doCreateWatcherStep() test.TestStep {
-	return test.TestStep{
+func doCreateWatcherStep() test.TestStep[*elasticsearchapicrd.Watch] {
+	return test.TestStep[*elasticsearchapicrd.Watch]{
 		Name: "create",
-		Do: func(c client.Client, key types.NamespacedName, o client.Object, data map[string]any) (err error) {
+		Do: func(c client.Client, key types.NamespacedName, o *elasticsearchapicrd.Watch, data map[string]any) (err error) {
 			logrus.Infof("=== Add new watch %s/%s ===\n\n", key.Namespace, key.Name)
 
 			watch := &elasticsearchapicrd.Watch{
@@ -235,7 +234,7 @@ func doCreateWatcherStep() test.TestStep {
 
 			return nil
 		},
-		Check: func(t *testing.T, c client.Client, key types.NamespacedName, o client.Object, data map[string]any) (err error) {
+		Check: func(t *testing.T, c client.Client, key types.NamespacedName, o *elasticsearchapicrd.Watch, data map[string]any) (err error) {
 			watch := &elasticsearchapicrd.Watch{}
 			isCreated := false
 
@@ -262,32 +261,31 @@ func doCreateWatcherStep() test.TestStep {
 	}
 }
 
-func doUpdateWatcherStep() test.TestStep {
-	return test.TestStep{
+func doUpdateWatcherStep() test.TestStep[*elasticsearchapicrd.Watch] {
+	return test.TestStep[*elasticsearchapicrd.Watch]{
 		Name: "update",
-		Do: func(c client.Client, key types.NamespacedName, o client.Object, data map[string]any) (err error) {
+		Do: func(c client.Client, key types.NamespacedName, o *elasticsearchapicrd.Watch, data map[string]any) (err error) {
 			logrus.Infof("=== Update watch %s/%s ===\n\n", key.Namespace, key.Name)
 
 			if o == nil {
 				return errors.New("Watch is null")
 			}
-			watch := o.(*elasticsearchapicrd.Watch)
 
-			data["lastGeneration"] = watch.GetStatus().GetObservedGeneration()
-			watch.Spec.Actions = &apis.MapAny{
+			data["lastGeneration"] = o.GetStatus().GetObservedGeneration()
+			o.Spec.Actions = &apis.MapAny{
 				Data: map[string]any{
 					"email_admin": map[string]any{
 						"email": "fake2",
 					},
 				},
 			}
-			if err = c.Update(context.Background(), watch); err != nil {
+			if err = c.Update(context.Background(), o); err != nil {
 				return err
 			}
 
 			return nil
 		},
-		Check: func(t *testing.T, c client.Client, key types.NamespacedName, o client.Object, data map[string]any) (err error) {
+		Check: func(t *testing.T, c client.Client, key types.NamespacedName, o *elasticsearchapicrd.Watch, data map[string]any) (err error) {
 			watch := &elasticsearchapicrd.Watch{}
 			isUpdated := false
 
@@ -316,26 +314,25 @@ func doUpdateWatcherStep() test.TestStep {
 	}
 }
 
-func doDeleteWatcherStep() test.TestStep {
-	return test.TestStep{
+func doDeleteWatcherStep() test.TestStep[*elasticsearchapicrd.Watch] {
+	return test.TestStep[*elasticsearchapicrd.Watch]{
 		Name: "delete",
-		Do: func(c client.Client, key types.NamespacedName, o client.Object, data map[string]any) (err error) {
+		Do: func(c client.Client, key types.NamespacedName, o *elasticsearchapicrd.Watch, data map[string]any) (err error) {
 			logrus.Infof("=== Delete watch %s/%s ===\n\n", key.Namespace, key.Name)
 
 			if o == nil {
 				return errors.New("Watch is null")
 			}
-			watch := o.(*elasticsearchapicrd.Watch)
 
 			wait := int64(0)
 
-			if err = c.Delete(context.Background(), watch, &client.DeleteOptions{GracePeriodSeconds: &wait}); err != nil {
+			if err = c.Delete(context.Background(), o, &client.DeleteOptions{GracePeriodSeconds: &wait}); err != nil {
 				return err
 			}
 
 			return nil
 		},
-		Check: func(t *testing.T, c client.Client, key types.NamespacedName, o client.Object, data map[string]any) (err error) {
+		Check: func(t *testing.T, c client.Client, key types.NamespacedName, o *elasticsearchapicrd.Watch, data map[string]any) (err error) {
 			watch := &elasticsearchapicrd.Watch{}
 			isDeleted := false
 

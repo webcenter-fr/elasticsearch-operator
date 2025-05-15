@@ -5,17 +5,16 @@ import (
 	"fmt"
 
 	"emperror.dev/errors"
-	"github.com/disaster37/operator-sdk-extra/pkg/apis/shared"
-	"github.com/disaster37/operator-sdk-extra/pkg/controller"
-	"github.com/disaster37/operator-sdk-extra/pkg/helper"
-	"github.com/disaster37/operator-sdk-extra/pkg/object"
+	"github.com/disaster37/operator-sdk-extra/v2/pkg/apis/shared"
+	"github.com/disaster37/operator-sdk-extra/v2/pkg/controller/multiphase"
+	"github.com/disaster37/operator-sdk-extra/v2/pkg/helper"
 	"github.com/sirupsen/logrus"
 	elasticsearchcrd "github.com/webcenter-fr/elasticsearch-operator/api/elasticsearch/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/client-go/tools/record"
-	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
 
 const (
@@ -24,12 +23,12 @@ const (
 )
 
 type serviceReconciler struct {
-	controller.MultiPhaseStepReconcilerAction
+	multiphase.MultiPhaseStepReconcilerAction[*elasticsearchcrd.Elasticsearch, *corev1.Service]
 }
 
-func newServiceReconciler(client client.Client, recorder record.EventRecorder) (multiPhaseStepReconcilerAction controller.MultiPhaseStepReconcilerAction) {
+func newServiceReconciler(client client.Client, recorder record.EventRecorder) (multiPhaseStepReconcilerAction multiphase.MultiPhaseStepReconcilerAction[*elasticsearchcrd.Elasticsearch, *corev1.Service]) {
 	return &serviceReconciler{
-		MultiPhaseStepReconcilerAction: controller.NewBasicMultiPhaseStepReconcilerAction(
+		MultiPhaseStepReconcilerAction: multiphase.NewMultiPhaseStepReconcilerAction[*elasticsearchcrd.Elasticsearch, *corev1.Service](
 			client,
 			ServicePhase,
 			ServiceCondition,
@@ -39,10 +38,9 @@ func newServiceReconciler(client client.Client, recorder record.EventRecorder) (
 }
 
 // Read existing services
-func (r *serviceReconciler) Read(ctx context.Context, resource object.MultiPhaseObject, data map[string]any, logger *logrus.Entry) (read controller.MultiPhaseRead, res ctrl.Result, err error) {
-	o := resource.(*elasticsearchcrd.Elasticsearch)
+func (r *serviceReconciler) Read(ctx context.Context, o *elasticsearchcrd.Elasticsearch, data map[string]any, logger *logrus.Entry) (read multiphase.MultiPhaseRead[*corev1.Service], res reconcile.Result, err error) {
 	serviceList := &corev1.ServiceList{}
-	read = controller.NewBasicMultiPhaseRead()
+	read = multiphase.NewMultiPhaseRead[*corev1.Service]()
 
 	// Read current node group services
 	labelSelectors, err := labels.Parse(fmt.Sprintf("cluster=%s,%s=true,%s/service=true", o.Name, elasticsearchcrd.ElasticsearchAnnotationKey, elasticsearchcrd.ElasticsearchAnnotationKey))
@@ -52,14 +50,14 @@ func (r *serviceReconciler) Read(ctx context.Context, resource object.MultiPhase
 	if err = r.Client().List(ctx, serviceList, &client.ListOptions{Namespace: o.Namespace, LabelSelector: labelSelectors}); err != nil {
 		return read, res, errors.Wrapf(err, "Error when read service")
 	}
-	read.SetCurrentObjects(helper.ToSliceOfObject(serviceList.Items))
+	read.SetCurrentObjects(helper.ToSlicePtr(serviceList.Items))
 
 	// Generate expected node group services
 	expectedServices, err := buildServices(o)
 	if err != nil {
 		return read, res, errors.Wrap(err, "Error when generate services")
 	}
-	read.SetExpectedObjects(helper.ToSliceOfObject(expectedServices))
+	read.SetExpectedObjects(expectedServices)
 
 	return read, res, nil
 }

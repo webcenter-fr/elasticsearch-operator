@@ -7,12 +7,12 @@ import (
 )
 
 // BuildCredentialSecret permit to build credential secret from Elasticsearch credentials
-func buildCredentialSecrets(fb *beatcrd.Filebeat, secretCredentials *corev1.Secret) (secrets []corev1.Secret, err error) {
+func buildCredentialSecrets(fb *beatcrd.Filebeat, secretCredentials *corev1.Secret) (secrets []*corev1.Secret, err error) {
 	if secretCredentials == nil {
 		return nil, nil
 	}
 
-	secrets = []corev1.Secret{
+	secrets = []*corev1.Secret{
 		{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:        GetSecretNameForCredentials(fb),

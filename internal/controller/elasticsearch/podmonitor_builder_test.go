@@ -3,7 +3,7 @@ package elasticsearch
 import (
 	"testing"
 
-	"github.com/disaster37/operator-sdk-extra/pkg/test"
+	"github.com/disaster37/operator-sdk-extra/v2/pkg/test"
 	monitoringv1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1"
 	"github.com/stretchr/testify/assert"
 	elasticsearchcrd "github.com/webcenter-fr/elasticsearch-operator/api/elasticsearch/v1"
@@ -17,7 +17,7 @@ func TestBuildPodMonitor(t *testing.T) {
 	var (
 		err error
 		o   *elasticsearchcrd.Elasticsearch
-		pms []monitoringv1.PodMonitor
+		pms []*monitoringv1.PodMonitor
 	)
 
 	sch := scheme.Scheme
@@ -71,5 +71,5 @@ func TestBuildPodMonitor(t *testing.T) {
 	}
 	pms, err = buildPodMonitors(o)
 	assert.NoError(t, err)
-	test.EqualFromYamlFile[*monitoringv1.PodMonitor](t, "testdata/podmonitor.yml", &pms[0], sch)
+	test.EqualFromYamlFile[*monitoringv1.PodMonitor](t, "testdata/podmonitor.yml", pms[0], sch)
 }

@@ -7,9 +7,9 @@ import (
 	"time"
 
 	"github.com/disaster37/k8s-objectmatcher/patch"
-	"github.com/disaster37/operator-sdk-extra/pkg/apis"
-	"github.com/disaster37/operator-sdk-extra/pkg/helper"
-	"github.com/disaster37/operator-sdk-extra/pkg/test"
+	"github.com/disaster37/operator-sdk-extra/v2/pkg/apis"
+	"github.com/disaster37/operator-sdk-extra/v2/pkg/helper"
+	"github.com/disaster37/operator-sdk-extra/v2/pkg/test"
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
 	beatcrd "github.com/webcenter-fr/elasticsearch-operator/api/beat/v1"
@@ -29,11 +29,10 @@ func (t *MetricbeatControllerTestSuite) TestMetricbeatController() {
 		Name:      "t-mb-" + helper.RandomString(10),
 		Namespace: "default",
 	}
-	fb := &beatcrd.Metricbeat{}
 	data := map[string]any{}
 
-	testCase := test.NewTestCase(t.T(), t.k8sClient, key, fb, 5*time.Second, data)
-	testCase.Steps = []test.TestStep{
+	testCase := test.NewTestCase[*beatcrd.Metricbeat](t.T(), t.k8sClient, key, 5*time.Second, data)
+	testCase.Steps = []test.TestStep[*beatcrd.Metricbeat]{
 		doCreateMetricbeatStep(),
 		doUpdateMetricbeatStep(),
 		doDeleteMetricbeatStep(),
@@ -42,10 +41,10 @@ func (t *MetricbeatControllerTestSuite) TestMetricbeatController() {
 	testCase.Run()
 }
 
-func doCreateMetricbeatStep() test.TestStep {
-	return test.TestStep{
+func doCreateMetricbeatStep() test.TestStep[*beatcrd.Metricbeat] {
+	return test.TestStep[*beatcrd.Metricbeat]{
 		Name: "create",
-		Do: func(c client.Client, key types.NamespacedName, o client.Object, data map[string]any) (err error) {
+		Do: func(c client.Client, key types.NamespacedName, o *beatcrd.Metricbeat, data map[string]any) (err error) {
 			logrus.Infof("=== Add new Metricbeat %s/%s ===\n\n", key.Namespace, key.Name)
 
 			// First, create Elasticsearch
@@ -115,7 +114,7 @@ func doCreateMetricbeatStep() test.TestStep {
 
 			return nil
 		},
-		Check: func(t *testing.T, c client.Client, key types.NamespacedName, o client.Object, data map[string]any) (err error) {
+		Check: func(t *testing.T, c client.Client, key types.NamespacedName, o *beatcrd.Metricbeat, data map[string]any) (err error) {
 			mb := &beatcrd.Metricbeat{}
 			var (
 				s   *corev1.Secret
@@ -206,35 +205,34 @@ func doCreateMetricbeatStep() test.TestStep {
 	}
 }
 
-func doUpdateMetricbeatStep() test.TestStep {
-	return test.TestStep{
+func doUpdateMetricbeatStep() test.TestStep[*beatcrd.Metricbeat] {
+	return test.TestStep[*beatcrd.Metricbeat]{
 		Name: "update",
-		Do: func(c client.Client, key types.NamespacedName, o client.Object, data map[string]any) (err error) {
+		Do: func(c client.Client, key types.NamespacedName, o *beatcrd.Metricbeat, data map[string]any) (err error) {
 			logrus.Infof("=== Update Metricbeat cluster %s/%s ===\n\n", key.Namespace, key.Name)
 
 			if o == nil {
 				return errors.New("Metricbeat is null")
 			}
-			mb := o.(*beatcrd.Metricbeat)
 
 			// Add labels must force to update all resources
-			mb.Labels = map[string]string{
+			o.Labels = map[string]string{
 				"test": "fu",
 			}
 			// Change spec to track generation
-			mb.Spec.Deployment.Labels = map[string]string{
+			o.Spec.Deployment.Labels = map[string]string{
 				"test": "fu",
 			}
 
-			data["lastGeneration"] = mb.GetStatus().GetObservedGeneration()
+			data["lastGeneration"] = o.GetStatus().GetObservedGeneration()
 
-			if err = c.Update(context.Background(), mb); err != nil {
+			if err = c.Update(context.Background(), o); err != nil {
 				return err
 			}
 
 			return nil
 		},
-		Check: func(t *testing.T, c client.Client, key types.NamespacedName, o client.Object, data map[string]any) (err error) {
+		Check: func(t *testing.T, c client.Client, key types.NamespacedName, o *beatcrd.Metricbeat, data map[string]any) (err error) {
 			mb := &beatcrd.Metricbeat{}
 
 			var (
@@ -335,25 +333,24 @@ func doUpdateMetricbeatStep() test.TestStep {
 	}
 }
 
-func doDeleteMetricbeatStep() test.TestStep {
-	return test.TestStep{
+func doDeleteMetricbeatStep() test.TestStep[*beatcrd.Metricbeat] {
+	return test.TestStep[*beatcrd.Metricbeat]{
 		Name: "delete",
-		Do: func(c client.Client, key types.NamespacedName, o client.Object, data map[string]any) (err error) {
+		Do: func(c client.Client, key types.NamespacedName, o *beatcrd.Metricbeat, data map[string]any) (err error) {
 			logrus.Infof("=== Delete Metricbeat cluster %s/%s ===\n\n", key.Namespace, key.Name)
 
 			if o == nil {
 				return errors.New("Metricbeat is null")
 			}
-			mb := o.(*beatcrd.Metricbeat)
 
 			wait := int64(0)
-			if err = c.Delete(context.Background(), mb, &client.DeleteOptions{GracePeriodSeconds: &wait}); err != nil {
+			if err = c.Delete(context.Background(), o, &client.DeleteOptions{GracePeriodSeconds: &wait}); err != nil {
 				return err
 			}
 
 			return nil
 		},
-		Check: func(t *testing.T, c client.Client, key types.NamespacedName, o client.Object, data map[string]any) (err error) {
+		Check: func(t *testing.T, c client.Client, key types.NamespacedName, o *beatcrd.Metricbeat, data map[string]any) (err error) {
 			mb := &beatcrd.Metricbeat{}
 			isDeleted := false
 

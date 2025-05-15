@@ -5,18 +5,16 @@ import (
 
 	"emperror.dev/errors"
 	"github.com/disaster37/k8s-objectmatcher/patch"
-	"github.com/disaster37/operator-sdk-extra/pkg/apis/shared"
-	"github.com/disaster37/operator-sdk-extra/pkg/controller"
-	"github.com/disaster37/operator-sdk-extra/pkg/helper"
-	"github.com/disaster37/operator-sdk-extra/pkg/object"
+	"github.com/disaster37/operator-sdk-extra/v2/pkg/apis/shared"
+	"github.com/disaster37/operator-sdk-extra/v2/pkg/controller/multiphase"
 	"github.com/sirupsen/logrus"
 	beatcrd "github.com/webcenter-fr/elasticsearch-operator/api/beat/v1"
 	policyv1 "k8s.io/api/policy/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/tools/record"
-	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
 
 const (
@@ -25,12 +23,12 @@ const (
 )
 
 type pdbReconciler struct {
-	controller.MultiPhaseStepReconcilerAction
+	multiphase.MultiPhaseStepReconcilerAction[*beatcrd.Filebeat, *policyv1.PodDisruptionBudget]
 }
 
-func newPdbReconciler(client client.Client, recorder record.EventRecorder) (multiPhaseStepReconcilerAction controller.MultiPhaseStepReconcilerAction) {
+func newPdbReconciler(client client.Client, recorder record.EventRecorder) (multiPhaseStepReconcilerAction multiphase.MultiPhaseStepReconcilerAction[*beatcrd.Filebeat, *policyv1.PodDisruptionBudget]) {
 	return &pdbReconciler{
-		MultiPhaseStepReconcilerAction: controller.NewBasicMultiPhaseStepReconcilerAction(
+		MultiPhaseStepReconcilerAction: multiphase.NewMultiPhaseStepReconcilerAction[*beatcrd.Filebeat, *policyv1.PodDisruptionBudget](
 			client,
 			PdbPhase,
 			PdbCondition,
@@ -40,10 +38,9 @@ func newPdbReconciler(client client.Client, recorder record.EventRecorder) (mult
 }
 
 // Read existing pdbs
-func (r *pdbReconciler) Read(ctx context.Context, resource object.MultiPhaseObject, data map[string]any, logger *logrus.Entry) (read controller.MultiPhaseRead, res ctrl.Result, err error) {
-	o := resource.(*beatcrd.Filebeat)
+func (r *pdbReconciler) Read(ctx context.Context, o *beatcrd.Filebeat, data map[string]any, logger *logrus.Entry) (read multiphase.MultiPhaseRead[*policyv1.PodDisruptionBudget], res reconcile.Result, err error) {
 	pdb := &policyv1.PodDisruptionBudget{}
-	read = controller.NewBasicMultiPhaseRead()
+	read = multiphase.NewMultiPhaseRead[*policyv1.PodDisruptionBudget]()
 
 	// Read current pdb
 	if err = r.Client().Get(ctx, types.NamespacedName{Namespace: o.Namespace, Name: GetPDBName(o)}, pdb); err != nil {
@@ -53,7 +50,7 @@ func (r *pdbReconciler) Read(ctx context.Context, resource object.MultiPhaseObje
 		pdb = nil
 	}
 	if pdb != nil {
-		read.SetCurrentObjects([]client.Object{pdb})
+		read.AddCurrentObject(pdb)
 	}
 
 	// Generate expected pdb
@@ -61,7 +58,7 @@ func (r *pdbReconciler) Read(ctx context.Context, resource object.MultiPhaseObje
 	if err != nil {
 		return read, res, errors.Wrap(err, "Error when generate pdb")
 	}
-	read.SetExpectedObjects(helper.ToSliceOfObject(expectedPdbs))
+	read.SetExpectedObjects(expectedPdbs)
 
 	return read, res, nil
 }

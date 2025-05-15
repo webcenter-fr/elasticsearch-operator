@@ -21,8 +21,9 @@ import (
 	"time"
 
 	"emperror.dev/errors"
-	"github.com/disaster37/operator-sdk-extra/pkg/controller"
-	"github.com/disaster37/operator-sdk-extra/pkg/object"
+	"github.com/disaster37/operator-sdk-extra/v2/pkg/apis/shared"
+	"github.com/disaster37/operator-sdk-extra/v2/pkg/controller"
+	"github.com/disaster37/operator-sdk-extra/v2/pkg/controller/multiphase"
 	routev1 "github.com/openshift/api/route/v1"
 	monitoringv1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1"
 	"github.com/sirupsen/logrus"
@@ -48,60 +49,61 @@ import (
 )
 
 const (
-	name string = "logstash"
+	name              string               = "logstash"
+	logstashFinalizer shared.FinalizerName = "logstash.k8s.webcenter.fr/finalizer"
 )
 
 // LogstashReconciler reconciles a Logstash object
 type LogstashReconciler struct {
 	controller.Controller
-	controller.MultiPhaseReconcilerAction
-	controller.MultiPhaseReconciler
+	multiphase.MultiPhaseReconciler[*logstashcrd.Logstash]
+	multiphase.MultiPhaseReconcilerAction[*logstashcrd.Logstash]
 	name            string
+	stepReconcilers []multiphase.MultiPhaseStepReconcilerAction[*logstashcrd.Logstash, client.Object]
 	kubeCapability  common.KubernetesCapability
-	stepReconcilers []controller.MultiPhaseStepReconcilerAction
 }
 
-func NewLogstashReconciler(client client.Client, logger *logrus.Entry, recorder record.EventRecorder, kubeCapability common.KubernetesCapability) (multiPhaseReconciler controller.Controller) {
+func NewLogstashReconciler(c client.Client, logger *logrus.Entry, recorder record.EventRecorder, kubeCapability common.KubernetesCapability) (multiPhaseReconciler controller.Controller) {
 	reconciler := &LogstashReconciler{
-		Controller: controller.NewBasicController(),
-		MultiPhaseReconcilerAction: controller.NewBasicMultiPhaseReconcilerAction(
-			client,
-			controller.ReadyCondition,
+		Controller: controller.NewController(),
+		MultiPhaseReconciler: multiphase.NewMultiPhaseReconciler[*logstashcrd.Logstash](
+			c,
+			name,
+			logstashFinalizer,
+			logger,
 			recorder,
 		),
-		MultiPhaseReconciler: controller.NewBasicMultiPhaseReconciler(
-			client,
-			name,
-			"logstash.k8s.webcenter.fr/finalizer",
-			logger,
+		MultiPhaseReconcilerAction: multiphase.NewMultiPhaseReconcilerAction[*logstashcrd.Logstash](
+			c,
+			controller.ReadyCondition,
 			recorder,
 		),
 		name:           name,
 		kubeCapability: kubeCapability,
-		stepReconcilers: []controller.MultiPhaseStepReconcilerAction{
-			newServiceAccountReconciler(client, recorder, kubeCapability.HasRoute),
-			newRoleBindingReconciler(client, recorder, kubeCapability.HasRoute),
-			newTlsReconciler(client, recorder),
-			newCAElasticsearchReconciler(client, recorder),
-			newCredentialReconciler(client, recorder),
-			newConfiMapReconciler(client, recorder),
-			newServiceReconciler(client, recorder),
-			newPdbReconciler(client, recorder),
-			newNetworkPolicyReconciler(client, recorder),
-			newStatefulsetReconciler(client, recorder, kubeCapability.HasRoute),
-			newIngressReconciler(client, recorder),
-			newMetricbeatReconciler(client, recorder),
+		stepReconcilers: []multiphase.MultiPhaseStepReconcilerAction[*logstashcrd.Logstash, client.Object]{
+			multiphase.NewObjectMultiPhaseStepReconcilerAction[*logstashcrd.Logstash, *corev1.ServiceAccount, client.Object](newServiceAccountReconciler(c, recorder, kubeCapability.HasRoute)),
+			multiphase.NewObjectMultiPhaseStepReconcilerAction[*logstashcrd.Logstash, *rbacv1.RoleBinding, client.Object](newRoleBindingReconciler(c, recorder, kubeCapability.HasRoute)),
+			multiphase.NewObjectMultiPhaseStepReconcilerAction[*logstashcrd.Logstash, *corev1.Secret, client.Object](newTlsReconciler(c, recorder)),
+			multiphase.NewObjectMultiPhaseStepReconcilerAction[*logstashcrd.Logstash, *corev1.Secret, client.Object](newCAElasticsearchReconciler(c, recorder)),
+			multiphase.NewObjectMultiPhaseStepReconcilerAction[*logstashcrd.Logstash, *corev1.Secret, client.Object](newCredentialReconciler(c, recorder)),
+			multiphase.NewObjectMultiPhaseStepReconcilerAction[*logstashcrd.Logstash, *corev1.ConfigMap, client.Object](newConfiMapReconciler(c, recorder)),
+			multiphase.NewObjectMultiPhaseStepReconcilerAction[*logstashcrd.Logstash, *corev1.Service, client.Object](newServiceReconciler(c, recorder)),
+			multiphase.NewObjectMultiPhaseStepReconcilerAction[*logstashcrd.Logstash, *policyv1.PodDisruptionBudget, client.Object](newPdbReconciler(c, recorder)),
+			multiphase.NewObjectMultiPhaseStepReconcilerAction[*logstashcrd.Logstash, *networkingv1.NetworkPolicy, client.Object](newNetworkPolicyReconciler(c, recorder)),
+			multiphase.NewObjectMultiPhaseStepReconcilerAction[*logstashcrd.Logstash, *appv1.StatefulSet, client.Object](newStatefulsetReconciler(c, recorder, kubeCapability.HasRoute)),
+			multiphase.NewObjectMultiPhaseStepReconcilerAction[*logstashcrd.Logstash, *networkingv1.Ingress, client.Object](newIngressReconciler(c, recorder)),
+			multiphase.NewObjectMultiPhaseStepReconcilerAction[*logstashcrd.Logstash, *beatcrd.Metricbeat, client.Object](newMetricbeatReconciler(c, recorder)),
 		},
 	}
 
 	// Add Pod monitor reconciler is CRD exist on cluster
 	if kubeCapability.HasPrometheus {
-		reconciler.stepReconcilers = append(reconciler.stepReconcilers, newPodMonitorReconciler(client, recorder))
+		reconciler.stepReconcilers = append(reconciler.stepReconcilers, multiphase.NewObjectMultiPhaseStepReconcilerAction[*logstashcrd.Logstash, *monitoringv1.PodMonitor, client.Object](newPodMonitorReconciler(c, recorder)))
 	}
 
 	// Add route reconciler if CRD exist on cluster
 	if kubeCapability.HasRoute {
-		reconciler.stepReconcilers = append(reconciler.stepReconcilers, newRouteReconciler(client, recorder))
+		reconciler.stepReconcilers = append(reconciler.stepReconcilers, multiphase.NewObjectMultiPhaseStepReconcilerAction[*logstashcrd.Logstash, *routev1.Route, client.Object](newRouteReconciler(c, recorder)))
 	}
 
 	return reconciler
@@ -137,7 +139,7 @@ func NewLogstashReconciler(client client.Client, logger *logrus.Entry, recorder 
 //
 // For more details, check Reconcile and its Result here:
 // - https://pkg.go.dev/sigs.k8s.io/controller-runtime@v0.13.0/pkg/reconcile
-func (r *LogstashReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
+func (r *LogstashReconciler) Reconcile(ctx context.Context, req reconcile.Request) (reconcile.Result, error) {
 	ls := &logstashcrd.Logstash{}
 	data := map[string]any{}
 
@@ -169,7 +171,7 @@ func (h *LogstashReconciler) SetupWithManager(mgr ctrl.Manager) error {
 		Watches(&corev1.ConfigMap{}, handler.EnqueueRequestsFromMapFunc(watchConfigMap(h.Client()))).
 		Watches(&elasticsearchcrd.Elasticsearch{}, handler.EnqueueRequestsFromMapFunc(watchElasticsearch(h.Client()))).
 		WithOptions(k8scontroller.Options{
-			RateLimiter: common.DefaultControllerRateLimiter[reconcile.Request](),
+			RateLimiter: controller.DefaultControllerRateLimiter[reconcile.Request](),
 		})
 
 	if h.kubeCapability.HasRoute {
@@ -183,29 +185,36 @@ func (h *LogstashReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrlBuilder.Complete(h)
 }
 
-func (h *LogstashReconciler) Configure(ctx context.Context, req ctrl.Request, resource object.MultiPhaseObject, data map[string]any, logger *logrus.Entry) (res ctrl.Result, err error) {
-	// Set prometheus Metrics
-	common.ControllerInstances.WithLabelValues(h.name, resource.GetNamespace(), resource.GetName()).Set(1)
-
-	return h.MultiPhaseReconcilerAction.Configure(ctx, req, resource, data, logger)
+func (h *LogstashReconciler) Client() client.Client {
+	return h.MultiPhaseReconcilerAction.Client()
 }
 
-func (h *LogstashReconciler) Delete(ctx context.Context, o object.MultiPhaseObject, data map[string]any, logger *logrus.Entry) (err error) {
+func (h *LogstashReconciler) Recorder() record.EventRecorder {
+	return h.MultiPhaseReconcilerAction.Recorder()
+}
+
+func (h *LogstashReconciler) Configure(ctx context.Context, req reconcile.Request, o *logstashcrd.Logstash, data map[string]any, logger *logrus.Entry) (res reconcile.Result, err error) {
+	// Set prometheus Metrics
+	common.ControllerInstances.WithLabelValues(h.name, o.GetNamespace(), o.GetName()).Set(1)
+
+	return h.MultiPhaseReconcilerAction.Configure(ctx, req, o, data, logger)
+}
+
+func (h *LogstashReconciler) Delete(ctx context.Context, o *logstashcrd.Logstash, data map[string]any, logger *logrus.Entry) (err error) {
 	// Set prometheus Metrics
 	common.ControllerInstances.WithLabelValues(h.name, o.GetNamespace(), o.GetName()).Set(0)
 
 	return h.MultiPhaseReconcilerAction.Delete(ctx, o, data, logger)
 }
 
-func (h *LogstashReconciler) OnError(ctx context.Context, o object.MultiPhaseObject, data map[string]any, currentErr error, logger *logrus.Entry) (res ctrl.Result, err error) {
+func (h *LogstashReconciler) OnError(ctx context.Context, o *logstashcrd.Logstash, data map[string]any, currentErr error, logger *logrus.Entry) (res reconcile.Result, err error) {
 	common.TotalErrors.Inc()
 	common.ControllerErrors.WithLabelValues(h.name, o.GetNamespace(), o.GetName()).Inc()
 
 	return h.MultiPhaseReconcilerAction.OnError(ctx, o, data, currentErr, logger)
 }
 
-func (h *LogstashReconciler) OnSuccess(ctx context.Context, r object.MultiPhaseObject, data map[string]any, logger *logrus.Entry) (res ctrl.Result, err error) {
-	o := r.(*logstashcrd.Logstash)
+func (h *LogstashReconciler) OnSuccess(ctx context.Context, o *logstashcrd.Logstash, data map[string]any, logger *logrus.Entry) (res reconcile.Result, err error) {
 
 	// Reset the current cluster errors
 	common.ControllerErrors.WithLabelValues(h.name, o.GetNamespace(), o.GetName()).Set(0)

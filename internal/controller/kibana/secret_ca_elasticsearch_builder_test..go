@@ -12,7 +12,7 @@ import (
 func TestBuildCAElasticsearchSecret(t *testing.T) {
 	var (
 		err      error
-		secrets  []corev1.Secret
+		secrets  []*corev1.Secret
 		o        *kibanacrd.Kibana
 		esSecret *corev1.Secret
 	)

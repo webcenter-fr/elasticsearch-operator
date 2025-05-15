@@ -10,9 +10,9 @@ import (
 	eshandler "github.com/disaster37/es-handler/v8"
 	"github.com/disaster37/es-handler/v8/mocks"
 	"github.com/disaster37/generic-objectmatcher/patch"
-	"github.com/disaster37/operator-sdk-extra/pkg/controller"
-	"github.com/disaster37/operator-sdk-extra/pkg/helper"
-	"github.com/disaster37/operator-sdk-extra/pkg/test"
+	"github.com/disaster37/operator-sdk-extra/v2/pkg/controller"
+	"github.com/disaster37/operator-sdk-extra/v2/pkg/helper"
+	"github.com/disaster37/operator-sdk-extra/v2/pkg/test"
 	olivere "github.com/olivere/elastic/v7"
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
@@ -31,11 +31,10 @@ func (t *ElasticsearchapiControllerTestSuite) TestSnapshotLifecyclePolicyReconci
 		Name:      "t-slm-" + helper.RandomString(10),
 		Namespace: "default",
 	}
-	slm := &elasticsearchapicrd.SnapshotLifecyclePolicy{}
 	data := map[string]any{}
 
-	testCase := test.NewTestCase(t.T(), t.k8sClient, key, slm, 5*time.Second, data)
-	testCase.Steps = []test.TestStep{
+	testCase := test.NewTestCase[*elasticsearchapicrd.SnapshotLifecyclePolicy](t.T(), t.k8sClient, key, 5*time.Second, data)
+	testCase.Steps = []test.TestStep[*elasticsearchapicrd.SnapshotLifecyclePolicy]{
 		doCreateSLMStep(),
 		doUpdateSLMStep(),
 		doDeleteSLMStep(),
@@ -182,10 +181,10 @@ func doMockSLM(mockES *mocks.MockElasticsearchHandler) func(stepName *string, da
 	}
 }
 
-func doCreateSLMStep() test.TestStep {
-	return test.TestStep{
+func doCreateSLMStep() test.TestStep[*elasticsearchapicrd.SnapshotLifecyclePolicy] {
+	return test.TestStep[*elasticsearchapicrd.SnapshotLifecyclePolicy]{
 		Name: "create",
-		Do: func(c client.Client, key types.NamespacedName, o client.Object, data map[string]any) (err error) {
+		Do: func(c client.Client, key types.NamespacedName, o *elasticsearchapicrd.SnapshotLifecyclePolicy, data map[string]any) (err error) {
 			logrus.Infof("=== Add new SLM policy %s/%s ===\n\n", key.Namespace, key.Name)
 
 			slm := &elasticsearchapicrd.SnapshotLifecyclePolicy{
@@ -220,7 +219,7 @@ func doCreateSLMStep() test.TestStep {
 
 			return nil
 		},
-		Check: func(t *testing.T, c client.Client, key types.NamespacedName, o client.Object, data map[string]any) (err error) {
+		Check: func(t *testing.T, c client.Client, key types.NamespacedName, o *elasticsearchapicrd.SnapshotLifecyclePolicy, data map[string]any) (err error) {
 			slm := &elasticsearchapicrd.SnapshotLifecyclePolicy{}
 			isCreated := false
 
@@ -248,26 +247,25 @@ func doCreateSLMStep() test.TestStep {
 	}
 }
 
-func doUpdateSLMStep() test.TestStep {
-	return test.TestStep{
+func doUpdateSLMStep() test.TestStep[*elasticsearchapicrd.SnapshotLifecyclePolicy] {
+	return test.TestStep[*elasticsearchapicrd.SnapshotLifecyclePolicy]{
 		Name: "update",
-		Do: func(c client.Client, key types.NamespacedName, o client.Object, data map[string]any) (err error) {
+		Do: func(c client.Client, key types.NamespacedName, o *elasticsearchapicrd.SnapshotLifecyclePolicy, data map[string]any) (err error) {
 			logrus.Infof("=== Update SLM policy %s/%s ===\n\n", key.Namespace, key.Name)
 
 			if o == nil {
 				return errors.New("SLM is null")
 			}
-			slm := o.(*elasticsearchapicrd.SnapshotLifecyclePolicy)
 
-			data["lastGeneration"] = slm.GetStatus().GetObservedGeneration()
-			slm.Spec.Retention.MinCount = 6
-			if err = c.Update(context.Background(), slm); err != nil {
+			data["lastGeneration"] = o.GetStatus().GetObservedGeneration()
+			o.Spec.Retention.MinCount = 6
+			if err = c.Update(context.Background(), o); err != nil {
 				return err
 			}
 
 			return nil
 		},
-		Check: func(t *testing.T, c client.Client, key types.NamespacedName, o client.Object, data map[string]any) (err error) {
+		Check: func(t *testing.T, c client.Client, key types.NamespacedName, o *elasticsearchapicrd.SnapshotLifecyclePolicy, data map[string]any) (err error) {
 			slm := &elasticsearchapicrd.SnapshotLifecyclePolicy{}
 			isUpdated := false
 
@@ -296,24 +294,23 @@ func doUpdateSLMStep() test.TestStep {
 	}
 }
 
-func doDeleteSLMStep() test.TestStep {
-	return test.TestStep{
+func doDeleteSLMStep() test.TestStep[*elasticsearchapicrd.SnapshotLifecyclePolicy] {
+	return test.TestStep[*elasticsearchapicrd.SnapshotLifecyclePolicy]{
 		Name: "delete",
-		Do: func(c client.Client, key types.NamespacedName, o client.Object, data map[string]any) (err error) {
+		Do: func(c client.Client, key types.NamespacedName, o *elasticsearchapicrd.SnapshotLifecyclePolicy, data map[string]any) (err error) {
 			logrus.Infof("=== Delete SLM policy %s/%s ===\n\n", key.Namespace, key.Name)
 
 			if o == nil {
 				return errors.New("SLM is null")
 			}
-			slm := o.(*elasticsearchapicrd.SnapshotLifecyclePolicy)
 
 			wait := int64(0)
-			if err = c.Delete(context.Background(), slm, &client.DeleteOptions{GracePeriodSeconds: &wait}); err != nil {
+			if err = c.Delete(context.Background(), o, &client.DeleteOptions{GracePeriodSeconds: &wait}); err != nil {
 				return err
 			}
 			return nil
 		},
-		Check: func(t *testing.T, c client.Client, key types.NamespacedName, o client.Object, data map[string]any) (err error) {
+		Check: func(t *testing.T, c client.Client, key types.NamespacedName, o *elasticsearchapicrd.SnapshotLifecyclePolicy, data map[string]any) (err error) {
 			slm := &elasticsearchapicrd.SnapshotLifecyclePolicy{}
 			isDeleted := false
 

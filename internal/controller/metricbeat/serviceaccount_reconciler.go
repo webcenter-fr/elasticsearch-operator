@@ -4,18 +4,16 @@ import (
 	"context"
 
 	"emperror.dev/errors"
-	"github.com/disaster37/operator-sdk-extra/pkg/apis/shared"
-	"github.com/disaster37/operator-sdk-extra/pkg/controller"
-	"github.com/disaster37/operator-sdk-extra/pkg/helper"
-	"github.com/disaster37/operator-sdk-extra/pkg/object"
+	"github.com/disaster37/operator-sdk-extra/v2/pkg/apis/shared"
+	"github.com/disaster37/operator-sdk-extra/v2/pkg/controller/multiphase"
 	"github.com/sirupsen/logrus"
 	beatcrd "github.com/webcenter-fr/elasticsearch-operator/api/beat/v1"
 	corev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/tools/record"
-	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
 
 const (
@@ -24,13 +22,13 @@ const (
 )
 
 type serviceAccountReconciler struct {
-	controller.MultiPhaseStepReconcilerAction
+	multiphase.MultiPhaseStepReconcilerAction[*beatcrd.Metricbeat, *corev1.ServiceAccount]
 	isOpenshift bool
 }
 
-func newServiceAccountReconciler(client client.Client, recorder record.EventRecorder, isOpenshift bool) (multiPhaseStepReconcilerAction controller.MultiPhaseStepReconcilerAction) {
+func newServiceAccountReconciler(client client.Client, recorder record.EventRecorder, isOpenshift bool) (multiPhaseStepReconcilerAction multiphase.MultiPhaseStepReconcilerAction[*beatcrd.Metricbeat, *corev1.ServiceAccount]) {
 	return &serviceAccountReconciler{
-		MultiPhaseStepReconcilerAction: controller.NewBasicMultiPhaseStepReconcilerAction(
+		MultiPhaseStepReconcilerAction: multiphase.NewMultiPhaseStepReconcilerAction[*beatcrd.Metricbeat, *corev1.ServiceAccount](
 			client,
 			ServiceAccountPhase,
 			ServiceAccountCondition,
@@ -41,10 +39,9 @@ func newServiceAccountReconciler(client client.Client, recorder record.EventReco
 }
 
 // Read existing service account
-func (r *serviceAccountReconciler) Read(ctx context.Context, resource object.MultiPhaseObject, data map[string]any, logger *logrus.Entry) (read controller.MultiPhaseRead, res ctrl.Result, err error) {
-	o := resource.(*beatcrd.Metricbeat)
+func (r *serviceAccountReconciler) Read(ctx context.Context, o *beatcrd.Metricbeat, data map[string]any, logger *logrus.Entry) (read multiphase.MultiPhaseRead[*corev1.ServiceAccount], res reconcile.Result, err error) {
 	serviceAccount := &corev1.ServiceAccount{}
-	read = controller.NewBasicMultiPhaseRead()
+	read = multiphase.NewMultiPhaseRead[*corev1.ServiceAccount]()
 
 	// Read current service account
 	if err = r.Client().Get(ctx, types.NamespacedName{Namespace: o.Namespace, Name: GetServiceAccountName(o)}, serviceAccount); err != nil {
@@ -54,7 +51,7 @@ func (r *serviceAccountReconciler) Read(ctx context.Context, resource object.Mul
 		serviceAccount = nil
 	}
 	if serviceAccount != nil {
-		read.SetCurrentObjects([]client.Object{serviceAccount})
+		read.AddCurrentObject(serviceAccount)
 	}
 
 	// Generate expected service account
@@ -62,7 +59,7 @@ func (r *serviceAccountReconciler) Read(ctx context.Context, resource object.Mul
 	if err != nil {
 		return read, res, errors.Wrap(err, "Error when generate service account")
 	}
-	read.SetExpectedObjects(helper.ToSliceOfObject(expectedServiceAccounts))
+	read.SetExpectedObjects(expectedServiceAccounts)
 
 	return read, res, nil
 }

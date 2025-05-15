@@ -7,9 +7,9 @@ import (
 	"time"
 
 	"github.com/disaster37/k8s-objectmatcher/patch"
-	"github.com/disaster37/operator-sdk-extra/pkg/apis"
-	"github.com/disaster37/operator-sdk-extra/pkg/helper"
-	"github.com/disaster37/operator-sdk-extra/pkg/test"
+	"github.com/disaster37/operator-sdk-extra/v2/pkg/apis"
+	"github.com/disaster37/operator-sdk-extra/v2/pkg/helper"
+	"github.com/disaster37/operator-sdk-extra/v2/pkg/test"
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
 	elasticsearchcrd "github.com/webcenter-fr/elasticsearch-operator/api/elasticsearch/v1"
@@ -31,11 +31,10 @@ func (t *LogstashControllerTestSuite) TestLogstashController() {
 		Name:      "t-ls-" + helper.RandomString(10),
 		Namespace: "default",
 	}
-	ls := &logstashcrd.Logstash{}
 	data := map[string]any{}
 
-	testCase := test.NewTestCase(t.T(), t.k8sClient, key, ls, 5*time.Second, data)
-	testCase.Steps = []test.TestStep{
+	testCase := test.NewTestCase[*logstashcrd.Logstash](t.T(), t.k8sClient, key, 5*time.Second, data)
+	testCase.Steps = []test.TestStep[*logstashcrd.Logstash]{
 		doCreateLogstashStep(),
 		doUpdateLogstashStep(),
 		doDeleteLogstashStep(),
@@ -44,10 +43,10 @@ func (t *LogstashControllerTestSuite) TestLogstashController() {
 	testCase.Run()
 }
 
-func doCreateLogstashStep() test.TestStep {
-	return test.TestStep{
+func doCreateLogstashStep() test.TestStep[*logstashcrd.Logstash] {
+	return test.TestStep[*logstashcrd.Logstash]{
 		Name: "create",
-		Do: func(c client.Client, key types.NamespacedName, o client.Object, data map[string]any) (err error) {
+		Do: func(c client.Client, key types.NamespacedName, o *logstashcrd.Logstash, data map[string]any) (err error) {
 			logrus.Infof("=== Add new Logstash %s/%s ===\n\n", key.Namespace, key.Name)
 
 			// First, create Elasticsearch
@@ -154,7 +153,7 @@ func doCreateLogstashStep() test.TestStep {
 
 			return nil
 		},
-		Check: func(t *testing.T, c client.Client, key types.NamespacedName, o client.Object, data map[string]any) (err error) {
+		Check: func(t *testing.T, c client.Client, key types.NamespacedName, o *logstashcrd.Logstash, data map[string]any) (err error) {
 			ls := &logstashcrd.Logstash{}
 			var (
 				s   *corev1.Secret
@@ -287,35 +286,34 @@ func doCreateLogstashStep() test.TestStep {
 	}
 }
 
-func doUpdateLogstashStep() test.TestStep {
-	return test.TestStep{
+func doUpdateLogstashStep() test.TestStep[*logstashcrd.Logstash] {
+	return test.TestStep[*logstashcrd.Logstash]{
 		Name: "update",
-		Do: func(c client.Client, key types.NamespacedName, o client.Object, data map[string]any) (err error) {
+		Do: func(c client.Client, key types.NamespacedName, o *logstashcrd.Logstash, data map[string]any) (err error) {
 			logrus.Infof("=== Update Logstash cluster %s/%s ===\n\n", key.Namespace, key.Name)
 
 			if o == nil {
 				return errors.New("Logstash is null")
 			}
-			ls := o.(*logstashcrd.Logstash)
 
 			// Add labels must force to update all resources
-			ls.Labels = map[string]string{
+			o.Labels = map[string]string{
 				"test": "fu",
 			}
 			// Change spec to track generation
-			ls.Spec.Deployment.Labels = map[string]string{
+			o.Spec.Deployment.Labels = map[string]string{
 				"test": "fu",
 			}
 
-			data["lastGeneration"] = ls.GetStatus().GetObservedGeneration()
+			data["lastGeneration"] = o.GetStatus().GetObservedGeneration()
 
-			if err = c.Update(context.Background(), ls); err != nil {
+			if err = c.Update(context.Background(), o); err != nil {
 				return err
 			}
 
 			return nil
 		},
-		Check: func(t *testing.T, c client.Client, key types.NamespacedName, o client.Object, data map[string]any) (err error) {
+		Check: func(t *testing.T, c client.Client, key types.NamespacedName, o *logstashcrd.Logstash, data map[string]any) (err error) {
 			ls := &logstashcrd.Logstash{}
 
 			var (
@@ -463,25 +461,24 @@ func doUpdateLogstashStep() test.TestStep {
 	}
 }
 
-func doDeleteLogstashStep() test.TestStep {
-	return test.TestStep{
+func doDeleteLogstashStep() test.TestStep[*logstashcrd.Logstash] {
+	return test.TestStep[*logstashcrd.Logstash]{
 		Name: "delete",
-		Do: func(c client.Client, key types.NamespacedName, o client.Object, data map[string]any) (err error) {
+		Do: func(c client.Client, key types.NamespacedName, o *logstashcrd.Logstash, data map[string]any) (err error) {
 			logrus.Infof("=== Delete Logstash cluster %s/%s ===\n\n", key.Namespace, key.Name)
 
 			if o == nil {
 				return errors.New("Logstash is null")
 			}
-			ls := o.(*logstashcrd.Logstash)
 
 			wait := int64(0)
-			if err = c.Delete(context.Background(), ls, &client.DeleteOptions{GracePeriodSeconds: &wait}); err != nil {
+			if err = c.Delete(context.Background(), o, &client.DeleteOptions{GracePeriodSeconds: &wait}); err != nil {
 				return err
 			}
 
 			return nil
 		},
-		Check: func(t *testing.T, c client.Client, key types.NamespacedName, o client.Object, data map[string]any) (err error) {
+		Check: func(t *testing.T, c client.Client, key types.NamespacedName, o *logstashcrd.Logstash, data map[string]any) (err error) {
 			ls := &logstashcrd.Logstash{}
 			isDeleted := false
 

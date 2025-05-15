@@ -7,8 +7,8 @@ import (
 	"time"
 
 	"github.com/disaster37/k8s-objectmatcher/patch"
-	"github.com/disaster37/operator-sdk-extra/pkg/helper"
-	"github.com/disaster37/operator-sdk-extra/pkg/test"
+	"github.com/disaster37/operator-sdk-extra/v2/pkg/helper"
+	"github.com/disaster37/operator-sdk-extra/v2/pkg/test"
 	routev1 "github.com/openshift/api/route/v1"
 	monitoringv1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1"
 	"github.com/sirupsen/logrus"
@@ -33,11 +33,10 @@ func (t *KibanaControllerTestSuite) TestKibanaController() {
 		Name:      "t-kb-" + helper.RandomString(10),
 		Namespace: "default",
 	}
-	kb := &kibanacrd.Kibana{}
 	data := map[string]any{}
 
-	testCase := test.NewTestCase(t.T(), t.k8sClient, key, kb, 5*time.Second, data)
-	testCase.Steps = []test.TestStep{
+	testCase := test.NewTestCase[*kibanacrd.Kibana](t.T(), t.k8sClient, key, 5*time.Second, data)
+	testCase.Steps = []test.TestStep[*kibanacrd.Kibana]{
 		doCreateKibanaStep(),
 		doUpdateKibanaStep(),
 		doDeleteKibanaStep(),
@@ -46,10 +45,10 @@ func (t *KibanaControllerTestSuite) TestKibanaController() {
 	testCase.Run()
 }
 
-func doCreateKibanaStep() test.TestStep {
-	return test.TestStep{
+func doCreateKibanaStep() test.TestStep[*kibanacrd.Kibana] {
+	return test.TestStep[*kibanacrd.Kibana]{
 		Name: "create",
-		Do: func(c client.Client, key types.NamespacedName, o client.Object, data map[string]any) (err error) {
+		Do: func(c client.Client, key types.NamespacedName, o *kibanacrd.Kibana, data map[string]any) (err error) {
 			logrus.Infof("=== Add new Kibana %s/%s ===\n\n", key.Namespace, key.Name)
 
 			// First, create Elasticsearch
@@ -128,7 +127,7 @@ func doCreateKibanaStep() test.TestStep {
 
 			return nil
 		},
-		Check: func(t *testing.T, c client.Client, key types.NamespacedName, o client.Object, data map[string]any) (err error) {
+		Check: func(t *testing.T, c client.Client, key types.NamespacedName, o *kibanacrd.Kibana, data map[string]any) (err error) {
 			kb := &kibanacrd.Kibana{}
 			var (
 				s              *corev1.Secret
@@ -292,35 +291,34 @@ func doCreateKibanaStep() test.TestStep {
 	}
 }
 
-func doUpdateKibanaStep() test.TestStep {
-	return test.TestStep{
+func doUpdateKibanaStep() test.TestStep[*kibanacrd.Kibana] {
+	return test.TestStep[*kibanacrd.Kibana]{
 		Name: "update",
-		Do: func(c client.Client, key types.NamespacedName, o client.Object, data map[string]any) (err error) {
+		Do: func(c client.Client, key types.NamespacedName, o *kibanacrd.Kibana, data map[string]any) (err error) {
 			logrus.Infof("=== Update Kibana cluster %s/%s ===\n\n", key.Namespace, key.Name)
 
 			if o == nil {
 				return errors.New("Kibana is null")
 			}
-			kb := o.(*kibanacrd.Kibana)
 
 			// Add labels must force to update all resources
-			kb.Labels = map[string]string{
+			o.Labels = map[string]string{
 				"test": "fu",
 			}
 			// Change spec to track generation
-			kb.Spec.Deployment.Labels = map[string]string{
+			o.Spec.Deployment.Labels = map[string]string{
 				"test": "fu",
 			}
 
-			data["lastGeneration"] = kb.GetStatus().GetObservedGeneration()
+			data["lastGeneration"] = o.GetStatus().GetObservedGeneration()
 
-			if err = c.Update(context.Background(), kb); err != nil {
+			if err = c.Update(context.Background(), o); err != nil {
 				return err
 			}
 
 			return nil
 		},
-		Check: func(t *testing.T, c client.Client, key types.NamespacedName, o client.Object, data map[string]any) (err error) {
+		Check: func(t *testing.T, c client.Client, key types.NamespacedName, o *kibanacrd.Kibana, data map[string]any) (err error) {
 			kb := &kibanacrd.Kibana{}
 
 			var (
@@ -501,25 +499,24 @@ func doUpdateKibanaStep() test.TestStep {
 	}
 }
 
-func doDeleteKibanaStep() test.TestStep {
-	return test.TestStep{
+func doDeleteKibanaStep() test.TestStep[*kibanacrd.Kibana] {
+	return test.TestStep[*kibanacrd.Kibana]{
 		Name: "delete",
-		Do: func(c client.Client, key types.NamespacedName, o client.Object, data map[string]any) (err error) {
+		Do: func(c client.Client, key types.NamespacedName, o *kibanacrd.Kibana, data map[string]any) (err error) {
 			logrus.Infof("=== Delete Kibana cluster %s/%s ===\n\n", key.Namespace, key.Name)
 
 			if o == nil {
 				return errors.New("Kibana is null")
 			}
-			kb := o.(*kibanacrd.Kibana)
 
 			wait := int64(0)
-			if err = c.Delete(context.Background(), kb, &client.DeleteOptions{GracePeriodSeconds: &wait}); err != nil {
+			if err = c.Delete(context.Background(), o, &client.DeleteOptions{GracePeriodSeconds: &wait}); err != nil {
 				return err
 			}
 
 			return nil
 		},
-		Check: func(t *testing.T, c client.Client, key types.NamespacedName, o client.Object, data map[string]any) (err error) {
+		Check: func(t *testing.T, c client.Client, key types.NamespacedName, o *kibanacrd.Kibana, data map[string]any) (err error) {
 			kb := &kibanacrd.Kibana{}
 			isDeleted := false
 

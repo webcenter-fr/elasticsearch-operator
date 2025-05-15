@@ -9,9 +9,9 @@ import (
 	"github.com/disaster37/generic-objectmatcher/patch"
 	"github.com/disaster37/go-kibana-rest/v8/kbapi"
 	"github.com/disaster37/kb-handler/v8/mocks"
-	"github.com/disaster37/operator-sdk-extra/pkg/controller"
-	"github.com/disaster37/operator-sdk-extra/pkg/helper"
-	"github.com/disaster37/operator-sdk-extra/pkg/test"
+	"github.com/disaster37/operator-sdk-extra/v2/pkg/controller"
+	"github.com/disaster37/operator-sdk-extra/v2/pkg/helper"
+	"github.com/disaster37/operator-sdk-extra/v2/pkg/test"
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
 	kibanaapicrd "github.com/webcenter-fr/elasticsearch-operator/api/kibanaapi/v1"
@@ -29,11 +29,10 @@ func (t *KibanaapiControllerTestSuite) TestKibanaUserSpaceReconciler() {
 		Name:      "t-space-" + helper.RandomString(10),
 		Namespace: "default",
 	}
-	space := &kibanaapicrd.UserSpace{}
 	data := map[string]any{}
 
-	testCase := test.NewTestCase(t.T(), t.k8sClient, key, space, 5*time.Second, data)
-	testCase.Steps = []test.TestStep{
+	testCase := test.NewTestCase[*kibanaapicrd.UserSpace](t.T(), t.k8sClient, key, 5*time.Second, data)
+	testCase.Steps = []test.TestStep[*kibanaapicrd.UserSpace]{
 		doCreateUserSpaceStep(),
 		doUpdateUserSpaceStep(),
 		doDeleteUserSpaceStep(),
@@ -169,10 +168,10 @@ func doMockUserSpace(mockKB *mocks.MockKibanaHandler) func(stepName *string, dat
 	}
 }
 
-func doCreateUserSpaceStep() test.TestStep {
-	return test.TestStep{
+func doCreateUserSpaceStep() test.TestStep[*kibanaapicrd.UserSpace] {
+	return test.TestStep[*kibanaapicrd.UserSpace]{
 		Name: "create",
-		Do: func(c client.Client, key types.NamespacedName, o client.Object, data map[string]any) (err error) {
+		Do: func(c client.Client, key types.NamespacedName, o *kibanaapicrd.UserSpace, data map[string]any) (err error) {
 			logrus.Infof("=== Add new user space %s/%s ===\n\n", key.Namespace, key.Name)
 
 			space := &kibanaapicrd.UserSpace{
@@ -196,7 +195,7 @@ func doCreateUserSpaceStep() test.TestStep {
 
 			return nil
 		},
-		Check: func(t *testing.T, c client.Client, key types.NamespacedName, o client.Object, data map[string]any) (err error) {
+		Check: func(t *testing.T, c client.Client, key types.NamespacedName, o *kibanaapicrd.UserSpace, data map[string]any) (err error) {
 			space := &kibanaapicrd.UserSpace{}
 			isCreated := false
 
@@ -223,10 +222,10 @@ func doCreateUserSpaceStep() test.TestStep {
 	}
 }
 
-func doCreateUserSpaceWithObjectsStep() test.TestStep {
-	return test.TestStep{
+func doCreateUserSpaceWithObjectsStep() test.TestStep[*kibanaapicrd.UserSpace] {
+	return test.TestStep[*kibanaapicrd.UserSpace]{
 		Name: "createWithObject",
-		Do: func(c client.Client, key types.NamespacedName, o client.Object, data map[string]any) (err error) {
+		Do: func(c client.Client, key types.NamespacedName, o *kibanaapicrd.UserSpace, data map[string]any) (err error) {
 			logrus.Infof("=== Add new user space with object %s/%s ===\n\n", key.Namespace, key.Name)
 
 			space := &kibanaapicrd.UserSpace{
@@ -261,7 +260,7 @@ func doCreateUserSpaceWithObjectsStep() test.TestStep {
 
 			return nil
 		},
-		Check: func(t *testing.T, c client.Client, key types.NamespacedName, o client.Object, data map[string]any) (err error) {
+		Check: func(t *testing.T, c client.Client, key types.NamespacedName, o *kibanaapicrd.UserSpace, data map[string]any) (err error) {
 			space := &kibanaapicrd.UserSpace{}
 			isCreated := false
 
@@ -294,26 +293,25 @@ func doCreateUserSpaceWithObjectsStep() test.TestStep {
 	}
 }
 
-func doUpdateUserSpaceStep() test.TestStep {
-	return test.TestStep{
+func doUpdateUserSpaceStep() test.TestStep[*kibanaapicrd.UserSpace] {
+	return test.TestStep[*kibanaapicrd.UserSpace]{
 		Name: "update",
-		Do: func(c client.Client, key types.NamespacedName, o client.Object, data map[string]any) (err error) {
+		Do: func(c client.Client, key types.NamespacedName, o *kibanaapicrd.UserSpace, data map[string]any) (err error) {
 			logrus.Infof("=== Update user space %s/%s ===\n\n", key.Namespace, key.Name)
 
 			if o == nil {
 				return errors.New("User space is null")
 			}
-			space := o.(*kibanaapicrd.UserSpace)
 
-			data["lastGeneration"] = space.GetStatus().GetObservedGeneration()
-			space.Spec.Description = "test2"
-			if err = c.Update(context.Background(), space); err != nil {
+			data["lastGeneration"] = o.GetStatus().GetObservedGeneration()
+			o.Spec.Description = "test2"
+			if err = c.Update(context.Background(), o); err != nil {
 				return err
 			}
 
 			return nil
 		},
-		Check: func(t *testing.T, c client.Client, key types.NamespacedName, o client.Object, data map[string]any) (err error) {
+		Check: func(t *testing.T, c client.Client, key types.NamespacedName, o *kibanaapicrd.UserSpace, data map[string]any) (err error) {
 			space := &kibanaapicrd.UserSpace{}
 			isUpdated := false
 
@@ -342,25 +340,24 @@ func doUpdateUserSpaceStep() test.TestStep {
 	}
 }
 
-func doDeleteUserSpaceStep() test.TestStep {
-	return test.TestStep{
+func doDeleteUserSpaceStep() test.TestStep[*kibanaapicrd.UserSpace] {
+	return test.TestStep[*kibanaapicrd.UserSpace]{
 		Name: "delete",
-		Do: func(c client.Client, key types.NamespacedName, o client.Object, data map[string]any) (err error) {
+		Do: func(c client.Client, key types.NamespacedName, o *kibanaapicrd.UserSpace, data map[string]any) (err error) {
 			logrus.Infof("=== Delete user space %s/%s ===\n\n", key.Namespace, key.Name)
 
 			if o == nil {
 				return errors.New("User space is null")
 			}
-			space := o.(*kibanaapicrd.UserSpace)
 
 			wait := int64(0)
-			if err = c.Delete(context.Background(), space, &client.DeleteOptions{GracePeriodSeconds: &wait}); err != nil {
+			if err = c.Delete(context.Background(), o, &client.DeleteOptions{GracePeriodSeconds: &wait}); err != nil {
 				return err
 			}
 
 			return nil
 		},
-		Check: func(t *testing.T, c client.Client, key types.NamespacedName, o client.Object, data map[string]any) (err error) {
+		Check: func(t *testing.T, c client.Client, key types.NamespacedName, o *kibanaapicrd.UserSpace, data map[string]any) (err error) {
 			space := &kibanaapicrd.UserSpace{}
 			isDeleted := false
 

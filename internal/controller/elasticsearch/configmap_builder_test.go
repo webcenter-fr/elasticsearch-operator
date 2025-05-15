@@ -3,8 +3,8 @@ package elasticsearch
 import (
 	"testing"
 
-	"github.com/disaster37/operator-sdk-extra/pkg/apis"
-	"github.com/disaster37/operator-sdk-extra/pkg/test"
+	"github.com/disaster37/operator-sdk-extra/v2/pkg/apis"
+	"github.com/disaster37/operator-sdk-extra/v2/pkg/test"
 	"github.com/stretchr/testify/assert"
 	elasticsearchcrd "github.com/webcenter-fr/elasticsearch-operator/api/elasticsearch/v1"
 	"github.com/webcenter-fr/elasticsearch-operator/api/shared"
@@ -66,7 +66,7 @@ node:
 
 	configMaps, err := buildConfigMaps(o)
 	assert.NoError(t, err)
-	test.EqualFromYamlFile[*corev1.ConfigMap](t, "testdata/configmap_default.yml", &configMaps[0], scheme.Scheme)
+	test.EqualFromYamlFile[*corev1.ConfigMap](t, "testdata/configmap_default.yml", configMaps[0], scheme.Scheme)
 
 	// When TLS API is disabled
 	o = &elasticsearchcrd.Elasticsearch{
@@ -110,7 +110,7 @@ node:
 
 	configMaps, err = buildConfigMaps(o)
 	assert.NoError(t, err)
-	test.EqualFromYamlFile[*corev1.ConfigMap](t, "testdata/configmap_api_tls_disabled.yml", &configMaps[0], scheme.Scheme)
+	test.EqualFromYamlFile[*corev1.ConfigMap](t, "testdata/configmap_api_tls_disabled.yml", configMaps[0], scheme.Scheme)
 
 	// When cluster is not yet bootstrapped
 	o = &elasticsearchcrd.Elasticsearch{
@@ -141,7 +141,7 @@ node:
 
 	configMaps, err = buildConfigMaps(o)
 	assert.NoError(t, err)
-	test.EqualFromYamlFile[*corev1.ConfigMap](t, "testdata/configmap_not_bootstrapping.yml", &configMaps[1], scheme.Scheme)
+	test.EqualFromYamlFile[*corev1.ConfigMap](t, "testdata/configmap_not_bootstrapping.yml", configMaps[1], scheme.Scheme)
 
 	// When cluster is bootstrapped
 	o = &elasticsearchcrd.Elasticsearch{
@@ -175,7 +175,7 @@ node:
 
 	configMaps, err = buildConfigMaps(o)
 	assert.NoError(t, err)
-	test.EqualFromYamlFile[*corev1.ConfigMap](t, "testdata/configmap_bootstrapping.yml", &configMaps[1], scheme.Scheme)
+	test.EqualFromYamlFile[*corev1.ConfigMap](t, "testdata/configmap_bootstrapping.yml", configMaps[1], scheme.Scheme)
 
 	// When cluster is not yet bootstrapped and single node
 	o = &elasticsearchcrd.Elasticsearch{
@@ -206,7 +206,7 @@ node:
 
 	configMaps, err = buildConfigMaps(o)
 	assert.NoError(t, err)
-	test.EqualFromYamlFile[*corev1.ConfigMap](t, "testdata/configmap_not_bootstrapping_single.yml", &configMaps[1], scheme.Scheme)
+	test.EqualFromYamlFile[*corev1.ConfigMap](t, "testdata/configmap_not_bootstrapping_single.yml", configMaps[1], scheme.Scheme)
 }
 
 func TestComputeInitialMasterNodes(t *testing.T) {

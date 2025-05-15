@@ -8,8 +8,8 @@ import (
 )
 
 // BuilderServices permit to generate service
-func buildServices(mb *beatcrd.Metricbeat) (services []corev1.Service, err error) {
-	services = make([]corev1.Service, 0, 1)
+func buildServices(mb *beatcrd.Metricbeat) (services []*corev1.Service, err error) {
+	services = make([]*corev1.Service, 0, 1)
 
 	// Create global service with all ports
 	service := &corev1.Service{
@@ -37,7 +37,7 @@ func buildServices(mb *beatcrd.Metricbeat) (services []corev1.Service, err error
 		},
 	}
 
-	services = append(services, *service)
+	services = append(services, service)
 
 	return services, nil
 }

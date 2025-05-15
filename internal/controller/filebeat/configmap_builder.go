@@ -17,8 +17,8 @@ import (
 )
 
 // BuildConfigMap permit to generate config maps
-func buildConfigMaps(fb *beatcrd.Filebeat, es *elasticsearchcrd.Elasticsearch, ls *logstashcrd.Logstash, elasticsearchCASecret *corev1.Secret, logstashCASecret *corev1.Secret) (configMaps []corev1.ConfigMap, err error) {
-	configMaps = make([]corev1.ConfigMap, 0, 1)
+func buildConfigMaps(fb *beatcrd.Filebeat, es *elasticsearchcrd.Elasticsearch, ls *logstashcrd.Logstash, elasticsearchCASecret *corev1.Secret, logstashCASecret *corev1.Secret) (configMaps []*corev1.ConfigMap, err error) {
+	configMaps = make([]*corev1.ConfigMap, 0, 1)
 	var cm *corev1.ConfigMap
 
 	// ConfigMap that store configs
@@ -165,7 +165,7 @@ func buildConfigMaps(fb *beatcrd.Filebeat, es *elasticsearchcrd.Elasticsearch, l
 		Data: expectedConfig,
 	}
 
-	configMaps = append(configMaps, *cm)
+	configMaps = append(configMaps, cm)
 
 	// ConfigMap that store modules
 	if fb.Spec.Modules != nil && len(fb.Spec.Modules.Data) > 0 {
@@ -187,7 +187,7 @@ func buildConfigMaps(fb *beatcrd.Filebeat, es *elasticsearchcrd.Elasticsearch, l
 			Data: modules,
 		}
 
-		configMaps = append(configMaps, *cm)
+		configMaps = append(configMaps, cm)
 	}
 
 	return configMaps, nil

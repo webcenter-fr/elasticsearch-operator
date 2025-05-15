@@ -3,8 +3,8 @@ package logstash
 import (
 	"testing"
 
-	"github.com/disaster37/operator-sdk-extra/pkg/apis"
-	"github.com/disaster37/operator-sdk-extra/pkg/test"
+	"github.com/disaster37/operator-sdk-extra/v2/pkg/apis"
+	"github.com/disaster37/operator-sdk-extra/v2/pkg/test"
 	"github.com/stretchr/testify/assert"
 	logstashcrd "github.com/webcenter-fr/elasticsearch-operator/api/logstash/v1"
 	"github.com/webcenter-fr/elasticsearch-operator/api/shared"
@@ -17,7 +17,7 @@ import (
 func TestBuildConfigMaps(t *testing.T) {
 	var (
 		o          *logstashcrd.Logstash
-		configMaps []corev1.ConfigMap
+		configMaps []*corev1.ConfigMap
 		err        error
 	)
 
@@ -68,7 +68,7 @@ node.value2: test`,
 	configMaps, err = buildConfigMaps(o)
 	assert.NoError(t, err)
 	assert.Equal(t, 1, len(configMaps))
-	test.EqualFromYamlFile[*corev1.ConfigMap](t, "testdata/configmap_config.yml", &configMaps[0], scheme.Scheme)
+	test.EqualFromYamlFile[*corev1.ConfigMap](t, "testdata/configmap_config.yml", configMaps[0], scheme.Scheme)
 
 	// When pipeline
 	o = &logstashcrd.Logstash{
@@ -97,7 +97,7 @@ node.value2: test`,
 	configMaps, err = buildConfigMaps(o)
 	assert.NoError(t, err)
 	assert.Equal(t, 1, len(configMaps))
-	test.EqualFromYamlFile[*corev1.ConfigMap](t, "testdata/configmap_pipeline.yml", &configMaps[0], scheme.Scheme)
+	test.EqualFromYamlFile[*corev1.ConfigMap](t, "testdata/configmap_pipeline.yml", configMaps[0], scheme.Scheme)
 
 	// When pattern
 	o = &logstashcrd.Logstash{
@@ -126,7 +126,7 @@ node.value2: test`,
 	configMaps, err = buildConfigMaps(o)
 	assert.NoError(t, err)
 	assert.Equal(t, 1, len(configMaps))
-	test.EqualFromYamlFile[*corev1.ConfigMap](t, "testdata/configmap_pattern.yml", &configMaps[0], scheme.Scheme)
+	test.EqualFromYamlFile[*corev1.ConfigMap](t, "testdata/configmap_pattern.yml", configMaps[0], scheme.Scheme)
 
 	// When exporter Prometheus
 	o = &logstashcrd.Logstash{
@@ -157,5 +157,5 @@ node.value2: test`,
 	configMaps, err = buildConfigMaps(o)
 	assert.NoError(t, err)
 	assert.Equal(t, 1, len(configMaps))
-	test.EqualFromYamlFile[*corev1.ConfigMap](t, "testdata/configmap_exporter.yml", &configMaps[0], scheme.Scheme)
+	test.EqualFromYamlFile[*corev1.ConfigMap](t, "testdata/configmap_exporter.yml", configMaps[0], scheme.Scheme)
 }

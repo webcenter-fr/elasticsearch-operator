@@ -5,10 +5,8 @@ import (
 	"time"
 
 	"emperror.dev/errors"
-	"github.com/disaster37/operator-sdk-extra/pkg/apis/shared"
-	"github.com/disaster37/operator-sdk-extra/pkg/controller"
-	"github.com/disaster37/operator-sdk-extra/pkg/helper"
-	"github.com/disaster37/operator-sdk-extra/pkg/object"
+	"github.com/disaster37/operator-sdk-extra/v2/pkg/apis/shared"
+	"github.com/disaster37/operator-sdk-extra/v2/pkg/controller/multiphase"
 	"github.com/sirupsen/logrus"
 	beatcrd "github.com/webcenter-fr/elasticsearch-operator/api/beat/v1"
 	logstashcrd "github.com/webcenter-fr/elasticsearch-operator/api/logstash/v1"
@@ -17,8 +15,8 @@ import (
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/tools/record"
-	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
 
 const (
@@ -27,12 +25,12 @@ const (
 )
 
 type caLogstashReconciler struct {
-	controller.MultiPhaseStepReconcilerAction
+	multiphase.MultiPhaseStepReconcilerAction[*beatcrd.Filebeat, *corev1.Secret]
 }
 
-func newCALogstashReconciler(client client.Client, recorder record.EventRecorder) (multiPhaseStepReconcilerAction controller.MultiPhaseStepReconcilerAction) {
+func newCALogstashReconciler(client client.Client, recorder record.EventRecorder) (multiPhaseStepReconcilerAction multiphase.MultiPhaseStepReconcilerAction[*beatcrd.Filebeat, *corev1.Secret]) {
 	return &caLogstashReconciler{
-		MultiPhaseStepReconcilerAction: controller.NewBasicMultiPhaseStepReconcilerAction(
+		MultiPhaseStepReconcilerAction: multiphase.NewMultiPhaseStepReconcilerAction[*beatcrd.Filebeat, *corev1.Secret](
 			client,
 			CALogstashPhase,
 			CALogstashCondition,
@@ -42,11 +40,10 @@ func newCALogstashReconciler(client client.Client, recorder record.EventRecorder
 }
 
 // Read existing secret
-func (r *caLogstashReconciler) Read(ctx context.Context, resource object.MultiPhaseObject, data map[string]any, logger *logrus.Entry) (read controller.MultiPhaseRead, res ctrl.Result, err error) {
-	o := resource.(*beatcrd.Filebeat)
+func (r *caLogstashReconciler) Read(ctx context.Context, o *beatcrd.Filebeat, data map[string]any, logger *logrus.Entry) (read multiphase.MultiPhaseRead[*corev1.Secret], res reconcile.Result, err error) {
 	s := &corev1.Secret{}
 	sLs := &corev1.Secret{}
-	read = controller.NewBasicMultiPhaseRead()
+	read = multiphase.NewMultiPhaseRead[*corev1.Secret]()
 
 	var ls *logstashcrd.Logstash
 
@@ -58,7 +55,7 @@ func (r *caLogstashReconciler) Read(ctx context.Context, resource object.MultiPh
 		s = nil
 	}
 	if s != nil {
-		read.SetCurrentObjects([]client.Object{s})
+		read.AddCurrentObject(s)
 	}
 
 	if o.Spec.LogstashRef.IsManaged() {
@@ -69,7 +66,7 @@ func (r *caLogstashReconciler) Read(ctx context.Context, resource object.MultiPh
 		}
 		if ls == nil {
 			logger.Warn("LogstashRef not found, try latter")
-			return read, ctrl.Result{RequeueAfter: 30 * time.Second}, nil
+			return read, reconcile.Result{RequeueAfter: 30 * time.Second}, nil
 		}
 
 		// Check if mirror logstash pki
@@ -80,7 +77,7 @@ func (r *caLogstashReconciler) Read(ctx context.Context, resource object.MultiPh
 					return read, res, errors.Wrapf(err, "Error when read secret %s", logstashcontrollers.GetSecretNameForPki(ls))
 				}
 				logger.Warnf("Secret not found %s/%s, try latter", ls.Namespace, logstashcontrollers.GetSecretNameForPki(ls))
-				return read, ctrl.Result{RequeueAfter: 30 * time.Second}, nil
+				return read, reconcile.Result{RequeueAfter: 30 * time.Second}, nil
 			}
 		}
 	}
@@ -90,7 +87,7 @@ func (r *caLogstashReconciler) Read(ctx context.Context, resource object.MultiPh
 	if err != nil {
 		return read, res, errors.Wrapf(err, "Error when generate secret %s", GetSecretNameForCALogstash(o))
 	}
-	read.SetExpectedObjects(helper.ToSliceOfObject(expectedSecretCALogstashs))
+	read.SetExpectedObjects(expectedSecretCALogstashs)
 
 	return read, res, nil
 }

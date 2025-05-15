@@ -12,7 +12,7 @@ import (
 func TestBuildCredentialSecret(t *testing.T) {
 	var (
 		err      error
-		secrets  []corev1.Secret
+		secrets  []*corev1.Secret
 		o        *logstashcrd.Logstash
 		esSecret *corev1.Secret
 	)

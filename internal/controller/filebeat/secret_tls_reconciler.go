@@ -11,10 +11,9 @@ import (
 	"github.com/disaster37/goca"
 	"github.com/disaster37/goca/cert"
 	"github.com/disaster37/k8s-objectmatcher/patch"
-	"github.com/disaster37/operator-sdk-extra/pkg/apis/shared"
-	"github.com/disaster37/operator-sdk-extra/pkg/controller"
-	"github.com/disaster37/operator-sdk-extra/pkg/helper"
-	"github.com/disaster37/operator-sdk-extra/pkg/object"
+	"github.com/disaster37/operator-sdk-extra/v2/pkg/apis/shared"
+	"github.com/disaster37/operator-sdk-extra/v2/pkg/controller/multiphase"
+	"github.com/disaster37/operator-sdk-extra/v2/pkg/helper"
 	"github.com/sirupsen/logrus"
 	"github.com/thoas/go-funk"
 	beatcrd "github.com/webcenter-fr/elasticsearch-operator/api/beat/v1"
@@ -26,6 +25,7 @@ import (
 	"k8s.io/client-go/tools/record"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
 
 const (
@@ -35,12 +35,12 @@ const (
 )
 
 type tlsReconciler struct {
-	controller.MultiPhaseStepReconcilerAction
+	multiphase.MultiPhaseStepReconcilerAction[*beatcrd.Filebeat, *corev1.Secret]
 }
 
-func newTlsReconciler(client client.Client, recorder record.EventRecorder) (multiPhaseStepReconcilerAction controller.MultiPhaseStepReconcilerAction) {
+func newTlsReconciler(client client.Client, recorder record.EventRecorder) (multiPhaseStepReconcilerAction multiphase.MultiPhaseStepReconcilerAction[*beatcrd.Filebeat, *corev1.Secret]) {
 	return &tlsReconciler{
-		MultiPhaseStepReconcilerAction: controller.NewBasicMultiPhaseStepReconcilerAction(
+		MultiPhaseStepReconcilerAction: multiphase.NewMultiPhaseStepReconcilerAction[*beatcrd.Filebeat, *corev1.Secret](
 			client,
 			TlsPhase,
 			TlsCondition,
@@ -50,9 +50,8 @@ func newTlsReconciler(client client.Client, recorder record.EventRecorder) (mult
 }
 
 // Read existing TLS secret
-func (r *tlsReconciler) Read(ctx context.Context, resource object.MultiPhaseObject, data map[string]any, logger *logrus.Entry) (read controller.MultiPhaseRead, res ctrl.Result, err error) {
-	o := resource.(*beatcrd.Filebeat)
-	read = controller.NewBasicMultiPhaseRead()
+func (r *tlsReconciler) Read(ctx context.Context, o *beatcrd.Filebeat, data map[string]any, logger *logrus.Entry) (read multiphase.MultiPhaseRead[*corev1.Secret], res reconcile.Result, err error) {
+	read = multiphase.NewMultiPhaseRead[*corev1.Secret]()
 	sCrt := &corev1.Secret{}
 	sPki := &corev1.Secret{}
 	var (
@@ -120,8 +119,7 @@ func (r *tlsReconciler) Read(ctx context.Context, resource object.MultiPhaseObje
 }
 
 // Diff permit to check if TLS secrets are up to date
-func (r *tlsReconciler) Diff(ctx context.Context, resource object.MultiPhaseObject, read controller.MultiPhaseRead, data map[string]any, logger *logrus.Entry, ignoreDiff ...patch.CalculateOption) (diff controller.MultiPhaseDiff, res ctrl.Result, err error) {
-	o := resource.(*beatcrd.Filebeat)
+func (r *tlsReconciler) Diff(ctx context.Context, o *beatcrd.Filebeat, read multiphase.MultiPhaseRead[*corev1.Secret], data map[string]any, logger *logrus.Entry, ignoreDiff ...patch.CalculateOption) (diff multiphase.MultiPhaseDiff[*corev1.Secret], res reconcile.Result, err error) {
 	var (
 		d         any
 		needRenew bool
@@ -157,10 +155,7 @@ func (r *tlsReconciler) Diff(ctx context.Context, resource object.MultiPhaseObje
 	}
 	sCrt := d.(*corev1.Secret)
 
-	diff = controller.NewBasicMultiPhaseDiff()
-	secretToUpdate := make([]client.Object, 0)
-	secretToCreate := make([]client.Object, 0)
-	secretToDelete := make([]client.Object, 0)
+	diff = multiphase.NewMultiPhaseDiff[*corev1.Secret]()
 
 	// Generate all certificates
 	if sCrt == nil || sPki == nil {
@@ -175,14 +170,18 @@ func (r *tlsReconciler) Diff(ctx context.Context, resource object.MultiPhaseObje
 			if err != nil {
 				return diff, res, errors.Wrap(err, "Error when generate PKI")
 			}
-			sPki, isUpdated = updateSecret(sPki, tmpPki)
+			sPki, isUpdated, err = updateSecret(o, sPki, tmpPki, r.Client().Scheme())
+			if err != nil {
+				return diff, res, errors.Wrap(err, "Error when update secret of PKI")
+
+			}
 			if err := patch.DefaultAnnotator.SetLastAppliedAnnotation(sPki); err != nil {
 				return diff, res, errors.Wrapf(err, "Error when set diff annotation on secret %s", sPki.Name)
 			}
 			if isUpdated {
-				secretToUpdate = append(secretToUpdate, sPki)
+				diff.AddObjectToUpdate(sPki)
 			} else {
-				secretToCreate = append(secretToCreate, sPki)
+				diff.AddObjectToCreate(sPki)
 			}
 
 			// Generate certificates
@@ -190,20 +189,19 @@ func (r *tlsReconciler) Diff(ctx context.Context, resource object.MultiPhaseObje
 			if err != nil {
 				return diff, res, errors.Wrap(err, "Error when generate certificates")
 			}
-			sCrt, isUpdated = updateSecret(sCrt, tmpCrt)
+			sCrt, isUpdated, err = updateSecret(o, sCrt, tmpCrt, r.Client().Scheme())
+			if err != nil {
+				return diff, res, errors.Wrap(err, "Error when update secret of certificates")
+			}
 			if err := patch.DefaultAnnotator.SetLastAppliedAnnotation(sCrt); err != nil {
 				return diff, res, errors.Wrapf(err, "Error when set diff annotation on secret %s", sCrt.Name)
 			}
 			if isUpdated {
-				secretToUpdate = append(secretToUpdate, sCrt)
+				diff.AddObjectToUpdate(sCrt)
 			} else {
-				secretToCreate = append(secretToCreate, sCrt)
+				diff.AddObjectToCreate(sCrt)
 			}
 		}
-
-		diff.SetObjectsToCreate(secretToCreate)
-		diff.SetObjectsToUpdate(secretToUpdate)
-		diff.SetObjectsToDelete(secretToDelete)
 
 		return diff, res, nil
 	}
@@ -249,14 +247,17 @@ func (r *tlsReconciler) Diff(ctx context.Context, resource object.MultiPhaseObje
 				return diff, res, errors.Wrap(err, "Error when renew Pki")
 			}
 			diff.AddDiff("Renew API Pki")
-			sPki, isUpdated = updateSecret(sPki, tmpPki)
+			sPki, isUpdated, err = updateSecret(o, sPki, tmpPki, r.Client().Scheme())
+			if err != nil {
+				return diff, res, errors.Wrap(err, "Error when update secret of PKI")
+			}
 			if err := patch.DefaultAnnotator.SetLastAppliedAnnotation(sPki); err != nil {
 				return diff, res, errors.Wrapf(err, "Error when set diff annotation on secret %s", sPki.Name)
 			}
 			if isUpdated {
-				secretToUpdate = append(secretToUpdate, sPki)
+				diff.AddObjectToUpdate(sPki)
 			} else {
-				secretToCreate = append(secretToCreate, sPki)
+				diff.AddObjectToCreate(sPki)
 			}
 
 			tmpCrt, err := buildTlsSecret(o, rootCA)
@@ -264,20 +265,19 @@ func (r *tlsReconciler) Diff(ctx context.Context, resource object.MultiPhaseObje
 				return diff, res, errors.Wrap(err, "Error when renew certificates")
 			}
 			diff.AddDiff("Renew API certificates")
-			sCrt, isUpdated = updateSecret(sCrt, tmpCrt)
+			sCrt, isUpdated, err = updateSecret(o, sCrt, tmpCrt, r.Client().Scheme())
+			if err != nil {
+				return diff, res, errors.Wrap(err, "Error when update secret of certificates")
+			}
 			if err := patch.DefaultAnnotator.SetLastAppliedAnnotation(sCrt); err != nil {
 				return diff, res, errors.Wrapf(err, "Error when set diff annotation on secret %s", sCrt.Name)
 			}
 			if isUpdated {
-				secretToUpdate = append(secretToUpdate, sCrt)
+				diff.AddObjectToUpdate(sCrt)
 			} else {
-				secretToCreate = append(secretToCreate, sCrt)
+				diff.AddObjectToCreate(sCrt)
 			}
 		}
-
-		diff.SetObjectsToCreate(secretToCreate)
-		diff.SetObjectsToUpdate(secretToUpdate)
-		diff.SetObjectsToDelete(secretToDelete)
 
 		return diff, res, nil
 	}
@@ -314,7 +314,7 @@ func (r *tlsReconciler) Diff(ctx context.Context, resource object.MultiPhaseObje
 			if err := patch.DefaultAnnotator.SetLastAppliedAnnotation(sCrt); err != nil {
 				return diff, res, errors.Wrapf(err, "Error when set diff annotation on secret %s", sCrt.Name)
 			}
-			secretToUpdate = append(secretToUpdate, sCrt)
+			diff.AddObjectToUpdate(sCrt)
 		}
 	}
 
@@ -341,18 +341,26 @@ func (r *tlsReconciler) Diff(ctx context.Context, resource object.MultiPhaseObje
 			s.Annotations = getAnnotations(o)
 			isUpdated = true
 		}
+		strDiff, err := helper.DiffOwnerReferences(o, s)
+		if err != nil {
+			return diff, res, errors.Wrapf(err, "Error when diff owner references on secret %s", s.Name)
+		}
+		if strDiff != "" {
+			diff.AddDiff(strDiff)
+			// Set ownerReferences
+			if err = ctrl.SetControllerReference(o, s, r.Client().Scheme()); err != nil {
+				return diff, res, errors.Wrapf(err, "Error when set owner reference on object '%s'", s.GetName())
+			}
+			isUpdated = true
+		}
 
 		if isUpdated {
 			if err := patch.DefaultAnnotator.SetLastAppliedAnnotation(s); err != nil {
 				return diff, res, errors.Wrapf(err, "Error when set diff annotation on secret %s", s.Name)
 			}
-			secretToUpdate = append(secretToUpdate, s)
+			diff.AddObjectToUpdate(s)
 		}
 	}
-
-	diff.SetObjectsToCreate(secretToCreate)
-	diff.SetObjectsToUpdate(secretToUpdate)
-	diff.SetObjectsToDelete(secretToDelete)
 
 	return diff, res, nil
 }

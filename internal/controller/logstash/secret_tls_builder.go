@@ -9,6 +9,8 @@ import (
 	logstashcrd "github.com/webcenter-fr/elasticsearch-operator/api/logstash/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime"
+	ctrl "sigs.k8s.io/controller-runtime"
 )
 
 const (
@@ -177,7 +179,7 @@ func generateCertificate(o *logstashcrd.Logstash, rootCA *goca.CA, name string, 
 
 // updateSecret return true if update existing secret
 // It return false if new secret
-func updateSecret(old, new *corev1.Secret) (s *corev1.Secret, updated bool) {
+func updateSecret(o *logstashcrd.Logstash, old, new *corev1.Secret, scheme *runtime.Scheme) (s *corev1.Secret, updated bool, err error) {
 	if old != nil {
 		old.Labels = new.Labels
 		old.Annotations = new.Annotations
@@ -189,5 +191,10 @@ func updateSecret(old, new *corev1.Secret) (s *corev1.Secret, updated bool) {
 		updated = false
 	}
 
-	return s, updated
+	// Set ownerReferences on expected object before to diff them
+	if err = ctrl.SetControllerReference(o, s, scheme); err != nil {
+		return nil, updated, errors.Wrapf(err, "Error when set owner reference on object '%s'", s.GetName())
+	}
+
+	return s, updated, nil
 }

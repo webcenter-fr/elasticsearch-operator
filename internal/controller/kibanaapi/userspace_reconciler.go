@@ -7,23 +7,22 @@ import (
 	"emperror.dev/errors"
 	"github.com/disaster37/go-kibana-rest/v8/kbapi"
 	kbhandler "github.com/disaster37/kb-handler/v8"
-	"github.com/disaster37/operator-sdk-extra/pkg/controller"
-	"github.com/disaster37/operator-sdk-extra/pkg/object"
+	"github.com/disaster37/operator-sdk-extra/v2/pkg/controller/remote"
 	"github.com/sirupsen/logrus"
 	kibanaapicrd "github.com/webcenter-fr/elasticsearch-operator/api/kibanaapi/v1"
 	"k8s.io/client-go/tools/record"
-	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
 
 type userSpaceReconciler struct {
-	controller.RemoteReconcilerAction[*kibanaapicrd.UserSpace, *kbapi.KibanaSpace, kbhandler.KibanaHandler]
+	remote.RemoteReconcilerAction[*kibanaapicrd.UserSpace, *kbapi.KibanaSpace, kbhandler.KibanaHandler]
 	name string
 }
 
-func newUserSpaceReconciler(name string, client client.Client, recorder record.EventRecorder) controller.RemoteReconcilerAction[*kibanaapicrd.UserSpace, *kbapi.KibanaSpace, kbhandler.KibanaHandler] {
+func newUserSpaceReconciler(name string, client client.Client, recorder record.EventRecorder) remote.RemoteReconcilerAction[*kibanaapicrd.UserSpace, *kbapi.KibanaSpace, kbhandler.KibanaHandler] {
 	return &userSpaceReconciler{
-		RemoteReconcilerAction: controller.NewRemoteReconcilerAction[*kibanaapicrd.UserSpace, *kbapi.KibanaSpace, kbhandler.KibanaHandler](
+		RemoteReconcilerAction: remote.NewRemoteReconcilerAction[*kibanaapicrd.UserSpace, *kbapi.KibanaSpace, kbhandler.KibanaHandler](
 			client,
 			recorder,
 		),
@@ -31,17 +30,16 @@ func newUserSpaceReconciler(name string, client client.Client, recorder record.E
 	}
 }
 
-func (h *userSpaceReconciler) GetRemoteHandler(ctx context.Context, req ctrl.Request, o object.RemoteObject, logger *logrus.Entry) (handler controller.RemoteExternalReconciler[*kibanaapicrd.UserSpace, *kbapi.KibanaSpace, kbhandler.KibanaHandler], res ctrl.Result, err error) {
-	space := o.(*kibanaapicrd.UserSpace)
-	kbClient, err := GetKibanaHandler(ctx, space, space.Spec.KibanaRef, h.Client(), logger)
-	if err != nil && space.DeletionTimestamp.IsZero() {
+func (h *userSpaceReconciler) GetRemoteHandler(ctx context.Context, req reconcile.Request, o *kibanaapicrd.UserSpace, logger *logrus.Entry) (handler remote.RemoteExternalReconciler[*kibanaapicrd.UserSpace, *kbapi.KibanaSpace, kbhandler.KibanaHandler], res reconcile.Result, err error) {
+	kbClient, err := GetKibanaHandler(ctx, o, o.Spec.KibanaRef, h.Client(), logger)
+	if err != nil && o.DeletionTimestamp.IsZero() {
 		return nil, res, err
 	}
 
 	// Kibana not ready
 	if kbClient == nil {
-		if space.DeletionTimestamp.IsZero() {
-			return nil, ctrl.Result{RequeueAfter: 60 * time.Second}, nil
+		if o.DeletionTimestamp.IsZero() {
+			return nil, reconcile.Result{RequeueAfter: 60 * time.Second}, nil
 		}
 
 		return nil, res, nil
@@ -52,19 +50,16 @@ func (h *userSpaceReconciler) GetRemoteHandler(ctx context.Context, req ctrl.Req
 	return handler, res, nil
 }
 
-func (h *userSpaceReconciler) Create(ctx context.Context, o object.RemoteObject, data map[string]any, handler controller.RemoteExternalReconciler[*kibanaapicrd.UserSpace, *kbapi.KibanaSpace, kbhandler.KibanaHandler], object *kbapi.KibanaSpace, logger *logrus.Entry) (res ctrl.Result, err error) {
+func (h *userSpaceReconciler) Create(ctx context.Context, o *kibanaapicrd.UserSpace, data map[string]any, handler remote.RemoteExternalReconciler[*kibanaapicrd.UserSpace, *kbapi.KibanaSpace, kbhandler.KibanaHandler], object *kbapi.KibanaSpace, logger *logrus.Entry) (res reconcile.Result, err error) {
 	res, err = h.RemoteReconcilerAction.Create(ctx, o, data, handler, object, logger)
 	if err != nil {
 		return res, err
 	}
-
-	// Copy object that not enforce reconcile
-	space := o.(*kibanaapicrd.UserSpace)
-
-	for _, copySpec := range space.Spec.KibanaUserSpaceCopies {
+	// Copy object
+	for _, copySpec := range o.Spec.KibanaUserSpaceCopies {
 		if !copySpec.IsForceUpdate() {
 			cs := &kbapi.KibanaSpaceCopySavedObjectParameter{
-				Spaces:            []string{space.GetExternalName()},
+				Spaces:            []string{o.GetExternalName()},
 				IncludeReferences: copySpec.IsIncludeReference(),
 				Overwrite:         copySpec.IsOverwrite(),
 				CreateNewCopies:   copySpec.IsCreateNewCopy(),
