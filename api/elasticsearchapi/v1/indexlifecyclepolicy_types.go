@@ -99,7 +99,7 @@ type IndexLifecyclePolicySpecPolicyPhasesPhase struct {
 	// +optional
 	MinAge *string `json:"min_age,omitempty"`
 
-	//The ILM action
+	// The ILM action
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
 	// +kubebuilder:pruning:PreserveUnknownFields
 	Actions apis.MapAny `json:"actions"`

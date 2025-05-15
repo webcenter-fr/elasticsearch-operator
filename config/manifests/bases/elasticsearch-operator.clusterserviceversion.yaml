@@ -2197,7 +2197,7 @@ spec:
       specDescriptors:
       - description: |-
           Config is the Cerebro config
-          The key is the file stored on kibana/config
+          The key is the file stored on config folders and the data is the contend
         displayName: Config
         path: config
       - description: Deployment permit to set the deployment settings
@@ -2251,6 +2251,11 @@ spec:
       - description: Route permit to set route settings
         displayName: Route
         path: endpoint.route
+      - description: |-
+          ExtraConfigs is extra config files store on config directory
+          The key is the file name and the value is the contend file
+        displayName: Extra Configs
+        path: extraConfigs
       - description: |-
           Image is the image to use when deploy Elasticsearch
           It can be usefull to use internal registry or mirror
@@ -2316,7 +2321,7 @@ spec:
       - description: |-
           Template is the raw template
           You can use it instead to set settings, mappings or aliases
-        displayName: Template
+        displayName: Raw Template
         path: rawTemplate
       - description: Settings is the component setting
         displayName: Settings
@@ -2489,9 +2494,7 @@ spec:
           It usefull to access on onpremise S3 service to store snaoshot and more
         displayName: Cacerts Secret Ref
         path: globalNodeGroup.caSecretRef
-      - description: |-
-          Config is the Elasticsearch config dedicated for this node groups like roles
-          The key is the file stored on elasticsearch/config
+      - description: Config is the global Elasticsearch config
         displayName: Config
         path: globalNodeGroup.config
       - description: Env permit to set some environment variable on containers
@@ -2501,6 +2504,12 @@ spec:
           or secret
         displayName: Env From
         path: globalNodeGroup.envFrom
+      - description: |-
+          ExtraConfigs is extra config files store on config directory
+          The key is the file stored on elasticsearch/config
+          The key is the file name and the value is the contend file
+        displayName: Extra Configs
+        path: globalNodeGroup.extraConfigs
       - description: InitContainerResources permit to set resources on init containers
         displayName: Init Container Resources
         path: globalNodeGroup.initContainerResources
@@ -2571,9 +2580,7 @@ spec:
       - description: Type permit to set anti affinity as soft or hard
         displayName: Type
         path: nodeGroups[0].antiAffinity.type
-      - description: |-
-          Config is the Elasticsearch config dedicated for this node groups
-          The key is the file stored on elasticsearch/config
+      - description: Config is the Elasticsearch config dedicated for this node groups
         displayName: Config
         path: nodeGroups[0].config
       - description: Env permit to set some environment variable on containers
@@ -2583,6 +2590,12 @@ spec:
           or secret
         displayName: Env From
         path: nodeGroups[0].envFrom
+      - description: |-
+          ExtraConfigs is extra config files store on config directory
+          The key is the file stored on elasticsearch/config
+          The key is the file name and the value is the contend file
+        displayName: Extra Configs
+        path: nodeGroups[0].extraConfigs
       - description: Jvm permit to set extra option on JVM like Xmx, Xms
         displayName: Jvm
         path: nodeGroups[0].jvm
@@ -2604,7 +2617,7 @@ spec:
         displayName: Volume
         path: nodeGroups[0].persistence.volume
       - description: VolumeClaim is the persistent volume claim spec use by statefullset
-        displayName: Volume Claim Spec
+        displayName: Volume Claim
         path: nodeGroups[0].persistence.volumeClaim
       - description: PodDisruptionBudget is the pod disruption budget policy
         displayName: Pod Disruption Budget Spec
@@ -2787,7 +2800,7 @@ spec:
         displayName: Volume
         path: deployment.persistence.volume
       - description: VolumeClaim is the persistent volume claim spec use by statefullset
-        displayName: Volume Claim Spec
+        displayName: Volume Claim
         path: deployment.persistence.volumeClaim
       - description: PodDisruptionBudget is the pod disruption budget policy
         displayName: Pod Disruption Budget Spec
@@ -2835,6 +2848,11 @@ spec:
           It need to contain the keys `username` and `password`.
         displayName: Secret Ref
         path: elasticsearchRef.secretRef
+      - description: |-
+          ExtraConfigs is extra config files store on config directory
+          The key is the file name and the value is the contend file
+        displayName: Extra Configs
+        path: extraConfigs
       - description: |-
           Image is the image to use when deploy Elasticsearch
           It can be usefull to use internal registry or mirror
@@ -2910,8 +2928,8 @@ spec:
       - description: |-
           Module is the module specification
           The key is the file stored on filebeat/modules.d
-        displayName: Module
-        path: module
+        displayName: Modules
+        path: modules
       - description: |-
           Monitoring permit to monitor current cluster
           Default, it not monitor cluster
@@ -3092,9 +3110,63 @@ spec:
           If empty, it use the ressource name
         displayName: Name
         path: name
-      - description: Policy is the raw policy on JSON
+      - description: Policy is the ILM policy
         displayName: Policy
         path: policy
+      - description: Metadata
+        displayName: Meta
+        path: policy._meta
+      - description: ILM phases
+        displayName: Phases
+        path: policy.phases
+      - description: Cold phase
+        displayName: Cold
+        path: policy.phases.cold
+      - description: The ILM action
+        displayName: Actions
+        path: policy.phases.cold.actions
+      - description: The min age to exec action
+        displayName: Min Age
+        path: policy.phases.cold.min_age
+      - description: Delete phase
+        displayName: Delete
+        path: policy.phases.delete
+      - description: The ILM action
+        displayName: Actions
+        path: policy.phases.delete.actions
+      - description: The min age to exec action
+        displayName: Min Age
+        path: policy.phases.delete.min_age
+      - description: Frozen phase
+        displayName: Frozen
+        path: policy.phases.frozen
+      - description: The ILM action
+        displayName: Actions
+        path: policy.phases.frozen.actions
+      - description: The min age to exec action
+        displayName: Min Age
+        path: policy.phases.frozen.min_age
+      - description: Hot phase
+        displayName: Hot
+        path: policy.phases.hot
+      - description: The ILM action
+        displayName: Actions
+        path: policy.phases.hot.actions
+      - description: The min age to exec action
+        displayName: Min Age
+        path: policy.phases.hot.min_age
+      - description: Warm phase
+        displayName: Warm
+        path: policy.phases.warm
+      - description: The ILM action
+        displayName: Actions
+        path: policy.phases.warm.actions
+      - description: The min age to exec action
+        displayName: Min Age
+        path: policy.phases.warm.min_age
+      - description: Policy is the raw policy on JSON
+        displayName: Raw Policy
+        path: rawPolicy
       version: v1
     - description: IndexTemplate is the Schema for the indextemplates API
       displayName: Index Template
@@ -3206,9 +3278,7 @@ spec:
         name: ""
         version: v1
       specDescriptors:
-      - description: |-
-          Config is the Kibana config
-          The key is the file stored on kibana/config
+      - description: Config is the Kibana config
         displayName: Config
         path: config
       - description: Deployment permit to set the deployment settings
@@ -3300,6 +3370,11 @@ spec:
       - description: Route permit to set route settings
         displayName: Route
         path: endpoint.route
+      - description: |-
+          ExtraConfigs is extra config files store on config directory
+          The key is the file name and the value is the contend file
+        displayName: Extra Configs
+        path: extraConfigs
       - description: |-
           Image is the image to use when deploy Elasticsearch
           It can be usefull to use internal registry or mirror
@@ -3455,9 +3530,7 @@ spec:
         name: ""
         version: apps/v1
       specDescriptors:
-      - description: |-
-          Config is the Logstash config
-          The key is the file stored on logstash/config
+      - description: Config is the Logstash config
         displayName: Config
         path: config
       - description: Deployment permit to set the deployment settings
@@ -3513,7 +3586,7 @@ spec:
         displayName: Volume
         path: deployment.persistence.volume
       - description: VolumeClaim is the persistent volume claim spec use by statefullset
-        displayName: Volume Claim Spec
+        displayName: Volume Claim
         path: deployment.persistence.volumeClaim
       - description: PodDisruptionBudget is the pod disruption budget policy
         displayName: Pod Disruption Budget Spec
@@ -3561,6 +3634,11 @@ spec:
           It need to contain the keys `username` and `password`.
         displayName: Secret Ref
         path: elasticsearchRef.secretRef
+      - description: |-
+          ExtraConfigs is extra config files store on config directory
+          The key is the file name and the value is the contend file
+        displayName: Extra Configs
+        path: extraConfigs
       - description: |-
           Image is the image to use when deploy Elasticsearch
           It can be usefull to use internal registry or mirror
@@ -3618,13 +3696,13 @@ spec:
       - description: |-
           Patterns is the patterns specification used by grok
           The key is the file stored on logstash/patterns
-        displayName: Pattern
-        path: pattern
+        displayName: Patterns
+        path: patterns
       - description: |-
           Pipeline is the pipeline specification
-          The key is the file stored on logstash/pipelines
-        displayName: Pipeline
-        path: pipeline
+          The key is the file stored on logstash/pipelines. The contend is the logstash rules as string
+        displayName: Pipelines
+        path: pipelines
       - description: Pki permit to manage certificates you can use for Logstash inputs
         displayName: Pki
         path: pki
@@ -3768,9 +3846,7 @@ spec:
       - description: Pipeline is the pipeline definition
         displayName: Pipeline
         path: pipeline
-      - description: |-
-          Settings is the pipeline settings
-          It's a JSON string
+      - description: Settings is the pipeline settings
         displayName: Settings
         path: settings
       version: v1
@@ -3807,9 +3883,7 @@ spec:
         name: ""
         version: apps/v1
       specDescriptors:
-      - description: |-
-          Config is the Metricbeat config
-          The key is the file stored on metricbeat
+      - description: Config is the Metricbeat config
         displayName: Config
         path: config
       - description: Deployment permit to set the deployment settings
@@ -3864,7 +3938,7 @@ spec:
         displayName: Volume
         path: deployment.persistence.volume
       - description: VolumeClaim is the persistent volume claim spec use by statefullset
-        displayName: Volume Claim Spec
+        displayName: Volume Claim
         path: deployment.persistence.volumeClaim
       - description: PodDisruptionBudget is the pod disruption budget policy
         displayName: Pod Disruption Budget Spec
@@ -3908,6 +3982,11 @@ spec:
         displayName: Secret Ref
         path: elasticsearchRef.secretRef
       - description: |-
+          ExtraConfigs is extra config files store on config directory
+          The key is the file name and the value is the contend file
+        displayName: Extra Configs
+        path: extraConfigs
+      - description: |-
           Image is the image to use when deploy Elasticsearch
           It can be usefull to use internal registry or mirror
         displayName: Image
@@ -3921,8 +4000,8 @@ spec:
       - description: |-
           Module is the module specification
           The key is the file stored on metricbeat/modules.d
-        displayName: Module
-        path: module
+        displayName: Modules
+        path: modules
       - description: |-
           Version is the Metricbeat version to use
           Default is use the latest
@@ -3964,9 +4043,7 @@ spec:
           Default to true
         displayName: Enabled
         path: enabled
-      - description: |-
-          Metadata is the meta data
-          JSON string
+      - description: Metadata is the meta data
         displayName: Metadata
         path: metadata
       - description: |-
@@ -3977,9 +4054,7 @@ spec:
       - description: Roles is the list of role to map
         displayName: Roles
         path: roles
-      - description: |-
-          Rules is the mapping rules
-          JSON string
+      - description: Rules is the mapping rules
         displayName: Rules
         path: rules
       version: v1
@@ -4024,9 +4099,7 @@ spec:
           It need to contain the keys `username` and `password`.
         displayName: Secret Ref
         path: elasticsearchRef.secretRef
-      - description: |-
-          Global  defining global privileges
-          JSON string
+      - description: Global  defining global privileges
         displayName: Global
         path: global
       - description: Indices is the list of indices permissions
@@ -4037,9 +4110,7 @@ spec:
           Default to false
         displayName: Allow Restricted Indices
         path: indices[0].allowRestrictedIndices
-      - description: |-
-          FieldSecurity
-          JSON string
+      - description: FieldSecurity
         displayName: Field Security
         path: indices[0].fieldSecurity
       - description: Names
@@ -4051,9 +4122,7 @@ spec:
       - description: Query
         displayName: Query
         path: indices[0].query
-      - description: |-
-          Metadata is optional meta-data
-          JSON string
+      - description: Metadata is optional meta-data
         displayName: Metadata
         path: metadata
       - description: |-
@@ -4064,9 +4133,7 @@ spec:
       - description: RunAs is the list of users that the owners of this role can impersonate
         displayName: Run As
         path: runAs
-      - description: |-
-          TransientMetadata
-          JSON string
+      - description: TransientMetadata
         displayName: Transient Metadata
         path: transientMetadata
       version: v1
@@ -4088,9 +4155,7 @@ spec:
       - description: Indices is the indice privileges
         displayName: Indices
         path: elasticsearch.indices
-      - description: |-
-          FieldSecurity
-          JSON string
+      - description: FieldSecurity
         displayName: Field Security
         path: elasticsearch.indices[0].fieldSecurity
       - description: Names
@@ -4136,9 +4201,7 @@ spec:
       - description: Spaces is the list of space o apply the privileges to
         displayName: Spaces
         path: kibana[0].spaces
-      - description: |-
-          Metadata is optional meta-data
-          JSON string
+      - description: Metadata is optional meta-data
         displayName: Metadata
         path: metadata
       - description: |-
@@ -4328,9 +4391,7 @@ spec:
           Default to false
         displayName: Is Protected
         path: isProtected
-      - description: |-
-          Metadata is the meta data
-          Is JSON string
+      - description: Metadata is the meta data
         displayName: Metadata
         path: metadata
       - description: PasswordHash is the password as hash
@@ -4447,14 +4508,10 @@ spec:
         name: None
         version: None
       specDescriptors:
-      - description: |-
-          Actions
-          JSON string
+      - description: Actions
         displayName: Actions
         path: actions
-      - description: |-
-          Condition
-          JSON string
+      - description: Conditiong
         displayName: Condition
         path: condition
       - description: ElasticsearchRef is the Elasticsearch ref to connect on.
@@ -4478,14 +4535,10 @@ spec:
           It need to contain the keys `username` and `password`.
         displayName: Secret Ref
         path: elasticsearchRef.secretRef
-      - description: |-
-          Input
-          JSON string
+      - description: Input
         displayName: Input
         path: input
-      - description: |-
-          Metadata
-          JSON string
+      - description: Metadata
         displayName: Metadata
         path: metadata
       - description: |-
@@ -4499,14 +4552,10 @@ spec:
       - description: ThrottlePeriodInMillis
         displayName: Throttle Period In Millis
         path: throttle_period_in_millis
-      - description: |-
-          Transform
-          JSON string
+      - description: Transform
         displayName: Transform
         path: transform
-      - description: |-
-          Trigger
-          JSON string
+      - description: Trigger
         displayName: Trigger
         path: trigger
       version: v1

@@ -141,7 +141,6 @@ func (h *userReconciler) Read(ctx context.Context, o *elasticsearchapicrd.User, 
 }
 
 func (h *userReconciler) Delete(ctx context.Context, o *elasticsearchapicrd.User, data map[string]any, handler remote.RemoteExternalReconciler[*elasticsearchapicrd.User, *olivere.XPackSecurityPutUserRequest, eshandler.ElasticsearchHandler], logger *logrus.Entry) (err error) {
-
 	if o.IsProtected() {
 		return nil
 	}
@@ -182,7 +181,6 @@ func (h *userReconciler) OnSuccess(ctx context.Context, o *elasticsearchapicrd.U
 }
 
 func (h *userReconciler) Diff(ctx context.Context, o *elasticsearchapicrd.User, read remote.RemoteRead[*olivere.XPackSecurityPutUserRequest], data map[string]any, handler remote.RemoteExternalReconciler[*elasticsearchapicrd.User, *olivere.XPackSecurityPutUserRequest, eshandler.ElasticsearchHandler], logger *logrus.Entry, ignoreDiff ...patch.CalculateOption) (diff remote.RemoteDiff[*olivere.XPackSecurityPutUserRequest], res reconcile.Result, err error) {
-
 	var currentUser *olivere.XPackSecurityPutUserRequest
 
 	// If it is protected user, only manage the password

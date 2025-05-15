@@ -179,7 +179,6 @@ func (h *MetricbeatReconciler) OnError(ctx context.Context, o *beatcrd.Metricbea
 }
 
 func (h *MetricbeatReconciler) OnSuccess(ctx context.Context, o *beatcrd.Metricbeat, data map[string]any, logger *logrus.Entry) (res reconcile.Result, err error) {
-
 	// Reset the current cluster errors
 	common.ControllerErrors.WithLabelValues(h.name, o.GetNamespace(), o.GetName()).Set(0)
 

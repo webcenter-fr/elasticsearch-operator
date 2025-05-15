@@ -173,7 +173,6 @@ func (r *tlsReconciler) Diff(ctx context.Context, o *logstashcrd.Logstash, read 
 			sPki, isUpdated, err = updateSecret(o, sPki, tmpPki, r.Client().Scheme())
 			if err != nil {
 				return diff, res, errors.Wrap(err, "Error when update secret of PKI")
-
 			}
 			if err := patch.DefaultAnnotator.SetLastAppliedAnnotation(sPki); err != nil {
 				return diff, res, errors.Wrapf(err, "Error when set diff annotation on secret %s", sPki.Name)
@@ -192,7 +191,6 @@ func (r *tlsReconciler) Diff(ctx context.Context, o *logstashcrd.Logstash, read 
 			sCrt, isUpdated, err = updateSecret(o, sCrt, tmpCrt, r.Client().Scheme())
 			if err != nil {
 				return diff, res, errors.Wrap(err, "Error when update secret of certificates")
-
 			}
 			if err := patch.DefaultAnnotator.SetLastAppliedAnnotation(sCrt); err != nil {
 				return diff, res, errors.Wrapf(err, "Error when set diff annotation on secret %s", sCrt.Name)

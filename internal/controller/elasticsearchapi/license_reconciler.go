@@ -57,7 +57,6 @@ func (h *licenseReconciler) GetRemoteHandler(ctx context.Context, req reconcile.
 }
 
 func (h *licenseReconciler) Read(ctx context.Context, o *elasticsearchapicrd.License, data map[string]any, handler remote.RemoteExternalReconciler[*elasticsearchapicrd.License, *olivere.XPackInfoLicense, eshandler.ElasticsearchHandler], logger *logrus.Entry) (read remote.RemoteRead[*olivere.XPackInfoLicense], res reconcile.Result, err error) {
-
 	read, res, err = h.RemoteReconcilerAction.Read(ctx, o, data, handler, logger)
 	if err != nil {
 		return nil, res, err
@@ -102,7 +101,6 @@ func (h *licenseReconciler) Read(ctx context.Context, o *elasticsearchapicrd.Lic
 }
 
 func (h *licenseReconciler) Create(ctx context.Context, o *elasticsearchapicrd.License, data map[string]any, handler remote.RemoteExternalReconciler[*elasticsearchapicrd.License, *olivere.XPackInfoLicense, eshandler.ElasticsearchHandler], object *olivere.XPackInfoLicense, logger *logrus.Entry) (res reconcile.Result, err error) {
-
 	if o.IsBasicLicense() {
 
 		if err = handler.Client().LicenseEnableBasic(); err != nil {
@@ -153,7 +151,6 @@ func (h *licenseReconciler) Diff(ctx context.Context, o *elasticsearchapicrd.Lic
 }
 
 func (h *licenseReconciler) OnSuccess(ctx context.Context, o *elasticsearchapicrd.License, data map[string]any, handler remote.RemoteExternalReconciler[*elasticsearchapicrd.License, *olivere.XPackInfoLicense, eshandler.ElasticsearchHandler], diff remote.RemoteDiff[*olivere.XPackInfoLicense], logger *logrus.Entry) (res reconcile.Result, err error) {
-
 	if o.IsBasicLicense() {
 		o.Status.LicenseType = "basic"
 		o.Status.ExpireAt = ""

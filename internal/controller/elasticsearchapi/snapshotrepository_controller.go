@@ -105,4 +105,3 @@ func (h *SnapshotRepositoryReconciler) Client() client.Client {
 func (h *SnapshotRepositoryReconciler) Recorder() record.EventRecorder {
 	return h.RemoteReconcilerAction.Recorder()
 }
-

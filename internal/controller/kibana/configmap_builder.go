@@ -60,7 +60,6 @@ func buildConfigMaps(kb *kibanacrd.Kibana, es *elasticsearchcrd.Elasticsearch) (
 		"kibana.yml": localhelper.ToYamlOrDie(kibanaConf),
 	}
 
-	
 	if kb.Spec.Config != nil && kb.Spec.Config.Data != nil {
 		config, err := yaml.Marshal(kb.Spec.Config.Data)
 		if err != nil {

@@ -2,7 +2,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.17.0
+    controller-gen.kubebuilder.io/version: v0.18.0
   creationTimestamp: null
   name: elasticsearches.elasticsearch.k8s.webcenter.fr
 spec:
@@ -2837,12 +2837,9 @@ spec:
                     type: object
                     x-kubernetes-map-type: atomic
                   config:
-                    additionalProperties:
-                      type: string
-                    description: |-
-                      Config is the Elasticsearch config dedicated for this node groups like roles
-                      The key is the file stored on elasticsearch/config
+                    description: Config is the global Elasticsearch config
                     type: object
+                    x-kubernetes-preserve-unknown-fields: true
                   env:
                     description: Env permit to set some environment variable on containers
                     items:
@@ -3010,6 +3007,14 @@ spec:
                           x-kubernetes-map-type: atomic
                       type: object
                     type: array
+                  extraConfigs:
+                    additionalProperties:
+                      type: string
+                    description: |-
+                      ExtraConfigs is extra config files store on config directory
+                      The key is the file stored on elasticsearch/config
+                      The key is the file name and the value is the contend file
+                    type: object
                   initContainerResources:
                     description: InitContainerResources permit to set resources on
                       init containers
@@ -3577,12 +3582,10 @@ spec:
                       - type
                       type: object
                     config:
-                      additionalProperties:
-                        type: string
-                      description: |-
-                        Config is the Elasticsearch config dedicated for this node groups
-                        The key is the file stored on elasticsearch/config
+                      description: Config is the Elasticsearch config dedicated for
+                        this node groups
                       type: object
+                      x-kubernetes-preserve-unknown-fields: true
                     env:
                       description: Env permit to set some environment variable on
                         containers
@@ -3752,6 +3755,14 @@ spec:
                             x-kubernetes-map-type: atomic
                         type: object
                       type: array
+                    extraConfigs:
+                      additionalProperties:
+                        type: string
+                      description: |-
+                        ExtraConfigs is extra config files store on config directory
+                        The key is the file stored on elasticsearch/config
+                        The key is the file name and the value is the contend file
+                      type: object
                     jvm:
                       description: Jvm permit to set extra option on JVM like Xmx,
                         Xms
@@ -5592,6 +5603,12 @@ spec:
                                 type: string
                               type: array
                               x-kubernetes-list-type: atomic
+                            annotations:
+                              additionalProperties:
+                                type: string
+                              description: Annotations permit to set annotation on
+                                PVC
+                              type: object
                             dataSource:
                               description: |-
                                 dataSource field can be used to specify either:
@@ -5671,6 +5688,11 @@ spec:
                               required:
                               - kind
                               - name
+                              type: object
+                            labels:
+                              additionalProperties:
+                                type: string
+                              description: Labels permit to set labels on PVC
                               type: object
                             resources:
                               description: |-

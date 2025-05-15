@@ -346,7 +346,6 @@ func (r *statefulsetReconciler) Diff(ctx context.Context, o *elasticsearchcrd.El
 
 			// Upgrade only one active statefulset or current upgrade
 			for _, sts := range currentStatefulsets {
-
 				// Not found a way to detect that we are on envtest, so without kubelet. We use env TEST to to that.
 				// It avoid to stuck test on this phase
 				if localhelper.IsOnStatefulSetUpgradeState(sts) && *sts.Spec.Replicas > 0 && os.Getenv("TEST") != "true" {
@@ -368,7 +367,6 @@ func (r *statefulsetReconciler) Diff(ctx context.Context, o *elasticsearchcrd.El
 
 			// Allow upgrade no active statefulset
 			for _, sts := range currentStatefulsets {
-
 				// Not found a way to detect that we are on envtest, so without kubelet. We use env TEST to to that.
 				// It avoid to stuck test on this phase
 				if *sts.Spec.Replicas == 0 && os.Getenv("TEST") != "true" {

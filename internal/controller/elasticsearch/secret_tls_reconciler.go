@@ -68,7 +68,6 @@ func newTlsReconciler(client client.Client, recorder record.EventRecorder) (mult
 
 // Configure permit to init condition
 func (r *tlsReconciler) Configure(ctx context.Context, req reconcile.Request, o *elasticsearchcrd.Elasticsearch, logger *logrus.Entry) (res reconcile.Result, err error) {
-
 	if condition.FindStatusCondition(o.Status.Conditions, TlsConditionGeneratePki.String()) == nil {
 		condition.SetStatusCondition(&o.Status.Conditions, metav1.Condition{
 			Type:   TlsConditionGeneratePki.String(),

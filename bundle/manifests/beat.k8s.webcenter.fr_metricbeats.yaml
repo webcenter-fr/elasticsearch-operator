@@ -2,7 +2,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.17.0
+    controller-gen.kubebuilder.io/version: v0.18.0
   creationTimestamp: null
   name: metricbeats.beat.k8s.webcenter.fr
 spec:
@@ -56,12 +56,9 @@ spec:
             description: MetricbeatSpec defines the desired state of Metricbeat
             properties:
               config:
-                additionalProperties:
-                  type: string
-                description: |-
-                  Config is the Metricbeat config
-                  The key is the file stored on metricbeat
+                description: Config is the Metricbeat config
                 type: object
+                x-kubernetes-preserve-unknown-fields: true
               deployment:
                 description: Deployment permit to set the deployment settings
                 properties:
@@ -4005,6 +4002,11 @@ spec:
                               type: string
                             type: array
                             x-kubernetes-list-type: atomic
+                          annotations:
+                            additionalProperties:
+                              type: string
+                            description: Annotations permit to set annotation on PVC
+                            type: object
                           dataSource:
                             description: |-
                               dataSource field can be used to specify either:
@@ -4080,6 +4082,11 @@ spec:
                             required:
                             - kind
                             - name
+                            type: object
+                          labels:
+                            additionalProperties:
+                              type: string
+                            description: Labels permit to set labels on PVC
                             type: object
                           resources:
                             description: |-
@@ -4477,6 +4484,13 @@ spec:
                     type: object
                     x-kubernetes-map-type: atomic
                 type: object
+              extraConfigs:
+                additionalProperties:
+                  type: string
+                description: |-
+                  ExtraConfigs is extra config files store on config directory
+                  The key is the file name and the value is the contend file
+                type: object
               image:
                 description: |-
                   Image is the image to use when deploy Elasticsearch
@@ -4509,13 +4523,12 @@ spec:
                   type: object
                   x-kubernetes-map-type: atomic
                 type: array
-              module:
-                additionalProperties:
-                  type: string
+              modules:
                 description: |-
                   Module is the module specification
                   The key is the file stored on metricbeat/modules.d
                 type: object
+                x-kubernetes-preserve-unknown-fields: true
               version:
                 default: latest
                 description: |-

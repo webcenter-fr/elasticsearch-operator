@@ -204,7 +204,6 @@ func (h *FilebeatReconciler) OnError(ctx context.Context, o *beatcrd.Filebeat, d
 }
 
 func (h *FilebeatReconciler) OnSuccess(ctx context.Context, o *beatcrd.Filebeat, data map[string]any, logger *logrus.Entry) (res reconcile.Result, err error) {
-
 	// Reset the current cluster errors
 	common.ControllerErrors.WithLabelValues(h.name, o.GetNamespace(), o.GetName()).Set(0)
 

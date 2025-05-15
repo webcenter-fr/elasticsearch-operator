@@ -98,7 +98,6 @@ func (r *RoleReconciler) SetupWithManager(mgr ctrl.Manager) error {
 		Complete(r)
 }
 
-
 func (h *RoleReconciler) Client() client.Client {
 	return h.RemoteReconcilerAction.Client()
 }

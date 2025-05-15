@@ -215,7 +215,6 @@ func (h *LogstashReconciler) OnError(ctx context.Context, o *logstashcrd.Logstas
 }
 
 func (h *LogstashReconciler) OnSuccess(ctx context.Context, o *logstashcrd.Logstash, data map[string]any, logger *logrus.Entry) (res reconcile.Result, err error) {
-
 	// Reset the current cluster errors
 	common.ControllerErrors.WithLabelValues(h.name, o.GetNamespace(), o.GetName()).Set(0)
 

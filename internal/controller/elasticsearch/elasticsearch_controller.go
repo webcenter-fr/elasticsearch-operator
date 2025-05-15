@@ -222,7 +222,6 @@ func (h *ElasticsearchReconciler) Recorder() record.EventRecorder {
 }
 
 func (h *ElasticsearchReconciler) Configure(ctx context.Context, req reconcile.Request, o *elasticsearchcrd.Elasticsearch, data map[string]any, logger *logrus.Entry) (res reconcile.Result, err error) {
-
 	// Set prometheus Metrics
 	common.ControllerInstances.WithLabelValues(h.name, o.Namespace, o.Name).Set(1)
 

@@ -2,7 +2,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.17.0
+    controller-gen.kubebuilder.io/version: v0.18.0
   creationTimestamp: null
   name: logstashes.logstash.k8s.webcenter.fr
 spec:
@@ -60,12 +60,9 @@ spec:
             description: LogstashSpec defines the desired state of Logstash
             properties:
               config:
-                additionalProperties:
-                  type: string
-                description: |-
-                  Config is the Logstash config
-                  The key is the file stored on logstash/config
+                description: Config is the Logstash config
                 type: object
+                x-kubernetes-preserve-unknown-fields: true
               deployment:
                 description: Deployment permit to set the deployment settings
                 properties:
@@ -4010,6 +4007,11 @@ spec:
                               type: string
                             type: array
                             x-kubernetes-list-type: atomic
+                          annotations:
+                            additionalProperties:
+                              type: string
+                            description: Annotations permit to set annotation on PVC
+                            type: object
                           dataSource:
                             description: |-
                               dataSource field can be used to specify either:
@@ -4085,6 +4087,11 @@ spec:
                             required:
                             - kind
                             - name
+                            type: object
+                          labels:
+                            additionalProperties:
+                              type: string
+                            description: Labels permit to set labels on PVC
                             type: object
                           resources:
                             description: |-
@@ -4522,6 +4529,13 @@ spec:
                         type: string
                     type: object
                     x-kubernetes-map-type: atomic
+                type: object
+              extraConfigs:
+                additionalProperties:
+                  type: string
+                description: |-
+                  ExtraConfigs is extra config files store on config directory
+                  The key is the file name and the value is the contend file
                 type: object
               image:
                 description: |-
@@ -5169,20 +5183,21 @@ spec:
                         type: string
                     type: object
                 type: object
-              pattern:
+              patterns:
                 additionalProperties:
                   type: string
                 description: |-
                   Patterns is the patterns specification used by grok
                   The key is the file stored on logstash/patterns
                 type: object
-              pipeline:
+              pipelines:
                 additionalProperties:
                   type: string
                 description: |-
                   Pipeline is the pipeline specification
-                  The key is the file stored on logstash/pipelines
+                  The key is the file stored on logstash/pipelines. The contend is the logstash rules as string
                 type: object
+                x-kubernetes-preserve-unknown-fields: true
               pki:
                 description: Pki permit to manage certificates you can use for Logstash
                   inputs

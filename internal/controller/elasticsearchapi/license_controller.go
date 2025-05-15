@@ -113,7 +113,6 @@ func (h *LicenseReconciler) Recorder() record.EventRecorder {
 	return h.RemoteReconcilerAction.Recorder()
 }
 
-
 // watchLicenseSecret permit to update license if secret change
 func watchLicenseSecret(c client.Client) handler.MapFunc {
 	return func(ctx context.Context, a client.Object) []reconcile.Request {

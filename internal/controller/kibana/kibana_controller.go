@@ -220,7 +220,6 @@ func (h *KibanaReconciler) OnError(ctx context.Context, o *kibanacrd.Kibana, dat
 }
 
 func (h *KibanaReconciler) OnSuccess(ctx context.Context, o *kibanacrd.Kibana, data map[string]any, logger *logrus.Entry) (res reconcile.Result, err error) {
-
 	// Reset the current cluster errors
 	common.ControllerErrors.WithLabelValues(h.name, o.GetNamespace(), o.GetName()).Set(0)
 

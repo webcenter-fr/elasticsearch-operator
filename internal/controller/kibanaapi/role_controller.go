@@ -108,4 +108,3 @@ func (h *RoleReconciler) Client() client.Client {
 func (h *RoleReconciler) Recorder() record.EventRecorder {
 	return h.RemoteReconcilerAction.Recorder()
 }
-
