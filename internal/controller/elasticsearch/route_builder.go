@@ -83,7 +83,6 @@ func buildRoutes(es *elasticsearchcrd.Elasticsearch, secretTlsApi *corev1.Secret
 		}
 	}
 
-
 	// Merge expected route with custom route spec
 	if err = k8sbuilder.MergeK8s(&route.Spec, route.Spec, es.Spec.Endpoint.Route.RouteSpec); err != nil {
 		return nil, errors.Wrap(err, "Error when merge route spec")

@@ -2411,13 +2411,17 @@ spec:
       - description: |-
           SecretRef is the secret ref that store certificates
           If secret not exist, it will use the default ingress certificate
-          If secret is nil, it will disable TLS on ingress spec.
         displayName: Secret Ref
         path: endpoint.ingress.secretRef
       - description: TargetNodeGroupName permit to define if specific node group is
           responsible to receive external access, like ingest nodes
         displayName: Target Node Group Name
         path: endpoint.ingress.targetNodeGroupName
+      - description: |-
+          Set to true to enable TLS on Ingress
+          Default to true
+        displayName: Tls Enabled
+        path: endpoint.ingress.tlsEnabled
       - description: Load balancer permit to set load balancer settings
         displayName: Load Balancer
         path: endpoint.loadBalancer

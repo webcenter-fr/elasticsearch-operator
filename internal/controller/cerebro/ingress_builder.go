@@ -33,7 +33,7 @@ func buildIngresses(cb *cerebrocrd.Cerebro) (ingresses []*networkingv1.Ingress, 
 	if cb.Spec.Endpoint.Ingress.IsTlsEnabled() {
 		tls = []networkingv1.IngressTLS{
 			{
-				Hosts:      []string{cb.Spec.Endpoint.Ingress.Host},
+				Hosts: []string{cb.Spec.Endpoint.Ingress.Host},
 			},
 		}
 		if cb.Spec.Endpoint.Ingress.SecretRef != nil {
