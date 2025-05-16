@@ -10,6 +10,7 @@ metadata:
     filebeat.k8s.webcenter.fr: "true"
 spec:
   replicas: 1
+  podManagementPolicy: Parallel
   serviceName: test-headless-fb
   selector:
     matchLabels:

@@ -808,7 +808,8 @@ fi
 			Annotations: getAnnotations(ls, ls.Spec.Deployment.Annotations),
 		},
 		Spec: appv1.StatefulSetSpec{
-			Replicas: ptr.To[int32](ls.Spec.Deployment.Replicas),
+			Replicas:            ptr.To(ls.Spec.Deployment.Replicas),
+			PodManagementPolicy: appv1.ParallelPodManagement,
 			Selector: &metav1.LabelSelector{
 				MatchLabels: map[string]string{
 					"cluster":                         ls.Name,

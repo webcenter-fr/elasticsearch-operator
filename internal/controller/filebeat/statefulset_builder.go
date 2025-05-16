@@ -569,7 +569,8 @@ chown -v root:root /mnt/data
 			Annotations: getAnnotations(fb, fb.Spec.Deployment.Annotations),
 		},
 		Spec: appv1.StatefulSetSpec{
-			Replicas: ptr.To[int32](fb.Spec.Deployment.Replicas),
+			Replicas:            ptr.To(fb.Spec.Deployment.Replicas),
+			PodManagementPolicy: appv1.ParallelPodManagement,
 			Selector: &metav1.LabelSelector{
 				MatchLabels: map[string]string{
 					"cluster":                     fb.Name,
