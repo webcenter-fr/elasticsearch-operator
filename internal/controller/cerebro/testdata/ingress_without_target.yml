@@ -20,3 +20,6 @@ spec:
               number: 9000
         path: /
         pathType: Prefix
+  tls:
+  - hosts:
+    - my-test.cluster.local

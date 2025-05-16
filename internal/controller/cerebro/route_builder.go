@@ -45,7 +45,7 @@ func buildRoutes(cb *cerebrocrd.Cerebro) (routes []*routev1.Route, err error) {
 	}
 
 	// Enabled TLS
-	if cb.Spec.Endpoint.Route.TlsEnabled != nil && *cb.Spec.Endpoint.Route.TlsEnabled {
+	if cb.Spec.Endpoint.Route.IsTlsEnabled() {
 		route.Spec.TLS = &routev1.TLSConfig{
 			InsecureEdgeTerminationPolicy: routev1.InsecureEdgeTerminationPolicyRedirect,
 			Termination:                   routev1.TLSTerminationEdge,

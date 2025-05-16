@@ -371,7 +371,6 @@ spec:
                         description: |-
                           SecretRef is the secret ref that store certificates
                           If secret not exist, it will use the default ingress certificate
-                          If secret is nil, it will disable TLS on ingress spec.
                         properties:
                           name:
                             default: ""
@@ -389,6 +388,12 @@ spec:
                           node group is responsible to receive external access, like
                           ingest nodes
                         type: string
+                      tlsEnabled:
+                        default: true
+                        description: |-
+                          Set to true to enable TLS on Ingress
+                          Default to true
+                        type: boolean
                     required:
                     - host
                     type: object

@@ -30,12 +30,14 @@ func buildIngresses(cb *cerebrocrd.Cerebro) (ingresses []*networkingv1.Ingress, 
 	targetService := GetServiceName(cb)
 
 	// Compute TLS
-	if cb.Spec.Endpoint.Ingress.SecretRef != nil {
+	if cb.Spec.Endpoint.Ingress.IsTlsEnabled() {
 		tls = []networkingv1.IngressTLS{
 			{
 				Hosts:      []string{cb.Spec.Endpoint.Ingress.Host},
-				SecretName: cb.Spec.Endpoint.Ingress.SecretRef.Name,
 			},
+		}
+		if cb.Spec.Endpoint.Ingress.SecretRef != nil {
+			tls[0].SecretName = cb.Spec.Endpoint.Ingress.SecretRef.Name
 		}
 	}
 

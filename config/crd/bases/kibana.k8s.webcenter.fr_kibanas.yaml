@@ -914,7 +914,6 @@ spec:
                         description: |-
                           SecretRef is the secret ref that store certificates
                           If secret not exist, it will use the default ingress certificate
-                          If secret is nil, it will disable TLS on ingress spec.
                         properties:
                           name:
                             default: ""
@@ -927,6 +926,12 @@ spec:
                             type: string
                         type: object
                         x-kubernetes-map-type: atomic
+                      tlsEnabled:
+                        default: true
+                        description: |-
+                          Set to true to enable TLS on Ingress
+                          Default to true
+                        type: boolean
                     required:
                     - host
                     type: object

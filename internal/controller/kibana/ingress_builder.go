@@ -37,12 +37,14 @@ func buildIngresses(kb *kibanacrd.Kibana) (ingresses []*networkingv1.Ingress, er
 	targetService := GetServiceName(kb)
 
 	// Compute TLS
-	if kb.Spec.Endpoint.Ingress.SecretRef != nil {
+	if kb.Spec.Tls.IsTlsEnabled() || kb.Spec.Endpoint.Ingress.IsTlsEnabled() {
 		tls = []networkingv1.IngressTLS{
 			{
-				Hosts:      []string{kb.Spec.Endpoint.Ingress.Host},
-				SecretName: kb.Spec.Endpoint.Ingress.SecretRef.Name,
+				Hosts: []string{kb.Spec.Endpoint.Ingress.Host},
 			},
+		}
+		if kb.Spec.Endpoint.Ingress.SecretRef != nil {
+			tls[0].SecretName = kb.Spec.Endpoint.Ingress.SecretRef.Name
 		}
 	}
 

@@ -22,3 +22,6 @@ spec:
               number: 5601
         path: /
         pathType: Prefix
+  tls:
+  - hosts:
+    - my-test.cluster.local

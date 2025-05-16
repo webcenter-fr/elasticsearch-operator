@@ -48,9 +48,15 @@ type EndpointIngressSpec struct {
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
 	Host string `json:"host"`
 
+	// Set to true to enable TLS on Ingress
+	// Default to true
+	// +operator-sdk:csv:customresourcedefinitions:type=spec
+	// +optional
+	// +kubebuilder:default=true
+	TlsEnabled *bool `json:"tlsEnabled,omitempty"`
+
 	// SecretRef is the secret ref that store certificates
 	// If secret not exist, it will use the default ingress certificate
-	// If secret is nil, it will disable TLS on ingress spec.
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
 	// +optional
 	SecretRef *corev1.LocalObjectReference `json:"secretRef,omitempty"`
@@ -136,4 +142,28 @@ func (h EndpointSpec) IsLoadBalancerEnabled() bool {
 	}
 
 	return false
+}
+
+// IsTlsEnabled return true if TLS is enabled
+// If TlsEnabled is not set, it will return true
+// If TlsEnabled is set to false, it will return false
+// If TlsEnabled is set to true, it will return true
+func (h EndpointIngressSpec) IsTlsEnabled() bool {
+	if h.TlsEnabled != nil {
+		return *h.TlsEnabled
+	}
+
+	return true
+}
+
+// IsTlsEnabled return true if TLS is enabled
+// If TlsEnabled is not set, it will return true
+// If TlsEnabled is set to false, it will return false
+// If TlsEnabled is set to true, it will return true
+func (h EndpointRouteSpec) IsTlsEnabled() bool {
+	if h.TlsEnabled != nil {
+		return *h.TlsEnabled
+	}
+
+	return true
 }

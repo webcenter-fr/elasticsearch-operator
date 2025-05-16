@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"k8s.io/utils/ptr"
 )
 
 func TestIsIngressEnabled(t *testing.T) {
@@ -58,4 +59,40 @@ func TestIsLoadBalancerEnabled(t *testing.T) {
 	// When Load balancer is specified and enabled
 	o.LoadBalancer.Enabled = true
 	assert.True(t, o.IsLoadBalancerEnabled())
+}
+
+func TestIsIngressTlsEnabled(t *testing.T) {
+	// With default values
+	o := EndpointIngressSpec{}
+	assert.True(t, o.IsTlsEnabled())
+
+	// When Tls is specified but disabled
+	o = EndpointIngressSpec{
+		TlsEnabled: ptr.To(false),
+	}
+	assert.False(t, o.IsTlsEnabled())
+
+	// When Tls is specified and enabled
+	o = EndpointIngressSpec{
+		TlsEnabled: ptr.To(true),
+	}
+	assert.True(t, o.IsTlsEnabled())
+}
+
+func TestIsRouteTlsEnabled(t *testing.T) {
+	// With default values
+	o := EndpointRouteSpec{}
+	assert.True(t, o.IsTlsEnabled())
+
+	// When Tls is specified but disabled
+	o = EndpointRouteSpec{
+		TlsEnabled: ptr.To(false),
+	}
+	assert.False(t, o.IsTlsEnabled())
+
+	// When Tls is specified and enabled
+	o = EndpointRouteSpec{
+		TlsEnabled: ptr.To(true),
+	}
+	assert.True(t, o.IsTlsEnabled())
 }

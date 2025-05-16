@@ -52,11 +52,15 @@ func buildIngresses(es *elasticsearchcrd.Elasticsearch) (ingresses []*networking
 	}
 
 	// Compute TLS
-	if es.Spec.Endpoint.Ingress.SecretRef != nil {
+	if es.Spec.Tls.IsTlsEnabled() || es.Spec.Endpoint.Ingress.IsTlsEnabled() {
+		secretName := ""
+		if es.Spec.Endpoint.Ingress.SecretRef != nil {
+			secretName = es.Spec.Endpoint.Ingress.SecretRef.Name
+		}
 		tls = []networkingv1.IngressTLS{
 			{
 				Hosts:      []string{es.Spec.Endpoint.Ingress.Host},
-				SecretName: es.Spec.Endpoint.Ingress.SecretRef.Name,
+				SecretName: secretName,
 			},
 		}
 	}

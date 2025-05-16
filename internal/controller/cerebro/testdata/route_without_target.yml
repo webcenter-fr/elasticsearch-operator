@@ -16,3 +16,6 @@ spec:
     name: test-cb
   port:
     targetPort: http
+  tls:
+    termination: edge
+    insecureEdgeTerminationPolicy: Redirect
