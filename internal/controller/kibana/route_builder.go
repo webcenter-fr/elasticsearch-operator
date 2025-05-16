@@ -46,7 +46,7 @@ func buildRoutes(kb *kibanacrd.Kibana, secretTlsApi *corev1.Secret) (routes []*r
 	}
 
 	// Enabled TLS
-	if kb.Spec.Tls.IsTlsEnabled() || (kb.Spec.Endpoint.Route.TlsEnabled != nil && *kb.Spec.Endpoint.Route.TlsEnabled) {
+	if kb.Spec.Tls.IsTlsEnabled() || kb.Spec.Endpoint.Route.IsTlsEnabled() {
 		route.Spec.TLS = &routev1.TLSConfig{
 			InsecureEdgeTerminationPolicy: routev1.InsecureEdgeTerminationPolicyRedirect,
 		}

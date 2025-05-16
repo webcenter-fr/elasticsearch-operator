@@ -64,7 +64,7 @@ func buildRoutes(es *elasticsearchcrd.Elasticsearch, secretTlsApi *corev1.Secret
 	}
 
 	// Enabled TLS
-	if es.Spec.Tls.IsTlsEnabled() || (es.Spec.Endpoint.Route.TlsEnabled != nil && *es.Spec.Endpoint.Route.TlsEnabled) {
+	if es.Spec.Tls.IsTlsEnabled() || es.Spec.Endpoint.Route.IsTlsEnabled() {
 		route.Spec.TLS = &routev1.TLSConfig{
 			InsecureEdgeTerminationPolicy: routev1.InsecureEdgeTerminationPolicyRedirect,
 		}
@@ -82,6 +82,7 @@ func buildRoutes(es *elasticsearchcrd.Elasticsearch, secretTlsApi *corev1.Secret
 			route.Spec.TLS.DestinationCACertificate = string(secretTlsApi.Data["ca.crt"])
 		}
 	}
+
 
 	// Merge expected route with custom route spec
 	if err = k8sbuilder.MergeK8s(&route.Spec, route.Spec, es.Spec.Endpoint.Route.RouteSpec); err != nil {
