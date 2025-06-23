@@ -21,6 +21,7 @@ import (
 	condition "k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -141,6 +142,7 @@ func doCreateIndexTemplateStep() test.TestStep[*elasticsearchapicrd.IndexTemplat
 						},
 					},
 					IndexPatterns: []string{"test"},
+					RawTemplate:   ptr.To(`{}`),
 				},
 			}
 			if err = c.Create(context.Background(), template); err != nil {

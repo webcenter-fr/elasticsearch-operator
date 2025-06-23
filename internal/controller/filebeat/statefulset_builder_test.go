@@ -36,7 +36,7 @@ func TestBuildStatefulset(t *testing.T) {
 			Name:      "test",
 		},
 		Spec: beatcrd.FilebeatSpec{
-			ElasticsearchRef: shared.ElasticsearchRef{
+			ElasticsearchRef: &shared.ElasticsearchRef{
 				ManagedElasticsearchRef: &shared.ElasticsearchManagedRef{
 					Name: "test",
 				},
@@ -83,7 +83,7 @@ func TestBuildStatefulset(t *testing.T) {
 			Name:      "test",
 		},
 		Spec: beatcrd.FilebeatSpec{
-			ElasticsearchRef: shared.ElasticsearchRef{
+			ElasticsearchRef: &shared.ElasticsearchRef{
 				ManagedElasticsearchRef: &shared.ElasticsearchManagedRef{
 					Name: "test",
 				},
@@ -122,7 +122,7 @@ func TestBuildStatefulset(t *testing.T) {
 					Replicas: 1,
 				},
 			},
-			ElasticsearchRef: shared.ElasticsearchRef{
+			ElasticsearchRef: &shared.ElasticsearchRef{
 				ExternalElasticsearchRef: &shared.ElasticsearchExternalRef{
 					Addresses: []string{
 						"https://es1:9200",
@@ -151,7 +151,7 @@ func TestBuildStatefulset(t *testing.T) {
 					Replicas: 1,
 				},
 			},
-			ElasticsearchRef: shared.ElasticsearchRef{
+			ElasticsearchRef: &shared.ElasticsearchRef{
 				ExternalElasticsearchRef: &shared.ElasticsearchExternalRef{
 					Addresses: []string{
 						"https://es1:9200",
@@ -189,7 +189,7 @@ func TestBuildStatefulset(t *testing.T) {
 			Name:      "test",
 		},
 		Spec: beatcrd.FilebeatSpec{
-			LogstashRef: beatcrd.FilebeatLogstashRef{
+			LogstashRef: &beatcrd.FilebeatLogstashRef{
 				ManagedLogstashRef: &beatcrd.FilebeatLogstashManagedRef{
 					Name:          "test",
 					TargetService: "beat",
@@ -230,7 +230,7 @@ func TestBuildStatefulset(t *testing.T) {
 					Replicas: 1,
 				},
 			},
-			LogstashRef: beatcrd.FilebeatLogstashRef{
+			LogstashRef: &beatcrd.FilebeatLogstashRef{
 				ExternalLogstashRef: &beatcrd.FilebeatLogstashExternalRef{
 					Addresses: []string{
 						"beat.logstash.svc:5002",
@@ -256,7 +256,7 @@ func TestBuildStatefulset(t *testing.T) {
 					Replicas: 1,
 				},
 			},
-			LogstashRef: beatcrd.FilebeatLogstashRef{
+			LogstashRef: &beatcrd.FilebeatLogstashRef{
 				ExternalLogstashRef: &beatcrd.FilebeatLogstashExternalRef{
 					Addresses: []string{
 						"beat.logstash.svc:5002",
@@ -291,7 +291,7 @@ func TestBuildStatefulset(t *testing.T) {
 			Name:      "test",
 		},
 		Spec: beatcrd.FilebeatSpec{
-			ElasticsearchRef: shared.ElasticsearchRef{
+			ElasticsearchRef: &shared.ElasticsearchRef{
 				ManagedElasticsearchRef: &shared.ElasticsearchManagedRef{
 					Name: "test",
 				},

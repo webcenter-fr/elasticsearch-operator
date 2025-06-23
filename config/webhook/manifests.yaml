@@ -1,0 +1,367 @@
+---
+apiVersion: admissionregistration.k8s.io/v1
+kind: ValidatingWebhookConfiguration
+metadata:
+  name: validating-webhook-configuration
+webhooks:
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: webhook-service
+      namespace: system
+      path: /validate-beat-k8s-webcenter-fr-v1-filebeat
+  failurePolicy: Fail
+  name: filebeat.beat.k8s.webcenter.fr
+  rules:
+  - apiGroups:
+    - beat.k8s.webcenter.fr
+    apiVersions:
+    - v1
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - filebeats
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: webhook-service
+      namespace: system
+      path: /validate-beat-k8s-webcenter-fr-v1-metricbeat
+  failurePolicy: Fail
+  name: metricbeat.beat.k8s.webcenter.fr
+  rules:
+  - apiGroups:
+    - beat.k8s.webcenter.fr
+    apiVersions:
+    - v1
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - metricbeats
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: webhook-service
+      namespace: system
+      path: /validate-cerebro-k8s-webcenter-fr-v1-host
+  failurePolicy: Fail
+  name: host.cerebro.k8s.webcenter.fr
+  rules:
+  - apiGroups:
+    - cerebro.k8s.webcenter.fr
+    apiVersions:
+    - v1
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - hosts
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: webhook-service
+      namespace: system
+      path: /validate-elasticsearchapi-k8s-webcenter-fr-v1-componenttemplate
+  failurePolicy: Fail
+  name: componenttemplate.elasticsearchapi.k8s.webcenter.fr
+  rules:
+  - apiGroups:
+    - elasticsearchapi.k8s.webcenter.fr
+    apiVersions:
+    - v1
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - componenttemplates
+  sideEffects: None
+  timeoutSeconds: 30
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: webhook-service
+      namespace: system
+      path: /validate-elasticsearchapi-k8s-webcenter-fr-v1-indexlifecyclepolicy
+  failurePolicy: Fail
+  name: indexlifecyclepolicy.elasticsearchapi.k8s.webcenter.fr
+  rules:
+  - apiGroups:
+    - elasticsearchapi.k8s.webcenter.fr
+    apiVersions:
+    - v1
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - indexlifecyclepolicies
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: webhook-service
+      namespace: system
+      path: /validate-elasticsearchapi-k8s-webcenter-fr-v1-indextemplate
+  failurePolicy: Fail
+  name: indextemplate.elasticsearchapi.k8s.webcenter.fr
+  rules:
+  - apiGroups:
+    - elasticsearchapi.k8s.webcenter.fr
+    apiVersions:
+    - v1
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - indextemplates
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: webhook-service
+      namespace: system
+      path: /validate-elasticsearchapi-k8s-webcenter-fr-v1-license
+  failurePolicy: Fail
+  name: license.elasticsearchapi.k8s.webcenter.fr
+  rules:
+  - apiGroups:
+    - elasticsearchapi.k8s.webcenter.fr
+    apiVersions:
+    - v1
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - licenses
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: webhook-service
+      namespace: system
+      path: /validate-elasticsearchapi-k8s-webcenter-fr-v1-role
+  failurePolicy: Fail
+  name: role.elasticsearchapi.k8s.webcenter.fr
+  rules:
+  - apiGroups:
+    - elasticsearchapi.k8s.webcenter.fr
+    apiVersions:
+    - v1
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - roles
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: webhook-service
+      namespace: system
+      path: /validate-elasticsearchapi-k8s-webcenter-fr-v1-rolemapping
+  failurePolicy: Fail
+  name: rolemapping.elasticsearchapi.k8s.webcenter.fr
+  rules:
+  - apiGroups:
+    - elasticsearchapi.k8s.webcenter.fr
+    apiVersions:
+    - v1
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - rolemappings
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: webhook-service
+      namespace: system
+      path: /validate-elasticsearchapi-k8s-webcenter-fr-v1-snapshotlifecyclepolicy
+  failurePolicy: Fail
+  name: snapshotlifecyclepolicy.elasticsearchapi.k8s.webcenter.fr
+  rules:
+  - apiGroups:
+    - elasticsearchapi.k8s.webcenter.fr
+    apiVersions:
+    - v1
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - snapshotlifecyclepolicies
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: webhook-service
+      namespace: system
+      path: /validate-elasticsearchapi-k8s-webcenter-fr-v1-snapshotrepository
+  failurePolicy: Fail
+  name: snapshotrepository.elasticsearchapi.k8s.webcenter.fr
+  rules:
+  - apiGroups:
+    - elasticsearchapi.k8s.webcenter.fr
+    apiVersions:
+    - v1
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - snapshotrepositories
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: webhook-service
+      namespace: system
+      path: /validate-elasticsearchapi-k8s-webcenter-fr-v1-user
+  failurePolicy: Fail
+  name: user.elasticsearchapi.k8s.webcenter.fr
+  rules:
+  - apiGroups:
+    - elasticsearchapi.k8s.webcenter.fr
+    apiVersions:
+    - v1
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - users
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: webhook-service
+      namespace: system
+      path: /validate-elasticsearchapi-k8s-webcenter-fr-v1-watch
+  failurePolicy: Fail
+  name: watch.elasticsearchapi.k8s.webcenter.fr
+  rules:
+  - apiGroups:
+    - elasticsearchapi.k8s.webcenter.fr
+    apiVersions:
+    - v1
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - watches
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: webhook-service
+      namespace: system
+      path: /validate-kibana-k8s-webcenter-fr-v1-kibana
+  failurePolicy: Fail
+  name: kibana.kibana.k8s.webcenter.fr
+  rules:
+  - apiGroups:
+    - kibana.k8s.webcenter.fr
+    apiVersions:
+    - v1
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - kibanas
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: webhook-service
+      namespace: system
+      path: /validate-kibanaapi-k8s-webcenter-fr-v1-logstashpipeline
+  failurePolicy: Fail
+  name: logstashpipeline.kibanaapi.k8s.webcenter.fr
+  rules:
+  - apiGroups:
+    - kibanaapi.k8s.webcenter.fr
+    apiVersions:
+    - v1
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - logstashpipelines
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: webhook-service
+      namespace: system
+      path: /validate-kibanaapi-k8s-webcenter-fr-v1-role
+  failurePolicy: Fail
+  name: role.kibanaapi.k8s.webcenter.fr
+  rules:
+  - apiGroups:
+    - kibanaapi.k8s.webcenter.fr
+    apiVersions:
+    - v1
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - roles
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: webhook-service
+      namespace: system
+      path: /validate-kibanaapi-k8s-webcenter-fr-v1-userspace
+  failurePolicy: Fail
+  name: userspace.kibanaapi.k8s.webcenter.fr
+  rules:
+  - apiGroups:
+    - kibanaapi.k8s.webcenter.fr
+    apiVersions:
+    - v1
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - userspaces
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: webhook-service
+      namespace: system
+      path: /validate-logstash-k8s-webcenter-fr-v1-logstash
+  failurePolicy: Fail
+  name: logstash.logstash.k8s.webcenter.fr
+  rules:
+  - apiGroups:
+    - logstash.k8s.webcenter.fr
+    apiVersions:
+    - v1
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - logstashes
+  sideEffects: None

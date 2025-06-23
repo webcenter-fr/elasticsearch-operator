@@ -167,10 +167,7 @@ func doEnableBasicLicenseStep() test.TestStep[*elasticsearchapicrd.License] {
 							Name: "test",
 						},
 					},
-					SecretRef: &core.LocalObjectReference{
-						Name: key.Name,
-					},
-					Basic: ptr.To[bool](true),
+					Basic: ptr.To(true),
 				},
 			}
 
@@ -292,7 +289,7 @@ func doUpdateToEnterpriseLicenseStep() test.TestStep[*elasticsearchapicrd.Licens
 					SecretRef: &core.LocalObjectReference{
 						Name: key.Name,
 					},
-					Basic: ptr.To[bool](false),
+					Basic: ptr.To(false),
 				},
 			}
 			if err = c.Create(context.Background(), secret); err != nil {

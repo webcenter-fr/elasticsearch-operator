@@ -1,7 +1,11 @@
 package shared
 
 import (
+	"fmt"
+	"strings"
+
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/util/validation/field"
 )
 
 type ElasticsearchRef struct {
@@ -60,4 +64,32 @@ func (h ElasticsearchRef) IsManaged() bool {
 // IsExternal permit to know if Elasticsearch is external (not managed by operator)
 func (h ElasticsearchRef) IsExternal() bool {
 	return h.ExternalElasticsearchRef != nil && len(h.ExternalElasticsearchRef.Addresses) > 0
+}
+
+// ValidateField permit to validate field from webhook
+func (h ElasticsearchRef) ValidateField() *field.Error {
+	// Check we provide Opensearch cluster
+	if !h.IsExternal() && !h.IsManaged() {
+		return field.Required(field.NewPath("spec").Child("elasticsearchRef"), "You need to provide managed or external Elasticsearch cluster")
+	}
+
+	return nil
+}
+
+// GetTargetCluster permit to get the target cluster
+func (h ElasticsearchRef) GetTargetCluster(currentNamespace string) string {
+	if currentNamespace == "" {
+		panic("You must provide currentNamespace")
+	}
+	if h.IsManaged() {
+		namespace := currentNamespace
+		if h.ManagedElasticsearchRef.Namespace != "" {
+			namespace = h.ManagedElasticsearchRef.Namespace
+		}
+		return fmt.Sprintf("%s/%s", namespace, h.ManagedElasticsearchRef.Name)
+	} else if h.IsExternal() {
+		return strings.Join(h.ExternalElasticsearchRef.Addresses, ",")
+	}
+
+	return ""
 }

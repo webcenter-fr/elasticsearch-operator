@@ -62,7 +62,6 @@ type IndexLifecyclePolicySpecPolicy struct {
 
 	// ILM phases
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
-	// +optional
 	Phases IndexLifecyclePolicySpecPolicyPhases `json:"phases"`
 }
 

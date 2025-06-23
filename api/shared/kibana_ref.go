@@ -1,7 +1,10 @@
 package shared
 
 import (
+	"fmt"
+
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/util/validation/field"
 )
 
 type KibanaRef struct {
@@ -54,4 +57,32 @@ func (h KibanaRef) IsManaged() bool {
 // IsExternal permit to know if Kibana is external (not managed by operator)
 func (h KibanaRef) IsExternal() bool {
 	return h.ExternalKibanaRef != nil && h.ExternalKibanaRef.Address != ""
+}
+
+// ValidateField permit to validate field from webhook
+func (h KibanaRef) ValidateField() *field.Error {
+	// Check we provide Opensearch cluster
+	if !h.IsExternal() && !h.IsManaged() {
+		return field.Required(field.NewPath("spec").Child("kibanaRef"), "You need to provide managed or external Kibana")
+	}
+
+	return nil
+}
+
+// GetTargetCluster permit to get the target cluster
+func (h KibanaRef) GetTargetCluster(currentNamespace string) string {
+	if currentNamespace == "" {
+		panic("You must provide currentNamespace")
+	}
+	if h.IsManaged() {
+		namespace := currentNamespace
+		if h.ManagedKibanaRef.Namespace != "" {
+			namespace = h.ManagedKibanaRef.Namespace
+		}
+		return fmt.Sprintf("%s/%s", namespace, h.ManagedKibanaRef.Name)
+	} else if h.IsExternal() {
+		return h.ExternalKibanaRef.Address
+	}
+
+	return ""
 }

@@ -44,13 +44,13 @@ type FilebeatSpec struct {
 	// It will generate Elasticsearch output bas eon it
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
 	// +optional
-	ElasticsearchRef shared.ElasticsearchRef `json:"elasticsearchRef,omitempty"`
+	ElasticsearchRef *shared.ElasticsearchRef `json:"elasticsearchRef,omitempty"`
 
 	// LogstashRef is the Logstash ref to connect on.
 	// It will generate Logstash output base on it
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
 	// +optional
-	LogstashRef FilebeatLogstashRef `json:"logstashRef,omitempty"`
+	LogstashRef *FilebeatLogstashRef `json:"logstashRef,omitempty"`
 
 	// Version is the Filebeat version to use
 	// Default is use the latest

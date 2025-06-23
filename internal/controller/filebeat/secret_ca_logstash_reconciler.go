@@ -58,9 +58,9 @@ func (r *caLogstashReconciler) Read(ctx context.Context, o *beatcrd.Filebeat, da
 		read.AddCurrentObject(s)
 	}
 
-	if o.Spec.LogstashRef.IsManaged() {
+	if o.Spec.LogstashRef != nil && o.Spec.LogstashRef.IsManaged() {
 		// Read Logstash
-		ls, err = GetLogstashFromRef(ctx, r.Client(), o, o.Spec.LogstashRef)
+		ls, err = GetLogstashFromRef(ctx, r.Client(), o, *o.Spec.LogstashRef)
 		if err != nil {
 			return read, res, errors.Wrap(err, "Error when read logstashRef")
 		}

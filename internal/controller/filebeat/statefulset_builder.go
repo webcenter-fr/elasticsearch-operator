@@ -22,7 +22,7 @@ import (
 // GenerateStatefullset permit to generate statefullset
 func buildStatefulsets(fb *beatcrd.Filebeat, es *elasticsearchcrd.Elasticsearch, ls *logstashcrd.Logstash, configMaps []*corev1.ConfigMap, secretsChecksum []*corev1.Secret, configMapsChecksum []*corev1.ConfigMap, isOpenshift bool) (statefullsets []*appv1.StatefulSet, err error) {
 	// Check the secretRef is set when use Elasticsearch output
-	if (fb.Spec.ElasticsearchRef.IsManaged() || fb.Spec.ElasticsearchRef.IsExternal()) && fb.Spec.ElasticsearchRef.SecretRef == nil {
+	if fb.Spec.ElasticsearchRef != nil && (fb.Spec.ElasticsearchRef.IsManaged() || fb.Spec.ElasticsearchRef.IsExternal()) && fb.Spec.ElasticsearchRef.SecretRef == nil {
 		return nil, errors.New("You must set the secretRef when you use ElasticsearchRef")
 	}
 
@@ -111,7 +111,7 @@ func buildStatefulsets(fb *beatcrd.Filebeat, es *elasticsearchcrd.Elasticsearch,
 		}, k8sbuilder.Merge)
 
 	// Inject Elasticsearch credentials if provided
-	if fb.Spec.ElasticsearchRef.IsManaged() || fb.Spec.ElasticsearchRef.IsExternal() {
+	if fb.Spec.ElasticsearchRef != nil && (fb.Spec.ElasticsearchRef.IsManaged() || fb.Spec.ElasticsearchRef.IsExternal()) {
 		cb.WithEnv([]corev1.EnvVar{
 			{
 				Name: "ELASTICSEARCH_USERNAME",
@@ -215,7 +215,7 @@ func buildStatefulsets(fb *beatcrd.Filebeat, es *elasticsearchcrd.Elasticsearch,
 	}
 
 	// Compute mount CA elasticsearch
-	if fb.Spec.ElasticsearchRef.ElasticsearchCaSecretRef != nil {
+	if fb.Spec.ElasticsearchRef != nil && fb.Spec.ElasticsearchRef.ElasticsearchCaSecretRef != nil {
 		cb.WithVolumeMount([]corev1.VolumeMount{
 			{
 				Name:      "ca-custom-elasticsearch",
@@ -223,7 +223,7 @@ func buildStatefulsets(fb *beatcrd.Filebeat, es *elasticsearchcrd.Elasticsearch,
 			},
 		}, k8sbuilder.Merge)
 	}
-	if fb.Spec.ElasticsearchRef.IsManaged() && es.Spec.Tls.IsTlsEnabled() && es.Spec.Tls.IsSelfManagedSecretForTls() {
+	if fb.Spec.ElasticsearchRef != nil && fb.Spec.ElasticsearchRef.IsManaged() && es.Spec.Tls.IsTlsEnabled() && es.Spec.Tls.IsSelfManagedSecretForTls() {
 		cb.WithVolumeMount([]corev1.VolumeMount{
 			{
 				Name:      "ca-elasticsearch",
@@ -233,7 +233,7 @@ func buildStatefulsets(fb *beatcrd.Filebeat, es *elasticsearchcrd.Elasticsearch,
 	}
 
 	// Compute mount CA logstash
-	if fb.Spec.LogstashRef.LogstashCaSecretRef != nil {
+	if fb.Spec.LogstashRef != nil && fb.Spec.LogstashRef.LogstashCaSecretRef != nil {
 		cb.WithVolumeMount([]corev1.VolumeMount{
 			{
 				Name:      "ca-custom-logstash",
@@ -478,7 +478,7 @@ chown -v root:root /mnt/data
 	}
 
 	// Elasticsearch CA secret
-	if fb.Spec.ElasticsearchRef.ElasticsearchCaSecretRef != nil {
+	if fb.Spec.ElasticsearchRef != nil && fb.Spec.ElasticsearchRef.ElasticsearchCaSecretRef != nil {
 		ptb.WithVolumes([]corev1.Volume{
 			{
 				Name: "ca-custom-elasticsearch",
@@ -490,7 +490,7 @@ chown -v root:root /mnt/data
 			},
 		}, k8sbuilder.Merge)
 	}
-	if fb.Spec.ElasticsearchRef.IsManaged() && es.Spec.Tls.IsTlsEnabled() && es.Spec.Tls.IsSelfManagedSecretForTls() {
+	if fb.Spec.ElasticsearchRef != nil && fb.Spec.ElasticsearchRef.IsManaged() && es.Spec.Tls.IsTlsEnabled() && es.Spec.Tls.IsSelfManagedSecretForTls() {
 		ptb.WithVolumes([]corev1.Volume{
 			{
 				Name: "ca-elasticsearch",
@@ -504,7 +504,7 @@ chown -v root:root /mnt/data
 	}
 
 	// Logstash CA secret
-	if fb.Spec.LogstashRef.LogstashCaSecretRef != nil {
+	if fb.Spec.LogstashRef != nil && fb.Spec.LogstashRef.LogstashCaSecretRef != nil {
 		ptb.WithVolumes([]corev1.Volume{
 			{
 				Name: "ca-custom-logstash",

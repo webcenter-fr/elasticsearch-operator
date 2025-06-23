@@ -46,7 +46,7 @@ func TestBuildConfigMaps(t *testing.T) {
 			Name:      "test",
 		},
 		Spec: beatcrd.FilebeatSpec{
-			LogstashRef: beatcrd.FilebeatLogstashRef{
+			LogstashRef: &beatcrd.FilebeatLogstashRef{
 				ManagedLogstashRef: &beatcrd.FilebeatLogstashManagedRef{
 					Name:          "test",
 					TargetService: "beat",
@@ -75,7 +75,7 @@ func TestBuildConfigMaps(t *testing.T) {
 			Name:      "test",
 		},
 		Spec: beatcrd.FilebeatSpec{
-			LogstashRef: beatcrd.FilebeatLogstashRef{
+			LogstashRef: &beatcrd.FilebeatLogstashRef{
 				ManagedLogstashRef: &beatcrd.FilebeatLogstashManagedRef{
 					Name:          "test",
 					TargetService: "beat",
@@ -113,7 +113,7 @@ func TestBuildConfigMaps(t *testing.T) {
 			Name:      "test",
 		},
 		Spec: beatcrd.FilebeatSpec{
-			LogstashRef: beatcrd.FilebeatLogstashRef{
+			LogstashRef: &beatcrd.FilebeatLogstashRef{
 				ManagedLogstashRef: &beatcrd.FilebeatLogstashManagedRef{
 					Name:          "test",
 					TargetService: "beat",
@@ -155,7 +155,7 @@ func TestBuildConfigMaps(t *testing.T) {
 			Name:      "test",
 		},
 		Spec: beatcrd.FilebeatSpec{
-			ElasticsearchRef: shared.ElasticsearchRef{
+			ElasticsearchRef: &shared.ElasticsearchRef{
 				ManagedElasticsearchRef: &shared.ElasticsearchManagedRef{
 					Name: "test",
 				},
@@ -182,7 +182,7 @@ func TestBuildConfigMaps(t *testing.T) {
 			Name:      "test",
 		},
 		Spec: beatcrd.FilebeatSpec{
-			ElasticsearchRef: shared.ElasticsearchRef{
+			ElasticsearchRef: &shared.ElasticsearchRef{
 				ExternalElasticsearchRef: &shared.ElasticsearchExternalRef{
 					Addresses: []string{"https://external-es"},
 				},
@@ -220,7 +220,7 @@ func TestBuildConfigMaps(t *testing.T) {
 			},
 		},
 		Spec: beatcrd.FilebeatSpec{
-			ElasticsearchRef: shared.ElasticsearchRef{
+			ElasticsearchRef: &shared.ElasticsearchRef{
 				ManagedElasticsearchRef: &shared.ElasticsearchManagedRef{
 					Name: "test",
 				},
@@ -263,7 +263,7 @@ node.value2: test`,
 			},
 		},
 		Spec: beatcrd.FilebeatSpec{
-			ElasticsearchRef: shared.ElasticsearchRef{
+			ElasticsearchRef: &shared.ElasticsearchRef{
 				ManagedElasticsearchRef: &shared.ElasticsearchManagedRef{
 					Name: "test",
 				},

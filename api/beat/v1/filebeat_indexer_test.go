@@ -12,21 +12,19 @@ import (
 func (t *TestSuite) TestSetupFilebeatIndexer() {
 	// Add filebeat to force indexer execution
 
-	filebeat := &Filebeat{
+	var (
+		filebeat *Filebeat
+		err      error
+	)
+
+	// When Logstash target
+	filebeat = &Filebeat{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "test",
 			Namespace: "default",
 		},
 		Spec: FilebeatSpec{
-			ElasticsearchRef: shared.ElasticsearchRef{
-				ManagedElasticsearchRef: &shared.ElasticsearchManagedRef{
-					Name: "test",
-				},
-				ElasticsearchCaSecretRef: &corev1.LocalObjectReference{
-					Name: "test",
-				},
-			},
-			LogstashRef: FilebeatLogstashRef{
+			LogstashRef: &FilebeatLogstashRef{
 				ManagedLogstashRef: &FilebeatLogstashManagedRef{
 					Name: "test",
 				},
@@ -105,6 +103,95 @@ func (t *TestSuite) TestSetupFilebeatIndexer() {
 		},
 	}
 
-	err := t.k8sClient.Create(context.Background(), filebeat)
+	err = t.k8sClient.Create(context.Background(), filebeat)
+	assert.NoError(t.T(), err)
+
+	// When Elasticsearch target
+	filebeat = &Filebeat{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "test2",
+			Namespace: "default",
+		},
+		Spec: FilebeatSpec{
+			ElasticsearchRef: &shared.ElasticsearchRef{
+				ManagedElasticsearchRef: &shared.ElasticsearchManagedRef{
+					Name: "test",
+				},
+				ElasticsearchCaSecretRef: &corev1.LocalObjectReference{
+					Name: "test",
+				},
+			},
+			Deployment: FilebeatDeploymentSpec{
+				AdditionalVolumes: []shared.DeploymentVolumeSpec{
+					{
+						Name: "config",
+						VolumeMount: corev1.VolumeMount{
+							MountPath: "/tmp/config",
+						},
+						VolumeSource: corev1.VolumeSource{
+							ConfigMap: &corev1.ConfigMapVolumeSource{
+								LocalObjectReference: corev1.LocalObjectReference{
+									Name: "test",
+								},
+							},
+						},
+					},
+					{
+						Name: "secret",
+						VolumeMount: corev1.VolumeMount{
+							MountPath: "/tmp/secret",
+						},
+						VolumeSource: corev1.VolumeSource{
+							Secret: &corev1.SecretVolumeSource{
+								SecretName: "test",
+							},
+						},
+					},
+				},
+				Deployment: shared.Deployment{
+					Env: []corev1.EnvVar{
+						{
+							Name: "config",
+							ValueFrom: &corev1.EnvVarSource{
+								ConfigMapKeyRef: &corev1.ConfigMapKeySelector{
+									LocalObjectReference: corev1.LocalObjectReference{
+										Name: "test",
+									},
+								},
+							},
+						},
+						{
+							Name: "secret",
+							ValueFrom: &corev1.EnvVarSource{
+								SecretKeyRef: &corev1.SecretKeySelector{
+									LocalObjectReference: corev1.LocalObjectReference{
+										Name: "test",
+									},
+								},
+							},
+						},
+					},
+					EnvFrom: []corev1.EnvFromSource{
+						{
+							ConfigMapRef: &corev1.ConfigMapEnvSource{
+								LocalObjectReference: corev1.LocalObjectReference{
+									Name: "test",
+								},
+							},
+						},
+						{
+							SecretRef: &corev1.SecretEnvSource{
+								LocalObjectReference: corev1.LocalObjectReference{
+									Name: "test",
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+	}
+
+	err = t.k8sClient.Create(context.Background(), filebeat)
 	assert.NoError(t.T(), err)
 }

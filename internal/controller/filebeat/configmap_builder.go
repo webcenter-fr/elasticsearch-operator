@@ -24,29 +24,6 @@ func buildConfigMaps(fb *beatcrd.Filebeat, es *elasticsearchcrd.Elasticsearch, l
 	// ConfigMap that store configs
 	var expectedConfig map[string]string
 
-	// Compute the logstash hosts
-	logstashHosts := make([]string, 0, 1)
-
-	if ls != nil {
-		if fb.Spec.LogstashRef.ManagedLogstashRef.TargetService != "" {
-			logstashHosts = append(logstashHosts, fmt.Sprintf("%s.%s.svc:%d", logstashcontrollers.GetServiceName(ls, fb.Spec.LogstashRef.ManagedLogstashRef.TargetService), ls.Namespace, fb.Spec.LogstashRef.ManagedLogstashRef.Port))
-		} else {
-			for i := 0; i < int(ls.Spec.Deployment.Replicas); i++ {
-				logstashHosts = append(logstashHosts, fmt.Sprintf("%s-%d.%s.%s.svc:%d", logstashcontrollers.GetStatefulsetName(ls), i, logstashcontrollers.GetGlobalServiceName(ls), ls.Namespace, fb.Spec.LogstashRef.ManagedLogstashRef.Port))
-			}
-		}
-	} else if fb.Spec.LogstashRef.IsExternal() && len(fb.Spec.LogstashRef.ExternalLogstashRef.Addresses) > 0 {
-		logstashHosts = fb.Spec.LogstashRef.ExternalLogstashRef.Addresses
-	}
-
-	// Compute the Elasticsearch hosts
-	elasticsearchHosts := make([]string, 0, 1)
-	if es != nil {
-		elasticsearchHosts = append(elasticsearchHosts, elasticsearchcontrollers.GetPublicUrl(es, fb.Spec.ElasticsearchRef.ManagedElasticsearchRef.TargetNodeGroup, false))
-	} else if fb.Spec.ElasticsearchRef.IsExternal() && len(fb.Spec.ElasticsearchRef.ExternalElasticsearchRef.Addresses) > 0 {
-		elasticsearchHosts = fb.Spec.ElasticsearchRef.ExternalElasticsearchRef.Addresses
-	}
-
 	// Static config
 	filebeatConf := map[string]any{
 		"http.enabled": true,
@@ -57,72 +34,97 @@ func buildConfigMaps(fb *beatcrd.Filebeat, es *elasticsearchcrd.Elasticsearch, l
 	}
 
 	// Logstash output
-	if fb.Spec.LogstashRef.IsExternal() || fb.Spec.LogstashRef.IsManaged() {
-		certificates := make([]string, 0)
-
-		// Compute logstash pki ca
-		if ls != nil && ls.Spec.Pki.IsEnabled() && ls.Spec.Pki.HasBeatCertificate() {
-			certificates = append(certificates, "/usr/share/filebeat/ls-ca/ca.crt")
-		}
-
-		// Compute external certificates
-		if logstashCASecret != nil {
-			for certificateName := range logstashCASecret.Data {
-				if strings.HasSuffix(certificateName, ".crt") || strings.HasSuffix(certificateName, ".pem") {
-					certificates = append(certificates, fmt.Sprintf("/usr/share/filebeat/ls-custom-ca/%s", certificateName))
+	if fb.Spec.LogstashRef != nil {
+		logstashHosts := make([]string, 0, 1)
+		if ls != nil {
+			if fb.Spec.LogstashRef.ManagedLogstashRef.TargetService != "" {
+				logstashHosts = append(logstashHosts, fmt.Sprintf("%s.%s.svc:%d", logstashcontrollers.GetServiceName(ls, fb.Spec.LogstashRef.ManagedLogstashRef.TargetService), ls.Namespace, fb.Spec.LogstashRef.ManagedLogstashRef.Port))
+			} else {
+				for i := 0; i < int(ls.Spec.Deployment.Replicas); i++ {
+					logstashHosts = append(logstashHosts, fmt.Sprintf("%s-%d.%s.%s.svc:%d", logstashcontrollers.GetStatefulsetName(ls), i, logstashcontrollers.GetGlobalServiceName(ls), ls.Namespace, fb.Spec.LogstashRef.ManagedLogstashRef.Port))
 				}
 			}
-		}
-		if len(certificates) == 0 {
-			filebeatConf["output.logstash"] = map[string]any{
-				"hosts":       logstashHosts,
-				"loadbalance": true,
-			}
-		} else {
-			filebeatConf["output.logstash"] = map[string]any{
-				"hosts":       logstashHosts,
-				"loadbalance": true,
-				"ssl": map[string]any{
-					"enable":                  true,
-					"certificate_authorities": certificates,
-				},
-			}
+		} else if fb.Spec.LogstashRef.IsExternal() && len(fb.Spec.LogstashRef.ExternalLogstashRef.Addresses) > 0 {
+			logstashHosts = fb.Spec.LogstashRef.ExternalLogstashRef.Addresses
 		}
 
+		if fb.Spec.LogstashRef.IsExternal() || fb.Spec.LogstashRef.IsManaged() {
+			certificates := make([]string, 0)
+
+			// Compute logstash pki ca
+			if ls != nil && ls.Spec.Pki.IsEnabled() && ls.Spec.Pki.HasBeatCertificate() {
+				certificates = append(certificates, "/usr/share/filebeat/ls-ca/ca.crt")
+			}
+
+			// Compute external certificates
+			if logstashCASecret != nil {
+				for certificateName := range logstashCASecret.Data {
+					if strings.HasSuffix(certificateName, ".crt") || strings.HasSuffix(certificateName, ".pem") {
+						certificates = append(certificates, fmt.Sprintf("/usr/share/filebeat/ls-custom-ca/%s", certificateName))
+					}
+				}
+			}
+			if len(certificates) == 0 {
+				filebeatConf["output.logstash"] = map[string]any{
+					"hosts":       logstashHosts,
+					"loadbalance": true,
+				}
+			} else {
+				filebeatConf["output.logstash"] = map[string]any{
+					"hosts":       logstashHosts,
+					"loadbalance": true,
+					"ssl": map[string]any{
+						"enable":                  true,
+						"certificate_authorities": certificates,
+					},
+				}
+			}
+
+		}
 	}
 
 	// Elasticsearch output
-	if fb.Spec.ElasticsearchRef.IsExternal() || fb.Spec.ElasticsearchRef.IsManaged() {
-		certificates := make([]string, 0)
+	if fb.Spec.ElasticsearchRef != nil {
 
-		// Compute Elasticsearch pki ca
-		if es != nil && es.Spec.Tls.IsTlsEnabled() && es.Spec.Tls.IsSelfManagedSecretForTls() {
-			certificates = append(certificates, "/usr/share/filebeat/es-ca/ca.crt")
+		elasticsearchHosts := make([]string, 0, 1)
+		if es != nil {
+			elasticsearchHosts = append(elasticsearchHosts, elasticsearchcontrollers.GetPublicUrl(es, fb.Spec.ElasticsearchRef.ManagedElasticsearchRef.TargetNodeGroup, false))
+		} else if fb.Spec.ElasticsearchRef.IsExternal() && len(fb.Spec.ElasticsearchRef.ExternalElasticsearchRef.Addresses) > 0 {
+			elasticsearchHosts = fb.Spec.ElasticsearchRef.ExternalElasticsearchRef.Addresses
 		}
 
-		// Compute external certificates
-		if elasticsearchCASecret != nil {
-			for certificateName := range elasticsearchCASecret.Data {
-				if strings.HasSuffix(certificateName, ".crt") || strings.HasSuffix(certificateName, ".pem") {
-					certificates = append(certificates, fmt.Sprintf("/usr/share/filebeat/es-custom-ca/%s", certificateName))
+		if fb.Spec.ElasticsearchRef.IsExternal() || fb.Spec.ElasticsearchRef.IsManaged() {
+			certificates := make([]string, 0)
+
+			// Compute Elasticsearch pki ca
+			if es != nil && es.Spec.Tls.IsTlsEnabled() && es.Spec.Tls.IsSelfManagedSecretForTls() {
+				certificates = append(certificates, "/usr/share/filebeat/es-ca/ca.crt")
+			}
+
+			// Compute external certificates
+			if elasticsearchCASecret != nil {
+				for certificateName := range elasticsearchCASecret.Data {
+					if strings.HasSuffix(certificateName, ".crt") || strings.HasSuffix(certificateName, ".pem") {
+						certificates = append(certificates, fmt.Sprintf("/usr/share/filebeat/es-custom-ca/%s", certificateName))
+					}
 				}
 			}
-		}
-		if len(certificates) == 0 {
-			filebeatConf["output.elasticsearch"] = map[string]any{
-				"hosts":    elasticsearchHosts,
-				"username": "${ELASTICSEARCH_USERNAME}",
-				"password": "${ELASTICSEARCH_PASSWORD}",
-			}
-		} else {
-			filebeatConf["output.elasticsearch"] = map[string]any{
-				"hosts":    elasticsearchHosts,
-				"username": "${ELASTICSEARCH_USERNAME}",
-				"password": "${ELASTICSEARCH_PASSWORD}",
-				"ssl": map[string]any{
-					"enable":                  true,
-					"certificate_authorities": certificates,
-				},
+			if len(certificates) == 0 {
+				filebeatConf["output.elasticsearch"] = map[string]any{
+					"hosts":    elasticsearchHosts,
+					"username": "${ELASTICSEARCH_USERNAME}",
+					"password": "${ELASTICSEARCH_PASSWORD}",
+				}
+			} else {
+				filebeatConf["output.elasticsearch"] = map[string]any{
+					"hosts":    elasticsearchHosts,
+					"username": "${ELASTICSEARCH_USERNAME}",
+					"password": "${ELASTICSEARCH_PASSWORD}",
+					"ssl": map[string]any{
+						"enable":                  true,
+						"certificate_authorities": certificates,
+					},
+				}
 			}
 		}
 	}
