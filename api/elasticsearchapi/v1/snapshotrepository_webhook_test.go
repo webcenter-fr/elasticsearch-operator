@@ -54,7 +54,7 @@ func (t *TestSuite) TestSetupSnapshotRepositoryWebhook() {
 				},
 			},
 			Name: "webhook",
-            Type: "local",
+			Type: "local",
 			Settings: &apis.MapAny{
 				Data: map[string]any{
 					"path": "/mnt/snpshot",
@@ -79,7 +79,7 @@ func (t *TestSuite) TestSetupSnapshotRepositoryWebhook() {
 				},
 			},
 			Name: "webhook",
-            Type: "local",
+			Type: "local",
 			Settings: &apis.MapAny{
 				Data: map[string]any{
 					"path": "/mnt/snpshot",
@@ -102,7 +102,7 @@ func (t *TestSuite) TestSetupSnapshotRepositoryWebhook() {
 				},
 			},
 			Name: "webhook",
-            Type: "local",
+			Type: "local",
 			Settings: &apis.MapAny{
 				Data: map[string]any{
 					"path": "/mnt/snpshot",
@@ -122,7 +122,7 @@ func (t *TestSuite) TestSetupSnapshotRepositoryWebhook() {
 		},
 		Spec: SnapshotRepositorySpec{
 			ElasticsearchRef: shared.ElasticsearchRef{},
-            Type: "local",
+			Type:             "local",
 			Settings: &apis.MapAny{
 				Data: map[string]any{
 					"path": "/mnt/snpshot",

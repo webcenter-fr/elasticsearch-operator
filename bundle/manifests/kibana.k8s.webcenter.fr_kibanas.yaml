@@ -214,7 +214,7 @@ spec:
                       config map or secret
                     items:
                       description: EnvFromSource represents the source of a set of
-                        ConfigMaps
+                        ConfigMaps or Secrets
                       properties:
                         configMapRef:
                           description: The ConfigMap to select from
@@ -234,8 +234,8 @@ spec:
                           type: object
                           x-kubernetes-map-type: atomic
                         prefix:
-                          description: An optional identifier to prepend to each key
-                            in the ConfigMap. Must be a C_IDENTIFIER.
+                          description: Optional text to prepend to the name of each
+                            environment variable. Must be a C_IDENTIFIER.
                           type: string
                         secretRef:
                           description: The Secret to select from
@@ -427,9 +427,6 @@ spec:
                           Additional policies may be added in the future.
                           Clients making eviction decisions should disallow eviction of unhealthy pods
                           if they encounter an unrecognized policy in this field.
-
-                          This field is beta-level. The eviction API uses this field when
-                          the feature gate PDBUnhealthyPodEvictionPolicy is enabled (enabled by default).
                         type: string
                     type: object
                   podTemplate:
@@ -1348,6 +1345,8 @@ spec:
                                   chain. Do not include a CA certificate. The secret referenced should
                                   be present in the same namespace as that of the Route.
                                   Forbidden when `certificate` is set.
+                                  The router service account needs to be granted with read-only access to this secret,
+                                  please refer to openshift docs for additional details.
                                 properties:
                                   name:
                                     description: |-

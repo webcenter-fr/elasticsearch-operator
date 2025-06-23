@@ -9,7 +9,6 @@ import (
 
 // SetupUserIndexexer setup indexer for User
 func SetupUserIndexexer(k8sManager manager.Manager) (err error) {
-
 	// Index external name needed by webhook to controle unicity
 	if err = k8sManager.GetFieldIndexer().IndexField(context.Background(), &User{}, "spec.externalName", func(o client.Object) []string {
 		p := o.(*User)

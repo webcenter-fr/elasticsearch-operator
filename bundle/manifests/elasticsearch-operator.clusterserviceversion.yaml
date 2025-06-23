@@ -863,10 +863,10 @@ metadata:
         }
       ]
     capabilities: Basic Install
-    createdAt: "2025-05-16T10:07:30Z"
-    operators.operatorframework.io/builder: operator-sdk-v1.39.2
+    createdAt: "2025-06-23T15:53:08Z"
+    operators.operatorframework.io/builder: operator-sdk-v1.40.0
     operators.operatorframework.io/project_layout: go.kubebuilder.io/v4
-  name: elasticsearch-operator.v0.0.55-rc.370
+  name: elasticsearch-operator.v0.0.55-rc.373
   namespace: placeholder
 spec:
   apiservicedefinitions: {}
@@ -3567,7 +3567,7 @@ spec:
                   value: INFO
                 - name: LOG_FORMATTER
                   value: json
-                image: quay.io/webcenter/elasticsearch-operator:0.0.55-rc.370
+                image: quay.io/webcenter/elasticsearch-operator:0.0.55-rc.373
                 livenessProbe:
                   httpGet:
                     path: /healthz
@@ -3575,6 +3575,10 @@ spec:
                   initialDelaySeconds: 15
                   periodSeconds: 20
                 name: manager
+                ports:
+                - containerPort: 9443
+                  name: webhook-server
+                  protocol: TCP
                 readinessProbe:
                   httpGet:
                     path: /readyz
@@ -3593,10 +3597,19 @@ spec:
                   capabilities:
                     drop:
                     - ALL
+                volumeMounts:
+                - mountPath: /tmp/k8s-webhook-server/serving-certs
+                  name: cert
+                  readOnly: true
               securityContext:
                 runAsNonRoot: true
               serviceAccountName: elasticsearch-operator-elasticsearch-operator
               terminationGracePeriodSeconds: 10
+              volumes:
+              - name: cert
+                secret:
+                  defaultMode: 420
+                  secretName: webhook-server-cert
       permissions:
       - rules:
         - apiGroups:
@@ -3658,4 +3671,366 @@ spec:
     name: webcenter.fr
     url: https://github.com/webcenter-fr/elasticsearch-operator
   replaces: elasticsearch-operator.v0.0.48
-  version: 0.0.55-rc.370
+  version: 0.0.55-rc.373
+  webhookdefinitions:
+  - admissionReviewVersions:
+    - v1
+    containerPort: 443
+    deploymentName: elasticsearch-operator-elasticsearch-operator
+    failurePolicy: Fail
+    generateName: componenttemplate.elasticsearchapi.k8s.webcenter.fr
+    rules:
+    - apiGroups:
+      - elasticsearchapi.k8s.webcenter.fr
+      apiVersions:
+      - v1
+      operations:
+      - CREATE
+      - UPDATE
+      resources:
+      - componenttemplates
+    sideEffects: None
+    targetPort: 9443
+    timeoutSeconds: 30
+    type: ValidatingAdmissionWebhook
+    webhookPath: /validate-elasticsearchapi-k8s-webcenter-fr-v1-componenttemplate
+  - admissionReviewVersions:
+    - v1
+    containerPort: 443
+    deploymentName: elasticsearch-operator-elasticsearch-operator
+    failurePolicy: Fail
+    generateName: filebeat.beat.k8s.webcenter.fr
+    rules:
+    - apiGroups:
+      - beat.k8s.webcenter.fr
+      apiVersions:
+      - v1
+      operations:
+      - CREATE
+      - UPDATE
+      resources:
+      - filebeats
+    sideEffects: None
+    targetPort: 9443
+    type: ValidatingAdmissionWebhook
+    webhookPath: /validate-beat-k8s-webcenter-fr-v1-filebeat
+  - admissionReviewVersions:
+    - v1
+    containerPort: 443
+    deploymentName: elasticsearch-operator-elasticsearch-operator
+    failurePolicy: Fail
+    generateName: host.cerebro.k8s.webcenter.fr
+    rules:
+    - apiGroups:
+      - cerebro.k8s.webcenter.fr
+      apiVersions:
+      - v1
+      operations:
+      - CREATE
+      - UPDATE
+      resources:
+      - hosts
+    sideEffects: None
+    targetPort: 9443
+    type: ValidatingAdmissionWebhook
+    webhookPath: /validate-cerebro-k8s-webcenter-fr-v1-host
+  - admissionReviewVersions:
+    - v1
+    containerPort: 443
+    deploymentName: elasticsearch-operator-elasticsearch-operator
+    failurePolicy: Fail
+    generateName: indexlifecyclepolicy.elasticsearchapi.k8s.webcenter.fr
+    rules:
+    - apiGroups:
+      - elasticsearchapi.k8s.webcenter.fr
+      apiVersions:
+      - v1
+      operations:
+      - CREATE
+      - UPDATE
+      resources:
+      - indexlifecyclepolicies
+    sideEffects: None
+    targetPort: 9443
+    type: ValidatingAdmissionWebhook
+    webhookPath: /validate-elasticsearchapi-k8s-webcenter-fr-v1-indexlifecyclepolicy
+  - admissionReviewVersions:
+    - v1
+    containerPort: 443
+    deploymentName: elasticsearch-operator-elasticsearch-operator
+    failurePolicy: Fail
+    generateName: indextemplate.elasticsearchapi.k8s.webcenter.fr
+    rules:
+    - apiGroups:
+      - elasticsearchapi.k8s.webcenter.fr
+      apiVersions:
+      - v1
+      operations:
+      - CREATE
+      - UPDATE
+      resources:
+      - indextemplates
+    sideEffects: None
+    targetPort: 9443
+    type: ValidatingAdmissionWebhook
+    webhookPath: /validate-elasticsearchapi-k8s-webcenter-fr-v1-indextemplate
+  - admissionReviewVersions:
+    - v1
+    containerPort: 443
+    deploymentName: elasticsearch-operator-elasticsearch-operator
+    failurePolicy: Fail
+    generateName: kibana.kibana.k8s.webcenter.fr
+    rules:
+    - apiGroups:
+      - kibana.k8s.webcenter.fr
+      apiVersions:
+      - v1
+      operations:
+      - CREATE
+      - UPDATE
+      resources:
+      - kibanas
+    sideEffects: None
+    targetPort: 9443
+    type: ValidatingAdmissionWebhook
+    webhookPath: /validate-kibana-k8s-webcenter-fr-v1-kibana
+  - admissionReviewVersions:
+    - v1
+    containerPort: 443
+    deploymentName: elasticsearch-operator-elasticsearch-operator
+    failurePolicy: Fail
+    generateName: license.elasticsearchapi.k8s.webcenter.fr
+    rules:
+    - apiGroups:
+      - elasticsearchapi.k8s.webcenter.fr
+      apiVersions:
+      - v1
+      operations:
+      - CREATE
+      - UPDATE
+      resources:
+      - licenses
+    sideEffects: None
+    targetPort: 9443
+    type: ValidatingAdmissionWebhook
+    webhookPath: /validate-elasticsearchapi-k8s-webcenter-fr-v1-license
+  - admissionReviewVersions:
+    - v1
+    containerPort: 443
+    deploymentName: elasticsearch-operator-elasticsearch-operator
+    failurePolicy: Fail
+    generateName: logstash.logstash.k8s.webcenter.fr
+    rules:
+    - apiGroups:
+      - logstash.k8s.webcenter.fr
+      apiVersions:
+      - v1
+      operations:
+      - CREATE
+      - UPDATE
+      resources:
+      - logstashes
+    sideEffects: None
+    targetPort: 9443
+    type: ValidatingAdmissionWebhook
+    webhookPath: /validate-logstash-k8s-webcenter-fr-v1-logstash
+  - admissionReviewVersions:
+    - v1
+    containerPort: 443
+    deploymentName: elasticsearch-operator-elasticsearch-operator
+    failurePolicy: Fail
+    generateName: logstashpipeline.kibanaapi.k8s.webcenter.fr
+    rules:
+    - apiGroups:
+      - kibanaapi.k8s.webcenter.fr
+      apiVersions:
+      - v1
+      operations:
+      - CREATE
+      - UPDATE
+      resources:
+      - logstashpipelines
+    sideEffects: None
+    targetPort: 9443
+    type: ValidatingAdmissionWebhook
+    webhookPath: /validate-kibanaapi-k8s-webcenter-fr-v1-logstashpipeline
+  - admissionReviewVersions:
+    - v1
+    containerPort: 443
+    deploymentName: elasticsearch-operator-elasticsearch-operator
+    failurePolicy: Fail
+    generateName: metricbeat.beat.k8s.webcenter.fr
+    rules:
+    - apiGroups:
+      - beat.k8s.webcenter.fr
+      apiVersions:
+      - v1
+      operations:
+      - CREATE
+      - UPDATE
+      resources:
+      - metricbeats
+    sideEffects: None
+    targetPort: 9443
+    type: ValidatingAdmissionWebhook
+    webhookPath: /validate-beat-k8s-webcenter-fr-v1-metricbeat
+  - admissionReviewVersions:
+    - v1
+    containerPort: 443
+    deploymentName: elasticsearch-operator-elasticsearch-operator
+    failurePolicy: Fail
+    generateName: role.elasticsearchapi.k8s.webcenter.fr
+    rules:
+    - apiGroups:
+      - elasticsearchapi.k8s.webcenter.fr
+      apiVersions:
+      - v1
+      operations:
+      - CREATE
+      - UPDATE
+      resources:
+      - roles
+    sideEffects: None
+    targetPort: 9443
+    type: ValidatingAdmissionWebhook
+    webhookPath: /validate-elasticsearchapi-k8s-webcenter-fr-v1-role
+  - admissionReviewVersions:
+    - v1
+    containerPort: 443
+    deploymentName: elasticsearch-operator-elasticsearch-operator
+    failurePolicy: Fail
+    generateName: role.kibanaapi.k8s.webcenter.fr
+    rules:
+    - apiGroups:
+      - kibanaapi.k8s.webcenter.fr
+      apiVersions:
+      - v1
+      operations:
+      - CREATE
+      - UPDATE
+      resources:
+      - roles
+    sideEffects: None
+    targetPort: 9443
+    type: ValidatingAdmissionWebhook
+    webhookPath: /validate-kibanaapi-k8s-webcenter-fr-v1-role
+  - admissionReviewVersions:
+    - v1
+    containerPort: 443
+    deploymentName: elasticsearch-operator-elasticsearch-operator
+    failurePolicy: Fail
+    generateName: rolemapping.elasticsearchapi.k8s.webcenter.fr
+    rules:
+    - apiGroups:
+      - elasticsearchapi.k8s.webcenter.fr
+      apiVersions:
+      - v1
+      operations:
+      - CREATE
+      - UPDATE
+      resources:
+      - rolemappings
+    sideEffects: None
+    targetPort: 9443
+    type: ValidatingAdmissionWebhook
+    webhookPath: /validate-elasticsearchapi-k8s-webcenter-fr-v1-rolemapping
+  - admissionReviewVersions:
+    - v1
+    containerPort: 443
+    deploymentName: elasticsearch-operator-elasticsearch-operator
+    failurePolicy: Fail
+    generateName: snapshotlifecyclepolicy.elasticsearchapi.k8s.webcenter.fr
+    rules:
+    - apiGroups:
+      - elasticsearchapi.k8s.webcenter.fr
+      apiVersions:
+      - v1
+      operations:
+      - CREATE
+      - UPDATE
+      resources:
+      - snapshotlifecyclepolicies
+    sideEffects: None
+    targetPort: 9443
+    type: ValidatingAdmissionWebhook
+    webhookPath: /validate-elasticsearchapi-k8s-webcenter-fr-v1-snapshotlifecyclepolicy
+  - admissionReviewVersions:
+    - v1
+    containerPort: 443
+    deploymentName: elasticsearch-operator-elasticsearch-operator
+    failurePolicy: Fail
+    generateName: snapshotrepository.elasticsearchapi.k8s.webcenter.fr
+    rules:
+    - apiGroups:
+      - elasticsearchapi.k8s.webcenter.fr
+      apiVersions:
+      - v1
+      operations:
+      - CREATE
+      - UPDATE
+      resources:
+      - snapshotrepositories
+    sideEffects: None
+    targetPort: 9443
+    type: ValidatingAdmissionWebhook
+    webhookPath: /validate-elasticsearchapi-k8s-webcenter-fr-v1-snapshotrepository
+  - admissionReviewVersions:
+    - v1
+    containerPort: 443
+    deploymentName: elasticsearch-operator-elasticsearch-operator
+    failurePolicy: Fail
+    generateName: user.elasticsearchapi.k8s.webcenter.fr
+    rules:
+    - apiGroups:
+      - elasticsearchapi.k8s.webcenter.fr
+      apiVersions:
+      - v1
+      operations:
+      - CREATE
+      - UPDATE
+      resources:
+      - users
+    sideEffects: None
+    targetPort: 9443
+    type: ValidatingAdmissionWebhook
+    webhookPath: /validate-elasticsearchapi-k8s-webcenter-fr-v1-user
+  - admissionReviewVersions:
+    - v1
+    containerPort: 443
+    deploymentName: elasticsearch-operator-elasticsearch-operator
+    failurePolicy: Fail
+    generateName: userspace.kibanaapi.k8s.webcenter.fr
+    rules:
+    - apiGroups:
+      - kibanaapi.k8s.webcenter.fr
+      apiVersions:
+      - v1
+      operations:
+      - CREATE
+      - UPDATE
+      resources:
+      - userspaces
+    sideEffects: None
+    targetPort: 9443
+    type: ValidatingAdmissionWebhook
+    webhookPath: /validate-kibanaapi-k8s-webcenter-fr-v1-userspace
+  - admissionReviewVersions:
+    - v1
+    containerPort: 443
+    deploymentName: elasticsearch-operator-elasticsearch-operator
+    failurePolicy: Fail
+    generateName: watch.elasticsearchapi.k8s.webcenter.fr
+    rules:
+    - apiGroups:
+      - elasticsearchapi.k8s.webcenter.fr
+      apiVersions:
+      - v1
+      operations:
+      - CREATE
+      - UPDATE
+      resources:
+      - watches
+    sideEffects: None
+    targetPort: 9443
+    type: ValidatingAdmissionWebhook
+    webhookPath: /validate-elasticsearchapi-k8s-webcenter-fr-v1-watch

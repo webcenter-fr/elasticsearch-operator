@@ -9,7 +9,6 @@ import (
 
 // SetupLicenceIndexer setuyp the indexer for licence
 func SetupLicenceIndexer(k8sManager manager.Manager) (err error) {
-
 	// Index external name needed by webhook to controle unicity
 	if err = k8sManager.GetFieldIndexer().IndexField(context.Background(), &License{}, "spec.externalName", func(o client.Object) []string {
 		p := o.(*License)
