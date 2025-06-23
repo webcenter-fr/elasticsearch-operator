@@ -1,12 +1,16 @@
 package cerebro
 
 import (
+	"crypto/tls"
+	"fmt"
+	"net"
 	"path/filepath"
 	"testing"
 	"time"
 
 	"github.com/disaster37/operator-sdk-extra/v2/pkg/controller"
 	"github.com/disaster37/operator-sdk-extra/v2/pkg/helper"
+	"github.com/disaster37/operator-sdk-extra/v2/pkg/test"
 	routev1 "github.com/openshift/api/route/v1"
 	monitoringv1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1"
 	"github.com/sirupsen/logrus"
@@ -29,6 +33,7 @@ import (
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 	metricsserver "sigs.k8s.io/controller-runtime/pkg/metrics/server"
+	"sigs.k8s.io/controller-runtime/pkg/webhook"
 	//+kubebuilder:scaffold:imports
 )
 
@@ -60,6 +65,9 @@ func (t *CerebroControllerTestSuite) SetupSuite() {
 		ErrorIfCRDPathMissing:    true,
 		ControlPlaneStopTimeout:  120 * time.Second,
 		ControlPlaneStartTimeout: 120 * time.Second,
+		WebhookInstallOptions: envtest.WebhookInstallOptions{
+			Paths: []string{filepath.Join("..", "..", "..", "config", "webhook")},
+		},
 	}
 	cfg, err := testEnv.Start()
 	if err != nil {
@@ -110,8 +118,14 @@ func (t *CerebroControllerTestSuite) SetupSuite() {
 	}
 
 	// Init k8smanager and k8sclient
+	webhookInstallOptions := &testEnv.WebhookInstallOptions
 	k8sManager, err := ctrl.NewManager(cfg, ctrl.Options{
-		Scheme:         scheme.Scheme,
+		Scheme: scheme.Scheme,
+		WebhookServer: webhook.NewServer(webhook.Options{
+			Host:    webhookInstallOptions.LocalServingHost,
+			Port:    webhookInstallOptions.LocalServingPort,
+			CertDir: webhookInstallOptions.LocalServingCertDir,
+		}),
 		LeaderElection: false,
 		Metrics:        metricsserver.Options{BindAddress: "0"},
 	})
@@ -143,8 +157,45 @@ func (t *CerebroControllerTestSuite) SetupSuite() {
 		beatcrd.SetupMetricbeatIndexer,
 		cerebrocrd.SetupCerebroIndexer,
 		cerebrocrd.SetupHostIndexer,
+		elasticsearchapicrd.SetupComponentTemplateIndexer,
+		elasticsearchapicrd.SetupIndexLifecyclePolicyIndexer,
+		elasticsearchapicrd.SetupIndexTemplateIndexer,
 		elasticsearchapicrd.SetupLicenceIndexer,
+		elasticsearchapicrd.SetupRoleIndexer,
+		elasticsearchapicrd.SetupRoleMappingIndexer,
+		elasticsearchapicrd.SetupSnapshotLifecyclePolicyIndexer,
+		elasticsearchapicrd.SetupSnapshotRepositoryIndexer,
 		elasticsearchapicrd.SetupUserIndexexer,
+		elasticsearchapicrd.SetupWatchIndexer,
+		kibanaapicrd.SetupLogstashPipelineIndexer,
+		kibanaapicrd.SetupRoleIndexer,
+		kibanaapicrd.SetupUserSpaceIndexer,
+	); err != nil {
+		panic(err)
+	}
+
+	// Add webhooks
+	if err := controller.SetupWebhookWithManager(
+		k8sManager,
+		k8sClient,
+		beatcrd.SetupFilebeatWebhookWithManager(logrus.NewEntry(logrus.StandardLogger())),
+		beatcrd.SetupMetricbeatWebhookWithManager(logrus.NewEntry(logrus.StandardLogger())),
+		cerebrocrd.SetupHostWebhookWithManager(logrus.NewEntry(logrus.StandardLogger())),
+		kibanacrd.SetupKibanaWebhookWithManager(logrus.NewEntry(logrus.StandardLogger())),
+		logstashcrd.SetupLogstashWebhookWithManager(logrus.NewEntry(logrus.StandardLogger())),
+		elasticsearchapicrd.SetupComponentTemplateWebhookWithManager(logrus.NewEntry(logrus.StandardLogger())),
+		elasticsearchapicrd.SetupIndexLifecyclePolicyWebhookWithManager(logrus.NewEntry(logrus.StandardLogger())),
+		elasticsearchapicrd.SetupIndexTemplateWebhookWithManager(logrus.NewEntry(logrus.StandardLogger())),
+		elasticsearchapicrd.SetupLicenseWebhookWithManager(logrus.NewEntry(logrus.StandardLogger())),
+		elasticsearchapicrd.SetupRoleWebhookWithManager(logrus.NewEntry(logrus.StandardLogger())),
+		elasticsearchapicrd.SetupRoleMappingWebhookWithManager(logrus.NewEntry(logrus.StandardLogger())),
+		elasticsearchapicrd.SetupSnapshotLifecyclePolicyWebhookWithManager(logrus.NewEntry(logrus.StandardLogger())),
+		elasticsearchapicrd.SetupSnapshotRepositoryWebhookWithManager(logrus.NewEntry(logrus.StandardLogger())),
+		elasticsearchapicrd.SetupUserWebhookWithManager(logrus.NewEntry(logrus.StandardLogger())),
+		elasticsearchapicrd.SetupWatchWebhookWithManager(logrus.NewEntry(logrus.StandardLogger())),
+		kibanaapicrd.SetupLogstashPipelineWebhookWithManager(logrus.NewEntry(logrus.StandardLogger())),
+		kibanaapicrd.SetupRoleWebhookWithManager(logrus.NewEntry(logrus.StandardLogger())),
+		kibanaapicrd.SetupUserSpaceWebhookWithManager(logrus.NewEntry(logrus.StandardLogger())),
 	); err != nil {
 		panic(err)
 	}
@@ -167,8 +218,19 @@ func (t *CerebroControllerTestSuite) SetupSuite() {
 		}
 	}()
 
-	// Wait for the cache to be ready.
-	time.Sleep(10 * time.Second)
+	// wait for the webhook server to get ready
+	dialer := &net.Dialer{Timeout: time.Second}
+	addrPort := fmt.Sprintf("%s:%d", webhookInstallOptions.LocalServingHost, webhookInstallOptions.LocalServingPort)
+	isTimeout, err := test.RunWithTimeout(func() error {
+		conn, err := tls.DialWithDialer(dialer, "tcp", addrPort, &tls.Config{InsecureSkipVerify: true})
+		if err != nil {
+			return err
+		}
+		return conn.Close()
+	}, time.Second*30, time.Second*1)
+	if err != nil || isTimeout {
+		panic("Webhook not ready")
+	}
 }
 
 func (t *CerebroControllerTestSuite) TearDownSuite() {

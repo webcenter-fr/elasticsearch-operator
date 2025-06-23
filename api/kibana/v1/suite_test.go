@@ -14,6 +14,8 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/envtest"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
+	"sigs.k8s.io/controller-runtime/pkg/webhook"
+	metricsserver "sigs.k8s.io/controller-runtime/pkg/metrics/server"
 )
 
 var testEnv *envtest.Environment
@@ -42,6 +44,9 @@ func (t *TestSuite) SetupSuite() {
 		ErrorIfCRDPathMissing:    true,
 		ControlPlaneStopTimeout:  120 * time.Second,
 		ControlPlaneStartTimeout: 120 * time.Second,
+		WebhookInstallOptions: envtest.WebhookInstallOptions{
+			Paths: []string{filepath.Join("..", "..", "..", "config", "webhook")},
+		},
 	}
 	cfg, err := testEnv.Start()
 	if err != nil {
@@ -59,8 +64,16 @@ func (t *TestSuite) SetupSuite() {
 	}
 
 	// Init k8smanager and k8sclient
+	webhookInstallOptions := &testEnv.WebhookInstallOptions
 	k8sManager, err := ctrl.NewManager(cfg, ctrl.Options{
 		Scheme: scheme.Scheme,
+		WebhookServer: webhook.NewServer(webhook.Options{
+			Host:    webhookInstallOptions.LocalServingHost,
+			Port:    webhookInstallOptions.LocalServingPort,
+			CertDir: webhookInstallOptions.LocalServingCertDir,
+		}),
+		LeaderElection: false,
+		Metrics:        metricsserver.Options{BindAddress: "0"},
 	})
 	if err != nil {
 		panic(err)
@@ -68,9 +81,19 @@ func (t *TestSuite) SetupSuite() {
 	k8sClient := k8sManager.GetClient()
 	t.k8sClient = k8sClient
 
+	// Setup indexer
 	if err := controller.SetupIndexerWithManager(
 		k8sManager,
 		SetupKibanaIndexer,
+	); err != nil {
+		panic(err)
+	}
+
+	// Setup webhook
+	if err := controller.SetupWebhookWithManager(
+		k8sManager,
+		k8sClient,
+		SetupKibanaWebhookWithManager(logrus.NewEntry(logrus.StandardLogger())),
 	); err != nil {
 		panic(err)
 	}

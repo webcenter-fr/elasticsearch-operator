@@ -59,10 +59,10 @@ func (r *caElasticsearchReconciler) Read(ctx context.Context, o *beatcrd.Filebea
 		read.AddCurrentObject(s)
 	}
 
-	if o.Spec.ElasticsearchRef.IsManaged() {
+	if o.Spec.ElasticsearchRef != nil && o.Spec.ElasticsearchRef.IsManaged() {
 
 		// Read Elasticsearch
-		es, err = common.GetElasticsearchFromRef(ctx, r.Client(), o, o.Spec.ElasticsearchRef)
+		es, err = common.GetElasticsearchFromRef(ctx, r.Client(), o, *o.Spec.ElasticsearchRef)
 		if err != nil {
 			return read, res, errors.Wrap(err, "Error when read elasticsearchRef")
 		}

@@ -29,6 +29,22 @@ import (
 	routev1 "github.com/openshift/api/route/v1"
 	monitoringv1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1"
 	"github.com/sirupsen/logrus"
+	"k8s.io/apimachinery/pkg/runtime"
+	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
+	"k8s.io/client-go/dynamic"
+	"k8s.io/client-go/kubernetes"
+	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
+	_ "k8s.io/client-go/plugin/pkg/client/auth"
+	"k8s.io/utils/ptr"
+	ctrl "sigs.k8s.io/controller-runtime"
+	"sigs.k8s.io/controller-runtime/pkg/cache"
+	"sigs.k8s.io/controller-runtime/pkg/config"
+	"sigs.k8s.io/controller-runtime/pkg/healthz"
+	"sigs.k8s.io/controller-runtime/pkg/log/zap"
+	"sigs.k8s.io/controller-runtime/pkg/metrics/filters"
+	"sigs.k8s.io/controller-runtime/pkg/metrics/server"
+	"sigs.k8s.io/controller-runtime/pkg/webhook"
+
 	beatcrd "github.com/webcenter-fr/elasticsearch-operator/api/beat/v1"
 	cerebrocrd "github.com/webcenter-fr/elasticsearch-operator/api/cerebro/v1"
 	elasticsearchcrd "github.com/webcenter-fr/elasticsearch-operator/api/elasticsearch/v1"
@@ -45,19 +61,6 @@ import (
 	kibanaapicontrollers "github.com/webcenter-fr/elasticsearch-operator/internal/controller/kibanaapi"
 	logstashcontrollers "github.com/webcenter-fr/elasticsearch-operator/internal/controller/logstash"
 	metricbeatcontrollers "github.com/webcenter-fr/elasticsearch-operator/internal/controller/metricbeat"
-	"k8s.io/apimachinery/pkg/runtime"
-	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
-	"k8s.io/client-go/dynamic"
-	"k8s.io/client-go/kubernetes"
-	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
-	_ "k8s.io/client-go/plugin/pkg/client/auth"
-	ctrl "sigs.k8s.io/controller-runtime"
-	"sigs.k8s.io/controller-runtime/pkg/cache"
-	"sigs.k8s.io/controller-runtime/pkg/healthz"
-	"sigs.k8s.io/controller-runtime/pkg/log/zap"
-	"sigs.k8s.io/controller-runtime/pkg/metrics/filters"
-	"sigs.k8s.io/controller-runtime/pkg/metrics/server"
-	"sigs.k8s.io/controller-runtime/pkg/webhook"
 	//+kubebuilder:scaffold:imports
 )
 
@@ -172,6 +175,10 @@ func main() {
 		Cache: cache.Options{
 			DefaultNamespaces: cacheNamespaces,
 		},
+		Controller: config.Controller{
+			MaxConcurrentReconciles: 1,
+			RecoverPanic:            ptr.To(true),
+		},
 		// LeaderElectionReleaseOnCancel defines if the leader should step down voluntarily
 		// when the Manager ends. This requires the binary to immediately end when the
 		// Manager is stopped, otherwise, this setting is unsafe. Setting this significantly
@@ -220,10 +227,51 @@ func main() {
 		beatcrd.SetupMetricbeatIndexer,
 		cerebrocrd.SetupCerebroIndexer,
 		cerebrocrd.SetupHostIndexer,
+		elasticsearchapicrd.SetupComponentTemplateIndexer,
+		elasticsearchapicrd.SetupIndexLifecyclePolicyIndexer,
+		elasticsearchapicrd.SetupIndexTemplateIndexer,
 		elasticsearchapicrd.SetupLicenceIndexer,
+		elasticsearchapicrd.SetupRoleIndexer,
+		elasticsearchapicrd.SetupRoleMappingIndexer,
+		elasticsearchapicrd.SetupSnapshotLifecyclePolicyIndexer,
+		elasticsearchapicrd.SetupSnapshotRepositoryIndexer,
 		elasticsearchapicrd.SetupUserIndexexer,
+		elasticsearchapicrd.SetupWatchIndexer,
+		kibanaapicrd.SetupLogstashPipelineIndexer,
+		kibanaapicrd.SetupRoleIndexer,
+		kibanaapicrd.SetupUserSpaceIndexer,
 	); err != nil {
-		panic(err)
+		setupLog.Error(err, "unable to add indexers", "indexer", "All")
+		os.Exit(1)
+	}
+
+	// Add webhooks
+	if os.Getenv("ENABLE_WEBHOOKS") != "false" {
+		if err := controller.SetupWebhookWithManager(
+			mgr,
+			mgr.GetClient(),
+			beatcrd.SetupFilebeatWebhookWithManager(logrus.NewEntry(log)),
+			beatcrd.SetupMetricbeatWebhookWithManager(logrus.NewEntry(log)),
+			cerebrocrd.SetupHostWebhookWithManager(logrus.NewEntry(log)),
+			kibanacrd.SetupKibanaWebhookWithManager(logrus.NewEntry(log)),
+			logstashcrd.SetupLogstashWebhookWithManager(logrus.NewEntry(log)),
+			elasticsearchapicrd.SetupComponentTemplateWebhookWithManager(logrus.NewEntry(log)),
+			elasticsearchapicrd.SetupIndexLifecyclePolicyWebhookWithManager(logrus.NewEntry(log)),
+			elasticsearchapicrd.SetupIndexTemplateWebhookWithManager(logrus.NewEntry(log)),
+			elasticsearchapicrd.SetupLicenseWebhookWithManager(logrus.NewEntry(log)),
+			elasticsearchapicrd.SetupRoleWebhookWithManager(logrus.NewEntry(log)),
+			elasticsearchapicrd.SetupRoleMappingWebhookWithManager(logrus.NewEntry(log)),
+			elasticsearchapicrd.SetupSnapshotLifecyclePolicyWebhookWithManager(logrus.NewEntry(log)),
+			elasticsearchapicrd.SetupSnapshotRepositoryWebhookWithManager(logrus.NewEntry(log)),
+			elasticsearchapicrd.SetupUserWebhookWithManager(logrus.NewEntry(log)),
+			elasticsearchapicrd.SetupWatchWebhookWithManager(logrus.NewEntry(log)),
+			kibanaapicrd.SetupLogstashPipelineWebhookWithManager(logrus.NewEntry(log)),
+			kibanaapicrd.SetupRoleWebhookWithManager(logrus.NewEntry(log)),
+			kibanaapicrd.SetupUserSpaceWebhookWithManager(logrus.NewEntry(log)),
+		); err != nil {
+			setupLog.Error(err, "unable to add webhooks", "webhook", "All")
+			os.Exit(1)
+		}
 	}
 
 	// Init controllers

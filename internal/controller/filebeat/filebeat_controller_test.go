@@ -102,7 +102,7 @@ func doCreateFilebeatStep() test.TestStep[*beatcrd.Filebeat] {
 				},
 				Spec: beatcrd.FilebeatSpec{
 					Version: "8.6.0",
-					ElasticsearchRef: sharedcrd.ElasticsearchRef{
+					ElasticsearchRef: &sharedcrd.ElasticsearchRef{
 						ManagedElasticsearchRef: &sharedcrd.ElasticsearchManagedRef{
 							Name: es.Name,
 						},

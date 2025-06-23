@@ -64,8 +64,8 @@ func (r *configMapReconciler) Read(ctx context.Context, o *beatcrd.Filebeat, dat
 	read.SetCurrentObjects(helper.ToSlicePtr(cmList.Items))
 
 	// Read Elasticsearch
-	if o.Spec.ElasticsearchRef.IsManaged() {
-		es, err = common.GetElasticsearchFromRef(ctx, r.Client(), o, o.Spec.ElasticsearchRef)
+	if o.Spec.ElasticsearchRef != nil && o.Spec.ElasticsearchRef.IsManaged() {
+		es, err = common.GetElasticsearchFromRef(ctx, r.Client(), o, *o.Spec.ElasticsearchRef)
 		if err != nil {
 			return read, res, errors.Wrap(err, "Error when read ElasticsearchRef")
 		}
@@ -78,7 +78,7 @@ func (r *configMapReconciler) Read(ctx context.Context, o *beatcrd.Filebeat, dat
 	}
 
 	// Read Logstash
-	if o.Spec.LogstashRef.IsManaged() {
+	if o.Spec.LogstashRef != nil && o.Spec.LogstashRef.IsManaged() {
 		ls = &logstashcrd.Logstash{}
 		namespace := o.Namespace
 		if o.Spec.LogstashRef.ManagedLogstashRef.Namespace != "" {
@@ -97,7 +97,7 @@ func (r *configMapReconciler) Read(ctx context.Context, o *beatcrd.Filebeat, dat
 	}
 
 	// Read ElasticsearchCASecret
-	if (o.Spec.ElasticsearchRef.IsExternal() || o.Spec.ElasticsearchRef.IsManaged()) && o.Spec.ElasticsearchRef.ElasticsearchCaSecretRef != nil {
+	if o.Spec.ElasticsearchRef != nil && (o.Spec.ElasticsearchRef.IsExternal() || o.Spec.ElasticsearchRef.IsManaged()) && o.Spec.ElasticsearchRef.ElasticsearchCaSecretRef != nil {
 		elasticsearchCASecret = &corev1.Secret{}
 		if err = r.Client().Get(ctx, types.NamespacedName{Namespace: o.Namespace, Name: o.Spec.ElasticsearchRef.ElasticsearchCaSecretRef.Name}, elasticsearchCASecret); err != nil {
 			if !k8serrors.IsNotFound(err) {
@@ -109,7 +109,7 @@ func (r *configMapReconciler) Read(ctx context.Context, o *beatcrd.Filebeat, dat
 	}
 
 	// Read logstashCASecret
-	if (o.Spec.LogstashRef.IsExternal() || o.Spec.LogstashRef.IsManaged()) && o.Spec.LogstashRef.LogstashCaSecretRef != nil {
+	if o.Spec.LogstashRef != nil && (o.Spec.LogstashRef.IsExternal() || o.Spec.LogstashRef.IsManaged()) && o.Spec.LogstashRef.LogstashCaSecretRef != nil {
 		logstashCASecret = &corev1.Secret{}
 		if err = r.Client().Get(ctx, types.NamespacedName{Namespace: o.Namespace, Name: o.Spec.LogstashRef.LogstashCaSecretRef.Name}, logstashCASecret); err != nil {
 			if !k8serrors.IsNotFound(err) {

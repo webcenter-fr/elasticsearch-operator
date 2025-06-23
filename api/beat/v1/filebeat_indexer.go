@@ -12,7 +12,7 @@ import (
 func SetupFilebeatIndexer(k8sManager manager.Manager) (err error) {
 	if err = k8sManager.GetFieldIndexer().IndexField(context.Background(), &Filebeat{}, "spec.elasticsearchRef.managed.name", func(o client.Object) []string {
 		p := o.(*Filebeat)
-		if p.Spec.ElasticsearchRef.IsManaged() {
+		if p.Spec.ElasticsearchRef != nil && p.Spec.ElasticsearchRef.IsManaged() {
 			return []string{p.Spec.ElasticsearchRef.ManagedElasticsearchRef.Name}
 		}
 		return []string{}
@@ -22,7 +22,7 @@ func SetupFilebeatIndexer(k8sManager manager.Manager) (err error) {
 
 	if err = k8sManager.GetFieldIndexer().IndexField(context.Background(), &Filebeat{}, "spec.elasticsearchRef.managed.fullname", func(o client.Object) []string {
 		p := o.(*Filebeat)
-		if p.Spec.ElasticsearchRef.IsManaged() {
+		if p.Spec.ElasticsearchRef != nil && p.Spec.ElasticsearchRef.IsManaged() {
 			if p.Spec.ElasticsearchRef.ManagedElasticsearchRef.Namespace != "" {
 				return []string{fmt.Sprintf("%s/%s", p.Spec.ElasticsearchRef.ManagedElasticsearchRef.Namespace, p.Spec.ElasticsearchRef.ManagedElasticsearchRef.Name)}
 			}
@@ -35,7 +35,7 @@ func SetupFilebeatIndexer(k8sManager manager.Manager) (err error) {
 
 	if err = k8sManager.GetFieldIndexer().IndexField(context.Background(), &Filebeat{}, "spec.elasticsearchRef.elasticsearchCASecretRef.name", func(o client.Object) []string {
 		p := o.(*Filebeat)
-		if p.Spec.ElasticsearchRef.ElasticsearchCaSecretRef != nil {
+		if p.Spec.ElasticsearchRef != nil && p.Spec.ElasticsearchRef.ElasticsearchCaSecretRef != nil {
 			return []string{p.Spec.ElasticsearchRef.ElasticsearchCaSecretRef.Name}
 		}
 		return []string{}
@@ -45,7 +45,7 @@ func SetupFilebeatIndexer(k8sManager manager.Manager) (err error) {
 
 	if err = k8sManager.GetFieldIndexer().IndexField(context.Background(), &Filebeat{}, "spec.elasticsearchRef.secretRef.name", func(o client.Object) []string {
 		p := o.(*Filebeat)
-		if p.Spec.ElasticsearchRef.SecretRef != nil {
+		if p.Spec.ElasticsearchRef != nil && p.Spec.ElasticsearchRef.SecretRef != nil {
 			return []string{p.Spec.ElasticsearchRef.SecretRef.Name}
 		}
 		return []string{}
@@ -55,7 +55,7 @@ func SetupFilebeatIndexer(k8sManager manager.Manager) (err error) {
 
 	if err = k8sManager.GetFieldIndexer().IndexField(context.Background(), &Filebeat{}, "spec.logstashRef.managed.name", func(o client.Object) []string {
 		p := o.(*Filebeat)
-		if p.Spec.LogstashRef.IsManaged() {
+		if p.Spec.LogstashRef != nil && p.Spec.LogstashRef.IsManaged() {
 			return []string{p.Spec.LogstashRef.ManagedLogstashRef.Name}
 		}
 		return []string{}
@@ -65,7 +65,7 @@ func SetupFilebeatIndexer(k8sManager manager.Manager) (err error) {
 
 	if err = k8sManager.GetFieldIndexer().IndexField(context.Background(), &Filebeat{}, "spec.logstashRef.managed.fullname", func(o client.Object) []string {
 		p := o.(*Filebeat)
-		if p.Spec.LogstashRef.IsManaged() {
+		if p.Spec.LogstashRef != nil && p.Spec.LogstashRef.IsManaged() {
 			if p.Spec.LogstashRef.ManagedLogstashRef.Namespace != "" {
 				return []string{fmt.Sprintf("%s/%s", p.Spec.LogstashRef.ManagedLogstashRef.Namespace, p.Spec.LogstashRef.ManagedLogstashRef.Name)}
 			}
@@ -78,7 +78,7 @@ func SetupFilebeatIndexer(k8sManager manager.Manager) (err error) {
 
 	if err = k8sManager.GetFieldIndexer().IndexField(context.Background(), &Filebeat{}, "spec.logstashRef.logstashCASecretRef.name", func(o client.Object) []string {
 		p := o.(*Filebeat)
-		if p.Spec.LogstashRef.LogstashCaSecretRef != nil {
+		if p.Spec.LogstashRef != nil && p.Spec.LogstashRef.LogstashCaSecretRef != nil {
 			return []string{p.Spec.LogstashRef.LogstashCaSecretRef.Name}
 		}
 		return []string{}

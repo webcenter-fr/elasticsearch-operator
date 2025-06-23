@@ -61,7 +61,7 @@ func TestBuildNetworkPolicies(t *testing.T) {
 				Kind: "Filebeat",
 			},
 			Spec: beatcrd.FilebeatSpec{
-				LogstashRef: beatcrd.FilebeatLogstashRef{
+				LogstashRef: &beatcrd.FilebeatLogstashRef{
 					ManagedLogstashRef: &beatcrd.FilebeatLogstashManagedRef{
 						Port: 5003,
 					},

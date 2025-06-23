@@ -206,6 +206,8 @@ spec:
                         - actions
                         type: object
                     type: object
+                required:
+                - phases
                 type: object
               rawPolicy:
                 description: Policy is the raw policy on JSON

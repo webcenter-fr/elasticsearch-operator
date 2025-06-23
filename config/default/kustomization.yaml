@@ -15,7 +15,7 @@ namePrefix: elasticsearch-operator-
 
 # [WEBHOOK] To enable webhook, uncomment all the sections with [WEBHOOK] prefix including the one in
 # crd/kustomization.yaml
-#- ../webhook
+
 # [CERTMANAGER] To enable cert-manager, uncomment all sections with 'CERTMANAGER'. 'WEBHOOK' components are required.
 #- ../certmanager
 # [PROMETHEUS] To enable prometheus monitor, uncomment all sections with 'PROMETHEUS'.
@@ -26,6 +26,7 @@ resources:
 - ../manager
 - ../prometheus
 - metrics_service.yaml
+- ../webhook
 
 # [METRICS] The following patch will enable the metrics endpoint using HTTPS and the port :8443.
 # More info: https://book.kubebuilder.io/reference/metrics
@@ -33,6 +34,7 @@ patches:
 - path: manager_metrics_patch.yaml
   target:
     kind: Deployment
+- path: manager_webhook_patch.yaml
 
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization

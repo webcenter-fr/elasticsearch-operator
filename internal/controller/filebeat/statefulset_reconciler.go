@@ -74,8 +74,8 @@ func (r *statefulsetReconciler) Read(ctx context.Context, o *beatcrd.Filebeat, d
 	}
 
 	// Read Elasticsearch
-	if o.Spec.ElasticsearchRef.IsManaged() {
-		es, err = common.GetElasticsearchFromRef(ctx, r.Client(), o, o.Spec.ElasticsearchRef)
+	if o.Spec.ElasticsearchRef != nil && o.Spec.ElasticsearchRef.IsManaged() {
+		es, err = common.GetElasticsearchFromRef(ctx, r.Client(), o, *o.Spec.ElasticsearchRef)
 		if err != nil {
 			return read, res, errors.Wrap(err, "Error when read ElasticsearchRef")
 		}
@@ -88,7 +88,7 @@ func (r *statefulsetReconciler) Read(ctx context.Context, o *beatcrd.Filebeat, d
 	}
 
 	// Read Logstash
-	if o.Spec.LogstashRef.IsManaged() {
+	if o.Spec.LogstashRef != nil && o.Spec.LogstashRef.IsManaged() {
 		ls = &logstashcrd.Logstash{}
 		namespace := o.Namespace
 		if o.Spec.LogstashRef.ManagedLogstashRef.Namespace != "" {
@@ -118,7 +118,7 @@ func (r *statefulsetReconciler) Read(ctx context.Context, o *beatcrd.Filebeat, d
 	}
 
 	// Read Custom CA Elasticsearch to generate checksum
-	if (o.Spec.ElasticsearchRef.IsManaged() && es.Spec.Tls.IsTlsEnabled()) || o.Spec.ElasticsearchRef.ElasticsearchCaSecretRef != nil {
+	if o.Spec.ElasticsearchRef != nil && ((o.Spec.ElasticsearchRef.IsManaged() && es.Spec.Tls.IsTlsEnabled()) || o.Spec.ElasticsearchRef.ElasticsearchCaSecretRef != nil) {
 		if o.Spec.ElasticsearchRef.IsManaged() && es.Spec.Tls.IsTlsEnabled() && es.Spec.Tls.IsSelfManagedSecretForTls() {
 			if err = r.Client().Get(ctx, types.NamespacedName{Namespace: o.Namespace, Name: GetSecretNameForCAElasticsearch(o)}, s); err != nil {
 				if !k8serrors.IsNotFound(err) {
@@ -147,7 +147,7 @@ func (r *statefulsetReconciler) Read(ctx context.Context, o *beatcrd.Filebeat, d
 	}
 
 	// Read custom CA for Logstash to add on checksum
-	if o.Spec.LogstashRef.LogstashCaSecretRef != nil {
+	if o.Spec.LogstashRef != nil && o.Spec.LogstashRef.LogstashCaSecretRef != nil {
 		if err = r.Client().Get(ctx, types.NamespacedName{Namespace: o.Namespace, Name: o.Spec.LogstashRef.LogstashCaSecretRef.Name}, s); err != nil {
 			if !k8serrors.IsNotFound(err) {
 				return read, res, errors.Wrapf(err, "Error when read secret %s", o.Spec.LogstashRef.LogstashCaSecretRef.Name)
@@ -160,7 +160,7 @@ func (r *statefulsetReconciler) Read(ctx context.Context, o *beatcrd.Filebeat, d
 	}
 
 	// Read Elasticsearch secretRef to add on checksum
-	if o.Spec.ElasticsearchRef.SecretRef != nil {
+	if o.Spec.ElasticsearchRef != nil && o.Spec.ElasticsearchRef.SecretRef != nil {
 		if err = r.Client().Get(ctx, types.NamespacedName{Namespace: o.Namespace, Name: o.Spec.ElasticsearchRef.SecretRef.Name}, s); err != nil {
 			if !k8serrors.IsNotFound(err) {
 				return read, res, errors.Wrapf(err, "Error when read secret %s", o.Spec.ElasticsearchRef.SecretRef.Name)

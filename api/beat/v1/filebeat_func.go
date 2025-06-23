@@ -2,6 +2,7 @@ package v1
 
 import (
 	"github.com/disaster37/operator-sdk-extra/v2/pkg/object"
+	"k8s.io/apimachinery/pkg/util/validation/field"
 )
 
 // GetStatus implement the object.MultiPhaseObject
@@ -26,6 +27,16 @@ func (h FilebeatLogstashRef) IsManaged() bool {
 // IsExternal permit to know if Logstash is external (not managed by operator)
 func (h FilebeatLogstashRef) IsExternal() bool {
 	return h.ExternalLogstashRef != nil && len(h.ExternalLogstashRef.Addresses) > 0
+}
+
+// ValidateField permit to validate field from webhook
+func (h FilebeatLogstashRef) ValidateField() *field.Error {
+	// Check we provide Opensearch cluster
+	if !h.IsExternal() && !h.IsManaged() {
+		return field.Required(field.NewPath("spec").Child("LogstashRef"), "You need to provide managed or external Logstash target")
+	}
+
+	return nil
 }
 
 // IsPdb return true if PDB is enabled
