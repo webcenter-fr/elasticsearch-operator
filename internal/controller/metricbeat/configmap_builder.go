@@ -94,7 +94,7 @@ func buildConfigMaps(mb *beatcrd.Metricbeat, es *elasticsearchcrd.Elasticsearch,
 	}
 
 	// Inject computed config
-	expectedConfig, err = helper.MergeSettings(injectedConfigMap, configs)
+	expectedConfig, err = helper.MergeSettings(configs, injectedConfigMap)
 	if err != nil {
 		return nil, errors.Wrap(err, "Error when merge expected config with computed config")
 	}

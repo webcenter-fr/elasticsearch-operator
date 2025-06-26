@@ -19,6 +19,7 @@ require (
 	github.com/elastic/go-elasticsearch/v8 v8.18.0
 	github.com/elastic/go-ucfg v0.8.8
 	github.com/google/go-cmp v0.7.0
+	github.com/magiconair/properties v1.8.10
 	github.com/olivere/elastic/v7 v7.0.32
 	github.com/openshift/api v0.0.0-20250613225054-29b831646a5f
 	github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring v0.83.0

@@ -16,9 +16,9 @@ func TestMergeSettings(t *testing.T) {
 		err       error
 	)
 
-	// Normal case
+	// Normal case when YAML
 	m = map[string]string{
-		"elasticsearch.yml": `
+		"opensearch.yml": `
 dd: a
 aa.bb: tutu
 ff:
@@ -27,7 +27,7 @@ ff:
 `,
 	}
 	m2 = map[string]string{
-		"elasticsearch.yml": `
+		"opensearch.yml": `
 dd: a
 aa.bb: tutu2
 ff:
@@ -37,7 +37,7 @@ ff:
 `,
 	}
 	expectedM = map[string]string{
-		"elasticsearch.yml": `aa:
+		"opensearch.yml": `aa:
     bb: tutu2
 dd: a
 ff:
@@ -62,17 +62,17 @@ ff:
 
 	// When keys is not the same
 	m = map[string]string{
-		"elasticsearch.yml": `
+		"opensearch.yml": `
 aa: aa
 `,
 	}
 	m2 = map[string]string{
-		"elasticsearch.yml": `
+		"opensearch.yml": `
 bb: bb
 `,
 	}
 	expectedM = map[string]string{
-		"elasticsearch.yml": `aa: aa
+		"opensearch.yml": `aa: aa
 bb: bb
 `,
 	}
@@ -83,13 +83,13 @@ bb: bb
 
 	// When error
 	m = map[string]string{
-		"elasticsearch.yml": `
+		"opensearch.yml": `
 dd: dd
  fff: ff
 `,
 	}
 	m2 = map[string]string{
-		"elasticsearch.yml": `
+		"opensearch.yml": `
 bb: bb
 `,
 	}
@@ -99,6 +99,81 @@ bb: bb
 
 	_, err = MergeSettings(m, m2)
 	assert.Error(t, err)
+
+	// Normal case when JSON
+	m = map[string]string{
+		"test.json": `
+{
+	"foo": "bar"		
+}
+`,
+	}
+	m2 = map[string]string{
+		"test.json": `
+{
+	"foo": "baz",
+	"bar": "qux"
+}
+`,
+	}
+	expectedM = map[string]string{
+		"test.json": `{
+  "bar": "qux",
+  "foo": "baz"
+}`,
+	}
+
+	res, err = MergeSettings(m2, m)
+	assert.NoError(t, err)
+	assert.Empty(t, cmp.Diff(expectedM, res))
+
+	// Normal case when properties
+	m = map[string]string{
+		"test.properties": `
+foo=bar
+bar=qux
+`,
+	}
+	m2 = map[string]string{
+		"test.properties": `
+foo = baz
+`,
+	}
+	expectedM = map[string]string{
+		"test.properties": `foo = baz
+bar = qux
+`,
+	}
+
+	res, err = MergeSettings(m2, m)
+	assert.NoError(t, err)
+	assert.Empty(t, cmp.Diff(expectedM, res))
+
+	// Normal case when file extension is not known
+	m = map[string]string{
+		"test.toto": `
+foo=bar
+bar=qux
+`,
+	}
+	m2 = map[string]string{
+		"test.toto": `
+foo = baz
+`,
+	}
+	expectedM = map[string]string{
+		"test.toto": `
+foo=bar
+bar=qux
+
+
+foo = baz
+`,
+	}
+
+	res, err = MergeSettings(m2, m)
+	assert.NoError(t, err)
+	assert.Empty(t, cmp.Diff(expectedM, res))
 }
 
 func TestGetSetting(t *testing.T) {

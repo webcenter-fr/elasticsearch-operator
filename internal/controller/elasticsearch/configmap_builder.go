@@ -86,7 +86,7 @@ func buildConfigMaps(es *elasticsearchcrd.Elasticsearch) (configMaps []*corev1.C
 		}
 
 		// Inject computed config
-		expectedConfig, err = helper.MergeSettings(injectedConfigMap, expectedConfig)
+		expectedConfig, err = helper.MergeSettings(expectedConfig, injectedConfigMap)
 		if err != nil {
 			return nil, errors.Wrapf(err, "Error when merge expected config with computed config on node group %s", nodeGroup.Name)
 		}
