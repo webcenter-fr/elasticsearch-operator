@@ -9,11 +9,11 @@ import (
 	"emperror.dev/errors"
 	"github.com/davecgh/go-spew/spew"
 	"github.com/elastic/go-ucfg"
+	ucfgjson "github.com/elastic/go-ucfg/json"
 	ucfgyaml "github.com/elastic/go-ucfg/yaml"
+	"github.com/magiconair/properties"
 	"github.com/thoas/go-funk"
 	"gopkg.in/yaml.v3"
-	"github.com/magiconair/properties"
-	ucfgjson "github.com/elastic/go-ucfg/json"
 )
 
 // MergeSettings have different behavior in fact of content
