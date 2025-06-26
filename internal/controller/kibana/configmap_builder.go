@@ -75,7 +75,7 @@ func buildConfigMaps(kb *kibanacrd.Kibana, es *elasticsearchcrd.Elasticsearch) (
 	}
 
 	// Inject computed config
-	expectedConfig, err = localhelper.MergeSettings(injectedConfigMap, configs)
+	expectedConfig, err = localhelper.MergeSettings(configs, injectedConfigMap)
 	if err != nil {
 		return nil, errors.Wrap(err, "Error when merge expected config with computed config")
 	}
