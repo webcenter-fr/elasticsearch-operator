@@ -53,7 +53,7 @@ func buildConfigMaps(kb *kibanacrd.Kibana, es *elasticsearchcrd.Elasticsearch) (
 		if !kb.Spec.Tls.IsTlsEnabled() && kb.Spec.Endpoint.Ingress.SecretRef == nil {
 			scheme = "http"
 		}
-		kibanaConf["server.publicBaseUrl"] = fmt.Sprintf(": %s://%s%s", scheme, kb.Spec.Endpoint.Ingress.Host, path)
+		kibanaConf["server.publicBaseUrl"] = fmt.Sprintf("%s://%s%s", scheme, kb.Spec.Endpoint.Ingress.Host, path)
 	}
 
 	injectedConfigMap := map[string]string{

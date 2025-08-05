@@ -30,7 +30,7 @@ metadata:
   namespace: olm
 spec:
   sourceType: grpc
-  image: quay.io/webcenter/elasticsearch-operator-catalog:v0.0.38
+  image: quay.io/webcenter/elasticsearch-operator-catalog:latest
 ```
 
 Then, you need to add the subscriptions:
@@ -40,7 +40,7 @@ kind: Subscription
 metadata:
   name: elasticsearch-operator-subscription
 spec:
-  channel: alpha
+  channel: stable
   name: elasticsearch-operator
   source: elasticsearch-operator
   sourceNamespace: olm
@@ -51,6 +51,15 @@ spec:
 ```
 
 > To upgrade operator, you just need to update the image version on `elasticsearch-operator` catalog source
+
+If you not have Prometheus operator on your Kubernetes, you need to deploy manually the ServiceMonitor CRD to avoid OLM failed.
+
+```bash
+kubectl apply --server-side -f https://raw.githubusercontent.com/prometheus-operator/prometheus-operator/r
+efs/tags/v0.84.0/example/prometheus-operator-crd/monitoring.coreos.com_servicemonitors.yaml
+
+kubectl apply --server-side -f https://raw.githubusercontent.com/prometheus-operator/prometheus-operator/refs/tags/v0.84.0/example/prometheus-operator-crd/monitoring.coreos.com_podmonitors.yaml
+```
 
 ## Deploy Elasticsearch cluster
 

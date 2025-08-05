@@ -34,8 +34,6 @@ spec:
         nginx.ingress.kubernetes.io/proxy-send-timeout: '600'
         nginx.ingress.kubernetes.io/ssl-redirect: 'true'
       host: elasticsearch-cluster-dev.domain.local
-      secretRef:
-        name: es-tls
   globalNodeGroup:
     additionalVolumes:
       - mountPath: /mnt/snapshot
@@ -50,8 +48,7 @@ spec:
       action.destructive_requires_name: true
       gateway.recover_after_time: 5m
       http.cors.allow-credentials: true
-      http.cors.allow-headers: X-Requested-With,X-Auth-Token,Content-Type,
-      Content-Length, Authorization
+      http.cors.allow-headers: X-Requested-With,X-Auth-Token,Content-Type,Content-Length, Authorization
       http.cors.allow-origin: /.*/
       http.cors.enabled: true
       http.max_content_length: 500mb
@@ -191,12 +188,12 @@ apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
   name: pvc-elasticsearch-snapshot
-  namespace: cluster-dev
-spec:
-  accessModes:
-    - ReadWriteMany
-  resources:
-    requests:
-      storage: 10Gi
-  storageClassName: nfs-client
+    namespace: cluster-dev
+    spec:
+      accessModes:
+          - ReadWriteMany
+            resources:
+                requests:
+                      storage: 10Gi
+                        storageClassName: nfs-client
 ```

@@ -143,10 +143,10 @@ apiVersion: v1
 kind: Secret
 metadata:
   name: kibana-keystore
-  namespace: cluster-dev
-type: Opaque
-data:
-  xpack.encryptedSavedObjects.encryptionKey: ++++++++
-  xpack.reporting.encryptionKey: ++++++++
-  xpack.security.encryptionKey: ++++++++
+    namespace: cluster-dev
+    type: Opaque
+    data:
+      xpack.encryptedSavedObjects.encryptionKey: ++++++++
+        xpack.reporting.encryptionKey: ++++++++
+          xpack.security.encryptionKey: ++++++++
 ```
