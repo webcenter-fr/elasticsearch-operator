@@ -8,6 +8,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	elasticsearchapicrd "github.com/webcenter-fr/elasticsearch-operator/api/elasticsearchapi/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/utils/ptr"
 )
 
 func TestUserBuild(t *testing.T) {
@@ -27,7 +28,7 @@ func TestUserBuild(t *testing.T) {
 			Namespace: "default",
 		},
 		Spec: elasticsearchapicrd.UserSpec{
-			Enabled:      true,
+			Enabled:      ptr.To(true),
 			Email:        "test@no.no",
 			FullName:     "test",
 			PasswordHash: "hash",
@@ -59,7 +60,7 @@ func TestUserBuild(t *testing.T) {
 			Namespace: "default",
 		},
 		Spec: elasticsearchapicrd.UserSpec{
-			Enabled:      true,
+			Enabled:      ptr.To(true),
 			Email:        "test@no.no",
 			FullName:     "test",
 			PasswordHash: "hash",

@@ -20,11 +20,16 @@ func newUserApiClient(client eshandler.ElasticsearchHandler) remote.RemoteExtern
 
 func (h *userApiClient) Build(o *elasticsearchapicrd.User) (user *olivere.XPackSecurityPutUserRequest, err error) {
 	user = &olivere.XPackSecurityPutUserRequest{
-		Enabled:      o.Spec.Enabled,
 		Email:        o.Spec.Email,
 		FullName:     o.Spec.FullName,
 		Roles:        o.Spec.Roles,
 		PasswordHash: o.Spec.PasswordHash,
+	}
+
+	if o.Spec.Enabled == nil || *o.Spec.Enabled {
+		user.Enabled = true
+	} else {
+		user.Enabled = false
 	}
 
 	if !o.IsAutoGeneratePassword() && o.Spec.PasswordHash != "" {

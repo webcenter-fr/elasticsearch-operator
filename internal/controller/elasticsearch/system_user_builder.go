@@ -28,7 +28,7 @@ func buildSystemUsers(es *elasticsearchcrd.Elasticsearch, s *corev1.Secret) (use
 							Name: es.Name,
 						},
 					},
-					Enabled:  true,
+					Enabled:  ptr.To(true),
 					Username: key,
 					SecretRef: &corev1.SecretKeySelector{
 						Key: key,

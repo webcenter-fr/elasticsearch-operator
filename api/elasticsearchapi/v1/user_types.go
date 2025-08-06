@@ -38,7 +38,7 @@ type UserSpec struct {
 	// Default to true
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
 	// +optional
-	Enabled bool `json:"enabled,omitempty"`
+	Enabled *bool `json:"enabled,omitempty"`
 
 	// Username is the user name
 	// If empty, it use the ressource name

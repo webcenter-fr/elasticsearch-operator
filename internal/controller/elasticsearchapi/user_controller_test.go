@@ -242,7 +242,7 @@ func doCreateUserStep() test.TestStep[*elasticsearchapicrd.User] {
 						},
 					},
 					Username:     "test",
-					Enabled:      true,
+					Enabled:      ptr.To(true),
 					Roles:        []string{"superuser"},
 					PasswordHash: "test",
 				},
@@ -291,7 +291,7 @@ func doUpdateUserStep() test.TestStep[*elasticsearchapicrd.User] {
 			}
 
 			data["lastGeneration"] = o.GetStatus().GetObservedGeneration()
-			o.Spec.Enabled = false
+			o.Spec.Enabled = ptr.To(false)
 			if err = c.Update(context.Background(), o); err != nil {
 				return err
 			}
