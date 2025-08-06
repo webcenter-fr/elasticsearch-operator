@@ -1142,6 +1142,11 @@ func (in *UserList) DeepCopyObject() runtime.Object {
 func (in *UserSpec) DeepCopyInto(out *UserSpec) {
 	*out = *in
 	in.ElasticsearchRef.DeepCopyInto(&out.ElasticsearchRef)
+	if in.Enabled != nil {
+		in, out := &in.Enabled, &out.Enabled
+		*out = new(bool)
+		**out = **in
+	}
 	if in.Metadata != nil {
 		in, out := &in.Metadata, &out.Metadata
 		*out = (*in).DeepCopy()
