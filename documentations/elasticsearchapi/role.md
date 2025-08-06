@@ -31,7 +31,7 @@ You can use the following properties:
   - **resources** (slice of string): The list of resources. Default to empty.
 - **global** (string): The global privilege on JSON format/
 - **transientMetadata** (string): The transient metadata on JSON format. Default to empty
-- **metadata** (string): The metadata on JSON format. Default to empty
+- **metadata** (map of string): The metadata. Default to empty
 
 ## Sample With managed Elasticsearch
 
