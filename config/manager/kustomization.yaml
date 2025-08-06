@@ -5,4 +5,4 @@ kind: Kustomization
 images:
 - name: controller
   newName: quay.io/webcenter/elasticsearch-operator
-  newTag: 1.0.4-rc.394
+  newTag: 1.0.4-rc.395
