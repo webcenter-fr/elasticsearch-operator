@@ -47,8 +47,8 @@ func newDeploymentReconciler(client client.Client, recorder record.EventRecorder
 func (r *deploymentReconciler) Read(ctx context.Context, o *cerebrocrd.Cerebro, data map[string]any, logger *logrus.Entry) (read multiphase.MultiPhaseRead[*appv1.Deployment], res reconcile.Result, err error) {
 	dpl := &appv1.Deployment{}
 	read = multiphase.NewMultiPhaseRead[*appv1.Deployment]()
-	s := &corev1.Secret{}
-	cm := &corev1.ConfigMap{}
+	var s *corev1.Secret
+	var cm *corev1.ConfigMap
 	cmList := &corev1.ConfigMapList{}
 	configMapsChecksum := make([]*corev1.ConfigMap, 0)
 	secretsChecksum := make([]*corev1.Secret, 0)
@@ -64,6 +64,7 @@ func (r *deploymentReconciler) Read(ctx context.Context, o *cerebrocrd.Cerebro, 
 	}
 
 	// Readsecret if needed
+	s = &corev1.Secret{}
 	if err = r.Client().Get(ctx, types.NamespacedName{Namespace: o.Namespace, Name: GetSecretNameForApplication(o)}, s); err != nil {
 		if !k8serrors.IsNotFound(err) {
 			return read, res, errors.Wrapf(err, "Error when read secret %s", GetSecretNameForApplication(o))
@@ -86,6 +87,7 @@ func (r *deploymentReconciler) Read(ctx context.Context, o *cerebrocrd.Cerebro, 
 	// Read extra Env to generate checksum if secret or configmap
 	for _, env := range o.Spec.Deployment.Env {
 		if env.ValueFrom != nil && env.ValueFrom.SecretKeyRef != nil {
+			s = &corev1.Secret{}
 			if err = r.Client().Get(ctx, types.NamespacedName{Namespace: o.Namespace, Name: env.ValueFrom.SecretKeyRef.Name}, s); err != nil {
 				if !k8serrors.IsNotFound(err) {
 					return read, res, errors.Wrapf(err, "Error when read secret %s", env.ValueFrom.SecretKeyRef.Name)
@@ -99,6 +101,7 @@ func (r *deploymentReconciler) Read(ctx context.Context, o *cerebrocrd.Cerebro, 
 		}
 
 		if env.ValueFrom != nil && env.ValueFrom.ConfigMapKeyRef != nil {
+			cm = &corev1.ConfigMap{}
 			if err = r.Client().Get(ctx, types.NamespacedName{Namespace: o.Namespace, Name: env.ValueFrom.ConfigMapKeyRef.Name}, cm); err != nil {
 				if !k8serrors.IsNotFound(err) {
 					return read, res, errors.Wrapf(err, "Error when read configMap %s", env.ValueFrom.ConfigMapKeyRef.Name)
@@ -115,6 +118,7 @@ func (r *deploymentReconciler) Read(ctx context.Context, o *cerebrocrd.Cerebro, 
 	// Read extra Env from to generate checksum if secret or configmap
 	for _, ef := range o.Spec.Deployment.EnvFrom {
 		if ef.SecretRef != nil {
+			s = &corev1.Secret{}
 			if err = r.Client().Get(ctx, types.NamespacedName{Namespace: o.Namespace, Name: ef.SecretRef.Name}, s); err != nil {
 				if !k8serrors.IsNotFound(err) {
 					return read, res, errors.Wrapf(err, "Error when read secret %s", ef.SecretRef.Name)
@@ -128,6 +132,7 @@ func (r *deploymentReconciler) Read(ctx context.Context, o *cerebrocrd.Cerebro, 
 		}
 
 		if ef.ConfigMapRef != nil {
+			cm = &corev1.ConfigMap{}
 			if err = r.Client().Get(ctx, types.NamespacedName{Namespace: o.Namespace, Name: ef.ConfigMapRef.Name}, cm); err != nil {
 				if !k8serrors.IsNotFound(err) {
 					return read, res, errors.Wrapf(err, "Error when read configMap %s", ef.ConfigMapRef.Name)

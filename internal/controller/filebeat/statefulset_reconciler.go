@@ -3,6 +3,7 @@ package filebeat
 import (
 	"context"
 	"fmt"
+	"sort"
 	"time"
 
 	"emperror.dev/errors"
@@ -51,8 +52,8 @@ func newStatefulsetReconciler(client client.Client, recorder record.EventRecorde
 func (r *statefulsetReconciler) Read(ctx context.Context, o *beatcrd.Filebeat, data map[string]any, logger *logrus.Entry) (read multiphase.MultiPhaseRead[*appv1.StatefulSet], res reconcile.Result, err error) {
 	sts := &appv1.StatefulSet{}
 	read = multiphase.NewMultiPhaseRead[*appv1.StatefulSet]()
-	s := &corev1.Secret{}
-	cm := &corev1.ConfigMap{}
+	var s *corev1.Secret
+	var cm *corev1.ConfigMap
 	cmList := &corev1.ConfigMapList{}
 	configMapsChecksum := make([]*corev1.ConfigMap, 0)
 	secretsChecksum := make([]*corev1.Secret, 0)
@@ -104,6 +105,7 @@ func (r *statefulsetReconciler) Read(ctx context.Context, o *beatcrd.Filebeat, d
 
 		// Read reflected secret to add on checksum
 		if ls.Spec.Pki.IsEnabled() && ls.Spec.Pki.HasBeatCertificate() {
+			s = &corev1.Secret{}
 			if err = r.Client().Get(ctx, types.NamespacedName{Namespace: o.Namespace, Name: GetSecretNameForCALogstash(o)}, s); err != nil {
 				if !k8serrors.IsNotFound(err) {
 					return read, res, errors.Wrapf(err, "Error when read secret %s", GetSecretNameForCALogstash(o))
@@ -120,6 +122,7 @@ func (r *statefulsetReconciler) Read(ctx context.Context, o *beatcrd.Filebeat, d
 	// Read Custom CA Elasticsearch to generate checksum
 	if o.Spec.ElasticsearchRef != nil && ((o.Spec.ElasticsearchRef.IsManaged() && es.Spec.Tls.IsTlsEnabled()) || o.Spec.ElasticsearchRef.ElasticsearchCaSecretRef != nil) {
 		if o.Spec.ElasticsearchRef.IsManaged() && es.Spec.Tls.IsTlsEnabled() && es.Spec.Tls.IsSelfManagedSecretForTls() {
+			s = &corev1.Secret{}
 			if err = r.Client().Get(ctx, types.NamespacedName{Namespace: o.Namespace, Name: GetSecretNameForCAElasticsearch(o)}, s); err != nil {
 				if !k8serrors.IsNotFound(err) {
 					return read, res, errors.Wrapf(err, "Error when read secret %s", GetSecretNameForCAElasticsearch(o))
@@ -130,6 +133,7 @@ func (r *statefulsetReconciler) Read(ctx context.Context, o *beatcrd.Filebeat, d
 
 			secretsChecksum = append(secretsChecksum, s)
 		} else {
+			s = &corev1.Secret{}
 			if err = r.Client().Get(ctx, types.NamespacedName{Namespace: o.Namespace, Name: o.Spec.ElasticsearchRef.ElasticsearchCaSecretRef.Name}, s); err != nil {
 				if !k8serrors.IsNotFound(err) {
 					return read, res, errors.Wrapf(err, "Error when read secret %s", o.Spec.ElasticsearchRef.ElasticsearchCaSecretRef.Name)
@@ -148,6 +152,7 @@ func (r *statefulsetReconciler) Read(ctx context.Context, o *beatcrd.Filebeat, d
 
 	// Read custom CA for Logstash to add on checksum
 	if o.Spec.LogstashRef != nil && o.Spec.LogstashRef.LogstashCaSecretRef != nil {
+		s = &corev1.Secret{}
 		if err = r.Client().Get(ctx, types.NamespacedName{Namespace: o.Namespace, Name: o.Spec.LogstashRef.LogstashCaSecretRef.Name}, s); err != nil {
 			if !k8serrors.IsNotFound(err) {
 				return read, res, errors.Wrapf(err, "Error when read secret %s", o.Spec.LogstashRef.LogstashCaSecretRef.Name)
@@ -161,6 +166,7 @@ func (r *statefulsetReconciler) Read(ctx context.Context, o *beatcrd.Filebeat, d
 
 	// Read Elasticsearch secretRef to add on checksum
 	if o.Spec.ElasticsearchRef != nil && o.Spec.ElasticsearchRef.SecretRef != nil {
+		s = &corev1.Secret{}
 		if err = r.Client().Get(ctx, types.NamespacedName{Namespace: o.Namespace, Name: o.Spec.ElasticsearchRef.SecretRef.Name}, s); err != nil {
 			if !k8serrors.IsNotFound(err) {
 				return read, res, errors.Wrapf(err, "Error when read secret %s", o.Spec.ElasticsearchRef.SecretRef.Name)
@@ -181,11 +187,15 @@ func (r *statefulsetReconciler) Read(ctx context.Context, o *beatcrd.Filebeat, d
 		return read, res, errors.Wrapf(err, "Error when read configMap")
 	}
 	cms = helper.ToSlicePtr(cmList.Items)
+	sort.Slice(cms, func(i, j int) bool {
+		return cms[i].Name < cms[j].Name
+	})
 	configMapsChecksum = append(configMapsChecksum, cms...)
 
 	// Read extra volumes to generate checksum if secret or configmap
 	for _, v := range o.Spec.Deployment.AdditionalVolumes {
 		if v.ConfigMap != nil {
+			cm = &corev1.ConfigMap{}
 			if err = r.Client().Get(ctx, types.NamespacedName{Namespace: o.Namespace, Name: v.ConfigMap.Name}, cm); err != nil {
 				if !k8serrors.IsNotFound(err) {
 					return read, res, errors.Wrapf(err, "Error when read configMap %s", v.ConfigMap.Name)
@@ -199,6 +209,7 @@ func (r *statefulsetReconciler) Read(ctx context.Context, o *beatcrd.Filebeat, d
 		}
 
 		if v.Secret != nil {
+			s = &corev1.Secret{}
 			if err = r.Client().Get(ctx, types.NamespacedName{Namespace: o.Namespace, Name: v.Secret.SecretName}, s); err != nil {
 				if !k8serrors.IsNotFound(err) {
 					return read, res, errors.Wrapf(err, "Error when read secret %s", v.Secret.SecretName)
@@ -215,6 +226,7 @@ func (r *statefulsetReconciler) Read(ctx context.Context, o *beatcrd.Filebeat, d
 	// Read extra Env to generate checksum if secret or configmap
 	for _, env := range o.Spec.Deployment.Env {
 		if env.ValueFrom != nil && env.ValueFrom.SecretKeyRef != nil {
+			s = &corev1.Secret{}
 			if err = r.Client().Get(ctx, types.NamespacedName{Namespace: o.Namespace, Name: env.ValueFrom.SecretKeyRef.Name}, s); err != nil {
 				if !k8serrors.IsNotFound(err) {
 					return read, res, errors.Wrapf(err, "Error when read secret %s", env.ValueFrom.SecretKeyRef.Name)
@@ -228,6 +240,7 @@ func (r *statefulsetReconciler) Read(ctx context.Context, o *beatcrd.Filebeat, d
 		}
 
 		if env.ValueFrom != nil && env.ValueFrom.ConfigMapKeyRef != nil {
+			cm = &corev1.ConfigMap{}
 			if err = r.Client().Get(ctx, types.NamespacedName{Namespace: o.Namespace, Name: env.ValueFrom.ConfigMapKeyRef.Name}, cm); err != nil {
 				if !k8serrors.IsNotFound(err) {
 					return read, res, errors.Wrapf(err, "Error when read configMap %s", env.ValueFrom.ConfigMapKeyRef.Name)
@@ -244,6 +257,7 @@ func (r *statefulsetReconciler) Read(ctx context.Context, o *beatcrd.Filebeat, d
 	// Read extra Env from to generate checksum if secret or configmap
 	for _, ef := range o.Spec.Deployment.EnvFrom {
 		if ef.SecretRef != nil {
+			s = &corev1.Secret{}
 			if err = r.Client().Get(ctx, types.NamespacedName{Namespace: o.Namespace, Name: ef.SecretRef.Name}, s); err != nil {
 				if !k8serrors.IsNotFound(err) {
 					return read, res, errors.Wrapf(err, "Error when read secret %s", ef.SecretRef.Name)
@@ -257,6 +271,7 @@ func (r *statefulsetReconciler) Read(ctx context.Context, o *beatcrd.Filebeat, d
 		}
 
 		if ef.ConfigMapRef != nil {
+			cm = &corev1.ConfigMap{}
 			if err = r.Client().Get(ctx, types.NamespacedName{Namespace: o.Namespace, Name: ef.ConfigMapRef.Name}, cm); err != nil {
 				if !k8serrors.IsNotFound(err) {
 					return read, res, errors.Wrapf(err, "Error when read configMap %s", ef.ConfigMapRef.Name)
@@ -273,6 +288,7 @@ func (r *statefulsetReconciler) Read(ctx context.Context, o *beatcrd.Filebeat, d
 	// Read certificates
 	if o.Spec.Pki.IsEnabled() {
 
+		s = &corev1.Secret{}
 		if err = r.Client().Get(ctx, types.NamespacedName{Namespace: o.Namespace, Name: GetSecretNameForTls(o)}, s); err != nil {
 			if !k8serrors.IsNotFound(err) {
 				return read, res, errors.Wrapf(err, "Error when read secret %s", GetSecretNameForTls(o))

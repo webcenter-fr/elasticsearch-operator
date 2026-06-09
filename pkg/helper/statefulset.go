@@ -18,7 +18,16 @@ func IsOnStatefulSetUpgradeState(o *appv1.StatefulSet) bool {
 		return true
 	}
 
-	if o.Status.Replicas != o.Status.ReadyReplicas {
+	expectedReplica := o.Status.Replicas
+	if o.Spec.Replicas != nil {
+		expectedReplica = *o.Spec.Replicas
+	}
+
+	if expectedReplica != o.Status.ReadyReplicas {
+		return true
+	}
+
+	if o.Status.UpdatedReplicas != expectedReplica {
 		return true
 	}
 

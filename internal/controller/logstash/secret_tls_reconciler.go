@@ -335,7 +335,7 @@ func (r *tlsReconciler) Diff(ctx context.Context, o *logstashcrd.Logstash, read 
 			s.Annotations = getAnnotations(o)
 			isUpdated = true
 		}
-		strDiff, err := helper.DiffOwnerReferences(o, s)
+		strDiff, err := localhelper.DiffOwnerReferences(o, s)
 		if err != nil {
 			return diff, res, errors.Wrapf(err, "Error when diff owner references on secret %s", s.Name)
 		}

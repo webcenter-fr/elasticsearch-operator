@@ -49,8 +49,8 @@ func newDeploymentReconciler(client client.Client, recorder record.EventRecorder
 func (r *deploymentReconciler) Read(ctx context.Context, o *kibanacrd.Kibana, data map[string]any, logger *logrus.Entry) (read multiphase.MultiPhaseRead[*appv1.Deployment], res reconcile.Result, err error) {
 	dpl := &appv1.Deployment{}
 	read = multiphase.NewMultiPhaseRead[*appv1.Deployment]()
-	s := &corev1.Secret{}
-	cm := &corev1.ConfigMap{}
+	var s *corev1.Secret
+	var cm *corev1.ConfigMap
 	cmList := &corev1.ConfigMapList{}
 	var es *elasticsearchcrd.Elasticsearch
 	configMapsChecksum := make([]*corev1.ConfigMap, 0)
@@ -82,6 +82,7 @@ func (r *deploymentReconciler) Read(ctx context.Context, o *kibanacrd.Kibana, da
 
 	// Read keystore secret if needed
 	if o.Spec.KeystoreSecretRef != nil && o.Spec.KeystoreSecretRef.Name != "" {
+		s = &corev1.Secret{}
 		if err = r.Client().Get(ctx, types.NamespacedName{Namespace: o.Namespace, Name: o.Spec.KeystoreSecretRef.Name}, s); err != nil {
 			if !k8serrors.IsNotFound(err) {
 				return read, res, errors.Wrapf(err, "Error when read secret %s", o.Spec.KeystoreSecretRef.Name)
@@ -96,6 +97,7 @@ func (r *deploymentReconciler) Read(ctx context.Context, o *kibanacrd.Kibana, da
 	// Read APi Crt if needed
 	if o.Spec.Tls.IsTlsEnabled() {
 		if o.Spec.Tls.IsSelfManagedSecretForTls() {
+			s = &corev1.Secret{}
 			if err = r.Client().Get(ctx, types.NamespacedName{Namespace: o.Namespace, Name: GetSecretNameForTls(o)}, s); err != nil {
 				if !k8serrors.IsNotFound(err) {
 					return read, res, errors.Wrapf(err, "Error when read secret %s", GetSecretNameForTls(o))
@@ -106,6 +108,7 @@ func (r *deploymentReconciler) Read(ctx context.Context, o *kibanacrd.Kibana, da
 
 			secretsChecksum = append(secretsChecksum, s)
 		} else {
+			s = &corev1.Secret{}
 			if err = r.Client().Get(ctx, types.NamespacedName{Namespace: o.Namespace, Name: o.Spec.Tls.CertificateSecretRef.Name}, s); err != nil {
 				if !k8serrors.IsNotFound(err) {
 					return read, res, errors.Wrapf(err, "Error when read secret %s", o.Spec.Tls.CertificateSecretRef.Name)
@@ -121,6 +124,7 @@ func (r *deploymentReconciler) Read(ctx context.Context, o *kibanacrd.Kibana, da
 	// Read Custom CA Elasticsearch if needed
 	if (o.Spec.ElasticsearchRef.IsManaged() && es.Spec.Tls.IsTlsEnabled()) || o.Spec.ElasticsearchRef.ElasticsearchCaSecretRef != nil {
 		if o.Spec.ElasticsearchRef.IsManaged() && es.Spec.Tls.IsTlsEnabled() && es.Spec.Tls.IsSelfManagedSecretForTls() {
+			s = &corev1.Secret{}
 			if err = r.Client().Get(ctx, types.NamespacedName{Namespace: o.Namespace, Name: GetSecretNameForCAElasticsearch(o)}, s); err != nil {
 				if !k8serrors.IsNotFound(err) {
 					return read, res, errors.Wrapf(err, "Error when read secret %s", GetSecretNameForCAElasticsearch(o))
@@ -131,6 +135,7 @@ func (r *deploymentReconciler) Read(ctx context.Context, o *kibanacrd.Kibana, da
 
 			secretsChecksum = append(secretsChecksum, s)
 		} else {
+			s = &corev1.Secret{}
 			if err = r.Client().Get(ctx, types.NamespacedName{Namespace: o.Namespace, Name: o.Spec.ElasticsearchRef.ElasticsearchCaSecretRef.Name}, s); err != nil {
 				if !k8serrors.IsNotFound(err) {
 					return read, res, errors.Wrapf(err, "Error when read secret %s", o.Spec.ElasticsearchRef.ElasticsearchCaSecretRef.Name)
@@ -149,6 +154,7 @@ func (r *deploymentReconciler) Read(ctx context.Context, o *kibanacrd.Kibana, da
 
 	// Read Elasticsearch secretRef to add on checksum
 	if o.Spec.ElasticsearchRef.SecretRef != nil {
+		s = &corev1.Secret{}
 		if err = r.Client().Get(ctx, types.NamespacedName{Namespace: o.Namespace, Name: o.Spec.ElasticsearchRef.SecretRef.Name}, s); err != nil {
 			if !k8serrors.IsNotFound(err) {
 				return read, res, errors.Wrapf(err, "Error when read secret %s", o.Spec.ElasticsearchRef.SecretRef.Name)
@@ -173,6 +179,7 @@ func (r *deploymentReconciler) Read(ctx context.Context, o *kibanacrd.Kibana, da
 	// Read extra Env to generate checksum if secret or configmap
 	for _, env := range o.Spec.Deployment.Env {
 		if env.ValueFrom != nil && env.ValueFrom.SecretKeyRef != nil {
+			s = &corev1.Secret{}
 			if err = r.Client().Get(ctx, types.NamespacedName{Namespace: o.Namespace, Name: env.ValueFrom.SecretKeyRef.Name}, s); err != nil {
 				if !k8serrors.IsNotFound(err) {
 					return read, res, errors.Wrapf(err, "Error when read secret %s", env.ValueFrom.SecretKeyRef.Name)
@@ -186,6 +193,7 @@ func (r *deploymentReconciler) Read(ctx context.Context, o *kibanacrd.Kibana, da
 		}
 
 		if env.ValueFrom != nil && env.ValueFrom.ConfigMapKeyRef != nil {
+			cm = &corev1.ConfigMap{}
 			if err = r.Client().Get(ctx, types.NamespacedName{Namespace: o.Namespace, Name: env.ValueFrom.ConfigMapKeyRef.Name}, cm); err != nil {
 				if !k8serrors.IsNotFound(err) {
 					return read, res, errors.Wrapf(err, "Error when read configMap %s", env.ValueFrom.ConfigMapKeyRef.Name)
@@ -202,6 +210,7 @@ func (r *deploymentReconciler) Read(ctx context.Context, o *kibanacrd.Kibana, da
 	// Read extra Env from to generate checksum if secret or configmap
 	for _, ef := range o.Spec.Deployment.EnvFrom {
 		if ef.SecretRef != nil {
+			s = &corev1.Secret{}
 			if err = r.Client().Get(ctx, types.NamespacedName{Namespace: o.Namespace, Name: ef.SecretRef.Name}, s); err != nil {
 				if !k8serrors.IsNotFound(err) {
 					return read, res, errors.Wrapf(err, "Error when read secret %s", ef.SecretRef.Name)
@@ -215,6 +224,7 @@ func (r *deploymentReconciler) Read(ctx context.Context, o *kibanacrd.Kibana, da
 		}
 
 		if ef.ConfigMapRef != nil {
+			cm = &corev1.ConfigMap{}
 			if err = r.Client().Get(ctx, types.NamespacedName{Namespace: o.Namespace, Name: ef.ConfigMapRef.Name}, cm); err != nil {
 				if !k8serrors.IsNotFound(err) {
 					return read, res, errors.Wrapf(err, "Error when read configMap %s", ef.ConfigMapRef.Name)

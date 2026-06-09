@@ -171,7 +171,7 @@ func (h *LogstashReconciler) SetupWithManager(mgr ctrl.Manager) error {
 		Watches(&corev1.ConfigMap{}, handler.EnqueueRequestsFromMapFunc(watchConfigMap(h.Client()))).
 		Watches(&elasticsearchcrd.Elasticsearch{}, handler.EnqueueRequestsFromMapFunc(watchElasticsearch(h.Client()))).
 		WithOptions(k8scontroller.Options{
-			RateLimiter: controller.DefaultControllerRateLimiter[reconcile.Request](),
+			RateLimiter: common.DefaultControllerRateLimiter(),
 		})
 
 	if h.kubeCapability.HasRoute {

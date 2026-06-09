@@ -993,6 +993,10 @@ func computeRoles(roles []string) string {
 		}
 	}
 
+	if len(computedRoles) == 0 {
+		return "[]"
+	}
+
 	return strings.Join(computedRoles, ", ")
 }
 

@@ -186,6 +186,7 @@ func generateCertificate(o *beatcrd.Filebeat, rootCA *goca.CA, name string, tlsS
 // It return false if new secret
 func updateSecret(o *beatcrd.Filebeat, old, new *corev1.Secret, scheme *runtime.Scheme) (s *corev1.Secret, updated bool, err error) {
 	if old != nil {
+		old = old.DeepCopy()
 		old.Labels = new.Labels
 		old.Annotations = new.Annotations
 		old.Data = new.Data

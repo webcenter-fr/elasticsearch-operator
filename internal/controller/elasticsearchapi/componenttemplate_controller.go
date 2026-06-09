@@ -22,6 +22,7 @@ import (
 	olivere "github.com/olivere/elastic/v7"
 	"github.com/sirupsen/logrus"
 	elasticsearchapicrd "github.com/webcenter-fr/elasticsearch-operator/api/elasticsearchapi/v1"
+	"github.com/webcenter-fr/elasticsearch-operator/internal/controller/common"
 	"k8s.io/client-go/tools/record"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -93,7 +94,7 @@ func (r *ComponentTemplateReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&elasticsearchapicrd.ComponentTemplate{}).
 		WithOptions(k8scontroller.Options{
-			RateLimiter: controller.DefaultControllerRateLimiter[reconcile.Request](),
+			RateLimiter: common.DefaultControllerRateLimiter(),
 		}).
 		Complete(r)
 }

@@ -59,8 +59,8 @@ func newStatefulsetReconciler(client client.Client, recorder record.EventRecorde
 func (r *statefulsetReconciler) Read(ctx context.Context, o *elasticsearchcrd.Elasticsearch, data map[string]any, logger *logrus.Entry) (read multiphase.MultiPhaseRead[*appv1.StatefulSet], res reconcile.Result, err error) {
 	stsList := &appv1.StatefulSetList{}
 	read = multiphase.NewMultiPhaseRead[*appv1.StatefulSet]()
-	s := &corev1.Secret{}
-	cm := &corev1.ConfigMap{}
+	var s *corev1.Secret
+	var cm *corev1.ConfigMap
 	cmList := &corev1.ConfigMapList{}
 	configMapsChecksum := make([]*corev1.ConfigMap, 0)
 	secretsChecksum := make([]*corev1.Secret, 0)
@@ -77,6 +77,7 @@ func (r *statefulsetReconciler) Read(ctx context.Context, o *elasticsearchcrd.El
 
 	// Read keystore secret if needed
 	if o.Spec.GlobalNodeGroup.KeystoreSecretRef != nil && o.Spec.GlobalNodeGroup.KeystoreSecretRef.Name != "" {
+		s = &corev1.Secret{}
 		if err = r.Client().Get(ctx, types.NamespacedName{Namespace: o.Namespace, Name: o.Spec.GlobalNodeGroup.KeystoreSecretRef.Name}, s); err != nil {
 			if !k8serrors.IsNotFound(err) {
 				return read, res, errors.Wrapf(err, "Error when read secret %s", o.Spec.GlobalNodeGroup.KeystoreSecretRef.Name)
@@ -90,6 +91,7 @@ func (r *statefulsetReconciler) Read(ctx context.Context, o *elasticsearchcrd.El
 
 	// Read cacerts secret if needed
 	if o.Spec.GlobalNodeGroup.CacertsSecretRef != nil && o.Spec.GlobalNodeGroup.CacertsSecretRef.Name != "" {
+		s = &corev1.Secret{}
 		if err = r.Client().Get(ctx, types.NamespacedName{Namespace: o.Namespace, Name: o.Spec.GlobalNodeGroup.CacertsSecretRef.Name}, s); err != nil {
 			if !k8serrors.IsNotFound(err) {
 				return read, res, errors.Wrapf(err, "Error when read secret %s", o.Spec.GlobalNodeGroup.CacertsSecretRef.Name)
@@ -104,6 +106,7 @@ func (r *statefulsetReconciler) Read(ctx context.Context, o *elasticsearchcrd.El
 	// Read API certificate secret if needed
 	if o.Spec.Tls.IsTlsEnabled() {
 		if o.Spec.Tls.IsSelfManagedSecretForTls() {
+			s = &corev1.Secret{}
 			if err = r.Client().Get(ctx, types.NamespacedName{Namespace: o.Namespace, Name: GetSecretNameForTlsApi(o)}, s); err != nil {
 				if !k8serrors.IsNotFound(err) {
 					return read, res, errors.Wrapf(err, "Error when read secret %s", GetSecretNameForTlsApi(o))
@@ -114,6 +117,7 @@ func (r *statefulsetReconciler) Read(ctx context.Context, o *elasticsearchcrd.El
 
 			secretsChecksum = append(secretsChecksum, s)
 		} else {
+			s = &corev1.Secret{}
 			if err = r.Client().Get(ctx, types.NamespacedName{Namespace: o.Namespace, Name: o.Spec.Tls.CertificateSecretRef.Name}, s); err != nil {
 				if !k8serrors.IsNotFound(err) {
 					return read, res, errors.Wrapf(err, "Error when read secret %s", o.Spec.Tls.CertificateSecretRef.Name)
@@ -127,6 +131,7 @@ func (r *statefulsetReconciler) Read(ctx context.Context, o *elasticsearchcrd.El
 	}
 
 	// Read transport certicate secret
+	s = &corev1.Secret{}
 	if err = r.Client().Get(ctx, types.NamespacedName{Namespace: o.Namespace, Name: GetSecretNameForTlsTransport(o)}, s); err != nil {
 		if !k8serrors.IsNotFound(err) {
 			return read, res, errors.Wrapf(err, "Error when read secret %s", GetSecretNameForTlsTransport(o))
@@ -154,6 +159,7 @@ func (r *statefulsetReconciler) Read(ctx context.Context, o *elasticsearchcrd.El
 	// Read extra volumes to generate checksum if secret or configmap
 	for _, v := range o.Spec.GlobalNodeGroup.AdditionalVolumes {
 		if v.ConfigMap != nil {
+			cm = &corev1.ConfigMap{}
 			if err = r.Client().Get(ctx, types.NamespacedName{Namespace: o.Namespace, Name: v.ConfigMap.Name}, cm); err != nil {
 				if !k8serrors.IsNotFound(err) {
 					return read, res, errors.Wrapf(err, "Error when read configMap %s", v.ConfigMap.Name)
@@ -167,6 +173,7 @@ func (r *statefulsetReconciler) Read(ctx context.Context, o *elasticsearchcrd.El
 		}
 
 		if v.Secret != nil {
+			s = &corev1.Secret{}
 			if err = r.Client().Get(ctx, types.NamespacedName{Namespace: o.Namespace, Name: v.Secret.SecretName}, s); err != nil {
 				if !k8serrors.IsNotFound(err) {
 					return read, res, errors.Wrapf(err, "Error when read secret %s", v.Secret.SecretName)
@@ -194,6 +201,7 @@ func (r *statefulsetReconciler) Read(ctx context.Context, o *elasticsearchcrd.El
 	// Read extra Env to generate checksum if secret or configmap
 	for _, env := range envList {
 		if env.ValueFrom != nil && env.ValueFrom.SecretKeyRef != nil {
+			s = &corev1.Secret{}
 			if err = r.Client().Get(ctx, types.NamespacedName{Namespace: o.Namespace, Name: env.ValueFrom.SecretKeyRef.Name}, s); err != nil {
 				if !k8serrors.IsNotFound(err) {
 					return read, res, errors.Wrapf(err, "Error when read secret %s", env.ValueFrom.SecretKeyRef.Name)
@@ -207,6 +215,7 @@ func (r *statefulsetReconciler) Read(ctx context.Context, o *elasticsearchcrd.El
 		}
 
 		if env.ValueFrom != nil && env.ValueFrom.ConfigMapKeyRef != nil {
+			cm = &corev1.ConfigMap{}
 			if err = r.Client().Get(ctx, types.NamespacedName{Namespace: o.Namespace, Name: env.ValueFrom.ConfigMapKeyRef.Name}, cm); err != nil {
 				if !k8serrors.IsNotFound(err) {
 					return read, res, errors.Wrapf(err, "Error when read configMap %s", env.ValueFrom.ConfigMapKeyRef.Name)
@@ -223,6 +232,7 @@ func (r *statefulsetReconciler) Read(ctx context.Context, o *elasticsearchcrd.El
 	// Read extra Env from to generate checksum if secret or configmap
 	for _, ef := range envFromList {
 		if ef.SecretRef != nil {
+			s = &corev1.Secret{}
 			if err = r.Client().Get(ctx, types.NamespacedName{Namespace: o.Namespace, Name: ef.SecretRef.Name}, s); err != nil {
 				if !k8serrors.IsNotFound(err) {
 					return read, res, errors.Wrapf(err, "Error when read secret %s", ef.SecretRef.Name)
@@ -236,6 +246,7 @@ func (r *statefulsetReconciler) Read(ctx context.Context, o *elasticsearchcrd.El
 		}
 
 		if ef.ConfigMapRef != nil {
+			cm = &corev1.ConfigMap{}
 			if err = r.Client().Get(ctx, types.NamespacedName{Namespace: o.Namespace, Name: ef.ConfigMapRef.Name}, cm); err != nil {
 				if !k8serrors.IsNotFound(err) {
 					return read, res, errors.Wrapf(err, "Error when read configMap %s", ef.ConfigMapRef.Name)

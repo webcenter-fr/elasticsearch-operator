@@ -194,7 +194,7 @@ func (h *ElasticsearchReconciler) SetupWithManager(mgr ctrl.Manager) error {
 		Watches(&elasticsearchcrd.Elasticsearch{}, handler.EnqueueRequestsFromMapFunc(watchElasticsearchMonitoring(h.Client()))).
 		Watches(&cerebrocrd.Host{}, handler.EnqueueRequestsFromMapFunc(watchHost(h.Client()))).
 		WithOptions(k8scontroller.Options{
-			RateLimiter: controller.DefaultControllerRateLimiter[reconcile.Request](),
+			RateLimiter: common.DefaultControllerRateLimiter(),
 		})
 
 	if h.kubeCapability.HasRoute {
