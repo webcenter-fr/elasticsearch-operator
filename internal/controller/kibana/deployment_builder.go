@@ -525,7 +525,7 @@ chown -R kibana:kibana /mnt/config
 
 `)
 	for _, plugin := range kb.Spec.PluginsList {
-		command.WriteString(fmt.Sprintf("./bin/kibana-plugin install %s\n", plugin))
+		fmt.Fprintf(&command, "./bin/kibana-plugin install %s\n", plugin)
 	}
 	command.WriteString(`
 if [ -d /mnt/plugins ]; then
