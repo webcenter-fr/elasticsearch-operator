@@ -579,7 +579,7 @@ chown -R logstash:logstash /mnt/config
 chown -v logstash:logstash /mnt/data
 `)
 	for _, plugin := range ls.Spec.PluginsList {
-		command.WriteString(fmt.Sprintf("./bin/logstash-plugin install %s\n", plugin))
+		fmt.Fprintf(&command, "./bin/logstash-plugin install %s\n", plugin)
 	}
 	command.WriteString(`
 if [ -d /mnt/plugins ]; then

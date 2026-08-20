@@ -21,6 +21,7 @@ import (
 	"github.com/disaster37/operator-sdk-extra/v2/pkg/controller/remote"
 	"github.com/sirupsen/logrus"
 	elasticsearchapicrd "github.com/webcenter-fr/elasticsearch-operator/api/elasticsearchapi/v1"
+	"github.com/webcenter-fr/elasticsearch-operator/internal/controller/common"
 	"k8s.io/client-go/tools/record"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -92,7 +93,7 @@ func (r *SnapshotLifecyclePolicyReconciler) SetupWithManager(mgr ctrl.Manager) e
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&elasticsearchapicrd.SnapshotLifecyclePolicy{}).
 		WithOptions(k8scontroller.Options{
-			RateLimiter: controller.DefaultControllerRateLimiter[reconcile.Request](),
+			RateLimiter: common.DefaultControllerRateLimiter(),
 		}).
 		Complete(r)
 }

@@ -684,7 +684,7 @@ chmod 775 /mnt/data
 
 `)
 		for _, plugin := range es.Spec.PluginsList {
-			command.WriteString(fmt.Sprintf("./bin/elasticsearch-plugin install -b %s\n", plugin))
+			fmt.Fprintf(&command, "./bin/elasticsearch-plugin install -b %s\n", plugin)
 		}
 		command.WriteString(`
 if [ -d /mnt/plugins ]; then
@@ -991,6 +991,10 @@ func computeRoles(roles []string) string {
 		if funk.ContainsString(roles, role) {
 			computedRoles = append(computedRoles, role)
 		}
+	}
+
+	if len(computedRoles) == 0 {
+		return "[]"
 	}
 
 	return strings.Join(computedRoles, ", ")

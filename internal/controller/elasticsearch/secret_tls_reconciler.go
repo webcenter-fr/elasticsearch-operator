@@ -596,7 +596,7 @@ func (r *tlsReconciler) Diff(ctx context.Context, o *elasticsearchcrd.Elasticsea
 			s.Annotations = getAnnotations(o)
 			isUpdated = true
 		}
-		strDiff, err := helper.DiffOwnerReferences(o, s)
+		strDiff, err := localhelper.DiffOwnerReferences(o, s)
 		if err != nil {
 			return diff, res, errors.Wrapf(err, "Error when diff owner references on secret %s", s.Name)
 		}
@@ -768,6 +768,15 @@ func (r *tlsReconciler) OnSuccess(ctx context.Context, o *elasticsearchcrd.Elast
 		}
 
 		for _, sts := range stsList.Items {
+			expectedReplicas := int32(1)
+			if sts.Spec.Replicas != nil {
+				expectedReplicas = *sts.Spec.Replicas
+			}
+			if sts.Status.CurrentReplicas != expectedReplicas {
+				logger.Debugf("Expected: %s, actual: %s", sequence, sts.Spec.Template.Annotations[fmt.Sprintf("%s/secret-%s", elasticsearchcrd.ElasticsearchAnnotationKey, sTransport.Name)])
+				logger.Info("Phase propagate CA: wait statefullset controller finished to propagate CA certificate")
+				return res, nil
+			}
 			if sts.Spec.Template.Annotations[fmt.Sprintf("%s/secret-%s", elasticsearchcrd.ElasticsearchAnnotationKey, sTransport.Name)] != sequence || localhelper.IsOnStatefulSetUpgradeState(&sts) {
 				logger.Debugf("Expected: %s, actual: %s", sequence, sts.Spec.Template.Annotations[fmt.Sprintf("%s/secret-%s", elasticsearchcrd.ElasticsearchAnnotationKey, sTransport.Name)])
 				logger.Info("Phase propagate CA: wait statefullset controller finished to propagate CA certificate")
@@ -814,6 +823,15 @@ func (r *tlsReconciler) OnSuccess(ctx context.Context, o *elasticsearchcrd.Elast
 		}
 
 		for _, sts := range stsList.Items {
+			expectedReplicas := int32(1)
+			if sts.Spec.Replicas != nil {
+				expectedReplicas = *sts.Spec.Replicas
+			}
+			if sts.Status.CurrentReplicas != expectedReplicas {
+				logger.Debugf("Expected: %s, actual: %s", sequence, sts.Spec.Template.Annotations[fmt.Sprintf("%s/secret-%s", elasticsearchcrd.ElasticsearchAnnotationKey, sTransport.Name)])
+				logger.Info("Phase propagate certificates:  wait statefullset controller finished to propagate certificate")
+				return res, nil
+			}
 			if sts.Spec.Template.Annotations[fmt.Sprintf("%s/secret-%s", elasticsearchcrd.ElasticsearchAnnotationKey, sTransport.Name)] != sequence || localhelper.IsOnStatefulSetUpgradeState(&sts) {
 				logger.Debugf("Expected: %s, actual: %s", sequence, sts.Spec.Template.Annotations[fmt.Sprintf("%s/secret-%s", elasticsearchcrd.ElasticsearchAnnotationKey, sTransport.Name)])
 				logger.Info("Phase propagate certificates:  wait statefullset controller finished to propagate certificate")
