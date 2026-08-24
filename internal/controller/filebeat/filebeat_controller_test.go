@@ -6,10 +6,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/disaster37/k8s-objectmatcher/patch"
-	"github.com/disaster37/operator-sdk-extra/v2/pkg/apis"
-	"github.com/disaster37/operator-sdk-extra/v2/pkg/helper"
-	"github.com/disaster37/operator-sdk-extra/v2/pkg/test"
+	"github.com/disaster37/operator-sdk-extra/v3/pkg/apis"
+	"github.com/disaster37/operator-sdk-extra/v3/pkg/helper"
+	"github.com/disaster37/operator-sdk-extra/v3/pkg/test"
 	routev1 "github.com/openshift/api/route/v1"
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
@@ -161,6 +160,10 @@ func doCreateFilebeatStep() test.TestStep[*beatcrd.Filebeat] {
 							Spec: routev1.RouteSpec{
 								Host: "filebeat.cluster.local",
 								Path: "/",
+								To: routev1.RouteTargetReference{
+									Kind: "Service",
+									Name: "syslog2",
+								},
 								TLS: &routev1.TLSConfig{
 									Termination: routev1.TLSTerminationEdge,
 								},
@@ -220,7 +223,6 @@ func doCreateFilebeatStep() test.TestStep[*beatcrd.Filebeat] {
 			}
 			assert.NotEmpty(t, s.Data)
 			assert.NotEmpty(t, s.OwnerReferences)
-			assert.NotEmpty(t, s.Annotations[patch.LastAppliedConfig])
 
 			// Secrets for Pki
 			s = &corev1.Secret{}
@@ -229,7 +231,6 @@ func doCreateFilebeatStep() test.TestStep[*beatcrd.Filebeat] {
 			}
 			assert.NotEmpty(t, s.Data)
 			assert.NotEmpty(t, s.OwnerReferences)
-			assert.NotEmpty(t, s.Annotations[patch.LastAppliedConfig])
 
 			// Secrets for certificates
 			s = &corev1.Secret{}
@@ -238,7 +239,6 @@ func doCreateFilebeatStep() test.TestStep[*beatcrd.Filebeat] {
 			}
 			assert.NotEmpty(t, s.Data)
 			assert.NotEmpty(t, s.OwnerReferences)
-			assert.NotEmpty(t, s.Annotations[patch.LastAppliedConfig])
 
 			// Secrets for credentials must exist
 			s = &corev1.Secret{}
@@ -247,7 +247,6 @@ func doCreateFilebeatStep() test.TestStep[*beatcrd.Filebeat] {
 			}
 			assert.NotEmpty(t, s.Data)
 			assert.NotEmpty(t, s.OwnerReferences)
-			assert.NotEmpty(t, s.Annotations[patch.LastAppliedConfig])
 
 			// Services for ingress must exist
 			svc = &corev1.Service{}
@@ -255,7 +254,6 @@ func doCreateFilebeatStep() test.TestStep[*beatcrd.Filebeat] {
 				t.Fatal(err)
 			}
 			assert.NotEmpty(t, svc.OwnerReferences)
-			assert.NotEmpty(t, svc.Annotations[patch.LastAppliedConfig])
 
 			// Services for route must exist
 			svc = &corev1.Service{}
@@ -263,7 +261,6 @@ func doCreateFilebeatStep() test.TestStep[*beatcrd.Filebeat] {
 				t.Fatal(err)
 			}
 			assert.NotEmpty(t, svc.OwnerReferences)
-			assert.NotEmpty(t, svc.Annotations[patch.LastAppliedConfig])
 
 			// Global service must exist
 			svc = &corev1.Service{}
@@ -271,7 +268,6 @@ func doCreateFilebeatStep() test.TestStep[*beatcrd.Filebeat] {
 				t.Fatal(err)
 			}
 			assert.NotEmpty(t, svc.OwnerReferences)
-			assert.NotEmpty(t, svc.Annotations[patch.LastAppliedConfig])
 
 			// Ingress must exist
 			i = &networkingv1.Ingress{}
@@ -279,7 +275,6 @@ func doCreateFilebeatStep() test.TestStep[*beatcrd.Filebeat] {
 				t.Fatal(err)
 			}
 			assert.NotEmpty(t, i.OwnerReferences)
-			assert.NotEmpty(t, i.Annotations[patch.LastAppliedConfig])
 
 			// Route must exist
 			route = &routev1.Route{}
@@ -287,7 +282,6 @@ func doCreateFilebeatStep() test.TestStep[*beatcrd.Filebeat] {
 				t.Fatal(err)
 			}
 			assert.NotEmpty(t, route.OwnerReferences)
-			assert.NotEmpty(t, route.Annotations[patch.LastAppliedConfig])
 
 			// Service Account must exist
 			serviceAccount = &corev1.ServiceAccount{}
@@ -295,7 +289,6 @@ func doCreateFilebeatStep() test.TestStep[*beatcrd.Filebeat] {
 				t.Fatal(err)
 			}
 			assert.NotEmpty(t, serviceAccount.OwnerReferences)
-			assert.NotEmpty(t, serviceAccount.Annotations[patch.LastAppliedConfig])
 
 			// roleBinding must exist
 			roleBinding = &rbacv1.RoleBinding{}
@@ -303,7 +296,6 @@ func doCreateFilebeatStep() test.TestStep[*beatcrd.Filebeat] {
 				t.Fatal(err)
 			}
 			assert.NotEmpty(t, roleBinding.OwnerReferences)
-			assert.NotEmpty(t, roleBinding.Annotations[patch.LastAppliedConfig])
 
 			// ConfigMaps must exist
 			cm = &corev1.ConfigMap{}
@@ -311,14 +303,12 @@ func doCreateFilebeatStep() test.TestStep[*beatcrd.Filebeat] {
 				t.Fatal(err)
 			}
 			assert.NotEmpty(t, cm.OwnerReferences)
-			assert.NotEmpty(t, cm.Annotations[patch.LastAppliedConfig])
 
 			cm = &corev1.ConfigMap{}
 			if err = c.Get(context.Background(), types.NamespacedName{Namespace: key.Namespace, Name: GetConfigMapModuleName(fb)}, cm); err != nil {
 				t.Fatal(err)
 			}
 			assert.NotEmpty(t, cm.OwnerReferences)
-			assert.NotEmpty(t, cm.Annotations[patch.LastAppliedConfig])
 
 			// PDB must exist
 			pdb = &policyv1.PodDisruptionBudget{}
@@ -326,7 +316,6 @@ func doCreateFilebeatStep() test.TestStep[*beatcrd.Filebeat] {
 				t.Fatal(err)
 			}
 			assert.NotEmpty(t, pdb.OwnerReferences)
-			assert.NotEmpty(t, pdb.Annotations[patch.LastAppliedConfig])
 
 			// Statefulset musts exist
 			sts = &appv1.StatefulSet{}
@@ -334,7 +323,6 @@ func doCreateFilebeatStep() test.TestStep[*beatcrd.Filebeat] {
 				t.Fatal(err)
 			}
 			assert.NotEmpty(t, sts.OwnerReferences)
-			assert.NotEmpty(t, sts.Annotations[patch.LastAppliedConfig])
 
 			// Status must be update
 			assert.NotEmpty(t, fb.Status.PhaseName)
@@ -411,7 +399,6 @@ func doUpdateFilebeatStep() test.TestStep[*beatcrd.Filebeat] {
 			}
 			assert.NotEmpty(t, s.Data)
 			assert.NotEmpty(t, s.OwnerReferences)
-			assert.NotEmpty(t, s.Annotations[patch.LastAppliedConfig])
 			assert.Equal(t, "fu", s.Labels["test"])
 
 			// Secrets for credentials must exist
@@ -421,7 +408,6 @@ func doUpdateFilebeatStep() test.TestStep[*beatcrd.Filebeat] {
 			}
 			assert.NotEmpty(t, s.Data)
 			assert.NotEmpty(t, s.OwnerReferences)
-			assert.NotEmpty(t, s.Annotations[patch.LastAppliedConfig])
 			assert.Equal(t, "fu", s.Labels["test"])
 
 			// Secrets for Pki
@@ -431,7 +417,6 @@ func doUpdateFilebeatStep() test.TestStep[*beatcrd.Filebeat] {
 			}
 			assert.NotEmpty(t, s.Data)
 			assert.NotEmpty(t, s.OwnerReferences)
-			assert.NotEmpty(t, s.Annotations[patch.LastAppliedConfig])
 			assert.Equal(t, "fu", s.Labels["test"])
 
 			// Secrets for certificates
@@ -441,7 +426,6 @@ func doUpdateFilebeatStep() test.TestStep[*beatcrd.Filebeat] {
 			}
 			assert.NotEmpty(t, s.Data)
 			assert.NotEmpty(t, s.OwnerReferences)
-			assert.NotEmpty(t, s.Annotations[patch.LastAppliedConfig])
 			assert.Equal(t, "fu", s.Labels["test"])
 
 			// Services for ingress must exist
@@ -450,7 +434,6 @@ func doUpdateFilebeatStep() test.TestStep[*beatcrd.Filebeat] {
 				t.Fatal(err)
 			}
 			assert.NotEmpty(t, svc.OwnerReferences)
-			assert.NotEmpty(t, svc.Annotations[patch.LastAppliedConfig])
 			assert.Equal(t, "fu", svc.Labels["test"])
 
 			// Services for route must exist
@@ -459,7 +442,6 @@ func doUpdateFilebeatStep() test.TestStep[*beatcrd.Filebeat] {
 				t.Fatal(err)
 			}
 			assert.NotEmpty(t, svc.OwnerReferences)
-			assert.NotEmpty(t, svc.Annotations[patch.LastAppliedConfig])
 			assert.Equal(t, "fu", svc.Labels["test"])
 
 			// Global service must exist
@@ -468,7 +450,6 @@ func doUpdateFilebeatStep() test.TestStep[*beatcrd.Filebeat] {
 				t.Fatal(err)
 			}
 			assert.NotEmpty(t, svc.OwnerReferences)
-			assert.NotEmpty(t, svc.Annotations[patch.LastAppliedConfig])
 			assert.Equal(t, "fu", svc.Labels["test"])
 
 			// Ingress must exist
@@ -477,7 +458,6 @@ func doUpdateFilebeatStep() test.TestStep[*beatcrd.Filebeat] {
 				t.Fatal(err)
 			}
 			assert.NotEmpty(t, i.OwnerReferences)
-			assert.NotEmpty(t, i.Annotations[patch.LastAppliedConfig])
 			assert.Equal(t, "fu", i.Labels["test"])
 
 			// Route must exist
@@ -486,7 +466,6 @@ func doUpdateFilebeatStep() test.TestStep[*beatcrd.Filebeat] {
 				t.Fatal(err)
 			}
 			assert.NotEmpty(t, route.OwnerReferences)
-			assert.NotEmpty(t, route.Annotations[patch.LastAppliedConfig])
 			assert.Equal(t, "fu", route.Labels["test"])
 
 			// Service Account must exist
@@ -496,7 +475,6 @@ func doUpdateFilebeatStep() test.TestStep[*beatcrd.Filebeat] {
 			}
 			assert.Equal(t, "fu", serviceAccount.Labels["test"])
 			assert.NotEmpty(t, serviceAccount.OwnerReferences)
-			assert.NotEmpty(t, serviceAccount.Annotations[patch.LastAppliedConfig])
 
 			// roleBinding must exist
 			roleBinding = &rbacv1.RoleBinding{}
@@ -505,7 +483,6 @@ func doUpdateFilebeatStep() test.TestStep[*beatcrd.Filebeat] {
 			}
 			assert.Equal(t, "fu", roleBinding.Labels["test"])
 			assert.NotEmpty(t, roleBinding.OwnerReferences)
-			assert.NotEmpty(t, roleBinding.Annotations[patch.LastAppliedConfig])
 
 			// ConfigMaps must exist
 			cm = &corev1.ConfigMap{}
@@ -513,7 +490,6 @@ func doUpdateFilebeatStep() test.TestStep[*beatcrd.Filebeat] {
 				t.Fatal(err)
 			}
 			assert.NotEmpty(t, cm.OwnerReferences)
-			assert.NotEmpty(t, cm.Annotations[patch.LastAppliedConfig])
 			assert.Equal(t, "fu", cm.Labels["test"])
 
 			cm = &corev1.ConfigMap{}
@@ -521,7 +497,6 @@ func doUpdateFilebeatStep() test.TestStep[*beatcrd.Filebeat] {
 				t.Fatal(err)
 			}
 			assert.NotEmpty(t, cm.OwnerReferences)
-			assert.NotEmpty(t, cm.Annotations[patch.LastAppliedConfig])
 			assert.Equal(t, "fu", cm.Labels["test"])
 
 			// PDB must exist
@@ -530,7 +505,6 @@ func doUpdateFilebeatStep() test.TestStep[*beatcrd.Filebeat] {
 				t.Fatal(err)
 			}
 			assert.NotEmpty(t, pdb.OwnerReferences)
-			assert.NotEmpty(t, pdb.Annotations[patch.LastAppliedConfig])
 			assert.Equal(t, "fu", pdb.Labels["test"])
 
 			// Statefulset musts exist
@@ -539,7 +513,6 @@ func doUpdateFilebeatStep() test.TestStep[*beatcrd.Filebeat] {
 				t.Fatal(err)
 			}
 			assert.NotEmpty(t, sts.OwnerReferences)
-			assert.NotEmpty(t, sts.Annotations[patch.LastAppliedConfig])
 			assert.Equal(t, "fu", sts.Labels["test"])
 
 			// Status must be update

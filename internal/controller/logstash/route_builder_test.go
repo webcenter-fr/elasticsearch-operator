@@ -3,7 +3,7 @@ package logstash
 import (
 	"testing"
 
-	"github.com/disaster37/operator-sdk-extra/v2/pkg/test"
+	"github.com/disaster37/operator-sdk-extra/v3/pkg/test"
 	routev1 "github.com/openshift/api/route/v1"
 	"github.com/stretchr/testify/assert"
 	logstashcrd "github.com/webcenter-fr/elasticsearch-operator/api/logstash/v1"

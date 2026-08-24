@@ -1,71 +1,75 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: test-cb
-  namespace: default
-  labels:
-    cluster: test
-    cerebro.k8s.webcenter.fr: "true"
   annotations:
     cerebro.k8s.webcenter.fr: "true"
+  labels:
+    cerebro.k8s.webcenter.fr: "true"
+    cluster: test
+  name: test-cb
+  namespace: default
 spec:
   replicas: 1
   selector:
     matchLabels:
-      cluster: test
       cerebro.k8s.webcenter.fr: "true"
+      cluster: test
+  strategy: {}
   template:
     metadata:
-      labels:
-        cluster: test
-        cerebro.k8s.webcenter.fr: "true"
       annotations:
         cerebro.k8s.webcenter.fr: "true"
-        cerebro.k8s.webcenter.fr/configmap-test-config-cb: "e5d2924ad73d6bbaa5fe5590cb71c6daaef594ca118ff3112643d73c92ba3a35"
-        cerebro.k8s.webcenter.fr/secret-keystore: "e0254a8990817d8a00deb6123c4a2a7ea7ae48428a65d9514257b3baedc1fb6e"
+        cerebro.k8s.webcenter.fr/configmap-test-config-cb: 4677e065adcece668a79cf48025751d600fb28898b195e198a263f76fa015660
+        cerebro.k8s.webcenter.fr/secret-keystore: e0254a8990817d8a00deb6123c4a2a7ea7ae48428a65d9514257b3baedc1fb6e
+      labels:
+        cerebro.k8s.webcenter.fr: "true"
+        cluster: test
       name: test-cb
     spec:
       containers:
-      - env:
-        - name: POD_NAME
-          valueFrom:
-            fieldRef:
-              apiVersion: v1
-              fieldPath: metadata.name
+      - args:
+        - --config
+        - /opt/cerebro/conf/application.yaml
+        env:
+        - name: env1
+          value: value1
         - name: NODE_NAME
           valueFrom:
             fieldRef:
               apiVersion: v1
               fieldPath: spec.nodeName
-        - name: POD_IP
-          valueFrom:
-            fieldRef:
-              apiVersion: v1
-              fieldPath: status.podIP
         - name: NAMESPACE
           valueFrom:
             fieldRef:
               apiVersion: v1
               fieldPath: metadata.namespace
-        - name: APPLICATION_SECRET
+        - name: POD_NAME
+          valueFrom:
+            fieldRef:
+              apiVersion: v1
+              fieldPath: metadata.name
+        - name: POD_IP
+          valueFrom:
+            fieldRef:
+              apiVersion: v1
+              fieldPath: status.podIP
+        - name: CEREBRO_SECRET
           valueFrom:
             secretKeyRef:
-              key: application
+              key: session-key
               name: test-application-cb
-        - name: env1
-          value: value1
         envFrom:
-          - configMapRef:
-              name: test
-        image: lmenezes/cerebro:8.5.1
-        args:
-          - '-Dconfig.file=/etc/cerebro/application.conf'
+        - configMapRef:
+            name: test
+        image: ghcr.io/disaster37/cerebro:v0.1.0
         livenessProbe:
           failureThreshold: 3
+          httpGet:
+            path: /favicon.ico
+            port: 9000
+            scheme: HTTP
           periodSeconds: 30
           successThreshold: 1
-          tcpSocket:
-            port: 9000
           timeoutSeconds: 5
         name: cerebro
         ports:
@@ -74,12 +78,12 @@ spec:
           protocol: TCP
         readinessProbe:
           failureThreshold: 3
-          periodSeconds: 10
-          successThreshold: 1
           httpGet:
-            path: /
+            path: /favicon.ico
             port: 9000
             scheme: HTTP
+          periodSeconds: 10
+          successThreshold: 1
           timeoutSeconds: 5
         resources:
           limits:
@@ -89,15 +93,15 @@ spec:
             cpu: "2"
             memory: 2Gi
         securityContext:
+          allowPrivilegeEscalation: false
           capabilities:
             drop:
             - ALL
-          runAsNonRoot: true
           privileged: false
           readOnlyRootFilesystem: true
-          allowPrivilegeEscalation: false
-          runAsUser: 1000
           runAsGroup: 1000
+          runAsNonRoot: true
+          runAsUser: 1000
         startupProbe:
           failureThreshold: 30
           initialDelaySeconds: 10
@@ -107,19 +111,17 @@ spec:
             port: 9000
           timeoutSeconds: 5
         volumeMounts:
-        - mountPath: /etc/cerebro
+        - mountPath: /opt/cerebro/conf
           name: config
-        - mountPath: /var/db/cerebro
-          name: db
-        - mountPath: /opt/cerebro/logs
-          name: logs
+        - mountPath: /data
+          name: data
         - mountPath: /tmp
           name: tmp
+      nodeSelector:
+        project: kibana
       securityContext:
         fsGroup: 1000
       terminationGracePeriodSeconds: 30
-      nodeSelector:
-        project: kibana
       tolerations:
       - effect: NoSchedule
         key: project
@@ -129,9 +131,8 @@ spec:
       - configMap:
           name: test-config-cb
         name: config
-      - name: db
-        emptyDir: {}
-      - name: logs
-        emptyDir: {}
-      - name: tmp
-        emptyDir: {}
+      - emptyDir: {}
+        name: data
+      - emptyDir: {}
+        name: tmp
+status: {}

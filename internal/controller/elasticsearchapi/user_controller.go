@@ -17,10 +17,9 @@ import (
 	"context"
 	"fmt"
 
-	eshandler "github.com/disaster37/es-handler/v8"
-	"github.com/disaster37/operator-sdk-extra/v2/pkg/controller"
-	"github.com/disaster37/operator-sdk-extra/v2/pkg/controller/remote"
-	olivere "github.com/olivere/elastic/v7"
+	eshandler "github.com/disaster37/es-handler/v9"
+	"github.com/disaster37/operator-sdk-extra/v3/pkg/controller"
+	"github.com/disaster37/operator-sdk-extra/v3/pkg/controller/remote"
 	"github.com/sirupsen/logrus"
 	elasticsearchapicrd "github.com/webcenter-fr/elasticsearch-operator/api/elasticsearchapi/v1"
 	"github.com/webcenter-fr/elasticsearch-operator/internal/controller/common"
@@ -42,15 +41,15 @@ const (
 // UserReconciler reconciles a User object
 type UserReconciler struct {
 	controller.Controller
-	remote.RemoteReconciler[*elasticsearchapicrd.User, *olivere.XPackSecurityPutUserRequest, eshandler.ElasticsearchHandler]
-	remote.RemoteReconcilerAction[*elasticsearchapicrd.User, *olivere.XPackSecurityPutUserRequest, eshandler.ElasticsearchHandler]
+	remote.RemoteReconciler[*elasticsearchapicrd.User, *eshandler.SecurityPutUserRequest, eshandler.ElasticsearchHandler]
+	remote.RemoteReconcilerAction[*elasticsearchapicrd.User, *eshandler.SecurityPutUserRequest, eshandler.ElasticsearchHandler]
 	name string
 }
 
 func NewUserReconciler(client client.Client, logger *logrus.Entry, recorder record.EventRecorder) controller.Controller {
 	return &UserReconciler{
 		Controller: controller.NewController(),
-		RemoteReconciler: remote.NewRemoteReconciler[*elasticsearchapicrd.User, *olivere.XPackSecurityPutUserRequest, eshandler.ElasticsearchHandler](
+		RemoteReconciler: remote.NewRemoteReconciler[*elasticsearchapicrd.User, *eshandler.SecurityPutUserRequest, eshandler.ElasticsearchHandler](
 			client,
 			userName,
 			"user.elasticsearchapi.k8s.webcenter.fr/finalizer",

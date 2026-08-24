@@ -7,13 +7,13 @@ import (
 	"time"
 
 	"emperror.dev/errors"
-	"github.com/disaster37/es-handler/v8/mocks"
+	esapi "github.com/disaster37/elasticsearch/v9/api"
+	"github.com/disaster37/es-handler/v9/mocks"
 	"github.com/disaster37/generic-objectmatcher/patch"
-	"github.com/disaster37/operator-sdk-extra/v2/pkg/apis"
-	"github.com/disaster37/operator-sdk-extra/v2/pkg/controller"
-	"github.com/disaster37/operator-sdk-extra/v2/pkg/helper"
-	"github.com/disaster37/operator-sdk-extra/v2/pkg/test"
-	olivere "github.com/olivere/elastic/v7"
+	"github.com/disaster37/operator-sdk-extra/v3/pkg/apis"
+	"github.com/disaster37/operator-sdk-extra/v3/pkg/controller"
+	"github.com/disaster37/operator-sdk-extra/v3/pkg/helper"
+	"github.com/disaster37/operator-sdk-extra/v3/pkg/test"
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
 	elasticsearchapicrd "github.com/webcenter-fr/elasticsearch-operator/api/elasticsearchapi/v1"
@@ -50,7 +50,7 @@ func doMockILM(mockES *mocks.MockElasticsearchHandler) func(stepName *string, da
 		isCreated := false
 		isUpdated := false
 
-		mockES.EXPECT().ILMGet(gomock.Any()).AnyTimes().DoAndReturn(func(name string) (*olivere.XPackIlmGetLifecycleResponse, error) {
+		mockES.EXPECT().ILMGet(gomock.Any()).AnyTimes().DoAndReturn(func(name string) (*esapi.IlmPolicy, error) {
 			switch *stepName {
 			case "create":
 				if !isCreated {
@@ -79,7 +79,7 @@ func doMockILM(mockES *mocks.MockElasticsearchHandler) func(stepName *string, da
 										}
 									}
 								}`
-					resp := &olivere.XPackIlmGetLifecycleResponse{}
+					resp := &esapi.IlmPolicy{}
 					if err := json.Unmarshal([]byte(rawPolicy), resp); err != nil {
 						panic(err)
 					}
@@ -111,7 +111,7 @@ func doMockILM(mockES *mocks.MockElasticsearchHandler) func(stepName *string, da
 								}
 							}
 						}`
-					resp := &olivere.XPackIlmGetLifecycleResponse{}
+					resp := &esapi.IlmPolicy{}
 					if err := json.Unmarshal([]byte(rawPolicy), resp); err != nil {
 						panic(err)
 					}
@@ -140,7 +140,7 @@ func doMockILM(mockES *mocks.MockElasticsearchHandler) func(stepName *string, da
 								}
 							}
 						}`
-					resp := &olivere.XPackIlmGetLifecycleResponse{}
+					resp := &esapi.IlmPolicy{}
 					if err := json.Unmarshal([]byte(rawPolicy), resp); err != nil {
 						panic(err)
 					}
@@ -151,7 +151,7 @@ func doMockILM(mockES *mocks.MockElasticsearchHandler) func(stepName *string, da
 			return nil, nil
 		})
 
-		mockES.EXPECT().ILMDiff(gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes().DoAndReturn(func(actual, expected, original *olivere.XPackIlmGetLifecycleResponse) (*patch.PatchResult, error) {
+		mockES.EXPECT().ILMDiff(gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes().DoAndReturn(func(actual, expected, original *esapi.IlmPolicy) (*patch.PatchResult, error) {
 			switch *stepName {
 			case "create":
 				if !isCreated {
@@ -174,7 +174,7 @@ func doMockILM(mockES *mocks.MockElasticsearchHandler) func(stepName *string, da
 			return nil, nil
 		})
 
-		mockES.EXPECT().ILMUpdate(gomock.Any(), gomock.Any()).AnyTimes().DoAndReturn(func(name string, policy *olivere.XPackIlmGetLifecycleResponse) error {
+		mockES.EXPECT().ILMUpdate(gomock.Any(), gomock.Any()).AnyTimes().DoAndReturn(func(name string, policy *esapi.IlmPolicy) error {
 			switch *stepName {
 			case "create":
 				data["isCreated"] = true

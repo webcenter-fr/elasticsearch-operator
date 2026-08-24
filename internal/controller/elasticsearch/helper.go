@@ -74,10 +74,12 @@ func GetSecretNameForTlsTransport(elasticsearch *elasticsearchcrd.Elasticsearch)
 	return fmt.Sprintf("%s-tls-transport-es", elasticsearch.Name)
 }
 
-// GetSecretNameForPkiTransport permit to get the secret name that store PKI for transport layer
-// It return the secret name as string
+// GetSecretNameForPkiTransport permit to get the secret name that store PKI for transport layer.
+// The transport TLS rotation saga (rotation.NewTLSStep + selfmanaged/pernode
+// backend) hardcodes the CA secret name as "<leafSecretName>-ca" (see
+// selfmanaged.CASecretSuffix). Align this helper to the library's actual naming.
 func GetSecretNameForPkiTransport(elasticsearch *elasticsearchcrd.Elasticsearch) (secretName string) {
-	return fmt.Sprintf("%s-pki-transport-es", elasticsearch.Name)
+	return fmt.Sprintf("%s-tls-transport-es-ca", elasticsearch.Name)
 }
 
 // GetSecretNameForTlsApi permit to get the secret name that store all certificates for Api layout (Http endpoint)

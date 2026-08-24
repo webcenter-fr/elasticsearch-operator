@@ -3,8 +3,9 @@ package elasticsearchapi
 import (
 	"testing"
 
-	"github.com/disaster37/operator-sdk-extra/v2/pkg/apis"
-	olivere "github.com/olivere/elastic/v7"
+	eshandler "github.com/disaster37/es-handler/v9"
+
+	"github.com/disaster37/operator-sdk-extra/v3/pkg/apis"
 	"github.com/stretchr/testify/assert"
 	elasticsearchapicrd "github.com/webcenter-fr/elasticsearch-operator/api/elasticsearchapi/v1"
 	"github.com/webcenter-fr/elasticsearch-operator/api/shared"
@@ -14,8 +15,8 @@ import (
 func TestWatchBuild(t *testing.T) {
 	var (
 		o             *elasticsearchapicrd.Watch
-		watch         *olivere.XPackWatch
-		expectedWatch *olivere.XPackWatch
+		watch         *eshandler.XPackWatch
+		expectedWatch *eshandler.XPackWatch
 		err           error
 	)
 
@@ -69,26 +70,26 @@ func TestWatchBuild(t *testing.T) {
 		},
 	}
 
-	expectedWatch = &olivere.XPackWatch{
-		Trigger: map[string]map[string]any{
-			"schedule": {
+	expectedWatch = &eshandler.XPackWatch{
+		"trigger": map[string]any{
+			"schedule": map[string]any{
 				"cron": "0 0/1 * * * ?",
 			},
 		},
-		Input: map[string]map[string]any{
-			"search": {
+		"input": map[string]any{
+			"search": map[string]any{
 				"key": "value",
 			},
 		},
-		Condition: map[string]map[string]any{
-			"compare": {
+		"condition": map[string]any{
+			"compare": map[string]any{
 				"ctx.payload.hits.total": map[string]any{
 					"gt": 0,
 				},
 			},
 		},
-		Actions: map[string]map[string]any{
-			"email_admin": {
+		"actions": map[string]any{
+			"email_admin": map[string]any{
 				"email": map[string]any{
 					"to":      "admin@domain.host.com",
 					"subject": "404 recently encountered",
@@ -161,38 +162,38 @@ func TestWatchBuild(t *testing.T) {
 		},
 	}
 
-	expectedWatch = &olivere.XPackWatch{
-		Trigger: map[string]map[string]any{
-			"schedule": {
+	expectedWatch = &eshandler.XPackWatch{
+		"trigger": map[string]any{
+			"schedule": map[string]any{
 				"cron": "0 0/1 * * * ?",
 			},
 		},
-		Input: map[string]map[string]any{
-			"search": {
+		"input": map[string]any{
+			"search": map[string]any{
 				"key": "value",
 			},
 		},
-		Condition: map[string]map[string]any{
-			"compare": {
+		"condition": map[string]any{
+			"compare": map[string]any{
 				"ctx.payload.hits.total": map[string]any{
 					"gt": 0,
 				},
 			},
 		},
-		Actions: map[string]map[string]any{
-			"email_admin": {
+		"actions": map[string]any{
+			"email_admin": map[string]any{
 				"email": map[string]any{
 					"to":      "admin@domain.host.com",
 					"subject": "404 recently encountered",
 				},
 			},
 		},
-		Transform: map[string]any{
+		"transform": map[string]any{
 			"key3": "value3",
 		},
-		ThrottlePeriod:         "1d",
-		ThrottlePeriodInMillis: 10,
-		Metadata: map[string]any{
+		"throttle_period":           "1d",
+		"throttle_period_in_millis": int64(10),
+		"metadata": map[string]any{
 			"key2": "value2",
 		},
 	}

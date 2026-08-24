@@ -24,4 +24,4 @@ spec:
       host: cerebro.cluster.local
       secretRef:
         name: cerebro-tls
-  version: 0.9.4
+  version: v0.1.0

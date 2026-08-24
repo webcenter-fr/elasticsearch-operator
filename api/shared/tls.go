@@ -38,10 +38,28 @@ type TlsSpec struct {
 
 	// KeySize is the key size when generate privates keys
 	// Default to 2048
+	// It is only honored when KeyComplexity is empty (deprecated in favor of KeyComplexity).
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
 	// +optional
 	// +kubebuilder:default=2048
 	KeySize *int `json:"keySize,omitempty"`
+
+	// CaRenewalDays is the number of days before the CA certificate expires
+	// at which the operator starts the CA rotation saga. Default 30.
+	// +operator-sdk:csv:customresourcedefinitions:type=spec
+	// +optional
+	// +kubebuilder:default=365
+	CaRenewalDays *int `json:"caRenewalDays,omitempty"`
+
+	// KeyComplexity selects the private-key algorithm and strength:
+	// rsa-2048 (default), rsa-4096, ecdsa-p256, ecdsa-p384, ecdsa-p521.
+	// Empty => legacy KeySize applies (RSA, default 2048). Changing it triggers
+	// a full CA rotation + staged cluster-wide rolling restart (no mixed
+	// RSA/ECDSA cluster).
+	// +operator-sdk:csv:customresourcedefinitions:type=spec
+	// +kubebuilder:validation:Enum=rsa-2048;rsa-4096;ecdsa-p256;ecdsa-p384;ecdsa-p521
+	// +optional
+	KeyComplexity string `json:"keyComplexity,omitempty"`
 }
 
 // TlsSelfSignedCertificateSpec permit to set the the self signed certificate
@@ -54,6 +72,8 @@ type TlsSelfSignedCertificateSpec struct {
 	// AltNames permit to set subject alt names of type dns when generate certificate
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
 	// +optional
+	// +kubebuilder:validation:MaxItems=32
+	// +kubebuilder:validation:items:Pattern=`^(\*\.)?([a-zA-Z0-9]|[a-zA-Z0-9][a-zA-Z0-9\-]{0,61}[a-zA-Z0-9])(\.([a-zA-Z0-9]|[a-zA-Z0-9][a-zA-Z0-9\-]{0,61}[a-zA-Z0-9]))*$`
 	AltNames []string `json:"altNames,omitempty"`
 }
 

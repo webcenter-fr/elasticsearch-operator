@@ -6,9 +6,9 @@ import (
 	"time"
 
 	"emperror.dev/errors"
-	"github.com/disaster37/operator-sdk-extra/v2/pkg/apis/shared"
-	"github.com/disaster37/operator-sdk-extra/v2/pkg/controller/multiphase"
-	"github.com/disaster37/operator-sdk-extra/v2/pkg/helper"
+	"github.com/disaster37/operator-sdk-extra/v3/pkg/apis/shared"
+	"github.com/disaster37/operator-sdk-extra/v3/pkg/controller/multiphase"
+	"github.com/disaster37/operator-sdk-extra/v3/pkg/helper"
 	"github.com/sirupsen/logrus"
 	beatcrd "github.com/webcenter-fr/elasticsearch-operator/api/beat/v1"
 	elasticsearchcrd "github.com/webcenter-fr/elasticsearch-operator/api/elasticsearch/v1"
@@ -39,6 +39,7 @@ func newConfiMapReconciler(client client.Client, recorder record.EventRecorder) 
 			ConfigmapPhase,
 			ConfigmapCondition,
 			recorder,
+			common.FieldManager,
 		),
 	}
 }
@@ -125,6 +126,7 @@ func (r *configMapReconciler) Read(ctx context.Context, o *beatcrd.Filebeat, dat
 	if err != nil {
 		return read, res, errors.Wrap(err, "Error when generate config maps")
 	}
+	common.InjectTypeMeta(r.Client().Scheme(), expectedCms...)
 	read.SetExpectedObjects(expectedCms)
 
 	return read, res, nil

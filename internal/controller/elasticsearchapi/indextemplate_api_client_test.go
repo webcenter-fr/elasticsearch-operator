@@ -3,8 +3,9 @@ package elasticsearchapi
 import (
 	"testing"
 
-	"github.com/disaster37/operator-sdk-extra/v2/pkg/apis"
-	olivere "github.com/olivere/elastic/v7"
+	eshandlerpatch "github.com/disaster37/es-handler/v9/patch"
+
+	"github.com/disaster37/operator-sdk-extra/v3/pkg/apis"
 	"github.com/stretchr/testify/assert"
 	elasticsearchapicrd "github.com/webcenter-fr/elasticsearch-operator/api/elasticsearchapi/v1"
 	"github.com/webcenter-fr/elasticsearch-operator/api/shared"
@@ -14,8 +15,8 @@ import (
 func TestIndexTemplateBuild(t *testing.T) {
 	var (
 		o          *elasticsearchapicrd.IndexTemplate
-		it         *olivere.IndicesGetIndexTemplate
-		expectedIt *olivere.IndicesGetIndexTemplate
+		it         *eshandlerpatch.IndexTemplate
+		expectedIt *eshandlerpatch.IndexTemplate
 		err        error
 	)
 
@@ -37,7 +38,7 @@ func TestIndexTemplateBuild(t *testing.T) {
 		},
 	}
 
-	expectedIt = &olivere.IndicesGetIndexTemplate{
+	expectedIt = &eshandlerpatch.IndexTemplate{
 		IndexPatterns: []string{"*"},
 	}
 
@@ -89,7 +90,7 @@ func TestIndexTemplateBuild(t *testing.T) {
 		},
 	}
 
-	expectedIt = &olivere.IndicesGetIndexTemplate{
+	expectedIt = &eshandlerpatch.IndexTemplate{
 		IndexPatterns: []string{"*"},
 		ComposedOf:    []string{"component1"},
 		Priority:      1,
@@ -97,8 +98,7 @@ func TestIndexTemplateBuild(t *testing.T) {
 		Meta: map[string]any{
 			"key": "value",
 		},
-		AllowAutoCreate: true,
-		Template: &olivere.IndicesGetIndexTemplateData{
+		Template: &eshandlerpatch.IndexTemplateData{
 			Settings: map[string]any{
 				"number_of_shards": 1,
 			},

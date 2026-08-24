@@ -4,10 +4,11 @@ import (
 	"context"
 
 	"emperror.dev/errors"
-	"github.com/disaster37/operator-sdk-extra/v2/pkg/apis/shared"
-	"github.com/disaster37/operator-sdk-extra/v2/pkg/controller/multiphase"
+	"github.com/disaster37/operator-sdk-extra/v3/pkg/apis/shared"
+	"github.com/disaster37/operator-sdk-extra/v3/pkg/controller/multiphase"
 	"github.com/sirupsen/logrus"
 	elasticsearchcrd "github.com/webcenter-fr/elasticsearch-operator/api/elasticsearch/v1"
+	"github.com/webcenter-fr/elasticsearch-operator/internal/controller/common"
 	corev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/types"
@@ -32,6 +33,7 @@ func newCredentialReconciler(client client.Client, recorder record.EventRecorder
 			CredentialPhase,
 			CredentialCondition,
 			recorder,
+			common.FieldManager,
 		),
 	}
 }
@@ -62,6 +64,7 @@ func (r *credentialReconciler) Read(ctx context.Context, o *elasticsearchcrd.Ela
 	if currentCredential != nil {
 		expectedCredentials[0].Data = currentCredential.Data
 	}
+	common.InjectTypeMeta(r.Client().Scheme(), expectedCredentials...)
 	read.SetExpectedObjects(expectedCredentials)
 
 	return read, res, nil

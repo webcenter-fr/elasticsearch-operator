@@ -4,7 +4,7 @@ metadata:
 components:
   - name: tools
     container:
-      image: quay.io/webcenter/developer-image:golang-ubi9-latest
+      image: quay.io/webcenter/developer-image:golang-ubi10-latest
       env:
         - name: GOPATH
           value: /projects:/home/user/go
@@ -16,10 +16,10 @@ components:
         - name: web
           targetPort: 8080
           exposure: public
-      memoryLimit: 8Gi
+      memoryLimit: 20Gi
       cpuLimit: 4000m
       cpuRequest: 1000m
-      memoryRequest: 4Gi
+      memoryRequest: 8Gi
       mountSources: true
   - name: docker
     attributes:
@@ -35,7 +35,7 @@ components:
         - name: 'DOCKER_TLS_CERTDIR'
           value: ''
       mountSources: true
-      memoryLimit: 8Gi
+      memoryLimit: 4Gi
       cpuLimit: 4000m
       cpuRequest: 1000m
       memoryRequest: 1Gi

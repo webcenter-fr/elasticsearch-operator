@@ -8,7 +8,7 @@ import (
 	"emperror.dev/errors"
 	"github.com/codingsince1985/checksum"
 	"github.com/disaster37/k8sbuilder"
-	"github.com/disaster37/operator-sdk-extra/v2/pkg/helper"
+	"github.com/disaster37/operator-sdk-extra/v3/pkg/helper"
 	"github.com/thoas/go-funk"
 	elasticsearchcrd "github.com/webcenter-fr/elasticsearch-operator/api/elasticsearch/v1"
 	"github.com/webcenter-fr/elasticsearch-operator/api/shared"
@@ -35,7 +35,7 @@ var roleList = []string{
 }
 
 // GenerateStatefullsets permit to generate statefullsets for each node groups
-func buildStatefulsets(es *elasticsearchcrd.Elasticsearch, secretsChecksum []*corev1.Secret, configMapsChecksum []*corev1.ConfigMap, isOpenshift bool) (statefullsets []*appv1.StatefulSet, err error) {
+func buildStatefulsets(es *elasticsearchcrd.Elasticsearch, secretsChecksum []*corev1.Secret, configMapsChecksum []*corev1.ConfigMap, isOpenshift bool, transportRolloutMarker string) (statefullsets []*appv1.StatefulSet, err error) {
 	var sts *appv1.StatefulSet
 
 	checksumAnnotations := map[string]string{}
@@ -44,8 +44,15 @@ func buildStatefulsets(es *elasticsearchcrd.Elasticsearch, secretsChecksum []*co
 	// Use annotations sequence instead compute checksum if provided
 	for _, s := range secretsChecksum {
 
-		sum := s.Annotations[fmt.Sprintf("%s/sequence", elasticsearchcrd.ElasticsearchAnnotationKey)]
-		if sum == "" {
+		var sum string
+		switch {
+		case s.Name == GetSecretNameForTlsTransport(es) && transportRolloutMarker != "":
+			// Transport cert: use the STS-computed rotation marker (changes
+			// ONLY on CA/leaf rotation, never on node add/remove).
+			sum = transportRolloutMarker
+		case s.Annotations[fmt.Sprintf("%s/sequence", elasticsearchcrd.ElasticsearchAnnotationKey)] != "":
+			sum = s.Annotations[fmt.Sprintf("%s/sequence", elasticsearchcrd.ElasticsearchAnnotationKey)]
+		default:
 			j, err := json.Marshal(s.Data)
 			if err != nil {
 				return nil, errors.Wrapf(err, "Error when convert data of secret %s on json string", s.Name)
@@ -422,8 +429,14 @@ fi
 			elasticsearchcrd.ElasticsearchAnnotationKey: "true",
 		}).
 			WithAnnotations(es.Spec.GlobalNodeGroup.Annotations, k8sbuilder.Merge).
-			WithAnnotations(nodeGroup.Annotations, k8sbuilder.Merge).
-			WithAnnotations(nodeGroupCheckSumAnnotations, k8sbuilder.Merge)
+			WithAnnotations(nodeGroup.Annotations, k8sbuilder.Merge)
+
+		// Operator-owned checksum annotations must ALWAYS win over user-supplied
+		// annotations (mergo.Merge would let a user pin the reserved
+		// `…/secret-*`/`…/configmap-*` markers and defeat the rollout logic).
+		for k, v := range nodeGroupCheckSumAnnotations {
+			ptb.PodTemplate().Annotations[k] = v
+		}
 
 		// Compute NodeSelector
 		ptb.WithNodeSelector(nodeGroup.NodeSelector, k8sbuilder.Merge)
@@ -830,6 +843,10 @@ fi
 
 		// Compute Statefullset
 		sts = &appv1.StatefulSet{
+			TypeMeta: metav1.TypeMeta{
+				APIVersion: "apps/v1",
+				Kind:       "StatefulSet",
+			},
 			ObjectMeta: metav1.ObjectMeta{
 				Namespace:   es.Namespace,
 				Name:        GetNodeGroupName(es, nodeGroup.Name),

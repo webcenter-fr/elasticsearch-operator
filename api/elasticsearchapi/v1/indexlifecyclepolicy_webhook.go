@@ -22,16 +22,16 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/disaster37/operator-sdk-extra/v2/pkg/controller"
-	olivere "github.com/olivere/elastic/v7"
+	esapi "github.com/disaster37/elasticsearch/v9/api"
+	"github.com/disaster37/operator-sdk-extra/v3/pkg/controller"
 	"github.com/sirupsen/logrus"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/fields"
-	"k8s.io/apimachinery/pkg/runtime"
+
 	"k8s.io/apimachinery/pkg/util/validation/field"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/controller-runtime/pkg/webhook"
+
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 )
 
@@ -43,8 +43,7 @@ type indexLifecyclePolicyValidator struct {
 // SetupWebhookWithManager will setup the manager to manage the webhooks
 func SetupIndexLifecyclePolicyWebhookWithManager(logger *logrus.Entry) controller.WebhookRegister {
 	return func(mgr ctrl.Manager, client client.Client) error {
-		return ctrl.NewWebhookManagedBy(mgr).
-			For(&IndexLifecyclePolicy{}).
+		return ctrl.NewWebhookManagedBy(mgr, &IndexLifecyclePolicy{}).
 			WithValidator(&indexLifecyclePolicyValidator{
 				logger: logger.WithField("webhook", "indexLifecyclePolicyValidator"),
 				client: client,
@@ -55,7 +54,7 @@ func SetupIndexLifecyclePolicyWebhookWithManager(logger *logrus.Entry) controlle
 
 // +kubebuilder:webhook:path=/validate-elasticsearchapi-k8s-webcenter-fr-v1-indexlifecyclepolicy,mutating=false,failurePolicy=fail,sideEffects=None,groups=elasticsearchapi.k8s.webcenter.fr,resources=indexlifecyclepolicies,verbs=create;update,versions=v1,name=indexlifecyclepolicy.elasticsearchapi.k8s.webcenter.fr,admissionReviewVersions=v1
 
-var _ webhook.CustomValidator = &indexLifecyclePolicyValidator{}
+var _ admission.Validator[*IndexLifecyclePolicy] = &indexLifecyclePolicyValidator{}
 
 func (r *indexLifecyclePolicyValidator) validateResourceUnicity(obj *IndexLifecyclePolicy) *field.Error {
 	// Check if resource already exist with same name on some remote cluster target
@@ -99,7 +98,7 @@ func (r *indexLifecyclePolicyValidator) validateExplicitPolicyOrRawPolicy(obj *I
 func (r *indexLifecyclePolicyValidator) validateRawPolicy(obj *IndexLifecyclePolicy) *field.Error {
 	if obj.IsRawPolicy() {
 
-		ilm := &olivere.XPackIlmGetLifecycleResponse{}
+		ilm := &esapi.IlmPolicy{}
 		if err := json.Unmarshal([]byte(*obj.Spec.RawPolicy), ilm); err != nil {
 			return field.Invalid(field.NewPath("spec").Child("rawPolicy"), obj.Spec.RawPolicy, fmt.Sprintf("The JSON is invalid: %s", err.Error()))
 		}
@@ -109,81 +108,72 @@ func (r *indexLifecyclePolicyValidator) validateRawPolicy(obj *IndexLifecyclePol
 }
 
 // ValidateCreate implements webhook.Validator so a webhook will be registered for the type
-func (r *indexLifecyclePolicyValidator) ValidateCreate(ctx context.Context, obj runtime.Object) (admission.Warnings, error) {
+func (r *indexLifecyclePolicyValidator) ValidateCreate(ctx context.Context, obj *IndexLifecyclePolicy) (admission.Warnings, error) {
 	var allErrs field.ErrorList
 
-	indexStateManagementObj, ok := obj.(*IndexLifecyclePolicy)
-	if !ok {
-		return nil, fmt.Errorf("expected a IndexLifecyclePolicy object but got %T", obj)
-	}
-	r.logger.Debugf("validate create %s/%s", indexStateManagementObj.GetNamespace(), indexStateManagementObj.GetName())
+	r.logger.Debugf("validate create %s/%s", obj.GetNamespace(), obj.GetName())
 
-	if err := r.validateExplicitPolicyOrRawPolicy(indexStateManagementObj); err != nil {
+	if err := r.validateExplicitPolicyOrRawPolicy(obj); err != nil {
 		allErrs = append(allErrs, err)
 	}
 
-	if err := r.validateRawPolicy(indexStateManagementObj); err != nil {
+	if err := r.validateRawPolicy(obj); err != nil {
 		allErrs = append(allErrs, err)
 	}
 
-	if err := indexStateManagementObj.Spec.ElasticsearchRef.ValidateField(); err != nil {
+	if err := obj.Spec.ElasticsearchRef.ValidateField(); err != nil {
 		allErrs = append(allErrs, err)
 	}
 
-	if err := r.validateResourceUnicity(indexStateManagementObj); err != nil {
+	if err := r.validateResourceUnicity(obj); err != nil {
 		allErrs = append(allErrs, err)
 	}
 
 	if len(allErrs) > 0 {
 		return nil, apierrors.NewInvalid(
-			indexStateManagementObj.GroupVersionKind().GroupKind(),
-			indexStateManagementObj.Name, allErrs)
+			obj.GroupVersionKind().GroupKind(),
+			obj.Name, allErrs)
 	}
 
 	return nil, nil
 }
 
 // ValidateUpdate implements webhook.Validator so a webhook will be registered for the type
-func (r *indexLifecyclePolicyValidator) ValidateUpdate(ctx context.Context, oldObj runtime.Object, newObj runtime.Object) (admission.Warnings, error) {
+func (r *indexLifecyclePolicyValidator) ValidateUpdate(ctx context.Context, oldObj *IndexLifecyclePolicy, newObj *IndexLifecyclePolicy) (admission.Warnings, error) {
 	var allErrs field.ErrorList
-	oldO := oldObj.(*IndexLifecyclePolicy)
 
-	indexStateManagementObj, ok := newObj.(*IndexLifecyclePolicy)
-	if !ok {
-		return nil, fmt.Errorf("expected a IndexLifecyclePolicy object but got %T", newObj)
-	}
-	r.logger.Debugf("validate update %s/%s", indexStateManagementObj.Namespace, indexStateManagementObj.Name)
+	r.logger.Debugf("validate update %s/%s", newObj.Namespace, newObj.Name)
 
-	if err := r.validateExplicitPolicyOrRawPolicy(indexStateManagementObj); err != nil {
+	if err := r.validateExplicitPolicyOrRawPolicy(newObj); err != nil {
 		allErrs = append(allErrs, err)
 	}
 
-	if err := r.validateRawPolicy(indexStateManagementObj); err != nil {
+	if err := r.validateRawPolicy(newObj); err != nil {
 		allErrs = append(allErrs, err)
 	}
 
-	if err := indexStateManagementObj.Spec.ElasticsearchRef.ValidateField(); err != nil {
+	if err := newObj.Spec.ElasticsearchRef.ValidateField(); err != nil {
 		allErrs = append(allErrs, err)
 	}
 
-	if err := validateImmutableName(indexStateManagementObj, oldO); err != nil {
+	if err := validateImmutableName(newObj, oldObj); err != nil {
 		allErrs = append(allErrs, err)
 	}
 
-	if err := r.validateResourceUnicity(indexStateManagementObj); err != nil {
+	if err := r.validateResourceUnicity(newObj); err != nil {
 		allErrs = append(allErrs, err)
 	}
 
 	if len(allErrs) > 0 {
 		return nil, apierrors.NewInvalid(
-			indexStateManagementObj.GroupVersionKind().GroupKind(),
-			indexStateManagementObj.Name, allErrs)
+			newObj.GroupVersionKind().GroupKind(),
+			newObj.Name, allErrs)
 	}
 
 	return nil, nil
 }
 
 // ValidateDelete implements webhook.Validator so a webhook will be registered for the type
-func (r *indexLifecyclePolicyValidator) ValidateDelete(ctx context.Context, obj runtime.Object) (admission.Warnings, error) {
+func (r *indexLifecyclePolicyValidator) ValidateDelete(ctx context.Context, obj *IndexLifecyclePolicy) (admission.Warnings, error) {
 	return nil, nil
 }

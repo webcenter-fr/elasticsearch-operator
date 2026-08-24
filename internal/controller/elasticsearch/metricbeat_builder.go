@@ -3,7 +3,7 @@ package elasticsearch
 import (
 	"fmt"
 
-	"github.com/disaster37/operator-sdk-extra/v2/pkg/apis"
+	"github.com/disaster37/operator-sdk-extra/v3/pkg/apis"
 	beatcrd "github.com/webcenter-fr/elasticsearch-operator/api/beat/v1"
 	elasticsearchcrd "github.com/webcenter-fr/elasticsearch-operator/api/elasticsearch/v1"
 	"github.com/webcenter-fr/elasticsearch-operator/api/shared"

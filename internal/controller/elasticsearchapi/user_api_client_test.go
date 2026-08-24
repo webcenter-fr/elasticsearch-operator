@@ -3,8 +3,9 @@ package elasticsearchapi
 import (
 	"testing"
 
-	"github.com/disaster37/operator-sdk-extra/v2/pkg/apis"
-	olivere "github.com/olivere/elastic/v7"
+	eshandler "github.com/disaster37/es-handler/v9"
+
+	"github.com/disaster37/operator-sdk-extra/v3/pkg/apis"
 	"github.com/stretchr/testify/assert"
 	elasticsearchapicrd "github.com/webcenter-fr/elasticsearch-operator/api/elasticsearchapi/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -14,8 +15,8 @@ import (
 func TestUserBuild(t *testing.T) {
 	var (
 		o            *elasticsearchapicrd.User
-		user         *olivere.XPackSecurityPutUserRequest
-		expectedUser *olivere.XPackSecurityPutUserRequest
+		user         *eshandler.SecurityPutUserRequest
+		expectedUser *eshandler.SecurityPutUserRequest
 		err          error
 	)
 
@@ -38,7 +39,7 @@ func TestUserBuild(t *testing.T) {
 		},
 	}
 
-	expectedUser = &olivere.XPackSecurityPutUserRequest{
+	expectedUser = &eshandler.SecurityPutUserRequest{
 		Enabled:  true,
 		Email:    "test@no.no",
 		FullName: "test",
@@ -75,7 +76,7 @@ func TestUserBuild(t *testing.T) {
 		},
 	}
 
-	expectedUser = &olivere.XPackSecurityPutUserRequest{
+	expectedUser = &eshandler.SecurityPutUserRequest{
 		Enabled:  true,
 		Email:    "test@no.no",
 		FullName: "test",

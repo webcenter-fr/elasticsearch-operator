@@ -8,6 +8,8 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
+const applicationSecretKey = "session-key"
+
 // BuildApplicationSecret permit to build credential secret
 func buildApplicationSecrets(o *cerebrocrd.Cerebro) (secrets []*corev1.Secret, err error) {
 	var applicationSecret string
@@ -27,7 +29,7 @@ func buildApplicationSecrets(o *cerebrocrd.Cerebro) (secrets []*corev1.Secret, e
 			},
 			Type: corev1.SecretTypeOpaque,
 			Data: map[string][]byte{
-				"application": []byte(applicationSecret),
+				applicationSecretKey: []byte(applicationSecret),
 			},
 		},
 	}

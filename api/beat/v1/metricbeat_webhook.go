@@ -19,15 +19,14 @@ package v1
 import (
 	"context"
 
-	"emperror.dev/errors"
-	"github.com/disaster37/operator-sdk-extra/v2/pkg/controller"
+	"github.com/disaster37/operator-sdk-extra/v3/pkg/controller"
 	"github.com/sirupsen/logrus"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
-	"k8s.io/apimachinery/pkg/runtime"
+
 	"k8s.io/apimachinery/pkg/util/validation/field"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/controller-runtime/pkg/webhook"
+
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 )
 
@@ -39,8 +38,7 @@ type metricbeatValidator struct {
 // SetupWebhookWithManager will setup the manager to manage the webhooks
 func SetupMetricbeatWebhookWithManager(logger *logrus.Entry) controller.WebhookRegister {
 	return func(mgr ctrl.Manager, client client.Client) error {
-		return ctrl.NewWebhookManagedBy(mgr).
-			For(&Metricbeat{}).
+		return ctrl.NewWebhookManagedBy(mgr, &Metricbeat{}).
 			WithValidator(&metricbeatValidator{
 				logger: logger,
 				client: client,
@@ -51,56 +49,45 @@ func SetupMetricbeatWebhookWithManager(logger *logrus.Entry) controller.WebhookR
 
 //+kubebuilder:webhook:path=/validate-beat-k8s-webcenter-fr-v1-metricbeat,mutating=false,failurePolicy=fail,sideEffects=None,groups=beat.k8s.webcenter.fr,resources=metricbeats,verbs=create;update,versions=v1,name=metricbeat.beat.k8s.webcenter.fr,admissionReviewVersions=v1
 
-// Use webhook.CustomValidator for controller-runtime v0.15+ or webhook.Validator for older versions
-var _ webhook.CustomValidator = &metricbeatValidator{}
+var _ admission.Validator[*Metricbeat] = &metricbeatValidator{}
 
 // ValidateCreate implements webhook.Validator so a webhook will be registered for the type
-func (r *metricbeatValidator) ValidateCreate(ctx context.Context, obj runtime.Object) (admission.Warnings, error) {
+func (r *metricbeatValidator) ValidateCreate(ctx context.Context, obj *Metricbeat) (admission.Warnings, error) {
 	var allErrs field.ErrorList
 
-	metricbeatObj, ok := obj.(*Metricbeat)
-	if !ok {
-		return nil, errors.Errorf("expected a Metricbeat object but got %T", obj)
-	}
-
 	// Check Elasticsearch target
-	if err := metricbeatObj.Spec.ElasticsearchRef.ValidateField(); err != nil {
+	if err := obj.Spec.ElasticsearchRef.ValidateField(); err != nil {
 		allErrs = append(allErrs, err)
 	}
 
 	if len(allErrs) > 0 {
 		return nil, apierrors.NewInvalid(
-			metricbeatObj.GroupVersionKind().GroupKind(),
-			metricbeatObj.Name, allErrs)
+			obj.GroupVersionKind().GroupKind(),
+			obj.Name, allErrs)
 	}
 
 	return nil, nil
 }
 
 // ValidateUpdate implements webhook.Validator so a webhook will be registered for the type
-func (r *metricbeatValidator) ValidateUpdate(ctx context.Context, oldObj runtime.Object, newObj runtime.Object) (admission.Warnings, error) {
+func (r *metricbeatValidator) ValidateUpdate(ctx context.Context, oldObj *Metricbeat, newObj *Metricbeat) (admission.Warnings, error) {
 	var allErrs field.ErrorList
 
-	metricbeatObj, ok := newObj.(*Metricbeat)
-	if !ok {
-		return nil, errors.Errorf("expected a Metricbeat object but got %T", newObj)
-	}
-
 	// Check Elasticsearch target
-	if err := metricbeatObj.Spec.ElasticsearchRef.ValidateField(); err != nil {
+	if err := newObj.Spec.ElasticsearchRef.ValidateField(); err != nil {
 		allErrs = append(allErrs, err)
 	}
 
 	if len(allErrs) > 0 {
 		return nil, apierrors.NewInvalid(
-			metricbeatObj.GroupVersionKind().GroupKind(),
-			metricbeatObj.Name, allErrs)
+			newObj.GroupVersionKind().GroupKind(),
+			newObj.Name, allErrs)
 	}
 
 	return nil, nil
 }
 
 // ValidateDelete implements webhook.Validator so a webhook will be registered for the type
-func (r *metricbeatValidator) ValidateDelete(ctx context.Context, obj runtime.Object) (admission.Warnings, error) {
+func (r *metricbeatValidator) ValidateDelete(ctx context.Context, obj *Metricbeat) (admission.Warnings, error) {
 	return nil, nil
 }

@@ -6,11 +6,12 @@ import (
 	"time"
 
 	"emperror.dev/errors"
-	"github.com/disaster37/operator-sdk-extra/v2/pkg/apis/shared"
-	"github.com/disaster37/operator-sdk-extra/v2/pkg/controller/multiphase"
-	"github.com/disaster37/operator-sdk-extra/v2/pkg/helper"
+	"github.com/disaster37/operator-sdk-extra/v3/pkg/apis/shared"
+	"github.com/disaster37/operator-sdk-extra/v3/pkg/controller/multiphase"
+	"github.com/disaster37/operator-sdk-extra/v3/pkg/helper"
 	"github.com/sirupsen/logrus"
 	cerebrocrd "github.com/webcenter-fr/elasticsearch-operator/api/cerebro/v1"
+	"github.com/webcenter-fr/elasticsearch-operator/internal/controller/common"
 	appv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
@@ -38,6 +39,7 @@ func newDeploymentReconciler(client client.Client, recorder record.EventRecorder
 			DeploymentPhase,
 			DeploymentCondition,
 			recorder,
+			common.FieldManager,
 		),
 		isOpenshift: isOpenshift,
 	}
@@ -151,6 +153,7 @@ func (r *deploymentReconciler) Read(ctx context.Context, o *cerebrocrd.Cerebro, 
 	if err != nil {
 		return read, res, errors.Wrap(err, "Error when generate deployment")
 	}
+	common.InjectTypeMeta(r.Client().Scheme(), expectedDeployments...)
 	read.SetExpectedObjects(expectedDeployments)
 
 	return read, res, nil

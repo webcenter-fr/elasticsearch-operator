@@ -17,7 +17,7 @@ limitations under the License.
 package v1
 
 import (
-	"github.com/disaster37/operator-sdk-extra/v2/pkg/apis/multiphase"
+	"github.com/disaster37/operator-sdk-extra/v3/pkg/apis/multiphase"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )

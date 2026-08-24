@@ -21,15 +21,15 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/disaster37/operator-sdk-extra/v2/pkg/controller"
+	"github.com/disaster37/operator-sdk-extra/v3/pkg/controller"
 	"github.com/sirupsen/logrus"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/fields"
-	"k8s.io/apimachinery/pkg/runtime"
+
 	"k8s.io/apimachinery/pkg/util/validation/field"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/controller-runtime/pkg/webhook"
+
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 )
 
@@ -41,8 +41,7 @@ type roleMappingValidator struct {
 // SetupWebhookWithManager will setup the manager to manage the webhooks
 func SetupRoleMappingWebhookWithManager(logger *logrus.Entry) controller.WebhookRegister {
 	return func(mgr ctrl.Manager, client client.Client) error {
-		return ctrl.NewWebhookManagedBy(mgr).
-			For(&RoleMapping{}).
+		return ctrl.NewWebhookManagedBy(mgr, &RoleMapping{}).
 			WithValidator(&roleMappingValidator{
 				logger: logger.WithField("webhook", "roleMappingValidator"),
 				client: client,
@@ -53,7 +52,7 @@ func SetupRoleMappingWebhookWithManager(logger *logrus.Entry) controller.Webhook
 
 // +kubebuilder:webhook:path=/validate-elasticsearchapi-k8s-webcenter-fr-v1-rolemapping,mutating=false,failurePolicy=fail,sideEffects=None,groups=elasticsearchapi.k8s.webcenter.fr,resources=rolemappings,verbs=create;update,versions=v1,name=rolemapping.elasticsearchapi.k8s.webcenter.fr,admissionReviewVersions=v1
 
-var _ webhook.CustomValidator = &roleMappingValidator{}
+var _ admission.Validator[*RoleMapping] = &roleMappingValidator{}
 
 func (r *roleMappingValidator) validateResourceUnicity(obj *RoleMapping) *field.Error {
 	// Check if resource already exist with same name on some remote cluster target
@@ -81,65 +80,56 @@ func (r *roleMappingValidator) validateResourceUnicity(obj *RoleMapping) *field.
 }
 
 // ValidateCreate implements webhook.Validator so a webhook will be registered for the type
-func (r *roleMappingValidator) ValidateCreate(ctx context.Context, obj runtime.Object) (admission.Warnings, error) {
+func (r *roleMappingValidator) ValidateCreate(ctx context.Context, obj *RoleMapping) (admission.Warnings, error) {
 	var allErrs field.ErrorList
 
-	roleMappingObj, ok := obj.(*RoleMapping)
-	if !ok {
-		return nil, fmt.Errorf("expected a RoleMapping object but got %T", obj)
-	}
-	r.logger.Debugf("validate create %s/%s", roleMappingObj.GetNamespace(), roleMappingObj.GetName())
+	r.logger.Debugf("validate create %s/%s", obj.GetNamespace(), obj.GetName())
 
-	if err := roleMappingObj.Spec.ElasticsearchRef.ValidateField(); err != nil {
+	if err := obj.Spec.ElasticsearchRef.ValidateField(); err != nil {
 		allErrs = append(allErrs, err)
 	}
 
-	if err := r.validateResourceUnicity(roleMappingObj); err != nil {
+	if err := r.validateResourceUnicity(obj); err != nil {
 		allErrs = append(allErrs, err)
 	}
 
 	if len(allErrs) > 0 {
 		return nil, apierrors.NewInvalid(
-			roleMappingObj.GroupVersionKind().GroupKind(),
-			roleMappingObj.Name, allErrs)
+			obj.GroupVersionKind().GroupKind(),
+			obj.Name, allErrs)
 	}
 
 	return nil, nil
 }
 
 // ValidateUpdate implements webhook.Validator so a webhook will be registered for the type
-func (r *roleMappingValidator) ValidateUpdate(ctx context.Context, oldObj runtime.Object, newObj runtime.Object) (admission.Warnings, error) {
+func (r *roleMappingValidator) ValidateUpdate(ctx context.Context, oldObj *RoleMapping, newObj *RoleMapping) (admission.Warnings, error) {
 	var allErrs field.ErrorList
-	oldO := oldObj.(*RoleMapping)
 
-	roleMappingObj, ok := newObj.(*RoleMapping)
-	if !ok {
-		return nil, fmt.Errorf("expected a RoleMapping object but got %T", newObj)
-	}
-	r.logger.Debugf("validate update %s/%s", roleMappingObj.Namespace, roleMappingObj.Name)
+	r.logger.Debugf("validate update %s/%s", newObj.Namespace, newObj.Name)
 
-	if err := roleMappingObj.Spec.ElasticsearchRef.ValidateField(); err != nil {
+	if err := newObj.Spec.ElasticsearchRef.ValidateField(); err != nil {
 		allErrs = append(allErrs, err)
 	}
 
-	if err := r.validateResourceUnicity(roleMappingObj); err != nil {
+	if err := r.validateResourceUnicity(newObj); err != nil {
 		allErrs = append(allErrs, err)
 	}
 
-	if err := validateImmutableName(roleMappingObj, oldO); err != nil {
+	if err := validateImmutableName(newObj, oldObj); err != nil {
 		allErrs = append(allErrs, err)
 	}
 
 	if len(allErrs) > 0 {
 		return nil, apierrors.NewInvalid(
-			roleMappingObj.GroupVersionKind().GroupKind(),
-			roleMappingObj.Name, allErrs)
+			newObj.GroupVersionKind().GroupKind(),
+			newObj.Name, allErrs)
 	}
 
 	return nil, nil
 }
 
 // ValidateDelete implements webhook.Validator so a webhook will be registered for the type
-func (r *roleMappingValidator) ValidateDelete(ctx context.Context, obj runtime.Object) (admission.Warnings, error) {
+func (r *roleMappingValidator) ValidateDelete(ctx context.Context, obj *RoleMapping) (admission.Warnings, error) {
 	return nil, nil
 }

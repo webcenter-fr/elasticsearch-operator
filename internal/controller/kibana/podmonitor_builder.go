@@ -14,9 +14,9 @@ func buildPodMonitors(kb *kibanacrd.Kibana) (podMonitors []*monitoringv1.PodMoni
 	if !kb.Spec.Monitoring.IsPrometheusMonitoring() {
 		return nil, nil
 	}
-	scheme := "https"
+	scheme := monitoringv1.Scheme("https")
 	if !kb.Spec.Tls.IsTlsEnabled() {
-		scheme = "http"
+		scheme = monitoringv1.Scheme("http")
 	}
 
 	podMonitors = []*monitoringv1.PodMonitor{
@@ -33,23 +33,29 @@ func buildPodMonitors(kb *kibanacrd.Kibana) (podMonitors []*monitoringv1.PodMoni
 						Port:     ptr.To("http"),
 						Interval: "10s",
 						Path:     "_prometheus/metrics",
-						BasicAuth: &monitoringv1.BasicAuth{
-							Username: corev1.SecretKeySelector{
-								LocalObjectReference: corev1.LocalObjectReference{
-									Name: GetSecretNameForCredentials(kb),
+						Scheme:   &scheme,
+						HTTPConfigWithProxy: monitoringv1.HTTPConfigWithProxy{
+							HTTPConfig: monitoringv1.HTTPConfig{
+								HTTPConfigWithoutTLS: monitoringv1.HTTPConfigWithoutTLS{
+									BasicAuth: &monitoringv1.BasicAuth{
+										Username: corev1.SecretKeySelector{
+											LocalObjectReference: corev1.LocalObjectReference{
+												Name: GetSecretNameForCredentials(kb),
+											},
+											Key: "username",
+										},
+										Password: corev1.SecretKeySelector{
+											LocalObjectReference: corev1.LocalObjectReference{
+												Name: GetSecretNameForCredentials(kb),
+											},
+											Key: "kibana_system",
+										},
+									},
 								},
-								Key: "username",
-							},
-							Password: corev1.SecretKeySelector{
-								LocalObjectReference: corev1.LocalObjectReference{
-									Name: GetSecretNameForCredentials(kb),
+								TLSConfig: &monitoringv1.SafeTLSConfig{
+									InsecureSkipVerify: ptr.To(true),
 								},
-								Key: "kibana_system",
 							},
-						},
-						Scheme: scheme,
-						TLSConfig: &monitoringv1.SafeTLSConfig{
-							InsecureSkipVerify: ptr.To(true),
 						},
 					},
 				},

@@ -22,16 +22,16 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/disaster37/operator-sdk-extra/v2/pkg/controller"
-	olivere "github.com/olivere/elastic/v7"
+	eshandlerpatch "github.com/disaster37/es-handler/v9/patch"
+	"github.com/disaster37/operator-sdk-extra/v3/pkg/controller"
 	"github.com/sirupsen/logrus"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/fields"
-	"k8s.io/apimachinery/pkg/runtime"
+
 	"k8s.io/apimachinery/pkg/util/validation/field"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/controller-runtime/pkg/webhook"
+
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 )
 
@@ -43,8 +43,7 @@ type indexTemplateValidator struct {
 // SetupWebhookWithManager will setup the manager to manage the webhooks
 func SetupIndexTemplateWebhookWithManager(logger *logrus.Entry) controller.WebhookRegister {
 	return func(mgr ctrl.Manager, client client.Client) error {
-		return ctrl.NewWebhookManagedBy(mgr).
-			For(&IndexTemplate{}).
+		return ctrl.NewWebhookManagedBy(mgr, &IndexTemplate{}).
 			WithValidator(&indexTemplateValidator{
 				logger: logger.WithField("webhook", "indexTemplateValidator"),
 				client: client,
@@ -55,7 +54,7 @@ func SetupIndexTemplateWebhookWithManager(logger *logrus.Entry) controller.Webho
 
 // +kubebuilder:webhook:path=/validate-elasticsearchapi-k8s-webcenter-fr-v1-indextemplate,mutating=false,failurePolicy=fail,sideEffects=None,groups=elasticsearchapi.k8s.webcenter.fr,resources=indextemplates,verbs=create;update,versions=v1,name=indextemplate.elasticsearchapi.k8s.webcenter.fr,admissionReviewVersions=v1
 
-var _ webhook.CustomValidator = &indexTemplateValidator{}
+var _ admission.Validator[*IndexTemplate] = &indexTemplateValidator{}
 
 func (r *indexTemplateValidator) validateResourceUnicity(obj *IndexTemplate) *field.Error {
 	// Check if resource already exist with same name on some remote cluster target
@@ -99,8 +98,8 @@ func (r *indexTemplateValidator) validateExplicitTemplateOrRawTemplate(obj *Inde
 func (r *indexTemplateValidator) validateRawTemplate(obj *IndexTemplate) *field.Error {
 	if obj.IsRawTemplate() {
 
-		ilm := &olivere.XPackIlmGetLifecycleResponse{}
-		if err := json.Unmarshal([]byte(*obj.Spec.RawTemplate), ilm); err != nil {
+		indexTemplate := &eshandlerpatch.IndexTemplate{}
+		if err := json.Unmarshal([]byte(*obj.Spec.RawTemplate), indexTemplate); err != nil {
 			return field.Invalid(field.NewPath("spec").Child("rawTemplate"), obj.Spec.RawTemplate, fmt.Sprintf("The JSON is invalid: %s", err.Error()))
 		}
 	}
@@ -109,81 +108,72 @@ func (r *indexTemplateValidator) validateRawTemplate(obj *IndexTemplate) *field.
 }
 
 // ValidateCreate implements webhook.Validator so a webhook will be registered for the type
-func (r *indexTemplateValidator) ValidateCreate(ctx context.Context, obj runtime.Object) (admission.Warnings, error) {
+func (r *indexTemplateValidator) ValidateCreate(ctx context.Context, obj *IndexTemplate) (admission.Warnings, error) {
 	var allErrs field.ErrorList
 
-	indexTemplateObj, ok := obj.(*IndexTemplate)
-	if !ok {
-		return nil, fmt.Errorf("expected a IndexTemplate object but got %T", obj)
-	}
-	r.logger.Debugf("validate create %s/%s", indexTemplateObj.GetNamespace(), indexTemplateObj.GetName())
+	r.logger.Debugf("validate create %s/%s", obj.GetNamespace(), obj.GetName())
 
-	if err := r.validateExplicitTemplateOrRawTemplate(indexTemplateObj); err != nil {
+	if err := r.validateExplicitTemplateOrRawTemplate(obj); err != nil {
 		allErrs = append(allErrs, err)
 	}
 
-	if err := r.validateRawTemplate(indexTemplateObj); err != nil {
+	if err := r.validateRawTemplate(obj); err != nil {
 		allErrs = append(allErrs, err)
 	}
 
-	if err := indexTemplateObj.Spec.ElasticsearchRef.ValidateField(); err != nil {
+	if err := obj.Spec.ElasticsearchRef.ValidateField(); err != nil {
 		allErrs = append(allErrs, err)
 	}
 
-	if err := r.validateResourceUnicity(indexTemplateObj); err != nil {
+	if err := r.validateResourceUnicity(obj); err != nil {
 		allErrs = append(allErrs, err)
 	}
 
 	if len(allErrs) > 0 {
 		return nil, apierrors.NewInvalid(
-			indexTemplateObj.GroupVersionKind().GroupKind(),
-			indexTemplateObj.Name, allErrs)
+			obj.GroupVersionKind().GroupKind(),
+			obj.Name, allErrs)
 	}
 
 	return nil, nil
 }
 
 // ValidateUpdate implements webhook.Validator so a webhook will be registered for the type
-func (r *indexTemplateValidator) ValidateUpdate(ctx context.Context, oldObj runtime.Object, newObj runtime.Object) (admission.Warnings, error) {
+func (r *indexTemplateValidator) ValidateUpdate(ctx context.Context, oldObj *IndexTemplate, newObj *IndexTemplate) (admission.Warnings, error) {
 	var allErrs field.ErrorList
-	oldO := oldObj.(*IndexTemplate)
 
-	indexTemplateObj, ok := newObj.(*IndexTemplate)
-	if !ok {
-		return nil, fmt.Errorf("expected a IndexTemplate object but got %T", newObj)
-	}
-	r.logger.Debugf("validate update %s/%s", indexTemplateObj.Namespace, indexTemplateObj.Name)
+	r.logger.Debugf("validate update %s/%s", newObj.Namespace, newObj.Name)
 
-	if err := r.validateExplicitTemplateOrRawTemplate(indexTemplateObj); err != nil {
+	if err := r.validateExplicitTemplateOrRawTemplate(newObj); err != nil {
 		allErrs = append(allErrs, err)
 	}
 
-	if err := r.validateRawTemplate(indexTemplateObj); err != nil {
+	if err := r.validateRawTemplate(newObj); err != nil {
 		allErrs = append(allErrs, err)
 	}
 
-	if err := indexTemplateObj.Spec.ElasticsearchRef.ValidateField(); err != nil {
+	if err := newObj.Spec.ElasticsearchRef.ValidateField(); err != nil {
 		allErrs = append(allErrs, err)
 	}
 
-	if err := validateImmutableName(indexTemplateObj, oldO); err != nil {
+	if err := validateImmutableName(newObj, oldObj); err != nil {
 		allErrs = append(allErrs, err)
 	}
 
-	if err := r.validateResourceUnicity(indexTemplateObj); err != nil {
+	if err := r.validateResourceUnicity(newObj); err != nil {
 		allErrs = append(allErrs, err)
 	}
 
 	if len(allErrs) > 0 {
 		return nil, apierrors.NewInvalid(
-			indexTemplateObj.GroupVersionKind().GroupKind(),
-			indexTemplateObj.Name, allErrs)
+			newObj.GroupVersionKind().GroupKind(),
+			newObj.Name, allErrs)
 	}
 
 	return nil, nil
 }
 
 // ValidateDelete implements webhook.Validator so a webhook will be registered for the type
-func (r *indexTemplateValidator) ValidateDelete(ctx context.Context, obj runtime.Object) (admission.Warnings, error) {
+func (r *indexTemplateValidator) ValidateDelete(ctx context.Context, obj *IndexTemplate) (admission.Warnings, error) {
 	return nil, nil
 }

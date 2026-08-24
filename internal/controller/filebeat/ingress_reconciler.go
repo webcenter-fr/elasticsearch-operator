@@ -5,11 +5,12 @@ import (
 	"fmt"
 
 	"emperror.dev/errors"
-	"github.com/disaster37/operator-sdk-extra/v2/pkg/apis/shared"
-	"github.com/disaster37/operator-sdk-extra/v2/pkg/controller/multiphase"
-	"github.com/disaster37/operator-sdk-extra/v2/pkg/helper"
+	"github.com/disaster37/operator-sdk-extra/v3/pkg/apis/shared"
+	"github.com/disaster37/operator-sdk-extra/v3/pkg/controller/multiphase"
+	"github.com/disaster37/operator-sdk-extra/v3/pkg/helper"
 	"github.com/sirupsen/logrus"
 	beatcrd "github.com/webcenter-fr/elasticsearch-operator/api/beat/v1"
+	"github.com/webcenter-fr/elasticsearch-operator/internal/controller/common"
 	networkingv1 "k8s.io/api/networking/v1"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/client-go/tools/record"
@@ -33,6 +34,7 @@ func newIngressReconciler(client client.Client, recorder record.EventRecorder) (
 			IngressPhase,
 			IngressCondition,
 			recorder,
+			common.FieldManager,
 		),
 	}
 }
@@ -57,6 +59,7 @@ func (r *ingressReconciler) Read(ctx context.Context, o *beatcrd.Filebeat, data 
 	if err != nil {
 		return read, res, errors.Wrap(err, "Error when generate ingress")
 	}
+	common.InjectTypeMeta(r.Client().Scheme(), expectedIngresses...)
 	read.SetExpectedObjects(expectedIngresses)
 
 	return read, res, nil

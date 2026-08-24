@@ -7,10 +7,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/disaster37/k8s-objectmatcher/patch"
-	"github.com/disaster37/operator-sdk-extra/v2/pkg/controller"
-	"github.com/disaster37/operator-sdk-extra/v2/pkg/helper"
-	"github.com/disaster37/operator-sdk-extra/v2/pkg/test"
+	"github.com/disaster37/operator-sdk-extra/v3/pkg/controller"
+	"github.com/disaster37/operator-sdk-extra/v3/pkg/helper"
+	"github.com/disaster37/operator-sdk-extra/v3/pkg/test"
 	routev1 "github.com/openshift/api/route/v1"
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
@@ -40,6 +39,7 @@ func (t *CerebroControllerTestSuite) TestCerebroController() {
 		doCreateCerebroStep(),
 		doUpdateCerebroStep(),
 		doAddHostStep(),
+		doMigrateLegacySecretStep(),
 		doDeleteCerebroStep(),
 	}
 
@@ -58,7 +58,7 @@ func doCreateCerebroStep() test.TestStep[*cerebrocrd.Cerebro] {
 					Namespace: key.Namespace,
 				},
 				Spec: cerebrocrd.CerebroSpec{
-					Version: "0.9.4",
+					Version: "v0.1.0",
 					Endpoint: shared.EndpointSpec{
 						Ingress: &shared.EndpointIngressSpec{
 							Enabled: true,
@@ -123,7 +123,6 @@ func doCreateCerebroStep() test.TestStep[*cerebrocrd.Cerebro] {
 			}
 			assert.NotEmpty(t, s.Data)
 			assert.NotEmpty(t, s.OwnerReferences)
-			assert.NotEmpty(t, s.Annotations[patch.LastAppliedConfig])
 
 			// Services must exists
 			svc = &corev1.Service{}
@@ -131,7 +130,6 @@ func doCreateCerebroStep() test.TestStep[*cerebrocrd.Cerebro] {
 				t.Fatal(err)
 			}
 			assert.NotEmpty(t, svc.OwnerReferences)
-			assert.NotEmpty(t, svc.Annotations[patch.LastAppliedConfig])
 
 			// Load balancer must exist
 			svc = &corev1.Service{}
@@ -139,7 +137,6 @@ func doCreateCerebroStep() test.TestStep[*cerebrocrd.Cerebro] {
 				t.Fatal(err)
 			}
 			assert.NotEmpty(t, svc.OwnerReferences)
-			assert.NotEmpty(t, svc.Annotations[patch.LastAppliedConfig])
 
 			// Ingress must exist
 			i = &networkingv1.Ingress{}
@@ -147,7 +144,6 @@ func doCreateCerebroStep() test.TestStep[*cerebrocrd.Cerebro] {
 				t.Fatal(err)
 			}
 			assert.NotEmpty(t, i.OwnerReferences)
-			assert.NotEmpty(t, i.Annotations[patch.LastAppliedConfig])
 
 			// Route must exist
 			route = &routev1.Route{}
@@ -155,7 +151,6 @@ func doCreateCerebroStep() test.TestStep[*cerebrocrd.Cerebro] {
 				t.Fatal(err)
 			}
 			assert.NotEmpty(t, route.OwnerReferences)
-			assert.NotEmpty(t, route.Annotations[patch.LastAppliedConfig])
 
 			// ConfigMaps must exist
 			cm = &corev1.ConfigMap{}
@@ -163,7 +158,6 @@ func doCreateCerebroStep() test.TestStep[*cerebrocrd.Cerebro] {
 				t.Fatal(err)
 			}
 			assert.NotEmpty(t, cm.OwnerReferences)
-			assert.NotEmpty(t, cm.Annotations[patch.LastAppliedConfig])
 
 			// Deployment musts exist
 			dpl = &appv1.Deployment{}
@@ -171,7 +165,6 @@ func doCreateCerebroStep() test.TestStep[*cerebrocrd.Cerebro] {
 				t.Fatal(err)
 			}
 			assert.NotEmpty(t, dpl.OwnerReferences)
-			assert.NotEmpty(t, dpl.Annotations[patch.LastAppliedConfig])
 
 			// Status must be update
 			assert.NotEmpty(t, cb.Status.PhaseName)
@@ -246,7 +239,6 @@ func doUpdateCerebroStep() test.TestStep[*cerebrocrd.Cerebro] {
 			}
 			assert.NotEmpty(t, s.Data)
 			assert.NotEmpty(t, s.OwnerReferences)
-			assert.NotEmpty(t, s.Annotations[patch.LastAppliedConfig])
 			assert.Equal(t, "fu", s.Labels["test"])
 
 			// Services must exists
@@ -255,7 +247,6 @@ func doUpdateCerebroStep() test.TestStep[*cerebrocrd.Cerebro] {
 				t.Fatal(err)
 			}
 			assert.NotEmpty(t, svc.OwnerReferences)
-			assert.NotEmpty(t, svc.Annotations[patch.LastAppliedConfig])
 			assert.Equal(t, "fu", svc.Labels["test"])
 
 			// Load balancer must exist
@@ -264,7 +255,6 @@ func doUpdateCerebroStep() test.TestStep[*cerebrocrd.Cerebro] {
 				t.Fatal(err)
 			}
 			assert.NotEmpty(t, svc.OwnerReferences)
-			assert.NotEmpty(t, svc.Annotations[patch.LastAppliedConfig])
 			assert.Equal(t, "fu", svc.Labels["test"])
 
 			// Ingress must exist
@@ -273,7 +263,6 @@ func doUpdateCerebroStep() test.TestStep[*cerebrocrd.Cerebro] {
 				t.Fatal(err)
 			}
 			assert.NotEmpty(t, i.OwnerReferences)
-			assert.NotEmpty(t, i.Annotations[patch.LastAppliedConfig])
 			assert.Equal(t, "fu", i.Labels["test"])
 
 			// Route must exist
@@ -282,7 +271,6 @@ func doUpdateCerebroStep() test.TestStep[*cerebrocrd.Cerebro] {
 				t.Fatal(err)
 			}
 			assert.NotEmpty(t, route.OwnerReferences)
-			assert.NotEmpty(t, route.Annotations[patch.LastAppliedConfig])
 			assert.Equal(t, "fu", route.Labels["test"])
 
 			// ConfigMaps must exist
@@ -291,7 +279,6 @@ func doUpdateCerebroStep() test.TestStep[*cerebrocrd.Cerebro] {
 				t.Fatal(err)
 			}
 			assert.NotEmpty(t, cm.OwnerReferences)
-			assert.NotEmpty(t, cm.Annotations[patch.LastAppliedConfig])
 			assert.Equal(t, "fu", cm.Labels["test"])
 
 			// Deployment musts exist
@@ -300,7 +287,6 @@ func doUpdateCerebroStep() test.TestStep[*cerebrocrd.Cerebro] {
 				t.Fatal(err)
 			}
 			assert.NotEmpty(t, dpl.OwnerReferences)
-			assert.NotEmpty(t, dpl.Annotations[patch.LastAppliedConfig])
 			assert.Equal(t, "fu", dpl.Labels["test"])
 
 			// Status must be update
@@ -434,8 +420,68 @@ func doAddHostStep() test.TestStep[*cerebrocrd.Cerebro] {
 			}
 
 			// ConfigMaps must exist
-			assert.Contains(t, cm.Data["application.conf"], fmt.Sprintf("name = \"%s\"", key.Name))
-			assert.Contains(t, cm.Data["application.conf"], fmt.Sprintf("host = \"https://%s-es.%s.svc:9200\"", key.Name, key.Namespace))
+			assert.Contains(t, cm.Data["application.yaml"], fmt.Sprintf("name: %s", key.Name))
+			assert.Contains(t, cm.Data["application.yaml"], fmt.Sprintf("host: https://%s-es.%s.svc:9200", key.Name, key.Namespace))
+
+			return nil
+		},
+	}
+}
+
+func doMigrateLegacySecretStep() test.TestStep[*cerebrocrd.Cerebro] {
+	return test.TestStep[*cerebrocrd.Cerebro]{
+		Name: "migrateLegacySecret",
+		Do: func(c client.Client, key types.NamespacedName, o *cerebrocrd.Cerebro, data map[string]any) (err error) {
+			logrus.Infof("=== Migrate legacy secret %s/%s ===\n\n", key.Namespace, key.Name)
+
+			if o == nil {
+				return errors.New("Cerebro is null")
+			}
+
+			// Simulate a legacy secret carrying the value under the `application` key
+			s := &corev1.Secret{}
+			if err = c.Get(context.Background(), types.NamespacedName{Namespace: key.Namespace, Name: GetSecretNameForApplication(o)}, s); err != nil {
+				return err
+			}
+			s.Data = map[string][]byte{
+				"application": []byte("legacy-value"),
+			}
+			if err = c.Update(context.Background(), s); err != nil {
+				return err
+			}
+
+			// Touch the Cerebro spec to trigger a reconcile
+			o.Spec.Deployment.Labels = map[string]string{
+				"migrate": "true",
+			}
+			if err = c.Update(context.Background(), o); err != nil {
+				return err
+			}
+
+			return nil
+		},
+		Check: func(t *testing.T, c client.Client, key types.NamespacedName, o *cerebrocrd.Cerebro, data map[string]any) (err error) {
+			s := &corev1.Secret{}
+
+			isTimeout, err := test.RunWithTimeout(func() error {
+				if err := c.Get(context.Background(), types.NamespacedName{Namespace: key.Namespace, Name: GetSecretNameForApplication(o)}, s); err != nil {
+					t.Fatal(err)
+				}
+
+				// The legacy value must be preserved under `session-key` and the old
+				// `application` key must be gone
+				if string(s.Data["session-key"]) == "legacy-value" && len(s.Data["application"]) == 0 {
+					return nil
+				}
+
+				return errors.New("Secret not yet migrated")
+			}, time.Second*30, time.Second*1)
+			if err != nil || isTimeout {
+				t.Fatalf("Secret migration not finished: %s", err.Error())
+			}
+
+			assert.Equal(t, "legacy-value", string(s.Data["session-key"]))
+			assert.NotContains(t, s.Data, "application")
 
 			return nil
 		},

@@ -8,7 +8,7 @@ import (
 	"emperror.dev/errors"
 	"github.com/codingsince1985/checksum"
 	"github.com/disaster37/k8sbuilder"
-	"github.com/disaster37/operator-sdk-extra/v2/pkg/helper"
+	"github.com/disaster37/operator-sdk-extra/v3/pkg/helper"
 	"github.com/elastic/go-ucfg"
 	elasticsearchcrd "github.com/webcenter-fr/elasticsearch-operator/api/elasticsearch/v1"
 	kibanacrd "github.com/webcenter-fr/elasticsearch-operator/api/kibana/v1"
@@ -345,8 +345,14 @@ fi
 	ptb.WithAnnotations(map[string]string{
 		kibanacrd.KibanaAnnotationKey: "true",
 	}).
-		WithAnnotations(kb.Spec.Deployment.Annotations, k8sbuilder.Merge).
-		WithAnnotations(checksumAnnotations, k8sbuilder.Merge)
+		WithAnnotations(kb.Spec.Deployment.Annotations, k8sbuilder.Merge)
+
+	// Operator-owned checksum annotations must ALWAYS win over user-supplied
+	// annotations (mergo.Merge would let a user pin the reserved
+	// `…/secret-*`/`…/configmap-*` markers and defeat the rollout logic).
+	for k, v := range checksumAnnotations {
+		ptb.PodTemplate().Annotations[k] = v
+	}
 
 	// Compute NodeSelector
 	ptb.WithNodeSelector(kb.Spec.Deployment.NodeSelector, k8sbuilder.Merge)

@@ -89,6 +89,7 @@ help: ## Display this help.
 .PHONY: manifests
 manifests: controller-gen ## Generate WebhookConfiguration, ClusterRole and CustomResourceDefinition objects.
 	$(CONTROLLER_GEN) rbac:roleName=elastic-operator crd:crdVersions=v1,generateEmbeddedObjectMeta=true webhook paths="./..." output:crd:artifacts:config=config/crd/bases
+	@go run ./hack/strip-crd-cel-validations
 
 .PHONY: generate
 generate: controller-gen ## Generate code containing DeepCopy, DeepCopyInto, and DeepCopyObject method implementations.
@@ -104,7 +105,7 @@ vet: ## Run go vet against code.
 
 .PHONY: test
 test: manifests generate fmt envtest ## Run tests.
-	KUBEBUILDER_ASSETS="$(shell $(ENVTEST) use $(ENVTEST_K8S_VERSION) -p path)" TEST=true go test -p 1 -v -coverprofile cover.out.tmp -timeout 1200s -count 1 -covermode=atomic ./apis/... ./pkg/... ./controllers/...  $(TESTARGS)
+	KUBEBUILDER_ASSETS="$(shell $(ENVTEST) use $(ENVTEST_K8S_VERSION) -p path)" ES_OPERATOR_ENVTEST=true go test -p 1 -v -coverprofile cover.out.tmp -timeout 1200s -count 1 -covermode=atomic ./api/... ./internal/controller/... ./pkg/...  $(TESTARGS)
 	cat cover.out.tmp | grep -v "_generated.*.go" > cover.out
 
 .PHONY: test-acc
@@ -121,11 +122,11 @@ generate-json-schema:
 
 .PHONY: build
 build: generate fmt vet ## Build manager binary.
-	go build -o bin/manager .
+	go build -o bin/manager ./cmd
 
 .PHONY: run
 run: manifests generate fmt vet ## Run a controller from your host.
-	LOG_LEVEL=debug LOG_FORMATTER=json go run .
+	LOG_LEVEL=debug LOG_FORMATTER=json go run ./cmd
 
 .PHONY: install-sample
 install-sample: manifests kustomize ## Install samples
@@ -185,7 +186,7 @@ ENVTEST ?= $(LOCALBIN)/setup-envtest
 
 ## Tool Versions
 KUSTOMIZE_VERSION ?= v5.4.3
-CONTROLLER_TOOLS_VERSION ?= v0.16.1
+CONTROLLER_TOOLS_VERSION ?= v0.21.0
 
 KUSTOMIZE_INSTALL_SCRIPT ?= "https://raw.githubusercontent.com/kubernetes-sigs/kustomize/master/hack/install_kustomize.sh"
 .PHONY: kustomize

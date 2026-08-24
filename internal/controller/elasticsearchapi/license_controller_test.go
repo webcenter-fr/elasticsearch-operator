@@ -6,11 +6,11 @@ import (
 	"time"
 
 	"emperror.dev/errors"
-	"github.com/disaster37/es-handler/v8/mocks"
-	"github.com/disaster37/operator-sdk-extra/v2/pkg/controller"
-	"github.com/disaster37/operator-sdk-extra/v2/pkg/helper"
-	"github.com/disaster37/operator-sdk-extra/v2/pkg/test"
-	olivere "github.com/olivere/elastic/v7"
+	esapi "github.com/disaster37/elasticsearch/v9/api"
+	"github.com/disaster37/es-handler/v9/mocks"
+	"github.com/disaster37/operator-sdk-extra/v3/pkg/controller"
+	"github.com/disaster37/operator-sdk-extra/v3/pkg/helper"
+	"github.com/disaster37/operator-sdk-extra/v3/pkg/test"
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
 	elasticsearchapicrd "github.com/webcenter-fr/elasticsearch-operator/api/elasticsearchapi/v1"
@@ -51,37 +51,37 @@ func doMockLicense(mockES *mocks.MockElasticsearchHandler) func(stepName *string
 		isUpdatedToEnterpriseLicense := false
 		isUpdatedEnterpriseLicense := false
 
-		mockES.EXPECT().LicenseGet().AnyTimes().DoAndReturn(func() (*olivere.XPackInfoLicense, error) {
+		mockES.EXPECT().LicenseGet().AnyTimes().DoAndReturn(func() (*esapi.LicenseInfo, error) {
 			switch *stepName {
 			case "create_basic_license":
 				if !isCreatedBasicLicense {
 					return nil, nil
 				} else {
-					return &olivere.XPackInfoLicense{
+					return &esapi.LicenseInfo{
 						UID:  "test",
 						Type: "basic",
 					}, nil
 				}
 			case "update_to_enterprise_license":
 				if !isUpdatedToEnterpriseLicense {
-					return &olivere.XPackInfoLicense{
+					return &esapi.LicenseInfo{
 						UID:  "test",
 						Type: "basic",
 					}, nil
 				} else {
-					return &olivere.XPackInfoLicense{
+					return &esapi.LicenseInfo{
 						UID:  "test",
 						Type: "gold",
 					}, nil
 				}
 			case "update_enterprise_license":
 				if !isUpdatedEnterpriseLicense {
-					return &olivere.XPackInfoLicense{
+					return &esapi.LicenseInfo{
 						UID:  "test",
 						Type: "basic",
 					}, nil
 				} else {
-					return &olivere.XPackInfoLicense{
+					return &esapi.LicenseInfo{
 						UID:  "test2",
 						Type: "gold",
 					}, nil
@@ -91,7 +91,7 @@ func doMockLicense(mockES *mocks.MockElasticsearchHandler) func(stepName *string
 			return nil, nil
 		})
 
-		mockES.EXPECT().LicenseDiff(gomock.Any(), gomock.Any()).AnyTimes().DoAndReturn(func(actual, expected *olivere.XPackInfoLicense) bool {
+		mockES.EXPECT().LicenseDiff(gomock.Any(), gomock.Any()).AnyTimes().DoAndReturn(func(actual, expected *esapi.LicenseInfo) bool {
 			switch *stepName {
 			case "create_basic_license":
 				if !isCreatedBasicLicense {

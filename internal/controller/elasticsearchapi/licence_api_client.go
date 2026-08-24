@@ -2,36 +2,36 @@ package elasticsearchapi
 
 import (
 	"emperror.dev/errors"
-	eshandler "github.com/disaster37/es-handler/v8"
+	esapi "github.com/disaster37/elasticsearch/v9/api"
+	eshandler "github.com/disaster37/es-handler/v9"
 	"github.com/disaster37/generic-objectmatcher/patch"
-	"github.com/disaster37/operator-sdk-extra/v2/pkg/controller/remote"
-	olivere "github.com/olivere/elastic/v7"
+	"github.com/disaster37/operator-sdk-extra/v3/pkg/controller/remote"
 	elasticsearchapicrd "github.com/webcenter-fr/elasticsearch-operator/api/elasticsearchapi/v1"
 )
 
 type licenseApiClient struct {
-	remote.RemoteExternalReconciler[*elasticsearchapicrd.License, *olivere.XPackInfoLicense, eshandler.ElasticsearchHandler]
+	remote.RemoteExternalReconciler[*elasticsearchapicrd.License, *esapi.LicenseInfo, eshandler.ElasticsearchHandler]
 }
 
-func newLicenseApiClient(client eshandler.ElasticsearchHandler) remote.RemoteExternalReconciler[*elasticsearchapicrd.License, *olivere.XPackInfoLicense, eshandler.ElasticsearchHandler] {
+func newLicenseApiClient(client eshandler.ElasticsearchHandler) remote.RemoteExternalReconciler[*elasticsearchapicrd.License, *esapi.LicenseInfo, eshandler.ElasticsearchHandler] {
 	return &licenseApiClient{
-		RemoteExternalReconciler: remote.NewRemoteExternalReconciler[*elasticsearchapicrd.License, *olivere.XPackInfoLicense, eshandler.ElasticsearchHandler](client),
+		RemoteExternalReconciler: remote.NewRemoteExternalReconciler[*elasticsearchapicrd.License, *esapi.LicenseInfo, eshandler.ElasticsearchHandler](client),
 	}
 }
 
-func (h *licenseApiClient) Build(o *elasticsearchapicrd.License) (license *olivere.XPackInfoLicense, err error) {
+func (h *licenseApiClient) Build(o *elasticsearchapicrd.License) (license *esapi.LicenseInfo, err error) {
 	return license, err
 }
 
-func (h *licenseApiClient) Get(o *elasticsearchapicrd.License) (object *olivere.XPackInfoLicense, err error) {
+func (h *licenseApiClient) Get(o *elasticsearchapicrd.License) (object *esapi.LicenseInfo, err error) {
 	return h.Client().LicenseGet()
 }
 
-func (h *licenseApiClient) Create(object *olivere.XPackInfoLicense, o *elasticsearchapicrd.License) (err error) {
+func (h *licenseApiClient) Create(object *esapi.LicenseInfo, o *elasticsearchapicrd.License) (err error) {
 	return nil
 }
 
-func (h *licenseApiClient) Update(object *olivere.XPackInfoLicense, o *elasticsearchapicrd.License) (err error) {
+func (h *licenseApiClient) Update(object *esapi.LicenseInfo, o *elasticsearchapicrd.License) (err error) {
 	return nil
 }
 
@@ -45,6 +45,6 @@ func (h *licenseApiClient) Delete(o *elasticsearchapicrd.License) (err error) {
 	return nil
 }
 
-func (h *licenseApiClient) Diff(currentOject *olivere.XPackInfoLicense, expectedObject *olivere.XPackInfoLicense, originalObject *olivere.XPackInfoLicense, o *elasticsearchapicrd.License, ignoresDiff ...patch.CalculateOption) (patchResult *patch.PatchResult, err error) {
+func (h *licenseApiClient) Diff(currentOject *esapi.LicenseInfo, expectedObject *esapi.LicenseInfo, originalObject *esapi.LicenseInfo, o *elasticsearchapicrd.License, ignoresDiff ...patch.CalculateOption) (patchResult *patch.PatchResult, err error) {
 	return nil, nil
 }

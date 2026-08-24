@@ -22,16 +22,16 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/disaster37/operator-sdk-extra/v2/pkg/controller"
-	olivere "github.com/olivere/elastic/v7"
+	eshandlerpatch "github.com/disaster37/es-handler/v9/patch"
+	"github.com/disaster37/operator-sdk-extra/v3/pkg/controller"
 	"github.com/sirupsen/logrus"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/fields"
-	"k8s.io/apimachinery/pkg/runtime"
+
 	"k8s.io/apimachinery/pkg/util/validation/field"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/controller-runtime/pkg/webhook"
+
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 )
 
@@ -43,8 +43,7 @@ type componentTemplateValidator struct {
 // SetupWebhookWithManager will setup the manager to manage the webhooks
 func SetupComponentTemplateWebhookWithManager(logger *logrus.Entry) controller.WebhookRegister {
 	return func(mgr ctrl.Manager, client client.Client) error {
-		return ctrl.NewWebhookManagedBy(mgr).
-			For(&ComponentTemplate{}).
+		return ctrl.NewWebhookManagedBy(mgr, &ComponentTemplate{}).
 			WithValidator(&componentTemplateValidator{
 				logger: logger.WithField("webhook", "componentTemplateValidator"),
 				client: client,
@@ -55,7 +54,7 @@ func SetupComponentTemplateWebhookWithManager(logger *logrus.Entry) controller.W
 
 //+kubebuilder:webhook:path=/validate-elasticsearchapi-k8s-webcenter-fr-v1-componenttemplate,mutating=false,failurePolicy=fail,sideEffects=None,groups=elasticsearchapi.k8s.webcenter.fr,resources=componenttemplates,verbs=create;update,versions=v1,name=componenttemplate.elasticsearchapi.k8s.webcenter.fr,admissionReviewVersions=v1,timeoutSeconds=30
 
-var _ webhook.CustomValidator = &componentTemplateValidator{}
+var _ admission.Validator[*ComponentTemplate] = &componentTemplateValidator{}
 
 func (r *componentTemplateValidator) validateResourceUnicity(obj *ComponentTemplate) *field.Error {
 	// Check if resource already exist with same name on some remote cluster target
@@ -99,7 +98,7 @@ func (r *componentTemplateValidator) validateExplicitTemplateOrRawTemplate(obj *
 func (r *componentTemplateValidator) validateRawTemplate(obj *ComponentTemplate) *field.Error {
 	if obj.IsRawTemplate() {
 
-		componentTemplate := &olivere.IndicesGetComponentTemplate{}
+		componentTemplate := &eshandlerpatch.ComponentTemplate{}
 		if err := json.Unmarshal([]byte(*obj.Spec.RawTemplate), componentTemplate); err != nil {
 			return field.Invalid(field.NewPath("spec").Child("rawTemplate"), obj.Spec.RawTemplate, fmt.Sprintf("The JSON is invalid: %s", err.Error()))
 		}
@@ -109,81 +108,72 @@ func (r *componentTemplateValidator) validateRawTemplate(obj *ComponentTemplate)
 }
 
 // ValidateCreate implements webhook.Validator so a webhook will be registered for the type
-func (r *componentTemplateValidator) ValidateCreate(ctx context.Context, obj runtime.Object) (admission.Warnings, error) {
+func (r *componentTemplateValidator) ValidateCreate(ctx context.Context, obj *ComponentTemplate) (admission.Warnings, error) {
 	var allErrs field.ErrorList
 
-	componentTemplateObj, ok := obj.(*ComponentTemplate)
-	if !ok {
-		return nil, fmt.Errorf("expected a ComponentTemplate object but got %T", obj)
-	}
-	r.logger.Debugf("validate create %s/%s", componentTemplateObj.GetNamespace(), componentTemplateObj.GetName())
+	r.logger.Debugf("validate create %s/%s", obj.GetNamespace(), obj.GetName())
 
-	if err := r.validateExplicitTemplateOrRawTemplate(componentTemplateObj); err != nil {
+	if err := r.validateExplicitTemplateOrRawTemplate(obj); err != nil {
 		allErrs = append(allErrs, err)
 	}
 
-	if err := r.validateRawTemplate(componentTemplateObj); err != nil {
+	if err := r.validateRawTemplate(obj); err != nil {
 		allErrs = append(allErrs, err)
 	}
 
-	if err := componentTemplateObj.Spec.ElasticsearchRef.ValidateField(); err != nil {
+	if err := obj.Spec.ElasticsearchRef.ValidateField(); err != nil {
 		allErrs = append(allErrs, err)
 	}
 
-	if err := r.validateResourceUnicity(componentTemplateObj); err != nil {
+	if err := r.validateResourceUnicity(obj); err != nil {
 		allErrs = append(allErrs, err)
 	}
 
 	if len(allErrs) > 0 {
 		return nil, apierrors.NewInvalid(
-			componentTemplateObj.GroupVersionKind().GroupKind(),
-			componentTemplateObj.Name, allErrs)
+			obj.GroupVersionKind().GroupKind(),
+			obj.Name, allErrs)
 	}
 
 	return nil, nil
 }
 
 // ValidateUpdate implements webhook.Validator so a webhook will be registered for the type
-func (r *componentTemplateValidator) ValidateUpdate(ctx context.Context, oldObj runtime.Object, newObj runtime.Object) (admission.Warnings, error) {
+func (r *componentTemplateValidator) ValidateUpdate(ctx context.Context, oldObj *ComponentTemplate, newObj *ComponentTemplate) (admission.Warnings, error) {
 	var allErrs field.ErrorList
-	oldO := oldObj.(*ComponentTemplate)
 
-	componentTemplateObj, ok := newObj.(*ComponentTemplate)
-	if !ok {
-		return nil, fmt.Errorf("expected a ComponentTemplate object but got %T", newObj)
-	}
-	r.logger.Debugf("validate update %s/%s", componentTemplateObj.Namespace, componentTemplateObj.Name)
+	r.logger.Debugf("validate update %s/%s", newObj.Namespace, newObj.Name)
 
-	if err := r.validateExplicitTemplateOrRawTemplate(componentTemplateObj); err != nil {
+	if err := r.validateExplicitTemplateOrRawTemplate(newObj); err != nil {
 		allErrs = append(allErrs, err)
 	}
 
-	if err := r.validateRawTemplate(componentTemplateObj); err != nil {
+	if err := r.validateRawTemplate(newObj); err != nil {
 		allErrs = append(allErrs, err)
 	}
 
-	if err := componentTemplateObj.Spec.ElasticsearchRef.ValidateField(); err != nil {
+	if err := newObj.Spec.ElasticsearchRef.ValidateField(); err != nil {
 		allErrs = append(allErrs, err)
 	}
 
-	if err := validateImmutableName(componentTemplateObj, oldO); err != nil {
+	if err := validateImmutableName(newObj, oldObj); err != nil {
 		allErrs = append(allErrs, err)
 	}
 
-	if err := r.validateResourceUnicity(componentTemplateObj); err != nil {
+	if err := r.validateResourceUnicity(newObj); err != nil {
 		allErrs = append(allErrs, err)
 	}
 
 	if len(allErrs) > 0 {
 		return nil, apierrors.NewInvalid(
-			componentTemplateObj.GroupVersionKind().GroupKind(),
-			componentTemplateObj.Name, allErrs)
+			newObj.GroupVersionKind().GroupKind(),
+			newObj.Name, allErrs)
 	}
 
 	return nil, nil
 }
 
 // ValidateDelete implements webhook.Validator so a webhook will be registered for the type
-func (r *componentTemplateValidator) ValidateDelete(ctx context.Context, obj runtime.Object) (admission.Warnings, error) {
+func (r *componentTemplateValidator) ValidateDelete(ctx context.Context, obj *ComponentTemplate) (admission.Warnings, error) {
 	return nil, nil
 }

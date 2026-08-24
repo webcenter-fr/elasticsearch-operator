@@ -1,25 +1,25 @@
 package elasticsearchapi
 
 import (
-	eshandler "github.com/disaster37/es-handler/v8"
+	esapi "github.com/disaster37/elasticsearch/v9/api"
+	eshandler "github.com/disaster37/es-handler/v9"
 	"github.com/disaster37/generic-objectmatcher/patch"
-	"github.com/disaster37/operator-sdk-extra/v2/pkg/controller/remote"
-	olivere "github.com/olivere/elastic/v7"
+	"github.com/disaster37/operator-sdk-extra/v3/pkg/controller/remote"
 	elasticsearchapicrd "github.com/webcenter-fr/elasticsearch-operator/api/elasticsearchapi/v1"
 )
 
 type roleMappingApiClient struct {
-	remote.RemoteExternalReconciler[*elasticsearchapicrd.RoleMapping, *olivere.XPackSecurityRoleMapping, eshandler.ElasticsearchHandler]
+	remote.RemoteExternalReconciler[*elasticsearchapicrd.RoleMapping, *esapi.SecurityRoleMapping, eshandler.ElasticsearchHandler]
 }
 
-func newRoleMappingApiClient(client eshandler.ElasticsearchHandler) remote.RemoteExternalReconciler[*elasticsearchapicrd.RoleMapping, *olivere.XPackSecurityRoleMapping, eshandler.ElasticsearchHandler] {
+func newRoleMappingApiClient(client eshandler.ElasticsearchHandler) remote.RemoteExternalReconciler[*elasticsearchapicrd.RoleMapping, *esapi.SecurityRoleMapping, eshandler.ElasticsearchHandler] {
 	return &roleMappingApiClient{
-		RemoteExternalReconciler: remote.NewRemoteExternalReconciler[*elasticsearchapicrd.RoleMapping, *olivere.XPackSecurityRoleMapping, eshandler.ElasticsearchHandler](client),
+		RemoteExternalReconciler: remote.NewRemoteExternalReconciler[*elasticsearchapicrd.RoleMapping, *esapi.SecurityRoleMapping, eshandler.ElasticsearchHandler](client),
 	}
 }
 
-func (h *roleMappingApiClient) Build(o *elasticsearchapicrd.RoleMapping) (rm *olivere.XPackSecurityRoleMapping, err error) {
-	rm = &olivere.XPackSecurityRoleMapping{
+func (h *roleMappingApiClient) Build(o *elasticsearchapicrd.RoleMapping) (rm *esapi.SecurityRoleMapping, err error) {
+	rm = &esapi.SecurityRoleMapping{
 		Enabled:  o.Spec.Enabled,
 		Roles:    o.Spec.Roles,
 		Metadata: make(map[string]any), // Fix issue on V8, metadata can't be null
@@ -36,15 +36,15 @@ func (h *roleMappingApiClient) Build(o *elasticsearchapicrd.RoleMapping) (rm *ol
 	return rm, nil
 }
 
-func (h *roleMappingApiClient) Get(o *elasticsearchapicrd.RoleMapping) (object *olivere.XPackSecurityRoleMapping, err error) {
+func (h *roleMappingApiClient) Get(o *elasticsearchapicrd.RoleMapping) (object *esapi.SecurityRoleMapping, err error) {
 	return h.Client().RoleMappingGet(o.GetExternalName())
 }
 
-func (h *roleMappingApiClient) Create(object *olivere.XPackSecurityRoleMapping, o *elasticsearchapicrd.RoleMapping) (err error) {
+func (h *roleMappingApiClient) Create(object *esapi.SecurityRoleMapping, o *elasticsearchapicrd.RoleMapping) (err error) {
 	return h.Client().RoleMappingUpdate(o.GetExternalName(), object)
 }
 
-func (h *roleMappingApiClient) Update(object *olivere.XPackSecurityRoleMapping, o *elasticsearchapicrd.RoleMapping) (err error) {
+func (h *roleMappingApiClient) Update(object *esapi.SecurityRoleMapping, o *elasticsearchapicrd.RoleMapping) (err error) {
 	return h.Client().RoleMappingUpdate(o.GetExternalName(), object)
 }
 
@@ -52,6 +52,6 @@ func (h *roleMappingApiClient) Delete(o *elasticsearchapicrd.RoleMapping) (err e
 	return h.Client().RoleMappingDelete(o.GetExternalName())
 }
 
-func (h *roleMappingApiClient) Diff(currentOject *olivere.XPackSecurityRoleMapping, expectedObject *olivere.XPackSecurityRoleMapping, originalObject *olivere.XPackSecurityRoleMapping, o *elasticsearchapicrd.RoleMapping, ignoresDiff ...patch.CalculateOption) (patchResult *patch.PatchResult, err error) {
+func (h *roleMappingApiClient) Diff(currentOject *esapi.SecurityRoleMapping, expectedObject *esapi.SecurityRoleMapping, originalObject *esapi.SecurityRoleMapping, o *elasticsearchapicrd.RoleMapping, ignoresDiff ...patch.CalculateOption) (patchResult *patch.PatchResult, err error) {
 	return h.Client().RoleMappingDiff(currentOject, expectedObject, originalObject)
 }

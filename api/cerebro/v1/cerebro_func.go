@@ -1,7 +1,7 @@
 package v1
 
 import (
-	"github.com/disaster37/operator-sdk-extra/v2/pkg/object"
+	"github.com/disaster37/operator-sdk-extra/v3/pkg/object"
 )
 
 // GetStatus implement the object.MultiPhaseObject

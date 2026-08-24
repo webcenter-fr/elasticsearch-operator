@@ -22,9 +22,9 @@ import (
 	"time"
 
 	"emperror.dev/errors"
-	"github.com/disaster37/operator-sdk-extra/v2/pkg/apis/shared"
-	"github.com/disaster37/operator-sdk-extra/v2/pkg/controller"
-	"github.com/disaster37/operator-sdk-extra/v2/pkg/controller/multiphase"
+	"github.com/disaster37/operator-sdk-extra/v3/pkg/apis/shared"
+	"github.com/disaster37/operator-sdk-extra/v3/pkg/controller"
+	"github.com/disaster37/operator-sdk-extra/v3/pkg/controller/multiphase"
 	routev1 "github.com/openshift/api/route/v1"
 	"github.com/sirupsen/logrus"
 	cerebrocrd "github.com/webcenter-fr/elasticsearch-operator/api/cerebro/v1"
@@ -51,7 +51,7 @@ const (
 	finalizer shared.FinalizerName = "cerebro.k8s.webcenter.fr/finalizer"
 )
 
-// CerebroReconciler reconciles a Cerebro objectFHost
+// CerebroReconciler reconciles a Cerebro object.
 type CerebroReconciler struct {
 	controller.Controller
 	multiphase.MultiPhaseReconciler[*cerebrocrd.Cerebro]
@@ -168,6 +168,12 @@ func (h *CerebroReconciler) Configure(ctx context.Context, req reconcile.Request
 	// Set prometheus Metrics
 	common.ControllerInstances.WithLabelValues(h.name, o.GetNamespace(), o.GetName()).Set(1)
 
+	if IsLegacyVersion(o) {
+		h.Recorder().Eventf(o, corev1.EventTypeWarning, "DeprecatedVersion",
+			"spec.version=%q is not a valid tag for %s and is treated as %s; set an explicit version",
+			legacyVersion, defaultImage, defaultVersion)
+	}
+
 	return h.MultiPhaseReconcilerAction.Configure(ctx, req, o, data, logger)
 }
 
@@ -221,7 +227,7 @@ func (h *CerebroReconciler) OnSuccess(ctx context.Context, o *cerebrocrd.Cerebro
 	dpl := &appv1.Deployment{}
 	if err = h.Client().Get(ctx, types.NamespacedName{Name: GetDeploymentName(o), Namespace: o.Namespace}, dpl); err != nil {
 		if !k8serrors.IsNotFound(err) {
-			return res, errors.Wrapf(err, "Error when read Kibana deployment")
+			return res, errors.Wrapf(err, "Error when read Cerebro deployment")
 		}
 
 		isReady = false

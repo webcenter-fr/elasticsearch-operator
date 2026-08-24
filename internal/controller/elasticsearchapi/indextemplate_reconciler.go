@@ -4,9 +4,9 @@ import (
 	"context"
 	"time"
 
-	eshandler "github.com/disaster37/es-handler/v8"
-	"github.com/disaster37/operator-sdk-extra/v2/pkg/controller/remote"
-	olivere "github.com/olivere/elastic/v7"
+	eshandler "github.com/disaster37/es-handler/v9"
+	eshandlerpatch "github.com/disaster37/es-handler/v9/patch"
+	"github.com/disaster37/operator-sdk-extra/v3/pkg/controller/remote"
 	"github.com/sirupsen/logrus"
 	elasticsearchapicrd "github.com/webcenter-fr/elasticsearch-operator/api/elasticsearchapi/v1"
 	"k8s.io/client-go/tools/record"
@@ -15,13 +15,13 @@ import (
 )
 
 type indexTemplateReconciler struct {
-	remote.RemoteReconcilerAction[*elasticsearchapicrd.IndexTemplate, *olivere.IndicesGetIndexTemplate, eshandler.ElasticsearchHandler]
+	remote.RemoteReconcilerAction[*elasticsearchapicrd.IndexTemplate, *eshandlerpatch.IndexTemplate, eshandler.ElasticsearchHandler]
 	name string
 }
 
-func newIndexTemplateReconcilerclient(name string, client client.Client, recorder record.EventRecorder) remote.RemoteReconcilerAction[*elasticsearchapicrd.IndexTemplate, *olivere.IndicesGetIndexTemplate, eshandler.ElasticsearchHandler] {
+func newIndexTemplateReconcilerclient(name string, client client.Client, recorder record.EventRecorder) remote.RemoteReconcilerAction[*elasticsearchapicrd.IndexTemplate, *eshandlerpatch.IndexTemplate, eshandler.ElasticsearchHandler] {
 	return &indexTemplateReconciler{
-		RemoteReconcilerAction: remote.NewRemoteReconcilerAction[*elasticsearchapicrd.IndexTemplate, *olivere.IndicesGetIndexTemplate, eshandler.ElasticsearchHandler](
+		RemoteReconcilerAction: remote.NewRemoteReconcilerAction[*elasticsearchapicrd.IndexTemplate, *eshandlerpatch.IndexTemplate, eshandler.ElasticsearchHandler](
 			client,
 			recorder,
 		),
@@ -29,7 +29,7 @@ func newIndexTemplateReconcilerclient(name string, client client.Client, recorde
 	}
 }
 
-func (h *indexTemplateReconciler) GetRemoteHandler(ctx context.Context, req reconcile.Request, o *elasticsearchapicrd.IndexTemplate, logger *logrus.Entry) (handler remote.RemoteExternalReconciler[*elasticsearchapicrd.IndexTemplate, *olivere.IndicesGetIndexTemplate, eshandler.ElasticsearchHandler], res reconcile.Result, err error) {
+func (h *indexTemplateReconciler) GetRemoteHandler(ctx context.Context, req reconcile.Request, o *elasticsearchapicrd.IndexTemplate, logger *logrus.Entry) (handler remote.RemoteExternalReconciler[*elasticsearchapicrd.IndexTemplate, *eshandlerpatch.IndexTemplate, eshandler.ElasticsearchHandler], res reconcile.Result, err error) {
 	esClient, err := GetElasticsearchHandler(ctx, o, o.Spec.ElasticsearchRef, h.Client(), logger)
 	if err != nil && o.DeletionTimestamp.IsZero() {
 		return nil, res, err

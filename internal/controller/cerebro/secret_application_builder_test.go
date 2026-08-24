@@ -40,5 +40,5 @@ func TestBuildApplicationSecret(t *testing.T) {
 	assert.Equal(t, "default", s[0].Namespace)
 	assert.Equal(t, labels, s[0].Labels)
 	assert.Equal(t, annotations, s[0].Annotations)
-	assert.NotEmpty(t, s[0].Data["application"])
+	assert.NotEmpty(t, s[0].Data[applicationSecretKey])
 }

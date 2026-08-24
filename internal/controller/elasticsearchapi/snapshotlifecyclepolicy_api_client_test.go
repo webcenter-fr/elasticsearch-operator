@@ -3,7 +3,7 @@ package elasticsearchapi
 import (
 	"testing"
 
-	eshandler "github.com/disaster37/es-handler/v8"
+	eshandler "github.com/disaster37/es-handler/v9"
 	"github.com/stretchr/testify/assert"
 	elasticsearchapicrd "github.com/webcenter-fr/elasticsearch-operator/api/elasticsearchapi/v1"
 	"github.com/webcenter-fr/elasticsearch-operator/api/shared"

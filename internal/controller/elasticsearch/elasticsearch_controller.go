@@ -18,19 +18,15 @@ package elasticsearch
 
 import (
 	"context"
-	"crypto/tls"
 	"fmt"
-	"net"
-	"net/http"
 	"time"
 
 	"emperror.dev/errors"
-	eshandler "github.com/disaster37/es-handler/v8"
-	"github.com/disaster37/operator-sdk-extra/v2/pkg/apis/shared"
-	"github.com/disaster37/operator-sdk-extra/v2/pkg/controller"
-	"github.com/disaster37/operator-sdk-extra/v2/pkg/controller/multiphase"
-	"github.com/elastic/elastic-transport-go/v8/elastictransport"
-	elastic "github.com/elastic/go-elasticsearch/v8"
+	elasticsearch "github.com/disaster37/elasticsearch/v9"
+	eshandler "github.com/disaster37/es-handler/v9"
+	"github.com/disaster37/operator-sdk-extra/v3/pkg/apis/shared"
+	"github.com/disaster37/operator-sdk-extra/v3/pkg/controller"
+	"github.com/disaster37/operator-sdk-extra/v3/pkg/controller/multiphase"
 	routev1 "github.com/openshift/api/route/v1"
 	monitoringv1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1"
 	"github.com/sirupsen/logrus"
@@ -96,14 +92,15 @@ func NewElasticsearchReconciler(c client.Client, logger *logrus.Entry, recorder 
 		stepReconcilers: []multiphase.MultiPhaseStepReconcilerAction[*elasticsearchcrd.Elasticsearch, client.Object]{
 			multiphase.NewObjectMultiPhaseStepReconcilerAction[*elasticsearchcrd.Elasticsearch, *corev1.ServiceAccount, client.Object](newServiceAccountReconciler(c, recorder, kubeCapability.HasRoute)),
 			multiphase.NewObjectMultiPhaseStepReconcilerAction[*elasticsearchcrd.Elasticsearch, *rbacv1.RoleBinding, client.Object](newRoleBindingReconciler(c, recorder, kubeCapability.HasRoute)),
-			multiphase.NewObjectMultiPhaseStepReconcilerAction[*elasticsearchcrd.Elasticsearch, *corev1.Secret, client.Object](newTlsReconciler(c, recorder)),
+			newTlsTransportReconciler(c, recorder, logger),
+			multiphase.NewObjectMultiPhaseStepReconcilerAction[*elasticsearchcrd.Elasticsearch, *corev1.Secret, client.Object](newTlsApiReconciler(c, recorder)),
 			multiphase.NewObjectMultiPhaseStepReconcilerAction[*elasticsearchcrd.Elasticsearch, *corev1.Secret, client.Object](newCredentialReconciler(c, recorder)),
 			multiphase.NewObjectMultiPhaseStepReconcilerAction[*elasticsearchcrd.Elasticsearch, *elasticsearchapicrd.License, client.Object](newLicenseReconciler(c, recorder)),
 			multiphase.NewObjectMultiPhaseStepReconcilerAction[*elasticsearchcrd.Elasticsearch, *corev1.ConfigMap, client.Object](newConfiMapReconciler(c, recorder)),
 			multiphase.NewObjectMultiPhaseStepReconcilerAction[*elasticsearchcrd.Elasticsearch, *corev1.Service, client.Object](newServiceReconciler(c, recorder)),
 			multiphase.NewObjectMultiPhaseStepReconcilerAction[*elasticsearchcrd.Elasticsearch, *policyv1.PodDisruptionBudget, client.Object](newPdbReconciler(c, recorder)),
 			multiphase.NewObjectMultiPhaseStepReconcilerAction[*elasticsearchcrd.Elasticsearch, *networkingv1.NetworkPolicy, client.Object](newNetworkPolicyReconciler(c, recorder)),
-			multiphase.NewObjectMultiPhaseStepReconcilerAction[*elasticsearchcrd.Elasticsearch, *appv1.StatefulSet, client.Object](newStatefulsetReconciler(c, recorder, kubeCapability.HasRoute)),
+			multiphase.NewObjectMultiPhaseStepReconcilerActionWithDiff[*elasticsearchcrd.Elasticsearch, *appv1.StatefulSet, client.Object](newStatefulsetReconciler(c, recorder, kubeCapability.HasRoute)),
 			multiphase.NewObjectMultiPhaseStepReconcilerAction[*elasticsearchcrd.Elasticsearch, *elasticsearchapicrd.User, client.Object](newSystemUserReconciler(c, recorder)),
 			multiphase.NewObjectMultiPhaseStepReconcilerAction[*elasticsearchcrd.Elasticsearch, *networkingv1.Ingress, client.Object](newIngressReconciler(c, recorder)),
 			multiphase.NewObjectMultiPhaseStepReconcilerAction[*elasticsearchcrd.Elasticsearch, *corev1.Service, client.Object](newLoadBalancerReconciler(c, recorder)),
@@ -419,7 +416,7 @@ func (h *ElasticsearchReconciler) computeElasticsearchUrl(ctx context.Context, e
 }
 
 func (h *ElasticsearchReconciler) getElasticsearchHandler(ctx context.Context, es *elasticsearchcrd.Elasticsearch, log *logrus.Entry) (esHandler eshandler.ElasticsearchHandler, err error) {
-	hosts := []string{}
+	addresses := []string{}
 
 	// Get Elasticsearch credentials
 	secret := &corev1.Secret{}
@@ -434,28 +431,35 @@ func (h *ElasticsearchReconciler) getElasticsearchHandler(ctx context.Context, e
 
 	serviceName := GetGlobalServiceName(es)
 	if !es.Spec.Tls.IsTlsEnabled() {
-		hosts = append(hosts, fmt.Sprintf("http://%s.%s.svc:9200", serviceName, es.Namespace))
+		addresses = append(addresses, fmt.Sprintf("http://%s.%s.svc:9200", serviceName, es.Namespace))
 	} else {
-		hosts = append(hosts, fmt.Sprintf("https://%s.%s.svc:9200", serviceName, es.Namespace))
+		addresses = append(addresses, fmt.Sprintf("https://%s.%s.svc:9200", serviceName, es.Namespace))
 	}
 
-	transport := &http.Transport{
-		Proxy: http.ProxyFromEnvironment,
-		TLSClientConfig: &tls.Config{
-			InsecureSkipVerify: true,
-		},
-		ResponseHeaderTimeout: 10 * time.Second,
-		DialContext:           (&net.Dialer{Timeout: 10 * time.Second}).DialContext,
-	}
-	cfg := elastic.Config{
-		Transport: transport,
-		Addresses: hosts,
-		Username:  "elastic",
-		Password:  string(secret.Data["elastic"]),
+	cfg := &elasticsearch.Config{
+		Addresses:         addresses,
+		Username:          "elastic",
+		Password:          string(secret.Data["elastic"]),
+		TLSSkipVerify:     es.Spec.Tls.IsSelfManagedSecretForTls(),
+		AllowInsecureHTTP: !es.Spec.Tls.IsTlsEnabled(),
+		Timeout:           common.ESClientTimeout,
 	}
 
-	if log.Logger.GetLevel() == logrus.DebugLevel {
-		cfg.Logger = &elastictransport.JSONLogger{EnableRequestBody: true, EnableResponseBody: true, Output: log.Logger.Out}
+	// BYO TLS (user-provided CertificateSecretRef): verify the server certificate
+	// against the user's CA bundle instead of skipping verification. The
+	// CertificateSecretRef holds `tls.crt`/`tls.key` and optionally `ca.crt`.
+	// (GlobalNodeGroup.CacertsSecretRef is the JVM cacerts truststore, not a PEM
+	// CA bundle, so it is intentionally not used as the TLS CACert here.)
+	if !es.Spec.Tls.IsSelfManagedSecretForTls() && es.Spec.Tls.CertificateSecretRef != nil {
+		tlsSecret := &corev1.Secret{}
+		if err = h.Client().Get(ctx, types.NamespacedName{Namespace: es.Namespace, Name: es.Spec.Tls.CertificateSecretRef.Name}, tlsSecret); err == nil {
+			if ca, ok := tlsSecret.Data["ca.crt"]; ok && len(ca) > 0 {
+				cfg.CACert = ca
+			}
+		}
+		// If the user's CA secret is missing/unreadable or has no ca.crt, CACert
+		// stays empty and the v9 client falls back to the system cert pool, so
+		// certificate verification remains enabled.
 	}
 
 	// Create Elasticsearch handler/client

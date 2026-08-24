@@ -6,13 +6,13 @@ import (
 	"time"
 
 	"emperror.dev/errors"
-	"github.com/disaster37/es-handler/v8/mocks"
+	eshandler "github.com/disaster37/es-handler/v9"
+	"github.com/disaster37/es-handler/v9/mocks"
 	"github.com/disaster37/generic-objectmatcher/patch"
-	"github.com/disaster37/operator-sdk-extra/v2/pkg/apis"
-	"github.com/disaster37/operator-sdk-extra/v2/pkg/controller"
-	"github.com/disaster37/operator-sdk-extra/v2/pkg/helper"
-	"github.com/disaster37/operator-sdk-extra/v2/pkg/test"
-	olivere "github.com/olivere/elastic/v7"
+	"github.com/disaster37/operator-sdk-extra/v3/pkg/apis"
+	"github.com/disaster37/operator-sdk-extra/v3/pkg/controller"
+	"github.com/disaster37/operator-sdk-extra/v3/pkg/helper"
+	"github.com/disaster37/operator-sdk-extra/v3/pkg/test"
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
 	elasticsearchapicrd "github.com/webcenter-fr/elasticsearch-operator/api/elasticsearchapi/v1"
@@ -48,30 +48,30 @@ func doMockWatcher(mockES *mocks.MockElasticsearchHandler) func(stepName *string
 		isCreated := false
 		isUpdated := false
 
-		mockES.EXPECT().WatchGet(gomock.Any()).AnyTimes().DoAndReturn(func(name string) (*olivere.XPackWatch, error) {
+		mockES.EXPECT().WatchGet(gomock.Any()).AnyTimes().DoAndReturn(func(name string) (*eshandler.XPackWatch, error) {
 			switch *stepName {
 			case "create":
 				if !isCreated {
 					return nil, nil
 				} else {
-					resp := &olivere.XPackWatch{
-						Trigger: map[string]map[string]any{
-							"schedule": {
+					resp := &eshandler.XPackWatch{
+						"trigger": map[string]any{
+							"schedule": map[string]any{
 								"cron": "0 0/1 * * * ?",
 							},
 						},
-						Input: map[string]map[string]any{
-							"search": {
+						"input": map[string]any{
+							"search": map[string]any{
 								"request": "fake",
 							},
 						},
-						Condition: map[string]map[string]any{
-							"compare": {
+						"condition": map[string]any{
+							"compare": map[string]any{
 								"ctx.payload.hits.total": "fake",
 							},
 						},
-						Actions: map[string]map[string]any{
-							"email": {
+						"actions": map[string]any{
+							"email": map[string]any{
 								"email": "fake",
 							},
 						},
@@ -80,48 +80,48 @@ func doMockWatcher(mockES *mocks.MockElasticsearchHandler) func(stepName *string
 				}
 			case "update":
 				if !isUpdated {
-					resp := &olivere.XPackWatch{
-						Trigger: map[string]map[string]any{
-							"schedule": {
+					resp := &eshandler.XPackWatch{
+						"trigger": map[string]any{
+							"schedule": map[string]any{
 								"cron": "0 0/1 * * * ?",
 							},
 						},
-						Input: map[string]map[string]any{
-							"search": {
+						"input": map[string]any{
+							"search": map[string]any{
 								"request": "fake",
 							},
 						},
-						Condition: map[string]map[string]any{
-							"compare": {
+						"condition": map[string]any{
+							"compare": map[string]any{
 								"ctx.payload.hits.total": "fake",
 							},
 						},
-						Actions: map[string]map[string]any{
-							"email": {
+						"actions": map[string]any{
+							"email": map[string]any{
 								"email": "fake",
 							},
 						},
 					}
 					return resp, nil
 				} else {
-					resp := &olivere.XPackWatch{
-						Trigger: map[string]map[string]any{
-							"schedule": {
+					resp := &eshandler.XPackWatch{
+						"trigger": map[string]any{
+							"schedule": map[string]any{
 								"cron": "0 0/1 * * * ?",
 							},
 						},
-						Input: map[string]map[string]any{
-							"search": {
+						"input": map[string]any{
+							"search": map[string]any{
 								"request": "fake",
 							},
 						},
-						Condition: map[string]map[string]any{
-							"compare": {
+						"condition": map[string]any{
+							"compare": map[string]any{
 								"ctx.payload.hits.total": "fake",
 							},
 						},
-						Actions: map[string]map[string]any{
-							"email": {
+						"actions": map[string]any{
+							"email": map[string]any{
 								"email": "fake2",
 							},
 						},
@@ -133,7 +133,7 @@ func doMockWatcher(mockES *mocks.MockElasticsearchHandler) func(stepName *string
 			return nil, nil
 		})
 
-		mockES.EXPECT().WatchDiff(gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes().DoAndReturn(func(actual, expected, original *olivere.XPackWatch) (*patch.PatchResult, error) {
+		mockES.EXPECT().WatchDiff(gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes().DoAndReturn(func(actual, expected, original *eshandler.XPackWatch) (*patch.PatchResult, error) {
 			switch *stepName {
 			case "create":
 				if !isCreated {
@@ -156,7 +156,7 @@ func doMockWatcher(mockES *mocks.MockElasticsearchHandler) func(stepName *string
 			return nil, nil
 		})
 
-		mockES.EXPECT().WatchUpdate(gomock.Any(), gomock.Any()).AnyTimes().DoAndReturn(func(name string, policy *olivere.XPackWatch) error {
+		mockES.EXPECT().WatchUpdate(gomock.Any(), gomock.Any()).AnyTimes().DoAndReturn(func(name string, policy *eshandler.XPackWatch) error {
 			switch *stepName {
 			case "create":
 				isCreated = true

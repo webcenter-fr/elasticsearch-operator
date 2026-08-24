@@ -19,15 +19,14 @@ package v1
 import (
 	"context"
 
-	"emperror.dev/errors"
-	"github.com/disaster37/operator-sdk-extra/v2/pkg/controller"
+	"github.com/disaster37/operator-sdk-extra/v3/pkg/controller"
 	"github.com/sirupsen/logrus"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
-	"k8s.io/apimachinery/pkg/runtime"
+
 	"k8s.io/apimachinery/pkg/util/validation/field"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/controller-runtime/pkg/webhook"
+
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 )
 
@@ -39,8 +38,7 @@ type kibanaValidator struct {
 // SetupWebhookWithManager will setup the manager to manage the webhooks
 func SetupKibanaWebhookWithManager(logger *logrus.Entry) controller.WebhookRegister {
 	return func(mgr ctrl.Manager, client client.Client) error {
-		return ctrl.NewWebhookManagedBy(mgr).
-			For(&Kibana{}).
+		return ctrl.NewWebhookManagedBy(mgr, &Kibana{}).
 			WithValidator(&kibanaValidator{
 				logger: logger.WithField("webhook", "kibanaValidator"),
 				client: client,
@@ -51,53 +49,43 @@ func SetupKibanaWebhookWithManager(logger *logrus.Entry) controller.WebhookRegis
 
 //+kubebuilder:webhook:path=/validate-kibana-k8s-webcenter-fr-v1-kibana,mutating=false,failurePolicy=fail,sideEffects=None,groups=kibana.k8s.webcenter.fr,resources=kibanas,verbs=create;update,versions=v1,name=kibana.kibana.k8s.webcenter.fr,admissionReviewVersions=v1
 
-var _ webhook.CustomValidator = &kibanaValidator{}
+var _ admission.Validator[*Kibana] = &kibanaValidator{}
 
 // ValidateCreate implements webhook.Validator so a webhook will be registered for the type
-func (r *kibanaValidator) ValidateCreate(ctx context.Context, obj runtime.Object) (admission.Warnings, error) {
+func (r *kibanaValidator) ValidateCreate(ctx context.Context, obj *Kibana) (admission.Warnings, error) {
 	var allErrs field.ErrorList
 
-	kibanaObj, ok := obj.(*Kibana)
-	if !ok {
-		return nil, errors.Errorf("expected a Kibana object but got %T", obj)
-	}
-
-	if err := kibanaObj.Spec.ElasticsearchRef.ValidateField(); err != nil {
+	if err := obj.Spec.ElasticsearchRef.ValidateField(); err != nil {
 		allErrs = append(allErrs, err)
 	}
 
 	if len(allErrs) > 0 {
 		return nil, apierrors.NewInvalid(
-			kibanaObj.GroupVersionKind().GroupKind(),
-			kibanaObj.Name, allErrs)
+			obj.GroupVersionKind().GroupKind(),
+			obj.Name, allErrs)
 	}
 
 	return nil, nil
 }
 
 // ValidateUpdate implements webhook.Validator so a webhook will be registered for the type
-func (r *kibanaValidator) ValidateUpdate(ctx context.Context, oldObj runtime.Object, newObj runtime.Object) (admission.Warnings, error) {
+func (r *kibanaValidator) ValidateUpdate(ctx context.Context, oldObj *Kibana, newObj *Kibana) (admission.Warnings, error) {
 	var allErrs field.ErrorList
 
-	kibanaObj, ok := newObj.(*Kibana)
-	if !ok {
-		return nil, errors.Errorf("expected a Kibana object but got %T", newObj)
-	}
-
-	if err := kibanaObj.Spec.ElasticsearchRef.ValidateField(); err != nil {
+	if err := newObj.Spec.ElasticsearchRef.ValidateField(); err != nil {
 		allErrs = append(allErrs, err)
 	}
 
 	if len(allErrs) > 0 {
 		return nil, apierrors.NewInvalid(
-			kibanaObj.GroupVersionKind().GroupKind(),
-			kibanaObj.Name, allErrs)
+			newObj.GroupVersionKind().GroupKind(),
+			newObj.Name, allErrs)
 	}
 
 	return nil, nil
 }
 
 // ValidateDelete implements webhook.Validator so a webhook will be registered for the type
-func (r *kibanaValidator) ValidateDelete(ctx context.Context, obj runtime.Object) (admission.Warnings, error) {
+func (r *kibanaValidator) ValidateDelete(ctx context.Context, obj *Kibana) (admission.Warnings, error) {
 	return nil, nil
 }

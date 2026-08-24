@@ -5,13 +5,15 @@ import (
 	"testing"
 	"time"
 
+	esapi "github.com/disaster37/elasticsearch/v9/api"
+
 	"emperror.dev/errors"
-	"github.com/disaster37/es-handler/v8/mocks"
+	eshandler "github.com/disaster37/es-handler/v9"
+	"github.com/disaster37/es-handler/v9/mocks"
 	"github.com/disaster37/generic-objectmatcher/patch"
-	"github.com/disaster37/operator-sdk-extra/v2/pkg/controller"
-	"github.com/disaster37/operator-sdk-extra/v2/pkg/helper"
-	"github.com/disaster37/operator-sdk-extra/v2/pkg/test"
-	olivere "github.com/olivere/elastic/v7"
+	"github.com/disaster37/operator-sdk-extra/v3/pkg/controller"
+	"github.com/disaster37/operator-sdk-extra/v3/pkg/helper"
+	"github.com/disaster37/operator-sdk-extra/v3/pkg/test"
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
 	elasticsearchapicrd "github.com/webcenter-fr/elasticsearch-operator/api/elasticsearchapi/v1"
@@ -58,13 +60,13 @@ func doMockUser(mockES *mocks.MockElasticsearchHandler) func(stepName *string, d
 		isCreatedWithAutoGeneratePassword := false
 		isUpdatedPassword := false
 
-		mockES.EXPECT().UserGet(gomock.Any()).AnyTimes().DoAndReturn(func(name string) (*olivere.XPackSecurityUser, error) {
+		mockES.EXPECT().UserGet(gomock.Any()).AnyTimes().DoAndReturn(func(name string) (*esapi.SecurityUser, error) {
 			switch *stepName {
 			case "create":
 				if !isCreated {
 					return nil, nil
 				} else {
-					resp := &olivere.XPackSecurityUser{
+					resp := &esapi.SecurityUser{
 						Enabled: true,
 						Roles:   []string{"superuser"},
 					}
@@ -72,20 +74,20 @@ func doMockUser(mockES *mocks.MockElasticsearchHandler) func(stepName *string, d
 				}
 			case "update":
 				if !isUpdated {
-					resp := &olivere.XPackSecurityUser{
+					resp := &esapi.SecurityUser{
 						Enabled: true,
 						Roles:   []string{"superuser"},
 					}
 					return resp, nil
 				} else {
-					resp := &olivere.XPackSecurityUser{
+					resp := &esapi.SecurityUser{
 						Enabled: false,
 						Roles:   []string{"superuser"},
 					}
 					return resp, nil
 				}
 			case "update_password_hash":
-				resp := &olivere.XPackSecurityUser{
+				resp := &esapi.SecurityUser{
 					Enabled: false,
 					Roles:   []string{"superuser"},
 				}
@@ -95,7 +97,7 @@ func doMockUser(mockES *mocks.MockElasticsearchHandler) func(stepName *string, d
 				if !isCreatedWithPassword {
 					return nil, nil
 				} else {
-					resp := &olivere.XPackSecurityUser{
+					resp := &esapi.SecurityUser{
 						Enabled: false,
 						Roles:   []string{"superuser"},
 					}
@@ -105,14 +107,14 @@ func doMockUser(mockES *mocks.MockElasticsearchHandler) func(stepName *string, d
 				if !isCreatedWithAutoGeneratePassword {
 					return nil, nil
 				} else {
-					resp := &olivere.XPackSecurityUser{
+					resp := &esapi.SecurityUser{
 						Enabled: false,
 						Roles:   []string{"superuser"},
 					}
 					return resp, nil
 				}
 			case "update_password":
-				resp := &olivere.XPackSecurityUser{
+				resp := &esapi.SecurityUser{
 					Enabled: false,
 					Roles:   []string{"superuser"},
 				}
@@ -123,7 +125,7 @@ func doMockUser(mockES *mocks.MockElasticsearchHandler) func(stepName *string, d
 			return nil, nil
 		})
 
-		mockES.EXPECT().UserDiff(gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes().DoAndReturn(func(actual, expected, original *olivere.XPackSecurityPutUserRequest) (*patch.PatchResult, error) {
+		mockES.EXPECT().UserDiff(gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes().DoAndReturn(func(actual, expected, original *eshandler.SecurityPutUserRequest) (*patch.PatchResult, error) {
 			switch *stepName {
 			case "create":
 				if !isCreated {
@@ -178,7 +180,7 @@ func doMockUser(mockES *mocks.MockElasticsearchHandler) func(stepName *string, d
 			return nil, nil
 		})
 
-		mockES.EXPECT().UserUpdate(gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes().DoAndReturn(func(name string, policy *olivere.XPackSecurityPutUserRequest, isProtected ...bool) error {
+		mockES.EXPECT().UserUpdate(gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes().DoAndReturn(func(name string, policy *eshandler.SecurityPutUserRequest, isProtected ...bool) error {
 			switch *stepName {
 			case "update":
 				isUpdated = true
@@ -197,7 +199,7 @@ func doMockUser(mockES *mocks.MockElasticsearchHandler) func(stepName *string, d
 			return nil
 		})
 
-		mockES.EXPECT().UserCreate(gomock.Any(), gomock.Any()).AnyTimes().DoAndReturn(func(name string, policy *olivere.XPackSecurityPutUserRequest) error {
+		mockES.EXPECT().UserCreate(gomock.Any(), gomock.Any()).AnyTimes().DoAndReturn(func(name string, policy *eshandler.SecurityPutUserRequest) error {
 			switch *stepName {
 			case "create":
 				isCreated = true

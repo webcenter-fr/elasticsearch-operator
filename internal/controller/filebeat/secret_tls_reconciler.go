@@ -10,20 +10,19 @@ import (
 	"emperror.dev/errors"
 	"github.com/disaster37/goca"
 	"github.com/disaster37/goca/cert"
-	"github.com/disaster37/k8s-objectmatcher/patch"
-	"github.com/disaster37/operator-sdk-extra/v2/pkg/apis/shared"
-	"github.com/disaster37/operator-sdk-extra/v2/pkg/controller/multiphase"
-	"github.com/disaster37/operator-sdk-extra/v2/pkg/helper"
+	"github.com/disaster37/operator-sdk-extra/v3/pkg/apis/shared"
+	"github.com/disaster37/operator-sdk-extra/v3/pkg/controller/multiphase"
+	"github.com/disaster37/operator-sdk-extra/v3/pkg/helper"
 	"github.com/sirupsen/logrus"
 	"github.com/thoas/go-funk"
 	beatcrd "github.com/webcenter-fr/elasticsearch-operator/api/beat/v1"
-	localhelper "github.com/webcenter-fr/elasticsearch-operator/pkg/helper"
+	"github.com/webcenter-fr/elasticsearch-operator/internal/controller/common"
 	"github.com/webcenter-fr/elasticsearch-operator/pkg/pki"
 	corev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/tools/record"
-	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
@@ -45,6 +44,7 @@ func newTlsReconciler(client client.Client, recorder record.EventRecorder) (mult
 			TlsPhase,
 			TlsCondition,
 			recorder,
+			common.FieldManager,
 		),
 	}
 }
@@ -119,7 +119,7 @@ func (r *tlsReconciler) Read(ctx context.Context, o *beatcrd.Filebeat, data map[
 }
 
 // Diff permit to check if TLS secrets are up to date
-func (r *tlsReconciler) Diff(ctx context.Context, o *beatcrd.Filebeat, read multiphase.MultiPhaseRead[*corev1.Secret], data map[string]any, logger *logrus.Entry, ignoreDiff ...patch.CalculateOption) (diff multiphase.MultiPhaseDiff[*corev1.Secret], res reconcile.Result, err error) {
+func (r *tlsReconciler) Diff(ctx context.Context, o *beatcrd.Filebeat, read multiphase.MultiPhaseRead[*corev1.Secret], data map[string]any, logger *logrus.Entry) (diff multiphase.MultiPhaseDiff[*corev1.Secret], res reconcile.Result, err error) {
 	var (
 		d         any
 		needRenew bool
@@ -174,9 +174,6 @@ func (r *tlsReconciler) Diff(ctx context.Context, o *beatcrd.Filebeat, read mult
 			if err != nil {
 				return diff, res, errors.Wrap(err, "Error when update secret of PKI")
 			}
-			if err := patch.DefaultAnnotator.SetLastAppliedAnnotation(sPki); err != nil {
-				return diff, res, errors.Wrapf(err, "Error when set diff annotation on secret %s", sPki.Name)
-			}
 			if isUpdated {
 				diff.AddObjectToUpdate(sPki)
 			} else {
@@ -191,9 +188,6 @@ func (r *tlsReconciler) Diff(ctx context.Context, o *beatcrd.Filebeat, read mult
 			sCrt, isUpdated, err = updateSecret(o, sCrt, tmpCrt, r.Client().Scheme())
 			if err != nil {
 				return diff, res, errors.Wrap(err, "Error when update secret of certificates")
-			}
-			if err := patch.DefaultAnnotator.SetLastAppliedAnnotation(sCrt); err != nil {
-				return diff, res, errors.Wrapf(err, "Error when set diff annotation on secret %s", sCrt.Name)
 			}
 			if isUpdated {
 				diff.AddObjectToUpdate(sCrt)
@@ -250,9 +244,6 @@ func (r *tlsReconciler) Diff(ctx context.Context, o *beatcrd.Filebeat, read mult
 			if err != nil {
 				return diff, res, errors.Wrap(err, "Error when update secret of PKI")
 			}
-			if err := patch.DefaultAnnotator.SetLastAppliedAnnotation(sPki); err != nil {
-				return diff, res, errors.Wrapf(err, "Error when set diff annotation on secret %s", sPki.Name)
-			}
 			if isUpdated {
 				diff.AddObjectToUpdate(sPki)
 			} else {
@@ -267,9 +258,6 @@ func (r *tlsReconciler) Diff(ctx context.Context, o *beatcrd.Filebeat, read mult
 			sCrt, isUpdated, err = updateSecret(o, sCrt, tmpCrt, r.Client().Scheme())
 			if err != nil {
 				return diff, res, errors.Wrap(err, "Error when update secret of certificates")
-			}
-			if err := patch.DefaultAnnotator.SetLastAppliedAnnotation(sCrt); err != nil {
-				return diff, res, errors.Wrapf(err, "Error when set diff annotation on secret %s", sCrt.Name)
 			}
 			if isUpdated {
 				diff.AddObjectToUpdate(sCrt)
@@ -310,54 +298,21 @@ func (r *tlsReconciler) Diff(ctx context.Context, o *beatcrd.Filebeat, read mult
 			// Keep existing sequence to not rolling restart all nodes
 			sCrt.Annotations = getAnnotations(o)
 
-			if err := patch.DefaultAnnotator.SetLastAppliedAnnotation(sCrt); err != nil {
-				return diff, res, errors.Wrapf(err, "Error when set diff annotation on secret %s", sCrt.Name)
-			}
+			sCrt.TypeMeta = metav1.TypeMeta{APIVersion: "v1", Kind: "Secret"}
 			diff.AddObjectToUpdate(sCrt)
 		}
 	}
 
-	// Check if labels or annotations need to bu upgraded
-	secrets := []*corev1.Secret{}
+	// Detect label/annotation drift so a label-only CR update re-applies the
+	// TLS secrets (SSA no-op when metadata is already correct).
 	if o.Spec.Pki.IsEnabled() {
-		secrets = append(secrets, sPki, sCrt)
-	}
-	for _, s := range secrets {
-		isUpdated := false
-		if s.Name == GetSecretNameForTls(o) {
-			if strDiff := localhelper.DiffLabels(getLabelsForTlsSecret(o), s.Labels); strDiff != "" {
-				diff.AddDiff(strDiff)
-				s.Labels = getLabelsForTlsSecret(o)
-				isUpdated = true
-			}
-		} else if strDiff := localhelper.DiffLabels(getLabels(o), s.Labels); strDiff != "" {
-			diff.AddDiff(strDiff)
-			s.Labels = getLabels(o)
-			isUpdated = true
+		if expected := common.DriftSecretForMetadata(sPki, getLabels(o), getAnnotations(o)); expected != nil {
+			diff.AddDiff("Update PKI secret metadata")
+			diff.AddObjectToUpdate(expected)
 		}
-		if strDiff := localhelper.DiffAnnotations(getAnnotations(o), s.Annotations); strDiff != "" {
-			diff.AddDiff(strDiff)
-			s.Annotations = getAnnotations(o)
-			isUpdated = true
-		}
-		strDiff, err := localhelper.DiffOwnerReferences(o, s)
-		if err != nil {
-			return diff, res, errors.Wrapf(err, "Error when diff owner references on secret %s", s.Name)
-		}
-		if strDiff != "" {
-			diff.AddDiff(strDiff)
-			// Set ownerReferences
-			if err = ctrl.SetControllerReference(o, s, r.Client().Scheme()); err != nil {
-				return diff, res, errors.Wrapf(err, "Error when set owner reference on object '%s'", s.GetName())
-			}
-			isUpdated = true
-		}
-
-		if isUpdated {
-			if err := patch.DefaultAnnotator.SetLastAppliedAnnotation(s); err != nil {
-				return diff, res, errors.Wrapf(err, "Error when set diff annotation on secret %s", s.Name)
-			}
-			diff.AddObjectToUpdate(s)
+		if expected := common.DriftSecretForMetadata(sCrt, getLabelsForTlsSecret(o), getAnnotations(o)); expected != nil {
+			diff.AddDiff("Update TLS secret metadata")
+			diff.AddObjectToUpdate(expected)
 		}
 	}
 

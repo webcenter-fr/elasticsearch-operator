@@ -6,9 +6,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/disaster37/k8s-objectmatcher/patch"
-	"github.com/disaster37/operator-sdk-extra/v2/pkg/helper"
-	"github.com/disaster37/operator-sdk-extra/v2/pkg/test"
+	"github.com/disaster37/operator-sdk-extra/v3/pkg/helper"
+	"github.com/disaster37/operator-sdk-extra/v3/pkg/test"
 	routev1 "github.com/openshift/api/route/v1"
 	monitoringv1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1"
 	"github.com/sirupsen/logrus"
@@ -165,7 +164,6 @@ func doCreateKibanaStep() test.TestStep[*kibanacrd.Kibana] {
 			}
 			assert.NotEmpty(t, s.Data)
 			assert.NotEmpty(t, s.OwnerReferences)
-			assert.NotEmpty(t, s.Annotations[patch.LastAppliedConfig])
 
 			s = &corev1.Secret{}
 			if err = c.Get(context.Background(), types.NamespacedName{Namespace: key.Namespace, Name: GetSecretNameForTls(kb)}, s); err != nil {
@@ -173,7 +171,6 @@ func doCreateKibanaStep() test.TestStep[*kibanacrd.Kibana] {
 			}
 			assert.NotEmpty(t, s.Data)
 			assert.NotEmpty(t, s.OwnerReferences)
-			assert.NotEmpty(t, s.Annotations[patch.LastAppliedConfig])
 
 			// Secrets for CA Elasticsearch
 			s = &corev1.Secret{}
@@ -182,7 +179,6 @@ func doCreateKibanaStep() test.TestStep[*kibanacrd.Kibana] {
 			}
 			assert.NotEmpty(t, s.Data)
 			assert.NotEmpty(t, s.OwnerReferences)
-			assert.NotEmpty(t, s.Annotations[patch.LastAppliedConfig])
 
 			// Secrets for credentials must exist
 			s = &corev1.Secret{}
@@ -191,7 +187,6 @@ func doCreateKibanaStep() test.TestStep[*kibanacrd.Kibana] {
 			}
 			assert.NotEmpty(t, s.Data)
 			assert.NotEmpty(t, s.OwnerReferences)
-			assert.NotEmpty(t, s.Annotations[patch.LastAppliedConfig])
 
 			// Services must exists
 			svc = &corev1.Service{}
@@ -199,7 +194,6 @@ func doCreateKibanaStep() test.TestStep[*kibanacrd.Kibana] {
 				t.Fatal(err)
 			}
 			assert.NotEmpty(t, svc.OwnerReferences)
-			assert.NotEmpty(t, svc.Annotations[patch.LastAppliedConfig])
 
 			// Load balancer must exist
 			svc = &corev1.Service{}
@@ -207,7 +201,6 @@ func doCreateKibanaStep() test.TestStep[*kibanacrd.Kibana] {
 				t.Fatal(err)
 			}
 			assert.NotEmpty(t, svc.OwnerReferences)
-			assert.NotEmpty(t, svc.Annotations[patch.LastAppliedConfig])
 
 			// Ingress must exist
 			i = &networkingv1.Ingress{}
@@ -215,7 +208,6 @@ func doCreateKibanaStep() test.TestStep[*kibanacrd.Kibana] {
 				t.Fatal(err)
 			}
 			assert.NotEmpty(t, i.OwnerReferences)
-			assert.NotEmpty(t, i.Annotations[patch.LastAppliedConfig])
 
 			// Route must exist
 			route = &routev1.Route{}
@@ -223,7 +215,6 @@ func doCreateKibanaStep() test.TestStep[*kibanacrd.Kibana] {
 				t.Fatal(err)
 			}
 			assert.NotEmpty(t, route.OwnerReferences)
-			assert.NotEmpty(t, route.Annotations[patch.LastAppliedConfig])
 
 			// Service Account must exist
 			serviceAccount = &corev1.ServiceAccount{}
@@ -231,7 +222,6 @@ func doCreateKibanaStep() test.TestStep[*kibanacrd.Kibana] {
 				t.Fatal(err)
 			}
 			assert.NotEmpty(t, serviceAccount.OwnerReferences)
-			assert.NotEmpty(t, serviceAccount.Annotations[patch.LastAppliedConfig])
 
 			// roleBinding must exist
 			roleBinding = &rbacv1.RoleBinding{}
@@ -239,7 +229,6 @@ func doCreateKibanaStep() test.TestStep[*kibanacrd.Kibana] {
 				t.Fatal(err)
 			}
 			assert.NotEmpty(t, roleBinding.OwnerReferences)
-			assert.NotEmpty(t, roleBinding.Annotations[patch.LastAppliedConfig])
 
 			// ConfigMaps must exist
 			cm = &corev1.ConfigMap{}
@@ -247,7 +236,6 @@ func doCreateKibanaStep() test.TestStep[*kibanacrd.Kibana] {
 				t.Fatal(err)
 			}
 			assert.NotEmpty(t, cm.OwnerReferences)
-			assert.NotEmpty(t, cm.Annotations[patch.LastAppliedConfig])
 
 			// PDB must exist
 			pdb = &policyv1.PodDisruptionBudget{}
@@ -255,7 +243,6 @@ func doCreateKibanaStep() test.TestStep[*kibanacrd.Kibana] {
 				t.Fatal(err)
 			}
 			assert.NotEmpty(t, pdb.OwnerReferences)
-			assert.NotEmpty(t, pdb.Annotations[patch.LastAppliedConfig])
 
 			// Network policy exist
 			np = &networkingv1.NetworkPolicy{}
@@ -263,7 +250,6 @@ func doCreateKibanaStep() test.TestStep[*kibanacrd.Kibana] {
 				t.Fatal(err)
 			}
 			assert.NotEmpty(t, np.OwnerReferences)
-			assert.NotEmpty(t, np.Annotations[patch.LastAppliedConfig])
 
 			// Deployment musts exist
 			dpl = &appv1.Deployment{}
@@ -271,7 +257,6 @@ func doCreateKibanaStep() test.TestStep[*kibanacrd.Kibana] {
 				t.Fatal(err)
 			}
 			assert.NotEmpty(t, dpl.OwnerReferences)
-			assert.NotEmpty(t, dpl.Annotations[patch.LastAppliedConfig])
 
 			// Pod monitor must exist
 			pm = &monitoringv1.PodMonitor{}
@@ -279,7 +264,6 @@ func doCreateKibanaStep() test.TestStep[*kibanacrd.Kibana] {
 				t.Fatal(err)
 			}
 			assert.NotEmpty(t, pm.OwnerReferences)
-			assert.NotEmpty(t, pm.Annotations[patch.LastAppliedConfig])
 
 			// Status must be update
 			assert.NotEmpty(t, kb.Status.PhaseName)
@@ -359,7 +343,6 @@ func doUpdateKibanaStep() test.TestStep[*kibanacrd.Kibana] {
 			}
 			assert.NotEmpty(t, s.Data)
 			assert.NotEmpty(t, s.OwnerReferences)
-			assert.NotEmpty(t, s.Annotations[patch.LastAppliedConfig])
 			assert.Equal(t, "fu", s.Labels["test"])
 
 			s = &corev1.Secret{}
@@ -368,7 +351,6 @@ func doUpdateKibanaStep() test.TestStep[*kibanacrd.Kibana] {
 			}
 			assert.NotEmpty(t, s.Data)
 			assert.NotEmpty(t, s.OwnerReferences)
-			assert.NotEmpty(t, s.Annotations[patch.LastAppliedConfig])
 			assert.Equal(t, "fu", s.Labels["test"])
 
 			// Secrets for CA Elasticsearch
@@ -378,7 +360,6 @@ func doUpdateKibanaStep() test.TestStep[*kibanacrd.Kibana] {
 			}
 			assert.NotEmpty(t, s.Data)
 			assert.NotEmpty(t, s.OwnerReferences)
-			assert.NotEmpty(t, s.Annotations[patch.LastAppliedConfig])
 			assert.Equal(t, "fu", s.Labels["test"])
 
 			// Secrets for credentials must exist
@@ -388,7 +369,6 @@ func doUpdateKibanaStep() test.TestStep[*kibanacrd.Kibana] {
 			}
 			assert.NotEmpty(t, s.Data)
 			assert.NotEmpty(t, s.OwnerReferences)
-			assert.NotEmpty(t, s.Annotations[patch.LastAppliedConfig])
 			assert.Equal(t, "fu", s.Labels["test"])
 
 			// Services must exists
@@ -397,7 +377,6 @@ func doUpdateKibanaStep() test.TestStep[*kibanacrd.Kibana] {
 				t.Fatal(err)
 			}
 			assert.NotEmpty(t, svc.OwnerReferences)
-			assert.NotEmpty(t, svc.Annotations[patch.LastAppliedConfig])
 			assert.Equal(t, "fu", svc.Labels["test"])
 
 			// Load balancer must exist
@@ -406,7 +385,6 @@ func doUpdateKibanaStep() test.TestStep[*kibanacrd.Kibana] {
 				t.Fatal(err)
 			}
 			assert.NotEmpty(t, svc.OwnerReferences)
-			assert.NotEmpty(t, svc.Annotations[patch.LastAppliedConfig])
 			assert.Equal(t, "fu", svc.Labels["test"])
 
 			// Ingress must exist
@@ -415,7 +393,6 @@ func doUpdateKibanaStep() test.TestStep[*kibanacrd.Kibana] {
 				t.Fatal(err)
 			}
 			assert.NotEmpty(t, i.OwnerReferences)
-			assert.NotEmpty(t, i.Annotations[patch.LastAppliedConfig])
 			assert.Equal(t, "fu", i.Labels["test"])
 
 			// Route must exist
@@ -424,7 +401,6 @@ func doUpdateKibanaStep() test.TestStep[*kibanacrd.Kibana] {
 				t.Fatal(err)
 			}
 			assert.NotEmpty(t, route.OwnerReferences)
-			assert.NotEmpty(t, route.Annotations[patch.LastAppliedConfig])
 			assert.Equal(t, "fu", route.Labels["test"])
 
 			// Service Account must exist
@@ -434,7 +410,6 @@ func doUpdateKibanaStep() test.TestStep[*kibanacrd.Kibana] {
 			}
 			assert.Equal(t, "fu", serviceAccount.Labels["test"])
 			assert.NotEmpty(t, serviceAccount.OwnerReferences)
-			assert.NotEmpty(t, serviceAccount.Annotations[patch.LastAppliedConfig])
 
 			// roleBinding must exist
 			roleBinding = &rbacv1.RoleBinding{}
@@ -443,7 +418,6 @@ func doUpdateKibanaStep() test.TestStep[*kibanacrd.Kibana] {
 			}
 			assert.Equal(t, "fu", roleBinding.Labels["test"])
 			assert.NotEmpty(t, roleBinding.OwnerReferences)
-			assert.NotEmpty(t, roleBinding.Annotations[patch.LastAppliedConfig])
 
 			// ConfigMaps must exist
 			cm = &corev1.ConfigMap{}
@@ -451,7 +425,6 @@ func doUpdateKibanaStep() test.TestStep[*kibanacrd.Kibana] {
 				t.Fatal(err)
 			}
 			assert.NotEmpty(t, cm.OwnerReferences)
-			assert.NotEmpty(t, cm.Annotations[patch.LastAppliedConfig])
 			assert.Equal(t, "fu", cm.Labels["test"])
 
 			// PDB must exist
@@ -460,7 +433,6 @@ func doUpdateKibanaStep() test.TestStep[*kibanacrd.Kibana] {
 				t.Fatal(err)
 			}
 			assert.NotEmpty(t, pdb.OwnerReferences)
-			assert.NotEmpty(t, pdb.Annotations[patch.LastAppliedConfig])
 			assert.Equal(t, "fu", pdb.Labels["test"])
 
 			// Deployment musts exist
@@ -469,7 +441,6 @@ func doUpdateKibanaStep() test.TestStep[*kibanacrd.Kibana] {
 				t.Fatal(err)
 			}
 			assert.NotEmpty(t, dpl.OwnerReferences)
-			assert.NotEmpty(t, dpl.Annotations[patch.LastAppliedConfig])
 			assert.Equal(t, "fu", dpl.Labels["test"])
 
 			// Network policy exist
@@ -478,7 +449,6 @@ func doUpdateKibanaStep() test.TestStep[*kibanacrd.Kibana] {
 				t.Fatal(err)
 			}
 			assert.NotEmpty(t, np.OwnerReferences)
-			assert.NotEmpty(t, np.Annotations[patch.LastAppliedConfig])
 			assert.Equal(t, "fu", np.Labels["test"])
 
 			// Pod monitor must exist
@@ -487,7 +457,6 @@ func doUpdateKibanaStep() test.TestStep[*kibanacrd.Kibana] {
 				t.Fatal(err)
 			}
 			assert.NotEmpty(t, pm.OwnerReferences)
-			assert.NotEmpty(t, pm.Annotations[patch.LastAppliedConfig])
 
 			// Status must be update
 			assert.NotEmpty(t, kb.Status.PhaseName)

@@ -2,16 +2,11 @@ package elasticsearchapi
 
 import (
 	"context"
-	"crypto/tls"
 	"fmt"
-	"net"
-	"net/http"
-	"time"
 
 	"emperror.dev/errors"
-	eshandler "github.com/disaster37/es-handler/v8"
-	"github.com/elastic/elastic-transport-go/v8/elastictransport"
-	elastic "github.com/elastic/go-elasticsearch/v8"
+	elasticsearch "github.com/disaster37/elasticsearch/v9"
+	eshandler "github.com/disaster37/es-handler/v9"
 	"github.com/sirupsen/logrus"
 	elasticsearchapicrd "github.com/webcenter-fr/elasticsearch-operator/api/elasticsearchapi/v1"
 	"github.com/webcenter-fr/elasticsearch-operator/api/shared"
@@ -28,8 +23,9 @@ func GetElasticsearchHandler(ctx context.Context, o client.Object, esRef shared.
 	var secretNS types.NamespacedName
 	secretName := ""
 	isManaged := false
-	hosts := []string{}
+	addresses := []string{}
 	selfSignedCertificate := false
+	allowInsecureHTTP := false
 	if esRef.IsManaged() {
 		isManaged = true
 
@@ -51,9 +47,10 @@ func GetElasticsearchHandler(ctx context.Context, o client.Object, esRef shared.
 		}
 
 		if !es.Spec.Tls.IsTlsEnabled() {
-			hosts = append(hosts, fmt.Sprintf("http://%s.%s.svc:9200", serviceName, es.Namespace))
+			addresses = append(addresses, fmt.Sprintf("http://%s.%s.svc:9200", serviceName, es.Namespace))
+			allowInsecureHTTP = true
 		} else {
-			hosts = append(hosts, fmt.Sprintf("https://%s.%s.svc:9200", serviceName, es.Namespace))
+			addresses = append(addresses, fmt.Sprintf("https://%s.%s.svc:9200", serviceName, es.Namespace))
 			selfSignedCertificate = true
 		}
 
@@ -67,7 +64,11 @@ func GetElasticsearchHandler(ctx context.Context, o client.Object, esRef shared.
 			return nil, errors.New("You must set the secretRef when you use external Elasticsearch")
 		}
 		secretName = esRef.SecretRef.Name
-		hosts = esRef.ExternalElasticsearchRef.Addresses
+		addresses = esRef.ExternalElasticsearchRef.Addresses
+		// The v9 client rejects credentials over plaintext http:// unless
+		// explicitly allowed. External clusters may legitimately use http, so
+		// preserve the previous behavior by opting in.
+		allowInsecureHTTP = true
 
 		secretNS = types.NamespacedName{
 			Namespace: o.GetNamespace(),
@@ -90,19 +91,11 @@ func GetElasticsearchHandler(ctx context.Context, o client.Object, esRef shared.
 		return nil, err
 	}
 
-	transport := &http.Transport{
-		Proxy:                 http.ProxyFromEnvironment,
-		TLSClientConfig:       &tls.Config{},
-		ResponseHeaderTimeout: 10 * time.Second,
-		DialContext:           (&net.Dialer{Timeout: 10 * time.Second}).DialContext,
-	}
-	cfg := elastic.Config{
-		Transport: transport,
-		Addresses: hosts,
-	}
-
-	if log.Logger.GetLevel() == logrus.DebugLevel {
-		cfg.Logger = &elastictransport.JSONLogger{EnableRequestBody: true, EnableResponseBody: true, Output: log.Logger.Out}
+	cfg := &elasticsearch.Config{
+		Addresses:         addresses,
+		TLSSkipVerify:     selfSignedCertificate,
+		AllowInsecureHTTP: allowInsecureHTTP,
+		Timeout:           common.ESClientTimeout,
 	}
 
 	if isManaged {
@@ -114,10 +107,6 @@ func GetElasticsearchHandler(ctx context.Context, o client.Object, esRef shared.
 		}
 		cfg.Username = string(secret.Data["username"])
 		cfg.Password = string(secret.Data["password"])
-	}
-
-	if selfSignedCertificate {
-		transport.TLSClientConfig.InsecureSkipVerify = true
 	}
 
 	// Create Elasticsearch handler/client

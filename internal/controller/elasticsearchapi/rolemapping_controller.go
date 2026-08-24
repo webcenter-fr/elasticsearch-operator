@@ -16,10 +16,10 @@ package elasticsearchapi
 import (
 	"context"
 
-	eshandler "github.com/disaster37/es-handler/v8"
-	"github.com/disaster37/operator-sdk-extra/v2/pkg/controller"
-	"github.com/disaster37/operator-sdk-extra/v2/pkg/controller/remote"
-	olivere "github.com/olivere/elastic/v7"
+	esapi "github.com/disaster37/elasticsearch/v9/api"
+	eshandler "github.com/disaster37/es-handler/v9"
+	"github.com/disaster37/operator-sdk-extra/v3/pkg/controller"
+	"github.com/disaster37/operator-sdk-extra/v3/pkg/controller/remote"
 	"github.com/sirupsen/logrus"
 	elasticsearchapicrd "github.com/webcenter-fr/elasticsearch-operator/api/elasticsearchapi/v1"
 	"github.com/webcenter-fr/elasticsearch-operator/internal/controller/common"
@@ -37,15 +37,15 @@ const (
 // RoleMappingReconciler reconciles a RoleMapping object
 type RoleMappingReconciler struct {
 	controller.Controller
-	remote.RemoteReconciler[*elasticsearchapicrd.RoleMapping, *olivere.XPackSecurityRoleMapping, eshandler.ElasticsearchHandler]
-	remote.RemoteReconcilerAction[*elasticsearchapicrd.RoleMapping, *olivere.XPackSecurityRoleMapping, eshandler.ElasticsearchHandler]
+	remote.RemoteReconciler[*elasticsearchapicrd.RoleMapping, *esapi.SecurityRoleMapping, eshandler.ElasticsearchHandler]
+	remote.RemoteReconcilerAction[*elasticsearchapicrd.RoleMapping, *esapi.SecurityRoleMapping, eshandler.ElasticsearchHandler]
 	name string
 }
 
 func NewRoleMappingReconciler(client client.Client, logger *logrus.Entry, recorder record.EventRecorder) controller.Controller {
 	return &RoleMappingReconciler{
 		Controller: controller.NewController(),
-		RemoteReconciler: remote.NewRemoteReconciler[*elasticsearchapicrd.RoleMapping, *olivere.XPackSecurityRoleMapping, eshandler.ElasticsearchHandler](
+		RemoteReconciler: remote.NewRemoteReconciler[*elasticsearchapicrd.RoleMapping, *esapi.SecurityRoleMapping, eshandler.ElasticsearchHandler](
 			client,
 			roleMappingName,
 			"rolemapping.elasticsearchapi.k8s.webcenter.fr/finalizer",

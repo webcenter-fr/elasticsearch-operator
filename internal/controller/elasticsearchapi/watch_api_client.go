@@ -1,77 +1,69 @@
 package elasticsearchapi
 
 import (
-	eshandler "github.com/disaster37/es-handler/v8"
+	eshandler "github.com/disaster37/es-handler/v9"
 	"github.com/disaster37/generic-objectmatcher/patch"
-	"github.com/disaster37/operator-sdk-extra/v2/pkg/controller/remote"
-	olivere "github.com/olivere/elastic/v7"
+	"github.com/disaster37/operator-sdk-extra/v3/pkg/controller/remote"
 	elasticsearchapicrd "github.com/webcenter-fr/elasticsearch-operator/api/elasticsearchapi/v1"
 )
 
 type watchApiClient struct {
-	remote.RemoteExternalReconciler[*elasticsearchapicrd.Watch, *olivere.XPackWatch, eshandler.ElasticsearchHandler]
+	remote.RemoteExternalReconciler[*elasticsearchapicrd.Watch, *eshandler.XPackWatch, eshandler.ElasticsearchHandler]
 }
 
-func newWatchApiClient(client eshandler.ElasticsearchHandler) remote.RemoteExternalReconciler[*elasticsearchapicrd.Watch, *olivere.XPackWatch, eshandler.ElasticsearchHandler] {
+func newWatchApiClient(client eshandler.ElasticsearchHandler) remote.RemoteExternalReconciler[*elasticsearchapicrd.Watch, *eshandler.XPackWatch, eshandler.ElasticsearchHandler] {
 	return &watchApiClient{
-		RemoteExternalReconciler: remote.NewRemoteExternalReconciler[*elasticsearchapicrd.Watch, *olivere.XPackWatch, eshandler.ElasticsearchHandler](client),
+		RemoteExternalReconciler: remote.NewRemoteExternalReconciler[*elasticsearchapicrd.Watch, *eshandler.XPackWatch, eshandler.ElasticsearchHandler](client),
 	}
 }
 
-func (h *watchApiClient) Build(o *elasticsearchapicrd.Watch) (watch *olivere.XPackWatch, err error) {
-	watch = &olivere.XPackWatch{
-		ThrottlePeriod:         o.Spec.ThrottlePeriod,
-		ThrottlePeriodInMillis: o.Spec.ThrottlePeriodInMillis,
+func (h *watchApiClient) Build(o *elasticsearchapicrd.Watch) (watch *eshandler.XPackWatch, err error) {
+	w := eshandler.XPackWatch{}
+
+	if o.Spec.ThrottlePeriod != "" {
+		w["throttle_period"] = o.Spec.ThrottlePeriod
+	}
+
+	if o.Spec.ThrottlePeriodInMillis != 0 {
+		w["throttle_period_in_millis"] = o.Spec.ThrottlePeriodInMillis
 	}
 
 	if o.Spec.Trigger != nil {
-		watch.Trigger = map[string]map[string]any{}
-		for key, data := range o.Spec.Trigger.Data {
-			watch.Trigger[key] = data.(map[string]any)
-		}
+		w["trigger"] = o.Spec.Trigger.Data
 	}
 
 	if o.Spec.Input != nil {
-		watch.Input = map[string]map[string]any{}
-		for key, data := range o.Spec.Input.Data {
-			watch.Input[key] = data.(map[string]any)
-		}
+		w["input"] = o.Spec.Input.Data
 	}
 
 	if o.Spec.Condition != nil {
-		watch.Condition = map[string]map[string]any{}
-		for key, data := range o.Spec.Condition.Data {
-			watch.Condition[key] = data.(map[string]any)
-		}
+		w["condition"] = o.Spec.Condition.Data
 	}
 
 	if o.Spec.Transform != nil {
-		watch.Transform = o.Spec.Transform.Data
+		w["transform"] = o.Spec.Transform.Data
 	}
 
 	if o.Spec.Actions != nil {
-		watch.Actions = map[string]map[string]any{}
-		for key, data := range o.Spec.Actions.Data {
-			watch.Actions[key] = data.(map[string]any)
-		}
+		w["actions"] = o.Spec.Actions.Data
 	}
 
 	if o.Spec.Metadata != nil {
-		watch.Metadata = o.Spec.Metadata.Data
+		w["metadata"] = o.Spec.Metadata.Data
 	}
 
-	return watch, nil
+	return &w, nil
 }
 
-func (h *watchApiClient) Get(o *elasticsearchapicrd.Watch) (object *olivere.XPackWatch, err error) {
+func (h *watchApiClient) Get(o *elasticsearchapicrd.Watch) (object *eshandler.XPackWatch, err error) {
 	return h.Client().WatchGet(o.GetExternalName())
 }
 
-func (h *watchApiClient) Create(object *olivere.XPackWatch, o *elasticsearchapicrd.Watch) (err error) {
+func (h *watchApiClient) Create(object *eshandler.XPackWatch, o *elasticsearchapicrd.Watch) (err error) {
 	return h.Client().WatchUpdate(o.GetExternalName(), object)
 }
 
-func (h *watchApiClient) Update(object *olivere.XPackWatch, o *elasticsearchapicrd.Watch) (err error) {
+func (h *watchApiClient) Update(object *eshandler.XPackWatch, o *elasticsearchapicrd.Watch) (err error) {
 	return h.Client().WatchUpdate(o.GetExternalName(), object)
 }
 
@@ -79,6 +71,6 @@ func (h *watchApiClient) Delete(o *elasticsearchapicrd.Watch) (err error) {
 	return h.Client().WatchDelete(o.GetExternalName())
 }
 
-func (h *watchApiClient) Diff(currentOject *olivere.XPackWatch, expectedObject *olivere.XPackWatch, originalObject *olivere.XPackWatch, o *elasticsearchapicrd.Watch, ignoresDiff ...patch.CalculateOption) (patchResult *patch.PatchResult, err error) {
+func (h *watchApiClient) Diff(currentOject *eshandler.XPackWatch, expectedObject *eshandler.XPackWatch, originalObject *eshandler.XPackWatch, o *elasticsearchapicrd.Watch, ignoresDiff ...patch.CalculateOption) (patchResult *patch.PatchResult, err error) {
 	return h.Client().WatchDiff(currentOject, expectedObject, originalObject)
 }

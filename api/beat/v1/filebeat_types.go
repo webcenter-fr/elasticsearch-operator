@@ -17,8 +17,8 @@ limitations under the License.
 package v1
 
 import (
-	"github.com/disaster37/operator-sdk-extra/v2/pkg/apis"
-	"github.com/disaster37/operator-sdk-extra/v2/pkg/apis/multiphase"
+	"github.com/disaster37/operator-sdk-extra/v3/pkg/apis"
+	"github.com/disaster37/operator-sdk-extra/v3/pkg/apis/multiphase"
 	"github.com/webcenter-fr/elasticsearch-operator/api/shared"
 	corev1 "k8s.io/api/core/v1"
 	policyv1 "k8s.io/api/policy/v1"

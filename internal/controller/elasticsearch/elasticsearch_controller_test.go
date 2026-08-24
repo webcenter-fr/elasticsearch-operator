@@ -7,9 +7,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/disaster37/k8s-objectmatcher/patch"
-	"github.com/disaster37/operator-sdk-extra/v2/pkg/helper"
-	"github.com/disaster37/operator-sdk-extra/v2/pkg/test"
+	"github.com/disaster37/operator-sdk-extra/v3/pkg/helper"
+	"github.com/disaster37/operator-sdk-extra/v3/pkg/test"
 	monitoringv1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1"
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
@@ -162,7 +161,6 @@ func doCreateElasticsearchStep() test.TestStep[*elasticsearchcrd.Elasticsearch] 
 			}
 			assert.NotEmpty(t, s.Data)
 			assert.NotEmpty(t, s.OwnerReferences)
-			assert.NotEmpty(t, s.Annotations[patch.LastAppliedConfig])
 
 			s = &corev1.Secret{}
 			if err = c.Get(context.Background(), types.NamespacedName{Namespace: key.Namespace, Name: GetSecretNameForTlsTransport(es)}, s); err != nil {
@@ -170,7 +168,6 @@ func doCreateElasticsearchStep() test.TestStep[*elasticsearchcrd.Elasticsearch] 
 			}
 			assert.NotEmpty(t, s.Data)
 			assert.NotEmpty(t, s.OwnerReferences)
-			assert.NotEmpty(t, s.Annotations[patch.LastAppliedConfig])
 
 			// Secrets for API PKI and certificates must exist
 			s = &corev1.Secret{}
@@ -179,7 +176,6 @@ func doCreateElasticsearchStep() test.TestStep[*elasticsearchcrd.Elasticsearch] 
 			}
 			assert.NotEmpty(t, s.Data)
 			assert.NotEmpty(t, s.OwnerReferences)
-			assert.NotEmpty(t, s.Annotations[patch.LastAppliedConfig])
 
 			s = &corev1.Secret{}
 			if err = c.Get(context.Background(), types.NamespacedName{Namespace: key.Namespace, Name: GetSecretNameForTlsApi(es)}, s); err != nil {
@@ -187,7 +183,6 @@ func doCreateElasticsearchStep() test.TestStep[*elasticsearchcrd.Elasticsearch] 
 			}
 			assert.NotEmpty(t, s.Data)
 			assert.NotEmpty(t, s.OwnerReferences)
-			assert.NotEmpty(t, s.Annotations[patch.LastAppliedConfig])
 
 			// Secrets for internal credentials must exist
 			s = &corev1.Secret{}
@@ -196,7 +191,6 @@ func doCreateElasticsearchStep() test.TestStep[*elasticsearchcrd.Elasticsearch] 
 			}
 			assert.NotEmpty(t, s.Data)
 			assert.NotEmpty(t, s.OwnerReferences)
-			assert.NotEmpty(t, s.Annotations[patch.LastAppliedConfig])
 
 			// Services must exists
 			svc = &corev1.Service{}
@@ -204,7 +198,6 @@ func doCreateElasticsearchStep() test.TestStep[*elasticsearchcrd.Elasticsearch] 
 				t.Fatal(err)
 			}
 			assert.NotEmpty(t, svc.OwnerReferences)
-			assert.NotEmpty(t, svc.Annotations[patch.LastAppliedConfig])
 
 			for _, nodeGroup := range es.Spec.NodeGroups {
 				svc = &corev1.Service{}
@@ -212,14 +205,12 @@ func doCreateElasticsearchStep() test.TestStep[*elasticsearchcrd.Elasticsearch] 
 					t.Fatal(err)
 				}
 				assert.NotEmpty(t, svc.OwnerReferences)
-				assert.NotEmpty(t, svc.Annotations[patch.LastAppliedConfig])
 
 				svc = &corev1.Service{}
 				if err = c.Get(context.Background(), types.NamespacedName{Namespace: key.Namespace, Name: GetNodeGroupServiceNameHeadless(es, nodeGroup.Name)}, svc); err != nil {
 					t.Fatal(err)
 				}
 				assert.NotEmpty(t, svc.OwnerReferences)
-				assert.NotEmpty(t, svc.Annotations[patch.LastAppliedConfig])
 			}
 
 			// Load balancer must exist
@@ -228,7 +219,6 @@ func doCreateElasticsearchStep() test.TestStep[*elasticsearchcrd.Elasticsearch] 
 				t.Fatal(err)
 			}
 			assert.NotEmpty(t, svc.OwnerReferences)
-			assert.NotEmpty(t, svc.Annotations[patch.LastAppliedConfig])
 
 			// Ingress must exist
 			i = &networkingv1.Ingress{}
@@ -236,7 +226,6 @@ func doCreateElasticsearchStep() test.TestStep[*elasticsearchcrd.Elasticsearch] 
 				t.Fatal(err)
 			}
 			assert.NotEmpty(t, i.OwnerReferences)
-			assert.NotEmpty(t, i.Annotations[patch.LastAppliedConfig])
 
 			// ConfigMaps must exist
 			for _, nodeGroup := range es.Spec.NodeGroups {
@@ -245,7 +234,6 @@ func doCreateElasticsearchStep() test.TestStep[*elasticsearchcrd.Elasticsearch] 
 					t.Fatal(err)
 				}
 				assert.NotEmpty(t, cm.OwnerReferences)
-				assert.NotEmpty(t, cm.Annotations[patch.LastAppliedConfig])
 			}
 
 			// PDB must exist
@@ -255,7 +243,6 @@ func doCreateElasticsearchStep() test.TestStep[*elasticsearchcrd.Elasticsearch] 
 					t.Fatal(err)
 				}
 				assert.NotEmpty(t, pdb.OwnerReferences)
-				assert.NotEmpty(t, pdb.Annotations[patch.LastAppliedConfig])
 			}
 
 			// Network policy must exist
@@ -264,7 +251,6 @@ func doCreateElasticsearchStep() test.TestStep[*elasticsearchcrd.Elasticsearch] 
 				t.Fatal(err)
 			}
 			assert.NotEmpty(t, np.OwnerReferences)
-			assert.NotEmpty(t, np.Annotations[patch.LastAppliedConfig])
 
 			// Statefulset musts exist
 			for _, nodeGroup := range es.Spec.NodeGroups {
@@ -273,7 +259,6 @@ func doCreateElasticsearchStep() test.TestStep[*elasticsearchcrd.Elasticsearch] 
 					t.Fatal(err)
 				}
 				assert.NotEmpty(t, sts.OwnerReferences)
-				assert.NotEmpty(t, sts.Annotations[patch.LastAppliedConfig])
 			}
 
 			// Users musts exist
@@ -290,7 +275,6 @@ func doCreateElasticsearchStep() test.TestStep[*elasticsearchcrd.Elasticsearch] 
 					t.Fatal(err)
 				}
 				assert.NotEmpty(t, user.OwnerReferences)
-				assert.NotEmpty(t, user.Annotations[patch.LastAppliedConfig])
 			}
 
 			// Exporter must exist
@@ -299,7 +283,6 @@ func doCreateElasticsearchStep() test.TestStep[*elasticsearchcrd.Elasticsearch] 
 				t.Fatal(err)
 			}
 			assert.NotEmpty(t, dpl.OwnerReferences)
-			assert.NotEmpty(t, dpl.Annotations[patch.LastAppliedConfig])
 
 			// Pod monitor must exist
 			pm = &monitoringv1.PodMonitor{}
@@ -307,7 +290,6 @@ func doCreateElasticsearchStep() test.TestStep[*elasticsearchcrd.Elasticsearch] 
 				t.Fatal(err)
 			}
 			assert.NotEmpty(t, pm.OwnerReferences)
-			assert.NotEmpty(t, pm.Annotations[patch.LastAppliedConfig])
 
 			// Metricbeat must exist
 			metricbeat = &beatcrd.Metricbeat{}
@@ -315,7 +297,6 @@ func doCreateElasticsearchStep() test.TestStep[*elasticsearchcrd.Elasticsearch] 
 				t.Fatal(err)
 			}
 			assert.NotEmpty(t, metricbeat.OwnerReferences)
-			assert.NotEmpty(t, metricbeat.Annotations[patch.LastAppliedConfig])
 
 			// Status must be update
 			assert.NotEmpty(t, es.Status.Health)
@@ -398,7 +379,6 @@ func doUpdateElasticsearchStep() test.TestStep[*elasticsearchcrd.Elasticsearch] 
 			assert.Equal(t, "fu", s.Labels["test"])
 			assert.NotEmpty(t, s.Data)
 			assert.NotEmpty(t, s.OwnerReferences)
-			assert.NotEmpty(t, s.Annotations[patch.LastAppliedConfig])
 
 			s = &corev1.Secret{}
 			if err = c.Get(context.Background(), types.NamespacedName{Namespace: key.Namespace, Name: GetSecretNameForTlsTransport(es)}, s); err != nil {
@@ -407,7 +387,6 @@ func doUpdateElasticsearchStep() test.TestStep[*elasticsearchcrd.Elasticsearch] 
 			assert.Equal(t, "fu", s.Labels["test"])
 			assert.NotEmpty(t, s.Data)
 			assert.NotEmpty(t, s.OwnerReferences)
-			assert.NotEmpty(t, s.Annotations[patch.LastAppliedConfig])
 
 			// Secrets for API PKI and certificates must exist
 			s = &corev1.Secret{}
@@ -417,7 +396,6 @@ func doUpdateElasticsearchStep() test.TestStep[*elasticsearchcrd.Elasticsearch] 
 			assert.Equal(t, "fu", s.Labels["test"])
 			assert.NotEmpty(t, s.Data)
 			assert.NotEmpty(t, s.OwnerReferences)
-			assert.NotEmpty(t, s.Annotations[patch.LastAppliedConfig])
 
 			s = &corev1.Secret{}
 			if err = c.Get(context.Background(), types.NamespacedName{Namespace: key.Namespace, Name: GetSecretNameForTlsApi(es)}, s); err != nil {
@@ -426,7 +404,6 @@ func doUpdateElasticsearchStep() test.TestStep[*elasticsearchcrd.Elasticsearch] 
 			assert.Equal(t, "fu", s.Labels["test"])
 			assert.NotEmpty(t, s.Data)
 			assert.NotEmpty(t, s.OwnerReferences)
-			assert.NotEmpty(t, s.Annotations[patch.LastAppliedConfig])
 
 			// Secrets for internal credentials must exist
 			s = &corev1.Secret{}
@@ -436,7 +413,6 @@ func doUpdateElasticsearchStep() test.TestStep[*elasticsearchcrd.Elasticsearch] 
 			assert.Equal(t, "fu", s.Labels["test"])
 			assert.NotEmpty(t, s.Data)
 			assert.NotEmpty(t, s.OwnerReferences)
-			assert.NotEmpty(t, s.Annotations[patch.LastAppliedConfig])
 
 			// Services must exists
 			svc = &corev1.Service{}
@@ -445,7 +421,6 @@ func doUpdateElasticsearchStep() test.TestStep[*elasticsearchcrd.Elasticsearch] 
 			}
 			assert.Equal(t, "fu", svc.Labels["test"])
 			assert.NotEmpty(t, svc.OwnerReferences)
-			assert.NotEmpty(t, svc.Annotations[patch.LastAppliedConfig])
 
 			for _, nodeGroup := range es.Spec.NodeGroups {
 				svc = &corev1.Service{}
@@ -454,7 +429,6 @@ func doUpdateElasticsearchStep() test.TestStep[*elasticsearchcrd.Elasticsearch] 
 				}
 				assert.Equal(t, "fu", svc.Labels["test"])
 				assert.NotEmpty(t, svc.OwnerReferences)
-				assert.NotEmpty(t, svc.Annotations[patch.LastAppliedConfig])
 
 				svc = &corev1.Service{}
 				if err = c.Get(context.Background(), types.NamespacedName{Namespace: key.Namespace, Name: GetNodeGroupServiceNameHeadless(es, nodeGroup.Name)}, svc); err != nil {
@@ -462,7 +436,6 @@ func doUpdateElasticsearchStep() test.TestStep[*elasticsearchcrd.Elasticsearch] 
 				}
 				assert.Equal(t, "fu", svc.Labels["test"])
 				assert.NotEmpty(t, svc.OwnerReferences)
-				assert.NotEmpty(t, svc.Annotations[patch.LastAppliedConfig])
 			}
 
 			// Load balancer must exist
@@ -472,7 +445,6 @@ func doUpdateElasticsearchStep() test.TestStep[*elasticsearchcrd.Elasticsearch] 
 			}
 			assert.Equal(t, "fu", svc.Labels["test"])
 			assert.NotEmpty(t, svc.OwnerReferences)
-			assert.NotEmpty(t, svc.Annotations[patch.LastAppliedConfig])
 
 			// Ingress must exist
 			i = &networkingv1.Ingress{}
@@ -481,7 +453,6 @@ func doUpdateElasticsearchStep() test.TestStep[*elasticsearchcrd.Elasticsearch] 
 			}
 			assert.Equal(t, "fu", i.Labels["test"])
 			assert.NotEmpty(t, i.OwnerReferences)
-			assert.NotEmpty(t, i.Annotations[patch.LastAppliedConfig])
 
 			// ConfigMaps must exist
 			for _, nodeGroup := range es.Spec.NodeGroups {
@@ -491,7 +462,6 @@ func doUpdateElasticsearchStep() test.TestStep[*elasticsearchcrd.Elasticsearch] 
 				}
 				assert.Equal(t, "fu", cm.Labels["test"])
 				assert.NotEmpty(t, cm.OwnerReferences)
-				assert.NotEmpty(t, cm.Annotations[patch.LastAppliedConfig])
 			}
 
 			// PDB must exist
@@ -502,7 +472,6 @@ func doUpdateElasticsearchStep() test.TestStep[*elasticsearchcrd.Elasticsearch] 
 				}
 				assert.Equal(t, "fu", pdb.Labels["test"])
 				assert.NotEmpty(t, pdb.OwnerReferences)
-				assert.NotEmpty(t, pdb.Annotations[patch.LastAppliedConfig])
 			}
 
 			// Network policy must exist
@@ -512,7 +481,6 @@ func doUpdateElasticsearchStep() test.TestStep[*elasticsearchcrd.Elasticsearch] 
 			}
 			assert.Equal(t, "fu", np.Labels["test"])
 			assert.NotEmpty(t, np.OwnerReferences)
-			assert.NotEmpty(t, np.Annotations[patch.LastAppliedConfig])
 
 			// Statefulset musts exist
 			for _, nodeGroup := range es.Spec.NodeGroups {
@@ -522,7 +490,6 @@ func doUpdateElasticsearchStep() test.TestStep[*elasticsearchcrd.Elasticsearch] 
 				}
 				assert.Equal(t, "fu", sts.Labels["test"])
 				assert.NotEmpty(t, sts.OwnerReferences)
-				assert.NotEmpty(t, sts.Annotations[patch.LastAppliedConfig])
 			}
 
 			// Users musts exist
@@ -540,7 +507,6 @@ func doUpdateElasticsearchStep() test.TestStep[*elasticsearchcrd.Elasticsearch] 
 				}
 				assert.Equal(t, "fu", user.Labels["test"])
 				assert.NotEmpty(t, user.OwnerReferences)
-				assert.NotEmpty(t, user.Annotations[patch.LastAppliedConfig])
 			}
 
 			// Exporter must exist
@@ -550,7 +516,6 @@ func doUpdateElasticsearchStep() test.TestStep[*elasticsearchcrd.Elasticsearch] 
 			}
 			assert.Equal(t, "fu", dpl.Labels["test"])
 			assert.NotEmpty(t, dpl.OwnerReferences)
-			assert.NotEmpty(t, dpl.Annotations[patch.LastAppliedConfig])
 
 			// Pod monitor must exist
 			pm = &monitoringv1.PodMonitor{}
@@ -558,7 +523,6 @@ func doUpdateElasticsearchStep() test.TestStep[*elasticsearchcrd.Elasticsearch] 
 				t.Fatal(err)
 			}
 			assert.NotEmpty(t, pm.OwnerReferences)
-			assert.NotEmpty(t, pm.Annotations[patch.LastAppliedConfig])
 			assert.Equal(t, "fu", pm.Labels["test"])
 
 			// Metricbeat must exist
@@ -567,7 +531,6 @@ func doUpdateElasticsearchStep() test.TestStep[*elasticsearchcrd.Elasticsearch] 
 				t.Fatal(err)
 			}
 			assert.NotEmpty(t, metricbeat.OwnerReferences)
-			assert.NotEmpty(t, metricbeat.Annotations[patch.LastAppliedConfig])
 			assert.Equal(t, "fu", metricbeat.Labels["test"])
 
 			// Status must be update
@@ -652,7 +615,6 @@ func doUpdateElasticsearchIncreaseNodeGroupStep() test.TestStep[*elasticsearchcr
 			}
 			assert.NotEmpty(t, s.Data)
 			assert.NotEmpty(t, s.OwnerReferences)
-			assert.NotEmpty(t, s.Annotations[patch.LastAppliedConfig])
 
 			s = &corev1.Secret{}
 			if err = c.Get(context.Background(), types.NamespacedName{Namespace: key.Namespace, Name: GetSecretNameForTlsTransport(es)}, s); err != nil {
@@ -660,7 +622,6 @@ func doUpdateElasticsearchIncreaseNodeGroupStep() test.TestStep[*elasticsearchcr
 			}
 			assert.NotEmpty(t, s.Data)
 			assert.NotEmpty(t, s.OwnerReferences)
-			assert.NotEmpty(t, s.Annotations[patch.LastAppliedConfig])
 
 			// Secrets for API PKI and certificates must exist
 			s = &corev1.Secret{}
@@ -669,7 +630,6 @@ func doUpdateElasticsearchIncreaseNodeGroupStep() test.TestStep[*elasticsearchcr
 			}
 			assert.NotEmpty(t, s.Data)
 			assert.NotEmpty(t, s.OwnerReferences)
-			assert.NotEmpty(t, s.Annotations[patch.LastAppliedConfig])
 
 			s = &corev1.Secret{}
 			if err = c.Get(context.Background(), types.NamespacedName{Namespace: key.Namespace, Name: GetSecretNameForTlsApi(es)}, s); err != nil {
@@ -677,7 +637,6 @@ func doUpdateElasticsearchIncreaseNodeGroupStep() test.TestStep[*elasticsearchcr
 			}
 			assert.NotEmpty(t, s.Data)
 			assert.NotEmpty(t, s.OwnerReferences)
-			assert.NotEmpty(t, s.Annotations[patch.LastAppliedConfig])
 
 			// Secrets for internal credentials must exist
 			s = &corev1.Secret{}
@@ -686,7 +645,6 @@ func doUpdateElasticsearchIncreaseNodeGroupStep() test.TestStep[*elasticsearchcr
 			}
 			assert.NotEmpty(t, s.Data)
 			assert.NotEmpty(t, s.OwnerReferences)
-			assert.NotEmpty(t, s.Annotations[patch.LastAppliedConfig])
 
 			// Services must exists
 			svc = &corev1.Service{}
@@ -694,7 +652,6 @@ func doUpdateElasticsearchIncreaseNodeGroupStep() test.TestStep[*elasticsearchcr
 				t.Fatal(err)
 			}
 			assert.NotEmpty(t, svc.OwnerReferences)
-			assert.NotEmpty(t, svc.Annotations[patch.LastAppliedConfig])
 
 			for _, nodeGroup := range es.Spec.NodeGroups {
 				svc = &corev1.Service{}
@@ -702,14 +659,12 @@ func doUpdateElasticsearchIncreaseNodeGroupStep() test.TestStep[*elasticsearchcr
 					t.Fatal(err)
 				}
 				assert.NotEmpty(t, svc.OwnerReferences)
-				assert.NotEmpty(t, svc.Annotations[patch.LastAppliedConfig])
 
 				svc = &corev1.Service{}
 				if err = c.Get(context.Background(), types.NamespacedName{Namespace: key.Namespace, Name: GetNodeGroupServiceNameHeadless(es, nodeGroup.Name)}, svc); err != nil {
 					t.Fatal(err)
 				}
 				assert.NotEmpty(t, svc.OwnerReferences)
-				assert.NotEmpty(t, svc.Annotations[patch.LastAppliedConfig])
 			}
 
 			// Load balancer must exist
@@ -718,7 +673,6 @@ func doUpdateElasticsearchIncreaseNodeGroupStep() test.TestStep[*elasticsearchcr
 				t.Fatal(err)
 			}
 			assert.NotEmpty(t, svc.OwnerReferences)
-			assert.NotEmpty(t, svc.Annotations[patch.LastAppliedConfig])
 
 			// Ingress must exist
 			i = &networkingv1.Ingress{}
@@ -726,7 +680,6 @@ func doUpdateElasticsearchIncreaseNodeGroupStep() test.TestStep[*elasticsearchcr
 				t.Fatal(err)
 			}
 			assert.NotEmpty(t, i.OwnerReferences)
-			assert.NotEmpty(t, i.Annotations[patch.LastAppliedConfig])
 
 			// ConfigMaps must exist
 			for _, nodeGroup := range es.Spec.NodeGroups {
@@ -735,7 +688,6 @@ func doUpdateElasticsearchIncreaseNodeGroupStep() test.TestStep[*elasticsearchcr
 					t.Fatal(err)
 				}
 				assert.NotEmpty(t, cm.OwnerReferences)
-				assert.NotEmpty(t, cm.Annotations[patch.LastAppliedConfig])
 			}
 
 			// PDB must exist
@@ -745,7 +697,6 @@ func doUpdateElasticsearchIncreaseNodeGroupStep() test.TestStep[*elasticsearchcr
 					t.Fatal(err)
 				}
 				assert.NotEmpty(t, pdb.OwnerReferences)
-				assert.NotEmpty(t, pdb.Annotations[patch.LastAppliedConfig])
 			}
 
 			// Network policy must exist
@@ -754,7 +705,6 @@ func doUpdateElasticsearchIncreaseNodeGroupStep() test.TestStep[*elasticsearchcr
 				t.Fatal(err)
 			}
 			assert.NotEmpty(t, np.OwnerReferences)
-			assert.NotEmpty(t, np.Annotations[patch.LastAppliedConfig])
 
 			// Statefulset musts exist
 			for _, nodeGroup := range es.Spec.NodeGroups {
@@ -763,7 +713,6 @@ func doUpdateElasticsearchIncreaseNodeGroupStep() test.TestStep[*elasticsearchcr
 					t.Fatal(err)
 				}
 				assert.NotEmpty(t, sts.OwnerReferences)
-				assert.NotEmpty(t, sts.Annotations[patch.LastAppliedConfig])
 			}
 
 			// Users musts exist
@@ -780,7 +729,6 @@ func doUpdateElasticsearchIncreaseNodeGroupStep() test.TestStep[*elasticsearchcr
 					t.Fatal(err)
 				}
 				assert.NotEmpty(t, user.OwnerReferences)
-				assert.NotEmpty(t, user.Annotations[patch.LastAppliedConfig])
 			}
 
 			// Exporter must exist
@@ -789,7 +737,6 @@ func doUpdateElasticsearchIncreaseNodeGroupStep() test.TestStep[*elasticsearchcr
 				t.Fatal(err)
 			}
 			assert.NotEmpty(t, dpl.OwnerReferences)
-			assert.NotEmpty(t, dpl.Annotations[patch.LastAppliedConfig])
 
 			// Pod monitor must exist
 			pm = &monitoringv1.PodMonitor{}
@@ -797,7 +744,6 @@ func doUpdateElasticsearchIncreaseNodeGroupStep() test.TestStep[*elasticsearchcr
 				t.Fatal(err)
 			}
 			assert.NotEmpty(t, pm.OwnerReferences)
-			assert.NotEmpty(t, pm.Annotations[patch.LastAppliedConfig])
 
 			// Metricbeat must exist
 			metricbeat = &beatcrd.Metricbeat{}
@@ -805,7 +751,6 @@ func doUpdateElasticsearchIncreaseNodeGroupStep() test.TestStep[*elasticsearchcr
 				t.Fatal(err)
 			}
 			assert.NotEmpty(t, metricbeat.OwnerReferences)
-			assert.NotEmpty(t, metricbeat.Annotations[patch.LastAppliedConfig])
 
 			// Status must be update
 			assert.NotEmpty(t, es.Status.Health)
@@ -885,7 +830,6 @@ func doUpdateElasticsearchDecreaseNodeGroupStep() test.TestStep[*elasticsearchcr
 			}
 			assert.NotEmpty(t, s.Data)
 			assert.NotEmpty(t, s.OwnerReferences)
-			assert.NotEmpty(t, s.Annotations[patch.LastAppliedConfig])
 
 			s = &corev1.Secret{}
 			if err = c.Get(context.Background(), types.NamespacedName{Namespace: key.Namespace, Name: GetSecretNameForTlsTransport(es)}, s); err != nil {
@@ -893,7 +837,6 @@ func doUpdateElasticsearchDecreaseNodeGroupStep() test.TestStep[*elasticsearchcr
 			}
 			assert.NotEmpty(t, s.Data)
 			assert.NotEmpty(t, s.OwnerReferences)
-			assert.NotEmpty(t, s.Annotations[patch.LastAppliedConfig])
 			for _, nodeGroup := range oldES.Spec.NodeGroups {
 				for _, nodeName := range GetNodeGroupNodeNames(oldES, nodeGroup.Name) {
 					if nodeGroup.Name == "data" {
@@ -913,7 +856,6 @@ func doUpdateElasticsearchDecreaseNodeGroupStep() test.TestStep[*elasticsearchcr
 			}
 			assert.NotEmpty(t, s.Data)
 			assert.NotEmpty(t, s.OwnerReferences)
-			assert.NotEmpty(t, s.Annotations[patch.LastAppliedConfig])
 
 			s = &corev1.Secret{}
 			if err = c.Get(context.Background(), types.NamespacedName{Namespace: key.Namespace, Name: GetSecretNameForTlsApi(es)}, s); err != nil {
@@ -921,7 +863,6 @@ func doUpdateElasticsearchDecreaseNodeGroupStep() test.TestStep[*elasticsearchcr
 			}
 			assert.NotEmpty(t, s.Data)
 			assert.NotEmpty(t, s.OwnerReferences)
-			assert.NotEmpty(t, s.Annotations[patch.LastAppliedConfig])
 
 			// Secrets for internal credentials must exist
 			s = &corev1.Secret{}
@@ -930,7 +871,6 @@ func doUpdateElasticsearchDecreaseNodeGroupStep() test.TestStep[*elasticsearchcr
 			}
 			assert.NotEmpty(t, s.Data)
 			assert.NotEmpty(t, s.OwnerReferences)
-			assert.NotEmpty(t, s.Annotations[patch.LastAppliedConfig])
 
 			// Services must exists
 			svc = &corev1.Service{}
@@ -938,7 +878,6 @@ func doUpdateElasticsearchDecreaseNodeGroupStep() test.TestStep[*elasticsearchcr
 				t.Fatal(err)
 			}
 			assert.NotEmpty(t, svc.OwnerReferences)
-			assert.NotEmpty(t, svc.Annotations[patch.LastAppliedConfig])
 
 			for _, nodeGroup := range oldES.Spec.NodeGroups {
 				if nodeGroup.Name == "data" {
@@ -961,14 +900,12 @@ func doUpdateElasticsearchDecreaseNodeGroupStep() test.TestStep[*elasticsearchcr
 						t.Fatal(err)
 					}
 					assert.NotEmpty(t, svc.OwnerReferences)
-					assert.NotEmpty(t, svc.Annotations[patch.LastAppliedConfig])
 
 					svc = &corev1.Service{}
 					if err = c.Get(context.Background(), types.NamespacedName{Namespace: key.Namespace, Name: GetNodeGroupServiceNameHeadless(es, nodeGroup.Name)}, svc); err != nil {
 						t.Fatal(err)
 					}
 					assert.NotEmpty(t, svc.OwnerReferences)
-					assert.NotEmpty(t, svc.Annotations[patch.LastAppliedConfig])
 				}
 			}
 
@@ -978,7 +915,6 @@ func doUpdateElasticsearchDecreaseNodeGroupStep() test.TestStep[*elasticsearchcr
 				t.Fatal(err)
 			}
 			assert.NotEmpty(t, svc.OwnerReferences)
-			assert.NotEmpty(t, svc.Annotations[patch.LastAppliedConfig])
 
 			// Ingress must exist
 			i = &networkingv1.Ingress{}
@@ -986,7 +922,6 @@ func doUpdateElasticsearchDecreaseNodeGroupStep() test.TestStep[*elasticsearchcr
 				t.Fatal(err)
 			}
 			assert.NotEmpty(t, i.OwnerReferences)
-			assert.NotEmpty(t, i.Annotations[patch.LastAppliedConfig])
 
 			// ConfigMaps must exist
 			for _, nodeGroup := range es.Spec.NodeGroups {
@@ -1003,7 +938,6 @@ func doUpdateElasticsearchDecreaseNodeGroupStep() test.TestStep[*elasticsearchcr
 						t.Fatal(err)
 					}
 					assert.NotEmpty(t, cm.OwnerReferences)
-					assert.NotEmpty(t, cm.Annotations[patch.LastAppliedConfig])
 				}
 			}
 
@@ -1022,7 +956,6 @@ func doUpdateElasticsearchDecreaseNodeGroupStep() test.TestStep[*elasticsearchcr
 						t.Fatal(err)
 					}
 					assert.NotEmpty(t, pdb.OwnerReferences)
-					assert.NotEmpty(t, pdb.Annotations[patch.LastAppliedConfig])
 				}
 			}
 
@@ -1032,7 +965,6 @@ func doUpdateElasticsearchDecreaseNodeGroupStep() test.TestStep[*elasticsearchcr
 				t.Fatal(err)
 			}
 			assert.NotEmpty(t, np.OwnerReferences)
-			assert.NotEmpty(t, np.Annotations[patch.LastAppliedConfig])
 
 			// Statefulset musts exist
 			for _, nodeGroup := range es.Spec.NodeGroups {
@@ -1049,7 +981,6 @@ func doUpdateElasticsearchDecreaseNodeGroupStep() test.TestStep[*elasticsearchcr
 						t.Fatal(err)
 					}
 					assert.NotEmpty(t, sts.OwnerReferences)
-					assert.NotEmpty(t, sts.Annotations[patch.LastAppliedConfig])
 				}
 			}
 
@@ -1068,7 +999,6 @@ func doUpdateElasticsearchDecreaseNodeGroupStep() test.TestStep[*elasticsearchcr
 				}
 				assert.Equal(t, "fu", user.Labels["test"])
 				assert.NotEmpty(t, user.OwnerReferences)
-				assert.NotEmpty(t, user.Annotations[patch.LastAppliedConfig])
 			}
 
 			// Exporter must exist
@@ -1077,7 +1007,6 @@ func doUpdateElasticsearchDecreaseNodeGroupStep() test.TestStep[*elasticsearchcr
 				t.Fatal(err)
 			}
 			assert.NotEmpty(t, dpl.OwnerReferences)
-			assert.NotEmpty(t, dpl.Annotations[patch.LastAppliedConfig])
 
 			// Pod monitor must exist
 			pm = &monitoringv1.PodMonitor{}
@@ -1085,7 +1014,6 @@ func doUpdateElasticsearchDecreaseNodeGroupStep() test.TestStep[*elasticsearchcr
 				t.Fatal(err)
 			}
 			assert.NotEmpty(t, pm.OwnerReferences)
-			assert.NotEmpty(t, pm.Annotations[patch.LastAppliedConfig])
 
 			// Metricbeat must exist
 			metricbeat = &beatcrd.Metricbeat{}
@@ -1093,7 +1021,6 @@ func doUpdateElasticsearchDecreaseNodeGroupStep() test.TestStep[*elasticsearchcr
 				t.Fatal(err)
 			}
 			assert.NotEmpty(t, metricbeat.OwnerReferences)
-			assert.NotEmpty(t, metricbeat.Annotations[patch.LastAppliedConfig])
 
 			// Status must be update
 			assert.NotEmpty(t, es.Status.Health)
@@ -1188,7 +1115,6 @@ func doUpdateElasticsearchAddLicenseStep() test.TestStep[*elasticsearchcrd.Elast
 			}
 			assert.NotEmpty(t, s.Data)
 			assert.NotEmpty(t, s.OwnerReferences)
-			assert.NotEmpty(t, s.Annotations[patch.LastAppliedConfig])
 
 			s = &corev1.Secret{}
 			if err = c.Get(context.Background(), types.NamespacedName{Namespace: key.Namespace, Name: GetSecretNameForTlsTransport(es)}, s); err != nil {
@@ -1196,7 +1122,6 @@ func doUpdateElasticsearchAddLicenseStep() test.TestStep[*elasticsearchcrd.Elast
 			}
 			assert.NotEmpty(t, s.Data)
 			assert.NotEmpty(t, s.OwnerReferences)
-			assert.NotEmpty(t, s.Annotations[patch.LastAppliedConfig])
 			for _, nodeGroup := range oldES.Spec.NodeGroups {
 				for _, nodeName := range GetNodeGroupNodeNames(oldES, nodeGroup.Name) {
 					if nodeGroup.Name == "data" {
@@ -1216,7 +1141,6 @@ func doUpdateElasticsearchAddLicenseStep() test.TestStep[*elasticsearchcrd.Elast
 			}
 			assert.NotEmpty(t, s.Data)
 			assert.NotEmpty(t, s.OwnerReferences)
-			assert.NotEmpty(t, s.Annotations[patch.LastAppliedConfig])
 
 			s = &corev1.Secret{}
 			if err = c.Get(context.Background(), types.NamespacedName{Namespace: key.Namespace, Name: GetSecretNameForTlsApi(es)}, s); err != nil {
@@ -1224,7 +1148,6 @@ func doUpdateElasticsearchAddLicenseStep() test.TestStep[*elasticsearchcrd.Elast
 			}
 			assert.NotEmpty(t, s.Data)
 			assert.NotEmpty(t, s.OwnerReferences)
-			assert.NotEmpty(t, s.Annotations[patch.LastAppliedConfig])
 
 			// Secrets for internal credentials must exist
 			s = &corev1.Secret{}
@@ -1233,7 +1156,6 @@ func doUpdateElasticsearchAddLicenseStep() test.TestStep[*elasticsearchcrd.Elast
 			}
 			assert.NotEmpty(t, s.Data)
 			assert.NotEmpty(t, s.OwnerReferences)
-			assert.NotEmpty(t, s.Annotations[patch.LastAppliedConfig])
 
 			// Services must exists
 			svc = &corev1.Service{}
@@ -1241,7 +1163,6 @@ func doUpdateElasticsearchAddLicenseStep() test.TestStep[*elasticsearchcrd.Elast
 				t.Fatal(err)
 			}
 			assert.NotEmpty(t, svc.OwnerReferences)
-			assert.NotEmpty(t, svc.Annotations[patch.LastAppliedConfig])
 
 			for _, nodeGroup := range oldES.Spec.NodeGroups {
 				if nodeGroup.Name == "data" {
@@ -1264,14 +1185,12 @@ func doUpdateElasticsearchAddLicenseStep() test.TestStep[*elasticsearchcrd.Elast
 						t.Fatal(err)
 					}
 					assert.NotEmpty(t, svc.OwnerReferences)
-					assert.NotEmpty(t, svc.Annotations[patch.LastAppliedConfig])
 
 					svc = &corev1.Service{}
 					if err = c.Get(context.Background(), types.NamespacedName{Namespace: key.Namespace, Name: GetNodeGroupServiceNameHeadless(es, nodeGroup.Name)}, svc); err != nil {
 						t.Fatal(err)
 					}
 					assert.NotEmpty(t, svc.OwnerReferences)
-					assert.NotEmpty(t, svc.Annotations[patch.LastAppliedConfig])
 				}
 			}
 
@@ -1281,7 +1200,6 @@ func doUpdateElasticsearchAddLicenseStep() test.TestStep[*elasticsearchcrd.Elast
 				t.Fatal(err)
 			}
 			assert.NotEmpty(t, svc.OwnerReferences)
-			assert.NotEmpty(t, svc.Annotations[patch.LastAppliedConfig])
 
 			// Ingress must exist
 			i = &networkingv1.Ingress{}
@@ -1289,7 +1207,6 @@ func doUpdateElasticsearchAddLicenseStep() test.TestStep[*elasticsearchcrd.Elast
 				t.Fatal(err)
 			}
 			assert.NotEmpty(t, i.OwnerReferences)
-			assert.NotEmpty(t, i.Annotations[patch.LastAppliedConfig])
 
 			// ConfigMaps must exist
 			for _, nodeGroup := range es.Spec.NodeGroups {
@@ -1306,7 +1223,6 @@ func doUpdateElasticsearchAddLicenseStep() test.TestStep[*elasticsearchcrd.Elast
 						t.Fatal(err)
 					}
 					assert.NotEmpty(t, cm.OwnerReferences)
-					assert.NotEmpty(t, cm.Annotations[patch.LastAppliedConfig])
 				}
 			}
 
@@ -1325,7 +1241,6 @@ func doUpdateElasticsearchAddLicenseStep() test.TestStep[*elasticsearchcrd.Elast
 						t.Fatal(err)
 					}
 					assert.NotEmpty(t, pdb.OwnerReferences)
-					assert.NotEmpty(t, pdb.Annotations[patch.LastAppliedConfig])
 				}
 			}
 
@@ -1335,7 +1250,6 @@ func doUpdateElasticsearchAddLicenseStep() test.TestStep[*elasticsearchcrd.Elast
 				t.Fatal(err)
 			}
 			assert.NotEmpty(t, np.OwnerReferences)
-			assert.NotEmpty(t, np.Annotations[patch.LastAppliedConfig])
 
 			// Statefulset musts exist
 			for _, nodeGroup := range es.Spec.NodeGroups {
@@ -1352,7 +1266,6 @@ func doUpdateElasticsearchAddLicenseStep() test.TestStep[*elasticsearchcrd.Elast
 						t.Fatal(err)
 					}
 					assert.NotEmpty(t, sts.OwnerReferences)
-					assert.NotEmpty(t, sts.Annotations[patch.LastAppliedConfig])
 				}
 			}
 
@@ -1370,7 +1283,6 @@ func doUpdateElasticsearchAddLicenseStep() test.TestStep[*elasticsearchcrd.Elast
 					t.Fatal(err)
 				}
 				assert.NotEmpty(t, user.OwnerReferences)
-				assert.NotEmpty(t, user.Annotations[patch.LastAppliedConfig])
 			}
 
 			// License must exist
@@ -1379,7 +1291,6 @@ func doUpdateElasticsearchAddLicenseStep() test.TestStep[*elasticsearchcrd.Elast
 				t.Fatal(err)
 			}
 			assert.NotEmpty(t, license.OwnerReferences)
-			assert.NotEmpty(t, license.Annotations[patch.LastAppliedConfig])
 
 			// Exporter must exist
 			dpl = &appv1.Deployment{}
@@ -1387,7 +1298,6 @@ func doUpdateElasticsearchAddLicenseStep() test.TestStep[*elasticsearchcrd.Elast
 				t.Fatal(err)
 			}
 			assert.NotEmpty(t, dpl.OwnerReferences)
-			assert.NotEmpty(t, dpl.Annotations[patch.LastAppliedConfig])
 
 			// Pod monitor must exist
 			pm = &monitoringv1.PodMonitor{}
@@ -1395,7 +1305,6 @@ func doUpdateElasticsearchAddLicenseStep() test.TestStep[*elasticsearchcrd.Elast
 				t.Fatal(err)
 			}
 			assert.NotEmpty(t, pm.OwnerReferences)
-			assert.NotEmpty(t, pm.Annotations[patch.LastAppliedConfig])
 
 			// Metricbeat must exist
 			metricbeat = &beatcrd.Metricbeat{}
@@ -1403,7 +1312,6 @@ func doUpdateElasticsearchAddLicenseStep() test.TestStep[*elasticsearchcrd.Elast
 				t.Fatal(err)
 			}
 			assert.NotEmpty(t, metricbeat.OwnerReferences)
-			assert.NotEmpty(t, metricbeat.Annotations[patch.LastAppliedConfig])
 
 			// Status must be update
 			assert.NotEmpty(t, es.Status.Health)
@@ -1548,4 +1456,259 @@ func doDeleteElasticsearchStep() test.TestStep[*elasticsearchcrd.Elasticsearch] 
 			return nil
 		},
 	}
+}
+
+func newMinimalElasticsearch(name, namespace string, nodeGroups []elasticsearchcrd.ElasticsearchNodeGroupSpec) *elasticsearchcrd.Elasticsearch {
+	return &elasticsearchcrd.Elasticsearch{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      name,
+			Namespace: namespace,
+		},
+		Spec: elasticsearchcrd.ElasticsearchSpec{
+			NodeGroups: nodeGroups,
+		},
+	}
+}
+
+func testNodeGroup(name string, replicas int32) elasticsearchcrd.ElasticsearchNodeGroupSpec {
+	return elasticsearchcrd.ElasticsearchNodeGroupSpec{
+		Name:  name,
+		Roles: []string{"master", "data", "ingest"},
+		Deployment: shared.Deployment{
+			Replicas: replicas,
+		},
+	}
+}
+
+// transportMarker returns the rollout-marker annotation value stored on the
+// StatefulSet pod template for the transport Secret.
+func transportMarker(sts *appv1.StatefulSet, es *elasticsearchcrd.Elasticsearch) string {
+	key := fmt.Sprintf("%s/secret-%s", elasticsearchcrd.ElasticsearchAnnotationKey, GetSecretNameForTlsTransport(es))
+	return sts.Spec.Template.Annotations[key]
+}
+
+// readTransportMarker reads the live transport rollout marker for a given
+// StatefulSet (returns "" when the STS does not exist yet).
+func readTransportMarker(c client.Client, key types.NamespacedName, stsName string) string {
+	sts := &appv1.StatefulSet{}
+	if err := c.Get(context.Background(), types.NamespacedName{Namespace: key.Namespace, Name: stsName}, sts); err != nil {
+		return ""
+	}
+	es := &elasticsearchcrd.Elasticsearch{}
+	if err := c.Get(context.Background(), key, es); err != nil {
+		return ""
+	}
+	return transportMarker(sts, es)
+}
+
+// waitObservedGeneration waits until the Elasticsearch observed generation is
+// strictly greater than min, returning the new value.
+func waitObservedGeneration(t *testing.T, c client.Client, key types.NamespacedName, min int64) int64 {
+	es := &elasticsearchcrd.Elasticsearch{}
+	var last int64
+	isTimeout, err := test.RunWithTimeout(func() error {
+		if err := c.Get(context.Background(), key, es); err != nil {
+			t.Fatal(err)
+		}
+		last = es.GetStatus().GetObservedGeneration()
+		if last > min {
+			return nil
+		}
+		return errors.New("not yet updated")
+	}, 30*time.Second, 1*time.Second)
+	if err != nil || isTimeout {
+		t.Fatalf("Elasticsearch not converged: %s", err.Error())
+	}
+	return last
+}
+
+// waitTransportMarkerChanged waits until the transport rollout marker differs
+// from before (a rotation/rollout has happened).
+func waitTransportMarkerChanged(t *testing.T, c client.Client, key types.NamespacedName, stsName, before string) {
+	isTimeout, err := test.RunWithTimeout(func() error {
+		current := readTransportMarker(c, key, stsName)
+		if current != "" && current != before {
+			return nil
+		}
+		return errors.New("marker not yet changed")
+	}, 90*time.Second, 2*time.Second)
+	if err != nil || isTimeout {
+		t.Fatalf("transport rollout marker did not change: %s", err.Error())
+	}
+}
+
+// waitTransportNodeCerts waits until the given node certs are present in (or
+// removed from) the shared transport Secret.
+func waitTransportNodeCerts(t *testing.T, c client.Client, key types.NamespacedName, nodes []string, present bool) {
+	isTimeout, err := test.RunWithTimeout(func() error {
+		es := &elasticsearchcrd.Elasticsearch{}
+		if err := c.Get(context.Background(), key, es); err != nil {
+			t.Fatal(err)
+		}
+		transport := &corev1.Secret{}
+		if err := c.Get(context.Background(), types.NamespacedName{Namespace: key.Namespace, Name: GetSecretNameForTlsTransport(es)}, transport); err != nil {
+			return err
+		}
+		for _, node := range nodes {
+			_, ok := transport.Data[fmt.Sprintf("%s.crt", node)]
+			if present && !ok {
+				return fmt.Errorf("cert for node %s not yet present", node)
+			}
+			if !present && ok {
+				return fmt.Errorf("cert for node %s not yet removed", node)
+			}
+		}
+		return nil
+	}, 90*time.Second, 2*time.Second)
+	if err != nil || isTimeout {
+		t.Fatalf("transport node certs not converged: %s", err.Error())
+	}
+}
+
+// TestElasticsearchControllerScaleUp asserts that adding a node-group does NOT
+// roll existing StatefulSets: the new node certs appear in the shared transport
+// Secret while the existing pod-template rollout marker stays unchanged.
+func (t *ElasticsearchControllerTestSuite) TestElasticsearchControllerScaleUp() {
+	ctx := context.Background()
+	c := t.k8sClient
+	key := types.NamespacedName{Name: "t-es-su-" + helper.RandomString(8), Namespace: "default"}
+
+	es := newMinimalElasticsearch(key.Name, key.Namespace, []elasticsearchcrd.ElasticsearchNodeGroupSpec{testNodeGroup("test", 2)})
+	assert.NoError(t.T(), c.Create(ctx, es))
+	waitObservedGeneration(t.T(), c, key, 0)
+
+	markerBefore := readTransportMarker(c, key, GetNodeGroupName(es, "test"))
+	assert.NotEmpty(t.T(), markerBefore)
+
+	es = &elasticsearchcrd.Elasticsearch{}
+	assert.NoError(t.T(), c.Get(ctx, key, es))
+	lastGen := es.GetStatus().GetObservedGeneration()
+	es.Spec.NodeGroups = append(es.Spec.NodeGroups, testNodeGroup("data", 2))
+	assert.NoError(t.T(), c.Update(ctx, es))
+	waitObservedGeneration(t.T(), c, key, lastGen)
+
+	es = &elasticsearchcrd.Elasticsearch{}
+	assert.NoError(t.T(), c.Get(ctx, key, es))
+	waitTransportNodeCerts(t.T(), c, key, GetNodeGroupNodeNames(es, "data"), true)
+
+	markerAfter := readTransportMarker(c, key, GetNodeGroupName(es, "test"))
+	assert.Equal(t.T(), markerBefore, markerAfter, "scale-up must not change the transport rollout marker")
+}
+
+// TestElasticsearchControllerScaleDown asserts that removing a node-group does
+// NOT roll existing StatefulSets: the removed node certs disappear while the
+// existing pod-template rollout marker stays unchanged.
+func (t *ElasticsearchControllerTestSuite) TestElasticsearchControllerScaleDown() {
+	ctx := context.Background()
+	c := t.k8sClient
+	key := types.NamespacedName{Name: "t-es-sd-" + helper.RandomString(8), Namespace: "default"}
+
+	es := newMinimalElasticsearch(key.Name, key.Namespace, []elasticsearchcrd.ElasticsearchNodeGroupSpec{
+		testNodeGroup("test", 1),
+		testNodeGroup("data", 1),
+	})
+	assert.NoError(t.T(), c.Create(ctx, es))
+	waitObservedGeneration(t.T(), c, key, 0)
+
+	markerBefore := readTransportMarker(c, key, GetNodeGroupName(es, "test"))
+	assert.NotEmpty(t.T(), markerBefore)
+
+	es = &elasticsearchcrd.Elasticsearch{}
+	assert.NoError(t.T(), c.Get(ctx, key, es))
+	lastGen := es.GetStatus().GetObservedGeneration()
+	es.Spec.NodeGroups = es.Spec.NodeGroups[:1]
+	assert.NoError(t.T(), c.Update(ctx, es))
+	waitObservedGeneration(t.T(), c, key, lastGen)
+
+	es = &elasticsearchcrd.Elasticsearch{}
+	assert.NoError(t.T(), c.Get(ctx, key, es))
+	waitTransportNodeCerts(t.T(), c, key, []string{GetNodeGroupName(es, "data") + "-0"}, false)
+
+	markerAfter := readTransportMarker(c, key, GetNodeGroupName(es, "test"))
+	assert.Equal(t.T(), markerBefore, markerAfter, "scale-down must not change the transport rollout marker")
+}
+
+// TestElasticsearchControllerCARotation asserts that a forced CA rotation bumps
+// the transport rollout marker (full staged rollout).
+func (t *ElasticsearchControllerTestSuite) TestElasticsearchControllerCARotation() {
+	ctx := context.Background()
+	c := t.k8sClient
+	key := types.NamespacedName{Name: "t-es-ca-" + helper.RandomString(8), Namespace: "default"}
+
+	es := newMinimalElasticsearch(key.Name, key.Namespace, []elasticsearchcrd.ElasticsearchNodeGroupSpec{testNodeGroup("test", 1)})
+	assert.NoError(t.T(), c.Create(ctx, es))
+	waitObservedGeneration(t.T(), c, key, 0)
+
+	markerBefore := readTransportMarker(c, key, GetNodeGroupName(es, "test"))
+	assert.NotEmpty(t.T(), markerBefore)
+
+	es = &elasticsearchcrd.Elasticsearch{}
+	assert.NoError(t.T(), c.Get(ctx, key, es))
+	if es.Annotations == nil {
+		es.Annotations = map[string]string{}
+	}
+	es.Annotations["operator-sdk-extra.webcenter.fr/force-regenerate-tls"] = "true"
+	assert.NoError(t.T(), c.Update(ctx, es))
+
+	waitTransportMarkerChanged(t.T(), c, key, GetNodeGroupName(es, "test"), markerBefore)
+}
+
+// TestElasticsearchControllerLeafRenew asserts that a forced leaf regeneration
+// bumps the transport rollout marker.
+func (t *ElasticsearchControllerTestSuite) TestElasticsearchControllerLeafRenew() {
+	ctx := context.Background()
+	c := t.k8sClient
+	key := types.NamespacedName{Name: "t-es-lr-" + helper.RandomString(8), Namespace: "default"}
+
+	es := newMinimalElasticsearch(key.Name, key.Namespace, []elasticsearchcrd.ElasticsearchNodeGroupSpec{testNodeGroup("test", 1)})
+	assert.NoError(t.T(), c.Create(ctx, es))
+	waitObservedGeneration(t.T(), c, key, 0)
+
+	markerBefore := readTransportMarker(c, key, GetNodeGroupName(es, "test"))
+	assert.NotEmpty(t.T(), markerBefore)
+
+	es = &elasticsearchcrd.Elasticsearch{}
+	assert.NoError(t.T(), c.Get(ctx, key, es))
+	if es.Annotations == nil {
+		es.Annotations = map[string]string{}
+	}
+	es.Annotations["operator-sdk-extra.webcenter.fr/force-regenerate-certificates"] = "true"
+	assert.NoError(t.T(), c.Update(ctx, es))
+
+	waitTransportMarkerChanged(t.T(), c, key, GetNodeGroupName(es, "test"), markerBefore)
+}
+
+// TestElasticsearchControllerSANDrift asserts that changing the API certificate
+// SANs re-issues the API leaf certificate (SAN set changes).
+func (t *ElasticsearchControllerTestSuite) TestElasticsearchControllerSANDrift() {
+	ctx := context.Background()
+	c := t.k8sClient
+	key := types.NamespacedName{Name: "t-es-sd-" + helper.RandomString(8), Namespace: "default"}
+
+	es := newMinimalElasticsearch(key.Name, key.Namespace, []elasticsearchcrd.ElasticsearchNodeGroupSpec{testNodeGroup("test", 1)})
+	assert.NoError(t.T(), c.Create(ctx, es))
+	waitObservedGeneration(t.T(), c, key, 0)
+
+	es = &elasticsearchcrd.Elasticsearch{}
+	assert.NoError(t.T(), c.Get(ctx, key, es))
+	api := &corev1.Secret{}
+	assert.NoError(t.T(), c.Get(ctx, types.NamespacedName{Namespace: key.Namespace, Name: GetSecretNameForTlsApi(es)}, api))
+	before, err := certParse(api.Data["tls.crt"])
+	assert.NoError(t.T(), err)
+
+	es.Spec.Tls.SelfSignedCertificate = &shared.TlsSelfSignedCertificateSpec{
+		AltNames: []string{"new.example.com"},
+	}
+	lastGen := es.GetStatus().GetObservedGeneration()
+	assert.NoError(t.T(), c.Update(ctx, es))
+	waitObservedGeneration(t.T(), c, key, lastGen)
+
+	es = &elasticsearchcrd.Elasticsearch{}
+	assert.NoError(t.T(), c.Get(ctx, key, es))
+	api = &corev1.Secret{}
+	assert.NoError(t.T(), c.Get(ctx, types.NamespacedName{Namespace: key.Namespace, Name: GetSecretNameForTlsApi(es)}, api))
+	after, err := certParse(api.Data["tls.crt"])
+	assert.NoError(t.T(), err)
+	assert.Contains(t.T(), after.DNSNames, "new.example.com", "API cert must be re-issued with the new SAN")
+	assert.NotEqual(t.T(), before.DNSNames, after.DNSNames)
 }

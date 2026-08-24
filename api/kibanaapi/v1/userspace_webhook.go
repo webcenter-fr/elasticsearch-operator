@@ -21,15 +21,15 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/disaster37/operator-sdk-extra/v2/pkg/controller"
+	"github.com/disaster37/operator-sdk-extra/v3/pkg/controller"
 	"github.com/sirupsen/logrus"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/fields"
-	"k8s.io/apimachinery/pkg/runtime"
+
 	"k8s.io/apimachinery/pkg/util/validation/field"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/controller-runtime/pkg/webhook"
+
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 )
 
@@ -41,8 +41,7 @@ type userSpaceValidator struct {
 // SetupWebhookWithManager will setup the manager to manage the webhooks
 func SetupUserSpaceWebhookWithManager(logger *logrus.Entry) controller.WebhookRegister {
 	return func(mgr ctrl.Manager, client client.Client) error {
-		return ctrl.NewWebhookManagedBy(mgr).
-			For(&UserSpace{}).
+		return ctrl.NewWebhookManagedBy(mgr, &UserSpace{}).
 			WithValidator(&userSpaceValidator{
 				logger: logger.WithField("webhook", "userSpaceValidator"),
 				client: client,
@@ -53,7 +52,7 @@ func SetupUserSpaceWebhookWithManager(logger *logrus.Entry) controller.WebhookRe
 
 // +kubebuilder:webhook:path=/validate-kibanaapi-k8s-webcenter-fr-v1-userspace,mutating=false,failurePolicy=fail,sideEffects=None,groups=kibanaapi.k8s.webcenter.fr,resources=userspaces,verbs=create;update,versions=v1,name=userspace.kibanaapi.k8s.webcenter.fr,admissionReviewVersions=v1
 
-var _ webhook.CustomValidator = &userSpaceValidator{}
+var _ admission.Validator[*UserSpace] = &userSpaceValidator{}
 
 func (r *userSpaceValidator) validateResourceUnicity(obj *UserSpace) *field.Error {
 	// Check if resource already exist with same name on some remote cluster target
@@ -81,65 +80,56 @@ func (r *userSpaceValidator) validateResourceUnicity(obj *UserSpace) *field.Erro
 }
 
 // ValidateCreate implements webhook.Validator so a webhook will be registered for the type
-func (r *userSpaceValidator) ValidateCreate(ctx context.Context, obj runtime.Object) (admission.Warnings, error) {
+func (r *userSpaceValidator) ValidateCreate(ctx context.Context, obj *UserSpace) (admission.Warnings, error) {
 	var allErrs field.ErrorList
 
-	userSpaceObj, ok := obj.(*UserSpace)
-	if !ok {
-		return nil, fmt.Errorf("expected a UserSpace object but got %T", obj)
-	}
-	r.logger.Debugf("validate create %s/%s", userSpaceObj.GetNamespace(), userSpaceObj.GetName())
+	r.logger.Debugf("validate create %s/%s", obj.GetNamespace(), obj.GetName())
 
-	if err := userSpaceObj.Spec.KibanaRef.ValidateField(); err != nil {
+	if err := obj.Spec.KibanaRef.ValidateField(); err != nil {
 		allErrs = append(allErrs, err)
 	}
 
-	if err := r.validateResourceUnicity(userSpaceObj); err != nil {
+	if err := r.validateResourceUnicity(obj); err != nil {
 		allErrs = append(allErrs, err)
 	}
 
 	if len(allErrs) > 0 {
 		return nil, apierrors.NewInvalid(
-			userSpaceObj.GroupVersionKind().GroupKind(),
-			userSpaceObj.Name, allErrs)
+			obj.GroupVersionKind().GroupKind(),
+			obj.Name, allErrs)
 	}
 
 	return nil, nil
 }
 
 // ValidateUpdate implements webhook.Validator so a webhook will be registered for the type
-func (r *userSpaceValidator) ValidateUpdate(ctx context.Context, oldObj runtime.Object, newObj runtime.Object) (admission.Warnings, error) {
+func (r *userSpaceValidator) ValidateUpdate(ctx context.Context, oldObj *UserSpace, newObj *UserSpace) (admission.Warnings, error) {
 	var allErrs field.ErrorList
-	oldO := oldObj.(*UserSpace)
 
-	userSpaceObj, ok := newObj.(*UserSpace)
-	if !ok {
-		return nil, fmt.Errorf("expected a UserSpace object but got %T", newObj)
-	}
-	r.logger.Debugf("validate update %s/%s", userSpaceObj.Namespace, userSpaceObj.Name)
+	r.logger.Debugf("validate update %s/%s", newObj.Namespace, newObj.Name)
 
-	if err := userSpaceObj.Spec.KibanaRef.ValidateField(); err != nil {
+	if err := newObj.Spec.KibanaRef.ValidateField(); err != nil {
 		allErrs = append(allErrs, err)
 	}
 
-	if err := r.validateResourceUnicity(userSpaceObj); err != nil {
+	if err := r.validateResourceUnicity(newObj); err != nil {
 		allErrs = append(allErrs, err)
 	}
 
-	if err := validateImmutableName(userSpaceObj, oldO); err != nil {
+	if err := validateImmutableName(newObj, oldObj); err != nil {
 		allErrs = append(allErrs, err)
 	}
 
 	if len(allErrs) > 0 {
 		return nil, apierrors.NewInvalid(
-			userSpaceObj.GroupVersionKind().GroupKind(),
-			userSpaceObj.Name, allErrs)
+			newObj.GroupVersionKind().GroupKind(),
+			newObj.Name, allErrs)
 	}
 
 	return nil, nil
 }
 
 // ValidateDelete implements webhook.Validator so a webhook will be registered for the type
-func (r *userSpaceValidator) ValidateDelete(ctx context.Context, obj runtime.Object) (admission.Warnings, error) {
+func (r *userSpaceValidator) ValidateDelete(ctx context.Context, obj *UserSpace) (admission.Warnings, error) {
 	return nil, nil
 }

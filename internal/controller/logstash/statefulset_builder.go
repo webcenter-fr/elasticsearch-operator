@@ -327,8 +327,14 @@ func buildStatefulsets(ls *logstashcrd.Logstash, es *elasticsearchcrd.Elasticsea
 	ptb.WithAnnotations(map[string]string{
 		logstashcrd.LogstashAnnotationKey: "true",
 	}).
-		WithAnnotations(ls.Spec.Deployment.Annotations, k8sbuilder.Merge).
-		WithAnnotations(checksumAnnotations, k8sbuilder.Merge)
+		WithAnnotations(ls.Spec.Deployment.Annotations, k8sbuilder.Merge)
+
+	// Operator-owned checksum annotations must ALWAYS win over user-supplied
+	// annotations (mergo.Merge would let a user pin the reserved
+	// `…/secret-*`/`…/configmap-*` markers and defeat the rollout logic).
+	for k, v := range checksumAnnotations {
+		ptb.PodTemplate().Annotations[k] = v
+	}
 
 	// Compute NodeSelector
 	ptb.WithNodeSelector(ls.Spec.Deployment.NodeSelector, k8sbuilder.OverwriteIfDefaultValue)

@@ -4,10 +4,11 @@ import (
 	"context"
 
 	"emperror.dev/errors"
-	"github.com/disaster37/operator-sdk-extra/v2/pkg/apis/shared"
-	"github.com/disaster37/operator-sdk-extra/v2/pkg/controller/multiphase"
+	"github.com/disaster37/operator-sdk-extra/v3/pkg/apis/shared"
+	"github.com/disaster37/operator-sdk-extra/v3/pkg/controller/multiphase"
 	"github.com/sirupsen/logrus"
 	elasticsearchcrd "github.com/webcenter-fr/elasticsearch-operator/api/elasticsearch/v1"
+	"github.com/webcenter-fr/elasticsearch-operator/internal/controller/common"
 	networkingv1 "k8s.io/api/networking/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/types"
@@ -32,6 +33,7 @@ func newIngressReconciler(client client.Client, recorder record.EventRecorder) (
 			IngressPhase,
 			IngressCondition,
 			recorder,
+			common.FieldManager,
 		),
 	}
 }
@@ -57,6 +59,7 @@ func (r *ingressReconciler) Read(ctx context.Context, o *elasticsearchcrd.Elasti
 	if err != nil {
 		return read, res, errors.Wrap(err, "Error when generate ingress")
 	}
+	common.InjectTypeMeta(r.Client().Scheme(), expectedIngresses...)
 	read.SetExpectedObjects(expectedIngresses)
 
 	return read, res, nil

@@ -4,10 +4,11 @@ import (
 	"context"
 
 	"emperror.dev/errors"
-	"github.com/disaster37/operator-sdk-extra/v2/pkg/apis/shared"
-	"github.com/disaster37/operator-sdk-extra/v2/pkg/controller/multiphase"
+	"github.com/disaster37/operator-sdk-extra/v3/pkg/apis/shared"
+	"github.com/disaster37/operator-sdk-extra/v3/pkg/controller/multiphase"
 	"github.com/sirupsen/logrus"
 	elasticsearchcrd "github.com/webcenter-fr/elasticsearch-operator/api/elasticsearch/v1"
+	"github.com/webcenter-fr/elasticsearch-operator/internal/controller/common"
 	appv1 "k8s.io/api/apps/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/types"
@@ -32,6 +33,7 @@ func newExporterReconciler(client client.Client, recorder record.EventRecorder) 
 			ExporterPhase,
 			ExporterCondition,
 			recorder,
+			common.FieldManager,
 		),
 	}
 }
@@ -57,6 +59,7 @@ func (r *exporterReconciler) Read(ctx context.Context, o *elasticsearchcrd.Elast
 	if err != nil {
 		return read, res, errors.Wrap(err, "Error when generate exporter deployment")
 	}
+	common.InjectTypeMeta(r.Client().Scheme(), expectedExporters...)
 	read.SetExpectedObjects(expectedExporters)
 
 	return read, res, nil

@@ -192,6 +192,7 @@ func updateSecret(o *logstashcrd.Logstash, old, new *corev1.Secret, scheme *runt
 		updated = false
 	}
 
+	s.TypeMeta = metav1.TypeMeta{APIVersion: "v1", Kind: "Secret"}
 	// Set ownerReferences on expected object before to diff them
 	if err = ctrl.SetControllerReference(o, s, scheme); err != nil {
 		return nil, updated, errors.Wrapf(err, "Error when set owner reference on object '%s'", s.GetName())
