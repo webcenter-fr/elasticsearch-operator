@@ -67,6 +67,7 @@ type TlsSelfSignedCertificateSpec struct {
 	// AltIps permit to set subject alt names of type ip when generate certificate
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
 	// +optional
+	// +kubebuilder:validation:MaxItems=32
 	AltIps []string `json:"altIPs,omitempty"`
 
 	// AltNames permit to set subject alt names of type dns when generate certificate

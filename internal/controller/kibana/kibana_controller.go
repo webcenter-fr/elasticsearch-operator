@@ -87,7 +87,7 @@ func NewKibanaReconciler(c client.Client, logger *logrus.Entry, recorder record.
 		stepReconcilers: []multiphase.MultiPhaseStepReconcilerAction[*kibanacrd.Kibana, client.Object]{
 			multiphase.NewObjectMultiPhaseStepReconcilerAction[*kibanacrd.Kibana, *corev1.ServiceAccount, client.Object](newServiceAccountReconciler(c, recorder, kubeCapability.HasRoute)),
 			multiphase.NewObjectMultiPhaseStepReconcilerAction[*kibanacrd.Kibana, *rbacv1.RoleBinding, client.Object](newRoleBindingReconciler(c, recorder, kubeCapability.HasRoute)),
-			multiphase.NewObjectMultiPhaseStepReconcilerAction[*kibanacrd.Kibana, *corev1.Secret, client.Object](newTlsReconciler(c, recorder)),
+			newTlsReconciler(c, recorder, logger),
 			multiphase.NewObjectMultiPhaseStepReconcilerAction[*kibanacrd.Kibana, *corev1.Secret, client.Object](newCAElasticsearchReconciler(c, recorder)),
 			multiphase.NewObjectMultiPhaseStepReconcilerAction[*kibanacrd.Kibana, *corev1.Secret, client.Object](newCredentialReconciler(c, recorder)),
 			multiphase.NewObjectMultiPhaseStepReconcilerAction[*kibanacrd.Kibana, *corev1.ConfigMap, client.Object](newConfiMapReconciler(c, recorder)),

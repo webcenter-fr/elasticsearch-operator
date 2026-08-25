@@ -83,7 +83,7 @@ func NewLogstashReconciler(c client.Client, logger *logrus.Entry, recorder recor
 		stepReconcilers: []multiphase.MultiPhaseStepReconcilerAction[*logstashcrd.Logstash, client.Object]{
 			multiphase.NewObjectMultiPhaseStepReconcilerAction[*logstashcrd.Logstash, *corev1.ServiceAccount, client.Object](newServiceAccountReconciler(c, recorder, kubeCapability.HasRoute)),
 			multiphase.NewObjectMultiPhaseStepReconcilerAction[*logstashcrd.Logstash, *rbacv1.RoleBinding, client.Object](newRoleBindingReconciler(c, recorder, kubeCapability.HasRoute)),
-			multiphase.NewObjectMultiPhaseStepReconcilerAction[*logstashcrd.Logstash, *corev1.Secret, client.Object](newTlsReconciler(c, recorder)),
+			newTlsReconciler(c, recorder),
 			multiphase.NewObjectMultiPhaseStepReconcilerAction[*logstashcrd.Logstash, *corev1.Secret, client.Object](newCAElasticsearchReconciler(c, recorder)),
 			multiphase.NewObjectMultiPhaseStepReconcilerAction[*logstashcrd.Logstash, *corev1.Secret, client.Object](newCredentialReconciler(c, recorder)),
 			multiphase.NewObjectMultiPhaseStepReconcilerAction[*logstashcrd.Logstash, *corev1.ConfigMap, client.Object](newConfiMapReconciler(c, recorder)),

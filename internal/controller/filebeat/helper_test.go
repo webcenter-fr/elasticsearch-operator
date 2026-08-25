@@ -230,7 +230,7 @@ func TestGetSecretNameForPki(t *testing.T) {
 		Spec: beatcrd.FilebeatSpec{},
 	}
 
-	assert.Equal(t, "test-pki-fb", GetSecretNameForPki(o))
+	assert.Equal(t, "test-tls-fb-ca", GetSecretNameForPki(o))
 }
 
 func TestGetSecretNameForTls(t *testing.T) {

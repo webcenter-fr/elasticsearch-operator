@@ -3,6 +3,7 @@ package kibana
 import (
 	"context"
 	"errors"
+	"fmt"
 	"testing"
 	"time"
 
@@ -163,14 +164,16 @@ func doCreateKibanaStep() test.TestStep[*kibanacrd.Kibana] {
 				t.Fatal(err)
 			}
 			assert.NotEmpty(t, s.Data)
-			assert.NotEmpty(t, s.OwnerReferences)
+			assert.NotEmpty(t, s.Data["ca.crt"])
+			assert.NotEmpty(t, s.Data["ca.key"])
 
 			s = &corev1.Secret{}
 			if err = c.Get(context.Background(), types.NamespacedName{Namespace: key.Namespace, Name: GetSecretNameForTls(kb)}, s); err != nil {
 				t.Fatal(err)
 			}
 			assert.NotEmpty(t, s.Data)
-			assert.NotEmpty(t, s.OwnerReferences)
+			assert.NotEmpty(t, s.Data["tls.crt"])
+			assert.NotEmpty(t, s.Data["tls.key"])
 
 			// Secrets for CA Elasticsearch
 			s = &corev1.Secret{}
@@ -270,6 +273,9 @@ func doCreateKibanaStep() test.TestStep[*kibanacrd.Kibana] {
 			assert.NotEmpty(t, kb.Status.Url)
 			assert.False(t, *kb.Status.IsOnError)
 
+			// TLS workflow status must converge to empty (saga completed)
+			assert.Empty(t, kb.Status.TlsWorkflowStatus.CurrentPhase)
+
 			return nil
 		},
 	}
@@ -342,7 +348,8 @@ func doUpdateKibanaStep() test.TestStep[*kibanacrd.Kibana] {
 				t.Fatal(err)
 			}
 			assert.NotEmpty(t, s.Data)
-			assert.NotEmpty(t, s.OwnerReferences)
+			assert.NotEmpty(t, s.Data["ca.crt"])
+			assert.NotEmpty(t, s.Data["ca.key"])
 			assert.Equal(t, "fu", s.Labels["test"])
 
 			s = &corev1.Secret{}
@@ -350,7 +357,8 @@ func doUpdateKibanaStep() test.TestStep[*kibanacrd.Kibana] {
 				t.Fatal(err)
 			}
 			assert.NotEmpty(t, s.Data)
-			assert.NotEmpty(t, s.OwnerReferences)
+			assert.NotEmpty(t, s.Data["tls.crt"])
+			assert.NotEmpty(t, s.Data["tls.key"])
 			assert.Equal(t, "fu", s.Labels["test"])
 
 			// Secrets for CA Elasticsearch
@@ -510,5 +518,260 @@ func doDeleteKibanaStep() test.TestStep[*kibanacrd.Kibana] {
 
 			return nil
 		},
+	}
+}
+
+// TestKibanaControllerCARotation asserts that a forced CA rotation via
+// AnnotationForceRenewTLS changes the CA secret's ca.crt and clears the annotation.
+func (t *KibanaControllerTestSuite) TestKibanaControllerCARotation() {
+	ctx := context.Background()
+	c := t.k8sClient
+	key := types.NamespacedName{Name: "t-kb-ca-" + helper.RandomString(8), Namespace: "default"}
+
+	// Create Elasticsearch first (required dependency)
+	es := &elasticsearchcrd.Elasticsearch{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      key.Name,
+			Namespace: key.Namespace,
+		},
+		Spec: elasticsearchcrd.ElasticsearchSpec{
+			Version: "8.6.0",
+			NodeGroups: []elasticsearchcrd.ElasticsearchNodeGroupSpec{
+				{Name: "all", Roles: []string{"master", "client", "data"}, Deployment: shared.Deployment{Replicas: 1}},
+			},
+		},
+	}
+	assert.NoError(t.T(), c.Create(ctx, es))
+
+	kb := &kibanacrd.Kibana{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      key.Name,
+			Namespace: key.Namespace,
+		},
+		Spec: kibanacrd.KibanaSpec{
+			Version: "8.6.0",
+			ElasticsearchRef: shared.ElasticsearchRef{
+				ManagedElasticsearchRef: &shared.ElasticsearchManagedRef{Name: es.Name},
+			},
+			Deployment: kibanacrd.KibanaDeploymentSpec{
+				Deployment: shared.Deployment{Replicas: 1},
+			},
+		},
+	}
+	assert.NoError(t.T(), c.Create(ctx, kb))
+
+	// Wait for bootstrap to complete (saga must converge to "")
+	waitKibanaSagaConverged(t.T(), c, key)
+	waitKibanaObservedGeneration(t.T(), c, key, 0)
+
+	// Read the CA secret before rotation
+	kb = &kibanacrd.Kibana{}
+	assert.NoError(t.T(), c.Get(ctx, key, kb))
+	caBefore := &corev1.Secret{}
+	assert.NoError(t.T(), c.Get(ctx, types.NamespacedName{Namespace: key.Namespace, Name: GetSecretNameForPki(kb)}, caBefore))
+	assert.NotEmpty(t.T(), caBefore.Data["ca.crt"])
+
+	// Set force-renew annotation
+	kb = &kibanacrd.Kibana{}
+	assert.NoError(t.T(), c.Get(ctx, key, kb))
+	if kb.Annotations == nil {
+		kb.Annotations = map[string]string{}
+	}
+	kb.Annotations[AnnotationForceRenewTLS] = "true"
+	lastGen := kb.GetStatus().GetObservedGeneration()
+	assert.NoError(t.T(), c.Update(ctx, kb))
+
+	// Wait for reconciliation
+	waitKibanaObservedGeneration(t.T(), c, key, lastGen)
+
+	// Assert CA cert changed and annotation cleared
+	kb = &kibanacrd.Kibana{}
+	assert.NoError(t.T(), c.Get(ctx, key, kb))
+	caAfter := &corev1.Secret{}
+	assert.NoError(t.T(), c.Get(ctx, types.NamespacedName{Namespace: key.Namespace, Name: GetSecretNameForPki(kb)}, caAfter))
+	assert.NotEmpty(t.T(), caAfter.Data["ca.crt"])
+	assert.NotEqual(t.T(), string(caBefore.Data["ca.crt"]), string(caAfter.Data["ca.crt"]),
+		"CA cert must change after forced rotation")
+	assert.Empty(t.T(), kb.Annotations[AnnotationForceRenewTLS],
+		"force-renew annotation must be cleared after rotation")
+}
+
+// TestKibanaControllerLeafRenew asserts that a forced leaf regeneration via
+// AnnotationForceRenewCertificates changes the leaf tls.crt while the CA ca.crt stays unchanged.
+func (t *KibanaControllerTestSuite) TestKibanaControllerLeafRenew() {
+	ctx := context.Background()
+	c := t.k8sClient
+	key := types.NamespacedName{Name: "t-kb-lr-" + helper.RandomString(8), Namespace: "default"}
+
+	es := &elasticsearchcrd.Elasticsearch{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      key.Name,
+			Namespace: key.Namespace,
+		},
+		Spec: elasticsearchcrd.ElasticsearchSpec{
+			Version: "8.6.0",
+			NodeGroups: []elasticsearchcrd.ElasticsearchNodeGroupSpec{
+				{Name: "all", Roles: []string{"master", "client", "data"}, Deployment: shared.Deployment{Replicas: 1}},
+			},
+		},
+	}
+	assert.NoError(t.T(), c.Create(ctx, es))
+
+	kb := &kibanacrd.Kibana{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      key.Name,
+			Namespace: key.Namespace,
+		},
+		Spec: kibanacrd.KibanaSpec{
+			Version: "8.6.0",
+			ElasticsearchRef: shared.ElasticsearchRef{
+				ManagedElasticsearchRef: &shared.ElasticsearchManagedRef{Name: es.Name},
+			},
+			Deployment: kibanacrd.KibanaDeploymentSpec{
+				Deployment: shared.Deployment{Replicas: 1},
+			},
+		},
+	}
+	assert.NoError(t.T(), c.Create(ctx, kb))
+	waitKibanaSagaConverged(t.T(), c, key)
+	waitKibanaObservedGeneration(t.T(), c, key, 0)
+
+	// Read CA and leaf before
+	kb = &kibanacrd.Kibana{}
+	assert.NoError(t.T(), c.Get(ctx, key, kb))
+	caBefore := &corev1.Secret{}
+	assert.NoError(t.T(), c.Get(ctx, types.NamespacedName{Namespace: key.Namespace, Name: GetSecretNameForPki(kb)}, caBefore))
+	leafBefore := &corev1.Secret{}
+	assert.NoError(t.T(), c.Get(ctx, types.NamespacedName{Namespace: key.Namespace, Name: GetSecretNameForTls(kb)}, leafBefore))
+
+	// Set force-renew-certificates annotation
+	kb = &kibanacrd.Kibana{}
+	assert.NoError(t.T(), c.Get(ctx, key, kb))
+	if kb.Annotations == nil {
+		kb.Annotations = map[string]string{}
+	}
+	kb.Annotations[AnnotationForceRenewCertificates] = "true"
+	lastGen := kb.GetStatus().GetObservedGeneration()
+	assert.NoError(t.T(), c.Update(ctx, kb))
+	waitKibanaObservedGeneration(t.T(), c, key, lastGen)
+
+	// Assert leaf changed, CA unchanged, annotation cleared
+	kb = &kibanacrd.Kibana{}
+	assert.NoError(t.T(), c.Get(ctx, key, kb))
+	caAfter := &corev1.Secret{}
+	assert.NoError(t.T(), c.Get(ctx, types.NamespacedName{Namespace: key.Namespace, Name: GetSecretNameForPki(kb)}, caAfter))
+	leafAfter := &corev1.Secret{}
+	assert.NoError(t.T(), c.Get(ctx, types.NamespacedName{Namespace: key.Namespace, Name: GetSecretNameForTls(kb)}, leafAfter))
+
+	assert.Equal(t.T(), string(caBefore.Data["ca.crt"]), string(caAfter.Data["ca.crt"]),
+		"CA cert must not change during leaf-only renewal")
+	assert.NotEqual(t.T(), string(leafBefore.Data["tls.crt"]), string(leafAfter.Data["tls.crt"]),
+		"leaf cert must change after forced leaf renewal")
+	assert.Empty(t.T(), kb.Annotations[AnnotationForceRenewCertificates],
+		"force-renew-certificates annotation must be cleared after renewal")
+}
+
+// TestKibanaControllerBYO asserts that when Spec.Tls.CertificateSecretRef is set,
+// no self-managed TLS secrets are created and no phase writes occur.
+func (t *KibanaControllerTestSuite) TestKibanaControllerBYO() {
+	ctx := context.Background()
+	c := t.k8sClient
+	key := types.NamespacedName{Name: "t-kb-byo-" + helper.RandomString(8), Namespace: "default"}
+
+	es := &elasticsearchcrd.Elasticsearch{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      key.Name,
+			Namespace: key.Namespace,
+		},
+		Spec: elasticsearchcrd.ElasticsearchSpec{
+			Version: "8.6.0",
+			NodeGroups: []elasticsearchcrd.ElasticsearchNodeGroupSpec{
+				{Name: "all", Roles: []string{"master", "client", "data"}, Deployment: shared.Deployment{Replicas: 1}},
+			},
+		},
+	}
+	assert.NoError(t.T(), c.Create(ctx, es))
+
+	kb := &kibanacrd.Kibana{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      key.Name,
+			Namespace: key.Namespace,
+		},
+		Spec: kibanacrd.KibanaSpec{
+			Version: "8.6.0",
+			Tls: shared.TlsSpec{
+				CertificateSecretRef: &corev1.LocalObjectReference{Name: "my-byo-secret"},
+				Enabled:              ptr.To[bool](true),
+			},
+			ElasticsearchRef: shared.ElasticsearchRef{
+				ManagedElasticsearchRef: &shared.ElasticsearchManagedRef{Name: es.Name},
+			},
+			Deployment: kibanacrd.KibanaDeploymentSpec{
+				Deployment: shared.Deployment{Replicas: 1},
+			},
+		},
+	}
+	assert.NoError(t.T(), c.Create(ctx, kb))
+	waitKibanaObservedGeneration(t.T(), c, key, 0)
+
+	// Assert no self-managed TLS secrets exist
+	kb = &kibanacrd.Kibana{}
+	assert.NoError(t.T(), c.Get(ctx, key, kb))
+
+	leafSecret := &corev1.Secret{}
+	err := c.Get(ctx, types.NamespacedName{Namespace: key.Namespace, Name: fmt.Sprintf("%s-tls-kb", key.Name)}, leafSecret)
+	assert.True(t.T(), k8serrors.IsNotFound(err), "self-managed leaf secret must not exist in BYO mode")
+
+	caSecret := &corev1.Secret{}
+	err = c.Get(ctx, types.NamespacedName{Namespace: key.Namespace, Name: fmt.Sprintf("%s-tls-kb-ca", key.Name)}, caSecret)
+	assert.True(t.T(), k8serrors.IsNotFound(err), "self-managed CA secret must not exist in BYO mode")
+
+	// Assert no TLS workflow phase writes
+	assert.Empty(t.T(), kb.Status.TlsWorkflowStatus.CurrentPhase)
+}
+
+// waitKibanaObservedGeneration waits until the Kibana observed generation is
+// strictly greater than min, returning the new value.
+func waitKibanaObservedGeneration(t *testing.T, c client.Client, key types.NamespacedName, min int64) int64 {
+	kb := &kibanacrd.Kibana{}
+	var last int64
+	isTimeout, err := test.RunWithTimeout(func() error {
+		if err := c.Get(context.Background(), key, kb); err != nil {
+			t.Fatal(err)
+		}
+		last = kb.GetStatus().GetObservedGeneration()
+		if last > min {
+			return nil
+		}
+		return errors.New("not yet updated")
+	}, 30*time.Second, 1*time.Second)
+	if err != nil {
+		t.Fatalf("Kibana not converged: %s", err.Error())
+	}
+	if isTimeout {
+		t.Fatal("Kibana not converged: timed out waiting for observed generation")
+	}
+	return last
+}
+
+// waitKibanaSagaConverged polls until the TLS workflow saga has completed
+// (CurrentPhase == ""), with a timeout. The TLS saga needs 3-4 reconcile
+// cycles to complete ("" → Rotate → Converge → "").
+func waitKibanaSagaConverged(t *testing.T, c client.Client, key types.NamespacedName) {
+	kb := &kibanacrd.Kibana{}
+	isTimeout, err := test.RunWithTimeout(func() error {
+		if err := c.Get(context.Background(), key, kb); err != nil {
+			t.Fatal(err)
+		}
+		if kb.Status.TlsWorkflowStatus.CurrentPhase == "" {
+			return nil
+		}
+		return errors.New("saga not yet converged")
+	}, 30*time.Second, 1*time.Second)
+	if err != nil {
+		t.Fatalf("Kibana saga not converged: %s", err.Error())
+	}
+	if isTimeout {
+		t.Fatalf("Kibana saga not converged: timed out (phase=%s)", kb.Status.TlsWorkflowStatus.CurrentPhase)
 	}
 }

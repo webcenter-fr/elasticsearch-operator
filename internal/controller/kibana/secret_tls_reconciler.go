@@ -3,20 +3,25 @@ package kibana
 import (
 	"context"
 	"crypto/x509"
+	"encoding/pem"
+	"fmt"
 	"time"
 
 	"emperror.dev/errors"
-	"github.com/disaster37/goca"
-	"github.com/disaster37/goca/cert"
 	"github.com/disaster37/operator-sdk-extra/v3/pkg/apis/shared"
+	"github.com/disaster37/operator-sdk-extra/v3/pkg/controller/certificate"
+	"github.com/disaster37/operator-sdk-extra/v3/pkg/controller/certificate/rotation"
+	"github.com/disaster37/operator-sdk-extra/v3/pkg/controller/certificate/selfmanaged"
 	"github.com/disaster37/operator-sdk-extra/v3/pkg/controller/multiphase"
-	"github.com/disaster37/operator-sdk-extra/v3/pkg/helper"
+	"github.com/disaster37/operator-sdk-extra/v3/pkg/controller/workflow"
 	"github.com/sirupsen/logrus"
 	kibanacrd "github.com/webcenter-fr/elasticsearch-operator/api/kibana/v1"
 	"github.com/webcenter-fr/elasticsearch-operator/internal/controller/common"
 	"github.com/webcenter-fr/elasticsearch-operator/pkg/pki"
+	appv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
+	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/tools/record"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -24,242 +29,247 @@ import (
 )
 
 const (
-	TlsCondition            shared.ConditionName = "TlsReady"
-	TlsPhase                shared.PhaseName     = "Tls"
-	DefaultRenewCertificate                      = -time.Hour * 24 * 30 // 30 days before expired
+	TlsCondition shared.ConditionName = "TlsReady"
+	TlsPhase     shared.PhaseName     = "Tls"
+
+	// AnnotationForceRenewTLS forces a full CA + leaf rotation (read as "true").
+	AnnotationForceRenewTLS = "kibana.k8s.webcenter.fr/force-renew-tls"
+	// AnnotationForceRenewCertificates forces leaf-only renewal (read as "true").
+	AnnotationForceRenewCertificates = "kibana.k8s.webcenter.fr/force-renew-certificates"
 )
 
+// tlsReconciler wraps the TLS rotation saga for Kibana self-managed TLS.
+// BYO / TLS-disabled paths are short-circuited in Read.
 type tlsReconciler struct {
-	multiphase.MultiPhaseStepReconcilerAction[*kibanacrd.Kibana, *corev1.Secret]
+	workflow.WorkflowStepReconcilerActionWithDiff[*kibanacrd.Kibana, client.Object]
 }
 
-func newTlsReconciler(client client.Client, recorder record.EventRecorder) (multiPhaseStepReconcilerAction multiphase.MultiPhaseStepReconcilerAction[*kibanacrd.Kibana, *corev1.Secret]) {
-	return &tlsReconciler{
-		MultiPhaseStepReconcilerAction: multiphase.NewMultiPhaseStepReconcilerAction[*kibanacrd.Kibana, *corev1.Secret](
-			client,
-			TlsPhase,
-			TlsCondition,
-			recorder,
-			common.FieldManager,
-		),
-	}
-}
-
-// Read existing transport TLS secret
-func (r *tlsReconciler) Read(ctx context.Context, o *kibanacrd.Kibana, data map[string]any, logger *logrus.Entry) (read multiphase.MultiPhaseRead[*corev1.Secret], res reconcile.Result, err error) {
-	read = multiphase.NewMultiPhaseRead[*corev1.Secret]()
-	sApi := &corev1.Secret{}
-	sApiPki := &corev1.Secret{}
-	var (
-		apiRootCA  *goca.CA
-		apiCrt     *x509.Certificate
-		secretName string
+func newTlsReconciler(c client.Client, recorder record.EventRecorder, log *logrus.Entry) multiphase.MultiPhaseStepReconcilerAction[*kibanacrd.Kibana, client.Object] {
+	saga := rotation.NewTLSStep[*kibanacrd.Kibana](
+		c,
+		TlsPhase,
+		TlsCondition,
+		recorder,
+		common.FieldManager,
+		selfmanaged.NewSelfManagedBackend[*kibanacrd.Kibana](),
+		certificate.TLSSpecProviderFunc[*kibanacrd.Kibana](kibanaTLSSpec),
+		rotation.WithConvergenceCheck(kibanaConvergenceCheck(c)),
+		rotation.WithCertificateCustomizer(kibanaCARenewalCustomizer(c, log)),
+		rotation.WithForceRegenerateAllAnnotation[*kibanacrd.Kibana](AnnotationForceRenewTLS),
+		rotation.WithForceRegenerateLeafAnnotation[*kibanacrd.Kibana](AnnotationForceRenewCertificates),
+		rotation.WithLabelsDecorator(func(o *kibanacrd.Kibana, obj client.Object) {
+			obj.SetLabels(getLabels(o))
+		}),
+		rotation.WithAnnotationsDecorator(func(o *kibanacrd.Kibana, obj client.Object) {
+			obj.SetAnnotations(getAnnotations(o))
+			obj.GetObjectKind().SetGroupVersionKind(schema.GroupVersionKind{Group: "", Version: "v1", Kind: "Secret"})
+		}),
 	)
-
-	if o.Spec.Tls.IsTlsEnabled() && o.Spec.Tls.IsSelfManagedSecretForTls() {
-		// Read API PKI secret
-		secretName = GetSecretNameForPki(o)
-		if err = r.Client().Get(ctx, types.NamespacedName{Namespace: o.Namespace, Name: secretName}, sApiPki); err != nil {
-			if !k8serrors.IsNotFound(err) {
-				return read, res, errors.Wrapf(err, "Error when read existing secret %s", secretName)
-			}
-			sApiPki = nil
-		}
-
-		// Read API secret
-		secretName = GetSecretNameForTls(o)
-		if err = r.Client().Get(ctx, types.NamespacedName{Namespace: o.Namespace, Name: secretName}, sApi); err != nil {
-			if !k8serrors.IsNotFound(err) {
-				return read, res, errors.Wrapf(err, "Error when read existing secret %s", secretName)
-			}
-			sApi = nil
-		}
-	}
-
-	// Load API PKI
-	if sApiPki != nil {
-		// Load root CA
-		apiRootCA, err = pki.LoadRootCA(sApiPki.Data["ca.key"], sApiPki.Data["ca.pub"], sApiPki.Data["ca.crt"], sApiPki.Data["ca.crl"], logger)
-		if err != nil {
-			return read, res, errors.Wrap(err, "Error when load PKI")
-		}
-	}
-
-	// Load API certificate
-	if sApi != nil {
-		apiCrt, err = cert.LoadCertFromPem(sApi.Data["tls.crt"])
-		if err != nil {
-			return read, res, errors.Wrapf(err, "Error when load certificate")
-		}
-	}
-
-	data["apiRootCA"] = apiRootCA
-	data["apiCertificate"] = apiCrt
-	data["apiTlsSecret"] = sApi
-	data["apiPkiSecret"] = sApiPki
-
-	return read, res, nil
+	return &tlsReconciler{WorkflowStepReconcilerActionWithDiff: saga}
 }
 
-// Diff permit to check if transport secrets are up to date
-func (r *tlsReconciler) Diff(ctx context.Context, o *kibanacrd.Kibana, read multiphase.MultiPhaseRead[*corev1.Secret], data map[string]any, logger *logrus.Entry) (diff multiphase.MultiPhaseDiff[*corev1.Secret], res reconcile.Result, err error) {
-	var (
-		d         any
-		needRenew bool
-		isUpdated bool
-	)
+// Read short-circuits the saga when TLS is disabled or user-managed (BYO);
+// otherwise performs legacy-CA cleanup and delegates to the saga.
+func (r *tlsReconciler) Read(ctx context.Context, o *kibanacrd.Kibana, data map[string]any, logger *logrus.Entry) (multiphase.MultiPhaseRead[client.Object], reconcile.Result, error) {
+	if !o.Spec.Tls.IsTlsEnabled() || !o.Spec.Tls.IsSelfManagedSecretForTls() {
+		return multiphase.NewMultiPhaseRead[client.Object](), reconcile.Result{}, nil
+	}
 
-	defaultRenewCertificate := DefaultRenewCertificate
+	if err := cleanupLegacyKibanaCASecret(ctx, r.Client(), o, logger); err != nil {
+		logger.Warnf("Failed to clean up legacy Kibana CA secret: %s", err.Error())
+	}
+
+	return r.WorkflowStepReconcilerActionWithDiff.Read(ctx, o, data, logger)
+}
+
+// kibanaTLSSpec builds the computed TLSSpec for a Kibana CR.
+func kibanaTLSSpec(o *kibanacrd.Kibana) certificate.TLSSpec {
+	validityDays := 365
+	if o.Spec.Tls.ValidityDays != nil {
+		validityDays = *o.Spec.Tls.ValidityDays
+	}
+
+	renewalDays := 30
 	if o.Spec.Tls.RenewalDays != nil {
-		defaultRenewCertificate = time.Duration(*o.Spec.Tls.RenewalDays) * 24 * time.Hour
+		renewalDays = *o.Spec.Tls.RenewalDays
 	}
 
-	d, err = helper.Get(data, "apiRootCA")
-	if err != nil {
-		return diff, res, err
-	}
-	apiRootCA := d.(*goca.CA)
-
-	d, err = helper.Get(data, "apiCertificate")
-	if err != nil {
-		return diff, res, err
-	}
-	apiCrt := d.(*x509.Certificate)
-
-	d, err = helper.Get(data, "apiPkiSecret")
-	if err != nil {
-		return diff, res, err
-	}
-	sApiPki := d.(*corev1.Secret)
-
-	d, err = helper.Get(data, "apiTlsSecret")
-	if err != nil {
-		return diff, res, err
-	}
-	sApi := d.(*corev1.Secret)
-
-	diff = multiphase.NewMultiPhaseDiff[*corev1.Secret]()
-
-	// Generate all certificates
-	if sApi == nil || sApiPki == nil {
-		logger.Debugf("Generate all certificates")
-		diff.AddDiff("Generate new certificates")
-
-		// Handle API certificates
-		if o.Spec.Tls.IsTlsEnabled() && o.Spec.Tls.IsSelfManagedSecretForTls() {
-
-			// Generate API PKI
-			tmpApiPki, apiRootCA, err := buildPkiSecret(o)
-			if err != nil {
-				return diff, res, errors.Wrap(err, "Error when generate PKI")
-			}
-			sApiPki, isUpdated, err = updateSecret(o, sApiPki, tmpApiPki, r.Client().Scheme())
-			if err != nil {
-				return diff, res, errors.Wrap(err, "Error when update secret of API PKI")
-			}
-			if isUpdated {
-				diff.AddObjectToUpdate(sApiPki)
-			} else {
-				diff.AddObjectToCreate(sApiPki)
-			}
-
-			// Generate API certificate
-			tmpApi, err := buildTlsSecret(o, apiRootCA)
-			if err != nil {
-				return diff, res, errors.Wrap(err, "Error when generate certificate")
-			}
-			sApi, isUpdated, err = updateSecret(o, sApi, tmpApi, r.Client().Scheme())
-			if err != nil {
-				return diff, res, errors.Wrap(err, "Error when update secret of API certificate")
-			}
-			if isUpdated {
-				diff.AddObjectToUpdate(sApi)
-			} else {
-				diff.AddObjectToCreate(sApi)
-			}
-		}
-
-		return diff, res, nil
+	spec := certificate.TLSSpec{
+		SecretName:       GetSecretNameForTls(o),
+		CommonName:       o.Name,
+		CACommonName:     fmt.Sprintf("%s-api", o.Name),
+		LeafValidityDays: validityDays,
+		CAValidityDays:   validityDays,
+		RenewalDays:      renewalDays,
+		Subject: certificate.CertificateSubject{
+			Organizations:       []string{o.Name},
+			OrganizationalUnits: []string{"api"},
+			Countries:           []string{"internal"},
+			Localities:          []string{"internal"},
+			Provinces:           []string{"internal"},
+		},
+		DNSNames: []string{
+			GetServiceName(o),
+			fmt.Sprintf("%s.%s", GetServiceName(o), o.Namespace),
+			fmt.Sprintf("%s.%s.svc", GetServiceName(o), o.Namespace),
+		},
 	}
 
-	// Check if certificates will expire
-	isRenew := false
-	certificates := map[string]x509.Certificate{}
-	if o.Spec.Tls.IsTlsEnabled() && o.Spec.Tls.IsSelfManagedSecretForTls() {
-		if apiRootCA != nil {
-			certificates["apiPki"] = *apiRootCA.GoCertificate()
-		} else {
-			isRenew = true
-		}
-		if apiCrt != nil {
-			certificates["apiCrt"] = *apiCrt
-		} else {
-			isRenew = true
+	if o.Spec.Tls.SelfSignedCertificate != nil {
+		spec.DNSNames = append(spec.DNSNames, o.Spec.Tls.SelfSignedCertificate.AltNames...)
+		spec.IPAddresses = append(spec.IPAddresses, o.Spec.Tls.SelfSignedCertificate.AltIps...)
+	}
+
+	// Defense-in-depth: CRD MaxItems validation should prevent this, but
+	// truncate excessive SANs to avoid oversized certificates (CWE-400).
+	// Truncation is silent (no logger available in TLSSpecProviderFunc).
+	if len(spec.DNSNames) > 64 {
+		spec.DNSNames = spec.DNSNames[:64]
+	}
+	if len(spec.IPAddresses) > 64 {
+		spec.IPAddresses = spec.IPAddresses[:64]
+	}
+
+	applyKeyComplexity(&spec, o.Spec.Tls.KeyComplexity, o.Spec.Tls.KeySize)
+
+	return spec
+}
+
+// applyKeyComplexity maps the CR's KeyComplexity/legacy KeySize to TLSSpec
+// key algorithm/curve/size (mirror of elasticsearch.applyKeyComplexity).
+func applyKeyComplexity(spec *certificate.TLSSpec, complexity string, legacyKeySize *int) {
+	switch complexity {
+	case "rsa-2048":
+		spec.KeyAlgorithm = certificate.KeyAlgorithmRSA
+		spec.KeySize = 2048
+	case "rsa-4096":
+		spec.KeyAlgorithm = certificate.KeyAlgorithmRSA
+		spec.KeySize = 4096
+	case "ecdsa-p256":
+		spec.KeyAlgorithm = certificate.KeyAlgorithmECDSA
+		spec.Curve = certificate.CurveP256
+	case "ecdsa-p384":
+		spec.KeyAlgorithm = certificate.KeyAlgorithmECDSA
+		spec.Curve = certificate.CurveP384
+	case "ecdsa-p521":
+		spec.KeyAlgorithm = certificate.KeyAlgorithmECDSA
+		spec.Curve = certificate.CurveP521
+	default:
+		spec.KeyAlgorithm = certificate.KeyAlgorithmRSA
+		spec.KeySize = 2048
+		if legacyKeySize != nil {
+			spec.KeySize = *legacyKeySize
 		}
 	}
+}
 
-	if !isRenew {
-		// Check certificate validity if all certificates exists
-		for name, crt := range certificates {
-			needRenew, err = pki.NeedRenewCertificate(&crt, defaultRenewCertificate, logger)
-			if err != nil {
-				return diff, res, errors.Wrapf(err, "Error when check expiration of %s certificate", name)
-			}
-			if needRenew {
-				isRenew = true
-				break
-			}
-		}
-	}
-
-	if isRenew {
-		logger.Debugf("Renew all certificates")
-
-		if o.Spec.Tls.IsTlsEnabled() && o.Spec.Tls.IsSelfManagedSecretForTls() {
-			tmpApiPki, apiRootCA, err := buildPkiSecret(o)
-			if err != nil {
-				return diff, res, errors.Wrap(err, "Error when renew Pki")
-			}
-			diff.AddDiff("Renew API Pki")
-			sApiPki, isUpdated, err = updateSecret(o, sApiPki, tmpApiPki, r.Client().Scheme())
-			if err != nil {
-				return diff, res, errors.Wrap(err, "Error when update secret of API Pki")
-			}
-			if isUpdated {
-				diff.AddObjectToUpdate(sApiPki)
-			} else {
-				diff.AddObjectToCreate(sApiPki)
-			}
-
-			tmpApi, err := buildTlsSecret(o, apiRootCA)
-			if err != nil {
-				return diff, res, errors.Wrap(err, "Error when renew certificate")
-			}
-			diff.AddDiff("Renew API certificate")
-			sApi, isUpdated, err = updateSecret(o, sApi, tmpApi, r.Client().Scheme())
-			if err != nil {
-				return diff, res, errors.Wrap(err, "Error when update secret of API certificate")
-			}
-			if isUpdated {
-				diff.AddObjectToUpdate(sApi)
-			} else {
-				diff.AddObjectToCreate(sApi)
-			}
+// kibanaCARenewalCustomizer forces a CA rotation when the current CA is within
+// caRenewalDays of expiry (sets AnnotationForceRenewTLS on o).
+func kibanaCARenewalCustomizer(c client.Client, log *logrus.Entry) certificate.CertificateCustomizer[*kibanacrd.Kibana] {
+	return certificate.CertificateCustomizerFunc[*kibanacrd.Kibana](func(o *kibanacrd.Kibana, base certificate.TLSSpec) (certificate.TLSSpec, error) {
+		if o.Spec.Tls.CaRenewalDays == nil {
+			return base, nil
 		}
 
-		return diff, res, nil
-	}
-
-	// Detect label/annotation drift so a label-only CR update re-applies the
-	// TLS secrets (SSA no-op when metadata is already correct).
-	if o.Spec.Tls.IsTlsEnabled() && o.Spec.Tls.IsSelfManagedSecretForTls() {
-		for _, s := range []*corev1.Secret{sApiPki, sApi} {
-			if expected := common.DriftSecretForMetadata(s, getLabels(o), getAnnotations(o)); expected != nil {
-				diff.AddDiff("Update TLS secret metadata")
-				diff.AddObjectToUpdate(expected)
+		caSecret := &corev1.Secret{}
+		if err := c.Get(context.Background(), types.NamespacedName{Namespace: o.Namespace, Name: GetSecretNameForPki(o)}, caSecret); err != nil {
+			if k8serrors.IsNotFound(err) {
+				return base, nil // CA not yet generated; bootstrap creates it
 			}
+			return base, err
 		}
+
+		crt, err := certParse(caSecret.Data["ca.crt"])
+		if err != nil {
+			return base, nil // unparseable CA; avoid breaking bootstrap
+		}
+
+		// Defense-in-depth: the CA secret is operator-generated and should always
+		// contain a CA certificate, but if it doesn't, don't trust it for renewal.
+		if !crt.IsCA {
+			log.Warnf("CA certificate in secret %s/%s is not a CA; skipping CA renewal check", o.Namespace, GetSecretNameForPki(o))
+			return base, nil
+		}
+
+		needRenew, err := pki.NeedRenewCertificate(crt, time.Duration(*o.Spec.Tls.CaRenewalDays)*24*time.Hour, log)
+		if err != nil || !needRenew {
+			return base, nil
+		}
+
+		if o.Annotations == nil {
+			o.Annotations = map[string]string{}
+		}
+		o.Annotations[AnnotationForceRenewTLS] = "true"
+
+		return base, nil
+	})
+}
+
+// kibanaConvergenceCheck gates the Rotate→Converge transition on the Kibana
+// Deployment having rolled to the latest generation.
+func kibanaConvergenceCheck(c client.Client) rotation.ConvergenceCheck[*kibanacrd.Kibana] {
+	return func(ctx context.Context, o *kibanacrd.Kibana, data map[string]any) (bool, error) {
+		// In envtest there is no kubelet to roll pods, so the convergence check
+		// would never pass and the CA rotation saga would stall in "Converge".
+		if common.IsEnvtest() {
+			return true, nil
+		}
+
+		dpl := &appv1.Deployment{}
+		if err := c.Get(ctx, types.NamespacedName{Namespace: o.Namespace, Name: GetDeploymentName(o)}, dpl); err != nil {
+			if k8serrors.IsNotFound(err) {
+				return false, nil
+			}
+			return false, errors.Wrapf(err, "Error when read Kibana deployment")
+		}
+
+		if dpl.Status.ObservedGeneration < dpl.Generation {
+			return false, nil
+		}
+
+		expectedReplicas := o.Spec.Deployment.Replicas
+		if dpl.Status.UpdatedReplicas < expectedReplicas || dpl.Status.AvailableReplicas < expectedReplicas {
+			return false, nil
+		}
+
+		return true, nil
+	}
+}
+
+// cleanupLegacyKibanaCASecret deletes the pre-saga PKI secret <name>-pki-kb once
+// the new saga CA secret <name>-tls-kb-ca exists. Best-effort.
+func cleanupLegacyKibanaCASecret(ctx context.Context, c client.Client, o *kibanacrd.Kibana, logger *logrus.Entry) error {
+	// The new CA must exist first (the saga has generated it at least once).
+	newCA := &corev1.Secret{}
+	if err := c.Get(ctx, types.NamespacedName{Namespace: o.Namespace, Name: GetSecretNameForPki(o)}, newCA); err != nil {
+		if k8serrors.IsNotFound(err) {
+			return nil
+		}
+		return err
 	}
 
-	return diff, res, nil
+	legacyName := fmt.Sprintf("%s-pki-kb", o.Name)
+	legacy := &corev1.Secret{}
+	if err := c.Get(ctx, types.NamespacedName{Namespace: o.Namespace, Name: legacyName}, legacy); err != nil {
+		if k8serrors.IsNotFound(err) {
+			return nil
+		}
+		return err
+	}
+
+	if err := c.Delete(ctx, legacy); err != nil {
+		return err
+	}
+	logger.Infof("Deleted legacy Kibana CA secret %s/%s", o.Namespace, legacyName)
+
+	return nil
+}
+
+// certParse parses the first CERTIFICATE PEM block.
+func certParse(pemBytes []byte) (*x509.Certificate, error) {
+	block, _ := pem.Decode(pemBytes)
+	if block == nil || block.Type != "CERTIFICATE" {
+		return nil, errors.New("no certificate found in PEM data")
+	}
+	return x509.ParseCertificate(block.Bytes)
 }

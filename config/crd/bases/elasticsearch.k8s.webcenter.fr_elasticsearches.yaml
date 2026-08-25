@@ -23459,7 +23459,7 @@ spec:
                 description: Tls permit to set the TLS setting for API access
                 properties:
                   caRenewalDays:
-                    default: 30
+                    default: 365
                     description: |-
                       CaRenewalDays is the number of days before the CA certificate expires
                       at which the operator starts the CA rotation saga. Default 30.
@@ -23522,6 +23522,7 @@ spec:
                           ip when generate certificate
                         items:
                           type: string
+                        maxItems: 32
                         type: array
                       altNames:
                         description: AltNames permit to set subject alt names of type

@@ -39,8 +39,6 @@ github.com/disaster37/generic-objectmatcher v1.0.2 h1:jjuMd0E/Q3ZsDCqbpd3nLdSI7I
 github.com/disaster37/generic-objectmatcher v1.0.2/go.mod h1:OyAiqj4iYNgikhoOBBNphdiToKvHtfC7Ib6C4kfkm0w=
 github.com/disaster37/go-kibana-rest/v8 v8.5.0 h1:Wr2CMopHj0wAh7kq3p355jXctISL1LdAZ9kYN/v6abw=
 github.com/disaster37/go-kibana-rest/v8 v8.5.0/go.mod h1:wVGm1b93CSmsHYoxzqhDszv347xr+fELdigS8XLO+bg=
-github.com/disaster37/goca v1.0.5 h1:c1H4EhoZmQoY7S5aCUidFZFmDwx8tB+hT8VX/QdJqeM=
-github.com/disaster37/goca v1.0.5/go.mod h1:wnv+TFjW1amP+FVyNMGNUJNmAVdfzPAEvifBWUwFhWs=
 github.com/disaster37/k8s-objectmatcher v1.8.8 h1:W6BN4Rkx2NCWOZaWGGEHjE3xaN6ur6mwL/V7wK9jf5Y=
 github.com/disaster37/k8s-objectmatcher v1.8.8/go.mod h1:2nRtPBxwgkwCBjerqlRF4oV9pqAVC1bxtl6Y4/iAt3U=
 github.com/disaster37/k8sbuilder v1.0.3 h1:SSm+qryxSPi3hoBxT8Et7ZfTnPHELRCNS8KVhnuOiG4=
@@ -362,5 +360,3 @@ sigs.k8s.io/structured-merge-diff/v6 v6.4.2 h1:qdOxHwrl2Kaag1aQEarlYcOA9vSyGCp3C
 sigs.k8s.io/structured-merge-diff/v6 v6.4.2/go.mod h1:M3W8sfWvn2HhQDIbGWj3S099YozAsymCo/wrT5ohRUE=
 sigs.k8s.io/yaml v1.6.0 h1:G8fkbMSAFqgEFgh4b1wmtzDnioxFCUgTZhlbj5P9QYs=
 sigs.k8s.io/yaml v1.6.0/go.mod h1:796bPqUfzR/0jLAl6XjHl3Ck7MiyVv8dbTdyT3/pMf4=
-software.sslmate.com/src/go-pkcs12 v0.6.0 h1:f3sQittAeF+pao32Vb+mkli+ZyT+VwKaD014qFGq6oU=
-software.sslmate.com/src/go-pkcs12 v0.6.0/go.mod h1:Qiz0EyvDRJjjxGyUQa2cCNZn/wMyzrRJ/qcDXOQazLI=

@@ -1,12 +1,18 @@
 package v1
 
 import (
+	"github.com/disaster37/operator-sdk-extra/v3/pkg/apis/workflow"
 	"github.com/disaster37/operator-sdk-extra/v3/pkg/object"
 )
 
 // GetStatus implement the object.MultiPhaseObject
 func (h *Kibana) GetStatus() object.MultiPhaseObjectStatus {
 	return &h.Status
+}
+
+// GetWorkflowStatus implement the workflow.WorkflowStatusGetter interface
+func (s *KibanaStatus) GetWorkflowStatus() *workflow.WorkflowStatus {
+	return &s.TlsWorkflowStatus
 }
 
 // IsPdb return true if PDB is enabled

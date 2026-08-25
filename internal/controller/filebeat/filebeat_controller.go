@@ -83,7 +83,7 @@ func NewFilebeatReconciler(c client.Client, logger *logrus.Entry, recorder recor
 		stepReconcilers: []multiphase.MultiPhaseStepReconcilerAction[*beatcrd.Filebeat, client.Object]{
 			multiphase.NewObjectMultiPhaseStepReconcilerAction[*beatcrd.Filebeat, *corev1.ServiceAccount, client.Object](newServiceAccountReconciler(c, recorder, kubeCapability.HasRoute)),
 			multiphase.NewObjectMultiPhaseStepReconcilerAction[*beatcrd.Filebeat, *rbacv1.RoleBinding, client.Object](newRoleBindingReconciler(c, recorder, kubeCapability.HasRoute)),
-			multiphase.NewObjectMultiPhaseStepReconcilerAction[*beatcrd.Filebeat, *corev1.Secret, client.Object](newTlsReconciler(c, recorder)),
+			newTlsReconciler(c, recorder),
 			multiphase.NewObjectMultiPhaseStepReconcilerAction[*beatcrd.Filebeat, *corev1.Secret, client.Object](newCALogstashReconciler(c, recorder)),
 			multiphase.NewObjectMultiPhaseStepReconcilerAction[*beatcrd.Filebeat, *corev1.Secret, client.Object](newCAElasticsearchReconciler(c, recorder)),
 			multiphase.NewObjectMultiPhaseStepReconcilerAction[*beatcrd.Filebeat, *corev1.Secret, client.Object](newCredentialReconciler(c, recorder)),

@@ -42,7 +42,7 @@ func TestGetSecretNameForPki(t *testing.T) {
 		Spec: kibanacrd.KibanaSpec{},
 	}
 
-	assert.Equal(t, "test-pki-kb", GetSecretNameForPki(o))
+	assert.Equal(t, "test-tls-kb-ca", GetSecretNameForPki(o))
 }
 
 func TestGetSecretNameForCAElasticsearch(t *testing.T) {

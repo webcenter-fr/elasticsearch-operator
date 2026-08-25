@@ -224,21 +224,22 @@ func doCreateFilebeatStep() test.TestStep[*beatcrd.Filebeat] {
 			assert.NotEmpty(t, s.Data)
 			assert.NotEmpty(t, s.OwnerReferences)
 
-			// Secrets for Pki
+			// Secrets for Pki (CA) - saga secrets have no owner references
 			s = &corev1.Secret{}
 			if err = c.Get(context.Background(), types.NamespacedName{Namespace: key.Namespace, Name: GetSecretNameForPki(fb)}, s); err != nil {
 				t.Fatal(err)
 			}
-			assert.NotEmpty(t, s.Data)
-			assert.NotEmpty(t, s.OwnerReferences)
+			assert.NotEmpty(t, s.Data["ca.crt"])
+			assert.NotEmpty(t, s.Data["ca.key"])
 
-			// Secrets for certificates
+			// Secrets for certificates (leaf) - saga secrets have no owner references
 			s = &corev1.Secret{}
 			if err = c.Get(context.Background(), types.NamespacedName{Namespace: key.Namespace, Name: GetSecretNameForTls(fb)}, s); err != nil {
 				t.Fatal(err)
 			}
-			assert.NotEmpty(t, s.Data)
-			assert.NotEmpty(t, s.OwnerReferences)
+			assert.NotEmpty(t, s.Data["ca.crt"])
+			assert.NotEmpty(t, s.Data["nxlog.crt"])
+			assert.NotEmpty(t, s.Data["nxlog.key"])
 
 			// Secrets for credentials must exist
 			s = &corev1.Secret{}
@@ -410,22 +411,23 @@ func doUpdateFilebeatStep() test.TestStep[*beatcrd.Filebeat] {
 			assert.NotEmpty(t, s.OwnerReferences)
 			assert.Equal(t, "fu", s.Labels["test"])
 
-			// Secrets for Pki
+			// Secrets for Pki (CA) - saga secrets have no owner references
 			s = &corev1.Secret{}
 			if err = c.Get(context.Background(), types.NamespacedName{Namespace: key.Namespace, Name: GetSecretNameForPki(fb)}, s); err != nil {
 				t.Fatal(err)
 			}
-			assert.NotEmpty(t, s.Data)
-			assert.NotEmpty(t, s.OwnerReferences)
+			assert.NotEmpty(t, s.Data["ca.crt"])
+			assert.NotEmpty(t, s.Data["ca.key"])
 			assert.Equal(t, "fu", s.Labels["test"])
 
-			// Secrets for certificates
+			// Secrets for certificates (leaf) - saga secrets have no owner references
 			s = &corev1.Secret{}
 			if err = c.Get(context.Background(), types.NamespacedName{Namespace: key.Namespace, Name: GetSecretNameForTls(fb)}, s); err != nil {
 				t.Fatal(err)
 			}
-			assert.NotEmpty(t, s.Data)
-			assert.NotEmpty(t, s.OwnerReferences)
+			assert.NotEmpty(t, s.Data["ca.crt"])
+			assert.NotEmpty(t, s.Data["nxlog.crt"])
+			assert.NotEmpty(t, s.Data["nxlog.key"])
 			assert.Equal(t, "fu", s.Labels["test"])
 
 			// Services for ingress must exist

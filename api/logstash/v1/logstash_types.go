@@ -19,6 +19,7 @@ package v1
 import (
 	"github.com/disaster37/operator-sdk-extra/v3/pkg/apis"
 	"github.com/disaster37/operator-sdk-extra/v3/pkg/apis/multiphase"
+	"github.com/disaster37/operator-sdk-extra/v3/pkg/apis/workflow"
 	"github.com/webcenter-fr/elasticsearch-operator/api/shared"
 	corev1 "k8s.io/api/core/v1"
 	policyv1 "k8s.io/api/policy/v1"
@@ -223,6 +224,10 @@ type LogstashStatus struct {
 	// CertSecretName is the secret name that store certs generated for inputs
 	// +operator-sdk:csv:customresourcedefinitions:type=status
 	CertSecretName string `json:"certSecret,omitempty"`
+
+	// TlsWorkflowStatus tracks the CA rotation saga phase
+	// +optional
+	TlsWorkflowStatus workflow.WorkflowStatus `json:"tlsWorkflowStatus,omitempty"`
 }
 
 //+kubebuilder:object:root=true

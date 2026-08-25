@@ -11,7 +11,6 @@ require (
 	github.com/disaster37/es-handler/v9 v9.0.0
 	github.com/disaster37/generic-objectmatcher v1.0.2
 	github.com/disaster37/go-kibana-rest/v8 v8.5.0
-	github.com/disaster37/goca v1.0.5
 	github.com/disaster37/k8sbuilder v1.0.3
 	github.com/disaster37/kb-handler/v8 v8.0.4
 	github.com/disaster37/operator-sdk-extra/v3 v3.0.7
@@ -143,5 +142,4 @@ require (
 	sigs.k8s.io/json v0.0.0-20250730193827-2d320260d730 // indirect
 	sigs.k8s.io/randfill v1.0.0 // indirect
 	sigs.k8s.io/structured-merge-diff/v6 v6.4.2 // indirect
-	software.sslmate.com/src/go-pkcs12 v0.6.0 // indirect
 )
