@@ -98,7 +98,3 @@ type RoleMappingList struct {
 	metav1.ListMeta `json:"metadata,omitempty"`
 	Items           []RoleMapping `json:"items"`
 }
-
-func init() {
-	SchemeBuilder.Register(&RoleMapping{}, &RoleMappingList{})
-}

@@ -201,12 +201,12 @@ func (t *CerebroControllerTestSuite) SetupSuite() {
 	}
 
 	// Init controllers
-	elasticsearchReconciler := elasticsearchcontrollers.NewElasticsearchReconciler(k8sClient, logrus.NewEntry(logrus.StandardLogger()), k8sManager.GetEventRecorderFor("elasticsearch-controller"), kubeCapability)
+	elasticsearchReconciler := elasticsearchcontrollers.NewElasticsearchReconciler(k8sClient, logrus.NewEntry(logrus.StandardLogger()), common.LegacyEventRecorder(k8sManager, "elasticsearch-controller"), kubeCapability)
 	if err = elasticsearchReconciler.SetupWithManager(k8sManager); err != nil {
 		panic(err)
 	}
 
-	cerebroReconciler := NewCerebroReconciler(k8sClient, logrus.NewEntry(logrus.StandardLogger()), k8sManager.GetEventRecorderFor("cerebro-controller"), kubeCapability)
+	cerebroReconciler := NewCerebroReconciler(k8sClient, logrus.NewEntry(logrus.StandardLogger()), common.LegacyEventRecorder(k8sManager, "cerebro-controller"), kubeCapability)
 	if err = cerebroReconciler.SetupWithManager(k8sManager); err != nil {
 		panic(err)
 	}

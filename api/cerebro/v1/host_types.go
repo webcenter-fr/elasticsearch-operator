@@ -108,7 +108,3 @@ type HostList struct {
 	metav1.ListMeta `json:"metadata,omitempty"`
 	Items           []Host `json:"items"`
 }
-
-func init() {
-	SchemeBuilder.Register(&Host{}, &HostList{})
-}

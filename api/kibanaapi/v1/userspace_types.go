@@ -149,7 +149,3 @@ type UserSpaceList struct {
 	metav1.ListMeta `json:"metadata,omitempty"`
 	Items           []UserSpace `json:"items"`
 }
-
-func init() {
-	SchemeBuilder.Register(&UserSpace{}, &UserSpaceList{})
-}

@@ -101,7 +101,3 @@ type ComponentTemplateList struct {
 	metav1.ListMeta `json:"metadata,omitempty"`
 	Items           []ComponentTemplate `json:"items"`
 }
-
-func init() {
-	SchemeBuilder.Register(&ComponentTemplate{}, &ComponentTemplateList{})
-}

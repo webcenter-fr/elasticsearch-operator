@@ -277,7 +277,3 @@ type FilebeatList struct {
 	metav1.ListMeta `json:"metadata,omitempty"`
 	Items           []Filebeat `json:"items"`
 }
-
-func init() {
-	SchemeBuilder.Register(&Filebeat{}, &FilebeatList{})
-}

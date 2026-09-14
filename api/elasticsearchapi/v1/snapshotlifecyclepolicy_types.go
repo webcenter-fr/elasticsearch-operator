@@ -154,7 +154,3 @@ type SnapshotLifecyclePolicyList struct {
 	metav1.ListMeta `json:"metadata,omitempty"`
 	Items           []SnapshotLifecyclePolicy `json:"items"`
 }
-
-func init() {
-	SchemeBuilder.Register(&SnapshotLifecyclePolicy{}, &SnapshotLifecyclePolicyList{})
-}

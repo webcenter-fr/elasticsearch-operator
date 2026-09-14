@@ -92,7 +92,3 @@ type LogstashPipelineList struct {
 	metav1.ListMeta `json:"metadata,omitempty"`
 	Items           []LogstashPipeline `json:"items"`
 }
-
-func init() {
-	SchemeBuilder.Register(&LogstashPipeline{}, &LogstashPipelineList{})
-}

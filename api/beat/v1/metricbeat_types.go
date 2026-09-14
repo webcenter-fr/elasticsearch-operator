@@ -154,7 +154,3 @@ type MetricbeatList struct {
 	metav1.ListMeta `json:"metadata,omitempty"`
 	Items           []Metricbeat `json:"items"`
 }
-
-func init() {
-	SchemeBuilder.Register(&Metricbeat{}, &MetricbeatList{})
-}

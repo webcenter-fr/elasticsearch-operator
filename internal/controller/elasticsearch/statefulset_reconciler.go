@@ -492,16 +492,16 @@ func (r *statefulsetReconciler) OnSuccess(ctx context.Context, o *elasticsearchc
 
 		r.Recorder().Eventf(o, corev1.EventTypeNormal, "Completed", "Statefulsets are being upgraded")
 
-		// In envtest there is no kubelet to roll pods; requeue immediately so
+		// In envtest there is no kubelet to roll pods; requeue quickly so
 		// the upgrade gating converges within the test timeout.
 		if common.IsEnvtest() {
-			return reconcile.Result{Requeue: true}, nil
+			return reconcile.Result{RequeueAfter: time.Second}, nil
 		}
 		return reconcile.Result{RequeueAfter: time.Second * 30}, nil
 
 	case StatefulsetPhaseUpgrade:
 		if common.IsEnvtest() {
-			return reconcile.Result{Requeue: true}, nil
+			return reconcile.Result{RequeueAfter: time.Second}, nil
 		}
 		return reconcile.Result{RequeueAfter: time.Second * 30}, nil
 
@@ -522,7 +522,7 @@ func (r *statefulsetReconciler) OnSuccess(ctx context.Context, o *elasticsearchc
 
 		r.Recorder().Eventf(o, corev1.EventTypeNormal, "Completed", "Statefulsets are finished to be upgraded")
 
-		return reconcile.Result{Requeue: true}, nil
+		return reconcile.Result{RequeueAfter: time.Second}, nil
 
 	}
 

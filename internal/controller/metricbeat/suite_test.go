@@ -217,12 +217,12 @@ func (t *MetricbeatControllerTestSuite) SetupSuite() {
 	}
 
 	// Init controllers
-	elasticsearchReconciler := elasticsearchcontrollers.NewElasticsearchReconciler(k8sClient, logrus.NewEntry(logrus.StandardLogger()), k8sManager.GetEventRecorderFor("elasticsearch-controller"), kubeCapability)
+	elasticsearchReconciler := elasticsearchcontrollers.NewElasticsearchReconciler(k8sClient, logrus.NewEntry(logrus.StandardLogger()), common.LegacyEventRecorder(k8sManager, "elasticsearch-controller"), kubeCapability)
 	if err = elasticsearchReconciler.SetupWithManager(k8sManager); err != nil {
 		panic(err)
 	}
 
-	metricbeatReconciler := NewMetricbeatReconciler(k8sClient, logrus.NewEntry(logrus.StandardLogger()), k8sManager.GetEventRecorderFor("metricbeat-controller"), kubeCapability)
+	metricbeatReconciler := NewMetricbeatReconciler(k8sClient, logrus.NewEntry(logrus.StandardLogger()), common.LegacyEventRecorder(k8sManager, "metricbeat-controller"), kubeCapability)
 	if err = metricbeatReconciler.SetupWithManager(k8sManager); err != nil {
 		panic(err)
 	}

@@ -201,7 +201,7 @@ func (t *ElasticsearchControllerTestSuite) SetupSuite() {
 	}
 
 	// Init controllers
-	elasticsearchReconciler := NewElasticsearchReconciler(k8sClient, logrus.NewEntry(logrus.StandardLogger()), k8sManager.GetEventRecorderFor("elasticsearch-controller"), kubeCapability)
+	elasticsearchReconciler := NewElasticsearchReconciler(k8sClient, logrus.NewEntry(logrus.StandardLogger()), common.LegacyEventRecorder(k8sManager, "elasticsearch-controller"), kubeCapability)
 	if err = elasticsearchReconciler.SetupWithManager(k8sManager); err != nil {
 		panic(err)
 	}

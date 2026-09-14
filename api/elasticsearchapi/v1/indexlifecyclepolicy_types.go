@@ -138,7 +138,3 @@ type IndexLifecyclePolicyList struct {
 	metav1.ListMeta `json:"metadata,omitempty"`
 	Items           []IndexLifecyclePolicy `json:"items"`
 }
-
-func init() {
-	SchemeBuilder.Register(&IndexLifecyclePolicy{}, &IndexLifecyclePolicyList{})
-}
