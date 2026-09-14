@@ -338,7 +338,3 @@ type ElasticsearchList struct {
 	metav1.ListMeta `json:"metadata,omitempty"`
 	Items           []Elasticsearch `json:"items"`
 }
-
-func init() {
-	SchemeBuilder.Register(&Elasticsearch{}, &ElasticsearchList{})
-}

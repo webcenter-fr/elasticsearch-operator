@@ -87,7 +87,3 @@ type SnapshotRepositoryList struct {
 	metav1.ListMeta `json:"metadata,omitempty"`
 	Items           []SnapshotRepository `json:"items"`
 }
-
-func init() {
-	SchemeBuilder.Register(&SnapshotRepository{}, &SnapshotRepositoryList{})
-}

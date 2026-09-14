@@ -276,115 +276,115 @@ func main() {
 	}
 
 	// Init controllers
-	elasticsearchController := elasticsearchcontrollers.NewElasticsearchReconciler(mgr.GetClient(), logrus.NewEntry(log), mgr.GetEventRecorderFor("elasticsearch-controller"), kubeCapability)
+	elasticsearchController := elasticsearchcontrollers.NewElasticsearchReconciler(mgr.GetClient(), logrus.NewEntry(log), common.LegacyEventRecorder(mgr, "elasticsearch-controller"), kubeCapability)
 	if err = elasticsearchController.SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "Elasticsearch")
 		os.Exit(1)
 	}
 
-	kibanaController := kibanacontrollers.NewKibanaReconciler(mgr.GetClient(), logrus.NewEntry(log), mgr.GetEventRecorderFor("kibana-controller"), kubeCapability)
+	kibanaController := kibanacontrollers.NewKibanaReconciler(mgr.GetClient(), logrus.NewEntry(log), common.LegacyEventRecorder(mgr, "kibana-controller"), kubeCapability)
 	if err = kibanaController.SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "Kibana")
 		os.Exit(1)
 	}
 
-	logstashController := logstashcontrollers.NewLogstashReconciler(mgr.GetClient(), logrus.NewEntry(log), mgr.GetEventRecorderFor("logstash-controller"), kubeCapability)
+	logstashController := logstashcontrollers.NewLogstashReconciler(mgr.GetClient(), logrus.NewEntry(log), common.LegacyEventRecorder(mgr, "logstash-controller"), kubeCapability)
 	if err = logstashController.SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "Logstash")
 		os.Exit(1)
 	}
 
-	filebeatController := filebeatcontrollers.NewFilebeatReconciler(mgr.GetClient(), logrus.NewEntry(log), mgr.GetEventRecorderFor("filebeat-controller"), kubeCapability)
+	filebeatController := filebeatcontrollers.NewFilebeatReconciler(mgr.GetClient(), logrus.NewEntry(log), common.LegacyEventRecorder(mgr, "filebeat-controller"), kubeCapability)
 	if err = filebeatController.SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "Filebeat")
 		os.Exit(1)
 	}
 
-	metricbeatController := metricbeatcontrollers.NewMetricbeatReconciler(mgr.GetClient(), logrus.NewEntry(log), mgr.GetEventRecorderFor("metricbeat-controller"), kubeCapability)
+	metricbeatController := metricbeatcontrollers.NewMetricbeatReconciler(mgr.GetClient(), logrus.NewEntry(log), common.LegacyEventRecorder(mgr, "metricbeat-controller"), kubeCapability)
 	if err = metricbeatController.SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "Metricbeat")
 		os.Exit(1)
 	}
 
-	cerebroController := cerebrocontrollers.NewCerebroReconciler(mgr.GetClient(), logrus.NewEntry(log), mgr.GetEventRecorderFor("cerebro-controller"), kubeCapability)
+	cerebroController := cerebrocontrollers.NewCerebroReconciler(mgr.GetClient(), logrus.NewEntry(log), common.LegacyEventRecorder(mgr, "cerebro-controller"), kubeCapability)
 	if err = cerebroController.SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "Cerebro")
 		os.Exit(1)
 	}
 
-	elasticsearchUserController := elasticsearchapicontrollers.NewUserReconciler(mgr.GetClient(), logrus.NewEntry(log), mgr.GetEventRecorderFor("elasticsearch-user-controller"))
+	elasticsearchUserController := elasticsearchapicontrollers.NewUserReconciler(mgr.GetClient(), logrus.NewEntry(log), common.LegacyEventRecorder(mgr, "elasticsearch-user-controller"))
 	if err = elasticsearchUserController.SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "ElasticsearchUser")
 		os.Exit(1)
 	}
 
-	elasticsearchLicenseController := elasticsearchapicontrollers.NewLicenseReconciler(mgr.GetClient(), logrus.NewEntry(log), mgr.GetEventRecorderFor("elasticsearch-license-controller"))
+	elasticsearchLicenseController := elasticsearchapicontrollers.NewLicenseReconciler(mgr.GetClient(), logrus.NewEntry(log), common.LegacyEventRecorder(mgr, "elasticsearch-license-controller"))
 	if err = elasticsearchLicenseController.SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "ElasticsearchLicense")
 		os.Exit(1)
 	}
 
-	elasticsearchRoleController := elasticsearchapicontrollers.NewRoleReconciler(mgr.GetClient(), logrus.NewEntry(log), mgr.GetEventRecorderFor("elasticsearch-role-controller"))
+	elasticsearchRoleController := elasticsearchapicontrollers.NewRoleReconciler(mgr.GetClient(), logrus.NewEntry(log), common.LegacyEventRecorder(mgr, "elasticsearch-role-controller"))
 	if err = elasticsearchRoleController.SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "ElasticsearchRole")
 		os.Exit(1)
 	}
 
-	elasticsearchRoleMappingController := elasticsearchapicontrollers.NewRoleMappingReconciler(mgr.GetClient(), logrus.NewEntry(log), mgr.GetEventRecorderFor("elasticsearch-rolemapping-controller"))
+	elasticsearchRoleMappingController := elasticsearchapicontrollers.NewRoleMappingReconciler(mgr.GetClient(), logrus.NewEntry(log), common.LegacyEventRecorder(mgr, "elasticsearch-rolemapping-controller"))
 	if err = elasticsearchRoleMappingController.SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "ElasticsearchRoleMapping")
 		os.Exit(1)
 	}
 
-	elasticsearchIlmController := elasticsearchapicontrollers.NewIndexLifecyclePolicyReconciler(mgr.GetClient(), logrus.NewEntry(log), mgr.GetEventRecorderFor("elasticsearch-indexlifecyclepolicy-controller"))
+	elasticsearchIlmController := elasticsearchapicontrollers.NewIndexLifecyclePolicyReconciler(mgr.GetClient(), logrus.NewEntry(log), common.LegacyEventRecorder(mgr, "elasticsearch-indexlifecyclepolicy-controller"))
 	if err = elasticsearchIlmController.SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "ElasticsearchIndexLifecyclePolicy")
 		os.Exit(1)
 	}
 
-	elasticsearchSlmController := elasticsearchapicontrollers.NewSnapshotLifecyclePolicyReconciler(mgr.GetClient(), logrus.NewEntry(log), mgr.GetEventRecorderFor("elasticsearch-snapshotlifecyclepolicy-controller"))
+	elasticsearchSlmController := elasticsearchapicontrollers.NewSnapshotLifecyclePolicyReconciler(mgr.GetClient(), logrus.NewEntry(log), common.LegacyEventRecorder(mgr, "elasticsearch-snapshotlifecyclepolicy-controller"))
 	if err = elasticsearchSlmController.SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "ElasticsearchSnapshotLifecyclePolicy")
 		os.Exit(1)
 	}
 
-	elasticsearchSnapshotRepositoryController := elasticsearchapicontrollers.NewSnapshotRepositoryReconciler(mgr.GetClient(), logrus.NewEntry(log), mgr.GetEventRecorderFor("elasticsearch-snapshotrepository-controller"))
+	elasticsearchSnapshotRepositoryController := elasticsearchapicontrollers.NewSnapshotRepositoryReconciler(mgr.GetClient(), logrus.NewEntry(log), common.LegacyEventRecorder(mgr, "elasticsearch-snapshotrepository-controller"))
 	if err = elasticsearchSnapshotRepositoryController.SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "ElasticsearchSnapshotRepository")
 		os.Exit(1)
 	}
 
-	elasticsearchComponentTemplateController := elasticsearchapicontrollers.NewComponentTemplateReconciler(mgr.GetClient(), logrus.NewEntry(log), mgr.GetEventRecorderFor("elasticsearch-componenttemplate-controller"))
+	elasticsearchComponentTemplateController := elasticsearchapicontrollers.NewComponentTemplateReconciler(mgr.GetClient(), logrus.NewEntry(log), common.LegacyEventRecorder(mgr, "elasticsearch-componenttemplate-controller"))
 	if err = elasticsearchComponentTemplateController.SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "ElasticsearchComponentTemplate")
 		os.Exit(1)
 	}
 
-	elasticsearchIndexTemplateController := elasticsearchapicontrollers.NewIndexTemplateReconciler(mgr.GetClient(), logrus.NewEntry(log), mgr.GetEventRecorderFor("elasticsearch-indextemplate-controller"))
+	elasticsearchIndexTemplateController := elasticsearchapicontrollers.NewIndexTemplateReconciler(mgr.GetClient(), logrus.NewEntry(log), common.LegacyEventRecorder(mgr, "elasticsearch-indextemplate-controller"))
 	if err = elasticsearchIndexTemplateController.SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "ElasticsearchIndexTemplate")
 		os.Exit(1)
 	}
 
-	elasticsearchWatchController := elasticsearchapicontrollers.NewWatchReconciler(mgr.GetClient(), logrus.NewEntry(log), mgr.GetEventRecorderFor("elasticsearch-indextemplate-controller"))
+	elasticsearchWatchController := elasticsearchapicontrollers.NewWatchReconciler(mgr.GetClient(), logrus.NewEntry(log), common.LegacyEventRecorder(mgr, "elasticsearch-indextemplate-controller"))
 	if err = elasticsearchWatchController.SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "ElasticsearchWatch")
 		os.Exit(1)
 	}
 
-	kibanaUserSpaceController := kibanaapicontrollers.NewUserSpaceReconciler(mgr.GetClient(), logrus.NewEntry(log), mgr.GetEventRecorderFor("kibana-userspace-controller"))
+	kibanaUserSpaceController := kibanaapicontrollers.NewUserSpaceReconciler(mgr.GetClient(), logrus.NewEntry(log), common.LegacyEventRecorder(mgr, "kibana-userspace-controller"))
 	if err = kibanaUserSpaceController.SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "KibanaUserSpace")
 		os.Exit(1)
 	}
 
-	kibanaRoleController := kibanaapicontrollers.NewRoleReconciler(mgr.GetClient(), logrus.NewEntry(log), mgr.GetEventRecorderFor("kibana-role-controller"))
+	kibanaRoleController := kibanaapicontrollers.NewRoleReconciler(mgr.GetClient(), logrus.NewEntry(log), common.LegacyEventRecorder(mgr, "kibana-role-controller"))
 	if err = kibanaRoleController.SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "KibanaRole")
 		os.Exit(1)
 	}
 
-	kibanaLogstashPipelineController := kibanaapicontrollers.NewLogstashPipelineReconciler(mgr.GetClient(), logrus.NewEntry(log), mgr.GetEventRecorderFor("kibana-logstashpipeline-controller"))
+	kibanaLogstashPipelineController := kibanaapicontrollers.NewLogstashPipelineReconciler(mgr.GetClient(), logrus.NewEntry(log), common.LegacyEventRecorder(mgr, "kibana-logstashpipeline-controller"))
 	if err = kibanaLogstashPipelineController.SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "KibanaLogstashPipeline")
 		os.Exit(1)

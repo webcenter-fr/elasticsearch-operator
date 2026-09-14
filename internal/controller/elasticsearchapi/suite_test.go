@@ -26,6 +26,7 @@ import (
 	kibanacrd "github.com/webcenter-fr/elasticsearch-operator/api/kibana/v1"
 	kibanaapicrd "github.com/webcenter-fr/elasticsearch-operator/api/kibanaapi/v1"
 	logstashcrd "github.com/webcenter-fr/elasticsearch-operator/api/logstash/v1"
+	"github.com/webcenter-fr/elasticsearch-operator/internal/controller/common"
 	"go.uber.org/mock/gomock"
 	"k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/rest"
@@ -194,7 +195,7 @@ func (t *ElasticsearchapiControllerTestSuite) SetupSuite() {
 	userReconciler := NewUserReconciler(
 		k8sClient,
 		logrus.NewEntry(logrus.StandardLogger()),
-		k8sManager.GetEventRecorderFor("elasticsearch-user-controller"),
+		common.LegacyEventRecorder(k8sManager, "elasticsearch-user-controller"),
 	)
 	userReconciler.(*UserReconciler).RemoteReconcilerAction = mock.NewMockRemoteReconcilerAction[*elasticsearchapicrd.User, *eshandler.SecurityPutUserRequest, eshandler.ElasticsearchHandler](
 		userReconciler.(*UserReconciler).RemoteReconcilerAction,
@@ -209,7 +210,7 @@ func (t *ElasticsearchapiControllerTestSuite) SetupSuite() {
 	licenseReconciler := NewLicenseReconciler(
 		k8sClient,
 		logrus.NewEntry(logrus.StandardLogger()),
-		k8sManager.GetEventRecorderFor("elasticsearch-license-controller"),
+		common.LegacyEventRecorder(k8sManager, "elasticsearch-license-controller"),
 	)
 	licenseReconciler.(*LicenseReconciler).RemoteReconcilerAction = mock.NewMockRemoteReconcilerAction[*elasticsearchapicrd.License, *esapi.LicenseInfo, eshandler.ElasticsearchHandler](
 		licenseReconciler.(*LicenseReconciler).RemoteReconcilerAction,
@@ -224,7 +225,7 @@ func (t *ElasticsearchapiControllerTestSuite) SetupSuite() {
 	roleReconciler := NewRoleReconciler(
 		k8sClient,
 		logrus.NewEntry(logrus.StandardLogger()),
-		k8sManager.GetEventRecorderFor("elasticsearch-role-controller"),
+		common.LegacyEventRecorder(k8sManager, "elasticsearch-role-controller"),
 	)
 	roleReconciler.(*RoleReconciler).RemoteReconcilerAction = mock.NewMockRemoteReconcilerAction[*elasticsearchapicrd.Role, *eshandler.XPackSecurityRole, eshandler.ElasticsearchHandler](
 		roleReconciler.(*RoleReconciler).RemoteReconcilerAction,
@@ -239,7 +240,7 @@ func (t *ElasticsearchapiControllerTestSuite) SetupSuite() {
 	roleMappingReconciler := NewRoleMappingReconciler(
 		k8sClient,
 		logrus.NewEntry(logrus.StandardLogger()),
-		k8sManager.GetEventRecorderFor("elasticsearch-rolemapping-controller"),
+		common.LegacyEventRecorder(k8sManager, "elasticsearch-rolemapping-controller"),
 	)
 	roleMappingReconciler.(*RoleMappingReconciler).RemoteReconcilerAction = mock.NewMockRemoteReconcilerAction[*elasticsearchapicrd.RoleMapping, *esapi.SecurityRoleMapping, eshandler.ElasticsearchHandler](
 		roleMappingReconciler.(*RoleMappingReconciler).RemoteReconcilerAction,
@@ -254,7 +255,7 @@ func (t *ElasticsearchapiControllerTestSuite) SetupSuite() {
 	ilmReconciler := NewIndexLifecyclePolicyReconciler(
 		k8sClient,
 		logrus.NewEntry(logrus.StandardLogger()),
-		k8sManager.GetEventRecorderFor("elasticsearch-indexlifecyclepolicy-controller"),
+		common.LegacyEventRecorder(k8sManager, "elasticsearch-indexlifecyclepolicy-controller"),
 	)
 	ilmReconciler.(*IndexLifecyclePolicyReconciler).RemoteReconcilerAction = mock.NewMockRemoteReconcilerAction[*elasticsearchapicrd.IndexLifecyclePolicy, *esapi.IlmPolicy, eshandler.ElasticsearchHandler](
 		ilmReconciler.(*IndexLifecyclePolicyReconciler).RemoteReconcilerAction,
@@ -269,7 +270,7 @@ func (t *ElasticsearchapiControllerTestSuite) SetupSuite() {
 	slmReconciler := NewSnapshotLifecyclePolicyReconciler(
 		k8sClient,
 		logrus.NewEntry(logrus.StandardLogger()),
-		k8sManager.GetEventRecorderFor("elasticsearch-snapshotlifecyclepolicy-controller"),
+		common.LegacyEventRecorder(k8sManager, "elasticsearch-snapshotlifecyclepolicy-controller"),
 	)
 	slmReconciler.(*SnapshotLifecyclePolicyReconciler).RemoteReconcilerAction = mock.NewMockRemoteReconcilerAction[*elasticsearchapicrd.SnapshotLifecyclePolicy, *eshandler.SnapshotLifecyclePolicySpec, eshandler.ElasticsearchHandler](
 		slmReconciler.(*SnapshotLifecyclePolicyReconciler).RemoteReconcilerAction,
@@ -284,7 +285,7 @@ func (t *ElasticsearchapiControllerTestSuite) SetupSuite() {
 	snapshotRepositoryReconciler := NewSnapshotRepositoryReconciler(
 		k8sClient,
 		logrus.NewEntry(logrus.StandardLogger()),
-		k8sManager.GetEventRecorderFor("elasticsearch-snapshotrepository-controller"),
+		common.LegacyEventRecorder(k8sManager, "elasticsearch-snapshotrepository-controller"),
 	)
 	snapshotRepositoryReconciler.(*SnapshotRepositoryReconciler).RemoteReconcilerAction = mock.NewMockRemoteReconcilerAction[*elasticsearchapicrd.SnapshotRepository, *esapi.SnapshotRepository, eshandler.ElasticsearchHandler](
 		snapshotRepositoryReconciler.(*SnapshotRepositoryReconciler).RemoteReconcilerAction,
@@ -299,7 +300,7 @@ func (t *ElasticsearchapiControllerTestSuite) SetupSuite() {
 	componentTemplateReconciler := NewComponentTemplateReconciler(
 		k8sClient,
 		logrus.NewEntry(logrus.StandardLogger()),
-		k8sManager.GetEventRecorderFor("elasticsearch-componenttemplate-controller"),
+		common.LegacyEventRecorder(k8sManager, "elasticsearch-componenttemplate-controller"),
 	)
 	componentTemplateReconciler.(*ComponentTemplateReconciler).RemoteReconcilerAction = mock.NewMockRemoteReconcilerAction[*elasticsearchapicrd.ComponentTemplate, *eshandlerpatch.ComponentTemplate, eshandler.ElasticsearchHandler](
 		componentTemplateReconciler.(*ComponentTemplateReconciler).RemoteReconcilerAction,
@@ -314,7 +315,7 @@ func (t *ElasticsearchapiControllerTestSuite) SetupSuite() {
 	indexTemplateReconciler := NewIndexTemplateReconciler(
 		k8sClient,
 		logrus.NewEntry(logrus.StandardLogger()),
-		k8sManager.GetEventRecorderFor("elasticsearch-indextemplate-controller"),
+		common.LegacyEventRecorder(k8sManager, "elasticsearch-indextemplate-controller"),
 	)
 	indexTemplateReconciler.(*IndexTemplateReconciler).RemoteReconcilerAction = mock.NewMockRemoteReconcilerAction[*elasticsearchapicrd.IndexTemplate, *eshandlerpatch.IndexTemplate, eshandler.ElasticsearchHandler](
 		indexTemplateReconciler.(*IndexTemplateReconciler).RemoteReconcilerAction,
@@ -329,7 +330,7 @@ func (t *ElasticsearchapiControllerTestSuite) SetupSuite() {
 	watchReconciler := NewWatchReconciler(
 		k8sClient,
 		logrus.NewEntry(logrus.StandardLogger()),
-		k8sManager.GetEventRecorderFor("elasticsearch-watch-controller"),
+		common.LegacyEventRecorder(k8sManager, "elasticsearch-watch-controller"),
 	)
 	watchReconciler.(*WatchReconciler).RemoteReconcilerAction = mock.NewMockRemoteReconcilerAction[*elasticsearchapicrd.Watch, *eshandler.XPackWatch, eshandler.ElasticsearchHandler](
 		watchReconciler.(*WatchReconciler).RemoteReconcilerAction,

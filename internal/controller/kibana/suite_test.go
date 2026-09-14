@@ -202,12 +202,12 @@ func (t *KibanaControllerTestSuite) SetupSuite() {
 
 	// Init controllers
 
-	elasticsearchReconciler := elasticsearchcontrollers.NewElasticsearchReconciler(k8sClient, logrus.NewEntry(logrus.StandardLogger()), k8sManager.GetEventRecorderFor("elasticsearch-controller"), kubeCapability)
+	elasticsearchReconciler := elasticsearchcontrollers.NewElasticsearchReconciler(k8sClient, logrus.NewEntry(logrus.StandardLogger()), common.LegacyEventRecorder(k8sManager, "elasticsearch-controller"), kubeCapability)
 	if err = elasticsearchReconciler.SetupWithManager(k8sManager); err != nil {
 		panic(err)
 	}
 
-	kibanaReconciler := NewKibanaReconciler(k8sClient, logrus.NewEntry(logrus.StandardLogger()), k8sManager.GetEventRecorderFor("kibana-controller"), kubeCapability)
+	kibanaReconciler := NewKibanaReconciler(k8sClient, logrus.NewEntry(logrus.StandardLogger()), common.LegacyEventRecorder(k8sManager, "kibana-controller"), kubeCapability)
 	if err = kibanaReconciler.SetupWithManager(k8sManager); err != nil {
 		panic(err)
 	}

@@ -217,12 +217,12 @@ func (t *FilebeatControllerTestSuite) SetupSuite() {
 	}
 
 	// Init controllers
-	elasticsearchReconciler := elasticsearchcontrollers.NewElasticsearchReconciler(k8sClient, logrus.NewEntry(logrus.StandardLogger()), k8sManager.GetEventRecorderFor("elasticsearch-controller"), kubeCapability)
+	elasticsearchReconciler := elasticsearchcontrollers.NewElasticsearchReconciler(k8sClient, logrus.NewEntry(logrus.StandardLogger()), common.LegacyEventRecorder(k8sManager, "elasticsearch-controller"), kubeCapability)
 	if err = elasticsearchReconciler.SetupWithManager(k8sManager); err != nil {
 		panic(err)
 	}
 
-	filebeatReconciler := NewFilebeatReconciler(k8sClient, logrus.NewEntry(logrus.StandardLogger()), k8sManager.GetEventRecorderFor("filebeat-controller"), kubeCapability)
+	filebeatReconciler := NewFilebeatReconciler(k8sClient, logrus.NewEntry(logrus.StandardLogger()), common.LegacyEventRecorder(k8sManager, "filebeat-controller"), kubeCapability)
 	if err = filebeatReconciler.SetupWithManager(k8sManager); err != nil {
 		panic(err)
 	}

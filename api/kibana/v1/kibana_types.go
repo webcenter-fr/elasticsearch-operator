@@ -165,7 +165,3 @@ type KibanaList struct {
 	metav1.ListMeta `json:"metadata,omitempty"`
 	Items           []Kibana `json:"items"`
 }
-
-func init() {
-	SchemeBuilder.Register(&Kibana{}, &KibanaList{})
-}

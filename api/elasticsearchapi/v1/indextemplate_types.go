@@ -140,7 +140,3 @@ type IndexTemplateList struct {
 	metav1.ListMeta `json:"metadata,omitempty"`
 	Items           []IndexTemplate `json:"items"`
 }
-
-func init() {
-	SchemeBuilder.Register(&IndexTemplate{}, &IndexTemplateList{})
-}

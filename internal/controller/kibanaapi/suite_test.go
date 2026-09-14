@@ -25,6 +25,7 @@ import (
 	kibanacrd "github.com/webcenter-fr/elasticsearch-operator/api/kibana/v1"
 	kibanaapicrd "github.com/webcenter-fr/elasticsearch-operator/api/kibanaapi/v1"
 	logstashcrd "github.com/webcenter-fr/elasticsearch-operator/api/logstash/v1"
+	"github.com/webcenter-fr/elasticsearch-operator/internal/controller/common"
 	"go.uber.org/mock/gomock"
 	"k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/rest"
@@ -193,7 +194,7 @@ func (t *KibanaapiControllerTestSuite) SetupSuite() {
 	roleReconciler := NewRoleReconciler(
 		k8sClient,
 		logrus.NewEntry(logrus.StandardLogger()),
-		k8sManager.GetEventRecorderFor("kibana-role-controller"),
+		common.LegacyEventRecorder(k8sManager, "kibana-role-controller"),
 	)
 	roleReconciler.(*RoleReconciler).RemoteReconcilerAction = mock.NewMockRemoteReconcilerAction[*kibanaapicrd.Role, *kbapi.KibanaRole, kbhandler.KibanaHandler](
 		roleReconciler.(*RoleReconciler).RemoteReconcilerAction,
@@ -208,7 +209,7 @@ func (t *KibanaapiControllerTestSuite) SetupSuite() {
 	spaceReconciler := NewUserSpaceReconciler(
 		k8sClient,
 		logrus.NewEntry(logrus.StandardLogger()),
-		k8sManager.GetEventRecorderFor("kibana-user-space-controller"),
+		common.LegacyEventRecorder(k8sManager, "kibana-user-space-controller"),
 	)
 	spaceReconciler.(*UserSpaceReconciler).RemoteReconcilerAction = mock.NewMockRemoteReconcilerAction[*kibanaapicrd.UserSpace, *kbapi.KibanaSpace, kbhandler.KibanaHandler](
 		spaceReconciler.(*UserSpaceReconciler).RemoteReconcilerAction,
@@ -223,7 +224,7 @@ func (t *KibanaapiControllerTestSuite) SetupSuite() {
 	pipelineReconciler := NewLogstashPipelineReconciler(
 		k8sClient,
 		logrus.NewEntry(logrus.StandardLogger()),
-		k8sManager.GetEventRecorderFor("kibana-logstash-pipeline-controller"),
+		common.LegacyEventRecorder(k8sManager, "kibana-logstash-pipeline-controller"),
 	)
 	pipelineReconciler.(*LogstashPipelineReconciler).RemoteReconcilerAction = mock.NewMockRemoteReconcilerAction[*kibanaapicrd.LogstashPipeline, *kbapi.LogstashPipeline, kbhandler.KibanaHandler](
 		pipelineReconciler.(*LogstashPipelineReconciler).RemoteReconcilerAction,

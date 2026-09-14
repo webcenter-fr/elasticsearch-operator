@@ -61,8 +61,8 @@ func TestKibanaTLSSpecOverrides(t *testing.T) {
 		},
 		Spec: kibanacrd.KibanaSpec{
 			Tls: shared.TlsSpec{
-				ValidityDays: ptr.To[int](180),
-				RenewalDays:  ptr.To[int](15),
+				ValidityDays:  ptr.To[int](180),
+				RenewalDays:   ptr.To[int](15),
 				KeyComplexity: "ecdsa-p256",
 				SelfSignedCertificate: &shared.TlsSelfSignedCertificateSpec{
 					AltNames: []string{"extra.example.com"},
@@ -161,11 +161,11 @@ func TestKibanaCARenewalCustomizer(t *testing.T) {
 	generateCACert := func(validFor time.Duration) []byte {
 		key, _ := rsa.GenerateKey(rand.Reader, 2048)
 		tmpl := &x509.Certificate{
-			SerialNumber: big.NewInt(1),
-			Subject:      pkix.Name{CommonName: "test-api"},
-			NotBefore:    time.Now(),
-			NotAfter:     time.Now().Add(validFor),
-			IsCA:         true,
+			SerialNumber:          big.NewInt(1),
+			Subject:               pkix.Name{CommonName: "test-api"},
+			NotBefore:             time.Now(),
+			NotAfter:              time.Now().Add(validFor),
+			IsCA:                  true,
 			BasicConstraintsValid: true,
 		}
 		certDER, _ := x509.CreateCertificate(rand.Reader, tmpl, tmpl, &key.PublicKey, key)

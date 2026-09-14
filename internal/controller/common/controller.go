@@ -9,8 +9,10 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/client-go/tools/record"
 	"k8s.io/client-go/util/workqueue"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/manager"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
 
@@ -80,6 +82,17 @@ func DriftSecretForMetadata(current *corev1.Secret, labels, annotations map[stri
 		expected.TypeMeta = metav1.TypeMeta{APIVersion: "v1", Kind: "Secret"}
 	}
 	return expected
+}
+
+// LegacyEventRecorder returns the legacy record.EventRecorder consumed by the
+// disaster37 operator-sdk-extra reconcilers. controller-runtime deprecates
+// Manager.GetEventRecorderFor in favor of GetEventRecorder (new events API),
+// but the disaster37 library still requires record.EventRecorder, so the
+// legacy accessor must be used until the library migrates.
+func LegacyEventRecorder(mgr manager.Manager, name string) record.EventRecorder {
+	//nolint:staticcheck // kept for the legacy disaster37 record.EventRecorder API
+	//lint:ignore SA1019 kept for the legacy disaster37 record.EventRecorder API
+	return mgr.GetEventRecorderFor(name)
 }
 
 func DefaultControllerRateLimiter() workqueue.TypedRateLimiter[reconcile.Request] {

@@ -257,7 +257,3 @@ type LogstashList struct {
 	metav1.ListMeta `json:"metadata,omitempty"`
 	Items           []Logstash `json:"items"`
 }
-
-func init() {
-	SchemeBuilder.Register(&Logstash{}, &LogstashList{})
-}
