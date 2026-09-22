@@ -263,6 +263,35 @@ func TestKibanaCARenewalCustomizer(t *testing.T) {
 		assert.Equal(t, "true", o.Annotations[AnnotationForceRenewTLS])
 	})
 
+	t.Run("caRenewalDays >= CA validity - guard prevents perpetual renewal", func(t *testing.T) {
+		caRenewalDays := 365
+		o := &kibanacrd.Kibana{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "test",
+				Namespace: "default",
+			},
+			Spec: kibanacrd.KibanaSpec{
+				Tls: shared.TlsSpec{CaRenewalDays: &caRenewalDays},
+			},
+		}
+		caPEM := generateCACert(365 * 24 * time.Hour) // freshly issued, valid a year
+		caSecret := &corev1.Secret{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "test-tls-kb-ca",
+				Namespace: "default",
+			},
+			Data: map[string][]byte{
+				"ca.crt": caPEM,
+				"ca.key": []byte("fake-key"),
+			},
+		}
+		c := fake.NewClientBuilder().WithObjects(caSecret).Build()
+		customizer := kibanaCARenewalCustomizer(c, log)
+		_, err := customizer.CustomizeCertificate(o, certificate.TLSSpec{CAValidityDays: 365})
+		assert.NoError(t, err)
+		assert.Empty(t, o.Annotations[AnnotationForceRenewTLS])
+	})
+
 	// Verify the customizer does not mutate the TLSSpec
 	t.Run("does not mutate base spec", func(t *testing.T) {
 		caRenewalDays := 30
