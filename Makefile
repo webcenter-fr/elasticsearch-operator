@@ -49,6 +49,15 @@ endif
 
 # Image URL to use all building/pushing image targets
 IMG ?= $(IMAGE_TAG_BASE):$(VERSION)
+
+# BuildKit builder to use for image builds. In Eclipse Che workspaces this is set
+# to "remote" (buildkitd sidecar exposed on tcp://127.0.0.1:1234). Override with
+# an empty value to use the default buildx builder (e.g. in CI).
+BUILDX_BUILDER ?= remote
+BUILDKIT_ADDR ?= tcp://127.0.0.1:1234
+BUILDX_BUILDER_FLAG = $(if $(BUILDX_BUILDER),--builder $(BUILDX_BUILDER),)
+buildx-ensure-builder: ## Ensure the remote buildx builder is registered.
+	@if [ -n "$(BUILDX_BUILDER)" ]; then docker buildx create --name $(BUILDX_BUILDER) --driver remote $(BUILDKIT_ADDR) >/dev/null 2>&1 || true; fi
 # ENVTEST_K8S_VERSION refers to the version of kubebuilder assets to be downloaded by envtest binary.
 ENVTEST_K8S_VERSION = 1.25.x
 
@@ -137,16 +146,16 @@ uninstall-sample: manifests kustomize ## Uninstall samples
 	$(KUSTOMIZE) build config/samples | kubectl delete -f -
 
 .PHONY: docker-build
-docker-build: test ## Build docker image with the manager.
-	docker build -t ${IMG} .
+docker-build: test buildx-ensure-builder ## Build docker image with the manager.
+	docker buildx build $(BUILDX_BUILDER_FLAG) -t ${IMG} .
 
 .PHONY: docker-push
 docker-push: ## Push docker image with the manager.
 	docker push ${IMG}
 
 .PHONY:docker-buildx
-docker-buildx: ## Build docker image with the manager.
-	docker buildx build -t ${IMG} . --push --build-arg http_proxy="$(HTTP_PROXY)" --build-arg https_proxy="$(HTTPS_PROXY)" --build-arg commit="$(shell git rev-parse --short HEAD)" --build-arg version="$(shell git symbolic-ref -q --short HEAD || git describe --tags --exact-match)"
+docker-buildx: buildx-ensure-builder ## Build docker image with the manager.
+	docker buildx build $(BUILDX_BUILDER_FLAG) -t ${IMG} . --push --build-arg http_proxy="$(HTTP_PROXY)" --build-arg https_proxy="$(HTTPS_PROXY)" --build-arg commit="$(shell git rev-parse --short HEAD)" --build-arg version="$(shell git symbolic-ref -q --short HEAD || git describe --tags --exact-match)"
 
 ##@ Deployment
 
@@ -223,8 +232,8 @@ bundle-push: ## Push the bundle image.
 	$(MAKE) docker-push IMG=$(BUNDLE_IMG)
 
 .PHONY: bundle-buildx
-bundle-buildx: bundle ## Build the bundle image.
-	docker buildx build -f bundle.Dockerfile -t $(BUNDLE_IMG) . --push --build-arg http_proxy="$(HTTP_PROXY)" --build-arg https_proxy="$(HTTPS_PROXY)"
+bundle-buildx: bundle buildx-ensure-builder ## Build the bundle image.
+	docker buildx build $(BUILDX_BUILDER_FLAG) -f bundle.Dockerfile -t $(BUNDLE_IMG) . --push --build-arg http_proxy="$(HTTP_PROXY)" --build-arg https_proxy="$(HTTPS_PROXY)"
 
 .PHONY: opm
 OPM = ./bin/opm
