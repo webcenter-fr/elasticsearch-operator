@@ -47,3 +47,25 @@ func TestNeedRenewCertificate(t *testing.T) {
 	_, err = NeedRenewCertificate(nil, d, testLogEntry)
 	assert.Error(t, err)
 }
+
+func TestEffectiveCARenewalDays(t *testing.T) {
+	tests := []struct {
+		name           string
+		caRenewalDays  int
+		caValidityDays int
+		want           int
+	}{
+		{"window equals validity falls back to default", 365, 365, 30},
+		{"default window below validity is kept", 30, 365, 30},
+		{"custom window below validity is kept", 300, 365, 300},
+		{"short-lived cert caps fallback at half validity", 10, 10, 5},
+		{"one-day cert clamps fallback to one", 1, 1, 1},
+		{"unknown validity keeps configured window", 30, 0, 30},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			assert.Equal(t, tt.want, EffectiveCARenewalDays(tt.caRenewalDays, tt.caValidityDays))
+		})
+	}
+}

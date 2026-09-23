@@ -22,15 +22,16 @@ import (
 const FieldManager = "elasticsearch-operator"
 
 // envtestEnvVar is the explicit, unambiguous env var the envtest suites set to
-// signal "no kubelet / no StatefulSet controller" (the generic TEST var is too
-// easy to set accidentally and is reserved for the Go test harness).
+// signal "no kubelet / no StatefulSet controller". The legacy generic TEST var
+// is also honored because the Dagger test pipeline (dagger-library-go) sets
+// TEST=true and cannot set operator-specific variables.
 const envtestEnvVar = "ES_OPERATOR_ENVTEST"
 
 // IsEnvtest reports whether the operator is running under the envtest harness
 // (where no kubelet or StatefulSet controller exists and the controller's
 // convergence/upgrade gating must fast-forward instead of waiting for pods).
 func IsEnvtest() bool {
-	return os.Getenv(envtestEnvVar) == "true"
+	return os.Getenv(envtestEnvVar) == "true" || os.Getenv("TEST") == "true"
 }
 
 // ESClientTimeout bounds every Elasticsearch API request issued through the

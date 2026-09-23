@@ -23,3 +23,23 @@ func NeedRenewCertificate(crt *x509.Certificate, durationBeforeExpire time.Durat
 
 	return false, nil
 }
+
+// EffectiveCARenewalDays returns the CA renewal window to use, guarding against
+// a misconfigured window that is greater than or equal to the CA validity.
+// A window >= validity makes a freshly issued CA immediately due for renewal,
+// so the rotation saga would rotate it on every reconcile (perpetual renewal
+// loop). In that case it falls back to the default 30-day window, capped at
+// half the validity for short-lived certificates.
+func EffectiveCARenewalDays(caRenewalDays, caValidityDays int) int {
+	if caValidityDays > 0 && caRenewalDays >= caValidityDays {
+		fallback := 30
+		if half := caValidityDays / 2; half < fallback {
+			fallback = half
+		}
+		if fallback < 1 {
+			fallback = 1
+		}
+		return fallback
+	}
+	return caRenewalDays
+}

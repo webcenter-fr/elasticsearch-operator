@@ -191,7 +191,12 @@ func kibanaCARenewalCustomizer(c client.Client, log *logrus.Entry) certificate.C
 			return base, nil
 		}
 
-		needRenew, err := pki.NeedRenewCertificate(crt, time.Duration(*o.Spec.Tls.CaRenewalDays)*24*time.Hour, log)
+		effectiveRenewalDays := pki.EffectiveCARenewalDays(*o.Spec.Tls.CaRenewalDays, base.CAValidityDays)
+		if effectiveRenewalDays != *o.Spec.Tls.CaRenewalDays {
+			log.Warnf("caRenewalDays=%d is >= CA validity %d days for %s/%s; falling back to %d days to avoid perpetual CA renewal",
+				*o.Spec.Tls.CaRenewalDays, base.CAValidityDays, o.Namespace, o.Name, effectiveRenewalDays)
+		}
+		needRenew, err := pki.NeedRenewCertificate(crt, time.Duration(effectiveRenewalDays)*24*time.Hour, log)
 		if err != nil || !needRenew {
 			return base, nil
 		}

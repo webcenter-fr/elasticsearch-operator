@@ -233,7 +233,12 @@ func transportCARenewalCustomizer(c client.Client, log *logrus.Entry) certificat
 			return base, nil // unparseable CA; avoid breaking bootstrap
 		}
 
-		needRenew, err := pki.NeedRenewCertificate(crt, time.Duration(*o.Spec.Tls.CaRenewalDays)*24*time.Hour, log)
+		effectiveRenewalDays := pki.EffectiveCARenewalDays(*o.Spec.Tls.CaRenewalDays, base.CAValidityDays)
+		if effectiveRenewalDays != *o.Spec.Tls.CaRenewalDays {
+			log.Warnf("caRenewalDays=%d is >= CA validity %d days for %s/%s; falling back to %d days to avoid perpetual CA renewal",
+				*o.Spec.Tls.CaRenewalDays, base.CAValidityDays, o.Namespace, o.Name, effectiveRenewalDays)
+		}
+		needRenew, err := pki.NeedRenewCertificate(crt, time.Duration(effectiveRenewalDays)*24*time.Hour, log)
 		if err != nil || !needRenew {
 			return base, nil
 		}
@@ -500,7 +505,7 @@ func apiCANeedsRegeneration(o *elasticsearchcrd.Elasticsearch, sPki *corev1.Secr
 	// for leaves); apply the CA-specific caRenewalDays window for the API CA.
 	caSpec := spec
 	if o.Spec.Tls.CaRenewalDays != nil {
-		caSpec.RenewalDays = *o.Spec.Tls.CaRenewalDays
+		caSpec.RenewalDays = pki.EffectiveCARenewalDays(*o.Spec.Tls.CaRenewalDays, spec.CAValidityDays)
 	}
 
 	need, err := selfmanaged.CANeedsRenewal(sPki, caSpec, time.Now())
