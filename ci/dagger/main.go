@@ -52,9 +52,27 @@ func New(
 	// +required
 	src *dagger.Directory,
 ) *ElasticsearchOperator {
+	// Pre-install a recent govulncheck. The upstream golang module installs the
+	// latest GitHub release tag (v1.1.4) which panics on generic code
+	// ("Substituting types.Signatures with generic functions are currently
+	// unsupported"). It is installed in /usr/local/bin because /go/bin is
+	// shadowed by a cache mount in the golang module. The PATH is overridden so
+	// /usr/local/bin is checked before the (cached) /go/bin binaries.
+	golangCtr := dag.Container().From("golang:1.27.0").
+		WithEnvVariable("PATH", "/usr/local/bin:/go/bin:/usr/local/go/bin:/usr/local/sbin:/usr/sbin:/usr/bin:/sbin:/bin").
+		WithEnvVariable("GOBIN", "/usr/local/bin").
+		WithExec([]string{"go", "install", "golang.org/x/vuln/cmd/govulncheck@v1.8.0"}).
+		WithEnvVariable("GOBIN", "")
+
 	return &ElasticsearchOperator{
-		Src:         src,
-		OperatorSDK: dag.OperatorSDK(src.WithoutDirectory("ci"), name),
+		Src: src,
+		OperatorSDK: dag.OperatorSDK(
+			src.WithoutDirectory("ci"),
+			name,
+			dagger.OperatorSDKOpts{
+				Container: golangCtr,
+			},
+		),
 	}
 }
 
