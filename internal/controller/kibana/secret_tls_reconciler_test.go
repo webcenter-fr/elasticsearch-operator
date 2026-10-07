@@ -1,7 +1,6 @@
 package kibana
 
 import (
-	"context"
 	"crypto/rand"
 	"crypto/rsa"
 	"crypto/x509"
@@ -12,15 +11,11 @@ import (
 	"time"
 
 	"github.com/disaster37/operator-sdk-extra/v3/pkg/controller/certificate"
-	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
 	kibanacrd "github.com/webcenter-fr/elasticsearch-operator/api/kibana/v1"
 	"github.com/webcenter-fr/elasticsearch-operator/api/shared"
-	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/utils/ptr"
-	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 )
 
 func TestKibanaTLSSpecDefaults(t *testing.T) {
@@ -44,6 +39,7 @@ func TestKibanaTLSSpecDefaults(t *testing.T) {
 	assert.Equal(t, 365, spec.LeafValidityDays)
 	assert.Equal(t, 365, spec.CAValidityDays)
 	assert.Equal(t, 30, spec.RenewalDays)
+	assert.Zero(t, spec.CARenewalDays)
 	assert.Equal(t, []string{"test"}, spec.Subject.Organizations)
 	assert.Equal(t, []string{"api"}, spec.Subject.OrganizationalUnits)
 	assert.Equal(t, []string{"internal"}, spec.Subject.Countries)
@@ -63,6 +59,7 @@ func TestKibanaTLSSpecOverrides(t *testing.T) {
 			Tls: shared.TlsSpec{
 				ValidityDays:  ptr.To[int](180),
 				RenewalDays:   ptr.To[int](15),
+				CaRenewalDays: ptr.To[int](90),
 				KeyComplexity: "ecdsa-p256",
 				SelfSignedCertificate: &shared.TlsSelfSignedCertificateSpec{
 					AltNames: []string{"extra.example.com"},
@@ -77,6 +74,7 @@ func TestKibanaTLSSpecOverrides(t *testing.T) {
 	assert.Equal(t, 180, spec.LeafValidityDays)
 	assert.Equal(t, 180, spec.CAValidityDays)
 	assert.Equal(t, 15, spec.RenewalDays)
+	assert.Equal(t, 90, spec.CARenewalDays)
 	assert.Contains(t, spec.DNSNames, "extra.example.com")
 	assert.Contains(t, spec.IPAddresses, "10.0.0.1")
 	assert.Equal(t, certificate.KeyAlgorithmECDSA, spec.KeyAlgorithm)
@@ -152,198 +150,4 @@ func TestCertParse(t *testing.T) {
 			}
 		})
 	}
-}
-
-func TestKibanaCARenewalCustomizer(t *testing.T) {
-	log := logrus.NewEntry(logrus.StandardLogger())
-
-	// Helper to generate a CA cert valid for the given duration from now
-	generateCACert := func(validFor time.Duration) []byte {
-		key, _ := rsa.GenerateKey(rand.Reader, 2048)
-		tmpl := &x509.Certificate{
-			SerialNumber:          big.NewInt(1),
-			Subject:               pkix.Name{CommonName: "test-api"},
-			NotBefore:             time.Now(),
-			NotAfter:              time.Now().Add(validFor),
-			IsCA:                  true,
-			BasicConstraintsValid: true,
-		}
-		certDER, _ := x509.CreateCertificate(rand.Reader, tmpl, tmpl, &key.PublicKey, key)
-		return pem.EncodeToMemory(&pem.Block{Type: "CERTIFICATE", Bytes: certDER})
-	}
-
-	t.Run("nil caRenewalDays - unchanged", func(t *testing.T) {
-		o := &kibanacrd.Kibana{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      "test",
-				Namespace: "default",
-			},
-			Spec: kibanacrd.KibanaSpec{},
-		}
-		c := fake.NewClientBuilder().Build()
-		customizer := kibanaCARenewalCustomizer(c, log)
-		_, err := customizer.CustomizeCertificate(o, certificate.TLSSpec{})
-		assert.NoError(t, err)
-		assert.Empty(t, o.Annotations[AnnotationForceRenewTLS])
-	})
-
-	t.Run("CA missing - unchanged", func(t *testing.T) {
-		caRenewalDays := 30
-		o := &kibanacrd.Kibana{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      "test",
-				Namespace: "default",
-			},
-			Spec: kibanacrd.KibanaSpec{
-				Tls: shared.TlsSpec{CaRenewalDays: &caRenewalDays},
-			},
-		}
-		c := fake.NewClientBuilder().Build()
-		customizer := kibanaCARenewalCustomizer(c, log)
-		_, err := customizer.CustomizeCertificate(o, certificate.TLSSpec{})
-		assert.NoError(t, err)
-		assert.Empty(t, o.Annotations[AnnotationForceRenewTLS])
-	})
-
-	t.Run("CA outside renewal window - unchanged", func(t *testing.T) {
-		caRenewalDays := 30
-		o := &kibanacrd.Kibana{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      "test",
-				Namespace: "default",
-			},
-			Spec: kibanacrd.KibanaSpec{
-				Tls: shared.TlsSpec{CaRenewalDays: &caRenewalDays},
-			},
-		}
-		caPEM := generateCACert(365 * 24 * time.Hour) // valid for a year
-		caSecret := &corev1.Secret{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      "test-tls-kb-ca",
-				Namespace: "default",
-			},
-			Data: map[string][]byte{
-				"ca.crt": caPEM,
-				"ca.key": []byte("fake-key"),
-			},
-		}
-		c := fake.NewClientBuilder().WithObjects(caSecret).Build()
-		customizer := kibanaCARenewalCustomizer(c, log)
-		_, err := customizer.CustomizeCertificate(o, certificate.TLSSpec{})
-		assert.NoError(t, err)
-		assert.Empty(t, o.Annotations[AnnotationForceRenewTLS])
-	})
-
-	t.Run("CA within renewal window - sets annotation", func(t *testing.T) {
-		caRenewalDays := 365 // huge window to guarantee the cert is "within"
-		o := &kibanacrd.Kibana{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      "test",
-				Namespace: "default",
-			},
-			Spec: kibanacrd.KibanaSpec{
-				Tls: shared.TlsSpec{CaRenewalDays: &caRenewalDays},
-			},
-		}
-		caPEM := generateCACert(1 * time.Hour) // expires in 1 hour
-		caSecret := &corev1.Secret{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      "test-tls-kb-ca",
-				Namespace: "default",
-			},
-			Data: map[string][]byte{
-				"ca.crt": caPEM,
-				"ca.key": []byte("fake-key"),
-			},
-		}
-		c := fake.NewClientBuilder().WithObjects(caSecret).Build()
-		customizer := kibanaCARenewalCustomizer(c, log)
-		_, err := customizer.CustomizeCertificate(o, certificate.TLSSpec{})
-		assert.NoError(t, err)
-		assert.Equal(t, "true", o.Annotations[AnnotationForceRenewTLS])
-	})
-
-	t.Run("caRenewalDays >= CA validity - guard prevents perpetual renewal", func(t *testing.T) {
-		caRenewalDays := 365
-		o := &kibanacrd.Kibana{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      "test",
-				Namespace: "default",
-			},
-			Spec: kibanacrd.KibanaSpec{
-				Tls: shared.TlsSpec{CaRenewalDays: &caRenewalDays},
-			},
-		}
-		caPEM := generateCACert(365 * 24 * time.Hour) // freshly issued, valid a year
-		caSecret := &corev1.Secret{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      "test-tls-kb-ca",
-				Namespace: "default",
-			},
-			Data: map[string][]byte{
-				"ca.crt": caPEM,
-				"ca.key": []byte("fake-key"),
-			},
-		}
-		c := fake.NewClientBuilder().WithObjects(caSecret).Build()
-		customizer := kibanaCARenewalCustomizer(c, log)
-		_, err := customizer.CustomizeCertificate(o, certificate.TLSSpec{CAValidityDays: 365})
-		assert.NoError(t, err)
-		assert.Empty(t, o.Annotations[AnnotationForceRenewTLS])
-	})
-
-	// Verify the customizer does not mutate the TLSSpec
-	t.Run("does not mutate base spec", func(t *testing.T) {
-		caRenewalDays := 30
-		o := &kibanacrd.Kibana{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      "test",
-				Namespace: "default",
-			},
-			Spec: kibanacrd.KibanaSpec{
-				Tls: shared.TlsSpec{CaRenewalDays: &caRenewalDays},
-			},
-		}
-		c := fake.NewClientBuilder().Build()
-		customizer := kibanaCARenewalCustomizer(c, log)
-		base := certificate.TLSSpec{SecretName: "original"}
-		result, err := customizer.CustomizeCertificate(o, base)
-		assert.NoError(t, err)
-		assert.Equal(t, "original", result.SecretName)
-	})
-
-	// Verify the customizer uses the correct secret name via GetSecretNameForPki
-	t.Run("uses correct CA secret name", func(t *testing.T) {
-		caRenewalDays := 365
-		o := &kibanacrd.Kibana{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      "test",
-				Namespace: "default",
-			},
-			Spec: kibanacrd.KibanaSpec{
-				Tls: shared.TlsSpec{CaRenewalDays: &caRenewalDays},
-			},
-		}
-		caPEM := generateCACert(1 * time.Hour)
-		caSecret := &corev1.Secret{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      "test-tls-kb-ca",
-				Namespace: "default",
-			},
-			Data: map[string][]byte{
-				"ca.crt": caPEM,
-				"ca.key": []byte("fake-key"),
-			},
-		}
-		c := fake.NewClientBuilder().WithObjects(caSecret).Build()
-		customizer := kibanaCARenewalCustomizer(c, log)
-		_, err := customizer.CustomizeCertificate(o, certificate.TLSSpec{})
-		assert.NoError(t, err)
-		assert.Equal(t, "true", o.Annotations[AnnotationForceRenewTLS])
-
-		// Verify the customizer fetched the correct secret
-		got := &corev1.Secret{}
-		err = c.Get(context.Background(), types.NamespacedName{Namespace: "default", Name: "test-tls-kb-ca"}, got)
-		assert.NoError(t, err)
-	})
 }

@@ -20,7 +20,6 @@ import (
 	"github.com/sirupsen/logrus"
 	elasticsearchcrd "github.com/webcenter-fr/elasticsearch-operator/api/elasticsearch/v1"
 	"github.com/webcenter-fr/elasticsearch-operator/internal/controller/common"
-	"github.com/webcenter-fr/elasticsearch-operator/pkg/pki"
 	appv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
@@ -108,6 +107,10 @@ func baseTLSSpec(o *elasticsearchcrd.Elasticsearch, secretName, commonName, caCo
 		},
 	}
 
+	if o.Spec.Tls.CaRenewalDays != nil {
+		spec.CARenewalDays = *o.Spec.Tls.CaRenewalDays
+	}
+
 	applyKeyComplexity(&spec, o.Spec.Tls.KeyComplexity, o.Spec.Tls.KeySize)
 
 	return spec
@@ -188,7 +191,7 @@ func transportConvergenceCheck(c client.Client) rotation.ConvergenceCheck[*elast
 // newTlsTransportReconciler returns the transport CA rotation saga step,
 // driven by the library rotation.NewTLSStep with the selfmanaged/pernode
 // backend.
-func newTlsTransportReconciler(c client.Client, recorder record.EventRecorder, log *logrus.Entry) workflow.WorkflowStepReconcilerActionWithDiff[*elasticsearchcrd.Elasticsearch, client.Object] {
+func newTlsTransportReconciler(c client.Client, recorder record.EventRecorder) workflow.WorkflowStepReconcilerActionWithDiff[*elasticsearchcrd.Elasticsearch, client.Object] {
 	return rotation.NewTLSStep[*elasticsearchcrd.Elasticsearch](
 		c,
 		TlsTransportPhase,
@@ -198,7 +201,6 @@ func newTlsTransportReconciler(c client.Client, recorder record.EventRecorder, l
 		pernode.NewPerNodeBackend[*elasticsearchcrd.Elasticsearch](&transportNodeSpecProvider{}),
 		certificate.TLSSpecProviderFunc[*elasticsearchcrd.Elasticsearch](transportTLSSpec),
 		rotation.WithConvergenceCheck(transportConvergenceCheck(c)),
-		rotation.WithCertificateCustomizer(transportCARenewalCustomizer(c, log)),
 		rotation.WithLabelsDecorator(func(o *elasticsearchcrd.Elasticsearch, obj client.Object) {
 			obj.SetLabels(getLabels(o))
 		}),
@@ -207,49 +209,6 @@ func newTlsTransportReconciler(c client.Client, recorder record.EventRecorder, l
 			obj.GetObjectKind().SetGroupVersionKind(schema.GroupVersionKind{Group: "", Version: "v1", Kind: "Secret"})
 		}),
 	)
-}
-
-// transportCARenewalCustomizer forces a CA rotation when the current transport
-// CA is within caRenewalDays of expiry. The library's CANeedsRenewal only knows
-// the shared RenewalDays window (now reserved for leaves), so the operator
-// re-checks the CA against the CA-specific window here and, when needed, flags
-// the saga to rotate via the force-regenerate annotation.
-func transportCARenewalCustomizer(c client.Client, log *logrus.Entry) certificate.CertificateCustomizer[*elasticsearchcrd.Elasticsearch] {
-	return certificate.CertificateCustomizerFunc[*elasticsearchcrd.Elasticsearch](func(o *elasticsearchcrd.Elasticsearch, base certificate.TLSSpec) (certificate.TLSSpec, error) {
-		if o.Spec.Tls.CaRenewalDays == nil {
-			return base, nil
-		}
-
-		caSecret := &corev1.Secret{}
-		if err := c.Get(context.Background(), types.NamespacedName{Namespace: o.Namespace, Name: GetSecretNameForPkiTransport(o)}, caSecret); err != nil {
-			if k8serrors.IsNotFound(err) {
-				return base, nil // CA not yet generated; bootstrap creates it
-			}
-			return base, err
-		}
-
-		crt, err := certParse(caSecret.Data["ca.crt"])
-		if err != nil {
-			return base, nil // unparseable CA; avoid breaking bootstrap
-		}
-
-		effectiveRenewalDays := pki.EffectiveCARenewalDays(*o.Spec.Tls.CaRenewalDays, base.CAValidityDays)
-		if effectiveRenewalDays != *o.Spec.Tls.CaRenewalDays {
-			log.Warnf("caRenewalDays=%d is >= CA validity %d days for %s/%s; falling back to %d days to avoid perpetual CA renewal",
-				*o.Spec.Tls.CaRenewalDays, base.CAValidityDays, o.Namespace, o.Name, effectiveRenewalDays)
-		}
-		needRenew, err := pki.NeedRenewCertificate(crt, time.Duration(effectiveRenewalDays)*24*time.Hour, log)
-		if err != nil || !needRenew {
-			return base, nil
-		}
-
-		if o.Annotations == nil {
-			o.Annotations = map[string]string{}
-		}
-		o.Annotations["operator-sdk-extra.webcenter.fr/force-regenerate-tls"] = "true"
-
-		return base, nil
-	})
 }
 
 // apiTlsReconciler manages the API (HTTP) TLS certificates: a single CA plus a
@@ -388,7 +347,7 @@ func cleanupLegacyTransportCASecret(ctx context.Context, c client.Client, o *ela
 func buildApiSecrets(c client.Client, o *elasticsearchcrd.Elasticsearch, sPki, sApi *corev1.Secret) ([]*corev1.Secret, error) {
 	spec := apiTLSSpec(o)
 
-	needCA, err := apiCANeedsRegeneration(o, sPki, spec)
+	needCA, err := apiCANeedsRegeneration(sPki, spec)
 	if err != nil {
 		return nil, err
 	}
@@ -495,20 +454,14 @@ func apiTLSSpec(o *elasticsearchcrd.Elasticsearch) certificate.TLSSpec {
 }
 
 // apiCANeedsRegeneration returns true when the API CA secret is missing or
-// needs renewal (against the CA-specific caRenewalDays window).
-func apiCANeedsRegeneration(o *elasticsearchcrd.Elasticsearch, sPki *corev1.Secret, spec certificate.TLSSpec) (bool, error) {
+// needs renewal. The CA-specific CARenewalDays window is now handled by the
+// library via TLSSpec.CARenewalDays, so the spec is used directly.
+func apiCANeedsRegeneration(sPki *corev1.Secret, spec certificate.TLSSpec) (bool, error) {
 	if sPki == nil {
 		return true, nil
 	}
 
-	// The library's CANeedsRenewal uses the shared RenewalDays window (reserved
-	// for leaves); apply the CA-specific caRenewalDays window for the API CA.
-	caSpec := spec
-	if o.Spec.Tls.CaRenewalDays != nil {
-		caSpec.RenewalDays = pki.EffectiveCARenewalDays(*o.Spec.Tls.CaRenewalDays, spec.CAValidityDays)
-	}
-
-	need, err := selfmanaged.CANeedsRenewal(sPki, caSpec, time.Now())
+	need, err := selfmanaged.CANeedsRenewal(sPki, spec, time.Now())
 	if err != nil {
 		return false, errors.Wrap(err, "Error when check API CA renewal")
 	}

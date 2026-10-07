@@ -92,7 +92,7 @@ func NewElasticsearchReconciler(c client.Client, logger *logrus.Entry, recorder 
 		stepReconcilers: []multiphase.MultiPhaseStepReconcilerAction[*elasticsearchcrd.Elasticsearch, client.Object]{
 			multiphase.NewObjectMultiPhaseStepReconcilerAction[*elasticsearchcrd.Elasticsearch, *corev1.ServiceAccount, client.Object](newServiceAccountReconciler(c, recorder, kubeCapability.HasRoute)),
 			multiphase.NewObjectMultiPhaseStepReconcilerAction[*elasticsearchcrd.Elasticsearch, *rbacv1.RoleBinding, client.Object](newRoleBindingReconciler(c, recorder, kubeCapability.HasRoute)),
-			newTlsTransportReconciler(c, recorder, logger),
+			newTlsTransportReconciler(c, recorder),
 			multiphase.NewObjectMultiPhaseStepReconcilerAction[*elasticsearchcrd.Elasticsearch, *corev1.Secret, client.Object](newTlsApiReconciler(c, recorder)),
 			multiphase.NewObjectMultiPhaseStepReconcilerAction[*elasticsearchcrd.Elasticsearch, *corev1.Secret, client.Object](newCredentialReconciler(c, recorder)),
 			multiphase.NewObjectMultiPhaseStepReconcilerAction[*elasticsearchcrd.Elasticsearch, *elasticsearchapicrd.License, client.Object](newLicenseReconciler(c, recorder)),

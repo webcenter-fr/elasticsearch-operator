@@ -76,7 +76,45 @@ func (r *tlsReconciler) Read(ctx context.Context, o *beatcrd.Filebeat, data map[
 		logger.Warnf("Failed to clean up legacy Filebeat CA secret: %s", err.Error())
 	}
 
-	return r.WorkflowStepReconcilerActionWithDiff.Read(ctx, o, data, logger)
+	read, res, err := r.WorkflowStepReconcilerActionWithDiff.Read(ctx, o, data, logger)
+	if err != nil {
+		return read, res, err
+	}
+
+	// The rotation saga does not re-apply labels/annotations on a label-only
+	// CR update (its "" steady state registers current==expected). Detect and
+	// fix that drift here so the saga secrets carry the operator labels after
+	// an update.
+	drift, err := buildTlsMetadataDrift(ctx, r.Client(), o)
+	if err != nil {
+		return read, res, err
+	}
+	for _, d := range drift {
+		read.AddExpectedObject(d)
+	}
+
+	return read, res, nil
+}
+
+// buildTlsMetadataDrift returns copies of the saga-managed CA and leaf secrets
+// with corrected labels/annotations when they differ from the operator defaults
+// (empty otherwise). The saga's steady state registers current==expected, so a
+// label-only CR update would otherwise never reach the Secrets.
+func buildTlsMetadataDrift(ctx context.Context, c client.Client, o *beatcrd.Filebeat) ([]client.Object, error) {
+	out := make([]client.Object, 0, 2)
+	for _, name := range []string{GetSecretNameForPki(o), GetSecretNameForTls(o)} {
+		s := &corev1.Secret{}
+		if err := c.Get(ctx, types.NamespacedName{Namespace: o.Namespace, Name: name}, s); err != nil {
+			if k8serrors.IsNotFound(err) {
+				continue
+			}
+			return nil, errors.Wrapf(err, "Error when read existing secret %s", name)
+		}
+		if drifted := common.DriftSecretForMetadata(s, getLabels(o), getAnnotations(o)); drifted != nil {
+			out = append(out, drifted)
+		}
+	}
+	return out, nil
 }
 
 // filebeatNodeSpecProvider implements pernode.NodeSpecProvider[*beatcrd.Filebeat];

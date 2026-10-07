@@ -5,10 +5,10 @@ import (
 	"crypto/x509"
 	"encoding/pem"
 	"fmt"
-	"time"
 
 	"emperror.dev/errors"
 	"github.com/disaster37/operator-sdk-extra/v3/pkg/apis/shared"
+	apworkflow "github.com/disaster37/operator-sdk-extra/v3/pkg/apis/workflow"
 	"github.com/disaster37/operator-sdk-extra/v3/pkg/controller/certificate"
 	"github.com/disaster37/operator-sdk-extra/v3/pkg/controller/certificate/rotation"
 	"github.com/disaster37/operator-sdk-extra/v3/pkg/controller/certificate/selfmanaged"
@@ -17,7 +17,6 @@ import (
 	"github.com/sirupsen/logrus"
 	kibanacrd "github.com/webcenter-fr/elasticsearch-operator/api/kibana/v1"
 	"github.com/webcenter-fr/elasticsearch-operator/internal/controller/common"
-	"github.com/webcenter-fr/elasticsearch-operator/pkg/pki"
 	appv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
@@ -44,7 +43,7 @@ type tlsReconciler struct {
 	workflow.WorkflowStepReconcilerActionWithDiff[*kibanacrd.Kibana, client.Object]
 }
 
-func newTlsReconciler(c client.Client, recorder record.EventRecorder, log *logrus.Entry) multiphase.MultiPhaseStepReconcilerAction[*kibanacrd.Kibana, client.Object] {
+func newTlsReconciler(c client.Client, recorder record.EventRecorder) multiphase.MultiPhaseStepReconcilerAction[*kibanacrd.Kibana, client.Object] {
 	saga := rotation.NewTLSStep[*kibanacrd.Kibana](
 		c,
 		TlsPhase,
@@ -54,7 +53,6 @@ func newTlsReconciler(c client.Client, recorder record.EventRecorder, log *logru
 		selfmanaged.NewSelfManagedBackend[*kibanacrd.Kibana](),
 		certificate.TLSSpecProviderFunc[*kibanacrd.Kibana](kibanaTLSSpec),
 		rotation.WithConvergenceCheck(kibanaConvergenceCheck(c)),
-		rotation.WithCertificateCustomizer(kibanaCARenewalCustomizer(c, log)),
 		rotation.WithForceRegenerateAllAnnotation[*kibanacrd.Kibana](AnnotationForceRenewTLS),
 		rotation.WithForceRegenerateLeafAnnotation[*kibanacrd.Kibana](AnnotationForceRenewCertificates),
 		rotation.WithLabelsDecorator(func(o *kibanacrd.Kibana, obj client.Object) {
@@ -79,7 +77,52 @@ func (r *tlsReconciler) Read(ctx context.Context, o *kibanacrd.Kibana, data map[
 		logger.Warnf("Failed to clean up legacy Kibana CA secret: %s", err.Error())
 	}
 
-	return r.WorkflowStepReconcilerActionWithDiff.Read(ctx, o, data, logger)
+	read, res, err := r.WorkflowStepReconcilerActionWithDiff.Read(ctx, o, data, logger)
+	if err != nil {
+		return read, res, err
+	}
+
+	// The rotation saga does not re-apply labels/annotations on a label-only
+	// CR update (its "" steady state registers current==expected). Detect and
+	// fix that drift here so the saga secrets carry the operator labels after
+	// an update. Only the steady state is patched: during a rotation cycle the
+	// saga emits freshly decorated objects and appending stale-Data copies
+	// would overwrite the new certificates.
+	startPhase, _ := data["rotationStartPhase"].(apworkflow.WorkflowPhase)
+	renewed, _ := data["rotationRenewed"].(bool)
+	_, hasSignals := data["tls."+TlsPhase.String()].(*certificate.LayerSignals)
+	if startPhase == "" && !renewed && !hasSignals {
+		drift, err := buildTlsMetadataDrift(ctx, r.Client(), o)
+		if err != nil {
+			return read, res, err
+		}
+		for _, d := range drift {
+			read.AddExpectedObject(d)
+		}
+	}
+
+	return read, res, nil
+}
+
+// buildTlsMetadataDrift returns copies of the saga-managed CA and leaf secrets
+// with corrected labels/annotations when they differ from the operator defaults
+// (empty otherwise). The saga's steady state registers current==expected, so a
+// label-only CR update would otherwise never reach the Secrets.
+func buildTlsMetadataDrift(ctx context.Context, c client.Client, o *kibanacrd.Kibana) ([]client.Object, error) {
+	out := make([]client.Object, 0, 2)
+	for _, name := range []string{GetSecretNameForPki(o), GetSecretNameForTls(o)} {
+		s := &corev1.Secret{}
+		if err := c.Get(ctx, types.NamespacedName{Namespace: o.Namespace, Name: name}, s); err != nil {
+			if k8serrors.IsNotFound(err) {
+				continue
+			}
+			return nil, errors.Wrapf(err, "Error when read existing secret %s", name)
+		}
+		if drifted := common.DriftSecretForMetadata(s, getLabels(o), getAnnotations(o)); drifted != nil {
+			out = append(out, drifted)
+		}
+	}
+	return out, nil
 }
 
 // kibanaTLSSpec builds the computed TLSSpec for a Kibana CR.
@@ -132,6 +175,10 @@ func kibanaTLSSpec(o *kibanacrd.Kibana) certificate.TLSSpec {
 
 	applyKeyComplexity(&spec, o.Spec.Tls.KeyComplexity, o.Spec.Tls.KeySize)
 
+	if o.Spec.Tls.CaRenewalDays != nil {
+		spec.CARenewalDays = *o.Spec.Tls.CaRenewalDays
+	}
+
 	return spec
 }
 
@@ -161,53 +208,6 @@ func applyKeyComplexity(spec *certificate.TLSSpec, complexity string, legacyKeyS
 			spec.KeySize = *legacyKeySize
 		}
 	}
-}
-
-// kibanaCARenewalCustomizer forces a CA rotation when the current CA is within
-// caRenewalDays of expiry (sets AnnotationForceRenewTLS on o).
-func kibanaCARenewalCustomizer(c client.Client, log *logrus.Entry) certificate.CertificateCustomizer[*kibanacrd.Kibana] {
-	return certificate.CertificateCustomizerFunc[*kibanacrd.Kibana](func(o *kibanacrd.Kibana, base certificate.TLSSpec) (certificate.TLSSpec, error) {
-		if o.Spec.Tls.CaRenewalDays == nil {
-			return base, nil
-		}
-
-		caSecret := &corev1.Secret{}
-		if err := c.Get(context.Background(), types.NamespacedName{Namespace: o.Namespace, Name: GetSecretNameForPki(o)}, caSecret); err != nil {
-			if k8serrors.IsNotFound(err) {
-				return base, nil // CA not yet generated; bootstrap creates it
-			}
-			return base, err
-		}
-
-		crt, err := certParse(caSecret.Data["ca.crt"])
-		if err != nil {
-			return base, nil // unparseable CA; avoid breaking bootstrap
-		}
-
-		// Defense-in-depth: the CA secret is operator-generated and should always
-		// contain a CA certificate, but if it doesn't, don't trust it for renewal.
-		if !crt.IsCA {
-			log.Warnf("CA certificate in secret %s/%s is not a CA; skipping CA renewal check", o.Namespace, GetSecretNameForPki(o))
-			return base, nil
-		}
-
-		effectiveRenewalDays := pki.EffectiveCARenewalDays(*o.Spec.Tls.CaRenewalDays, base.CAValidityDays)
-		if effectiveRenewalDays != *o.Spec.Tls.CaRenewalDays {
-			log.Warnf("caRenewalDays=%d is >= CA validity %d days for %s/%s; falling back to %d days to avoid perpetual CA renewal",
-				*o.Spec.Tls.CaRenewalDays, base.CAValidityDays, o.Namespace, o.Name, effectiveRenewalDays)
-		}
-		needRenew, err := pki.NeedRenewCertificate(crt, time.Duration(effectiveRenewalDays)*24*time.Hour, log)
-		if err != nil || !needRenew {
-			return base, nil
-		}
-
-		if o.Annotations == nil {
-			o.Annotations = map[string]string{}
-		}
-		o.Annotations[AnnotationForceRenewTLS] = "true"
-
-		return base, nil
-	})
 }
 
 // kibanaConvergenceCheck gates the Rotate→Converge transition on the Kibana
