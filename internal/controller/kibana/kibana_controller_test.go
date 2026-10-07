@@ -148,7 +148,11 @@ func doCreateKibanaStep() test.TestStep[*kibanacrd.Kibana] {
 					t.Fatal("Kibana not found")
 				}
 
-				if kb.GetStatus().GetObservedGeneration() > 0 {
+				// The TLS rotation saga advances over several reconcile cycles
+				// ("" -> Rotate -> Converge -> ""), while the observed generation
+				// is written on the first cycle. Wait for both so the saga has
+				// fully converged before asserting on the status.
+				if kb.GetStatus().GetObservedGeneration() > 0 && kb.Status.TlsWorkflowStatus.CurrentPhase == "" {
 					return nil
 				}
 
@@ -578,11 +582,13 @@ func (t *KibanaControllerTestSuite) TestKibanaControllerCARotation() {
 		kb.Annotations = map[string]string{}
 	}
 	kb.Annotations[AnnotationForceRenewTLS] = "true"
-	lastGen := kb.GetStatus().GetObservedGeneration()
 	assert.NoError(t.T(), c.Update(ctx, kb))
 
-	// Wait for reconciliation
-	waitKibanaObservedGeneration(t.T(), c, key, lastGen)
+	// An annotation-only update does not bump metadata.generation, so the
+	// observed generation never increases. The operator clears the force
+	// annotation in the same OnSuccess cycle in which the rotation is
+	// applied; wait for that instead.
+	waitKibanaAnnotationCleared(t.T(), c, key, AnnotationForceRenewTLS)
 
 	// Assert CA cert changed and annotation cleared
 	kb = &kibanacrd.Kibana{}
@@ -651,9 +657,13 @@ func (t *KibanaControllerTestSuite) TestKibanaControllerLeafRenew() {
 		kb.Annotations = map[string]string{}
 	}
 	kb.Annotations[AnnotationForceRenewCertificates] = "true"
-	lastGen := kb.GetStatus().GetObservedGeneration()
 	assert.NoError(t.T(), c.Update(ctx, kb))
-	waitKibanaObservedGeneration(t.T(), c, key, lastGen)
+
+	// An annotation-only update does not bump metadata.generation, so the
+	// observed generation never increases. The operator clears the force
+	// annotation in the same OnSuccess cycle in which the leaf is renewed;
+	// wait for that instead.
+	waitKibanaAnnotationCleared(t.T(), c, key, AnnotationForceRenewCertificates)
 
 	// Assert leaf changed, CA unchanged, annotation cleared
 	kb = &kibanacrd.Kibana{}
@@ -692,6 +702,20 @@ func (t *KibanaControllerTestSuite) TestKibanaControllerBYO() {
 	}
 	assert.NoError(t.T(), c.Create(ctx, es))
 
+	// The user-managed TLS secret referenced by CertificateSecretRef must
+	// exist: the Deployment step waits for it before creating the Deployment.
+	byoSecret := &corev1.Secret{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "my-byo-secret",
+			Namespace: key.Namespace,
+		},
+		Data: map[string][]byte{
+			"tls.crt": []byte("crt"),
+			"tls.key": []byte("key"),
+		},
+	}
+	assert.NoError(t.T(), c.Create(ctx, byoSecret))
+
 	kb := &kibanacrd.Kibana{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      key.Name,
@@ -728,6 +752,28 @@ func (t *KibanaControllerTestSuite) TestKibanaControllerBYO() {
 
 	// Assert no TLS workflow phase writes
 	assert.Empty(t.T(), kb.Status.TlsWorkflowStatus.CurrentPhase)
+}
+
+// waitKibanaAnnotationCleared polls until the given force-renew annotation has
+// been removed by the operator (which happens in the same OnSuccess cycle that
+// applies the rotation).
+func waitKibanaAnnotationCleared(t *testing.T, c client.Client, key types.NamespacedName, annotation string) {
+	kb := &kibanacrd.Kibana{}
+	isTimeout, err := test.RunWithTimeout(func() error {
+		if err := c.Get(context.Background(), key, kb); err != nil {
+			t.Fatal(err)
+		}
+		if _, ok := kb.Annotations[annotation]; !ok {
+			return nil
+		}
+		return errors.New("annotation not yet cleared")
+	}, 30*time.Second, 1*time.Second)
+	if err != nil {
+		t.Fatalf("Kibana annotation not cleared: %s", err.Error())
+	}
+	if isTimeout {
+		t.Fatalf("Kibana annotation %s not cleared: timed out", annotation)
+	}
 }
 
 // waitKibanaObservedGeneration waits until the Kibana observed generation is

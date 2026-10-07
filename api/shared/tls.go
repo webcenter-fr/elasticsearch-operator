@@ -48,7 +48,7 @@ type TlsSpec struct {
 	// at which the operator starts the CA rotation saga. Default 30.
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
 	// +optional
-	// +kubebuilder:default=365
+	// +kubebuilder:default=30
 	CaRenewalDays *int `json:"caRenewalDays,omitempty"`
 
 	// KeyComplexity selects the private-key algorithm and strength:

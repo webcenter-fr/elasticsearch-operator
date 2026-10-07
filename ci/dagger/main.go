@@ -26,7 +26,7 @@ import (
 )
 
 const (
-	kubeVersion                 = "1.31.0"
+	kubeVersion                 = "1.36.0"
 	sdkVersion                  = "v1.39.2"
 	controllerGenVersion        = "v0.18.0"
 	kustomizeVersion            = "v5.4.3"

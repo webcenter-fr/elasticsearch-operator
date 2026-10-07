@@ -1,6 +1,6 @@
 module github.com/webcenter-fr/elasticsearch-operator
 
-go 1.27
+go 1.27.0
 
 require (
 	dario.cat/mergo v1.0.2
@@ -13,7 +13,7 @@ require (
 	github.com/disaster37/go-kibana-rest/v8 v8.5.0
 	github.com/disaster37/k8sbuilder v1.0.3
 	github.com/disaster37/kb-handler/v8 v8.0.4
-	github.com/disaster37/operator-sdk-extra/v3 v3.0.7
+	github.com/disaster37/operator-sdk-extra/v3 v3.0.9-0.20260923121927-31a88ead634d
 	github.com/elastic/go-ucfg v0.9.1
 	github.com/google/go-cmp v0.7.0
 	github.com/magiconair/properties v1.18.11

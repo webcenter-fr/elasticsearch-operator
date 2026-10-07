@@ -1,0 +1,119 @@
+schemaVersion: 2.2.0
+metadata:
+  name: golang
+components:
+  - name: tools
+    container:
+      image: quay.io/webcenter/developer-image:golang-ubi10-latest
+      env:
+        - name: GOPATH
+          value: /projects:/home/user/go
+        - name: GOCACHE
+          value: /tmp/.cache
+        - name: DOCKER_HOST
+          value: tcp://127.0.0.1:2375
+        - name: BUILDKIT_HOST
+          value: "tcp://127.0.0.1:1234"
+        - name: DOCKER_BUILDKIT
+          value: "1"
+        - name: BUILDX_BUILDER
+          value: remote
+      endpoints:
+        - name: web
+          targetPort: 8080
+          exposure: public
+      memoryLimit: 20Gi
+      cpuLimit: 4000m
+      cpuRequest: 1000m
+      memoryRequest: 8Gi
+      mountSources: true
+  - name: kubedock
+    container:
+      image: joyrex2001/kubedock:latest
+      env:
+        - name: SERVER_LISTEN_ADDR
+          value: ':2375'
+      mountSources: true
+      memoryLimit: 4Gi
+      cpuLimit: 4000m
+      cpuRequest: 1000m
+      memoryRequest: 1Gi
+  - name: buildkitd
+    container:
+      image: moby/buildkit:latest
+      command: ['sh', '-c']
+      args:
+        - 'mount -o remount,rw /sys/fs/cgroup; exec buildkitd --addr=tcp://0.0.0.0:1234'
+      env:
+        - name: DOCKER_CONFIG
+          value: /home/user/.docker
+      mountSources: true
+      memoryLimit: 8Gi
+      cpuLimit: 4000m
+      cpuRequest: 500m
+      memoryRequest: 2Gi
+      volumeMounts:
+        - name: buildkit-cache
+          path: /var/lib/buildkit
+    attributes:
+      container-overrides:
+        securityContext:
+          runAsUser: 0
+          runAsNonRoot: false
+          allowPrivilegeEscalation: true
+          appArmorProfile:
+            type: Unconfined
+          capabilities:
+            add:
+              - SYS_ADMIN
+              - NET_ADMIN
+              - BPF
+  - name: buildkit-cache
+    volume:
+      size: 10Gi
+
+commands:
+  - id: run
+    exec:
+      label: "1.1 Run"
+      component: tools
+      workingDir: ${PROJECT_SOURCE}/
+      commandLine: "go run ."
+      group:
+        kind: run
+
+  - id: stop
+    exec:
+      label: "1.2 Stop"
+      component: tools
+      commandLine: "kill $(pidof go)"
+      group:
+        kind: run
+
+  - id: test
+    exec:
+      label: "1.3 Test"
+      component: tools
+      workingDir: ${PROJECT_SOURCE}/
+      commandLine: "go test -v"
+      group:
+        kind: test
+
+  - id: run-current-file
+    exec:
+      label: "Run current file"
+      component: tools
+      workingDir: ${fileDirname}
+      commandLine: "go run ${file}"
+      group:
+        kind: run
+
+  - id: init-buildx-builder
+    exec:
+      label: "Init buildx remote builder"
+      component: tools
+      commandLine: 'docker buildx create --name remote --driver remote tcp://127.0.0.1:1234 >/dev/null 2>&1 || true; docker buildx use remote >/dev/null 2>&1 || true'
+
+events:
+  postStart:
+    - init-buildx-builder
