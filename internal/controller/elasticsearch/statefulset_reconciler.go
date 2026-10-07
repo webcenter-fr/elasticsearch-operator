@@ -82,7 +82,7 @@ func (r *statefulsetReconciler) Read(ctx context.Context, o *elasticsearchcrd.El
 	// pod-template creationTimestamp the API server sets on live StatefulSets,
 	// so strip it here to avoid a perpetual "update" classification.
 	for i := range stsList.Items {
-		stsList.Items[i].Spec.Template.ObjectMeta.CreationTimestamp = metav1.Time{}
+		stsList.Items[i].Spec.Template.CreationTimestamp = metav1.Time{}
 	}
 	read.SetCurrentObjects(helper.ToSlicePtr(stsList.Items))
 

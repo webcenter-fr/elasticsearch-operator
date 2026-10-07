@@ -81,29 +81,29 @@ func NewLogstashReconciler(c client.Client, logger *logrus.Entry, recorder recor
 		name:           name,
 		kubeCapability: kubeCapability,
 		stepReconcilers: []multiphase.MultiPhaseStepReconcilerAction[*logstashcrd.Logstash, client.Object]{
-			multiphase.NewObjectMultiPhaseStepReconcilerAction[*logstashcrd.Logstash, *corev1.ServiceAccount, client.Object](newServiceAccountReconciler(c, recorder, kubeCapability.HasRoute)),
-			multiphase.NewObjectMultiPhaseStepReconcilerAction[*logstashcrd.Logstash, *rbacv1.RoleBinding, client.Object](newRoleBindingReconciler(c, recorder, kubeCapability.HasRoute)),
+			multiphase.As[*logstashcrd.Logstash, *corev1.ServiceAccount, client.Object](newServiceAccountReconciler(c, recorder, kubeCapability.HasRoute)),
+			multiphase.As[*logstashcrd.Logstash, *rbacv1.RoleBinding, client.Object](newRoleBindingReconciler(c, recorder, kubeCapability.HasRoute)),
 			newTlsReconciler(c, recorder),
-			multiphase.NewObjectMultiPhaseStepReconcilerAction[*logstashcrd.Logstash, *corev1.Secret, client.Object](newCAElasticsearchReconciler(c, recorder)),
-			multiphase.NewObjectMultiPhaseStepReconcilerAction[*logstashcrd.Logstash, *corev1.Secret, client.Object](newCredentialReconciler(c, recorder)),
-			multiphase.NewObjectMultiPhaseStepReconcilerAction[*logstashcrd.Logstash, *corev1.ConfigMap, client.Object](newConfiMapReconciler(c, recorder)),
-			multiphase.NewObjectMultiPhaseStepReconcilerAction[*logstashcrd.Logstash, *corev1.Service, client.Object](newServiceReconciler(c, recorder)),
-			multiphase.NewObjectMultiPhaseStepReconcilerAction[*logstashcrd.Logstash, *policyv1.PodDisruptionBudget, client.Object](newPdbReconciler(c, recorder)),
-			multiphase.NewObjectMultiPhaseStepReconcilerAction[*logstashcrd.Logstash, *networkingv1.NetworkPolicy, client.Object](newNetworkPolicyReconciler(c, recorder)),
-			multiphase.NewObjectMultiPhaseStepReconcilerAction[*logstashcrd.Logstash, *appv1.StatefulSet, client.Object](newStatefulsetReconciler(c, recorder, kubeCapability.HasRoute)),
-			multiphase.NewObjectMultiPhaseStepReconcilerAction[*logstashcrd.Logstash, *networkingv1.Ingress, client.Object](newIngressReconciler(c, recorder)),
-			multiphase.NewObjectMultiPhaseStepReconcilerAction[*logstashcrd.Logstash, *beatcrd.Metricbeat, client.Object](newMetricbeatReconciler(c, recorder)),
+			multiphase.As[*logstashcrd.Logstash, *corev1.Secret, client.Object](newCAElasticsearchReconciler(c, recorder)),
+			multiphase.As[*logstashcrd.Logstash, *corev1.Secret, client.Object](newCredentialReconciler(c, recorder)),
+			multiphase.As[*logstashcrd.Logstash, *corev1.ConfigMap, client.Object](newConfiMapReconciler(c, recorder)),
+			multiphase.As[*logstashcrd.Logstash, *corev1.Service, client.Object](newServiceReconciler(c, recorder)),
+			multiphase.As[*logstashcrd.Logstash, *policyv1.PodDisruptionBudget, client.Object](newPdbReconciler(c, recorder)),
+			multiphase.As[*logstashcrd.Logstash, *networkingv1.NetworkPolicy, client.Object](newNetworkPolicyReconciler(c, recorder)),
+			multiphase.As[*logstashcrd.Logstash, *appv1.StatefulSet, client.Object](newStatefulsetReconciler(c, recorder, kubeCapability.HasRoute)),
+			multiphase.As[*logstashcrd.Logstash, *networkingv1.Ingress, client.Object](newIngressReconciler(c, recorder)),
+			multiphase.As[*logstashcrd.Logstash, *beatcrd.Metricbeat, client.Object](newMetricbeatReconciler(c, recorder)),
 		},
 	}
 
 	// Add Pod monitor reconciler is CRD exist on cluster
 	if kubeCapability.HasPrometheus {
-		reconciler.stepReconcilers = append(reconciler.stepReconcilers, multiphase.NewObjectMultiPhaseStepReconcilerAction[*logstashcrd.Logstash, *monitoringv1.PodMonitor, client.Object](newPodMonitorReconciler(c, recorder)))
+		reconciler.stepReconcilers = append(reconciler.stepReconcilers, multiphase.As[*logstashcrd.Logstash, *monitoringv1.PodMonitor, client.Object](newPodMonitorReconciler(c, recorder)))
 	}
 
 	// Add route reconciler if CRD exist on cluster
 	if kubeCapability.HasRoute {
-		reconciler.stepReconcilers = append(reconciler.stepReconcilers, multiphase.NewObjectMultiPhaseStepReconcilerAction[*logstashcrd.Logstash, *routev1.Route, client.Object](newRouteReconciler(c, recorder)))
+		reconciler.stepReconcilers = append(reconciler.stepReconcilers, multiphase.As[*logstashcrd.Logstash, *routev1.Route, client.Object](newRouteReconciler(c, recorder)))
 	}
 
 	return reconciler

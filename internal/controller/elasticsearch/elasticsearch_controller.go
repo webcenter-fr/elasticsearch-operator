@@ -90,33 +90,33 @@ func NewElasticsearchReconciler(c client.Client, logger *logrus.Entry, recorder 
 		name:           name,
 		kubeCapability: kubeCapability,
 		stepReconcilers: []multiphase.MultiPhaseStepReconcilerAction[*elasticsearchcrd.Elasticsearch, client.Object]{
-			multiphase.NewObjectMultiPhaseStepReconcilerAction[*elasticsearchcrd.Elasticsearch, *corev1.ServiceAccount, client.Object](newServiceAccountReconciler(c, recorder, kubeCapability.HasRoute)),
-			multiphase.NewObjectMultiPhaseStepReconcilerAction[*elasticsearchcrd.Elasticsearch, *rbacv1.RoleBinding, client.Object](newRoleBindingReconciler(c, recorder, kubeCapability.HasRoute)),
+			multiphase.As[*elasticsearchcrd.Elasticsearch, *corev1.ServiceAccount, client.Object](newServiceAccountReconciler(c, recorder, kubeCapability.HasRoute)),
+			multiphase.As[*elasticsearchcrd.Elasticsearch, *rbacv1.RoleBinding, client.Object](newRoleBindingReconciler(c, recorder, kubeCapability.HasRoute)),
 			newTlsTransportReconciler(c, recorder),
-			multiphase.NewObjectMultiPhaseStepReconcilerAction[*elasticsearchcrd.Elasticsearch, *corev1.Secret, client.Object](newTlsApiReconciler(c, recorder)),
-			multiphase.NewObjectMultiPhaseStepReconcilerAction[*elasticsearchcrd.Elasticsearch, *corev1.Secret, client.Object](newCredentialReconciler(c, recorder)),
-			multiphase.NewObjectMultiPhaseStepReconcilerAction[*elasticsearchcrd.Elasticsearch, *elasticsearchapicrd.License, client.Object](newLicenseReconciler(c, recorder)),
-			multiphase.NewObjectMultiPhaseStepReconcilerAction[*elasticsearchcrd.Elasticsearch, *corev1.ConfigMap, client.Object](newConfiMapReconciler(c, recorder)),
-			multiphase.NewObjectMultiPhaseStepReconcilerAction[*elasticsearchcrd.Elasticsearch, *corev1.Service, client.Object](newServiceReconciler(c, recorder)),
-			multiphase.NewObjectMultiPhaseStepReconcilerAction[*elasticsearchcrd.Elasticsearch, *policyv1.PodDisruptionBudget, client.Object](newPdbReconciler(c, recorder)),
-			multiphase.NewObjectMultiPhaseStepReconcilerAction[*elasticsearchcrd.Elasticsearch, *networkingv1.NetworkPolicy, client.Object](newNetworkPolicyReconciler(c, recorder)),
-			multiphase.NewObjectMultiPhaseStepReconcilerActionWithDiff[*elasticsearchcrd.Elasticsearch, *appv1.StatefulSet, client.Object](newStatefulsetReconciler(c, recorder, kubeCapability.HasRoute)),
-			multiphase.NewObjectMultiPhaseStepReconcilerAction[*elasticsearchcrd.Elasticsearch, *elasticsearchapicrd.User, client.Object](newSystemUserReconciler(c, recorder)),
-			multiphase.NewObjectMultiPhaseStepReconcilerAction[*elasticsearchcrd.Elasticsearch, *networkingv1.Ingress, client.Object](newIngressReconciler(c, recorder)),
-			multiphase.NewObjectMultiPhaseStepReconcilerAction[*elasticsearchcrd.Elasticsearch, *corev1.Service, client.Object](newLoadBalancerReconciler(c, recorder)),
-			multiphase.NewObjectMultiPhaseStepReconcilerAction[*elasticsearchcrd.Elasticsearch, *beatcrd.Metricbeat, client.Object](newMetricbeatReconciler(c, recorder)),
-			multiphase.NewObjectMultiPhaseStepReconcilerAction[*elasticsearchcrd.Elasticsearch, *appv1.Deployment, client.Object](newExporterReconciler(c, recorder)),
+			multiphase.As[*elasticsearchcrd.Elasticsearch, *corev1.Secret, client.Object](newTlsApiReconciler(c, recorder)),
+			multiphase.As[*elasticsearchcrd.Elasticsearch, *corev1.Secret, client.Object](newCredentialReconciler(c, recorder)),
+			multiphase.As[*elasticsearchcrd.Elasticsearch, *elasticsearchapicrd.License, client.Object](newLicenseReconciler(c, recorder)),
+			multiphase.As[*elasticsearchcrd.Elasticsearch, *corev1.ConfigMap, client.Object](newConfiMapReconciler(c, recorder)),
+			multiphase.As[*elasticsearchcrd.Elasticsearch, *corev1.Service, client.Object](newServiceReconciler(c, recorder)),
+			multiphase.As[*elasticsearchcrd.Elasticsearch, *policyv1.PodDisruptionBudget, client.Object](newPdbReconciler(c, recorder)),
+			multiphase.As[*elasticsearchcrd.Elasticsearch, *networkingv1.NetworkPolicy, client.Object](newNetworkPolicyReconciler(c, recorder)),
+			multiphase.AsWithDiff[*elasticsearchcrd.Elasticsearch, *appv1.StatefulSet, client.Object](newStatefulsetReconciler(c, recorder, kubeCapability.HasRoute)),
+			multiphase.As[*elasticsearchcrd.Elasticsearch, *elasticsearchapicrd.User, client.Object](newSystemUserReconciler(c, recorder)),
+			multiphase.As[*elasticsearchcrd.Elasticsearch, *networkingv1.Ingress, client.Object](newIngressReconciler(c, recorder)),
+			multiphase.As[*elasticsearchcrd.Elasticsearch, *corev1.Service, client.Object](newLoadBalancerReconciler(c, recorder)),
+			multiphase.As[*elasticsearchcrd.Elasticsearch, *beatcrd.Metricbeat, client.Object](newMetricbeatReconciler(c, recorder)),
+			multiphase.As[*elasticsearchcrd.Elasticsearch, *appv1.Deployment, client.Object](newExporterReconciler(c, recorder)),
 		},
 	}
 
 	// Add Pod monitor reconciler is CRD exist on cluster
 	if kubeCapability.HasPrometheus {
-		reconciler.stepReconcilers = append(reconciler.stepReconcilers, multiphase.NewObjectMultiPhaseStepReconcilerAction[*elasticsearchcrd.Elasticsearch, *monitoringv1.PodMonitor, client.Object](newPodMonitorReconciler(c, recorder)))
+		reconciler.stepReconcilers = append(reconciler.stepReconcilers, multiphase.As[*elasticsearchcrd.Elasticsearch, *monitoringv1.PodMonitor, client.Object](newPodMonitorReconciler(c, recorder)))
 	}
 
 	// Add route reconciler if CRD exist on cluster
 	if kubeCapability.HasRoute {
-		reconciler.stepReconcilers = append(reconciler.stepReconcilers, multiphase.NewObjectMultiPhaseStepReconcilerAction[*elasticsearchcrd.Elasticsearch, *routev1.Route, client.Object](newRouteReconciler(c, recorder)))
+		reconciler.stepReconcilers = append(reconciler.stepReconcilers, multiphase.As[*elasticsearchcrd.Elasticsearch, *routev1.Route, client.Object](newRouteReconciler(c, recorder)))
 	}
 
 	return reconciler

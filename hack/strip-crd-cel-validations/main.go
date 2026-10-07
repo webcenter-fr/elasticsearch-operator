@@ -66,7 +66,9 @@ func stripFile(path string) (changed bool, warnings []string, err error) {
 	if err != nil {
 		return false, nil, err
 	}
-	defer f.Close()
+	defer func() {
+		_ = f.Close()
+	}()
 
 	var lines []string
 	sc := bufio.NewScanner(f)

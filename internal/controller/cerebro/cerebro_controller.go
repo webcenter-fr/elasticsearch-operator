@@ -79,17 +79,17 @@ func NewCerebroReconciler(c client.Client, logger *logrus.Entry, recorder record
 		name:           name,
 		kubeCapability: kubeCapability,
 		stepReconcilers: []multiphase.MultiPhaseStepReconcilerAction[*cerebrocrd.Cerebro, client.Object]{
-			multiphase.NewObjectMultiPhaseStepReconcilerAction[*cerebrocrd.Cerebro, *corev1.Secret, client.Object](newApplicationSecretReconciler(c, recorder)),
-			multiphase.NewObjectMultiPhaseStepReconcilerAction[*cerebrocrd.Cerebro, *corev1.ConfigMap, client.Object](newConfiMapReconciler(c, recorder)),
-			multiphase.NewObjectMultiPhaseStepReconcilerAction[*cerebrocrd.Cerebro, *corev1.Service, client.Object](newServiceReconciler(c, recorder)),
-			multiphase.NewObjectMultiPhaseStepReconcilerAction[*cerebrocrd.Cerebro, *appv1.Deployment, client.Object](newDeploymentReconciler(c, recorder, kubeCapability.HasRoute)),
-			multiphase.NewObjectMultiPhaseStepReconcilerAction[*cerebrocrd.Cerebro, *networkingv1.Ingress, client.Object](newIngressReconciler(c, recorder)),
-			multiphase.NewObjectMultiPhaseStepReconcilerAction[*cerebrocrd.Cerebro, *corev1.Service, client.Object](newLoadBalancerReconciler(c, recorder)),
+			multiphase.As[*cerebrocrd.Cerebro, *corev1.Secret, client.Object](newApplicationSecretReconciler(c, recorder)),
+			multiphase.As[*cerebrocrd.Cerebro, *corev1.ConfigMap, client.Object](newConfiMapReconciler(c, recorder)),
+			multiphase.As[*cerebrocrd.Cerebro, *corev1.Service, client.Object](newServiceReconciler(c, recorder)),
+			multiphase.As[*cerebrocrd.Cerebro, *appv1.Deployment, client.Object](newDeploymentReconciler(c, recorder, kubeCapability.HasRoute)),
+			multiphase.As[*cerebrocrd.Cerebro, *networkingv1.Ingress, client.Object](newIngressReconciler(c, recorder)),
+			multiphase.As[*cerebrocrd.Cerebro, *corev1.Service, client.Object](newLoadBalancerReconciler(c, recorder)),
 		},
 	}
 
 	if kubeCapability.HasRoute {
-		reconciler.stepReconcilers = append(reconciler.stepReconcilers, multiphase.NewObjectMultiPhaseStepReconcilerAction[*cerebrocrd.Cerebro, *routev1.Route, client.Object](newRouteReconciler(c, recorder)))
+		reconciler.stepReconcilers = append(reconciler.stepReconcilers, multiphase.As[*cerebrocrd.Cerebro, *routev1.Route, client.Object](newRouteReconciler(c, recorder)))
 	}
 
 	return reconciler

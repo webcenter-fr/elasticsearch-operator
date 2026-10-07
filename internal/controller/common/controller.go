@@ -52,7 +52,7 @@ const ESClientTimeout = 30 * time.Second
 func InjectTypeMeta[T client.Object](scheme *runtime.Scheme, objs ...T) {
 	for _, obj := range objs {
 		v := reflect.ValueOf(obj)
-		if v.Kind() == reflect.Ptr && v.IsNil() {
+		if v.Kind() == reflect.Pointer && v.IsNil() {
 			continue
 		}
 		if obj.GetObjectKind().GroupVersionKind().Kind != "" {
@@ -79,7 +79,7 @@ func DriftSecretForMetadata(current *corev1.Secret, labels, annotations map[stri
 	expected := current.DeepCopy()
 	expected.Labels = labels
 	expected.Annotations = annotations
-	if expected.TypeMeta.Kind == "" {
+	if expected.Kind == "" {
 		expected.TypeMeta = metav1.TypeMeta{APIVersion: "v1", Kind: "Secret"}
 	}
 	return expected

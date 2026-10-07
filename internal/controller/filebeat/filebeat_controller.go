@@ -81,24 +81,24 @@ func NewFilebeatReconciler(c client.Client, logger *logrus.Entry, recorder recor
 		name:           name,
 		kubeCapability: kubeCapability,
 		stepReconcilers: []multiphase.MultiPhaseStepReconcilerAction[*beatcrd.Filebeat, client.Object]{
-			multiphase.NewObjectMultiPhaseStepReconcilerAction[*beatcrd.Filebeat, *corev1.ServiceAccount, client.Object](newServiceAccountReconciler(c, recorder, kubeCapability.HasRoute)),
-			multiphase.NewObjectMultiPhaseStepReconcilerAction[*beatcrd.Filebeat, *rbacv1.RoleBinding, client.Object](newRoleBindingReconciler(c, recorder, kubeCapability.HasRoute)),
+			multiphase.As[*beatcrd.Filebeat, *corev1.ServiceAccount, client.Object](newServiceAccountReconciler(c, recorder, kubeCapability.HasRoute)),
+			multiphase.As[*beatcrd.Filebeat, *rbacv1.RoleBinding, client.Object](newRoleBindingReconciler(c, recorder, kubeCapability.HasRoute)),
 			newTlsReconciler(c, recorder),
-			multiphase.NewObjectMultiPhaseStepReconcilerAction[*beatcrd.Filebeat, *corev1.Secret, client.Object](newCALogstashReconciler(c, recorder)),
-			multiphase.NewObjectMultiPhaseStepReconcilerAction[*beatcrd.Filebeat, *corev1.Secret, client.Object](newCAElasticsearchReconciler(c, recorder)),
-			multiphase.NewObjectMultiPhaseStepReconcilerAction[*beatcrd.Filebeat, *corev1.Secret, client.Object](newCredentialReconciler(c, recorder)),
-			multiphase.NewObjectMultiPhaseStepReconcilerAction[*beatcrd.Filebeat, *corev1.ConfigMap, client.Object](newConfiMapReconciler(c, recorder)),
-			multiphase.NewObjectMultiPhaseStepReconcilerAction[*beatcrd.Filebeat, *corev1.Service, client.Object](newServiceReconciler(c, recorder)),
-			multiphase.NewObjectMultiPhaseStepReconcilerAction[*beatcrd.Filebeat, *policyv1.PodDisruptionBudget, client.Object](newPdbReconciler(c, recorder)),
-			multiphase.NewObjectMultiPhaseStepReconcilerAction[*beatcrd.Filebeat, *appv1.StatefulSet, client.Object](newStatefulsetReconciler(c, recorder, kubeCapability.HasRoute)),
-			multiphase.NewObjectMultiPhaseStepReconcilerAction[*beatcrd.Filebeat, *networkingv1.Ingress, client.Object](newIngressReconciler(c, recorder)),
-			multiphase.NewObjectMultiPhaseStepReconcilerAction[*beatcrd.Filebeat, *beatcrd.Metricbeat, client.Object](newMetricbeatReconciler(c, recorder)),
+			multiphase.As[*beatcrd.Filebeat, *corev1.Secret, client.Object](newCALogstashReconciler(c, recorder)),
+			multiphase.As[*beatcrd.Filebeat, *corev1.Secret, client.Object](newCAElasticsearchReconciler(c, recorder)),
+			multiphase.As[*beatcrd.Filebeat, *corev1.Secret, client.Object](newCredentialReconciler(c, recorder)),
+			multiphase.As[*beatcrd.Filebeat, *corev1.ConfigMap, client.Object](newConfiMapReconciler(c, recorder)),
+			multiphase.As[*beatcrd.Filebeat, *corev1.Service, client.Object](newServiceReconciler(c, recorder)),
+			multiphase.As[*beatcrd.Filebeat, *policyv1.PodDisruptionBudget, client.Object](newPdbReconciler(c, recorder)),
+			multiphase.As[*beatcrd.Filebeat, *appv1.StatefulSet, client.Object](newStatefulsetReconciler(c, recorder, kubeCapability.HasRoute)),
+			multiphase.As[*beatcrd.Filebeat, *networkingv1.Ingress, client.Object](newIngressReconciler(c, recorder)),
+			multiphase.As[*beatcrd.Filebeat, *beatcrd.Metricbeat, client.Object](newMetricbeatReconciler(c, recorder)),
 		},
 	}
 
 	// Add route reconciler if CRD exist on cluster
 	if kubeCapability.HasRoute {
-		reconciler.stepReconcilers = append(reconciler.stepReconcilers, multiphase.NewObjectMultiPhaseStepReconcilerAction[*beatcrd.Filebeat, *routev1.Route, client.Object](newRouteReconciler(c, recorder)))
+		reconciler.stepReconcilers = append(reconciler.stepReconcilers, multiphase.As[*beatcrd.Filebeat, *routev1.Route, client.Object](newRouteReconciler(c, recorder)))
 	}
 
 	return reconciler
