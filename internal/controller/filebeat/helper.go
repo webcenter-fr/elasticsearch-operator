@@ -126,8 +126,10 @@ func GetServiceAccountName(fb *beatcrd.Filebeat) string {
 
 // GetSecretNameForPki permit to get the secret name that store PKI
 // It return the secret name as string
+// Since migration to operator-sdk-extra saga: the saga hardcodes CA secret as <leafName>-ca,
+// where leafName = GetSecretNameForTls (<name>-tls-fb), so PKI name follows that convention.
 func GetSecretNameForPki(fb *beatcrd.Filebeat) (secretName string) {
-	return fmt.Sprintf("%s-pki-fb", fb.Name)
+	return fmt.Sprintf("%s-tls-fb-ca", fb.Name)
 }
 
 // GetSecretNameForTls permit to get the secret name that store all certificates for Filebeat

@@ -3,7 +3,7 @@ package cerebro
 import (
 	"testing"
 
-	"github.com/disaster37/operator-sdk-extra/v2/pkg/test"
+	"github.com/disaster37/operator-sdk-extra/v3/pkg/test"
 	"github.com/stretchr/testify/assert"
 	cerebrocrd "github.com/webcenter-fr/elasticsearch-operator/api/cerebro/v1"
 	elasticsearchcrd "github.com/webcenter-fr/elasticsearch-operator/api/elasticsearch/v1"
@@ -34,9 +34,9 @@ func TestBuildConfigMap(t *testing.T) {
 			},
 		},
 		Spec: cerebrocrd.CerebroSpec{
-			Config: ptr.To(`test2 = test2`),
+			Config: ptr.To("basePath: /cerebro\n"),
 			ExtraConfigs: map[string]string{
-				"application.conf": "test = test\n",
+				"application.yaml": "rest:\n  history:\n    size: 100\n",
 				"log4j.yml":        "log.test: test\n",
 			},
 		},
@@ -103,4 +103,18 @@ func TestBuildConfigMap(t *testing.T) {
 
 	assert.NoError(t, err)
 	test.EqualFromYamlFile[*corev1.ConfigMap](t, "testdata/configmap_elasticsearch_external_targets.yml", configMaps[0], scheme.Scheme)
+}
+
+func TestBuildConfigMapWithInvalidConfig(t *testing.T) {
+	o := &cerebrocrd.Cerebro{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: "default",
+			Name:      "test",
+		},
+		Spec: cerebrocrd.CerebroSpec{},
+	}
+	o.Spec.Config = ptr.To("this: [is: not valid yaml")
+
+	_, err := buildConfigMaps(o, nil, nil)
+	assert.Error(t, err)
 }

@@ -16,12 +16,12 @@ package elasticsearchapi
 import (
 	"context"
 
-	eshandler "github.com/disaster37/es-handler/v8"
-	"github.com/disaster37/operator-sdk-extra/v2/pkg/controller"
-	"github.com/disaster37/operator-sdk-extra/v2/pkg/controller/remote"
-	olivere "github.com/olivere/elastic/v7"
+	eshandler "github.com/disaster37/es-handler/v9"
+	"github.com/disaster37/operator-sdk-extra/v3/pkg/controller"
+	"github.com/disaster37/operator-sdk-extra/v3/pkg/controller/remote"
 	"github.com/sirupsen/logrus"
 	elasticsearchapicrd "github.com/webcenter-fr/elasticsearch-operator/api/elasticsearchapi/v1"
+	"github.com/webcenter-fr/elasticsearch-operator/internal/controller/common"
 	"k8s.io/client-go/tools/record"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -36,15 +36,15 @@ const (
 // WatchReconciler reconciles a Watch object
 type WatchReconciler struct {
 	controller.Controller
-	remote.RemoteReconciler[*elasticsearchapicrd.Watch, *olivere.XPackWatch, eshandler.ElasticsearchHandler]
-	remote.RemoteReconcilerAction[*elasticsearchapicrd.Watch, *olivere.XPackWatch, eshandler.ElasticsearchHandler]
+	remote.RemoteReconciler[*elasticsearchapicrd.Watch, *eshandler.XPackWatch, eshandler.ElasticsearchHandler]
+	remote.RemoteReconcilerAction[*elasticsearchapicrd.Watch, *eshandler.XPackWatch, eshandler.ElasticsearchHandler]
 	name string
 }
 
 func NewWatchReconciler(client client.Client, logger *logrus.Entry, recorder record.EventRecorder) controller.Controller {
 	return &WatchReconciler{
 		Controller: controller.NewController(),
-		RemoteReconciler: remote.NewRemoteReconciler[*elasticsearchapicrd.Watch, *olivere.XPackWatch, eshandler.ElasticsearchHandler](
+		RemoteReconciler: remote.NewRemoteReconciler[*elasticsearchapicrd.Watch, *eshandler.XPackWatch, eshandler.ElasticsearchHandler](
 			client,
 			watchName,
 			"watch.elasticsearchapi.k8s.webcenter.fr/finalizer",
@@ -93,7 +93,7 @@ func (r *WatchReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&elasticsearchapicrd.Watch{}).
 		WithOptions(k8scontroller.Options{
-			RateLimiter: controller.DefaultControllerRateLimiter[reconcile.Request](),
+			RateLimiter: common.DefaultControllerRateLimiter(),
 		}).
 		Complete(r)
 }

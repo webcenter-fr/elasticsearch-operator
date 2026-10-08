@@ -82,8 +82,10 @@ func GetContainerImage(ls *logstashcrd.Logstash) string {
 
 // GetSecretNameForPki permit to get the secret name that store PKI
 // It return the secret name as string
+// Since migration to operator-sdk-extra saga: the saga hardcodes CA secret as <leafName>-ca,
+// where leafName = GetSecretNameForTls (<name>-tls-ls), so PKI name follows that convention.
 func GetSecretNameForPki(ls *logstashcrd.Logstash) (secretName string) {
-	return fmt.Sprintf("%s-pki-ls", ls.Name)
+	return fmt.Sprintf("%s-tls-ls-ca", ls.Name)
 }
 
 // GetSecretNameForTls permit to get the secret name that store all certificates for Logstash

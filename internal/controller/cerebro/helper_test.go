@@ -77,15 +77,41 @@ func TestGetContainerImage(t *testing.T) {
 		},
 		Spec: cerebrocrd.CerebroSpec{},
 	}
-	assert.Equal(t, "lmenezes/cerebro:latest", GetContainerImage(o))
+	assert.Equal(t, "ghcr.io/disaster37/cerebro:v0.1.0", GetContainerImage(o))
 
 	// When version is specified
-	o.Spec.Version = "v1"
-	assert.Equal(t, "lmenezes/cerebro:v1", GetContainerImage(o))
+	o.Spec.Version = "v0.2.0"
+	assert.Equal(t, "ghcr.io/disaster37/cerebro:v0.2.0", GetContainerImage(o))
 
 	// When image is overwriten
 	o.Spec.Image = "my-image"
-	assert.Equal(t, "my-image:v1", GetContainerImage(o))
+	assert.Equal(t, "my-image:v0.2.0", GetContainerImage(o))
+
+	// When the legacy `latest` default is still persisted, it is remapped
+	o.Spec.Image = ""
+	o.Spec.Version = "latest"
+	assert.Equal(t, "ghcr.io/disaster37/cerebro:v0.1.0", GetContainerImage(o))
+}
+
+func TestIsLegacyVersion(t *testing.T) {
+	o := &cerebrocrd.Cerebro{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: "default",
+			Name:      "test",
+		},
+		Spec: cerebrocrd.CerebroSpec{},
+	}
+
+	// Empty version is not legacy
+	assert.False(t, IsLegacyVersion(o))
+
+	// Explicit version is not legacy
+	o.Spec.Version = "v0.1.0"
+	assert.False(t, IsLegacyVersion(o))
+
+	// Legacy `latest` default is detected
+	o.Spec.Version = "latest"
+	assert.True(t, IsLegacyVersion(o))
 }
 
 func TestGetLabels(t *testing.T) {

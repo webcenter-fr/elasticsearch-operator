@@ -21,15 +21,15 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/disaster37/operator-sdk-extra/v2/pkg/controller"
+	"github.com/disaster37/operator-sdk-extra/v3/pkg/controller"
 	"github.com/sirupsen/logrus"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/fields"
-	"k8s.io/apimachinery/pkg/runtime"
+
 	"k8s.io/apimachinery/pkg/util/validation/field"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/controller-runtime/pkg/webhook"
+
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 )
 
@@ -41,8 +41,7 @@ type watchValidator struct {
 // SetupWebhookWithManager will setup the manager to manage the webhooks
 func SetupWatchWebhookWithManager(logger *logrus.Entry) controller.WebhookRegister {
 	return func(mgr ctrl.Manager, client client.Client) error {
-		return ctrl.NewWebhookManagedBy(mgr).
-			For(&Watch{}).
+		return ctrl.NewWebhookManagedBy(mgr, &Watch{}).
 			WithValidator(&watchValidator{
 				logger: logger.WithField("webhook", "watchValidator"),
 				client: client,
@@ -53,7 +52,7 @@ func SetupWatchWebhookWithManager(logger *logrus.Entry) controller.WebhookRegist
 
 // +kubebuilder:webhook:path=/validate-elasticsearchapi-k8s-webcenter-fr-v1-watch,mutating=false,failurePolicy=fail,sideEffects=None,groups=elasticsearchapi.k8s.webcenter.fr,resources=watches,verbs=create;update,versions=v1,name=watch.elasticsearchapi.k8s.webcenter.fr,admissionReviewVersions=v1
 
-var _ webhook.CustomValidator = &watchValidator{}
+var _ admission.Validator[*Watch] = &watchValidator{}
 
 func (r *watchValidator) validateResourceUnicity(obj *Watch) *field.Error {
 	// Check if resource already exist with same name on some remote cluster target
@@ -81,65 +80,56 @@ func (r *watchValidator) validateResourceUnicity(obj *Watch) *field.Error {
 }
 
 // ValidateCreate implements webhook.Validator so a webhook will be registered for the type
-func (r *watchValidator) ValidateCreate(ctx context.Context, obj runtime.Object) (admission.Warnings, error) {
+func (r *watchValidator) ValidateCreate(ctx context.Context, obj *Watch) (admission.Warnings, error) {
 	var allErrs field.ErrorList
 
-	watchObj, ok := obj.(*Watch)
-	if !ok {
-		return nil, fmt.Errorf("expected a Watch object but got %T", obj)
-	}
-	r.logger.Debugf("validate create %s/%s", watchObj.GetNamespace(), watchObj.GetName())
+	r.logger.Debugf("validate create %s/%s", obj.GetNamespace(), obj.GetName())
 
-	if err := watchObj.Spec.ElasticsearchRef.ValidateField(); err != nil {
+	if err := obj.Spec.ElasticsearchRef.ValidateField(); err != nil {
 		allErrs = append(allErrs, err)
 	}
 
-	if err := r.validateResourceUnicity(watchObj); err != nil {
+	if err := r.validateResourceUnicity(obj); err != nil {
 		allErrs = append(allErrs, err)
 	}
 
 	if len(allErrs) > 0 {
 		return nil, apierrors.NewInvalid(
-			watchObj.GroupVersionKind().GroupKind(),
-			watchObj.Name, allErrs)
+			obj.GroupVersionKind().GroupKind(),
+			obj.Name, allErrs)
 	}
 
 	return nil, nil
 }
 
 // ValidateUpdate implements webhook.Validator so a webhook will be registered for the type
-func (r *watchValidator) ValidateUpdate(ctx context.Context, oldObj runtime.Object, newObj runtime.Object) (admission.Warnings, error) {
+func (r *watchValidator) ValidateUpdate(ctx context.Context, oldObj *Watch, newObj *Watch) (admission.Warnings, error) {
 	var allErrs field.ErrorList
-	oldO := oldObj.(*Watch)
 
-	watchObj, ok := newObj.(*Watch)
-	if !ok {
-		return nil, fmt.Errorf("expected a Watch object but got %T", newObj)
-	}
-	r.logger.Debugf("validate update %s/%s", watchObj.Namespace, watchObj.Name)
+	r.logger.Debugf("validate update %s/%s", newObj.Namespace, newObj.Name)
 
-	if err := watchObj.Spec.ElasticsearchRef.ValidateField(); err != nil {
+	if err := newObj.Spec.ElasticsearchRef.ValidateField(); err != nil {
 		allErrs = append(allErrs, err)
 	}
 
-	if err := validateImmutableName(watchObj, oldO); err != nil {
+	if err := validateImmutableName(newObj, oldObj); err != nil {
 		allErrs = append(allErrs, err)
 	}
 
-	if err := r.validateResourceUnicity(watchObj); err != nil {
+	if err := r.validateResourceUnicity(newObj); err != nil {
 		allErrs = append(allErrs, err)
 	}
 
 	if len(allErrs) > 0 {
 		return nil, apierrors.NewInvalid(
-			watchObj.GroupVersionKind().GroupKind(),
-			watchObj.Name, allErrs)
+			newObj.GroupVersionKind().GroupKind(),
+			newObj.Name, allErrs)
 	}
 
 	return nil, nil
 }
 
 // ValidateDelete implements webhook.Validator so a webhook will be registered for the type
-func (r *watchValidator) ValidateDelete(ctx context.Context, obj runtime.Object) (admission.Warnings, error) {
+func (r *watchValidator) ValidateDelete(ctx context.Context, obj *Watch) (admission.Warnings, error) {
 	return nil, nil
 }

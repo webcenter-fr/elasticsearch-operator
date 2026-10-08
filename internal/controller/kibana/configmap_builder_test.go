@@ -3,8 +3,8 @@ package kibana
 import (
 	"testing"
 
-	"github.com/disaster37/operator-sdk-extra/v2/pkg/apis"
-	"github.com/disaster37/operator-sdk-extra/v2/pkg/test"
+	"github.com/disaster37/operator-sdk-extra/v3/pkg/apis"
+	"github.com/disaster37/operator-sdk-extra/v3/pkg/test"
 	"github.com/stretchr/testify/assert"
 	elasticsearchcrd "github.com/webcenter-fr/elasticsearch-operator/api/elasticsearch/v1"
 	kibanacrd "github.com/webcenter-fr/elasticsearch-operator/api/kibana/v1"

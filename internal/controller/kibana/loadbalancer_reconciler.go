@@ -4,10 +4,11 @@ import (
 	"context"
 
 	"emperror.dev/errors"
-	"github.com/disaster37/operator-sdk-extra/v2/pkg/apis/shared"
-	"github.com/disaster37/operator-sdk-extra/v2/pkg/controller/multiphase"
+	"github.com/disaster37/operator-sdk-extra/v3/pkg/apis/shared"
+	"github.com/disaster37/operator-sdk-extra/v3/pkg/controller/multiphase"
 	"github.com/sirupsen/logrus"
 	kibanacrd "github.com/webcenter-fr/elasticsearch-operator/api/kibana/v1"
+	"github.com/webcenter-fr/elasticsearch-operator/internal/controller/common"
 	corev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/types"
@@ -32,6 +33,7 @@ func newLoadBalancerReconciler(client client.Client, recorder record.EventRecord
 			LoadBalancerPhase,
 			LoadBalancerCondition,
 			recorder,
+			common.FieldManager,
 		),
 	}
 }
@@ -57,6 +59,7 @@ func (r *loadBalancerReconciler) Read(ctx context.Context, o *kibanacrd.Kibana, 
 	if err != nil {
 		return read, res, errors.Wrap(err, "Error when generate load balancer")
 	}
+	common.InjectTypeMeta(r.Client().Scheme(), expectedLbs...)
 	read.SetExpectedObjects(expectedLbs)
 
 	return read, res, nil

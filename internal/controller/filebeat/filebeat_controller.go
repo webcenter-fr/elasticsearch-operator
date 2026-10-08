@@ -21,9 +21,9 @@ import (
 	"time"
 
 	"emperror.dev/errors"
-	"github.com/disaster37/operator-sdk-extra/v2/pkg/apis/shared"
-	"github.com/disaster37/operator-sdk-extra/v2/pkg/controller"
-	"github.com/disaster37/operator-sdk-extra/v2/pkg/controller/multiphase"
+	"github.com/disaster37/operator-sdk-extra/v3/pkg/apis/shared"
+	"github.com/disaster37/operator-sdk-extra/v3/pkg/controller"
+	"github.com/disaster37/operator-sdk-extra/v3/pkg/controller/multiphase"
 	routev1 "github.com/openshift/api/route/v1"
 	"github.com/sirupsen/logrus"
 	beatcrd "github.com/webcenter-fr/elasticsearch-operator/api/beat/v1"
@@ -81,24 +81,24 @@ func NewFilebeatReconciler(c client.Client, logger *logrus.Entry, recorder recor
 		name:           name,
 		kubeCapability: kubeCapability,
 		stepReconcilers: []multiphase.MultiPhaseStepReconcilerAction[*beatcrd.Filebeat, client.Object]{
-			multiphase.NewObjectMultiPhaseStepReconcilerAction[*beatcrd.Filebeat, *corev1.ServiceAccount, client.Object](newServiceAccountReconciler(c, recorder, kubeCapability.HasRoute)),
-			multiphase.NewObjectMultiPhaseStepReconcilerAction[*beatcrd.Filebeat, *rbacv1.RoleBinding, client.Object](newRoleBindingReconciler(c, recorder, kubeCapability.HasRoute)),
-			multiphase.NewObjectMultiPhaseStepReconcilerAction[*beatcrd.Filebeat, *corev1.Secret, client.Object](newTlsReconciler(c, recorder)),
-			multiphase.NewObjectMultiPhaseStepReconcilerAction[*beatcrd.Filebeat, *corev1.Secret, client.Object](newCALogstashReconciler(c, recorder)),
-			multiphase.NewObjectMultiPhaseStepReconcilerAction[*beatcrd.Filebeat, *corev1.Secret, client.Object](newCAElasticsearchReconciler(c, recorder)),
-			multiphase.NewObjectMultiPhaseStepReconcilerAction[*beatcrd.Filebeat, *corev1.Secret, client.Object](newCredentialReconciler(c, recorder)),
-			multiphase.NewObjectMultiPhaseStepReconcilerAction[*beatcrd.Filebeat, *corev1.ConfigMap, client.Object](newConfiMapReconciler(c, recorder)),
-			multiphase.NewObjectMultiPhaseStepReconcilerAction[*beatcrd.Filebeat, *corev1.Service, client.Object](newServiceReconciler(c, recorder)),
-			multiphase.NewObjectMultiPhaseStepReconcilerAction[*beatcrd.Filebeat, *policyv1.PodDisruptionBudget, client.Object](newPdbReconciler(c, recorder)),
-			multiphase.NewObjectMultiPhaseStepReconcilerAction[*beatcrd.Filebeat, *appv1.StatefulSet, client.Object](newStatefulsetReconciler(c, recorder, kubeCapability.HasRoute)),
-			multiphase.NewObjectMultiPhaseStepReconcilerAction[*beatcrd.Filebeat, *networkingv1.Ingress, client.Object](newIngressReconciler(c, recorder)),
-			multiphase.NewObjectMultiPhaseStepReconcilerAction[*beatcrd.Filebeat, *beatcrd.Metricbeat, client.Object](newMetricbeatReconciler(c, recorder)),
+			multiphase.As[*beatcrd.Filebeat, *corev1.ServiceAccount, client.Object](newServiceAccountReconciler(c, recorder, kubeCapability.HasRoute)),
+			multiphase.As[*beatcrd.Filebeat, *rbacv1.RoleBinding, client.Object](newRoleBindingReconciler(c, recorder, kubeCapability.HasRoute)),
+			newTlsReconciler(c, recorder),
+			multiphase.As[*beatcrd.Filebeat, *corev1.Secret, client.Object](newCALogstashReconciler(c, recorder)),
+			multiphase.As[*beatcrd.Filebeat, *corev1.Secret, client.Object](newCAElasticsearchReconciler(c, recorder)),
+			multiphase.As[*beatcrd.Filebeat, *corev1.Secret, client.Object](newCredentialReconciler(c, recorder)),
+			multiphase.As[*beatcrd.Filebeat, *corev1.ConfigMap, client.Object](newConfiMapReconciler(c, recorder)),
+			multiphase.As[*beatcrd.Filebeat, *corev1.Service, client.Object](newServiceReconciler(c, recorder)),
+			multiphase.As[*beatcrd.Filebeat, *policyv1.PodDisruptionBudget, client.Object](newPdbReconciler(c, recorder)),
+			multiphase.As[*beatcrd.Filebeat, *appv1.StatefulSet, client.Object](newStatefulsetReconciler(c, recorder, kubeCapability.HasRoute)),
+			multiphase.As[*beatcrd.Filebeat, *networkingv1.Ingress, client.Object](newIngressReconciler(c, recorder)),
+			multiphase.As[*beatcrd.Filebeat, *beatcrd.Metricbeat, client.Object](newMetricbeatReconciler(c, recorder)),
 		},
 	}
 
 	// Add route reconciler if CRD exist on cluster
 	if kubeCapability.HasRoute {
-		reconciler.stepReconcilers = append(reconciler.stepReconcilers, multiphase.NewObjectMultiPhaseStepReconcilerAction[*beatcrd.Filebeat, *routev1.Route, client.Object](newRouteReconciler(c, recorder)))
+		reconciler.stepReconcilers = append(reconciler.stepReconcilers, multiphase.As[*beatcrd.Filebeat, *routev1.Route, client.Object](newRouteReconciler(c, recorder)))
 	}
 
 	return reconciler
@@ -164,7 +164,7 @@ func (h *FilebeatReconciler) SetupWithManager(mgr ctrl.Manager) error {
 		Watches(&elasticsearchcrd.Elasticsearch{}, handler.EnqueueRequestsFromMapFunc(watchElasticsearch(h.Client()))).
 		Watches(&logstashcrd.Logstash{}, handler.EnqueueRequestsFromMapFunc(watchLogstash(h.Client()))).
 		WithOptions(k8scontroller.Options{
-			RateLimiter: controller.DefaultControllerRateLimiter[reconcile.Request](),
+			RateLimiter: common.DefaultControllerRateLimiter(),
 		})
 
 	if h.kubeCapability.HasRoute {

@@ -5,12 +5,13 @@ import (
 	"fmt"
 
 	"emperror.dev/errors"
-	"github.com/disaster37/operator-sdk-extra/v2/pkg/apis/shared"
-	"github.com/disaster37/operator-sdk-extra/v2/pkg/controller/multiphase"
-	"github.com/disaster37/operator-sdk-extra/v2/pkg/helper"
+	"github.com/disaster37/operator-sdk-extra/v3/pkg/apis/shared"
+	"github.com/disaster37/operator-sdk-extra/v3/pkg/controller/multiphase"
+	"github.com/disaster37/operator-sdk-extra/v3/pkg/helper"
 	"github.com/sirupsen/logrus"
 	beatcrd "github.com/webcenter-fr/elasticsearch-operator/api/beat/v1"
 	logstashcrd "github.com/webcenter-fr/elasticsearch-operator/api/logstash/v1"
+	"github.com/webcenter-fr/elasticsearch-operator/internal/controller/common"
 	networkingv1 "k8s.io/api/networking/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/fields"
@@ -36,6 +37,7 @@ func newNetworkPolicyReconciler(client client.Client, recorder record.EventRecor
 			NetworkPolicyPhase,
 			NetworkPolicyCondition,
 			recorder,
+			common.FieldManager,
 		),
 	}
 }
@@ -76,6 +78,7 @@ func (r *networkPolicyReconciler) Read(ctx context.Context, o *logstashcrd.Logst
 	if err != nil {
 		return read, res, errors.Wrap(err, "Error when generate network policy")
 	}
+	common.InjectTypeMeta(r.Client().Scheme(), expectedNps...)
 	read.SetExpectedObjects(expectedNps)
 
 	return read, res, nil

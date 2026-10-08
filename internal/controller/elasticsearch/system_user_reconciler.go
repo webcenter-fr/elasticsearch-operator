@@ -5,12 +5,13 @@ import (
 	"fmt"
 
 	"emperror.dev/errors"
-	"github.com/disaster37/operator-sdk-extra/v2/pkg/apis/shared"
-	"github.com/disaster37/operator-sdk-extra/v2/pkg/controller/multiphase"
-	"github.com/disaster37/operator-sdk-extra/v2/pkg/helper"
+	"github.com/disaster37/operator-sdk-extra/v3/pkg/apis/shared"
+	"github.com/disaster37/operator-sdk-extra/v3/pkg/controller/multiphase"
+	"github.com/disaster37/operator-sdk-extra/v3/pkg/helper"
 	"github.com/sirupsen/logrus"
 	elasticsearchcrd "github.com/webcenter-fr/elasticsearch-operator/api/elasticsearch/v1"
 	elasticsearchapicrd "github.com/webcenter-fr/elasticsearch-operator/api/elasticsearchapi/v1"
+	"github.com/webcenter-fr/elasticsearch-operator/internal/controller/common"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/types"
@@ -35,6 +36,7 @@ func newSystemUserReconciler(client client.Client, recorder record.EventRecorder
 			SystemUserPhase,
 			SystemUserCondition,
 			recorder,
+			common.FieldManager,
 		),
 	}
 }
@@ -65,6 +67,7 @@ func (r *systemUserReconciler) Read(ctx context.Context, o *elasticsearchcrd.Ela
 	if err != nil {
 		return read, res, errors.Wrap(err, "Error when generate system users")
 	}
+	common.InjectTypeMeta(r.Client().Scheme(), expectedUsers...)
 	read.SetExpectedObjects(expectedUsers)
 
 	return read, res, nil

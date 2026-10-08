@@ -8,7 +8,13 @@ import (
 )
 
 const (
-	defaultImage = "lmenezes/cerebro"
+	defaultImage   = "ghcr.io/disaster37/cerebro"
+	defaultVersion = "v0.1.0"
+
+	// legacyVersion is the value the old CRD defaulted `spec.version` to. Existing
+	// Cerebro resources have it persisted, and no `latest` tag exists upstream, so it
+	// must be remapped to avoid ImagePullBackOff on upgrade.
+	legacyVersion = "latest"
 )
 
 // GetConfigMapName permit to get the configMap name that store the config
@@ -36,15 +42,15 @@ func GetIngressName(cb *cerebrocrd.Cerebro) (ingressName string) {
 	return fmt.Sprintf("%s-cb", cb.Name)
 }
 
-// GetDeploymentName permit to get the deployement name
+// GetDeploymentName permit to get the deployment name
 func GetDeploymentName(cb *cerebrocrd.Cerebro) (name string) {
 	return fmt.Sprintf("%s-cb", cb.Name)
 }
 
 // GetContainerImage permit to get the image name
 func GetContainerImage(cb *cerebrocrd.Cerebro) string {
-	version := "latest"
-	if cb.Spec.Version != "" {
+	version := defaultVersion
+	if cb.Spec.Version != "" && cb.Spec.Version != legacyVersion {
 		version = cb.Spec.Version
 	}
 
@@ -54,6 +60,12 @@ func GetContainerImage(cb *cerebrocrd.Cerebro) string {
 	}
 
 	return fmt.Sprintf("%s:%s", image, version)
+}
+
+// IsLegacyVersion returns true when spec.version still carries the obsolete
+// `latest` value inherited from the previous CRD default.
+func IsLegacyVersion(cb *cerebrocrd.Cerebro) bool {
+	return cb.Spec.Version == legacyVersion
 }
 
 // getLabels permit to return global label must be set on all resources

@@ -16,12 +16,13 @@ package elasticsearchapi
 import (
 	"context"
 
-	eshandler "github.com/disaster37/es-handler/v8"
-	"github.com/disaster37/operator-sdk-extra/v2/pkg/controller"
-	"github.com/disaster37/operator-sdk-extra/v2/pkg/controller/remote"
-	olivere "github.com/olivere/elastic/v7"
+	eshandler "github.com/disaster37/es-handler/v9"
+	eshandlerpatch "github.com/disaster37/es-handler/v9/patch"
+	"github.com/disaster37/operator-sdk-extra/v3/pkg/controller"
+	"github.com/disaster37/operator-sdk-extra/v3/pkg/controller/remote"
 	"github.com/sirupsen/logrus"
 	elasticsearchapicrd "github.com/webcenter-fr/elasticsearch-operator/api/elasticsearchapi/v1"
+	"github.com/webcenter-fr/elasticsearch-operator/internal/controller/common"
 	"k8s.io/client-go/tools/record"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -36,15 +37,15 @@ const (
 // IndexTemplateReconciler reconciles a index template object
 type IndexTemplateReconciler struct {
 	controller.Controller
-	remote.RemoteReconciler[*elasticsearchapicrd.IndexTemplate, *olivere.IndicesGetIndexTemplate, eshandler.ElasticsearchHandler]
-	remote.RemoteReconcilerAction[*elasticsearchapicrd.IndexTemplate, *olivere.IndicesGetIndexTemplate, eshandler.ElasticsearchHandler]
+	remote.RemoteReconciler[*elasticsearchapicrd.IndexTemplate, *eshandlerpatch.IndexTemplate, eshandler.ElasticsearchHandler]
+	remote.RemoteReconcilerAction[*elasticsearchapicrd.IndexTemplate, *eshandlerpatch.IndexTemplate, eshandler.ElasticsearchHandler]
 	name string
 }
 
 func NewIndexTemplateReconciler(client client.Client, logger *logrus.Entry, recorder record.EventRecorder) controller.Controller {
 	return &IndexTemplateReconciler{
 		Controller: controller.NewController(),
-		RemoteReconciler: remote.NewRemoteReconciler[*elasticsearchapicrd.IndexTemplate, *olivere.IndicesGetIndexTemplate, eshandler.ElasticsearchHandler](
+		RemoteReconciler: remote.NewRemoteReconciler[*elasticsearchapicrd.IndexTemplate, *eshandlerpatch.IndexTemplate, eshandler.ElasticsearchHandler](
 			client,
 			indexTemplateName,
 			"indextemplate.elasticsearchapi.k8s.webcenter.fr/finalizer",
@@ -93,7 +94,7 @@ func (r *IndexTemplateReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&elasticsearchapicrd.IndexTemplate{}).
 		WithOptions(k8scontroller.Options{
-			RateLimiter: controller.DefaultControllerRateLimiter[reconcile.Request](),
+			RateLimiter: common.DefaultControllerRateLimiter(),
 		}).
 		Complete(r)
 }

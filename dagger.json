@@ -1,30 +1,31 @@
 {
   "name": "elasticsearch-operator",
-  "engineVersion": "v0.16.1",
+  "engineVersion": "v0.21.10",
   "sdk": {
     "source": "go"
   },
   "dependencies": [
     {
       "name": "codecov",
-      "source": "github.com/disaster37/dagger-library-go/codecov@v2",
-      "pin": "82563f30f2223de7f59ce6c7f9f296ba91dbd61a"
+      "source": "github.com/disaster37/dagger-library-go/codecov@2.0.20",
+      "pin": "e205189be6eba617e7bcc870db2e73a04171f38e"
     },
     {
       "name": "git-module",
-      "source": "github.com/disaster37/dagger-library-go/git-module@v2",
-      "pin": "82563f30f2223de7f59ce6c7f9f296ba91dbd61a"
+      "source": "github.com/disaster37/dagger-library-go/git-module@2.0.20",
+      "pin": "e205189be6eba617e7bcc870db2e73a04171f38e"
     },
     {
       "name": "golang",
-      "source": "github.com/disaster37/dagger-library-go/golang@v2",
-      "pin": "82563f30f2223de7f59ce6c7f9f296ba91dbd61a"
+      "source": "github.com/disaster37/dagger-library-go/golang@2.0.20",
+      "pin": "e205189be6eba617e7bcc870db2e73a04171f38e"
     },
     {
       "name": "operator-sdk",
-      "source": "github.com/disaster37/dagger-library-go/operator-sdk@v2",
-      "pin": "82563f30f2223de7f59ce6c7f9f296ba91dbd61a"
+      "source": "github.com/disaster37/dagger-library-go/operator-sdk@2.0.20",
+      "pin": "e205189be6eba617e7bcc870db2e73a04171f38e"
     }
   ],
-  "source": "ci/dagger"
+  "source": "ci/dagger",
+  "disableDefaultFunctionCaching": true
 }

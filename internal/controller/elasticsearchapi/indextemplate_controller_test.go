@@ -6,12 +6,12 @@ import (
 	"time"
 
 	"emperror.dev/errors"
-	"github.com/disaster37/es-handler/v8/mocks"
+	"github.com/disaster37/es-handler/v9/mocks"
+	eshandlerpatch "github.com/disaster37/es-handler/v9/patch"
 	"github.com/disaster37/generic-objectmatcher/patch"
-	"github.com/disaster37/operator-sdk-extra/v2/pkg/controller"
-	"github.com/disaster37/operator-sdk-extra/v2/pkg/helper"
-	"github.com/disaster37/operator-sdk-extra/v2/pkg/test"
-	olivere "github.com/olivere/elastic/v7"
+	"github.com/disaster37/operator-sdk-extra/v3/pkg/controller"
+	"github.com/disaster37/operator-sdk-extra/v3/pkg/helper"
+	"github.com/disaster37/operator-sdk-extra/v3/pkg/test"
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
 	elasticsearchapicrd "github.com/webcenter-fr/elasticsearch-operator/api/elasticsearchapi/v1"
@@ -48,26 +48,26 @@ func doMockIndexTemplate(mockES *mocks.MockElasticsearchHandler) func(stepName *
 		isCreated := false
 		isUpdated := false
 
-		mockES.EXPECT().IndexTemplateGet(gomock.Any()).AnyTimes().DoAndReturn(func(name string) (*olivere.IndicesGetIndexTemplate, error) {
+		mockES.EXPECT().IndexTemplateGet(gomock.Any()).AnyTimes().DoAndReturn(func(name string) (*eshandlerpatch.IndexTemplate, error) {
 			switch *stepName {
 			case "create":
 				if !isCreated {
 					return nil, nil
 				} else {
 
-					resp := &olivere.IndicesGetIndexTemplate{
+					resp := &eshandlerpatch.IndexTemplate{
 						IndexPatterns: []string{"test"},
 					}
 					return resp, nil
 				}
 			case "update":
 				if !isUpdated {
-					resp := &olivere.IndicesGetIndexTemplate{
+					resp := &eshandlerpatch.IndexTemplate{
 						IndexPatterns: []string{"test"},
 					}
 					return resp, nil
 				} else {
-					resp := &olivere.IndicesGetIndexTemplate{
+					resp := &eshandlerpatch.IndexTemplate{
 						IndexPatterns: []string{"test2"},
 					}
 					return resp, nil
@@ -77,7 +77,7 @@ func doMockIndexTemplate(mockES *mocks.MockElasticsearchHandler) func(stepName *
 			return nil, nil
 		})
 
-		mockES.EXPECT().IndexTemplateDiff(gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes().DoAndReturn(func(actual, expected, original *olivere.IndicesGetIndexTemplate) (*patch.PatchResult, error) {
+		mockES.EXPECT().IndexTemplateDiff(gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes().DoAndReturn(func(actual, expected, original *eshandlerpatch.IndexTemplate) (*patch.PatchResult, error) {
 			switch *stepName {
 			case "create":
 				if !isCreated {
@@ -100,7 +100,7 @@ func doMockIndexTemplate(mockES *mocks.MockElasticsearchHandler) func(stepName *
 			return nil, nil
 		})
 
-		mockES.EXPECT().IndexTemplateUpdate(gomock.Any(), gomock.Any()).AnyTimes().DoAndReturn(func(name string, policy *olivere.IndicesGetIndexTemplate) error {
+		mockES.EXPECT().IndexTemplateUpdate(gomock.Any(), gomock.Any()).AnyTimes().DoAndReturn(func(name string, policy *eshandlerpatch.IndexTemplate) error {
 			switch *stepName {
 			case "create":
 				isCreated = true

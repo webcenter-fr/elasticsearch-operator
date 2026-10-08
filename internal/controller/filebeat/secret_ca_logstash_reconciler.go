@@ -5,11 +5,12 @@ import (
 	"time"
 
 	"emperror.dev/errors"
-	"github.com/disaster37/operator-sdk-extra/v2/pkg/apis/shared"
-	"github.com/disaster37/operator-sdk-extra/v2/pkg/controller/multiphase"
+	"github.com/disaster37/operator-sdk-extra/v3/pkg/apis/shared"
+	"github.com/disaster37/operator-sdk-extra/v3/pkg/controller/multiphase"
 	"github.com/sirupsen/logrus"
 	beatcrd "github.com/webcenter-fr/elasticsearch-operator/api/beat/v1"
 	logstashcrd "github.com/webcenter-fr/elasticsearch-operator/api/logstash/v1"
+	"github.com/webcenter-fr/elasticsearch-operator/internal/controller/common"
 	logstashcontrollers "github.com/webcenter-fr/elasticsearch-operator/internal/controller/logstash"
 	corev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
@@ -35,6 +36,7 @@ func newCALogstashReconciler(client client.Client, recorder record.EventRecorder
 			CALogstashPhase,
 			CALogstashCondition,
 			recorder,
+			common.FieldManager,
 		),
 	}
 }
@@ -87,6 +89,7 @@ func (r *caLogstashReconciler) Read(ctx context.Context, o *beatcrd.Filebeat, da
 	if err != nil {
 		return read, res, errors.Wrapf(err, "Error when generate secret %s", GetSecretNameForCALogstash(o))
 	}
+	common.InjectTypeMeta(r.Client().Scheme(), expectedSecretCALogstashs...)
 	read.SetExpectedObjects(expectedSecretCALogstashs)
 
 	return read, res, nil

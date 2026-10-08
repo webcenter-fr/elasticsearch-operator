@@ -3,7 +3,7 @@ package elasticsearch
 import (
 	"testing"
 
-	"github.com/disaster37/operator-sdk-extra/v2/pkg/test"
+	"github.com/disaster37/operator-sdk-extra/v3/pkg/test"
 	monitoringv1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1"
 	"github.com/stretchr/testify/assert"
 	elasticsearchcrd "github.com/webcenter-fr/elasticsearch-operator/api/elasticsearch/v1"

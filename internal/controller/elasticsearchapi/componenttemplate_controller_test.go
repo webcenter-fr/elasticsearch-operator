@@ -6,13 +6,13 @@ import (
 	"time"
 
 	"emperror.dev/errors"
-	"github.com/disaster37/es-handler/v8/mocks"
+	"github.com/disaster37/es-handler/v9/mocks"
+	eshandlerpatch "github.com/disaster37/es-handler/v9/patch"
 	"github.com/disaster37/generic-objectmatcher/patch"
-	"github.com/disaster37/operator-sdk-extra/v2/pkg/apis"
-	"github.com/disaster37/operator-sdk-extra/v2/pkg/controller"
-	"github.com/disaster37/operator-sdk-extra/v2/pkg/helper"
-	"github.com/disaster37/operator-sdk-extra/v2/pkg/test"
-	olivere "github.com/olivere/elastic/v7"
+	"github.com/disaster37/operator-sdk-extra/v3/pkg/apis"
+	"github.com/disaster37/operator-sdk-extra/v3/pkg/controller"
+	"github.com/disaster37/operator-sdk-extra/v3/pkg/helper"
+	"github.com/disaster37/operator-sdk-extra/v3/pkg/test"
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
 	elasticsearchapicrd "github.com/webcenter-fr/elasticsearch-operator/api/elasticsearchapi/v1"
@@ -48,14 +48,14 @@ func doMockComponentTemplate(mockES *mocks.MockElasticsearchHandler) func(stepNa
 		isCreated := false
 		isUpdated := false
 
-		mockES.EXPECT().ComponentTemplateGet(gomock.Any()).AnyTimes().DoAndReturn(func(name string) (*olivere.IndicesGetComponentTemplate, error) {
+		mockES.EXPECT().ComponentTemplateGet(gomock.Any()).AnyTimes().DoAndReturn(func(name string) (*eshandlerpatch.ComponentTemplate, error) {
 			switch *stepName {
 			case "create":
 				if !isCreated {
 					return nil, nil
 				} else {
-					resp := &olivere.IndicesGetComponentTemplate{
-						Template: &olivere.IndicesGetComponentTemplateData{
+					resp := &eshandlerpatch.ComponentTemplate{
+						Template: &eshandlerpatch.ComponentTemplateData{
 							Settings: map[string]interface{}{"fake": "foo"},
 						},
 					}
@@ -63,15 +63,15 @@ func doMockComponentTemplate(mockES *mocks.MockElasticsearchHandler) func(stepNa
 				}
 			case "update":
 				if !isUpdated {
-					resp := &olivere.IndicesGetComponentTemplate{
-						Template: &olivere.IndicesGetComponentTemplateData{
+					resp := &eshandlerpatch.ComponentTemplate{
+						Template: &eshandlerpatch.ComponentTemplateData{
 							Settings: map[string]interface{}{"fake": "foo"},
 						},
 					}
 					return resp, nil
 				} else {
-					resp := &olivere.IndicesGetComponentTemplate{
-						Template: &olivere.IndicesGetComponentTemplateData{
+					resp := &eshandlerpatch.ComponentTemplate{
+						Template: &eshandlerpatch.ComponentTemplateData{
 							Settings: map[string]interface{}{"fake": "foo2"},
 						},
 					}
@@ -82,7 +82,7 @@ func doMockComponentTemplate(mockES *mocks.MockElasticsearchHandler) func(stepNa
 			return nil, nil
 		})
 
-		mockES.EXPECT().ComponentTemplateDiff(gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes().DoAndReturn(func(actual, expected, original *olivere.IndicesGetComponentTemplate) (*patch.PatchResult, error) {
+		mockES.EXPECT().ComponentTemplateDiff(gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes().DoAndReturn(func(actual, expected, original *eshandlerpatch.ComponentTemplate) (*patch.PatchResult, error) {
 			switch *stepName {
 			case "create":
 				if !isCreated {
@@ -105,7 +105,7 @@ func doMockComponentTemplate(mockES *mocks.MockElasticsearchHandler) func(stepNa
 			return nil, nil
 		})
 
-		mockES.EXPECT().ComponentTemplateUpdate(gomock.Any(), gomock.Any()).AnyTimes().DoAndReturn(func(name string, component *olivere.IndicesGetComponentTemplate) error {
+		mockES.EXPECT().ComponentTemplateUpdate(gomock.Any(), gomock.Any()).AnyTimes().DoAndReturn(func(name string, component *eshandlerpatch.ComponentTemplate) error {
 			switch *stepName {
 			case "create":
 				data["isCreated"] = true

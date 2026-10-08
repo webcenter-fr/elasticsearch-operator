@@ -19,15 +19,14 @@ package v1
 import (
 	"context"
 
-	"emperror.dev/errors"
-	"github.com/disaster37/operator-sdk-extra/v2/pkg/controller"
+	"github.com/disaster37/operator-sdk-extra/v3/pkg/controller"
 	"github.com/sirupsen/logrus"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
-	"k8s.io/apimachinery/pkg/runtime"
+
 	"k8s.io/apimachinery/pkg/util/validation/field"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/controller-runtime/pkg/webhook"
+
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 )
 
@@ -39,8 +38,7 @@ type filebeatValidator struct {
 // SetupWebhookWithManager will setup the manager to manage the webhooks
 func SetupFilebeatWebhookWithManager(logger *logrus.Entry) controller.WebhookRegister {
 	return func(mgr ctrl.Manager, client client.Client) error {
-		return ctrl.NewWebhookManagedBy(mgr).
-			For(&Filebeat{}).
+		return ctrl.NewWebhookManagedBy(mgr, &Filebeat{}).
 			WithValidator(&filebeatValidator{
 				logger: logger,
 				client: client,
@@ -51,94 +49,83 @@ func SetupFilebeatWebhookWithManager(logger *logrus.Entry) controller.WebhookReg
 
 //+kubebuilder:webhook:path=/validate-beat-k8s-webcenter-fr-v1-filebeat,mutating=false,failurePolicy=fail,sideEffects=None,groups=beat.k8s.webcenter.fr,resources=filebeats,verbs=create;update,versions=v1,name=filebeat.beat.k8s.webcenter.fr,admissionReviewVersions=v1
 
-// Use webhook.CustomValidator for controller-runtime v0.15+ or webhook.Validator for older versions
-var _ webhook.CustomValidator = &filebeatValidator{}
+var _ admission.Validator[*Filebeat] = &filebeatValidator{}
 
 // ValidateCreate implements webhook.Validator so a webhook will be registered for the type
-func (r *filebeatValidator) ValidateCreate(ctx context.Context, obj runtime.Object) (admission.Warnings, error) {
+func (r *filebeatValidator) ValidateCreate(ctx context.Context, obj *Filebeat) (admission.Warnings, error) {
 	var allErrs field.ErrorList
 
-	filebeatObj, ok := obj.(*Filebeat)
-	if !ok {
-		return nil, errors.Errorf("expected a Filebeat object but got %T", obj)
-	}
-
 	// Check only one target
-	if filebeatObj.Spec.LogstashRef != nil && filebeatObj.Spec.ElasticsearchRef != nil {
-		allErrs = append(allErrs, field.Invalid(field.NewPath("spec"), filebeatObj.Spec, "ElasticsearchRef and LogstashRef are mutually exclusive"))
+	if obj.Spec.LogstashRef != nil && obj.Spec.ElasticsearchRef != nil {
+		allErrs = append(allErrs, field.Invalid(field.NewPath("spec"), obj.Spec, "ElasticsearchRef and LogstashRef are mutually exclusive"))
 	}
 
 	// Check is set excatly one target
-	if filebeatObj.Spec.ElasticsearchRef == nil && filebeatObj.Spec.LogstashRef == nil {
-		allErrs = append(allErrs, field.Invalid(field.NewPath("spec"), filebeatObj.Spec, "You need to provide Elasticsearch target or Logstash target"))
+	if obj.Spec.ElasticsearchRef == nil && obj.Spec.LogstashRef == nil {
+		allErrs = append(allErrs, field.Invalid(field.NewPath("spec"), obj.Spec, "You need to provide Elasticsearch target or Logstash target"))
 	}
 
 	// Check logstash target
-	if filebeatObj.Spec.LogstashRef != nil {
-		if err := filebeatObj.Spec.LogstashRef.ValidateField(); err != nil {
+	if obj.Spec.LogstashRef != nil {
+		if err := obj.Spec.LogstashRef.ValidateField(); err != nil {
 			allErrs = append(allErrs, err)
 		}
 	}
 
 	// Check Elasticsearch target
-	if filebeatObj.Spec.ElasticsearchRef != nil {
-		if err := filebeatObj.Spec.ElasticsearchRef.ValidateField(); err != nil {
+	if obj.Spec.ElasticsearchRef != nil {
+		if err := obj.Spec.ElasticsearchRef.ValidateField(); err != nil {
 			allErrs = append(allErrs, err)
 		}
 	}
 
 	if len(allErrs) > 0 {
 		return nil, apierrors.NewInvalid(
-			filebeatObj.GroupVersionKind().GroupKind(),
-			filebeatObj.Name, allErrs)
+			obj.GroupVersionKind().GroupKind(),
+			obj.Name, allErrs)
 	}
 
 	return nil, nil
 }
 
 // ValidateUpdate implements webhook.Validator so a webhook will be registered for the type
-func (r *filebeatValidator) ValidateUpdate(ctx context.Context, oldObj runtime.Object, newObj runtime.Object) (admission.Warnings, error) {
+func (r *filebeatValidator) ValidateUpdate(ctx context.Context, oldObj *Filebeat, newObj *Filebeat) (admission.Warnings, error) {
 	var allErrs field.ErrorList
 
-	filebeatObj, ok := newObj.(*Filebeat)
-	if !ok {
-		return nil, errors.Errorf("expected a Filebeat object but got %T", newObj)
-	}
-
 	// Check only one target
-	if filebeatObj.Spec.LogstashRef != nil && filebeatObj.Spec.ElasticsearchRef != nil {
-		allErrs = append(allErrs, field.Invalid(field.NewPath("spec"), filebeatObj.Spec, "ElasticsearchRef and LogstashRef are mutually exclusive"))
+	if newObj.Spec.LogstashRef != nil && newObj.Spec.ElasticsearchRef != nil {
+		allErrs = append(allErrs, field.Invalid(field.NewPath("spec"), newObj.Spec, "ElasticsearchRef and LogstashRef are mutually exclusive"))
 	}
 
 	// Check is set excatly one target
-	if filebeatObj.Spec.ElasticsearchRef == nil && filebeatObj.Spec.LogstashRef == nil {
-		allErrs = append(allErrs, field.Invalid(field.NewPath("spec"), filebeatObj.Spec, "You need to provide Elasticsearch target or Logstash target"))
+	if newObj.Spec.ElasticsearchRef == nil && newObj.Spec.LogstashRef == nil {
+		allErrs = append(allErrs, field.Invalid(field.NewPath("spec"), newObj.Spec, "You need to provide Elasticsearch target or Logstash target"))
 	}
 
 	// Check logstash target
-	if filebeatObj.Spec.LogstashRef != nil {
-		if err := filebeatObj.Spec.LogstashRef.ValidateField(); err != nil {
+	if newObj.Spec.LogstashRef != nil {
+		if err := newObj.Spec.LogstashRef.ValidateField(); err != nil {
 			allErrs = append(allErrs, err)
 		}
 	}
 
 	// Check Opensearch target
-	if filebeatObj.Spec.ElasticsearchRef != nil {
-		if err := filebeatObj.Spec.ElasticsearchRef.ValidateField(); err != nil {
+	if newObj.Spec.ElasticsearchRef != nil {
+		if err := newObj.Spec.ElasticsearchRef.ValidateField(); err != nil {
 			allErrs = append(allErrs, err)
 		}
 	}
 
 	if len(allErrs) > 0 {
 		return nil, apierrors.NewInvalid(
-			filebeatObj.GroupVersionKind().GroupKind(),
-			filebeatObj.Name, allErrs)
+			newObj.GroupVersionKind().GroupKind(),
+			newObj.Name, allErrs)
 	}
 
 	return nil, nil
 }
 
 // ValidateDelete implements webhook.Validator so a webhook will be registered for the type
-func (r *filebeatValidator) ValidateDelete(ctx context.Context, obj runtime.Object) (admission.Warnings, error) {
+func (r *filebeatValidator) ValidateDelete(ctx context.Context, obj *Filebeat) (admission.Warnings, error) {
 	return nil, nil
 }

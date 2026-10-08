@@ -156,7 +156,7 @@ func TestGetSecretNameForPkiTransport(t *testing.T) {
 		},
 	}
 
-	assert.Equal(t, "test-pki-transport-es", GetSecretNameForPkiTransport(o))
+	assert.Equal(t, "test-tls-transport-es-ca", GetSecretNameForPkiTransport(o))
 }
 
 func TestGetSecretNameForTlsApi(t *testing.T) {

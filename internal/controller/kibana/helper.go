@@ -38,10 +38,11 @@ func GetSecretNameForCAElasticsearch(kb *kibanacrd.Kibana) (secretName string) {
 	return fmt.Sprintf("%s-ca-es-kb", kb.Name)
 }
 
-// GetSecretNameForPki permit to get the secret name that store PKI
-// It return the secret name as string
+// GetSecretNameForPki returns the CA secret name for the Kibana TLS saga.
+// The saga's selfmanaged backend appends "-ca" to the leaf secret name,
+// so the CA secret is <name>-tls-kb-ca.
 func GetSecretNameForPki(kb *kibanacrd.Kibana) (secretName string) {
-	return fmt.Sprintf("%s-pki-kb", kb.Name)
+	return fmt.Sprintf("%s-tls-kb-ca", kb.Name)
 }
 
 // GetSecretNameForKeystore permit to get the secret name that store the secret

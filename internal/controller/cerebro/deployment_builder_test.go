@@ -3,7 +3,7 @@ package cerebro
 import (
 	"testing"
 
-	"github.com/disaster37/operator-sdk-extra/v2/pkg/test"
+	"github.com/disaster37/operator-sdk-extra/v3/pkg/test"
 	"github.com/stretchr/testify/assert"
 	cerebrocrd "github.com/webcenter-fr/elasticsearch-operator/api/cerebro/v1"
 	"github.com/webcenter-fr/elasticsearch-operator/api/shared"
@@ -109,7 +109,7 @@ func TestBuildDeployment(t *testing.T) {
 					},
 				},
 			},
-			Version: "8.5.1",
+			Version: "v0.1.0",
 			ExtraConfigs: map[string]string{
 				"log4j.yaml": "my log4j",
 			},

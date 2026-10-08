@@ -21,9 +21,9 @@ import (
 	"time"
 
 	"emperror.dev/errors"
-	"github.com/disaster37/operator-sdk-extra/v2/pkg/apis/shared"
-	"github.com/disaster37/operator-sdk-extra/v2/pkg/controller"
-	"github.com/disaster37/operator-sdk-extra/v2/pkg/controller/multiphase"
+	"github.com/disaster37/operator-sdk-extra/v3/pkg/apis/shared"
+	"github.com/disaster37/operator-sdk-extra/v3/pkg/controller"
+	"github.com/disaster37/operator-sdk-extra/v3/pkg/controller/multiphase"
 	"github.com/sirupsen/logrus"
 	beatcrd "github.com/webcenter-fr/elasticsearch-operator/api/beat/v1"
 	elasticsearchcrd "github.com/webcenter-fr/elasticsearch-operator/api/elasticsearch/v1"
@@ -78,14 +78,14 @@ func NewMetricbeatReconciler(c client.Client, logger *logrus.Entry, recorder rec
 		name:           name,
 		kubeCapability: kubeCapability,
 		stepReconcilers: []multiphase.MultiPhaseStepReconcilerAction[*beatcrd.Metricbeat, client.Object]{
-			multiphase.NewObjectMultiPhaseStepReconcilerAction[*beatcrd.Metricbeat, *corev1.ServiceAccount, client.Object](newServiceAccountReconciler(c, recorder, kubeCapability.HasRoute)),
-			multiphase.NewObjectMultiPhaseStepReconcilerAction[*beatcrd.Metricbeat, *rbacv1.RoleBinding, client.Object](newRoleBindingReconciler(c, recorder, kubeCapability.HasRoute)),
-			multiphase.NewObjectMultiPhaseStepReconcilerAction[*beatcrd.Metricbeat, *corev1.Secret, client.Object](newCAElasticsearchReconciler(c, recorder)),
-			multiphase.NewObjectMultiPhaseStepReconcilerAction[*beatcrd.Metricbeat, *corev1.Secret, client.Object](newCredentialReconciler(c, recorder)),
-			multiphase.NewObjectMultiPhaseStepReconcilerAction[*beatcrd.Metricbeat, *corev1.ConfigMap, client.Object](newConfiMapReconciler(c, recorder)),
-			multiphase.NewObjectMultiPhaseStepReconcilerAction[*beatcrd.Metricbeat, *corev1.Service, client.Object](newServiceReconciler(c, recorder)),
-			multiphase.NewObjectMultiPhaseStepReconcilerAction[*beatcrd.Metricbeat, *policyv1.PodDisruptionBudget, client.Object](newPdbReconciler(c, recorder)),
-			multiphase.NewObjectMultiPhaseStepReconcilerAction[*beatcrd.Metricbeat, *appv1.StatefulSet, client.Object](newStatefulsetReconciler(c, recorder, kubeCapability.HasRoute)),
+			multiphase.As[*beatcrd.Metricbeat, *corev1.ServiceAccount, client.Object](newServiceAccountReconciler(c, recorder, kubeCapability.HasRoute)),
+			multiphase.As[*beatcrd.Metricbeat, *rbacv1.RoleBinding, client.Object](newRoleBindingReconciler(c, recorder, kubeCapability.HasRoute)),
+			multiphase.As[*beatcrd.Metricbeat, *corev1.Secret, client.Object](newCAElasticsearchReconciler(c, recorder)),
+			multiphase.As[*beatcrd.Metricbeat, *corev1.Secret, client.Object](newCredentialReconciler(c, recorder)),
+			multiphase.As[*beatcrd.Metricbeat, *corev1.ConfigMap, client.Object](newConfiMapReconciler(c, recorder)),
+			multiphase.As[*beatcrd.Metricbeat, *corev1.Service, client.Object](newServiceReconciler(c, recorder)),
+			multiphase.As[*beatcrd.Metricbeat, *policyv1.PodDisruptionBudget, client.Object](newPdbReconciler(c, recorder)),
+			multiphase.As[*beatcrd.Metricbeat, *appv1.StatefulSet, client.Object](newStatefulsetReconciler(c, recorder, kubeCapability.HasRoute)),
 		},
 	}
 }

@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/disaster37/operator-sdk-extra/v2/pkg/test"
+	"github.com/disaster37/operator-sdk-extra/v3/pkg/test"
 	"github.com/stretchr/testify/assert"
 	elasticsearchcrd "github.com/webcenter-fr/elasticsearch-operator/api/elasticsearch/v1"
 	"github.com/webcenter-fr/elasticsearch-operator/api/shared"
@@ -48,7 +48,7 @@ func TestBuildStatefulset(t *testing.T) {
 		},
 	}
 
-	sts, err = buildStatefulsets(o, nil, nil, false)
+	sts, err = buildStatefulsets(o, nil, nil, false, "")
 	assert.NoError(t, err)
 	test.EqualFromYamlFile[*appv1.StatefulSet](t, "testdata/statefullset-all.yml", sts[0], scheme.Scheme)
 
@@ -75,7 +75,7 @@ func TestBuildStatefulset(t *testing.T) {
 		},
 	}
 
-	sts, err = buildStatefulsets(o, nil, nil, true)
+	sts, err = buildStatefulsets(o, nil, nil, true, "")
 	assert.NoError(t, err)
 	test.EqualFromYamlFile[*appv1.StatefulSet](t, "testdata/statefullset_all_openshift.yml", sts[0], scheme.Scheme)
 
@@ -270,7 +270,7 @@ func TestBuildStatefulset(t *testing.T) {
 		}
 	}
 
-	sts, err = buildStatefulsets(o, extraSecrets, extraConfigMaps, false)
+	sts, err = buildStatefulsets(o, extraSecrets, extraConfigMaps, false, "")
 	assert.NoError(t, err)
 	test.EqualFromYamlFile[*appv1.StatefulSet](t, "testdata/statefullset-master.yml", sts[0], scheme.Scheme)
 	test.EqualFromYamlFile[*appv1.StatefulSet](t, "testdata/statefullset-data.yml", sts[1], scheme.Scheme)
@@ -345,7 +345,7 @@ func TestBuildStatefulset(t *testing.T) {
 		}
 	}
 
-	sts, err = buildStatefulsets(o, extraSecrets, extraConfigMaps, false)
+	sts, err = buildStatefulsets(o, extraSecrets, extraConfigMaps, false, "")
 	assert.NoError(t, err)
 	test.EqualFromYamlFile[*appv1.StatefulSet](t, "testdata/statefullset-all-external-tls.yml", sts[0], scheme.Scheme)
 }

@@ -33,7 +33,7 @@ func buildPodMonitors(ls *logstashcrd.Logstash) (podMonitors []*monitoringv1.Pod
 					Port:     ptr.To("exporter"),
 					Interval: monitoringv1.Duration(scrapInterval),
 					Path:     "/metrics",
-					Scheme:   "http",
+					Scheme:   ptr.To(monitoringv1.Scheme("http")),
 				},
 			},
 			Selector: metav1.LabelSelector{

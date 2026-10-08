@@ -3,8 +3,9 @@ package elasticsearchapi
 import (
 	"testing"
 
-	"github.com/disaster37/operator-sdk-extra/v2/pkg/apis"
-	olivere "github.com/olivere/elastic/v7"
+	eshandlerpatch "github.com/disaster37/es-handler/v9/patch"
+
+	"github.com/disaster37/operator-sdk-extra/v3/pkg/apis"
 	"github.com/stretchr/testify/assert"
 	elasticsearchapicrd "github.com/webcenter-fr/elasticsearch-operator/api/elasticsearchapi/v1"
 	"github.com/webcenter-fr/elasticsearch-operator/api/shared"
@@ -14,8 +15,8 @@ import (
 func TestComponentTemplateBuild(t *testing.T) {
 	var (
 		o          *elasticsearchapicrd.ComponentTemplate
-		ct         *olivere.IndicesGetComponentTemplate
-		expectedCt *olivere.IndicesGetComponentTemplate
+		ct         *eshandlerpatch.ComponentTemplate
+		expectedCt *eshandlerpatch.ComponentTemplate
 		err        error
 		client     *componentTemplateApiClient
 	)
@@ -37,8 +38,8 @@ func TestComponentTemplateBuild(t *testing.T) {
 		},
 	}
 
-	expectedCt = &olivere.IndicesGetComponentTemplate{
-		Template: &olivere.IndicesGetComponentTemplateData{
+	expectedCt = &eshandlerpatch.ComponentTemplate{
+		Template: &eshandlerpatch.ComponentTemplateData{
 			Settings: map[string]any{},
 			Mappings: map[string]any{},
 			Aliases:  map[string]any{},
@@ -81,8 +82,8 @@ func TestComponentTemplateBuild(t *testing.T) {
 		},
 	}
 
-	expectedCt = &olivere.IndicesGetComponentTemplate{
-		Template: &olivere.IndicesGetComponentTemplateData{
+	expectedCt = &eshandlerpatch.ComponentTemplate{
+		Template: &eshandlerpatch.ComponentTemplateData{
 			Settings: map[string]any{
 				"number_of_shards": 1,
 			},

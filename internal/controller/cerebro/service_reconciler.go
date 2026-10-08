@@ -4,10 +4,11 @@ import (
 	"context"
 
 	"emperror.dev/errors"
-	"github.com/disaster37/operator-sdk-extra/v2/pkg/apis/shared"
-	"github.com/disaster37/operator-sdk-extra/v2/pkg/controller/multiphase"
+	"github.com/disaster37/operator-sdk-extra/v3/pkg/apis/shared"
+	"github.com/disaster37/operator-sdk-extra/v3/pkg/controller/multiphase"
 	"github.com/sirupsen/logrus"
 	cerebrocrd "github.com/webcenter-fr/elasticsearch-operator/api/cerebro/v1"
+	"github.com/webcenter-fr/elasticsearch-operator/internal/controller/common"
 	corev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/types"
@@ -32,6 +33,7 @@ func newServiceReconciler(client client.Client, recorder record.EventRecorder) (
 			ServicePhase,
 			ServiceCondition,
 			recorder,
+			common.FieldManager,
 		),
 	}
 }
@@ -57,6 +59,7 @@ func (r *serviceReconciler) Read(ctx context.Context, o *cerebrocrd.Cerebro, dat
 	if err != nil {
 		return read, res, errors.Wrap(err, "Error when generate service")
 	}
+	common.InjectTypeMeta(r.Client().Scheme(), expectedServices...)
 	read.SetExpectedObjects(expectedServices)
 
 	return read, res, nil

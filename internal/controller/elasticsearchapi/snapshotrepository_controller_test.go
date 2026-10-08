@@ -6,13 +6,13 @@ import (
 	"time"
 
 	"emperror.dev/errors"
-	"github.com/disaster37/es-handler/v8/mocks"
+	esapi "github.com/disaster37/elasticsearch/v9/api"
+	"github.com/disaster37/es-handler/v9/mocks"
 	"github.com/disaster37/generic-objectmatcher/patch"
-	"github.com/disaster37/operator-sdk-extra/v2/pkg/apis"
-	"github.com/disaster37/operator-sdk-extra/v2/pkg/controller"
-	"github.com/disaster37/operator-sdk-extra/v2/pkg/helper"
-	"github.com/disaster37/operator-sdk-extra/v2/pkg/test"
-	olivere "github.com/olivere/elastic/v7"
+	"github.com/disaster37/operator-sdk-extra/v3/pkg/apis"
+	"github.com/disaster37/operator-sdk-extra/v3/pkg/controller"
+	"github.com/disaster37/operator-sdk-extra/v3/pkg/helper"
+	"github.com/disaster37/operator-sdk-extra/v3/pkg/test"
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
 	elasticsearchapicrd "github.com/webcenter-fr/elasticsearch-operator/api/elasticsearchapi/v1"
@@ -48,15 +48,15 @@ func doMockSnapshotRepository(mockES *mocks.MockElasticsearchHandler) func(stepN
 		isCreated := false
 		isUpdated := false
 
-		mockES.EXPECT().SnapshotRepositoryGet(gomock.Any()).AnyTimes().DoAndReturn(func(name string) (*olivere.SnapshotRepositoryMetaData, error) {
+		mockES.EXPECT().SnapshotRepositoryGet(gomock.Any()).AnyTimes().DoAndReturn(func(name string) (*esapi.SnapshotRepository, error) {
 			switch *stepName {
 			case "create":
 				if !isCreated {
 					return nil, nil
 				} else {
-					resp := &olivere.SnapshotRepositoryMetaData{
+					resp := &esapi.SnapshotRepository{
 						Type: "url",
-						Settings: map[string]any{
+						Settings: map[string]string{
 							"url": "http://fake",
 						},
 					}
@@ -64,17 +64,17 @@ func doMockSnapshotRepository(mockES *mocks.MockElasticsearchHandler) func(stepN
 				}
 			case "update":
 				if !isUpdated {
-					resp := &olivere.SnapshotRepositoryMetaData{
+					resp := &esapi.SnapshotRepository{
 						Type: "url",
-						Settings: map[string]any{
+						Settings: map[string]string{
 							"url": "http://fake",
 						},
 					}
 					return resp, nil
 				} else {
-					resp := &olivere.SnapshotRepositoryMetaData{
+					resp := &esapi.SnapshotRepository{
 						Type: "url",
-						Settings: map[string]any{
+						Settings: map[string]string{
 							"url": "http://fake2",
 						},
 					}
@@ -85,7 +85,7 @@ func doMockSnapshotRepository(mockES *mocks.MockElasticsearchHandler) func(stepN
 			return nil, nil
 		})
 
-		mockES.EXPECT().SnapshotRepositoryDiff(gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes().DoAndReturn(func(actual, expected, original *olivere.SnapshotRepositoryMetaData) (*patch.PatchResult, error) {
+		mockES.EXPECT().SnapshotRepositoryDiff(gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes().DoAndReturn(func(actual, expected, original *esapi.SnapshotRepository) (*patch.PatchResult, error) {
 			switch *stepName {
 			case "create":
 				if !isCreated {
@@ -108,7 +108,7 @@ func doMockSnapshotRepository(mockES *mocks.MockElasticsearchHandler) func(stepN
 			return nil, nil
 		})
 
-		mockES.EXPECT().SnapshotRepositoryUpdate(gomock.Any(), gomock.Any()).AnyTimes().DoAndReturn(func(name string, policy *olivere.SnapshotRepositoryMetaData) error {
+		mockES.EXPECT().SnapshotRepositoryUpdate(gomock.Any(), gomock.Any()).AnyTimes().DoAndReturn(func(name string, policy *esapi.SnapshotRepository) error {
 			switch *stepName {
 			case "create":
 				isCreated = true

@@ -8,9 +8,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/disaster37/operator-sdk-extra/v2/pkg/controller"
-	"github.com/disaster37/operator-sdk-extra/v2/pkg/helper"
-	"github.com/disaster37/operator-sdk-extra/v2/pkg/test"
+	"github.com/disaster37/operator-sdk-extra/v3/pkg/controller"
+	"github.com/disaster37/operator-sdk-extra/v3/pkg/helper"
+	"github.com/disaster37/operator-sdk-extra/v3/pkg/test"
 	routev1 "github.com/openshift/api/route/v1"
 	monitoringv1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1"
 	"github.com/sirupsen/logrus"
@@ -202,12 +202,12 @@ func (t *KibanaControllerTestSuite) SetupSuite() {
 
 	// Init controllers
 
-	elasticsearchReconciler := elasticsearchcontrollers.NewElasticsearchReconciler(k8sClient, logrus.NewEntry(logrus.StandardLogger()), k8sManager.GetEventRecorderFor("elasticsearch-controller"), kubeCapability)
+	elasticsearchReconciler := elasticsearchcontrollers.NewElasticsearchReconciler(k8sClient, logrus.NewEntry(logrus.StandardLogger()), common.LegacyEventRecorder(k8sManager, "elasticsearch-controller"), kubeCapability)
 	if err = elasticsearchReconciler.SetupWithManager(k8sManager); err != nil {
 		panic(err)
 	}
 
-	kibanaReconciler := NewKibanaReconciler(k8sClient, logrus.NewEntry(logrus.StandardLogger()), k8sManager.GetEventRecorderFor("kibana-controller"), kubeCapability)
+	kibanaReconciler := NewKibanaReconciler(k8sClient, logrus.NewEntry(logrus.StandardLogger()), common.LegacyEventRecorder(k8sManager, "kibana-controller"), kubeCapability)
 	if err = kibanaReconciler.SetupWithManager(k8sManager); err != nil {
 		panic(err)
 	}

@@ -4,8 +4,8 @@ import (
 	"context"
 	"time"
 
-	eshandler "github.com/disaster37/es-handler/v8"
-	"github.com/disaster37/operator-sdk-extra/v2/pkg/controller/remote"
+	eshandler "github.com/disaster37/es-handler/v9"
+	"github.com/disaster37/operator-sdk-extra/v3/pkg/controller/remote"
 	"github.com/sirupsen/logrus"
 	elasticsearchapicrd "github.com/webcenter-fr/elasticsearch-operator/api/elasticsearchapi/v1"
 	"k8s.io/client-go/tools/record"

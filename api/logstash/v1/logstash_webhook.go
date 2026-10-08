@@ -19,15 +19,14 @@ package v1
 import (
 	"context"
 
-	"emperror.dev/errors"
-	"github.com/disaster37/operator-sdk-extra/v2/pkg/controller"
+	"github.com/disaster37/operator-sdk-extra/v3/pkg/controller"
 	"github.com/sirupsen/logrus"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
-	"k8s.io/apimachinery/pkg/runtime"
+
 	"k8s.io/apimachinery/pkg/util/validation/field"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/controller-runtime/pkg/webhook"
+
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 )
 
@@ -39,8 +38,7 @@ type logstashValidator struct {
 // SetupWebhookWithManager will setup the manager to manage the webhooks
 func SetupLogstashWebhookWithManager(logger *logrus.Entry) controller.WebhookRegister {
 	return func(mgr ctrl.Manager, client client.Client) error {
-		return ctrl.NewWebhookManagedBy(mgr).
-			For(&Logstash{}).
+		return ctrl.NewWebhookManagedBy(mgr, &Logstash{}).
 			WithValidator(&logstashValidator{
 				logger: logger.WithField("webhook", "logstashValidator"),
 				client: client,
@@ -51,53 +49,43 @@ func SetupLogstashWebhookWithManager(logger *logrus.Entry) controller.WebhookReg
 
 //+kubebuilder:webhook:path=/validate-logstash-k8s-webcenter-fr-v1-logstash,mutating=false,failurePolicy=fail,sideEffects=None,groups=logstash.k8s.webcenter.fr,resources=logstashes,verbs=create;update,versions=v1,name=logstash.logstash.k8s.webcenter.fr,admissionReviewVersions=v1
 
-var _ webhook.CustomValidator = &logstashValidator{}
+var _ admission.Validator[*Logstash] = &logstashValidator{}
 
 // ValidateCreate implements webhook.Validator so a webhook will be registered for the type
-func (r *logstashValidator) ValidateCreate(ctx context.Context, obj runtime.Object) (admission.Warnings, error) {
+func (r *logstashValidator) ValidateCreate(ctx context.Context, obj *Logstash) (admission.Warnings, error) {
 	var allErrs field.ErrorList
 
-	logstashObj, ok := obj.(*Logstash)
-	if !ok {
-		return nil, errors.Errorf("expected a Logstash object but got %T", obj)
-	}
-
-	if err := logstashObj.Spec.ElasticsearchRef.ValidateField(); err != nil {
+	if err := obj.Spec.ElasticsearchRef.ValidateField(); err != nil {
 		allErrs = append(allErrs, err)
 	}
 
 	if len(allErrs) > 0 {
 		return nil, apierrors.NewInvalid(
-			logstashObj.GroupVersionKind().GroupKind(),
-			logstashObj.Name, allErrs)
+			obj.GroupVersionKind().GroupKind(),
+			obj.Name, allErrs)
 	}
 
 	return nil, nil
 }
 
 // ValidateUpdate implements webhook.Validator so a webhook will be registered for the type
-func (r *logstashValidator) ValidateUpdate(ctx context.Context, oldObj runtime.Object, newObj runtime.Object) (admission.Warnings, error) {
+func (r *logstashValidator) ValidateUpdate(ctx context.Context, oldObj *Logstash, newObj *Logstash) (admission.Warnings, error) {
 	var allErrs field.ErrorList
 
-	logstashObj, ok := newObj.(*Logstash)
-	if !ok {
-		return nil, errors.Errorf("expected a Logstash object but got %T", newObj)
-	}
-
-	if err := logstashObj.Spec.ElasticsearchRef.ValidateField(); err != nil {
+	if err := newObj.Spec.ElasticsearchRef.ValidateField(); err != nil {
 		allErrs = append(allErrs, err)
 	}
 
 	if len(allErrs) > 0 {
 		return nil, apierrors.NewInvalid(
-			logstashObj.GroupVersionKind().GroupKind(),
-			logstashObj.Name, allErrs)
+			newObj.GroupVersionKind().GroupKind(),
+			newObj.Name, allErrs)
 	}
 
 	return nil, nil
 }
 
 // ValidateDelete implements webhook.Validator so a webhook will be registered for the type
-func (r *logstashValidator) ValidateDelete(ctx context.Context, obj runtime.Object) (admission.Warnings, error) {
+func (r *logstashValidator) ValidateDelete(ctx context.Context, obj *Logstash) (admission.Warnings, error) {
 	return nil, nil
 }

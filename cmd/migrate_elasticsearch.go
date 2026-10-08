@@ -5,7 +5,7 @@ import (
 	"fmt"
 
 	"emperror.dev/errors"
-	"github.com/disaster37/operator-sdk-extra/v2/pkg/helper"
+	"github.com/disaster37/operator-sdk-extra/v3/pkg/helper"
 	"github.com/sirupsen/logrus"
 	elasticsearchcrd "github.com/webcenter-fr/elasticsearch-operator/api/elasticsearch/v1"
 	"github.com/webcenter-fr/elasticsearch-operator/internal/controller/elasticsearch"
@@ -45,9 +45,9 @@ func migrateElasticsearch(ctx context.Context, clientDynamic dynamic.Interface, 
 // addAnnotationsOnTLSSecrets permit to set needed annotation on existing Elasticsearch cluster to manage in right way the cluster
 func addAnnotationsOnTLSSecrets(ctx context.Context, clientStd kubernetes.Interface, esList []elasticsearchcrd.Elasticsearch, log *logrus.Entry) (err error) {
 	var secret *corev1.Secret
-	listSecretName := make([]string, 0, 2)
 
 	for _, esCluster := range esList {
+		listSecretName := make([]string, 0, 2)
 		listSecretName = append(listSecretName, elasticsearch.GetSecretNameForTlsTransport(&esCluster))
 		listSecretName = append(listSecretName, elasticsearch.GetSecretNameForTlsApi(&esCluster))
 		for _, secretName := range listSecretName {
@@ -59,6 +59,9 @@ func addAnnotationsOnTLSSecrets(ctx context.Context, clientStd kubernetes.Interf
 			}
 
 			if secret.Annotations[fmt.Sprintf("%s/sequence", elasticsearchcrd.ElasticsearchAnnotationKey)] == "" {
+				if secret.Annotations == nil {
+					secret.Annotations = make(map[string]string)
+				}
 				secret.Annotations[fmt.Sprintf("%s/sequence", elasticsearchcrd.ElasticsearchAnnotationKey)] = helper.RandomString(64)
 				if _, err = clientStd.CoreV1().Secrets(secret.Namespace).Update(ctx, secret, v1.UpdateOptions{}); err != nil {
 					return errors.Wrapf(err, "Error when upgrade secret %s:%s", esCluster.Namespace, secretName)

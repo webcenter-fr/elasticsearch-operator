@@ -4,10 +4,11 @@ import (
 	"context"
 
 	"emperror.dev/errors"
-	"github.com/disaster37/operator-sdk-extra/v2/pkg/apis/shared"
-	"github.com/disaster37/operator-sdk-extra/v2/pkg/controller/multiphase"
+	"github.com/disaster37/operator-sdk-extra/v3/pkg/apis/shared"
+	"github.com/disaster37/operator-sdk-extra/v3/pkg/controller/multiphase"
 	"github.com/sirupsen/logrus"
 	beatcrd "github.com/webcenter-fr/elasticsearch-operator/api/beat/v1"
+	"github.com/webcenter-fr/elasticsearch-operator/internal/controller/common"
 	rbacv1 "k8s.io/api/rbac/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/types"
@@ -33,6 +34,7 @@ func newRoleBindingReconciler(client client.Client, recorder record.EventRecorde
 			RoleBindingPhase,
 			RoleBindingCondition,
 			recorder,
+			common.FieldManager,
 		),
 		isOpenshift: isOpenshift,
 	}
@@ -59,28 +61,28 @@ func (r *roleBindingReconciler) Read(ctx context.Context, o *beatcrd.Filebeat, d
 	if err != nil {
 		return read, res, errors.Wrap(err, "Error when generate role bindings")
 	}
+	common.InjectTypeMeta(r.Client().Scheme(), expectedRoleBindings...)
 	read.SetExpectedObjects(expectedRoleBindings)
 
 	return read, res, nil
 }
 
-// Update permit to handle how to update role binding
-// RoleRef is immutable. So if we update it, we need to recreate it
-func (r *roleBindingReconciler) Update(ctx context.Context, o *beatcrd.Filebeat, data map[string]any, objects []*rbacv1.RoleBinding, logger *logrus.Entry) (res reconcile.Result, err error) {
-	// First, we try to update it
-	res, err = r.MultiPhaseStepReconcilerAction.Update(ctx, o, data, objects, logger)
+// Apply permit to handle how to apply role bindings
+// RoleRef is immutable. So if it changed, we need to delete and recreate the object.
+func (r *roleBindingReconciler) Apply(ctx context.Context, o *beatcrd.Filebeat, data map[string]any, objects []*rbacv1.RoleBinding, logger *logrus.Entry) (res reconcile.Result, err error) {
+	// First, we try to apply it
+	res, err = r.MultiPhaseStepReconcilerAction.Apply(ctx, o, data, objects, logger)
 	if err != nil {
-		if k8serrors.IsForbidden(err) {
-			// Delete
+		if k8serrors.IsForbidden(err) || k8serrors.IsInvalid(err) {
+			// RoleRef is immutable: delete then recreate
 			res, err = r.Delete(ctx, o, data, objects, logger)
 			if err != nil {
-				return res, errors.Wrap(err, "Error when delete role bindins in gload to recreate it (update)")
+				return res, errors.Wrap(err, "Error when delete role bindings in order to recreate it (apply)")
 			}
 
-			// Create
-			res, err = r.Create(ctx, o, data, objects, logger)
+			res, err = r.MultiPhaseStepReconcilerAction.Apply(ctx, o, data, objects, logger)
 			if err != nil {
-				return res, errors.Wrap(err, "Error when create role binding after delete it (update)")
+				return res, errors.Wrap(err, "Error when recreate role binding after delete it (apply)")
 			}
 
 			return res, nil

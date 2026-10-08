@@ -21,15 +21,15 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/disaster37/operator-sdk-extra/v2/pkg/controller"
+	"github.com/disaster37/operator-sdk-extra/v3/pkg/controller"
 	"github.com/sirupsen/logrus"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/fields"
-	"k8s.io/apimachinery/pkg/runtime"
+
 	"k8s.io/apimachinery/pkg/util/validation/field"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/controller-runtime/pkg/webhook"
+
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 )
 
@@ -41,8 +41,7 @@ type snapshotRepositoryValidator struct {
 // SetupWebhookWithManager will setup the manager to manage the webhooks
 func SetupSnapshotRepositoryWebhookWithManager(logger *logrus.Entry) controller.WebhookRegister {
 	return func(mgr ctrl.Manager, client client.Client) error {
-		return ctrl.NewWebhookManagedBy(mgr).
-			For(&SnapshotRepository{}).
+		return ctrl.NewWebhookManagedBy(mgr, &SnapshotRepository{}).
 			WithValidator(&snapshotRepositoryValidator{
 				logger: logger.WithField("webhook", "snapshotRepositoryValidator"),
 				client: client,
@@ -53,7 +52,7 @@ func SetupSnapshotRepositoryWebhookWithManager(logger *logrus.Entry) controller.
 
 // +kubebuilder:webhook:path=/validate-elasticsearchapi-k8s-webcenter-fr-v1-snapshotrepository,mutating=false,failurePolicy=fail,sideEffects=None,groups=elasticsearchapi.k8s.webcenter.fr,resources=snapshotrepositories,verbs=create;update,versions=v1,name=snapshotrepository.elasticsearchapi.k8s.webcenter.fr,admissionReviewVersions=v1
 
-var _ webhook.CustomValidator = &snapshotRepositoryValidator{}
+var _ admission.Validator[*SnapshotRepository] = &snapshotRepositoryValidator{}
 
 func (r *snapshotRepositoryValidator) validateResourceUnicity(obj *SnapshotRepository) *field.Error {
 	// Check if resource already exist with same name on some remote cluster target
@@ -81,65 +80,56 @@ func (r *snapshotRepositoryValidator) validateResourceUnicity(obj *SnapshotRepos
 }
 
 // ValidateCreate implements webhook.Validator so a webhook will be registered for the type
-func (r *snapshotRepositoryValidator) ValidateCreate(ctx context.Context, obj runtime.Object) (admission.Warnings, error) {
+func (r *snapshotRepositoryValidator) ValidateCreate(ctx context.Context, obj *SnapshotRepository) (admission.Warnings, error) {
 	var allErrs field.ErrorList
 
-	snapshotRepositoryObj, ok := obj.(*SnapshotRepository)
-	if !ok {
-		return nil, fmt.Errorf("expected a SnapshotRepository object but got %T", obj)
-	}
-	r.logger.Debugf("validate create %s/%s", snapshotRepositoryObj.GetNamespace(), snapshotRepositoryObj.GetName())
+	r.logger.Debugf("validate create %s/%s", obj.GetNamespace(), obj.GetName())
 
-	if err := snapshotRepositoryObj.Spec.ElasticsearchRef.ValidateField(); err != nil {
+	if err := obj.Spec.ElasticsearchRef.ValidateField(); err != nil {
 		allErrs = append(allErrs, err)
 	}
 
-	if err := r.validateResourceUnicity(snapshotRepositoryObj); err != nil {
+	if err := r.validateResourceUnicity(obj); err != nil {
 		allErrs = append(allErrs, err)
 	}
 
 	if len(allErrs) > 0 {
 		return nil, apierrors.NewInvalid(
-			snapshotRepositoryObj.GroupVersionKind().GroupKind(),
-			snapshotRepositoryObj.Name, allErrs)
+			obj.GroupVersionKind().GroupKind(),
+			obj.Name, allErrs)
 	}
 
 	return nil, nil
 }
 
 // ValidateUpdate implements webhook.Validator so a webhook will be registered for the type
-func (r *snapshotRepositoryValidator) ValidateUpdate(ctx context.Context, oldObj runtime.Object, newObj runtime.Object) (admission.Warnings, error) {
+func (r *snapshotRepositoryValidator) ValidateUpdate(ctx context.Context, oldObj *SnapshotRepository, newObj *SnapshotRepository) (admission.Warnings, error) {
 	var allErrs field.ErrorList
-	oldO := oldObj.(*SnapshotRepository)
 
-	snapshotRepositoryObj, ok := newObj.(*SnapshotRepository)
-	if !ok {
-		return nil, fmt.Errorf("expected a SnapshotRepository object but got %T", newObj)
-	}
-	r.logger.Debugf("validate update %s/%s", snapshotRepositoryObj.Namespace, snapshotRepositoryObj.Name)
+	r.logger.Debugf("validate update %s/%s", newObj.Namespace, newObj.Name)
 
-	if err := snapshotRepositoryObj.Spec.ElasticsearchRef.ValidateField(); err != nil {
+	if err := newObj.Spec.ElasticsearchRef.ValidateField(); err != nil {
 		allErrs = append(allErrs, err)
 	}
 
-	if err := validateImmutableName(snapshotRepositoryObj, oldO); err != nil {
+	if err := validateImmutableName(newObj, oldObj); err != nil {
 		allErrs = append(allErrs, err)
 	}
 
-	if err := r.validateResourceUnicity(snapshotRepositoryObj); err != nil {
+	if err := r.validateResourceUnicity(newObj); err != nil {
 		allErrs = append(allErrs, err)
 	}
 
 	if len(allErrs) > 0 {
 		return nil, apierrors.NewInvalid(
-			snapshotRepositoryObj.GroupVersionKind().GroupKind(),
-			snapshotRepositoryObj.Name, allErrs)
+			newObj.GroupVersionKind().GroupKind(),
+			newObj.Name, allErrs)
 	}
 
 	return nil, nil
 }
 
 // ValidateDelete implements webhook.Validator so a webhook will be registered for the type
-func (r *snapshotRepositoryValidator) ValidateDelete(ctx context.Context, obj runtime.Object) (admission.Warnings, error) {
+func (r *snapshotRepositoryValidator) ValidateDelete(ctx context.Context, obj *SnapshotRepository) (admission.Warnings, error) {
 	return nil, nil
 }

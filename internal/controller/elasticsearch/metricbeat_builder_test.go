@@ -3,7 +3,7 @@ package elasticsearch
 import (
 	"testing"
 
-	"github.com/disaster37/operator-sdk-extra/v2/pkg/test"
+	"github.com/disaster37/operator-sdk-extra/v3/pkg/test"
 	"github.com/stretchr/testify/assert"
 	beatcrd "github.com/webcenter-fr/elasticsearch-operator/api/beat/v1"
 	elasticsearchcrd "github.com/webcenter-fr/elasticsearch-operator/api/elasticsearch/v1"

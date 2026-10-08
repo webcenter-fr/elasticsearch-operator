@@ -273,7 +273,7 @@ func TestGetSecretNameForPki(t *testing.T) {
 		Spec: logstashcrd.LogstashSpec{},
 	}
 
-	assert.Equal(t, "test-pki-ls", GetSecretNameForPki(o))
+	assert.Equal(t, "test-tls-ls-ca", GetSecretNameForPki(o))
 }
 
 func TestGetSecretNameForTls(t *testing.T) {

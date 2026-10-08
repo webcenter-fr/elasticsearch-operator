@@ -49,6 +49,15 @@ endif
 
 # Image URL to use all building/pushing image targets
 IMG ?= $(IMAGE_TAG_BASE):$(VERSION)
+
+# BuildKit builder to use for image builds. In Eclipse Che workspaces this is set
+# to "remote" (buildkitd sidecar exposed on tcp://127.0.0.1:1234). Override with
+# an empty value to use the default buildx builder (e.g. in CI).
+BUILDX_BUILDER ?= remote
+BUILDKIT_ADDR ?= tcp://127.0.0.1:1234
+BUILDX_BUILDER_FLAG = $(if $(BUILDX_BUILDER),--builder $(BUILDX_BUILDER),)
+buildx-ensure-builder: ## Ensure the remote buildx builder is registered.
+	@if [ -n "$(BUILDX_BUILDER)" ]; then docker buildx create --name $(BUILDX_BUILDER) --driver remote $(BUILDKIT_ADDR) >/dev/null 2>&1 || true; fi
 # ENVTEST_K8S_VERSION refers to the version of kubebuilder assets to be downloaded by envtest binary.
 ENVTEST_K8S_VERSION = 1.25.x
 
@@ -89,6 +98,7 @@ help: ## Display this help.
 .PHONY: manifests
 manifests: controller-gen ## Generate WebhookConfiguration, ClusterRole and CustomResourceDefinition objects.
 	$(CONTROLLER_GEN) rbac:roleName=elastic-operator crd:crdVersions=v1,generateEmbeddedObjectMeta=true webhook paths="./..." output:crd:artifacts:config=config/crd/bases
+	@go run ./hack/strip-crd-cel-validations
 
 .PHONY: generate
 generate: controller-gen ## Generate code containing DeepCopy, DeepCopyInto, and DeepCopyObject method implementations.
@@ -104,7 +114,7 @@ vet: ## Run go vet against code.
 
 .PHONY: test
 test: manifests generate fmt envtest ## Run tests.
-	KUBEBUILDER_ASSETS="$(shell $(ENVTEST) use $(ENVTEST_K8S_VERSION) -p path)" TEST=true go test -p 1 -v -coverprofile cover.out.tmp -timeout 1200s -count 1 -covermode=atomic ./apis/... ./pkg/... ./controllers/...  $(TESTARGS)
+	KUBEBUILDER_ASSETS="$(shell $(ENVTEST) use $(ENVTEST_K8S_VERSION) -p path)" ES_OPERATOR_ENVTEST=true go test -p 1 -v -coverprofile cover.out.tmp -timeout 1200s -count 1 -covermode=atomic ./api/... ./internal/controller/... ./pkg/...  $(TESTARGS)
 	cat cover.out.tmp | grep -v "_generated.*.go" > cover.out
 
 .PHONY: test-acc
@@ -121,11 +131,11 @@ generate-json-schema:
 
 .PHONY: build
 build: generate fmt vet ## Build manager binary.
-	go build -o bin/manager .
+	go build -o bin/manager ./cmd
 
 .PHONY: run
 run: manifests generate fmt vet ## Run a controller from your host.
-	LOG_LEVEL=debug LOG_FORMATTER=json go run .
+	LOG_LEVEL=debug LOG_FORMATTER=json go run ./cmd
 
 .PHONY: install-sample
 install-sample: manifests kustomize ## Install samples
@@ -136,16 +146,16 @@ uninstall-sample: manifests kustomize ## Uninstall samples
 	$(KUSTOMIZE) build config/samples | kubectl delete -f -
 
 .PHONY: docker-build
-docker-build: test ## Build docker image with the manager.
-	docker build -t ${IMG} .
+docker-build: test buildx-ensure-builder ## Build docker image with the manager.
+	docker buildx build $(BUILDX_BUILDER_FLAG) -t ${IMG} .
 
 .PHONY: docker-push
 docker-push: ## Push docker image with the manager.
 	docker push ${IMG}
 
 .PHONY:docker-buildx
-docker-buildx: ## Build docker image with the manager.
-	docker buildx build -t ${IMG} . --push --build-arg http_proxy="$(HTTP_PROXY)" --build-arg https_proxy="$(HTTPS_PROXY)" --build-arg commit="$(shell git rev-parse --short HEAD)" --build-arg version="$(shell git symbolic-ref -q --short HEAD || git describe --tags --exact-match)"
+docker-buildx: buildx-ensure-builder ## Build docker image with the manager.
+	docker buildx build $(BUILDX_BUILDER_FLAG) -t ${IMG} . --push --build-arg http_proxy="$(HTTP_PROXY)" --build-arg https_proxy="$(HTTPS_PROXY)" --build-arg commit="$(shell git rev-parse --short HEAD)" --build-arg version="$(shell git symbolic-ref -q --short HEAD || git describe --tags --exact-match)"
 
 ##@ Deployment
 
@@ -185,7 +195,7 @@ ENVTEST ?= $(LOCALBIN)/setup-envtest
 
 ## Tool Versions
 KUSTOMIZE_VERSION ?= v5.4.3
-CONTROLLER_TOOLS_VERSION ?= v0.16.1
+CONTROLLER_TOOLS_VERSION ?= v0.21.0
 
 KUSTOMIZE_INSTALL_SCRIPT ?= "https://raw.githubusercontent.com/kubernetes-sigs/kustomize/master/hack/install_kustomize.sh"
 .PHONY: kustomize
@@ -222,8 +232,8 @@ bundle-push: ## Push the bundle image.
 	$(MAKE) docker-push IMG=$(BUNDLE_IMG)
 
 .PHONY: bundle-buildx
-bundle-buildx: bundle ## Build the bundle image.
-	docker buildx build -f bundle.Dockerfile -t $(BUNDLE_IMG) . --push --build-arg http_proxy="$(HTTP_PROXY)" --build-arg https_proxy="$(HTTPS_PROXY)"
+bundle-buildx: bundle buildx-ensure-builder ## Build the bundle image.
+	docker buildx build $(BUILDX_BUILDER_FLAG) -f bundle.Dockerfile -t $(BUNDLE_IMG) . --push --build-arg http_proxy="$(HTTP_PROXY)" --build-arg https_proxy="$(HTTPS_PROXY)"
 
 .PHONY: opm
 OPM = ./bin/opm

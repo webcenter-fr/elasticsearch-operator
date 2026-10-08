@@ -6,10 +6,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/disaster37/k8s-objectmatcher/patch"
-	"github.com/disaster37/operator-sdk-extra/v2/pkg/apis"
-	"github.com/disaster37/operator-sdk-extra/v2/pkg/helper"
-	"github.com/disaster37/operator-sdk-extra/v2/pkg/test"
+	"github.com/disaster37/operator-sdk-extra/v3/pkg/apis"
+	"github.com/disaster37/operator-sdk-extra/v3/pkg/helper"
+	"github.com/disaster37/operator-sdk-extra/v3/pkg/test"
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
 	elasticsearchcrd "github.com/webcenter-fr/elasticsearch-operator/api/elasticsearch/v1"
@@ -186,7 +185,6 @@ func doCreateLogstashStep() test.TestStep[*logstashcrd.Logstash] {
 			}
 			assert.NotEmpty(t, s.Data)
 			assert.NotEmpty(t, s.OwnerReferences)
-			assert.NotEmpty(t, s.Annotations[patch.LastAppliedConfig])
 
 			// Secrets for credentials must exist
 			s = &corev1.Secret{}
@@ -195,25 +193,23 @@ func doCreateLogstashStep() test.TestStep[*logstashcrd.Logstash] {
 			}
 			assert.NotEmpty(t, s.Data)
 			assert.NotEmpty(t, s.OwnerReferences)
-			assert.NotEmpty(t, s.Annotations[patch.LastAppliedConfig])
 
-			// Secrets for Pki
+			// Secrets for Pki (CA) - saga secrets have no owner references
 			s = &corev1.Secret{}
 			if err = c.Get(context.Background(), types.NamespacedName{Namespace: key.Namespace, Name: GetSecretNameForPki(ls)}, s); err != nil {
 				t.Fatal(err)
 			}
-			assert.NotEmpty(t, s.Data)
-			assert.NotEmpty(t, s.OwnerReferences)
-			assert.NotEmpty(t, s.Annotations[patch.LastAppliedConfig])
+			assert.NotEmpty(t, s.Data["ca.crt"])
+			assert.NotEmpty(t, s.Data["ca.key"])
 
-			// Secrets for certificates
+			// Secrets for certificates (leaf) - saga secrets have no owner references
 			s = &corev1.Secret{}
 			if err = c.Get(context.Background(), types.NamespacedName{Namespace: key.Namespace, Name: GetSecretNameForTls(ls)}, s); err != nil {
 				t.Fatal(err)
 			}
-			assert.NotEmpty(t, s.Data)
-			assert.NotEmpty(t, s.OwnerReferences)
-			assert.NotEmpty(t, s.Annotations[patch.LastAppliedConfig])
+			assert.NotEmpty(t, s.Data["ca.crt"])
+			assert.NotEmpty(t, s.Data["filebeat.crt"])
+			assert.NotEmpty(t, s.Data["filebeat.key"])
 
 			// Services for ingress must exist
 			svc = &corev1.Service{}
@@ -221,7 +217,6 @@ func doCreateLogstashStep() test.TestStep[*logstashcrd.Logstash] {
 				t.Fatal(err)
 			}
 			assert.NotEmpty(t, svc.OwnerReferences)
-			assert.NotEmpty(t, svc.Annotations[patch.LastAppliedConfig])
 
 			// Global service must exist
 			svc = &corev1.Service{}
@@ -229,7 +224,6 @@ func doCreateLogstashStep() test.TestStep[*logstashcrd.Logstash] {
 				t.Fatal(err)
 			}
 			assert.NotEmpty(t, svc.OwnerReferences)
-			assert.NotEmpty(t, svc.Annotations[patch.LastAppliedConfig])
 
 			// Ingress must exist
 			i = &networkingv1.Ingress{}
@@ -237,7 +231,6 @@ func doCreateLogstashStep() test.TestStep[*logstashcrd.Logstash] {
 				t.Fatal(err)
 			}
 			assert.NotEmpty(t, i.OwnerReferences)
-			assert.NotEmpty(t, i.Annotations[patch.LastAppliedConfig])
 
 			// ConfigMaps must exist
 			cm = &corev1.ConfigMap{}
@@ -245,21 +238,18 @@ func doCreateLogstashStep() test.TestStep[*logstashcrd.Logstash] {
 				t.Fatal(err)
 			}
 			assert.NotEmpty(t, cm.OwnerReferences)
-			assert.NotEmpty(t, cm.Annotations[patch.LastAppliedConfig])
 
 			cm = &corev1.ConfigMap{}
 			if err = c.Get(context.Background(), types.NamespacedName{Namespace: key.Namespace, Name: GetConfigMapPipelineName(ls)}, cm); err != nil {
 				t.Fatal(err)
 			}
 			assert.NotEmpty(t, cm.OwnerReferences)
-			assert.NotEmpty(t, cm.Annotations[patch.LastAppliedConfig])
 
 			cm = &corev1.ConfigMap{}
 			if err = c.Get(context.Background(), types.NamespacedName{Namespace: key.Namespace, Name: GetConfigMapPatternName(ls)}, cm); err != nil {
 				t.Fatal(err)
 			}
 			assert.NotEmpty(t, cm.OwnerReferences)
-			assert.NotEmpty(t, cm.Annotations[patch.LastAppliedConfig])
 
 			// PDB must exist
 			pdb = &policyv1.PodDisruptionBudget{}
@@ -267,7 +257,6 @@ func doCreateLogstashStep() test.TestStep[*logstashcrd.Logstash] {
 				t.Fatal(err)
 			}
 			assert.NotEmpty(t, pdb.OwnerReferences)
-			assert.NotEmpty(t, pdb.Annotations[patch.LastAppliedConfig])
 
 			// Statefulset musts exist
 			sts = &appv1.StatefulSet{}
@@ -275,7 +264,6 @@ func doCreateLogstashStep() test.TestStep[*logstashcrd.Logstash] {
 				t.Fatal(err)
 			}
 			assert.NotEmpty(t, sts.OwnerReferences)
-			assert.NotEmpty(t, sts.Annotations[patch.LastAppliedConfig])
 
 			// Status must be update
 			assert.NotEmpty(t, ls.Status.PhaseName)
@@ -349,7 +337,6 @@ func doUpdateLogstashStep() test.TestStep[*logstashcrd.Logstash] {
 			}
 			assert.NotEmpty(t, s.Data)
 			assert.NotEmpty(t, s.OwnerReferences)
-			assert.NotEmpty(t, s.Annotations[patch.LastAppliedConfig])
 			assert.Equal(t, "fu", s.Labels["test"])
 
 			// Secrets for credentials must exist
@@ -359,27 +346,25 @@ func doUpdateLogstashStep() test.TestStep[*logstashcrd.Logstash] {
 			}
 			assert.NotEmpty(t, s.Data)
 			assert.NotEmpty(t, s.OwnerReferences)
-			assert.NotEmpty(t, s.Annotations[patch.LastAppliedConfig])
 			assert.Equal(t, "fu", s.Labels["test"])
 
-			// Secrets for Pki
+			// Secrets for Pki (CA) - saga secrets have no owner references
 			s = &corev1.Secret{}
 			if err = c.Get(context.Background(), types.NamespacedName{Namespace: key.Namespace, Name: GetSecretNameForPki(ls)}, s); err != nil {
 				t.Fatal(err)
 			}
-			assert.NotEmpty(t, s.Data)
-			assert.NotEmpty(t, s.OwnerReferences)
-			assert.NotEmpty(t, s.Annotations[patch.LastAppliedConfig])
+			assert.NotEmpty(t, s.Data["ca.crt"])
+			assert.NotEmpty(t, s.Data["ca.key"])
 			assert.Equal(t, "fu", s.Labels["test"])
 
-			// Secrets for certificates
+			// Secrets for certificates (leaf) - saga secrets have no owner references
 			s = &corev1.Secret{}
 			if err = c.Get(context.Background(), types.NamespacedName{Namespace: key.Namespace, Name: GetSecretNameForTls(ls)}, s); err != nil {
 				t.Fatal(err)
 			}
-			assert.NotEmpty(t, s.Data)
-			assert.NotEmpty(t, s.OwnerReferences)
-			assert.NotEmpty(t, s.Annotations[patch.LastAppliedConfig])
+			assert.NotEmpty(t, s.Data["ca.crt"])
+			assert.NotEmpty(t, s.Data["filebeat.crt"])
+			assert.NotEmpty(t, s.Data["filebeat.key"])
 			assert.Equal(t, "fu", s.Labels["test"])
 
 			// Services for ingress must exist
@@ -388,7 +373,6 @@ func doUpdateLogstashStep() test.TestStep[*logstashcrd.Logstash] {
 				t.Fatal(err)
 			}
 			assert.NotEmpty(t, svc.OwnerReferences)
-			assert.NotEmpty(t, svc.Annotations[patch.LastAppliedConfig])
 			assert.Equal(t, "fu", svc.Labels["test"])
 
 			// Global service must exist
@@ -397,7 +381,6 @@ func doUpdateLogstashStep() test.TestStep[*logstashcrd.Logstash] {
 				t.Fatal(err)
 			}
 			assert.NotEmpty(t, svc.OwnerReferences)
-			assert.NotEmpty(t, svc.Annotations[patch.LastAppliedConfig])
 			assert.Equal(t, "fu", svc.Labels["test"])
 
 			// Ingress must exist
@@ -406,7 +389,6 @@ func doUpdateLogstashStep() test.TestStep[*logstashcrd.Logstash] {
 				t.Fatal(err)
 			}
 			assert.NotEmpty(t, i.OwnerReferences)
-			assert.NotEmpty(t, i.Annotations[patch.LastAppliedConfig])
 			assert.Equal(t, "fu", i.Labels["test"])
 
 			// ConfigMaps must exist
@@ -415,7 +397,6 @@ func doUpdateLogstashStep() test.TestStep[*logstashcrd.Logstash] {
 				t.Fatal(err)
 			}
 			assert.NotEmpty(t, cm.OwnerReferences)
-			assert.NotEmpty(t, cm.Annotations[patch.LastAppliedConfig])
 			assert.Equal(t, "fu", cm.Labels["test"])
 
 			cm = &corev1.ConfigMap{}
@@ -423,7 +404,6 @@ func doUpdateLogstashStep() test.TestStep[*logstashcrd.Logstash] {
 				t.Fatal(err)
 			}
 			assert.NotEmpty(t, cm.OwnerReferences)
-			assert.NotEmpty(t, cm.Annotations[patch.LastAppliedConfig])
 			assert.Equal(t, "fu", cm.Labels["test"])
 
 			cm = &corev1.ConfigMap{}
@@ -431,7 +411,6 @@ func doUpdateLogstashStep() test.TestStep[*logstashcrd.Logstash] {
 				t.Fatal(err)
 			}
 			assert.NotEmpty(t, cm.OwnerReferences)
-			assert.NotEmpty(t, cm.Annotations[patch.LastAppliedConfig])
 			assert.Equal(t, "fu", cm.Labels["test"])
 
 			// PDB must exist
@@ -440,7 +419,6 @@ func doUpdateLogstashStep() test.TestStep[*logstashcrd.Logstash] {
 				t.Fatal(err)
 			}
 			assert.NotEmpty(t, pdb.OwnerReferences)
-			assert.NotEmpty(t, pdb.Annotations[patch.LastAppliedConfig])
 			assert.Equal(t, "fu", pdb.Labels["test"])
 
 			// Statefulset musts exist
@@ -449,7 +427,6 @@ func doUpdateLogstashStep() test.TestStep[*logstashcrd.Logstash] {
 				t.Fatal(err)
 			}
 			assert.NotEmpty(t, sts.OwnerReferences)
-			assert.NotEmpty(t, sts.Annotations[patch.LastAppliedConfig])
 			assert.Equal(t, "fu", sts.Labels["test"])
 
 			// Status must be update

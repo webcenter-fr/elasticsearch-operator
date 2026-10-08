@@ -4,11 +4,11 @@ import (
 	"context"
 
 	"emperror.dev/errors"
-	"github.com/disaster37/k8s-objectmatcher/patch"
-	"github.com/disaster37/operator-sdk-extra/v2/pkg/apis/shared"
-	"github.com/disaster37/operator-sdk-extra/v2/pkg/controller/multiphase"
+	"github.com/disaster37/operator-sdk-extra/v3/pkg/apis/shared"
+	"github.com/disaster37/operator-sdk-extra/v3/pkg/controller/multiphase"
 	"github.com/sirupsen/logrus"
 	kibanacrd "github.com/webcenter-fr/elasticsearch-operator/api/kibana/v1"
+	"github.com/webcenter-fr/elasticsearch-operator/internal/controller/common"
 	policyv1 "k8s.io/api/policy/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/types"
@@ -33,6 +33,7 @@ func newPdbReconciler(client client.Client, recorder record.EventRecorder) (mult
 			PdbPhase,
 			PdbCondition,
 			recorder,
+			common.FieldManager,
 		),
 	}
 }
@@ -58,13 +59,8 @@ func (r *pdbReconciler) Read(ctx context.Context, o *kibanacrd.Kibana, data map[
 	if err != nil {
 		return read, res, errors.Wrap(err, "Error when generate pdb")
 	}
+	common.InjectTypeMeta(r.Client().Scheme(), expectedPdbs...)
 	read.SetExpectedObjects(expectedPdbs)
 
 	return read, res, nil
-}
-
-func (r *pdbReconciler) GetIgnoresDiff() []patch.CalculateOption {
-	return []patch.CalculateOption{
-		patch.IgnorePDBSelector(),
-	}
 }

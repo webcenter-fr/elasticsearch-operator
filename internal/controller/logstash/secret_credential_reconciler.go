@@ -5,8 +5,8 @@ import (
 	"time"
 
 	"emperror.dev/errors"
-	"github.com/disaster37/operator-sdk-extra/v2/pkg/apis/shared"
-	"github.com/disaster37/operator-sdk-extra/v2/pkg/controller/multiphase"
+	"github.com/disaster37/operator-sdk-extra/v3/pkg/apis/shared"
+	"github.com/disaster37/operator-sdk-extra/v3/pkg/controller/multiphase"
 	"github.com/sirupsen/logrus"
 	elasticsearchcrd "github.com/webcenter-fr/elasticsearch-operator/api/elasticsearch/v1"
 	logstashcrd "github.com/webcenter-fr/elasticsearch-operator/api/logstash/v1"
@@ -36,6 +36,7 @@ func newCredentialReconciler(client client.Client, recorder record.EventRecorder
 			CredentialPhase,
 			CredentialCondition,
 			recorder,
+			common.FieldManager,
 		),
 	}
 }
@@ -85,6 +86,7 @@ func (r *credentialReconciler) Read(ctx context.Context, o *logstashcrd.Logstash
 	if err != nil {
 		return read, res, errors.Wrapf(err, "Error when generate secret %s", GetSecretNameForCredentials(o))
 	}
+	common.InjectTypeMeta(r.Client().Scheme(), expectedSecretCredentials...)
 	read.SetExpectedObjects(expectedSecretCredentials)
 
 	return read, res, nil

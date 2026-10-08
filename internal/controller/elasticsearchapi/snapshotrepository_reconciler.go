@@ -4,9 +4,9 @@ import (
 	"context"
 	"time"
 
-	eshandler "github.com/disaster37/es-handler/v8"
-	"github.com/disaster37/operator-sdk-extra/v2/pkg/controller/remote"
-	olivere "github.com/olivere/elastic/v7"
+	esapi "github.com/disaster37/elasticsearch/v9/api"
+	eshandler "github.com/disaster37/es-handler/v9"
+	"github.com/disaster37/operator-sdk-extra/v3/pkg/controller/remote"
 	"github.com/sirupsen/logrus"
 	elasticsearchapicrd "github.com/webcenter-fr/elasticsearch-operator/api/elasticsearchapi/v1"
 	"k8s.io/client-go/tools/record"
@@ -15,13 +15,13 @@ import (
 )
 
 type snapshotRepositoryReconciler struct {
-	remote.RemoteReconcilerAction[*elasticsearchapicrd.SnapshotRepository, *olivere.SnapshotRepositoryMetaData, eshandler.ElasticsearchHandler]
+	remote.RemoteReconcilerAction[*elasticsearchapicrd.SnapshotRepository, *esapi.SnapshotRepository, eshandler.ElasticsearchHandler]
 	name string
 }
 
-func newSnapshotRepositoryReconciler(name string, client client.Client, recorder record.EventRecorder) remote.RemoteReconcilerAction[*elasticsearchapicrd.SnapshotRepository, *olivere.SnapshotRepositoryMetaData, eshandler.ElasticsearchHandler] {
+func newSnapshotRepositoryReconciler(name string, client client.Client, recorder record.EventRecorder) remote.RemoteReconcilerAction[*elasticsearchapicrd.SnapshotRepository, *esapi.SnapshotRepository, eshandler.ElasticsearchHandler] {
 	return &snapshotRepositoryReconciler{
-		RemoteReconcilerAction: remote.NewRemoteReconcilerAction[*elasticsearchapicrd.SnapshotRepository, *olivere.SnapshotRepositoryMetaData, eshandler.ElasticsearchHandler](
+		RemoteReconcilerAction: remote.NewRemoteReconcilerAction[*elasticsearchapicrd.SnapshotRepository, *esapi.SnapshotRepository, eshandler.ElasticsearchHandler](
 			client,
 			recorder,
 		),
@@ -29,7 +29,7 @@ func newSnapshotRepositoryReconciler(name string, client client.Client, recorder
 	}
 }
 
-func (h *snapshotRepositoryReconciler) GetRemoteHandler(ctx context.Context, req reconcile.Request, o *elasticsearchapicrd.SnapshotRepository, logger *logrus.Entry) (handler remote.RemoteExternalReconciler[*elasticsearchapicrd.SnapshotRepository, *olivere.SnapshotRepositoryMetaData, eshandler.ElasticsearchHandler], res reconcile.Result, err error) {
+func (h *snapshotRepositoryReconciler) GetRemoteHandler(ctx context.Context, req reconcile.Request, o *elasticsearchapicrd.SnapshotRepository, logger *logrus.Entry) (handler remote.RemoteExternalReconciler[*elasticsearchapicrd.SnapshotRepository, *esapi.SnapshotRepository, eshandler.ElasticsearchHandler], res reconcile.Result, err error) {
 	esClient, err := GetElasticsearchHandler(ctx, o, o.Spec.ElasticsearchRef, h.Client(), logger)
 	if err != nil && o.DeletionTimestamp.IsZero() {
 		return nil, res, err

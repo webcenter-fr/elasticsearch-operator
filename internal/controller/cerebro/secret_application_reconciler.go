@@ -4,10 +4,11 @@ import (
 	"context"
 
 	"emperror.dev/errors"
-	"github.com/disaster37/operator-sdk-extra/v2/pkg/apis/shared"
-	"github.com/disaster37/operator-sdk-extra/v2/pkg/controller/multiphase"
+	"github.com/disaster37/operator-sdk-extra/v3/pkg/apis/shared"
+	"github.com/disaster37/operator-sdk-extra/v3/pkg/controller/multiphase"
 	"github.com/sirupsen/logrus"
 	cerebrocrd "github.com/webcenter-fr/elasticsearch-operator/api/cerebro/v1"
+	"github.com/webcenter-fr/elasticsearch-operator/internal/controller/common"
 	corev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/types"
@@ -32,6 +33,7 @@ func newApplicationSecretReconciler(client client.Client, recorder record.EventR
 			ApplicationSecretPhase,
 			ApplicationSecretCondition,
 			recorder,
+			common.FieldManager,
 		),
 	}
 }
@@ -58,11 +60,29 @@ func (r *applicationSecretReconciler) Read(ctx context.Context, o *cerebrocrd.Ce
 		return read, res, errors.Wrapf(err, "Error when generate secret %s", GetSecretNameForApplication(o))
 	}
 
-	// Never update existing credentials
+	// Never regenerate existing credentials.
+	// Legacy secrets carry the value under the `application` key: re-key it to
+	// `session-key` in place so that already issued session cookies stay valid.
 	if currentApplicationSecret != nil {
-		expectedApplicationSecrets[0].Data = currentApplicationSecret.Data
+		if v, ok := currentApplicationSecret.Data[applicationSecretKey]; ok {
+			expectedApplicationSecrets[0].Data[applicationSecretKey] = v
+		} else if v, ok := currentApplicationSecret.Data["application"]; ok {
+			logger.Infof("Migrate secret %s from key `application` to key `%s`", GetSecretNameForApplication(o), applicationSecretKey)
+			expectedApplicationSecrets[0].Data[applicationSecretKey] = v
+
+			// The multiphase framework applies children with Server-Side Apply, which
+			// only prunes fields owned by the applying field manager. A legacy
+			// `application` key owned by a different (pre-SSA) manager would therefore
+			// linger forever. Explicitly remove it from the live object so the secret
+			// converges to a single key.
+			patch := []byte(`{"data":{"application":null}}`)
+			if err = r.Client().Patch(ctx, currentApplicationSecret, client.RawPatch(types.MergePatchType, patch)); err != nil {
+				return read, res, errors.Wrapf(err, "Error when remove legacy key `application` from secret %s", GetSecretNameForApplication(o))
+			}
+		}
 	}
 
+	common.InjectTypeMeta(r.Client().Scheme(), expectedApplicationSecrets...)
 	read.SetExpectedObjects(expectedApplicationSecrets)
 
 	return read, res, nil

@@ -1,9 +1,9 @@
 package elasticsearchapi
 
 import (
-	eshandler "github.com/disaster37/es-handler/v8"
+	eshandler "github.com/disaster37/es-handler/v9"
 	"github.com/disaster37/generic-objectmatcher/patch"
-	"github.com/disaster37/operator-sdk-extra/v2/pkg/controller/remote"
+	"github.com/disaster37/operator-sdk-extra/v3/pkg/controller/remote"
 	elasticsearchapicrd "github.com/webcenter-fr/elasticsearch-operator/api/elasticsearchapi/v1"
 )
 

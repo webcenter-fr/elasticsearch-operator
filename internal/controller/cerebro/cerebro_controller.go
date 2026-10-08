@@ -22,9 +22,9 @@ import (
 	"time"
 
 	"emperror.dev/errors"
-	"github.com/disaster37/operator-sdk-extra/v2/pkg/apis/shared"
-	"github.com/disaster37/operator-sdk-extra/v2/pkg/controller"
-	"github.com/disaster37/operator-sdk-extra/v2/pkg/controller/multiphase"
+	"github.com/disaster37/operator-sdk-extra/v3/pkg/apis/shared"
+	"github.com/disaster37/operator-sdk-extra/v3/pkg/controller"
+	"github.com/disaster37/operator-sdk-extra/v3/pkg/controller/multiphase"
 	routev1 "github.com/openshift/api/route/v1"
 	"github.com/sirupsen/logrus"
 	cerebrocrd "github.com/webcenter-fr/elasticsearch-operator/api/cerebro/v1"
@@ -51,7 +51,7 @@ const (
 	finalizer shared.FinalizerName = "cerebro.k8s.webcenter.fr/finalizer"
 )
 
-// CerebroReconciler reconciles a Cerebro objectFHost
+// CerebroReconciler reconciles a Cerebro object.
 type CerebroReconciler struct {
 	controller.Controller
 	multiphase.MultiPhaseReconciler[*cerebrocrd.Cerebro]
@@ -79,17 +79,17 @@ func NewCerebroReconciler(c client.Client, logger *logrus.Entry, recorder record
 		name:           name,
 		kubeCapability: kubeCapability,
 		stepReconcilers: []multiphase.MultiPhaseStepReconcilerAction[*cerebrocrd.Cerebro, client.Object]{
-			multiphase.NewObjectMultiPhaseStepReconcilerAction[*cerebrocrd.Cerebro, *corev1.Secret, client.Object](newApplicationSecretReconciler(c, recorder)),
-			multiphase.NewObjectMultiPhaseStepReconcilerAction[*cerebrocrd.Cerebro, *corev1.ConfigMap, client.Object](newConfiMapReconciler(c, recorder)),
-			multiphase.NewObjectMultiPhaseStepReconcilerAction[*cerebrocrd.Cerebro, *corev1.Service, client.Object](newServiceReconciler(c, recorder)),
-			multiphase.NewObjectMultiPhaseStepReconcilerAction[*cerebrocrd.Cerebro, *appv1.Deployment, client.Object](newDeploymentReconciler(c, recorder, kubeCapability.HasRoute)),
-			multiphase.NewObjectMultiPhaseStepReconcilerAction[*cerebrocrd.Cerebro, *networkingv1.Ingress, client.Object](newIngressReconciler(c, recorder)),
-			multiphase.NewObjectMultiPhaseStepReconcilerAction[*cerebrocrd.Cerebro, *corev1.Service, client.Object](newLoadBalancerReconciler(c, recorder)),
+			multiphase.As[*cerebrocrd.Cerebro, *corev1.Secret, client.Object](newApplicationSecretReconciler(c, recorder)),
+			multiphase.As[*cerebrocrd.Cerebro, *corev1.ConfigMap, client.Object](newConfiMapReconciler(c, recorder)),
+			multiphase.As[*cerebrocrd.Cerebro, *corev1.Service, client.Object](newServiceReconciler(c, recorder)),
+			multiphase.As[*cerebrocrd.Cerebro, *appv1.Deployment, client.Object](newDeploymentReconciler(c, recorder, kubeCapability.HasRoute)),
+			multiphase.As[*cerebrocrd.Cerebro, *networkingv1.Ingress, client.Object](newIngressReconciler(c, recorder)),
+			multiphase.As[*cerebrocrd.Cerebro, *corev1.Service, client.Object](newLoadBalancerReconciler(c, recorder)),
 		},
 	}
 
 	if kubeCapability.HasRoute {
-		reconciler.stepReconcilers = append(reconciler.stepReconcilers, multiphase.NewObjectMultiPhaseStepReconcilerAction[*cerebrocrd.Cerebro, *routev1.Route, client.Object](newRouteReconciler(c, recorder)))
+		reconciler.stepReconcilers = append(reconciler.stepReconcilers, multiphase.As[*cerebrocrd.Cerebro, *routev1.Route, client.Object](newRouteReconciler(c, recorder)))
 	}
 
 	return reconciler
@@ -146,7 +146,7 @@ func (h *CerebroReconciler) SetupWithManager(mgr ctrl.Manager) error {
 		Watches(&corev1.ConfigMap{}, handler.EnqueueRequestsFromMapFunc(watchConfigMap(h.Client()))).
 		Watches(&cerebrocrd.Host{}, handler.EnqueueRequestsFromMapFunc(watchHost(h.Client()))).
 		WithOptions(k8scontroller.Options{
-			RateLimiter: controller.DefaultControllerRateLimiter[reconcile.Request](),
+			RateLimiter: common.DefaultControllerRateLimiter(),
 		})
 
 	if h.kubeCapability.HasRoute {
@@ -167,6 +167,12 @@ func (h *CerebroReconciler) Recorder() record.EventRecorder {
 func (h *CerebroReconciler) Configure(ctx context.Context, req reconcile.Request, o *cerebrocrd.Cerebro, data map[string]any, logger *logrus.Entry) (res reconcile.Result, err error) {
 	// Set prometheus Metrics
 	common.ControllerInstances.WithLabelValues(h.name, o.GetNamespace(), o.GetName()).Set(1)
+
+	if IsLegacyVersion(o) {
+		h.Recorder().Eventf(o, corev1.EventTypeWarning, "DeprecatedVersion",
+			"spec.version=%q is not a valid tag for %s and is treated as %s; set an explicit version",
+			legacyVersion, defaultImage, defaultVersion)
+	}
 
 	return h.MultiPhaseReconcilerAction.Configure(ctx, req, o, data, logger)
 }
@@ -221,7 +227,7 @@ func (h *CerebroReconciler) OnSuccess(ctx context.Context, o *cerebrocrd.Cerebro
 	dpl := &appv1.Deployment{}
 	if err = h.Client().Get(ctx, types.NamespacedName{Name: GetDeploymentName(o), Namespace: o.Namespace}, dpl); err != nil {
 		if !k8serrors.IsNotFound(err) {
-			return res, errors.Wrapf(err, "Error when read Kibana deployment")
+			return res, errors.Wrapf(err, "Error when read Cerebro deployment")
 		}
 
 		isReady = false

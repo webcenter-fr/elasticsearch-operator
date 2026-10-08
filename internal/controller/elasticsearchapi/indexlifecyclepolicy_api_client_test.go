@@ -3,8 +3,9 @@ package elasticsearchapi
 import (
 	"testing"
 
-	"github.com/disaster37/operator-sdk-extra/v2/pkg/apis"
-	olivere "github.com/olivere/elastic/v7"
+	esapi "github.com/disaster37/elasticsearch/v9/api"
+
+	"github.com/disaster37/operator-sdk-extra/v3/pkg/apis"
 	"github.com/stretchr/testify/assert"
 	elasticsearchapicrd "github.com/webcenter-fr/elasticsearch-operator/api/elasticsearchapi/v1"
 	"github.com/webcenter-fr/elasticsearch-operator/api/shared"
@@ -15,8 +16,8 @@ import (
 func TestIndexLifecyclePolicyBuild(t *testing.T) {
 	var (
 		o           *elasticsearchapicrd.IndexLifecyclePolicy
-		ilm         *olivere.XPackIlmGetLifecycleResponse
-		expectedIlm *olivere.XPackIlmGetLifecycleResponse
+		ilm         *esapi.IlmPolicy
+		expectedIlm *esapi.IlmPolicy
 		err         error
 		client      *indexLifecyclePolicyApiClient
 	)
@@ -70,7 +71,7 @@ func TestIndexLifecyclePolicyBuild(t *testing.T) {
 		},
 	}
 
-	expectedIlm = &olivere.XPackIlmGetLifecycleResponse{
+	expectedIlm = &esapi.IlmPolicy{
 		Policy: map[string]any{
 			"phases": map[string]any{
 				"warm": map[string]any{

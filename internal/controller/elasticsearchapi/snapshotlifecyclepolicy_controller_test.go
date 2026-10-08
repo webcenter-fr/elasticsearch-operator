@@ -7,13 +7,13 @@ import (
 	"time"
 
 	"emperror.dev/errors"
-	eshandler "github.com/disaster37/es-handler/v8"
-	"github.com/disaster37/es-handler/v8/mocks"
+	esapi "github.com/disaster37/elasticsearch/v9/api"
+	eshandler "github.com/disaster37/es-handler/v9"
+	"github.com/disaster37/es-handler/v9/mocks"
 	"github.com/disaster37/generic-objectmatcher/patch"
-	"github.com/disaster37/operator-sdk-extra/v2/pkg/controller"
-	"github.com/disaster37/operator-sdk-extra/v2/pkg/helper"
-	"github.com/disaster37/operator-sdk-extra/v2/pkg/test"
-	olivere "github.com/olivere/elastic/v7"
+	"github.com/disaster37/operator-sdk-extra/v3/pkg/controller"
+	"github.com/disaster37/operator-sdk-extra/v3/pkg/helper"
+	"github.com/disaster37/operator-sdk-extra/v3/pkg/test"
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
 	elasticsearchapicrd "github.com/webcenter-fr/elasticsearch-operator/api/elasticsearchapi/v1"
@@ -49,8 +49,8 @@ func doMockSLM(mockES *mocks.MockElasticsearchHandler) func(stepName *string, da
 		isCreated := false
 		isUpdated := false
 
-		mockES.EXPECT().SnapshotRepositoryGet(gomock.Eq("my_repository")).AnyTimes().DoAndReturn(func(name string) (*olivere.SnapshotRepositoryMetaData, error) {
-			return &olivere.SnapshotRepositoryMetaData{
+		mockES.EXPECT().SnapshotRepositoryGet(gomock.Eq("my_repository")).AnyTimes().DoAndReturn(func(name string) (*esapi.SnapshotRepository, error) {
+			return &esapi.SnapshotRepository{
 				Type: "url",
 			}, nil
 		})

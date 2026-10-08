@@ -17,7 +17,7 @@ limitations under the License.
 package v1
 
 import (
-	"github.com/disaster37/operator-sdk-extra/v2/pkg/apis/remote"
+	"github.com/disaster37/operator-sdk-extra/v3/pkg/apis/remote"
 	"github.com/webcenter-fr/elasticsearch-operator/api/shared"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -148,8 +148,4 @@ type UserSpaceList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`
 	Items           []UserSpace `json:"items"`
-}
-
-func init() {
-	SchemeBuilder.Register(&UserSpace{}, &UserSpaceList{})
 }

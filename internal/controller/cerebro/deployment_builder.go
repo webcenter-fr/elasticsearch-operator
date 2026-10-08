@@ -16,6 +16,19 @@ import (
 	"k8s.io/utils/ptr"
 )
 
+// computeChecksum marshals data to JSON and returns its SHA-256 hex digest.
+func computeChecksum(name string, data any) (string, error) {
+	j, err := json.Marshal(data)
+	if err != nil {
+		return "", errors.Wrapf(err, "Error when convert data of %s on json string", name)
+	}
+	sum, err := checksum.SHA256sumReader(bytes.NewReader(j))
+	if err != nil {
+		return "", errors.Wrapf(err, "Error when generate checksum for %s", name)
+	}
+	return sum, nil
+}
+
 // BuildDeployment permit to generate deployment
 func buildDeployments(cerebro *cerebrocrd.Cerebro, secretsChecksum []*corev1.Secret, configMapsChecksum []*corev1.ConfigMap, isOpenshift bool) (dpls []*appv1.Deployment, err error) {
 	dpls = make([]*appv1.Deployment, 0, 1)
@@ -23,25 +36,17 @@ func buildDeployments(cerebro *cerebrocrd.Cerebro, secretsChecksum []*corev1.Sec
 
 	// checksum for configmap
 	for _, cm := range configMapsChecksum {
-		j, err := json.Marshal(cm.Data)
+		sum, err := computeChecksum(cm.Name, cm.Data)
 		if err != nil {
-			return nil, errors.Wrapf(err, "Error when convert data of configMap %s on json string", cm.Name)
-		}
-		sum, err := checksum.SHA256sumReader(bytes.NewReader(j))
-		if err != nil {
-			return nil, errors.Wrapf(err, "Error when generate checksum for extra configMap %s", cm.Name)
+			return nil, err
 		}
 		checksumAnnotations[fmt.Sprintf("%s/configmap-%s", cerebrocrd.CerebroAnnotationKey, cm.Name)] = sum
 	}
 	// checksum for secret
 	for _, s := range secretsChecksum {
-		j, err := json.Marshal(s.Data)
+		sum, err := computeChecksum(s.Name, s.Data)
 		if err != nil {
-			return nil, errors.Wrapf(err, "Error when convert data of secret %s on json string", s.Name)
-		}
-		sum, err := checksum.SHA256sumReader(bytes.NewReader(j))
-		if err != nil {
-			return nil, errors.Wrapf(err, "Error when generate checksum for extra secret %s", s.Name)
+			return nil, err
 		}
 		checksumAnnotations[fmt.Sprintf("%s/secret-%s", cerebrocrd.CerebroAnnotationKey, s.Name)] = sum
 	}
@@ -57,7 +62,8 @@ func buildDeployments(cerebro *cerebrocrd.Cerebro, secretsChecksum []*corev1.Sec
 	cb.WithContainer(cerebroContainer.DeepCopy()).
 		Container().Name = "cerebro"
 	cb.Container().Args = []string{
-		"-Dconfig.file=/etc/cerebro/application.conf",
+		"--config",
+		"/opt/cerebro/conf/application.yaml",
 	}
 
 	// Compute EnvFrom
@@ -103,13 +109,13 @@ func buildDeployments(cerebro *cerebrocrd.Cerebro, secretsChecksum []*corev1.Sec
 				},
 			},
 			{
-				Name: "APPLICATION_SECRET",
+				Name: "CEREBRO_SECRET",
 				ValueFrom: &corev1.EnvVarSource{
 					SecretKeyRef: &corev1.SecretKeySelector{
 						LocalObjectReference: corev1.LocalObjectReference{
 							Name: GetSecretNameForApplication(cerebro),
 						},
-						Key: "application",
+						Key: "session-key",
 					},
 				},
 			},
@@ -134,47 +140,30 @@ func buildDeployments(cerebro *cerebrocrd.Cerebro, secretsChecksum []*corev1.Sec
 	cb.WithImagePullPolicy(cerebro.Spec.ImagePullPolicy, k8sbuilder.OverwriteIfDefaultValue)
 
 	// Compute security context
-	if !isOpenshift {
-		cb.WithSecurityContext(&corev1.SecurityContext{
-			Capabilities: &corev1.Capabilities{
-				Drop: []corev1.Capability{
-					"ALL",
-				},
-			},
-			AllowPrivilegeEscalation: ptr.To(false),
-			ReadOnlyRootFilesystem:   ptr.To(true),
-			Privileged:               ptr.To(false),
-			RunAsNonRoot:             ptr.To(true),
-			RunAsUser:                ptr.To[int64](1000),
-			RunAsGroup:               ptr.To[int64](1000),
-		}, k8sbuilder.OverwriteIfDefaultValue)
-	} else {
-		cb.WithSecurityContext(&corev1.SecurityContext{
-			Capabilities: &corev1.Capabilities{
-				Drop: []corev1.Capability{
-					"ALL",
-				},
-			},
-			AllowPrivilegeEscalation: ptr.To(false),
-			ReadOnlyRootFilesystem:   ptr.To(true),
-			Privileged:               ptr.To(false),
-			RunAsNonRoot:             ptr.To(true),
-		}, k8sbuilder.OverwriteIfDefaultValue)
+	sc := &corev1.SecurityContext{
+		Capabilities: &corev1.Capabilities{
+			Drop: []corev1.Capability{"ALL"},
+		},
+		AllowPrivilegeEscalation: ptr.To(false),
+		ReadOnlyRootFilesystem:   ptr.To(true),
+		Privileged:               ptr.To(false),
+		RunAsNonRoot:             ptr.To(true),
 	}
+	if !isOpenshift {
+		sc.RunAsUser = ptr.To[int64](1000)
+		sc.RunAsGroup = ptr.To[int64](1000)
+	}
+	cb.WithSecurityContext(sc, k8sbuilder.OverwriteIfDefaultValue)
 
 	// Compute volume mount
 	cb.WithVolumeMount([]corev1.VolumeMount{
 		{
 			Name:      "config",
-			MountPath: "/etc/cerebro",
+			MountPath: "/opt/cerebro/conf",
 		},
 		{
-			Name:      "db",
-			MountPath: "/var/db/cerebro",
-		},
-		{
-			Name:      "logs",
-			MountPath: "/opt/cerebro/logs",
+			Name:      "data",
+			MountPath: "/data",
 		},
 		{
 			Name:      "tmp",
@@ -189,8 +178,10 @@ func buildDeployments(cerebro *cerebrocrd.Cerebro, secretsChecksum []*corev1.Sec
 		FailureThreshold: 3,
 		SuccessThreshold: 1,
 		ProbeHandler: corev1.ProbeHandler{
-			TCPSocket: &corev1.TCPSocketAction{
-				Port: intstr.FromInt(9000),
+			HTTPGet: &corev1.HTTPGetAction{
+				Path:   "/favicon.ico",
+				Port:   intstr.FromInt(9000),
+				Scheme: corev1.URISchemeHTTP,
 			},
 		},
 	}, k8sbuilder.OverwriteIfDefaultValue)
@@ -203,7 +194,7 @@ func buildDeployments(cerebro *cerebrocrd.Cerebro, secretsChecksum []*corev1.Sec
 		SuccessThreshold: 1,
 		ProbeHandler: corev1.ProbeHandler{
 			HTTPGet: &corev1.HTTPGetAction{
-				Path:   "/",
+				Path:   "/favicon.ico",
 				Port:   intstr.FromInt(9000),
 				Scheme: corev1.URISchemeHTTP,
 			},
@@ -268,13 +259,7 @@ func buildDeployments(cerebro *cerebrocrd.Cerebro, secretsChecksum []*corev1.Sec
 			},
 		},
 		{
-			Name: "db",
-			VolumeSource: corev1.VolumeSource{
-				EmptyDir: &corev1.EmptyDirVolumeSource{},
-			},
-		},
-		{
-			Name: "logs",
+			Name: "data",
 			VolumeSource: corev1.VolumeSource{
 				EmptyDir: &corev1.EmptyDirVolumeSource{},
 			},

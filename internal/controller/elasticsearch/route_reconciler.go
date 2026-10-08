@@ -5,11 +5,12 @@ import (
 	"time"
 
 	"emperror.dev/errors"
-	"github.com/disaster37/operator-sdk-extra/v2/pkg/apis/shared"
-	"github.com/disaster37/operator-sdk-extra/v2/pkg/controller/multiphase"
+	"github.com/disaster37/operator-sdk-extra/v3/pkg/apis/shared"
+	"github.com/disaster37/operator-sdk-extra/v3/pkg/controller/multiphase"
 	routev1 "github.com/openshift/api/route/v1"
 	"github.com/sirupsen/logrus"
 	elasticsearchcrd "github.com/webcenter-fr/elasticsearch-operator/api/elasticsearch/v1"
+	"github.com/webcenter-fr/elasticsearch-operator/internal/controller/common"
 	corev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/types"
@@ -34,6 +35,7 @@ func newRouteReconciler(client client.Client, recorder record.EventRecorder) (mu
 			RoutePhase,
 			RouteCondition,
 			recorder,
+			common.FieldManager,
 		),
 	}
 }
@@ -82,6 +84,7 @@ func (r *routeReconciler) Read(ctx context.Context, o *elasticsearchcrd.Elastics
 	if err != nil {
 		return read, res, errors.Wrap(err, "Error when generate route")
 	}
+	common.InjectTypeMeta(r.Client().Scheme(), expectedRoutes...)
 	read.SetExpectedObjects(expectedRoutes)
 
 	return read, res, nil

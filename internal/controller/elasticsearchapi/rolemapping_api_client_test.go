@@ -3,8 +3,9 @@ package elasticsearchapi
 import (
 	"testing"
 
-	"github.com/disaster37/operator-sdk-extra/v2/pkg/apis"
-	olivere "github.com/olivere/elastic/v7"
+	esapi "github.com/disaster37/elasticsearch/v9/api"
+
+	"github.com/disaster37/operator-sdk-extra/v3/pkg/apis"
 	"github.com/stretchr/testify/assert"
 	elasticsearchapicrd "github.com/webcenter-fr/elasticsearch-operator/api/elasticsearchapi/v1"
 	"github.com/webcenter-fr/elasticsearch-operator/api/shared"
@@ -14,8 +15,8 @@ import (
 func TestRoleMappingBuild(t *testing.T) {
 	var (
 		o          *elasticsearchapicrd.RoleMapping
-		rm         *olivere.XPackSecurityRoleMapping
-		expectedRm *olivere.XPackSecurityRoleMapping
+		rm         *esapi.SecurityRoleMapping
+		expectedRm *esapi.SecurityRoleMapping
 		err        error
 	)
 
@@ -56,7 +57,7 @@ func TestRoleMappingBuild(t *testing.T) {
 		},
 	}
 
-	expectedRm = &olivere.XPackSecurityRoleMapping{
+	expectedRm = &esapi.SecurityRoleMapping{
 		Enabled: true,
 		Roles: []string{
 			"superuser",
@@ -122,7 +123,7 @@ func TestRoleMappingBuild(t *testing.T) {
 		},
 	}
 
-	expectedRm = &olivere.XPackSecurityRoleMapping{
+	expectedRm = &esapi.SecurityRoleMapping{
 		Enabled: true,
 		Roles: []string{
 			"superuser",

@@ -22,9 +22,9 @@ import (
 	"time"
 
 	"emperror.dev/errors"
-	"github.com/disaster37/operator-sdk-extra/v2/pkg/apis/shared"
-	"github.com/disaster37/operator-sdk-extra/v2/pkg/controller"
-	"github.com/disaster37/operator-sdk-extra/v2/pkg/controller/multiphase"
+	"github.com/disaster37/operator-sdk-extra/v3/pkg/apis/shared"
+	"github.com/disaster37/operator-sdk-extra/v3/pkg/controller"
+	"github.com/disaster37/operator-sdk-extra/v3/pkg/controller/multiphase"
 	"github.com/elastic/go-ucfg"
 	routev1 "github.com/openshift/api/route/v1"
 	monitoringv1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1"
@@ -85,30 +85,30 @@ func NewKibanaReconciler(c client.Client, logger *logrus.Entry, recorder record.
 		name:           name,
 		kubeCapability: kubeCapability,
 		stepReconcilers: []multiphase.MultiPhaseStepReconcilerAction[*kibanacrd.Kibana, client.Object]{
-			multiphase.NewObjectMultiPhaseStepReconcilerAction[*kibanacrd.Kibana, *corev1.ServiceAccount, client.Object](newServiceAccountReconciler(c, recorder, kubeCapability.HasRoute)),
-			multiphase.NewObjectMultiPhaseStepReconcilerAction[*kibanacrd.Kibana, *rbacv1.RoleBinding, client.Object](newRoleBindingReconciler(c, recorder, kubeCapability.HasRoute)),
-			multiphase.NewObjectMultiPhaseStepReconcilerAction[*kibanacrd.Kibana, *corev1.Secret, client.Object](newTlsReconciler(c, recorder)),
-			multiphase.NewObjectMultiPhaseStepReconcilerAction[*kibanacrd.Kibana, *corev1.Secret, client.Object](newCAElasticsearchReconciler(c, recorder)),
-			multiphase.NewObjectMultiPhaseStepReconcilerAction[*kibanacrd.Kibana, *corev1.Secret, client.Object](newCredentialReconciler(c, recorder)),
-			multiphase.NewObjectMultiPhaseStepReconcilerAction[*kibanacrd.Kibana, *corev1.ConfigMap, client.Object](newConfiMapReconciler(c, recorder)),
-			multiphase.NewObjectMultiPhaseStepReconcilerAction[*kibanacrd.Kibana, *corev1.Service, client.Object](newServiceReconciler(c, recorder)),
-			multiphase.NewObjectMultiPhaseStepReconcilerAction[*kibanacrd.Kibana, *policyv1.PodDisruptionBudget, client.Object](newPdbReconciler(c, recorder)),
-			multiphase.NewObjectMultiPhaseStepReconcilerAction[*kibanacrd.Kibana, *networkingv1.NetworkPolicy, client.Object](newNetworkPolicyReconciler(c, recorder)),
-			multiphase.NewObjectMultiPhaseStepReconcilerAction[*kibanacrd.Kibana, *appv1.Deployment, client.Object](newDeploymentReconciler(c, recorder, kubeCapability.HasRoute)),
-			multiphase.NewObjectMultiPhaseStepReconcilerAction[*kibanacrd.Kibana, *networkingv1.Ingress, client.Object](newIngressReconciler(c, recorder)),
-			multiphase.NewObjectMultiPhaseStepReconcilerAction[*kibanacrd.Kibana, *corev1.Service, client.Object](newLoadBalancerReconciler(c, recorder)),
-			multiphase.NewObjectMultiPhaseStepReconcilerAction[*kibanacrd.Kibana, *beatcrd.Metricbeat, client.Object](newMetricbeatReconciler(c, recorder)),
+			multiphase.As[*kibanacrd.Kibana, *corev1.ServiceAccount, client.Object](newServiceAccountReconciler(c, recorder, kubeCapability.HasRoute)),
+			multiphase.As[*kibanacrd.Kibana, *rbacv1.RoleBinding, client.Object](newRoleBindingReconciler(c, recorder, kubeCapability.HasRoute)),
+			newTlsReconciler(c, recorder),
+			multiphase.As[*kibanacrd.Kibana, *corev1.Secret, client.Object](newCAElasticsearchReconciler(c, recorder)),
+			multiphase.As[*kibanacrd.Kibana, *corev1.Secret, client.Object](newCredentialReconciler(c, recorder)),
+			multiphase.As[*kibanacrd.Kibana, *corev1.ConfigMap, client.Object](newConfiMapReconciler(c, recorder)),
+			multiphase.As[*kibanacrd.Kibana, *corev1.Service, client.Object](newServiceReconciler(c, recorder)),
+			multiphase.As[*kibanacrd.Kibana, *policyv1.PodDisruptionBudget, client.Object](newPdbReconciler(c, recorder)),
+			multiphase.As[*kibanacrd.Kibana, *networkingv1.NetworkPolicy, client.Object](newNetworkPolicyReconciler(c, recorder)),
+			multiphase.As[*kibanacrd.Kibana, *appv1.Deployment, client.Object](newDeploymentReconciler(c, recorder, kubeCapability.HasRoute)),
+			multiphase.As[*kibanacrd.Kibana, *networkingv1.Ingress, client.Object](newIngressReconciler(c, recorder)),
+			multiphase.As[*kibanacrd.Kibana, *corev1.Service, client.Object](newLoadBalancerReconciler(c, recorder)),
+			multiphase.As[*kibanacrd.Kibana, *beatcrd.Metricbeat, client.Object](newMetricbeatReconciler(c, recorder)),
 		},
 	}
 
 	// Add Pod monitor reconciler is CRD exist on cluster
 	if kubeCapability.HasPrometheus {
-		reconciler.stepReconcilers = append(reconciler.stepReconcilers, multiphase.NewObjectMultiPhaseStepReconcilerAction[*kibanacrd.Kibana, *monitoringv1.PodMonitor, client.Object](newPodMonitorReconciler(c, recorder)))
+		reconciler.stepReconcilers = append(reconciler.stepReconcilers, multiphase.As[*kibanacrd.Kibana, *monitoringv1.PodMonitor, client.Object](newPodMonitorReconciler(c, recorder)))
 	}
 
 	// Add route reconciler if CRD exist on cluster
 	if kubeCapability.HasRoute {
-		reconciler.stepReconcilers = append(reconciler.stepReconcilers, multiphase.NewObjectMultiPhaseStepReconcilerAction[*kibanacrd.Kibana, *routev1.Route, client.Object](newRouteReconciler(c, recorder)))
+		reconciler.stepReconcilers = append(reconciler.stepReconcilers, multiphase.As[*kibanacrd.Kibana, *routev1.Route, client.Object](newRouteReconciler(c, recorder)))
 	}
 
 	return reconciler
@@ -176,7 +176,7 @@ func (h *KibanaReconciler) SetupWithManager(mgr ctrl.Manager) error {
 		Watches(&corev1.ConfigMap{}, handler.EnqueueRequestsFromMapFunc(watchConfigMap(h.Client()))).
 		Watches(&elasticsearchcrd.Elasticsearch{}, handler.EnqueueRequestsFromMapFunc(watchElasticsearch(h.Client()))).
 		WithOptions(k8scontroller.Options{
-			RateLimiter: controller.DefaultControllerRateLimiter[reconcile.Request](),
+			RateLimiter: common.DefaultControllerRateLimiter(),
 		})
 
 	if h.kubeCapability.HasRoute {

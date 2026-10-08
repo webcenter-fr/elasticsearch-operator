@@ -16,12 +16,13 @@ package elasticsearchapi
 import (
 	"context"
 
-	eshandler "github.com/disaster37/es-handler/v8"
-	"github.com/disaster37/operator-sdk-extra/v2/pkg/controller"
-	"github.com/disaster37/operator-sdk-extra/v2/pkg/controller/remote"
-	olivere "github.com/olivere/elastic/v7"
+	esapi "github.com/disaster37/elasticsearch/v9/api"
+	eshandler "github.com/disaster37/es-handler/v9"
+	"github.com/disaster37/operator-sdk-extra/v3/pkg/controller"
+	"github.com/disaster37/operator-sdk-extra/v3/pkg/controller/remote"
 	"github.com/sirupsen/logrus"
 	elasticsearchapicrd "github.com/webcenter-fr/elasticsearch-operator/api/elasticsearchapi/v1"
+	"github.com/webcenter-fr/elasticsearch-operator/internal/controller/common"
 	"k8s.io/client-go/tools/record"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -36,15 +37,15 @@ const (
 // IndexLifecyclePolicyReconciler reconciles a IndexLifecyclePolicy object
 type IndexLifecyclePolicyReconciler struct {
 	controller.Controller
-	remote.RemoteReconciler[*elasticsearchapicrd.IndexLifecyclePolicy, *olivere.XPackIlmGetLifecycleResponse, eshandler.ElasticsearchHandler]
-	remote.RemoteReconcilerAction[*elasticsearchapicrd.IndexLifecyclePolicy, *olivere.XPackIlmGetLifecycleResponse, eshandler.ElasticsearchHandler]
+	remote.RemoteReconciler[*elasticsearchapicrd.IndexLifecyclePolicy, *esapi.IlmPolicy, eshandler.ElasticsearchHandler]
+	remote.RemoteReconcilerAction[*elasticsearchapicrd.IndexLifecyclePolicy, *esapi.IlmPolicy, eshandler.ElasticsearchHandler]
 	name string
 }
 
 func NewIndexLifecyclePolicyReconciler(client client.Client, logger *logrus.Entry, recorder record.EventRecorder) controller.Controller {
 	return &IndexLifecyclePolicyReconciler{
 		Controller: controller.NewController(),
-		RemoteReconciler: remote.NewRemoteReconciler[*elasticsearchapicrd.IndexLifecyclePolicy, *olivere.XPackIlmGetLifecycleResponse, eshandler.ElasticsearchHandler](
+		RemoteReconciler: remote.NewRemoteReconciler[*elasticsearchapicrd.IndexLifecyclePolicy, *esapi.IlmPolicy, eshandler.ElasticsearchHandler](
 			client,
 			indexLifecyclePolicyName,
 			"ilm.elasticsearchapi.k8s.webcenter.fr/finalizer",
@@ -93,7 +94,7 @@ func (r *IndexLifecyclePolicyReconciler) SetupWithManager(mgr ctrl.Manager) erro
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&elasticsearchapicrd.IndexLifecyclePolicy{}).
 		WithOptions(k8scontroller.Options{
-			RateLimiter: controller.DefaultControllerRateLimiter[reconcile.Request](),
+			RateLimiter: common.DefaultControllerRateLimiter(),
 		}).
 		Complete(r)
 }

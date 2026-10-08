@@ -1,7 +1,8 @@
 package v1
 
 import (
-	"github.com/disaster37/operator-sdk-extra/v2/pkg/object"
+	"github.com/disaster37/operator-sdk-extra/v3/pkg/apis/workflow"
+	"github.com/disaster37/operator-sdk-extra/v3/pkg/object"
 	"k8s.io/apimachinery/pkg/util/validation/field"
 )
 
@@ -54,4 +55,9 @@ func (h FilebeatPkiSpec) IsEnabled() bool {
 		return true
 	}
 	return false
+}
+
+// GetWorkflowStatus implement the workflow.WorkflowStatusGetter interface
+func (s *FilebeatStatus) GetWorkflowStatus() *workflow.WorkflowStatus {
+	return &s.TlsWorkflowStatus
 }

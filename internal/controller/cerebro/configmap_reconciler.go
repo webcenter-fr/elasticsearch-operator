@@ -5,11 +5,12 @@ import (
 	"fmt"
 
 	"emperror.dev/errors"
-	"github.com/disaster37/operator-sdk-extra/v2/pkg/apis/shared"
-	"github.com/disaster37/operator-sdk-extra/v2/pkg/controller/multiphase"
+	"github.com/disaster37/operator-sdk-extra/v3/pkg/apis/shared"
+	"github.com/disaster37/operator-sdk-extra/v3/pkg/controller/multiphase"
 	"github.com/sirupsen/logrus"
 	cerebrocrd "github.com/webcenter-fr/elasticsearch-operator/api/cerebro/v1"
 	elasticsearchcrd "github.com/webcenter-fr/elasticsearch-operator/api/elasticsearch/v1"
+	"github.com/webcenter-fr/elasticsearch-operator/internal/controller/common"
 	corev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/fields"
@@ -36,6 +37,7 @@ func newConfiMapReconciler(client client.Client, recorder record.EventRecorder) 
 			ConfigmapPhase,
 			ConfigmapCondition,
 			recorder,
+			common.FieldManager,
 		),
 	}
 }
@@ -117,6 +119,7 @@ func (r *configMapReconciler) Read(ctx context.Context, o *cerebrocrd.Cerebro, d
 	if err != nil {
 		return read, res, errors.Wrap(err, "Error when generate config maps")
 	}
+	common.InjectTypeMeta(r.Client().Scheme(), expectedCms...)
 	read.SetExpectedObjects(expectedCms)
 
 	return read, res, nil

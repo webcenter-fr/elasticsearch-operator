@@ -5,11 +5,12 @@ import (
 	"fmt"
 
 	"emperror.dev/errors"
-	"github.com/disaster37/operator-sdk-extra/v2/pkg/apis/shared"
-	"github.com/disaster37/operator-sdk-extra/v2/pkg/controller/multiphase"
-	"github.com/disaster37/operator-sdk-extra/v2/pkg/helper"
+	"github.com/disaster37/operator-sdk-extra/v3/pkg/apis/shared"
+	"github.com/disaster37/operator-sdk-extra/v3/pkg/controller/multiphase"
+	"github.com/disaster37/operator-sdk-extra/v3/pkg/helper"
 	"github.com/sirupsen/logrus"
 	beatcrd "github.com/webcenter-fr/elasticsearch-operator/api/beat/v1"
+	"github.com/webcenter-fr/elasticsearch-operator/internal/controller/common"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/client-go/tools/record"
@@ -33,6 +34,7 @@ func newServiceReconciler(client client.Client, recorder record.EventRecorder) (
 			ServicePhase,
 			ServiceCondition,
 			recorder,
+			common.FieldManager,
 		),
 	}
 }
@@ -57,6 +59,7 @@ func (r *serviceReconciler) Read(ctx context.Context, o *beatcrd.Metricbeat, dat
 	if err != nil {
 		return read, res, errors.Wrap(err, "Error when generate service")
 	}
+	common.InjectTypeMeta(r.Client().Scheme(), expectedServices...)
 	read.SetExpectedObjects(expectedServices)
 
 	return read, res, nil

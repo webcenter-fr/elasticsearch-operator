@@ -19,15 +19,14 @@ package v1
 import (
 	"context"
 
-	"emperror.dev/errors"
-	"github.com/disaster37/operator-sdk-extra/v2/pkg/controller"
+	"github.com/disaster37/operator-sdk-extra/v3/pkg/controller"
 	"github.com/sirupsen/logrus"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
-	"k8s.io/apimachinery/pkg/runtime"
+
 	"k8s.io/apimachinery/pkg/util/validation/field"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/controller-runtime/pkg/webhook"
+
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 )
 
@@ -39,8 +38,7 @@ type hostValidator struct {
 // SetupWebhookWithManager will setup the manager to manage the webhooks
 func SetupHostWebhookWithManager(logger *logrus.Entry) controller.WebhookRegister {
 	return func(mgr ctrl.Manager, client client.Client) error {
-		return ctrl.NewWebhookManagedBy(mgr).
-			For(&Host{}).
+		return ctrl.NewWebhookManagedBy(mgr, &Host{}).
 			WithValidator(&hostValidator{
 				logger: logger.WithField("webhook", "cerebroHostValidator"),
 				client: client,
@@ -51,53 +49,43 @@ func SetupHostWebhookWithManager(logger *logrus.Entry) controller.WebhookRegiste
 
 //+kubebuilder:webhook:path=/validate-cerebro-k8s-webcenter-fr-v1-host,mutating=false,failurePolicy=fail,sideEffects=None,groups=cerebro.k8s.webcenter.fr,resources=hosts,verbs=create;update,versions=v1,name=host.cerebro.k8s.webcenter.fr,admissionReviewVersions=v1
 
-var _ webhook.CustomValidator = &hostValidator{}
+var _ admission.Validator[*Host] = &hostValidator{}
 
 // ValidateCreate implements webhook.Validator so a webhook will be registered for the type
-func (r *hostValidator) ValidateCreate(ctx context.Context, obj runtime.Object) (admission.Warnings, error) {
+func (r *hostValidator) ValidateCreate(ctx context.Context, obj *Host) (admission.Warnings, error) {
 	var allErrs field.ErrorList
 
-	hostObj, ok := obj.(*Host)
-	if !ok {
-		return nil, errors.Errorf("expected a Host object but got %T", obj)
-	}
-
-	if err := hostObj.Spec.ElasticsearchRef.ValidateField(); err != nil {
+	if err := obj.Spec.ElasticsearchRef.ValidateField(); err != nil {
 		allErrs = append(allErrs, err)
 	}
 
 	if len(allErrs) > 0 {
 		return nil, apierrors.NewInvalid(
-			hostObj.GroupVersionKind().GroupKind(),
-			hostObj.Name, allErrs)
+			obj.GroupVersionKind().GroupKind(),
+			obj.Name, allErrs)
 	}
 
 	return nil, nil
 }
 
 // ValidateUpdate implements webhook.Validator so a webhook will be registered for the type
-func (r *hostValidator) ValidateUpdate(ctx context.Context, oldObj runtime.Object, newObj runtime.Object) (admission.Warnings, error) {
+func (r *hostValidator) ValidateUpdate(ctx context.Context, oldObj *Host, newObj *Host) (admission.Warnings, error) {
 	var allErrs field.ErrorList
 
-	hostObj, ok := newObj.(*Host)
-	if !ok {
-		return nil, errors.Errorf("expected a Host object but got %T", newObj)
-	}
-
-	if err := hostObj.Spec.ElasticsearchRef.ValidateField(); err != nil {
+	if err := newObj.Spec.ElasticsearchRef.ValidateField(); err != nil {
 		allErrs = append(allErrs, err)
 	}
 
 	if len(allErrs) > 0 {
 		return nil, apierrors.NewInvalid(
-			hostObj.GroupVersionKind().GroupKind(),
-			hostObj.Name, allErrs)
+			newObj.GroupVersionKind().GroupKind(),
+			newObj.Name, allErrs)
 	}
 
 	return nil, nil
 }
 
 // ValidateDelete implements webhook.Validator so a webhook will be registered for the type
-func (r *hostValidator) ValidateDelete(ctx context.Context, obj runtime.Object) (admission.Warnings, error) {
+func (r *hostValidator) ValidateDelete(ctx context.Context, obj *Host) (admission.Warnings, error) {
 	return nil, nil
 }

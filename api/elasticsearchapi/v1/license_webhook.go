@@ -21,15 +21,15 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/disaster37/operator-sdk-extra/v2/pkg/controller"
+	"github.com/disaster37/operator-sdk-extra/v3/pkg/controller"
 	"github.com/sirupsen/logrus"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/fields"
-	"k8s.io/apimachinery/pkg/runtime"
+
 	"k8s.io/apimachinery/pkg/util/validation/field"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/controller-runtime/pkg/webhook"
+
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 )
 
@@ -41,8 +41,7 @@ type licenseValidator struct {
 // SetupWebhookWithManager will setup the manager to manage the webhooks
 func SetupLicenseWebhookWithManager(logger *logrus.Entry) controller.WebhookRegister {
 	return func(mgr ctrl.Manager, client client.Client) error {
-		return ctrl.NewWebhookManagedBy(mgr).
-			For(&License{}).
+		return ctrl.NewWebhookManagedBy(mgr, &License{}).
 			WithValidator(&licenseValidator{
 				logger: logger.WithField("webhook", "licenseValidator"),
 				client: client,
@@ -53,7 +52,7 @@ func SetupLicenseWebhookWithManager(logger *logrus.Entry) controller.WebhookRegi
 
 // +kubebuilder:webhook:path=/validate-elasticsearchapi-k8s-webcenter-fr-v1-license,mutating=false,failurePolicy=fail,sideEffects=None,groups=elasticsearchapi.k8s.webcenter.fr,resources=licenses,verbs=create;update,versions=v1,name=license.elasticsearchapi.k8s.webcenter.fr,admissionReviewVersions=v1
 
-var _ webhook.CustomValidator = &licenseValidator{}
+var _ admission.Validator[*License] = &licenseValidator{}
 
 func (r *licenseValidator) validateBasicOrLicense(obj *License) *field.Error {
 	if obj.IsBasicLicense() {
@@ -95,73 +94,64 @@ func (r *licenseValidator) validateResourceUnicity(obj *License) *field.Error {
 }
 
 // ValidateCreate implements webhook.Validator so a webhook will be registered for the type
-func (r *licenseValidator) ValidateCreate(ctx context.Context, obj runtime.Object) (admission.Warnings, error) {
+func (r *licenseValidator) ValidateCreate(ctx context.Context, obj *License) (admission.Warnings, error) {
 	var allErrs field.ErrorList
 
-	licenseObj, ok := obj.(*License)
-	if !ok {
-		return nil, fmt.Errorf("expected a License object but got %T", obj)
-	}
-	r.logger.Debugf("validate create %s/%s", licenseObj.GetNamespace(), licenseObj.GetName())
+	r.logger.Debugf("validate create %s/%s", obj.GetNamespace(), obj.GetName())
 
-	if err := licenseObj.Spec.ElasticsearchRef.ValidateField(); err != nil {
+	if err := obj.Spec.ElasticsearchRef.ValidateField(); err != nil {
 		allErrs = append(allErrs, err)
 	}
 
-	if err := r.validateBasicOrLicense(licenseObj); err != nil {
+	if err := r.validateBasicOrLicense(obj); err != nil {
 		allErrs = append(allErrs, err)
 	}
 
-	if err := r.validateResourceUnicity(licenseObj); err != nil {
+	if err := r.validateResourceUnicity(obj); err != nil {
 		allErrs = append(allErrs, err)
 	}
 
 	if len(allErrs) > 0 {
 		return nil, apierrors.NewInvalid(
-			licenseObj.GroupVersionKind().GroupKind(),
-			licenseObj.Name, allErrs)
+			obj.GroupVersionKind().GroupKind(),
+			obj.Name, allErrs)
 	}
 
 	return nil, nil
 }
 
 // ValidateUpdate implements webhook.Validator so a webhook will be registered for the type
-func (r *licenseValidator) ValidateUpdate(ctx context.Context, oldObj runtime.Object, newObj runtime.Object) (admission.Warnings, error) {
+func (r *licenseValidator) ValidateUpdate(ctx context.Context, oldObj *License, newObj *License) (admission.Warnings, error) {
 	var allErrs field.ErrorList
-	oldO := oldObj.(*License)
 
-	licenseObj, ok := newObj.(*License)
-	if !ok {
-		return nil, fmt.Errorf("expected a License object but got %T", newObj)
-	}
-	r.logger.Debugf("validate update %s/%s", licenseObj.Namespace, licenseObj.Name)
+	r.logger.Debugf("validate update %s/%s", newObj.Namespace, newObj.Name)
 
-	if err := licenseObj.Spec.ElasticsearchRef.ValidateField(); err != nil {
+	if err := newObj.Spec.ElasticsearchRef.ValidateField(); err != nil {
 		allErrs = append(allErrs, err)
 	}
 
-	if err := validateImmutableName(licenseObj, oldO); err != nil {
+	if err := validateImmutableName(newObj, oldObj); err != nil {
 		allErrs = append(allErrs, err)
 	}
 
-	if err := r.validateBasicOrLicense(licenseObj); err != nil {
+	if err := r.validateBasicOrLicense(newObj); err != nil {
 		allErrs = append(allErrs, err)
 	}
 
-	if err := r.validateResourceUnicity(licenseObj); err != nil {
+	if err := r.validateResourceUnicity(newObj); err != nil {
 		allErrs = append(allErrs, err)
 	}
 
 	if len(allErrs) > 0 {
 		return nil, apierrors.NewInvalid(
-			licenseObj.GroupVersionKind().GroupKind(),
-			licenseObj.Name, allErrs)
+			newObj.GroupVersionKind().GroupKind(),
+			newObj.Name, allErrs)
 	}
 
 	return nil, nil
 }
 
 // ValidateDelete implements webhook.Validator so a webhook will be registered for the type
-func (r *licenseValidator) ValidateDelete(ctx context.Context, obj runtime.Object) (admission.Warnings, error) {
+func (r *licenseValidator) ValidateDelete(ctx context.Context, obj *License) (admission.Warnings, error) {
 	return nil, nil
 }

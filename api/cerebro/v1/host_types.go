@@ -17,7 +17,7 @@ limitations under the License.
 package v1
 
 import (
-	"github.com/disaster37/operator-sdk-extra/v2/pkg/apis/multiphase"
+	"github.com/disaster37/operator-sdk-extra/v3/pkg/apis/multiphase"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -107,8 +107,4 @@ type HostList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`
 	Items           []Host `json:"items"`
-}
-
-func init() {
-	SchemeBuilder.Register(&Host{}, &HostList{})
 }
