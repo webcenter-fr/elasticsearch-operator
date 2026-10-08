@@ -38,6 +38,7 @@ import (
 	"k8s.io/utils/ptr"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/cache"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/config"
 	"sigs.k8s.io/controller-runtime/pkg/healthz"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
@@ -61,6 +62,7 @@ import (
 	kibanaapicontrollers "github.com/webcenter-fr/elasticsearch-operator/internal/controller/kibanaapi"
 	logstashcontrollers "github.com/webcenter-fr/elasticsearch-operator/internal/controller/logstash"
 	metricbeatcontrollers "github.com/webcenter-fr/elasticsearch-operator/internal/controller/metricbeat"
+	localhelper "github.com/webcenter-fr/elasticsearch-operator/pkg/helper"
 	//+kubebuilder:scaffold:imports
 )
 
@@ -271,6 +273,33 @@ func main() {
 			kibanaapicrd.SetupUserSpaceWebhookWithManager(logrus.NewEntry(log)),
 		); err != nil {
 			setupLog.Error(err, "unable to add webhooks", "webhook", "All")
+			os.Exit(1)
+		}
+
+		// Add NetworkPolicy for webhook (OCP/apiserver must reach TCP 9443).
+		cl, err := client.New(cfg, client.Options{Scheme: scheme})
+		if err != nil {
+			setupLog.Error(err, "unable to create client for webhook networkPolicy")
+			os.Exit(1)
+		}
+		namespace, err := localhelper.GetOperatorNamespace()
+		if err != nil {
+			setupLog.Error(err, "unable to get operator namespace", "namespace", "POD_NAMESPACE")
+			os.Exit(1)
+		}
+		if err = controller.EnsureNetworkPolicyForWebhook(
+			context.Background(),
+			cl,
+			logrus.NewEntry(log),
+			namespace,
+			map[string]string{
+				"app.kubernetes.io/name": "elasticsearch-operator",
+			},
+			map[string]string{
+				"control-plane": "elasticsearch-operator",
+			},
+		); err != nil {
+			setupLog.Error(err, "unable to create networkPolicy", "controller", "core")
 			os.Exit(1)
 		}
 	}
