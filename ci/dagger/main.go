@@ -76,6 +76,181 @@ func New(
 	}
 }
 
+// k3sEntrypoint setup the cgroup nesting because k3s only does it when running
+// as PID 1, which doesn't happen in Dagger given that we're using our custom
+// shim.
+// Copied from https://github.com/moby/moby/blob/ed89041433a031cafc0a0f19cfe573c31688d377/hack/dind#L28-L37
+const k3sEntrypoint = `#!/bin/sh
+
+set -o errexit
+set -o nounset
+
+if [ -f /sys/fs/cgroup/cgroup.controllers ]; then
+  echo "[$(date -Iseconds)] [CgroupV2 Fix] Evacuating Root Cgroup ..."
+  # move the processes from the root group to the /init group,
+  # otherwise writing subtree_control fails with EBUSY.
+  mkdir -p /sys/fs/cgroup/init
+  xargs -rn1 < /sys/fs/cgroup/cgroup.procs > /sys/fs/cgroup/init/cgroup.procs || :
+  # enable controllers
+  sed -e 's/ / +/g' -e 's/^/+/' <"/sys/fs/cgroup/cgroup.controllers" >"/sys/fs/cgroup/cgroup.subtree_control"
+  echo "[$(date -Iseconds)] [CgroupV2 Fix] Done"
+fi
+
+exec "$@"
+`
+
+// TestOlmOperator start a k3s cluster, install OLM on it and deploy the
+// operator using the given catalog image.
+// It return the kube service and the kubeconfig file.
+func (h *ElasticsearchOperator) testOlmOperator(
+	ctx context.Context,
+
+	// The catalog image to install
+	// +required
+	catalogImage string,
+
+	// The operator name
+	// +required
+	name string,
+
+	// The channel of the operator to install
+	// +optional
+	channel string,
+) (*dagger.Service, *dagger.File, error) {
+	if channel == "" {
+		channel = "stable"
+	}
+
+	// Build the k3s server container. The containerd data and the kubelet
+	// state are mounted on cache volumes (disk) instead of tmpfs because the
+	// OLM catalog images are too large for a tmpfs mount on the runner: the
+	// containerd process get killed and the cluster dies.
+	configCache := dag.CacheVolume(fmt.Sprintf("k3s_config_%s", name))
+	k3sCtr := dag.Container().
+		From("rancher/k3s:v1.34.3-k3s1").
+		WithNewFile("/usr/bin/entrypoint.sh", k3sEntrypoint, dagger.ContainerWithNewFileOpts{
+			Permissions: 0o755,
+		}).
+		WithEntrypoint([]string{"entrypoint.sh"}).
+		WithMountedCache("/etc/rancher/k3s", configCache).
+		WithMountedCache("/var/lib/rancher/k3s", dag.CacheVolume(fmt.Sprintf("k3s_data_%s", name))).
+		WithMountedCache("/var/lib/kubelet", dag.CacheVolume(fmt.Sprintf("k3s_kubelet_%s", name))).
+		WithMountedTemp("/var/log").
+		WithExec([]string{"sh", "-c", `
+cat <<EOF > /etc/rancher/k3s/registries.yaml
+configs:
+  "*":
+    tls:
+      insecure_skip_verify: true
+EOF`}).
+		WithExposedPort(6443)
+
+	service := k3sCtr.AsService(dagger.ContainerAsServiceOpts{
+		UseEntrypoint: true,
+		Args: []string{
+			"sh", "-c",
+			"k3s server --bind-address $(ip route | grep src | awk '{print $NF}') --disable traefik --disable metrics-server --egress-selector-mode=disabled --cluster-cidr=10.44.0.0/16 --service-cidr=10.45.0.0/16",
+		},
+		InsecureRootCapabilities: true,
+	})
+
+	// Get the kubeconfig from the config cache. Wait until the k3s server
+	// wrote it.
+	kubeconfig := dag.Container().
+		From("alpine").
+		WithMountedCache("/cache/k3s", configCache).
+		WithExec([]string{"sh", "-c", "n=0; until [ -f /cache/k3s/k3s.yaml ] || [ $n -ge 180 ]; do sleep 1; n=$((n+1)); done; cp /cache/k3s/k3s.yaml /kubeconfig.yaml"}).
+		File("/kubeconfig.yaml")
+
+	if _, err := service.Start(ctx); err != nil {
+		return nil, nil, errors.Wrap(err, "Error when start k3s cluster")
+	}
+
+	// Kubectl container
+	kubectl := dag.Container().
+		From("bitnami/kubectl").
+		WithoutEntrypoint().
+		WithFile("/.kube/config", kubeconfig, dagger.ContainerWithFileOpts{Owner: "1001"}).
+		WithUser("1001")
+
+	// Wait that kube is ready
+	if _, err := kubectl.
+		WithExec([]string{"sh", "-c", "n=0; until kubectl get --raw /readyz >/dev/null 2>&1 || [ $n -ge 240 ]; do sleep 1; n=$((n+1)); done; kubectl get --raw /readyz"}).
+		Stdout(ctx); err != nil {
+		return nil, nil, errors.Wrap(err, "Error when wait k3s cluster ready")
+	}
+
+	// Install OLM
+	if _, err := h.SDK().Container().
+		WithFile("/kubeconfig", kubeconfig).
+		WithEnvVariable("KUBECONFIG", "/kubeconfig").
+		WithExec(helper.ForgeCommand("operator-sdk olm install")).
+		Stdout(ctx); err != nil {
+		return nil, nil, errors.Wrap(err, "Error when install OLM")
+	}
+
+	// Install Prometheus CRD needed by the operator
+	if _, err := kubectl.
+		WithExec([]string{"kubectl", "apply", "--server-side=true", "-f", "https://raw.githubusercontent.com/prometheus-community/helm-charts/refs/heads/main/charts/kube-prometheus-stack/charts/crds/crds/crd-servicemonitors.yaml"}).
+		WithExec([]string{"kubectl", "apply", "--server-side=true", "-f", "https://raw.githubusercontent.com/prometheus-community/helm-charts/refs/heads/main/charts/kube-prometheus-stack/charts/crds/crds/crd-podmonitors.yaml"}).
+		Stdout(ctx); err != nil {
+		return nil, nil, errors.Wrap(err, "Error when install ServiceMonitor / PodMonitor CRD")
+	}
+
+	catalogYaml := fmt.Sprintf(`apiVersion: operators.coreos.com/v1alpha1
+kind: CatalogSource
+metadata:
+  name: test
+  namespace: olm
+spec:
+  sourceType: grpc
+  image: %s
+`, catalogImage)
+
+	subscriptionYaml := fmt.Sprintf(`apiVersion: operators.coreos.com/v1alpha1
+kind: Subscription
+metadata:
+  name: test
+  namespace: operators
+spec:
+  catalogSource: test
+  catalogSourceNamespace: olm
+  channel: %s
+  installPlanApproval: Automatic
+  package: %s
+`, channel, name)
+
+	// Install catalog and subscription
+	if _, err := kubectl.
+		WithNewFile("/tmp/catalog.yaml", catalogYaml).
+		WithNewFile("/tmp/subscription.yaml", subscriptionYaml).
+		WithExec([]string{"kubectl", "apply", "--server-side=true", "-f", "/tmp/catalog.yaml"}).
+		WithExec([]string{"kubectl", "apply", "--server-side=true", "-f", "/tmp/subscription.yaml"}).
+		Stdout(ctx); err != nil {
+		return nil, nil, errors.Wrap(err, "Error when install catalog and subscription")
+	}
+
+	// Wait the time it install OLM operator
+	kubeCtn := kubectl.WithExec([]string{"sleep", "120"})
+
+	// Get some trace to troubleshooting if needed
+	_, _ = kubeCtn.
+		WithExec([]string{"kubectl", "-n", "olm", "get", "pods"}).
+		WithExec([]string{"kubectl", "-n", "olm", "describe", "catalogSource", "test"}).
+		WithExec([]string{"kubectl", "-n", "operators", "describe", "subscription", "test"}).
+		WithExec([]string{"kubectl", "-n", "operators", "describe", "installplan"}).
+		WithExec([]string{"kubectl", "-n", "operators", "describe", "clusterServiceVersion"}).
+		WithExec([]string{"kubectl", "-n", "operators", "get", "all"}).
+		Stdout(ctx)
+
+	// Check that the deployment operator is ready
+	if _, err := kubeCtn.WithExec([]string{"kubectl", "-n", "operators", "wait", "--for=condition=Available=True", "--all", "deployment", "--timeout=120s"}).Stdout(ctx); err != nil {
+		return nil, nil, errors.Wrap(err, "Operator not ready")
+	}
+
+	return service, kubeconfig, nil
+}
+
 func (h *ElasticsearchOperator) Test(
 	ctx context.Context,
 	// if only short running tests should be executed
@@ -249,18 +424,25 @@ func (h *ElasticsearchOperator) CI(
 		if err != nil {
 			return nil, errors.Wrap(err, "Error when get catalog name")
 		}
-		service := h.OperatorSDK.TestOlmOperator(
+		service, kubeconfig, err := h.testOlmOperator(
+			ctx,
 			fmt.Sprintf("%s:%s", catalogName, version),
 			name,
-			dagger.OperatorSDKTestOlmOperatorOpts{
-				Channel: strings.TrimSpace(strings.Split(channels, ",")[0]),
-			},
+			strings.TrimSpace(strings.Split(channels, ",")[0]),
 		)
+		if err != nil {
+			return nil, errors.Wrap(err, "Error when test OLM operator")
+		}
 		defer service.Stop(ctx)
 
-		// Deploy Elasticsearch operator to look
-		kubeCtr := h.OperatorSDK.Kube().Kubectl().
-			WithServiceBinding("kube.svc", service)
+		// Deploy Elasticsearch cluster to test the operator
+		kubeCtr := dag.Container().
+			From("bitnami/kubectl").
+			WithoutEntrypoint().
+			WithFile("/.kube/config", kubeconfig, dagger.ContainerWithFileOpts{Owner: "1001"}).
+			WithUser("1001").
+			WithDirectory("/src", dir).
+			WithWorkdir("/src")
 
 		_, err = kubeCtr.
 			WithExec(helper.ForgeCommand("kubectl apply -n default --server-side=true -f config/samples/elasticsearch_v1_elasticsearch.yaml")).
