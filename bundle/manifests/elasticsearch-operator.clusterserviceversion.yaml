@@ -247,7 +247,7 @@ metadata:
                 }
               }
             },
-            "version": "0.9.4"
+            "version": "v0.1.0"
           }
         },
         {
@@ -863,10 +863,10 @@ metadata:
         }
       ]
     capabilities: Basic Install
-    createdAt: "2025-08-06T12:52:43Z"
-    operators.operatorframework.io/builder: operator-sdk-v1.41.1
+    createdAt: "2026-10-08T13:32:36Z"
+    operators.operatorframework.io/builder: operator-sdk-v1.42.3
     operators.operatorframework.io/project_layout: go.kubebuilder.io/v4
-  name: elasticsearch-operator.v1.0.4-rc.395
+  name: elasticsearch-operator.v1.0.4-rc.417
   namespace: placeholder
 spec:
   apiservicedefinitions: {}
@@ -1262,6 +1262,11 @@ spec:
         displayName: Tls
         path: tls
       - description: |-
+          CaRenewalDays is the number of days before the CA certificate expires
+          at which the operator starts the CA rotation saga. Default 30.
+        displayName: Ca Renewal Days
+        path: tls.caRenewalDays
+      - description: |-
           CertificateSecretRef is the secret that store your custom certificates.
           It need to have the following keys: tls.key, tls.crt and optionally ca.crt
         displayName: Certificate Secret Ref
@@ -1272,8 +1277,17 @@ spec:
         displayName: Enabled
         path: tls.enabled
       - description: |-
+          KeyComplexity selects the private-key algorithm and strength:
+          rsa-2048 (default), rsa-4096, ecdsa-p256, ecdsa-p384, ecdsa-p521.
+          Empty => legacy KeySize applies (RSA, default 2048). Changing it triggers
+          a full CA rotation + staged cluster-wide rolling restart (no mixed
+          RSA/ECDSA cluster).
+        displayName: Key Complexity
+        path: tls.keyComplexity
+      - description: |-
           KeySize is the key size when generate privates keys
           Default to 2048
+          It is only honored when KeyComplexity is empty (deprecated in favor of KeyComplexity).
         displayName: Key Size
         path: tls.keySize
       - description: |-
@@ -2013,6 +2027,11 @@ spec:
         displayName: Tls
         path: tls
       - description: |-
+          CaRenewalDays is the number of days before the CA certificate expires
+          at which the operator starts the CA rotation saga. Default 30.
+        displayName: Ca Renewal Days
+        path: tls.caRenewalDays
+      - description: |-
           CertificateSecretRef is the secret that store your custom certificates.
           It need to have the following keys: tls.key, tls.crt and optionally ca.crt
         displayName: Certificate Secret Ref
@@ -2023,8 +2042,17 @@ spec:
         displayName: Enabled
         path: tls.enabled
       - description: |-
+          KeyComplexity selects the private-key algorithm and strength:
+          rsa-2048 (default), rsa-4096, ecdsa-p256, ecdsa-p384, ecdsa-p521.
+          Empty => legacy KeySize applies (RSA, default 2048). Changing it triggers
+          a full CA rotation + staged cluster-wide rolling restart (no mixed
+          RSA/ECDSA cluster).
+        displayName: Key Complexity
+        path: tls.keyComplexity
+      - description: |-
           KeySize is the key size when generate privates keys
           Default to 2048
+          It is only honored when KeyComplexity is empty (deprecated in favor of KeyComplexity).
         displayName: Key Size
         path: tls.keySize
       - description: |-
@@ -3567,7 +3595,7 @@ spec:
                   value: INFO
                 - name: LOG_FORMATTER
                   value: json
-                image: quay.io/webcenter/elasticsearch-operator:1.0.4-rc.395
+                image: quay.io/webcenter/elasticsearch-operator:1.0.4-rc.417
                 livenessProbe:
                   httpGet:
                     path: /healthz
@@ -3671,7 +3699,7 @@ spec:
     name: webcenter.fr
     url: https://github.com/webcenter-fr/elasticsearch-operator
   replaces: elasticsearch-operator.v0.0.48
-  version: 1.0.4-rc.395
+  version: 1.0.4-rc.417
   webhookdefinitions:
   - admissionReviewVersions:
     - v1
