@@ -213,11 +213,11 @@ metadata:
   name: test
   namespace: operators
 spec:
-  catalogSource: test
-  catalogSourceNamespace: olm
+  source: test
+  sourceNamespace: olm
   channel: %s
   installPlanApproval: Automatic
-  package: %s
+  name: %s
 `, channel, name)
 
 	// Install catalog and subscription
