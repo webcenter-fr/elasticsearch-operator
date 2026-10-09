@@ -460,6 +460,60 @@ fi
 		ptb.WithContainers([]corev1.Container{*cb.Container()}, k8sbuilder.Merge)
 
 		// Compute init containers
+		// suspend-check runs first: it blocks the pod in Init state when the
+		// pod name is listed in the suspended-pods ConfigMap (pod downtime
+		// feature, see elasticsearch.k8s.webcenter.fr/suspend annotation).
+		// The data volume is mounted read-only so `kubectl exec` can still
+		// access the PVC content while the pod is suspended.
+		scb := k8sbuilder.NewContainerBuilder().WithContainer(&corev1.Container{
+			Name:            SuspendInitContainerName,
+			Image:           "busybox:1.36",
+			ImagePullPolicy: es.Spec.ImagePullPolicy,
+			SecurityContext: &corev1.SecurityContext{
+				Capabilities: &corev1.Capabilities{
+					Drop: []corev1.Capability{
+						"ALL",
+					},
+				},
+				AllowPrivilegeEscalation: ptr.To(false),
+				Privileged:               ptr.To(false),
+				RunAsNonRoot:             ptr.To(true),
+				RunAsUser:                ptr.To[int64](1000),
+				RunAsGroup:               ptr.To[int64](1000),
+			},
+			Command: []string{"/bin/sh", "-c"},
+			Args: []string{
+				`while grep -qx "$HOSTNAME" /suspended/suspended_pods.txt 2>/dev/null; do
+  echo "Pod $HOSTNAME is suspended via ` + elasticsearchcrd.ElasticsearchSuspendAnnotation + ` annotation"
+  echo "Remove the pod name from the annotation to resume normal operation"
+  sleep 10
+done`,
+			},
+			Env: []corev1.EnvVar{
+				{
+					Name: "HOSTNAME",
+					ValueFrom: &corev1.EnvVarSource{
+						FieldRef: &corev1.ObjectFieldSelector{
+							FieldPath: "metadata.name",
+						},
+					},
+				},
+			},
+			VolumeMounts: []corev1.VolumeMount{
+				{
+					Name:      "suspended-pods",
+					MountPath: "/suspended",
+					ReadOnly:  true,
+				},
+				{
+					Name:      "elasticsearch-data",
+					MountPath: "/usr/share/elasticsearch/data",
+					ReadOnly:  true,
+				},
+			},
+		})
+		ptb.WithInitContainers([]corev1.Container{*scb.Container()}, k8sbuilder.Merge)
+
 		if es.Spec.SetVMMaxMapCount == nil || *es.Spec.SetVMMaxMapCount {
 			icb := k8sbuilder.NewContainerBuilder().WithContainer(&corev1.Container{
 				Name:            "configure-sysctl",
@@ -772,6 +826,19 @@ fi
 				Name: "plugin",
 				VolumeSource: corev1.VolumeSource{
 					EmptyDir: &corev1.EmptyDirVolumeSource{},
+				},
+			},
+			{
+				Name: "suspended-pods",
+				VolumeSource: corev1.VolumeSource{
+					ConfigMap: &corev1.ConfigMapVolumeSource{
+						LocalObjectReference: corev1.LocalObjectReference{
+							Name: GetSuspendedPodsConfigMapName(es),
+						},
+						// Optional: if the ConfigMap is missing, pods start
+						// normally instead of being stuck (fail-open).
+						Optional: ptr.To(true),
+					},
 				},
 			},
 		}, k8sbuilder.Merge)

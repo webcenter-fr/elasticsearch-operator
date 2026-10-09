@@ -46,6 +46,11 @@ func GetBootstrappingConfigMapName(elasticsearch *elasticsearchcrd.Elasticsearch
 	return fmt.Sprintf("%s-bootstrapping-es", elasticsearch.Name)
 }
 
+// GetSuspendedPodsConfigMapName permit to get the configMap name that store the suspended pod names
+func GetSuspendedPodsConfigMapName(elasticsearch *elasticsearchcrd.Elasticsearch) (configMapName string) {
+	return fmt.Sprintf("%s-suspended-pods-es", elasticsearch.Name)
+}
+
 // GetNodeGroupServiceName permit to get the service name for specified node group name
 func GetNodeGroupServiceName(elasticsearch *elasticsearchcrd.Elasticsearch, nodeGroupName string) (serviceName string) {
 	return GetNodeGroupName(elasticsearch, nodeGroupName)
@@ -169,6 +174,18 @@ func GetNodeGroupNameFromNodeName(nodeName string) (nodeGroupName string) {
 	}
 
 	return ""
+}
+
+// GetNodeGroupNameFromPodName permit to get the node group name from a pod name.
+// Pod names follow the pattern <es-name>-<nodeGroupName>-es-<ordinal>.
+func GetNodeGroupNameFromPodName(elasticsearch *elasticsearchcrd.Elasticsearch, podName string) (nodeGroupName string) {
+	stsName := GetNodeGroupNameFromNodeName(podName)
+	prefix := fmt.Sprintf("%s-", elasticsearch.Name)
+	if !strings.HasPrefix(stsName, prefix) {
+		return ""
+	}
+
+	return strings.TrimSuffix(strings.TrimPrefix(stsName, prefix), "-es")
 }
 
 // isMasterRole return true if nodegroup have `cluster_manager` role

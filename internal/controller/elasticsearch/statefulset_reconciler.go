@@ -393,13 +393,20 @@ func (r *statefulsetReconciler) Diff(ctx context.Context, o *elasticsearchcrd.El
 			}
 
 			if data["phase"] != StatefulsetPhaseUpgrade {
-				// We need to enable balancing before upgrade
+				// The rolling upgrade is finished: complete the rolling restart
+				// (re-enable shard allocation and rebalancing with transient
+				// settings, or clean up node shutdown requests).
 				// We need to retry if error. We can't stay cluster on this state
 				if esHandler == nil {
 					return diff, res, errors.New("Elasticsearch handler is nil. We need to get it before continue to have ability to re activate balancing")
 				}
-				if err = esHandler.EnableRoutingRebalance(); err != nil {
-					return diff, res, errors.Wrap(err, "Error when enable routing rebalance")
+				orchestrator, err := NewRollingRestartOrchestrator(esHandler, r.Client(), logger)
+				if err != nil {
+					return diff, res, errors.Wrap(err, "Error when create rolling restart orchestrator")
+				}
+				logger.Info("=== Rolling Upgrade Completed: completing rolling restart ===")
+				if err = orchestrator.CompleteRollingRestart(ctx); err != nil {
+					return diff, res, errors.Wrap(err, "Error when complete rolling restart")
 				}
 				data["phase"] = StatefulsetPhaseUpgradeFinished
 			}
@@ -415,18 +422,37 @@ func (r *statefulsetReconciler) Diff(ctx context.Context, o *elasticsearchcrd.El
 			if *sts.Spec.Replicas == 0 {
 				updatesAllowed = append(updatesAllowed, sts)
 			} else if !activeStateFulsetAlreadyUpgraded {
-				data["phase"] = StatefulsetPhaseUpgradeStarted
-				activeStateFulsetAlreadyUpgraded = true
-				updatesAllowed = append(updatesAllowed, sts)
-
-				// We need to disable balancing before upgrade
-				// We not need to block if error
-				if esHandler != nil {
-					if err = esHandler.DisableRoutingRebalance(); err != nil {
-						logger.Warnf("Error when disable routing rebalance: %s", err)
+				// In envtest there is no real Elasticsearch cluster: skip the
+				// rolling restart orchestration (predicates, transient settings).
+				if esHandler != nil && !common.IsEnvtest() {
+					orchestrator, allowed, err := r.checkUpgradePredicates(ctx, o, sts, esHandler, logger)
+					if err != nil {
+						return diff, res, err
 					}
+					if !allowed {
+						// Safety predicates blocked the upgrade: retry later
+						res = reconcile.Result{RequeueAfter: 30 * time.Second}
+						continue
+					}
+
+					logger.Infof("=== Rolling Upgrade Started: StatefulSet %s ===", sts.Name)
+
+					// Prepare the cluster for the rolling restart (non-blocking)
+					if err := orchestrator.PrepareForRollingRestart(ctx); err != nil {
+						logger.Warnf("Error when prepare rolling restart (non-blocking): %s", err)
+					}
+
+					data["phase"] = StatefulsetPhaseUpgradeStarted
+					activeStateFulsetAlreadyUpgraded = true
+					updatesAllowed = append(updatesAllowed, sts)
 				} else {
-					logger.Warn("Elasticsearch not ready. We skip to disable routing rebalance. It something can be normal if you provision the cluster first time.")
+					data["phase"] = StatefulsetPhaseUpgradeStarted
+					activeStateFulsetAlreadyUpgraded = true
+					updatesAllowed = append(updatesAllowed, sts)
+
+					if esHandler == nil {
+						logger.Warn("Elasticsearch not ready. We skip rolling restart preparation. It something can be normal if you provision the cluster first time.")
+					}
 				}
 			}
 		}
@@ -439,6 +465,103 @@ func (r *statefulsetReconciler) Diff(ctx context.Context, o *elasticsearchcrd.El
 	multiphase.PopulateDiff(diff, creates, updates, deletes, diffStrs)
 
 	return diff, res, nil
+}
+
+// checkUpgradePredicates evaluates the rolling restart safety predicates for
+// a StatefulSet about to be upgraded. It returns the orchestrator (used to
+// prepare the cluster) and true when the upgrade can proceed, or false when
+// a predicate blocked it (the caller should retry later).
+func (r *statefulsetReconciler) checkUpgradePredicates(ctx context.Context, o *elasticsearchcrd.Elasticsearch, sts *appv1.StatefulSet, esHandler elasticsearchhandler.ElasticsearchHandler, logger *logrus.Entry) (*RollingRestartOrchestrator, bool, error) {
+	orchestrator, err := NewRollingRestartOrchestrator(esHandler, r.Client(), logger)
+	if err != nil {
+		logger.Warnf("Error when create rolling restart orchestrator, delaying upgrade: %s", err)
+		return nil, false, nil
+	}
+
+	predicateState, err := r.buildUpgradeState(ctx, o, sts, esHandler, logger)
+	if err != nil {
+		return nil, false, err
+	}
+
+	// Cluster-level safety predicates (health + started replicas)
+	stsList := &appv1.StatefulSetList{Items: []appv1.StatefulSet{*sts}}
+	ok, reason, err := orchestrator.CheckPredicates(ctx, stsList)
+	if err != nil {
+		return nil, false, errors.Wrap(err, "Error when check rolling restart predicates")
+	}
+	if !ok {
+		logger.Infof("Rolling upgrade of StatefulSet %s blocked by safety predicates: %s", sts.Name, reason)
+		return orchestrator, false, nil
+	}
+
+	// Per-pod safety predicates
+	podsPassed := true
+	for _, pod := range predicateState.PodsToUpgrade {
+		ok, reason, err := ApplyPredicates(ctx, pod, predicateState)
+		if err != nil {
+			return nil, false, errors.Wrapf(err, "Error when apply upgrade predicates on pod %s", pod.Name)
+		}
+		if !ok {
+			logger.Infof("Pod %s cannot be upgraded yet: %s", pod.Name, reason)
+			podsPassed = false
+		}
+	}
+	if !podsPassed {
+		logger.Infof("Rolling upgrade of StatefulSet %s delayed: some pods blocked by safety predicates", sts.Name)
+		return orchestrator, false, nil
+	}
+
+	logger.Infof("StatefulSet %s passed all safety predicates (%d pod(s) checked)", sts.Name, len(predicateState.PodsToUpgrade))
+	return orchestrator, true, nil
+}
+
+// buildUpgradeState collects the pod context needed to evaluate upgrade predicates.
+func (r *statefulsetReconciler) buildUpgradeState(ctx context.Context, o *elasticsearchcrd.Elasticsearch, sts *appv1.StatefulSet, esHandler elasticsearchhandler.ElasticsearchHandler, logger *logrus.Entry) (*UpgradeState, error) {
+	// List pods of the StatefulSet being upgraded
+	podsToUpgrade := &corev1.PodList{}
+	if err := r.Client().List(ctx, podsToUpgrade, client.InNamespace(o.Namespace), client.MatchingLabels(sts.Spec.Selector.MatchLabels)); err != nil {
+		return nil, errors.Wrapf(err, "Error when read pods of statefulset %s", sts.Name)
+	}
+
+	// List all Elasticsearch pods
+	allPods := &corev1.PodList{}
+	labelSelectors, err := labels.Parse(fmt.Sprintf("cluster=%s,%s=true", o.Name, elasticsearchcrd.ElasticsearchAnnotationKey))
+	if err != nil {
+		return nil, errors.Wrap(err, "Error when generate label selector")
+	}
+	if err := r.Client().List(ctx, allPods, &client.ListOptions{Namespace: o.Namespace, LabelSelector: labelSelectors}); err != nil {
+		return nil, errors.Wrapf(err, "Error when read Elasticsearch pods")
+	}
+
+	healthyPods := make(map[string]corev1.Pod, len(allPods.Items))
+	deletedPods := make([]corev1.Pod, 0)
+	for _, p := range allPods.Items {
+		if p.DeletionTimestamp != nil {
+			deletedPods = append(deletedPods, p)
+			continue
+		}
+		if IsPodReady(&p) {
+			healthyPods[p.Name] = p
+		}
+	}
+
+	expectedMasters := make([]string, 0, 3)
+	for _, nodeGroup := range o.Spec.NodeGroups {
+		if IsMasterRole(o, nodeGroup.Name) {
+			expectedMasters = append(expectedMasters, GetNodeGroupNodeNames(o, nodeGroup.Name)...)
+		}
+	}
+
+	return &UpgradeState{
+		ES:              o,
+		ESHandler:       esHandler,
+		HealthyPods:     healthyPods,
+		PodsToUpgrade:   podsToUpgrade.Items,
+		CurrentPods:     allPods.Items,
+		ExpectedMasters: expectedMasters,
+		DeletedPods:     deletedPods,
+		Logger:          logger,
+	}, nil
 }
 
 // OnSuccess permit to set status condition on the right state is everithink is good

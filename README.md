@@ -221,3 +221,5 @@ You can read complete documentation per sub section
 ## Design
 
 - [Elasticsearch reconciler design](documentations/design/elasticsearch_design.md)
+- [Rolling upgrade](documentations/rolling-upgrade.md)
+- [Pod suspend (downtime mode)](documentations/pod-downtime.md)
