@@ -5,7 +5,7 @@ import corev1 "k8s.io/api/core/v1"
 // TlsSpec permit to set TLS
 type TlsSpec struct {
 	// Enabled permit to enabled TLS
-	// Default to false
+	// Default to true
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
 	// +optional
 	// +kubebuilder:default=true

@@ -313,7 +313,7 @@ func (h *KibanaReconciler) computeKibanaUrl(ctx context.Context, kb *kibanacrd.K
 	if kb.Spec.Endpoint.IsIngressEnabled() {
 		url = kb.Spec.Endpoint.Ingress.Host
 
-		if kb.Spec.Endpoint.Ingress.SecretRef != nil {
+		if kb.Spec.Endpoint.Ingress.IsTlsEnabled() || kb.Spec.Tls.IsTlsEnabled() {
 			scheme = "https"
 		} else {
 			scheme = "http"
@@ -321,7 +321,7 @@ func (h *KibanaReconciler) computeKibanaUrl(ctx context.Context, kb *kibanacrd.K
 	} else if kb.Spec.Endpoint.IsRouteEnabled() {
 		url = kb.Spec.Endpoint.Route.Host
 
-		if kb.Spec.Endpoint.Route.TlsEnabled != nil && *kb.Spec.Endpoint.Route.TlsEnabled {
+		if kb.Spec.Endpoint.Route.IsTlsEnabled() || kb.Spec.Tls.IsTlsEnabled() {
 			scheme = "https"
 		} else {
 			scheme = "http"

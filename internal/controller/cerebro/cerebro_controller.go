@@ -282,7 +282,7 @@ func (h *CerebroReconciler) computeCerebroUrl(ctx context.Context, cb *cerebrocr
 	if cb.Spec.Endpoint.IsIngressEnabled() {
 		url = cb.Spec.Endpoint.Ingress.Host
 
-		if cb.Spec.Endpoint.Ingress.SecretRef != nil {
+		if cb.Spec.Endpoint.Ingress.IsTlsEnabled() {
 			scheme = "https"
 		} else {
 			scheme = "http"
@@ -290,7 +290,7 @@ func (h *CerebroReconciler) computeCerebroUrl(ctx context.Context, cb *cerebrocr
 	} else if cb.Spec.Endpoint.IsRouteEnabled() {
 		url = cb.Spec.Endpoint.Route.Host
 
-		if cb.Spec.Endpoint.Route.TlsEnabled != nil && *cb.Spec.Endpoint.Route.TlsEnabled {
+		if cb.Spec.Endpoint.Route.IsTlsEnabled() {
 			scheme = "https"
 		} else {
 			scheme = "http"

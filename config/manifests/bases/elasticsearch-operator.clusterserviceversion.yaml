@@ -1106,7 +1106,7 @@ spec:
           It need to have the following keys: tls.key, tls.crt and optionally ca.crt'
         displayName: Certificate Secret Ref
         path: tls.certificateSecretRef
-      - description: Enabled permit to enabled TLS on Kibana Default to false
+      - description: Enabled permit to enabled TLS on Kibana Default to true
         displayName: Enabled
         path: tls.enabled
       - description: KeySize is the key size when generate privates keys Default to
@@ -2670,7 +2670,7 @@ spec:
         path: tls.certificateSecretRef
       - description: |-
           Enabled permit to enabled TLS
-          Default to false
+          Default to true
         displayName: Enabled
         path: tls.enabled
       - description: |-
@@ -3421,7 +3421,7 @@ spec:
         path: tls.certificateSecretRef
       - description: |-
           Enabled permit to enabled TLS
-          Default to false
+          Default to true
         displayName: Enabled
         path: tls.enabled
       - description: |-
