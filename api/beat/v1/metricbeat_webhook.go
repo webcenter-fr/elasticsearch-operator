@@ -55,9 +55,38 @@ var _ admission.Validator[*Metricbeat] = &metricbeatValidator{}
 func (r *metricbeatValidator) ValidateCreate(ctx context.Context, obj *Metricbeat) (admission.Warnings, error) {
 	var allErrs field.ErrorList
 
+	// Check only one target pattern: either legacy ref or discover refs
+	hasLegacyRef := obj.Spec.ElasticsearchRef.IsManaged() || obj.Spec.ElasticsearchRef.IsExternal()
+	hasDiscoverRef := len(obj.Spec.DiscoverRef) > 0
+
+	if hasLegacyRef && hasDiscoverRef {
+		allErrs = append(allErrs, field.Invalid(field.NewPath("spec"), obj.Spec, "You can't use elasticsearchRef and discoverRef at the same time"))
+	}
+
+	// Check is set at least one target
+	if !hasLegacyRef && !hasDiscoverRef {
+		allErrs = append(allErrs, field.Invalid(field.NewPath("spec"), obj.Spec, "You need to provide Elasticsearch target or Discover target"))
+	}
+
 	// Check Elasticsearch target
-	if err := obj.Spec.ElasticsearchRef.ValidateField(); err != nil {
-		allErrs = append(allErrs, err)
+	if hasLegacyRef {
+		if err := obj.Spec.ElasticsearchRef.ValidateField(); err != nil {
+			allErrs = append(allErrs, err)
+		}
+	}
+
+	// Check discover output name is set in discoverRef if DiscoverOutputName is set
+	if obj.Spec.DiscoverOutputName != nil && *obj.Spec.DiscoverOutputName != "" {
+		found := false
+		for _, dr := range obj.Spec.DiscoverRef {
+			if dr.GetName() == *obj.Spec.DiscoverOutputName {
+				found = true
+				break
+			}
+		}
+		if !found {
+			allErrs = append(allErrs, field.Invalid(field.NewPath("spec").Child("discoverOutputName"), *obj.Spec.DiscoverOutputName, "DiscoverOutputName must reference a name in discoverRef"))
+		}
 	}
 
 	if len(allErrs) > 0 {
@@ -73,9 +102,38 @@ func (r *metricbeatValidator) ValidateCreate(ctx context.Context, obj *Metricbea
 func (r *metricbeatValidator) ValidateUpdate(ctx context.Context, oldObj *Metricbeat, newObj *Metricbeat) (admission.Warnings, error) {
 	var allErrs field.ErrorList
 
+	// Check only one target pattern: either legacy ref or discover refs
+	hasLegacyRef := newObj.Spec.ElasticsearchRef.IsManaged() || newObj.Spec.ElasticsearchRef.IsExternal()
+	hasDiscoverRef := len(newObj.Spec.DiscoverRef) > 0
+
+	if hasLegacyRef && hasDiscoverRef {
+		allErrs = append(allErrs, field.Invalid(field.NewPath("spec"), newObj.Spec, "You can't use elasticsearchRef and discoverRef at the same time"))
+	}
+
+	// Check is set at least one target
+	if !hasLegacyRef && !hasDiscoverRef {
+		allErrs = append(allErrs, field.Invalid(field.NewPath("spec"), newObj.Spec, "You need to provide Elasticsearch target or Discover target"))
+	}
+
 	// Check Elasticsearch target
-	if err := newObj.Spec.ElasticsearchRef.ValidateField(); err != nil {
-		allErrs = append(allErrs, err)
+	if hasLegacyRef {
+		if err := newObj.Spec.ElasticsearchRef.ValidateField(); err != nil {
+			allErrs = append(allErrs, err)
+		}
+	}
+
+	// Check discover output name is set in discoverRef if DiscoverOutputName is set
+	if newObj.Spec.DiscoverOutputName != nil && *newObj.Spec.DiscoverOutputName != "" {
+		found := false
+		for _, dr := range newObj.Spec.DiscoverRef {
+			if dr.GetName() == *newObj.Spec.DiscoverOutputName {
+				found = true
+				break
+			}
+		}
+		if !found {
+			allErrs = append(allErrs, field.Invalid(field.NewPath("spec").Child("discoverOutputName"), *newObj.Spec.DiscoverOutputName, "DiscoverOutputName must reference a name in discoverRef"))
+		}
 	}
 
 	if len(allErrs) > 0 {

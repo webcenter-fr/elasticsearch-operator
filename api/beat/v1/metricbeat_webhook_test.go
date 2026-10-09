@@ -4,9 +4,11 @@ import (
 	"context"
 
 	"github.com/stretchr/testify/assert"
+	discovercrd "github.com/webcenter-fr/elasticsearch-operator/api/discover/v1"
 	"github.com/webcenter-fr/elasticsearch-operator/api/shared"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/utils/ptr"
 )
 
 func (t *TestSuite) TestMetricbeatWebhook() {
@@ -171,6 +173,73 @@ func (t *TestSuite) TestMetricbeatWebhook() {
 					},
 				},
 			},
+		},
+	}
+	err = t.k8sClient.Create(context.Background(), o)
+	assert.Error(t.T(), err)
+
+	// Need success when only discover target is set
+	o = &Metricbeat{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "test-webhook-discover",
+			Namespace: "default",
+		},
+		Spec: MetricbeatSpec{
+			DiscoverRef: []*discovercrd.DiscoverRef{
+				{
+					Elasticsearch: &corev1.LocalObjectReference{
+						Name: "test-elasticsearch",
+					},
+				},
+			},
+			DiscoverOutputName: ptr.To("test-elasticsearch"),
+			Deployment:         MetricbeatDeploymentSpec{},
+		},
+	}
+	err = t.k8sClient.Create(context.Background(), o)
+	assert.NoError(t.T(), err)
+
+	// Need failed when both legacy and discover targets are set
+	o = &Metricbeat{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "test-webhook-both",
+			Namespace: "default",
+		},
+		Spec: MetricbeatSpec{
+			ElasticsearchRef: shared.ElasticsearchRef{
+				ManagedElasticsearchRef: &shared.ElasticsearchManagedRef{
+					Name: "test-elasticsearch",
+				},
+			},
+			DiscoverRef: []*discovercrd.DiscoverRef{
+				{
+					Elasticsearch: &corev1.LocalObjectReference{
+						Name: "test-elasticsearch",
+					},
+				},
+			},
+			Deployment: MetricbeatDeploymentSpec{},
+		},
+	}
+	err = t.k8sClient.Create(context.Background(), o)
+	assert.Error(t.T(), err)
+
+	// Need failed when discoverOutputName does not reference a discoverRef
+	o = &Metricbeat{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "test-webhook-discover-output-not-found",
+			Namespace: "default",
+		},
+		Spec: MetricbeatSpec{
+			DiscoverRef: []*discovercrd.DiscoverRef{
+				{
+					Elasticsearch: &corev1.LocalObjectReference{
+						Name: "test-elasticsearch",
+					},
+				},
+			},
+			DiscoverOutputName: ptr.To("other-elasticsearch"),
+			Deployment:         MetricbeatDeploymentSpec{},
 		},
 	}
 	err = t.k8sClient.Create(context.Background(), o)

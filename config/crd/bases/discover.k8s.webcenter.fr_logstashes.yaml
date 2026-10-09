@@ -1,0 +1,300 @@
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  annotations:
+    controller-gen.kubebuilder.io/version: v0.21.0
+  name: logstashes.discover.k8s.webcenter.fr
+spec:
+  group: discover.k8s.webcenter.fr
+  names:
+    kind: Logstash
+    listKind: LogstashList
+    plural: logstashes
+    singular: logstash
+  scope: Namespaced
+  versions:
+  - additionalPrinterColumns:
+    - description: Phase
+      jsonPath: .status.phase
+      name: Phase
+      type: string
+    - description: secret ref that store certificate files
+      jsonPath: .status.secretFileRef
+      name: secretFile
+      type: string
+    - description: secret ref that store env variables
+      jsonPath: .status.secretEnvRef
+      name: secretEnv
+      type: string
+    - description: Is on error
+      jsonPath: .status.isOnError
+      name: Error
+      type: boolean
+    - description: health
+      jsonPath: .status.conditions[?(@.type=='Ready')].status
+      name: Ready
+      type: string
+    - jsonPath: .metadata.creationTimestamp
+      name: Age
+      type: date
+    name: v1
+    schema:
+      openAPIV3Schema:
+        description: |-
+          Logstash is the Schema for the logstashes API.
+          It will generate and maintain secret that store CA certificate for Logstash.
+          It will also maintain the URL to connect on Logstash.
+        properties:
+          apiVersion:
+            description: |-
+              APIVersion defines the versioned schema of this representation of an object.
+              Servers should convert recognized schemas to the latest internal value, and
+              may reject unrecognized values.
+              More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources
+            type: string
+          kind:
+            description: |-
+              Kind is a string value representing the REST resource this object represents.
+              Servers may infer this from the endpoint the client submits requests to.
+              Cannot be updated.
+              In CamelCase.
+              More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds
+            type: string
+          metadata:
+            type: object
+          spec:
+            description: LogstashSpec defines the desired state of Logstash.
+            properties:
+              logstashRef:
+                description: |-
+                  LogstashRef is the Logstash ref to connect on.
+                  It will generate Logstash output base on it
+                properties:
+                  external:
+                    description: ExternalLogstahsRef is the external Logstash instance
+                      not managed by operator
+                    properties:
+                      addresses:
+                        description: Addresses is the list of Logstash addresses
+                        items:
+                          type: string
+                        type: array
+                      userSecretRef:
+                        description: |-
+                          UserSecretRef is the secret that store your user SSL certificate / key.
+                          It must have 2 entry:
+                            - user.key: the user private key
+                            - user.crt: the user certificate
+                        properties:
+                          name:
+                            default: ""
+                            description: |-
+                              Name of the referent.
+                              This field is effectively required, but due to backwards compatibility is
+                              allowed to be empty. Instances of this type with an empty value here are
+                              almost certainly wrong.
+                              More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                            type: string
+                        type: object
+                        x-kubernetes-map-type: atomic
+                    required:
+                    - addresses
+                    type: object
+                  logstashCASecretRef:
+                    description: |-
+                      LogstashCaSecretRef is the secret that store your custom CA certificates to connect on Logstash via beat protocole.
+                      It will add all entry that finish by *.crt or *.pem
+                      If Logstash is managed and use internal PKI no need to set it. I will use it by design
+                    properties:
+                      name:
+                        default: ""
+                        description: |-
+                          Name of the referent.
+                          This field is effectively required, but due to backwards compatibility is
+                          allowed to be empty. Instances of this type with an empty value here are
+                          almost certainly wrong.
+                          More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                        type: string
+                    type: object
+                    x-kubernetes-map-type: atomic
+                  managed:
+                    description: ManagedLogstashRef is the managed Logstash instance
+                      by operator
+                    properties:
+                      name:
+                        description: Name is the Logstash cluster deployed by operator
+                        type: string
+                      namespace:
+                        description: |-
+                          Namespace is the namespace where Logstash is deployed by operator
+                          No need to set if is deployed on the same namespace
+                        type: string
+                      port:
+                        description: Port is the port number to connect on service
+                        format: int64
+                        type: integer
+                      targetService:
+                        description: TargetService is the target service that expose
+                          the beat protocole
+                        type: string
+                      userRef:
+                        description: UserRef is the user reference to connect on Logstash.
+                        properties:
+                          name:
+                            description: name is unique within a namespace to reference
+                              a secret resource.
+                            type: string
+                          namespace:
+                            description: namespace defines the space within which
+                              the secret name must be unique.
+                            type: string
+                        type: object
+                        x-kubernetes-map-type: atomic
+                    required:
+                    - name
+                    - port
+                    type: object
+                type: object
+              name:
+                description: |-
+                  Name is the logical name
+                  it used to compute the environment key suffix on secret targetSecretEnvRef
+                  it used to compute the mount path of secret targetSecretFileRef
+                  Default to the name of the Discover resource
+                type: string
+              targetSecretEnvRef:
+                description: |-
+                  TargetSecretEnvRef defines the secret where to store discovered information as env variables
+                  You can find here bootstrap servers, user, password ...
+                  Default to the name of the Discover resource with suffix "-env"
+                properties:
+                  name:
+                    default: ""
+                    description: |-
+                      Name of the referent.
+                      This field is effectively required, but due to backwards compatibility is
+                      allowed to be empty. Instances of this type with an empty value here are
+                      almost certainly wrong.
+                      More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                    type: string
+                type: object
+                x-kubernetes-map-type: atomic
+              targetSecretRef:
+                description: |-
+                  TargetSecretFileRef defines the secret where to store discovered information as files
+                  You can find here certificate, private key, keystore, truststore ...
+                  Default to the name of the Discover resource with suffix "-file"
+                properties:
+                  name:
+                    default: ""
+                    description: |-
+                      Name of the referent.
+                      This field is effectively required, but due to backwards compatibility is
+                      allowed to be empty. Instances of this type with an empty value here are
+                      almost certainly wrong.
+                      More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                    type: string
+                type: object
+                x-kubernetes-map-type: atomic
+            type: object
+          status:
+            description: LogstashStatus defines the observed state of Logstash.
+            properties:
+              conditions:
+                description: List of conditions
+                items:
+                  description: Condition contains details for one aspect of the current
+                    state of this API Resource.
+                  properties:
+                    lastTransitionTime:
+                      description: |-
+                        lastTransitionTime is the last time the condition transitioned from one status to another.
+                        This should be when the underlying condition changed.  If that is not known, then using the time when the API field changed is acceptable.
+                      format: date-time
+                      type: string
+                    message:
+                      description: |-
+                        message is a human readable message indicating details about the transition.
+                        This may be an empty string.
+                      maxLength: 32768
+                      type: string
+                    observedGeneration:
+                      description: |-
+                        observedGeneration represents the .metadata.generation that the condition was set based upon.
+                        For instance, if .metadata.generation is currently 12, but the .status.conditions[x].observedGeneration is 9, the condition is out of date
+                        with respect to the current state of the instance.
+                      format: int64
+                      minimum: 0
+                      type: integer
+                    reason:
+                      description: |-
+                        reason contains a programmatic identifier indicating the reason for the condition's last transition.
+                        Producers of specific condition types may define expected values and meanings for this field,
+                        and whether the values are considered a guaranteed API.
+                        The value should be a CamelCase string.
+                        This field may not be empty.
+                      maxLength: 1024
+                      minLength: 1
+                      pattern: ^[A-Za-z]([A-Za-z0-9_,:]*[A-Za-z0-9_])?$
+                      type: string
+                    status:
+                      description: status of the condition, one of True, False, Unknown.
+                      enum:
+                      - "True"
+                      - "False"
+                      - Unknown
+                      type: string
+                    type:
+                      description: type of condition in CamelCase or in foo.example.com/CamelCase.
+                      maxLength: 316
+                      pattern: ^([a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*/)?(([A-Za-z0-9][-A-Za-z0-9_.]*)?[A-Za-z0-9])$
+                      type: string
+                  required:
+                  - lastTransitionTime
+                  - message
+                  - reason
+                  - status
+                  - type
+                  type: object
+                type: array
+              isOnError:
+                description: IsOnError is true if controller is stuck on Error
+                type: boolean
+              lastErrorMessage:
+                description: LastErrorMessage is the current error message
+                type: string
+              logstashCASecretRef:
+                description: LogstashCASecretRef is the secret that store CA certificate
+                  to connect on Logstash
+                type: string
+              logstashUserSecretRef:
+                description: LogstashUserSecretRef is the secret that store user certificates
+                  to connect on Logstash
+                type: string
+              observedGeneration:
+                description: observedGeneration is the current generation applied
+                format: int64
+                type: integer
+              phase:
+                description: Phase is the current phase
+                type: string
+              secretEnvRef:
+                description: SecretEnvRef is the name of the secret where env-based
+                  information is stored
+                type: string
+              secretFileRef:
+                description: SecretFileRef is the name of the secret where file-based
+                  information is stored
+                type: string
+            type: object
+        type: object
+    served: true
+    storage: true
+    subresources:
+      status: {}
+status:
+  acceptedNames:
+    kind: ""
+    plural: ""
+  conditions: null
+  storedVersions: null

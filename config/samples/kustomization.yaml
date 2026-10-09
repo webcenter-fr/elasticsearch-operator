@@ -20,5 +20,10 @@ resources:
 - cerebro_v1_host.yaml
 - kibanaapi_v1_userspace.yaml
 - kibanaapi_v1_logstashpipeline.yaml
+- discover_v1_kafka.yaml
+- discover_v1_logstash.yaml
+- discover_v1_elasticsearch.yaml
+- beat_v1_filebeat_discover.yaml
+- logstash_v1_discover.yaml
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization

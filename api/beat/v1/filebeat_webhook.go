@@ -55,14 +55,22 @@ var _ admission.Validator[*Filebeat] = &filebeatValidator{}
 func (r *filebeatValidator) ValidateCreate(ctx context.Context, obj *Filebeat) (admission.Warnings, error) {
 	var allErrs field.ErrorList
 
-	// Check only one target
+	// Check only one target pattern: either legacy refs or discover refs
+	hasLegacyRef := obj.Spec.LogstashRef != nil || obj.Spec.ElasticsearchRef != nil
+	hasDiscoverRef := len(obj.Spec.DiscoverRef) > 0
+
+	if hasLegacyRef && hasDiscoverRef {
+		allErrs = append(allErrs, field.Invalid(field.NewPath("spec"), obj.Spec, "You can't use elasticsearchRef/logstashRef and discoverRef at the same time"))
+	}
+
+	// Check only one legacy target
 	if obj.Spec.LogstashRef != nil && obj.Spec.ElasticsearchRef != nil {
 		allErrs = append(allErrs, field.Invalid(field.NewPath("spec"), obj.Spec, "ElasticsearchRef and LogstashRef are mutually exclusive"))
 	}
 
-	// Check is set excatly one target
-	if obj.Spec.ElasticsearchRef == nil && obj.Spec.LogstashRef == nil {
-		allErrs = append(allErrs, field.Invalid(field.NewPath("spec"), obj.Spec, "You need to provide Elasticsearch target or Logstash target"))
+	// Check is set at least one target
+	if !hasLegacyRef && !hasDiscoverRef {
+		allErrs = append(allErrs, field.Invalid(field.NewPath("spec"), obj.Spec, "You need to provide Elasticsearch target, Logstash target or Discover target"))
 	}
 
 	// Check logstash target
@@ -79,6 +87,20 @@ func (r *filebeatValidator) ValidateCreate(ctx context.Context, obj *Filebeat) (
 		}
 	}
 
+	// Check discover output name is set in discoverRef if DiscoverOutputName is set
+	if obj.Spec.DiscoverOutputName != nil && *obj.Spec.DiscoverOutputName != "" {
+		found := false
+		for _, dr := range obj.Spec.DiscoverRef {
+			if dr.GetName() == *obj.Spec.DiscoverOutputName {
+				found = true
+				break
+			}
+		}
+		if !found {
+			allErrs = append(allErrs, field.Invalid(field.NewPath("spec").Child("discoverOutputName"), *obj.Spec.DiscoverOutputName, "DiscoverOutputName must reference a name in discoverRef"))
+		}
+	}
+
 	if len(allErrs) > 0 {
 		return nil, apierrors.NewInvalid(
 			obj.GroupVersionKind().GroupKind(),
@@ -92,14 +114,22 @@ func (r *filebeatValidator) ValidateCreate(ctx context.Context, obj *Filebeat) (
 func (r *filebeatValidator) ValidateUpdate(ctx context.Context, oldObj *Filebeat, newObj *Filebeat) (admission.Warnings, error) {
 	var allErrs field.ErrorList
 
-	// Check only one target
+	// Check only one target pattern: either legacy refs or discover refs
+	hasLegacyRef := newObj.Spec.LogstashRef != nil || newObj.Spec.ElasticsearchRef != nil
+	hasDiscoverRef := len(newObj.Spec.DiscoverRef) > 0
+
+	if hasLegacyRef && hasDiscoverRef {
+		allErrs = append(allErrs, field.Invalid(field.NewPath("spec"), newObj.Spec, "You can't use elasticsearchRef/logstashRef and discoverRef at the same time"))
+	}
+
+	// Check only one legacy target
 	if newObj.Spec.LogstashRef != nil && newObj.Spec.ElasticsearchRef != nil {
 		allErrs = append(allErrs, field.Invalid(field.NewPath("spec"), newObj.Spec, "ElasticsearchRef and LogstashRef are mutually exclusive"))
 	}
 
-	// Check is set excatly one target
-	if newObj.Spec.ElasticsearchRef == nil && newObj.Spec.LogstashRef == nil {
-		allErrs = append(allErrs, field.Invalid(field.NewPath("spec"), newObj.Spec, "You need to provide Elasticsearch target or Logstash target"))
+	// Check is set at least one target
+	if !hasLegacyRef && !hasDiscoverRef {
+		allErrs = append(allErrs, field.Invalid(field.NewPath("spec"), newObj.Spec, "You need to provide Elasticsearch target, Logstash target or Discover target"))
 	}
 
 	// Check logstash target
@@ -109,10 +139,24 @@ func (r *filebeatValidator) ValidateUpdate(ctx context.Context, oldObj *Filebeat
 		}
 	}
 
-	// Check Opensearch target
+	// Check Elasticsearch target
 	if newObj.Spec.ElasticsearchRef != nil {
 		if err := newObj.Spec.ElasticsearchRef.ValidateField(); err != nil {
 			allErrs = append(allErrs, err)
+		}
+	}
+
+	// Check discover output name is set in discoverRef if DiscoverOutputName is set
+	if newObj.Spec.DiscoverOutputName != nil && *newObj.Spec.DiscoverOutputName != "" {
+		found := false
+		for _, dr := range newObj.Spec.DiscoverRef {
+			if dr.GetName() == *newObj.Spec.DiscoverOutputName {
+				found = true
+				break
+			}
+		}
+		if !found {
+			allErrs = append(allErrs, field.Invalid(field.NewPath("spec").Child("discoverOutputName"), *newObj.Spec.DiscoverOutputName, "DiscoverOutputName must reference a name in discoverRef"))
 		}
 	}
 

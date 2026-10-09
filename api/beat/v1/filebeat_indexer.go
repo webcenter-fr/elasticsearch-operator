@@ -86,6 +86,17 @@ func SetupFilebeatIndexer(k8sManager manager.Manager) (err error) {
 		return err
 	}
 
+	if err = k8sManager.GetFieldIndexer().IndexField(context.Background(), &Filebeat{}, "spec.discover.name", func(o client.Object) []string {
+		p := o.(*Filebeat)
+		res := make([]string, 0, len(p.Spec.DiscoverRef))
+		for _, dr := range p.Spec.DiscoverRef {
+			res = append(res, dr.GetName())
+		}
+		return res
+	}); err != nil {
+		return err
+	}
+
 	if err = k8sManager.GetFieldIndexer().IndexField(context.Background(), &Filebeat{}, "spec.deployment.additionalVolumes.configMap.name", func(o client.Object) []string {
 		p := o.(*Filebeat)
 		volumeNames := make([]string, 0, len(p.Spec.Deployment.AdditionalVolumes))

@@ -32,7 +32,7 @@ func TestBuildConfigMaps(t *testing.T) {
 		Spec: beatcrd.MetricbeatSpec{},
 	}
 
-	configMaps, err = buildConfigMaps(o, nil, nil)
+	configMaps, err = buildConfigMaps(o, nil, nil, "", nil, nil)
 	assert.NoError(t, err)
 	assert.Equal(t, 1, len(configMaps))
 	test.EqualFromYamlFile[*corev1.ConfigMap](t, "testdata/configmap_default.yml", configMaps[0], scheme.Scheme)
@@ -59,7 +59,7 @@ func TestBuildConfigMaps(t *testing.T) {
 		Spec: elasticsearchcrd.ElasticsearchSpec{},
 	}
 
-	configMaps, err = buildConfigMaps(o, es, nil)
+	configMaps, err = buildConfigMaps(o, es, nil, "", nil, nil)
 	assert.NoError(t, err)
 	assert.Equal(t, 1, len(configMaps))
 	test.EqualFromYamlFile[*corev1.ConfigMap](t, "testdata/configmap_default_elasticsearch.yml", configMaps[0], scheme.Scheme)
@@ -91,7 +91,7 @@ func TestBuildConfigMaps(t *testing.T) {
 		},
 	}
 
-	configMaps, err = buildConfigMaps(o, nil, s)
+	configMaps, err = buildConfigMaps(o, nil, s, "", nil, nil)
 	assert.NoError(t, err)
 	assert.Equal(t, 1, len(configMaps))
 	test.EqualFromYamlFile[*corev1.ConfigMap](t, "testdata/configmap_default_elasticsearch_with_ca_secret.yml", configMaps[0], scheme.Scheme)
@@ -134,7 +134,7 @@ node.value2: test`,
 		Spec: elasticsearchcrd.ElasticsearchSpec{},
 	}
 
-	configMaps, err = buildConfigMaps(o, es, nil)
+	configMaps, err = buildConfigMaps(o, es, nil, "", nil, nil)
 	assert.NoError(t, err)
 	assert.Equal(t, 1, len(configMaps))
 	test.EqualFromYamlFile[*corev1.ConfigMap](t, "testdata/configmap_config.yml", configMaps[0], scheme.Scheme)
@@ -176,7 +176,7 @@ node.value2: test`,
 		Spec: elasticsearchcrd.ElasticsearchSpec{},
 	}
 
-	configMaps, err = buildConfigMaps(o, es, nil)
+	configMaps, err = buildConfigMaps(o, es, nil, "", nil, nil)
 	assert.NoError(t, err)
 	assert.Equal(t, 2, len(configMaps))
 	test.EqualFromYamlFile[*corev1.ConfigMap](t, "testdata/configmap_module.yml", configMaps[1], scheme.Scheme)

@@ -2,8 +2,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.22.0
-  creationTimestamp: null
+    controller-gen.kubebuilder.io/version: v0.21.0
   name: metricbeats.beat.k8s.webcenter.fr
 spec:
   group: beat.k8s.webcenter.fr
@@ -4682,10 +4681,65 @@ spec:
                 required:
                 - replicas
                 type: object
+              discoverOutputName:
+                description: DiscoverOutputName permit to set the discover name that
+                  will be use to generate output
+                type: string
+              discoverRef:
+                description: DiscoverRef permit to reference discover configuration
+                items:
+                  description: DiscoverRef permit to reference an existing discover
+                  properties:
+                    elasticsearch:
+                      description: Elasticsearch permit to reference an Elasticsearch
+                        discover
+                      properties:
+                        name:
+                          default: ""
+                          description: |-
+                            Name of the referent.
+                            This field is effectively required, but due to backwards compatibility is
+                            allowed to be empty. Instances of this type with an empty value here are
+                            almost certainly wrong.
+                            More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                          type: string
+                      type: object
+                      x-kubernetes-map-type: atomic
+                    kafka:
+                      description: Kafka permit to reference a Kafka discover
+                      properties:
+                        name:
+                          default: ""
+                          description: |-
+                            Name of the referent.
+                            This field is effectively required, but due to backwards compatibility is
+                            allowed to be empty. Instances of this type with an empty value here are
+                            almost certainly wrong.
+                            More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                          type: string
+                      type: object
+                      x-kubernetes-map-type: atomic
+                    logstash:
+                      description: Logstash permit to reference a Logstash discover
+                      properties:
+                        name:
+                          default: ""
+                          description: |-
+                            Name of the referent.
+                            This field is effectively required, but due to backwards compatibility is
+                            allowed to be empty. Instances of this type with an empty value here are
+                            almost certainly wrong.
+                            More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                          type: string
+                      type: object
+                      x-kubernetes-map-type: atomic
+                  type: object
+                type: array
               elasticsearchRef:
                 description: |-
                   ElasticsearchRef is the Elasticsearch ref to connect on.
                   It will generate Elasticsearch output bas on it
+                  Deprecated: use DiscoverRef and DiscoverOutputName instead
                 properties:
                   elasticsearchCASecretRef:
                     description: |-
@@ -4806,7 +4860,6 @@ spec:
                 type: string
             required:
             - deployment
-            - elasticsearchRef
             type: object
           status:
             description: MetricbeatStatus defines the observed state of Metricbeat

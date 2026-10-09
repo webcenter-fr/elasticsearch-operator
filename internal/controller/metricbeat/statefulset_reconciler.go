@@ -13,6 +13,7 @@ import (
 	beatcrd "github.com/webcenter-fr/elasticsearch-operator/api/beat/v1"
 	elasticsearchcrd "github.com/webcenter-fr/elasticsearch-operator/api/elasticsearch/v1"
 	"github.com/webcenter-fr/elasticsearch-operator/internal/controller/common"
+	"github.com/webcenter-fr/elasticsearch-operator/internal/controller/discover"
 	appv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
@@ -222,6 +223,16 @@ func (r *statefulsetReconciler) Read(ctx context.Context, o *beatcrd.Metricbeat,
 			break
 		}
 	}
+
+	// Read discovers secrets
+	discoverSecrets, reconcileResult, err := discover.ReadDiscoversSecrets(ctx, r.Client(), logger, o, o.Spec.DiscoverRef)
+	if err != nil {
+		return read, res, errors.Wrapf(err, "Error when read discovers secrets")
+	}
+	if reconcileResult != nil {
+		return read, *reconcileResult, nil
+	}
+	secretsChecksum = append(secretsChecksum, discoverSecrets...)
 
 	// Generate expected statefulset
 	expectedSts, err := buildStatefulsets(o, es, cms, secretsChecksum, configMapsChecksum, r.isOpenshift)

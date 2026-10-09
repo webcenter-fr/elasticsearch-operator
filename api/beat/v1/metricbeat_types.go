@@ -19,6 +19,7 @@ package v1
 import (
 	"github.com/disaster37/operator-sdk-extra/v3/pkg/apis"
 	"github.com/disaster37/operator-sdk-extra/v3/pkg/apis/multiphase"
+	discovercrd "github.com/webcenter-fr/elasticsearch-operator/api/discover/v1"
 	"github.com/webcenter-fr/elasticsearch-operator/api/shared"
 	corev1 "k8s.io/api/core/v1"
 	policyv1 "k8s.io/api/policy/v1"
@@ -42,8 +43,20 @@ type MetricbeatSpec struct {
 
 	// ElasticsearchRef is the Elasticsearch ref to connect on.
 	// It will generate Elasticsearch output bas on it
+	// Deprecated: use DiscoverRef and DiscoverOutputName instead
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
+	// +optional
 	ElasticsearchRef shared.ElasticsearchRef `json:"elasticsearchRef"`
+
+	// DiscoverRef permit to reference discover configuration
+	// +operator-sdk:csv:customresourcedefinitions:type=spec
+	// +optional
+	DiscoverRef []*discovercrd.DiscoverRef `json:"discoverRef,omitempty"`
+
+	// DiscoverOutputName permit to set the discover name that will be use to generate output
+	// +operator-sdk:csv:customresourcedefinitions:type=spec
+	// +optional
+	DiscoverOutputName *string `json:"discoverOutputName,omitempty"`
 
 	// Version is the Metricbeat version to use
 	// Default is use the latest

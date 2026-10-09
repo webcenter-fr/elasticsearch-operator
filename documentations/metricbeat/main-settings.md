@@ -18,7 +18,9 @@ You can use the following main setting to deploy Metricbeat:
       - **name** (string / require): The secret name.
   - **elasticsearchCASecretRef** (object). It's the secret that store custom CA to connect on Elasticsearch cluster. The key must be `ca.crt`
     - **name** (string / require): The secret name
-- **module** (map of any): Each key is the file store on modules.d folder. Each value is the config on YAML format. It permit to enable and configure modules. Default is `empty`.
+- **modules** (map of any): Each key is the file store on modules.d folder. Each value is the config on YAML format. It permit to enable and configure modules. Default is `empty`.
+
+> **Deprecated**: `elasticsearchRef` is deprecated in favor of the Discover concept. Use `discoverRef` and `discoverOutputName` instead. See [Discover settings](discover-settings.md) and the [migration guide](#migration-to-discover).
 
 
 **metricbeat.yaml**:
@@ -47,7 +49,7 @@ spec:
     - name: my-pull-secret
   config:
     tags: ["service-X", "web-tier"]
-  module:
+  modules:
     elasticsearch-xpack.yml:
       - module: elasticsearch
         xpack.enabled: true
@@ -100,3 +102,51 @@ data:
   username: ++++++++
   password: ++++++++
 ```
+
+## Migration to Discover
+
+The `elasticsearchRef` field is deprecated in favor of the Discover concept. The migration consists in creating an Elasticsearch Discover resource, then referencing it from Metricbeat with `discoverRef` and `discoverOutputName`.
+
+**Before (deprecated static ref):**
+
+```yaml
+apiVersion: beat.k8s.webcenter.fr/v1
+kind: Metricbeat
+metadata:
+  name: metricbeat
+spec:
+  elasticsearchRef:
+    managed:
+      name: my-elasticsearch
+    secretRef:
+      name: elasticsearch-credentials
+```
+
+**After (Discover):**
+
+```yaml
+# Step 1: Create the Discover resource
+apiVersion: discover.k8s.webcenter.fr/v1
+kind: Elasticsearch
+metadata:
+  name: my-elasticsearch-discover
+spec:
+  elasticsearchRef:
+    managed:
+      name: my-elasticsearch
+    secretRef:
+      name: elasticsearch-credentials
+---
+# Step 2: Reference it from Metricbeat
+apiVersion: beat.k8s.webcenter.fr/v1
+kind: Metricbeat
+metadata:
+  name: metricbeat
+spec:
+  discoverRef:
+    - elasticsearch:
+        name: my-elasticsearch-discover
+  discoverOutputName: my-elasticsearch-discover
+```
+
+See [Discover settings](discover-settings.md) for the complete reference.

@@ -14,7 +14,7 @@ spec:
     managed:
       name: elasticsearch
       namespace: elk-monitoring
-  module:
+  modules:
     elasticsearch-xpack.yml:
       - module: elasticsearch
         xpack.enabled: true

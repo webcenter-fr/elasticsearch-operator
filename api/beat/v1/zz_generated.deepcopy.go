@@ -21,6 +21,7 @@ limitations under the License.
 package v1
 
 import (
+	discoverv1 "github.com/webcenter-fr/elasticsearch-operator/api/discover/v1"
 	"github.com/webcenter-fr/elasticsearch-operator/api/shared"
 	corev1 "k8s.io/api/core/v1"
 	policyv1 "k8s.io/api/policy/v1"
@@ -255,6 +256,22 @@ func (in *FilebeatSpec) DeepCopyInto(out *FilebeatSpec) {
 		*out = new(FilebeatLogstashRef)
 		(*in).DeepCopyInto(*out)
 	}
+	if in.DiscoverRef != nil {
+		in, out := &in.DiscoverRef, &out.DiscoverRef
+		*out = make([]*discoverv1.DiscoverRef, len(*in))
+		for i := range *in {
+			if (*in)[i] != nil {
+				in, out := &(*in)[i], &(*out)[i]
+				*out = new(discoverv1.DiscoverRef)
+				(*in).DeepCopyInto(*out)
+			}
+		}
+	}
+	if in.DiscoverOutputName != nil {
+		in, out := &in.DiscoverOutputName, &out.DiscoverOutputName
+		*out = new(string)
+		**out = **in
+	}
 	if in.Config != nil {
 		in, out := &in.Config, &out.Config
 		*out = (*in).DeepCopy()
@@ -455,6 +472,22 @@ func (in *MetricbeatSpec) DeepCopyInto(out *MetricbeatSpec) {
 	*out = *in
 	in.ImageSpec.DeepCopyInto(&out.ImageSpec)
 	in.ElasticsearchRef.DeepCopyInto(&out.ElasticsearchRef)
+	if in.DiscoverRef != nil {
+		in, out := &in.DiscoverRef, &out.DiscoverRef
+		*out = make([]*discoverv1.DiscoverRef, len(*in))
+		for i := range *in {
+			if (*in)[i] != nil {
+				in, out := &(*in)[i], &(*out)[i]
+				*out = new(discoverv1.DiscoverRef)
+				(*in).DeepCopyInto(*out)
+			}
+		}
+	}
+	if in.DiscoverOutputName != nil {
+		in, out := &in.DiscoverOutputName, &out.DiscoverOutputName
+		*out = new(string)
+		**out = **in
+	}
 	if in.Config != nil {
 		in, out := &in.Config, &out.Config
 		*out = (*in).DeepCopy()

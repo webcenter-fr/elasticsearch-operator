@@ -6,7 +6,9 @@ import (
 
 	"emperror.dev/errors"
 	beatcrd "github.com/webcenter-fr/elasticsearch-operator/api/beat/v1"
+	discovercrd "github.com/webcenter-fr/elasticsearch-operator/api/discover/v1"
 	elasticsearchcrd "github.com/webcenter-fr/elasticsearch-operator/api/elasticsearch/v1"
+	"github.com/webcenter-fr/elasticsearch-operator/internal/controller/discover"
 	elasticsearchcontrollers "github.com/webcenter-fr/elasticsearch-operator/internal/controller/elasticsearch"
 	"github.com/webcenter-fr/elasticsearch-operator/pkg/helper"
 	corev1 "k8s.io/api/core/v1"
@@ -15,7 +17,7 @@ import (
 )
 
 // BuildConfigMap permit to generate config maps
-func buildConfigMaps(mb *beatcrd.Metricbeat, es *elasticsearchcrd.Elasticsearch, elasticsearchCASecret *corev1.Secret) (configMaps []*corev1.ConfigMap, err error) {
+func buildConfigMaps(mb *beatcrd.Metricbeat, es *elasticsearchcrd.Elasticsearch, elasticsearchCASecret *corev1.Secret, discoverOutputType discovercrd.DiscoverType, discoverOutputSecretEnv *corev1.Secret, discoverOutputSecretFile *corev1.Secret) (configMaps []*corev1.ConfigMap, err error) {
 	configMaps = make([]*corev1.ConfigMap, 0, 1)
 	var cm *corev1.ConfigMap
 
@@ -37,6 +39,44 @@ func buildConfigMaps(mb *beatcrd.Metricbeat, es *elasticsearchcrd.Elasticsearch,
 		"metricbeat.config.modules": map[string]any{
 			"path": "${path.config}/modules.d/*.yml",
 		},
+	}
+
+	// Compute discover output
+	if discoverOutputType == discovercrd.DiscoverTypeElasticsearch {
+		// Get the environment variables for elasticsearch hosts
+		elasticsearchHostsEnvVar := ""
+		elasticsearchUsernameEnvVar := ""
+		elasticsearchPasswordEnvVar := ""
+		for key := range discoverOutputSecretEnv.Data {
+			if strings.HasPrefix(key, "ELASTICSEARCH_HOSTS_") {
+				elasticsearchHostsEnvVar = key
+			} else if strings.HasPrefix(key, "ELASTICSEARCH_USERNAME_") {
+				elasticsearchUsernameEnvVar = key
+			} else if strings.HasPrefix(key, "ELASTICSEARCH_PASSWORD_") {
+				elasticsearchPasswordEnvVar = key
+			}
+		}
+		if elasticsearchHostsEnvVar == "" {
+			return nil, errors.New("Cannot find elasticsearch hosts environment variable in discover output secret")
+		}
+
+		output := map[string]any{
+			"hosts": []string{fmt.Sprintf("${%s}", elasticsearchHostsEnvVar)},
+		}
+		if elasticsearchUsernameEnvVar != "" && elasticsearchPasswordEnvVar != "" {
+			output["username"] = fmt.Sprintf("${%s}", elasticsearchUsernameEnvVar)
+			output["password"] = fmt.Sprintf("${%s}", elasticsearchPasswordEnvVar)
+		}
+
+		// Check if tls is enabled
+		if discoverOutputSecretFile.Data["ca.crt"] != nil {
+			output["ssl"] = map[string]any{
+				"enabled":                 true,
+				"certificate_authorities": []string{fmt.Sprintf("/usr/share/metricbeat/discover/%s/ca.crt", discover.GetDiscoverMountPathFromAnnotations(discoverOutputSecretFile))},
+			}
+		}
+
+		metricbeatConf["output.elasticsearch"] = output
 	}
 
 	// Elasticsearch output
