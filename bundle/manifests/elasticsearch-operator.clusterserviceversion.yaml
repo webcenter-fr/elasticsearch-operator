@@ -1273,7 +1273,7 @@ spec:
         path: tls.certificateSecretRef
       - description: |-
           Enabled permit to enabled TLS
-          Default to false
+          Default to true
         displayName: Enabled
         path: tls.enabled
       - description: |-
@@ -2038,7 +2038,7 @@ spec:
         path: tls.certificateSecretRef
       - description: |-
           Enabled permit to enabled TLS
-          Default to false
+          Default to true
         displayName: Enabled
         path: tls.enabled
       - description: |-

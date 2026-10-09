@@ -940,6 +940,7 @@ spec:
                           ingest nodes
                         type: string
                       tlsEnabled:
+                        default: true
                         description: Set to true to enable TLS on route
                         type: boolean
                     required:
@@ -6396,7 +6397,7 @@ spec:
                     default: true
                     description: |-
                       Enabled permit to enabled TLS
-                      Default to false
+                      Default to true
                     type: boolean
                   keyComplexity:
                     description: |-

@@ -372,7 +372,7 @@ func (h *ElasticsearchReconciler) computeElasticsearchUrl(ctx context.Context, e
 	if es.IsIngressEnabled() {
 		url = es.Spec.Endpoint.Ingress.Host
 
-		if es.Spec.Endpoint.Ingress.SecretRef != nil {
+		if es.Spec.Endpoint.Ingress.IsTlsEnabled() || es.Spec.Tls.IsTlsEnabled() {
 			scheme = "https"
 		} else {
 			scheme = "http"
@@ -380,7 +380,7 @@ func (h *ElasticsearchReconciler) computeElasticsearchUrl(ctx context.Context, e
 	} else if es.IsRouteEnabled() {
 		url = es.Spec.Endpoint.Route.Host
 
-		if es.Spec.Endpoint.Route.TlsEnabled != nil && *es.Spec.Endpoint.Route.TlsEnabled {
+		if es.Spec.Endpoint.Route.IsTlsEnabled() || es.Spec.Tls.IsTlsEnabled() {
 			scheme = "https"
 		} else {
 			scheme = "http"

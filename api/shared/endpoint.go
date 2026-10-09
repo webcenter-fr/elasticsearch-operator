@@ -93,6 +93,7 @@ type EndpointRouteSpec struct {
 	// Set to true to enable TLS on route
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
 	// +optional
+	// +kubebuilder:default=true
 	TlsEnabled *bool `json:"tlsEnabled,omitempty"`
 
 	// SecretRef is the secret ref that store certificates

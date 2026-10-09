@@ -128,7 +128,7 @@ func main() {
 	if err != nil {
 		setupLog.Info("WATCH_NAMESPACES env variable not setted, the manager will watch and manage resources in all namespaces")
 	} else {
-		setupLog.Info("Manager look only resources on namespaces %s", watchNamespace)
+		setupLog.Info("Manager look only resources on namespaces", "namespaces", watchNamespace)
 		watchNamespaces := helper.StringToSlice(watchNamespace, ",")
 		cacheNamespaces = make(map[string]cache.Config)
 		for _, namespace := range watchNamespaces {
@@ -142,7 +142,7 @@ func main() {
 	cfg := ctrl.GetConfigOrDie()
 	timeout, err := helper.GetKubeClientTimeoutFromEnv()
 	if err != nil {
-		setupLog.Error(err, "KUBE_CLIENT_TIMEOUT must be a valid duration: %s", err.Error())
+		setupLog.Error(err, "KUBE_CLIENT_TIMEOUT must be a valid duration")
 		os.Exit(1)
 	}
 	cfg.Timeout = timeout

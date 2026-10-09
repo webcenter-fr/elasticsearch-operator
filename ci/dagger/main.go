@@ -58,7 +58,7 @@ func New(
 	// unsupported"). It is installed in /usr/local/bin because /go/bin is
 	// shadowed by a cache mount in the golang module. The PATH is overridden so
 	// /usr/local/bin is checked before the (cached) /go/bin binaries.
-	golangCtr := dag.Container().From("golang:1.27.0").
+	golangCtr := dag.Container().From("golang:1.27.2").
 		WithEnvVariable("PATH", "/usr/local/bin:/go/bin:/usr/local/go/bin:/usr/local/sbin:/usr/sbin:/usr/bin:/sbin:/bin").
 		WithEnvVariable("GOBIN", "/usr/local/bin").
 		WithExec([]string{"go", "install", "golang.org/x/vuln/cmd/govulncheck@v1.8.0"}).
