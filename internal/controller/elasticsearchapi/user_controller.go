@@ -22,7 +22,6 @@ import (
 	"github.com/disaster37/operator-sdk-extra/v3/pkg/controller/remote"
 	"github.com/sirupsen/logrus"
 	elasticsearchapicrd "github.com/webcenter-fr/elasticsearch-operator/api/elasticsearchapi/v1"
-	"github.com/webcenter-fr/elasticsearch-operator/internal/controller/common"
 	core "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/fields"
 	"k8s.io/apimachinery/pkg/types"
@@ -100,7 +99,7 @@ func (r *UserReconciler) SetupWithManager(mgr ctrl.Manager) error {
 		For(&elasticsearchapicrd.User{}).
 		Watches(&core.Secret{}, handler.EnqueueRequestsFromMapFunc(watchUserSecret(r.Client()))).
 		WithOptions(k8scontroller.Options{
-			RateLimiter: common.DefaultControllerRateLimiter(),
+			RateLimiter: controller.DefaultControllerRateLimiter[reconcile.Request](),
 		}).
 		Complete(r)
 }

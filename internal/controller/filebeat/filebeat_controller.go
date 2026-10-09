@@ -164,7 +164,7 @@ func (h *FilebeatReconciler) SetupWithManager(mgr ctrl.Manager) error {
 		Watches(&elasticsearchcrd.Elasticsearch{}, handler.EnqueueRequestsFromMapFunc(watchElasticsearch(h.Client()))).
 		Watches(&logstashcrd.Logstash{}, handler.EnqueueRequestsFromMapFunc(watchLogstash(h.Client()))).
 		WithOptions(k8scontroller.Options{
-			RateLimiter: common.DefaultControllerRateLimiter(),
+			RateLimiter: controller.DefaultControllerRateLimiter[reconcile.Request](),
 		})
 
 	if h.kubeCapability.HasRoute {
