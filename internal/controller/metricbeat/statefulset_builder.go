@@ -128,7 +128,8 @@ func buildStatefulsets(mb *beatcrd.Metricbeat, es *elasticsearchcrd.Elasticsearc
 				},
 			},
 		}, k8sbuilder.Merge)
-	} else {
+	} else if mb.Spec.ElasticsearchRef.IsExternal() {
+		// SecretRef is guaranteed to be set by the check at the top of this function
 		cb.WithEnv([]corev1.EnvVar{
 			{
 				Name: "ELASTICSEARCH_USERNAME",
