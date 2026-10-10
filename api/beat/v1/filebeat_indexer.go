@@ -69,7 +69,7 @@ func SetupFilebeatIndexer(k8sManager manager.Manager) (err error) {
 			if p.Spec.LogstashRef.ManagedLogstashRef.Namespace != "" {
 				return []string{fmt.Sprintf("%s/%s", p.Spec.LogstashRef.ManagedLogstashRef.Namespace, p.Spec.LogstashRef.ManagedLogstashRef.Name)}
 			}
-			return []string{fmt.Sprintf("%s/%s", p.Namespace, p.Spec.LogstashRef.ManagedLogstashRef.Namespace)}
+			return []string{fmt.Sprintf("%s/%s", p.Namespace, p.Spec.LogstashRef.ManagedLogstashRef.Name)}
 		}
 		return []string{}
 	}); err != nil {

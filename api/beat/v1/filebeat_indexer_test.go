@@ -2,11 +2,14 @@ package v1
 
 import (
 	"context"
+	"time"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/webcenter-fr/elasticsearch-operator/api/shared"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/fields"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 func (t *TestSuite) TestSetupFilebeatIndexer() {
@@ -194,4 +197,32 @@ func (t *TestSuite) TestSetupFilebeatIndexer() {
 
 	err = t.k8sClient.Create(context.Background(), filebeat)
 	assert.NoError(t.T(), err)
+
+	// The managed fullname indexers must index by resource name (namespace/name),
+	// so a field selector on the referenced resource fullname must match.
+	assert.Eventually(t.T(), func() bool {
+		list := &FilebeatList{}
+		if err := t.k8sClient.List(context.Background(), list, &client.ListOptions{
+			Namespace: "default",
+			FieldSelector: fields.SelectorFromSet(fields.Set{
+				"spec.logstashRef.managed.fullname": "default/test",
+			}),
+		}); err != nil {
+			return false
+		}
+		return len(list.Items) == 1 && list.Items[0].Name == "test"
+	}, 10*time.Second, 100*time.Millisecond)
+
+	assert.Eventually(t.T(), func() bool {
+		list := &FilebeatList{}
+		if err := t.k8sClient.List(context.Background(), list, &client.ListOptions{
+			Namespace: "default",
+			FieldSelector: fields.SelectorFromSet(fields.Set{
+				"spec.elasticsearchRef.managed.fullname": "default/test",
+			}),
+		}); err != nil {
+			return false
+		}
+		return len(list.Items) == 1 && list.Items[0].Name == "test2"
+	}, 10*time.Second, 100*time.Millisecond)
 }
