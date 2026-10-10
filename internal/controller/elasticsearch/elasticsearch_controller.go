@@ -349,6 +349,13 @@ loopStatefulset:
 		res.RequeueAfter = time.Second * 30
 	}
 
+	// Reconcile suspended pods (downtime mode via the suspend annotation).
+	// It runs on every successful reconcile: it deletes running pods that
+	// should be suspended so they restart blocked in Init state.
+	if err := ReconcileSuspendedPods(ctx, h.Client(), o, logger); err != nil {
+		logger.Warnf("Error when reconciling suspended pods: %s", err)
+	}
+
 	o.Status.CredentialsRef = corev1.LocalObjectReference{
 		Name: GetSecretNameForCredentials(o),
 	}
@@ -415,9 +422,31 @@ func (h *ElasticsearchReconciler) computeElasticsearchUrl(ctx context.Context, e
 	return fmt.Sprintf("%s://%s", scheme, url), nil
 }
 
-func (h *ElasticsearchReconciler) getElasticsearchHandler(ctx context.Context, es *elasticsearchcrd.Elasticsearch, log *logrus.Entry) (esHandler eshandler.ElasticsearchHandler, err error) {
-	addresses := []string{}
+// getElasticsearchAddresses builds the list of Elasticsearch API addresses:
+// one DNS address per pod via the headless services (which publish not-ready
+// addresses, so the operator can always connect, even during a rolling
+// restart when pods are not ready), plus the global ClusterIP service as
+// fallback. Inspired by ECK's URL provider.
+func getElasticsearchAddresses(es *elasticsearchcrd.Elasticsearch) (addresses []string) {
+	scheme := "http"
+	if es.Spec.Tls.IsTlsEnabled() {
+		scheme = "https"
+	}
 
+	for _, nodeGroup := range es.Spec.NodeGroups {
+		headlessService := GetNodeGroupServiceNameHeadless(es, nodeGroup.Name)
+		for _, nodeName := range GetNodeGroupNodeNames(es, nodeGroup.Name) {
+			addresses = append(addresses, fmt.Sprintf("%s://%s.%s.%s.svc:9200", scheme, nodeName, headlessService, es.Namespace))
+		}
+	}
+
+	// Fallback: the global ClusterIP service (load-balances across ready pods)
+	addresses = append(addresses, fmt.Sprintf("%s://%s.%s.svc:9200", scheme, GetGlobalServiceName(es), es.Namespace))
+
+	return addresses
+}
+
+func (h *ElasticsearchReconciler) getElasticsearchHandler(ctx context.Context, es *elasticsearchcrd.Elasticsearch, log *logrus.Entry) (esHandler eshandler.ElasticsearchHandler, err error) {
 	// Get Elasticsearch credentials
 	secret := &corev1.Secret{}
 	if err = h.Client().Get(ctx, types.NamespacedName{Namespace: es.Namespace, Name: GetSecretNameForCredentials(es)}, secret); err != nil {
@@ -429,12 +458,8 @@ func (h *ElasticsearchReconciler) getElasticsearchHandler(ctx context.Context, e
 		return nil, err
 	}
 
-	serviceName := GetGlobalServiceName(es)
-	if !es.Spec.Tls.IsTlsEnabled() {
-		addresses = append(addresses, fmt.Sprintf("http://%s.%s.svc:9200", serviceName, es.Namespace))
-	} else {
-		addresses = append(addresses, fmt.Sprintf("https://%s.%s.svc:9200", serviceName, es.Namespace))
-	}
+	addresses := getElasticsearchAddresses(es)
+	log.Infof("Elasticsearch client configured with %d addresses (%d pod DNS via headless services + 1 global service)", len(addresses), len(addresses)-1)
 
 	cfg := &elasticsearch.Config{
 		Addresses:         addresses,

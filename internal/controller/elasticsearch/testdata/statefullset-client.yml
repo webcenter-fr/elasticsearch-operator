@@ -194,6 +194,39 @@ spec:
         - mountPath: /usr/share/elasticsearch/jdk/lib/security
           name: cacerts
       initContainers:
+      - args:
+        - |-
+          while grep -qx "$HOSTNAME" /suspended/suspended_pods.txt 2>/dev/null; do
+            echo "Pod $HOSTNAME is suspended via elasticsearch.k8s.webcenter.fr/suspend annotation"
+            echo "Remove the pod name from the annotation to resume normal operation"
+            sleep 10
+          done
+        command:
+        - /bin/sh
+        - -c
+        env:
+        - name: HOSTNAME
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.name
+        image: docker.elastic.co/elasticsearch/elasticsearch:2.3.0
+        name: suspend-check
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+            - ALL
+          privileged: false
+          runAsGroup: 1000
+          runAsNonRoot: true
+          runAsUser: 1000
+        volumeMounts:
+        - mountPath: /suspended
+          name: suspended-pods
+          readOnly: true
+        - mountPath: /usr/share/elasticsearch/data
+          name: elasticsearch-data
+          readOnly: true
       - command:
         - sysctl
         - -w
@@ -415,6 +448,10 @@ spec:
         emptyDir: {}
       - name: plugin
         emptyDir: {}
+      - configMap:
+          name: test-suspended-pods-es
+          optional: true
+        name: suspended-pods
   volumeClaimTemplates:
   - metadata:
       creationTimestamp: null

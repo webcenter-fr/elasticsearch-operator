@@ -33,8 +33,8 @@ github.com/disaster37/elasticsearch/v9 v9.0.1 h1:VuHHLEqpbD8tv3fkyrPka0nyfjvbdJn
 github.com/disaster37/elasticsearch/v9 v9.0.1/go.mod h1:SC1UbBGHw1FOSm+B4GrdA6lfTmpasXD+W7J6srYQ7z0=
 github.com/disaster37/es-handler/v8 v8.1.5 h1:GkV63to9EvnU95hgvLy66gqeOSw+tlnDaU3cjTcQeXc=
 github.com/disaster37/es-handler/v8 v8.1.5/go.mod h1:kLPwx7xutOHWdGwtbujzg1h1J6Xv+HKRakc/pgY1wQo=
-github.com/disaster37/es-handler/v9 v9.0.0 h1:EEY8KI7vepodHYF9pcK6lmPwt+WlZMuQ7wEZmQ46WIo=
-github.com/disaster37/es-handler/v9 v9.0.0/go.mod h1:+1u8CO3SDyeWliXiwq74HnKZM0n/fOGXN+P7w4uQtT0=
+github.com/disaster37/es-handler/v9 v9.0.1 h1:M6l9Z1El6pal9dhDquhBXUT8dqnbo67yRzSqG37iDRM=
+github.com/disaster37/es-handler/v9 v9.0.1/go.mod h1:+1u8CO3SDyeWliXiwq74HnKZM0n/fOGXN+P7w4uQtT0=
 github.com/disaster37/generic-objectmatcher v1.0.2 h1:jjuMd0E/Q3ZsDCqbpd3nLdSI7I9SJB+xJXT9LgWoltc=
 github.com/disaster37/generic-objectmatcher v1.0.2/go.mod h1:OyAiqj4iYNgikhoOBBNphdiToKvHtfC7Ib6C4kfkm0w=
 github.com/disaster37/go-kibana-rest/v8 v8.5.0 h1:Wr2CMopHj0wAh7kq3p355jXctISL1LdAZ9kYN/v6abw=

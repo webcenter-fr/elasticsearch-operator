@@ -28,6 +28,16 @@ import (
 
 const (
 	ElasticsearchAnnotationKey = "elasticsearch.k8s.webcenter.fr"
+
+	// ElasticsearchSuspendAnnotation permits to suspend pods (downtime mode).
+	// The value is a comma-separated list of pod names. Suspended pods stay in
+	// Init state with their PVC mounted, so `kubectl exec` can still access data.
+	ElasticsearchSuspendAnnotation = ElasticsearchAnnotationKey + "/suspend"
+
+	// ElasticsearchDisableUpgradePredicatesAnnotation permits to disable upgrade
+	// safety predicates. The value is a comma-separated list of predicate names,
+	// or "*" to disable all of them.
+	ElasticsearchDisableUpgradePredicatesAnnotation = ElasticsearchAnnotationKey + "/disable-upgrade-predicates"
 )
 
 // EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!
