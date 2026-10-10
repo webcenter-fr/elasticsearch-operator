@@ -8,7 +8,7 @@ require (
 	github.com/codingsince1985/checksum v1.3.0
 	github.com/davecgh/go-spew v1.1.2-0.20180830191138-d8f796af33cc
 	github.com/disaster37/elasticsearch/v9 v9.0.1
-	github.com/disaster37/es-handler/v9 v9.0.1-0.20261009200008-18b9967f0a21
+	github.com/disaster37/es-handler/v9 v9.0.1
 	github.com/disaster37/generic-objectmatcher v1.0.2
 	github.com/disaster37/go-kibana-rest/v8 v8.5.0
 	github.com/disaster37/k8sbuilder v1.0.3
