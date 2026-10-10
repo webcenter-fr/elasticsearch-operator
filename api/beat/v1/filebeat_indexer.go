@@ -90,6 +90,9 @@ func SetupFilebeatIndexer(k8sManager manager.Manager) (err error) {
 		p := o.(*Filebeat)
 		res := make([]string, 0, len(p.Spec.DiscoverRef))
 		for _, dr := range p.Spec.DiscoverRef {
+			if dr == nil {
+				continue
+			}
 			res = append(res, dr.GetName())
 		}
 		return res

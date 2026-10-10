@@ -56,6 +56,9 @@ func (r *logstashValidator) ValidateCreate(ctx context.Context, obj *Logstash) (
 	if err := obj.Spec.LogstashRef.ValidateField(); err != nil {
 		allErrs = append(allErrs, err)
 	}
+	if err := obj.Spec.Discover.ValidateName(); err != nil {
+		allErrs = append(allErrs, err)
+	}
 
 	if len(allErrs) > 0 {
 		return nil, apierrors.NewInvalid(
@@ -72,6 +75,9 @@ func (r *logstashValidator) ValidateUpdate(ctx context.Context, oldObj *Logstash
 	var allErrs field.ErrorList
 
 	if err := newObj.Spec.LogstashRef.ValidateField(); err != nil {
+		allErrs = append(allErrs, err)
+	}
+	if err := newObj.Spec.Discover.ValidateName(); err != nil {
 		allErrs = append(allErrs, err)
 	}
 

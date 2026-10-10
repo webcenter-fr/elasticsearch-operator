@@ -9,11 +9,13 @@ import (
 	"github.com/stretchr/testify/assert"
 	discovercrd "github.com/webcenter-fr/elasticsearch-operator/api/discover/v1"
 	logstashcrd "github.com/webcenter-fr/elasticsearch-operator/api/logstash/v1"
+	"github.com/webcenter-fr/elasticsearch-operator/api/shared"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/tools/record"
+	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 )
 
@@ -170,4 +172,69 @@ func TestSecretLogstashReconcilerReadWhenManagedClusterNotReady(t *testing.T) {
 	_, res, err := r.Read(ctx, o, map[string]any{}, logger)
 	assert.NoError(t, err)
 	assert.Equal(t, 30*time.Second, res.RequeueAfter)
+}
+
+func TestSecretLogstashReconcilerReadManagedUserRef(t *testing.T) {
+	ctx := context.Background()
+	logger := logrus.NewEntry(logrus.New())
+
+	userSecret := &corev1.Secret{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: "default",
+			Name:      "managed-user-secret",
+		},
+		Data: map[string][]byte{
+			"user.key": []byte(logstashTestUserKey),
+			"user.crt": []byte(logstashTestUserCrt),
+		},
+	}
+	ls := &logstashcrd.Logstash{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: "other",
+			Name:      "managed-logstash",
+		},
+		Spec: logstashcrd.LogstashSpec{
+			Pki: logstashcrd.LogstashPkiSpec{
+				Enabled: ptr.To(false),
+			},
+			Deployment: logstashcrd.LogstashDeploymentSpec{
+				Deployment: shared.Deployment{
+					Replicas: 1,
+				},
+			},
+		},
+	}
+	o := &discovercrd.Logstash{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: "default",
+			Name:      "test",
+		},
+		Spec: discovercrd.LogstashSpec{
+			LogstashRef: discovercrd.LogstashRef{
+				ManagedLogstashRef: &discovercrd.LogstashManagedRef{
+					Name:      "managed-logstash",
+					Namespace: "other",
+					Port:      5000,
+					UserRef: &corev1.SecretReference{
+						Name: "managed-user-secret",
+					},
+				},
+			},
+		},
+	}
+
+	c := newLogstashTestClient(t, o, ls, userSecret).Build()
+	r := newSecretLogstashReconciler(c, record.NewFakeRecorder(10))
+
+	data := map[string]any{}
+	read, res, err := r.Read(ctx, o, data, logger)
+	assert.NoError(t, err)
+	assert.Zero(t, res.RequeueAfter)
+	assert.Len(t, read.GetExpectedObjects(), 2)
+	assert.Equal(t, "managed-user-secret", *data["logstashUserSecretRef"].(*string))
+	assert.Equal(t, []byte("managed-logstash-ls-0.managed-logstash-headless-ls.other.svc:5000"), read.GetExpectedObjects()[0].Data["LOGSTASH_HOSTS_TEST"])
+	assert.NotEmpty(t, read.GetExpectedObjects()[0].Data["LOGSTASH_USER_PASSWORD_TEST"])
+	assert.Equal(t, []byte(logstashTestUserKey), read.GetExpectedObjects()[1].Data["user.key"])
+	assert.Equal(t, []byte(logstashTestUserCrt), read.GetExpectedObjects()[1].Data["user.crt"])
+	assert.NotEmpty(t, read.GetExpectedObjects()[1].Data["user.p12"])
 }

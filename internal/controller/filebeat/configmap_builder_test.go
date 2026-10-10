@@ -258,6 +258,25 @@ func TestBuildConfigMaps(t *testing.T) {
 	assert.Equal(t, 1, len(configMaps))
 	test.EqualFromYamlFile[*corev1.ConfigMap](t, "testdata/configmap_discover_kafka.yml", configMaps[0], scheme.Scheme)
 
+	// When discover Kafka output without CA (plaintext external Kafka)
+	discoverFileSecret = &corev1.Secret{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: "default",
+			Name:      "test-kafka-file",
+			Annotations: map[string]string{
+				fmt.Sprintf("%s/mountPath", discovercrd.DiscoverAnnotationKey): "test-kafka",
+			},
+		},
+		Data: map[string][]byte{
+			"ca.crt": []byte(""),
+		},
+	}
+
+	configMaps, err = buildConfigMaps(o, nil, nil, nil, nil, discovercrd.DiscoverTypeKafka, discoverEnvSecret, discoverFileSecret)
+	assert.NoError(t, err)
+	assert.Equal(t, 1, len(configMaps))
+	test.EqualFromYamlFile[*corev1.ConfigMap](t, "testdata/configmap_discover_kafka_no_ca.yml", configMaps[0], scheme.Scheme)
+
 	// When discover Logstash output
 	o = &beatcrd.Filebeat{
 		ObjectMeta: metav1.ObjectMeta{
@@ -303,6 +322,25 @@ func TestBuildConfigMaps(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equal(t, 1, len(configMaps))
 	test.EqualFromYamlFile[*corev1.ConfigMap](t, "testdata/configmap_discover_logstash.yml", configMaps[0], scheme.Scheme)
+
+	// When discover Logstash output without CA (plaintext external Logstash)
+	discoverFileSecret = &corev1.Secret{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: "default",
+			Name:      "test-logstash-file",
+			Annotations: map[string]string{
+				fmt.Sprintf("%s/mountPath", discovercrd.DiscoverAnnotationKey): "test-logstash",
+			},
+		},
+		Data: map[string][]byte{
+			"ca.crt": []byte(""),
+		},
+	}
+
+	configMaps, err = buildConfigMaps(o, nil, nil, nil, nil, discovercrd.DiscoverTypeLogstash, discoverEnvSecret, discoverFileSecret)
+	assert.NoError(t, err)
+	assert.Equal(t, 1, len(configMaps))
+	test.EqualFromYamlFile[*corev1.ConfigMap](t, "testdata/configmap_discover_logstash_no_ca.yml", configMaps[0], scheme.Scheme)
 
 	// When config
 	o = &beatcrd.Filebeat{

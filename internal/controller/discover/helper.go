@@ -29,18 +29,21 @@ func GetSecretNameForEnv(name string, targetSecretEnvRef *corev1.LocalObjectRefe
 
 // GetLabels permit to return global labels must be set on all resources of a discover type
 func GetLabels(discoverTypeKey, name string, srcLabels map[string]string, customLabels ...map[string]string) (labels map[string]string) {
-	labels = map[string]string{
-		"discoverName":                    name,
-		discoverTypeKey:                   "true",
-		discovercrd.DiscoverAnnotationKey: "true",
-	}
+	labels = map[string]string{}
 	for _, label := range customLabels {
 		for key, val := range label {
 			labels[key] = val
 		}
 	}
+	labels = funk.UnionStringMap(labels, srcLabels)
 
-	return funk.UnionStringMap(labels, srcLabels)
+	// Operator labels always win over user labels to keep the discover
+	// controllers and the workload watchers consistent.
+	return funk.UnionStringMap(labels, map[string]string{
+		"discoverName":                    name,
+		discoverTypeKey:                   "true",
+		discovercrd.DiscoverAnnotationKey: "true",
+	})
 }
 
 // GetAnnotations permit to return global annotations must be set on all resources of a discover type

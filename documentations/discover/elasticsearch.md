@@ -58,6 +58,8 @@ spec:
 | `targetSecretEnvRef.name` | Secret name for environment variables | `{resource-name}-env` |
 | `name` | Logical name used as suffix for environment variables and as directory name to mount the file secret on pods | Resource name |
 
+> `name` must start with an alphanumeric character and only contain alphanumeric characters, `-`, `_` or `.`. It must not contain `..`.
+
 ### Elasticsearch Reference
 
 | Field | Description | Required |

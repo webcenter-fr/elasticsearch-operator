@@ -85,6 +85,25 @@ func (r *secretLogstashReconciler) Read(ctx context.Context, o *discovercrd.Logs
 			return read, reconcile.Result{RequeueAfter: 30 * time.Second}, nil
 		}
 
+		// Get the user secret
+		if o.Spec.LogstashRef.ManagedLogstashRef.UserRef != nil && o.Spec.LogstashRef.ManagedLogstashRef.UserRef.Name != "" {
+			userNamespace := o.Namespace
+			if o.Spec.LogstashRef.ManagedLogstashRef.UserRef.Namespace != "" {
+				userNamespace = o.Spec.LogstashRef.ManagedLogstashRef.UserRef.Namespace
+			}
+			logstashUserSecret = &corev1.Secret{}
+			if err = r.Client().Get(ctx, types.NamespacedName{Namespace: userNamespace, Name: o.Spec.LogstashRef.ManagedLogstashRef.UserRef.Name}, logstashUserSecret); err != nil {
+				if !k8serrors.IsNotFound(err) {
+					return read, res, errors.Wrapf(err, "Error when read secret %s", o.Spec.LogstashRef.ManagedLogstashRef.UserRef.Name)
+				}
+				logger.Warnf("Secret not found %s/%s, try latter", userNamespace, o.Spec.LogstashRef.ManagedLogstashRef.UserRef.Name)
+				return read, reconcile.Result{RequeueAfter: 30 * time.Second}, nil
+			}
+
+			// Set secret ref in status
+			data["logstashUserSecretRef"] = ptr.To(logstashUserSecret.Name)
+		}
+
 		// Get the CA secret
 		if ls.Spec.Pki.IsEnabled() {
 			logstashCaSecret = &corev1.Secret{}

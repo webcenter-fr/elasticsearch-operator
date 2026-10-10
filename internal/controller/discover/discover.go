@@ -75,6 +75,9 @@ func ReadDiscoversSecrets(ctx context.Context, c client.Client, logger *logrus.E
 
 	// Read discover refs
 	for _, ref := range discoversRef {
+		if ref == nil {
+			continue
+		}
 		if ref.Kafka != nil {
 			discoverKafka = &discovercrd.Kafka{}
 			if err = c.Get(ctx, types.NamespacedName{Namespace: o.GetNamespace(), Name: ref.Kafka.Name}, discoverKafka); err != nil {

@@ -21,6 +21,7 @@ import (
 
 	"github.com/disaster37/operator-sdk-extra/v3/pkg/controller"
 	"github.com/sirupsen/logrus"
+	discovercrd "github.com/webcenter-fr/elasticsearch-operator/api/discover/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 
 	"k8s.io/apimachinery/pkg/util/validation/field"
@@ -68,6 +69,11 @@ func (r *metricbeatValidator) ValidateCreate(ctx context.Context, obj *Metricbea
 		allErrs = append(allErrs, field.Invalid(field.NewPath("spec"), obj.Spec, "You need to provide Elasticsearch target or Discover target"))
 	}
 
+	// Check each discover ref references exactly one discover
+	if hasDiscoverRef {
+		allErrs = append(allErrs, discovercrd.ValidateDiscoverRefs(obj.Spec.DiscoverRef, field.NewPath("spec").Child("discoverRef"))...)
+	}
+
 	// Check Elasticsearch target
 	if hasLegacyRef {
 		if err := obj.Spec.ElasticsearchRef.ValidateField(); err != nil {
@@ -79,6 +85,9 @@ func (r *metricbeatValidator) ValidateCreate(ctx context.Context, obj *Metricbea
 	if obj.Spec.DiscoverOutputName != nil && *obj.Spec.DiscoverOutputName != "" {
 		found := false
 		for _, dr := range obj.Spec.DiscoverRef {
+			if dr == nil {
+				continue
+			}
 			if dr.GetName() == *obj.Spec.DiscoverOutputName {
 				found = true
 				break
@@ -115,6 +124,11 @@ func (r *metricbeatValidator) ValidateUpdate(ctx context.Context, oldObj *Metric
 		allErrs = append(allErrs, field.Invalid(field.NewPath("spec"), newObj.Spec, "You need to provide Elasticsearch target or Discover target"))
 	}
 
+	// Check each discover ref references exactly one discover
+	if hasDiscoverRef {
+		allErrs = append(allErrs, discovercrd.ValidateDiscoverRefs(newObj.Spec.DiscoverRef, field.NewPath("spec").Child("discoverRef"))...)
+	}
+
 	// Check Elasticsearch target
 	if hasLegacyRef {
 		if err := newObj.Spec.ElasticsearchRef.ValidateField(); err != nil {
@@ -126,6 +140,9 @@ func (r *metricbeatValidator) ValidateUpdate(ctx context.Context, oldObj *Metric
 	if newObj.Spec.DiscoverOutputName != nil && *newObj.Spec.DiscoverOutputName != "" {
 		found := false
 		for _, dr := range newObj.Spec.DiscoverRef {
+			if dr == nil {
+				continue
+			}
 			if dr.GetName() == *newObj.Spec.DiscoverOutputName {
 				found = true
 				break

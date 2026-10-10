@@ -35,3 +35,43 @@ func getEnvSuffix(kk *discovercrd.Kafka) string {
 func kafkaHaveClusterCa(kk *strimzicrd.Kafka) bool {
 	return kk.Spec.ClusterCa == nil || kk.Spec.ClusterCa.GenerateCertificateAuthority == nil || *kk.Spec.ClusterCa.GenerateCertificateAuthority
 }
+
+// getSpecListener permit to find the Kafka spec listener that matches the status
+// listener name. When the name is not available, it falls back to the given
+// index. It returns nil when no listener matches.
+func getSpecListener(kk *strimzicrd.Kafka, listenerName string, index int) *strimzicrd.KafkaSpecKafkaListenersElem {
+	if kk == nil || kk.Spec == nil {
+		return nil
+	}
+
+	if listenerName != "" {
+		for i := range kk.Spec.Kafka.Listeners {
+			listener := &kk.Spec.Kafka.Listeners[i]
+			if listener.Name != "" && listener.Name == listenerName {
+				return listener
+			}
+		}
+	}
+
+	if index >= 0 && index < len(kk.Spec.Kafka.Listeners) {
+		return &kk.Spec.Kafka.Listeners[index]
+	}
+
+	return nil
+}
+
+// getListenerAuthentication permit to get the authentication configuration of the
+// spec listener that matches the given status listener
+func getListenerAuthentication(kk *strimzicrd.Kafka, listener strimzicrd.KafkaStatusListenersElem, index int) *strimzicrd.KafkaSpecKafkaListenersElemAuthentication {
+	listenerName := ""
+	if listener.Name != nil {
+		listenerName = *listener.Name
+	}
+
+	specListener := getSpecListener(kk, listenerName, index)
+	if specListener == nil {
+		return nil
+	}
+
+	return specListener.Authentication
+}

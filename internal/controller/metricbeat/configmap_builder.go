@@ -69,7 +69,7 @@ func buildConfigMaps(mb *beatcrd.Metricbeat, es *elasticsearchcrd.Elasticsearch,
 		}
 
 		// Check if tls is enabled
-		if discoverOutputSecretFile.Data["ca.crt"] != nil {
+		if len(discoverOutputSecretFile.Data["ca.crt"]) > 0 {
 			output["ssl"] = map[string]any{
 				"enabled":                 true,
 				"certificate_authorities": []string{fmt.Sprintf("/usr/share/metricbeat/discover/%s/ca.crt", discover.GetDiscoverMountPathFromAnnotations(discoverOutputSecretFile))},

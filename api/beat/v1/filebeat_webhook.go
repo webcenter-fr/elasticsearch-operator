@@ -21,6 +21,7 @@ import (
 
 	"github.com/disaster37/operator-sdk-extra/v3/pkg/controller"
 	"github.com/sirupsen/logrus"
+	discovercrd "github.com/webcenter-fr/elasticsearch-operator/api/discover/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 
 	"k8s.io/apimachinery/pkg/util/validation/field"
@@ -73,6 +74,11 @@ func (r *filebeatValidator) ValidateCreate(ctx context.Context, obj *Filebeat) (
 		allErrs = append(allErrs, field.Invalid(field.NewPath("spec"), obj.Spec, "You need to provide Elasticsearch target, Logstash target or Discover target"))
 	}
 
+	// Check each discover ref references exactly one discover
+	if hasDiscoverRef {
+		allErrs = append(allErrs, discovercrd.ValidateDiscoverRefs(obj.Spec.DiscoverRef, field.NewPath("spec").Child("discoverRef"))...)
+	}
+
 	// Check logstash target
 	if obj.Spec.LogstashRef != nil {
 		if err := obj.Spec.LogstashRef.ValidateField(); err != nil {
@@ -91,6 +97,9 @@ func (r *filebeatValidator) ValidateCreate(ctx context.Context, obj *Filebeat) (
 	if obj.Spec.DiscoverOutputName != nil && *obj.Spec.DiscoverOutputName != "" {
 		found := false
 		for _, dr := range obj.Spec.DiscoverRef {
+			if dr == nil {
+				continue
+			}
 			if dr.GetName() == *obj.Spec.DiscoverOutputName {
 				found = true
 				break
@@ -132,6 +141,11 @@ func (r *filebeatValidator) ValidateUpdate(ctx context.Context, oldObj *Filebeat
 		allErrs = append(allErrs, field.Invalid(field.NewPath("spec"), newObj.Spec, "You need to provide Elasticsearch target, Logstash target or Discover target"))
 	}
 
+	// Check each discover ref references exactly one discover
+	if hasDiscoverRef {
+		allErrs = append(allErrs, discovercrd.ValidateDiscoverRefs(newObj.Spec.DiscoverRef, field.NewPath("spec").Child("discoverRef"))...)
+	}
+
 	// Check logstash target
 	if newObj.Spec.LogstashRef != nil {
 		if err := newObj.Spec.LogstashRef.ValidateField(); err != nil {
@@ -150,6 +164,9 @@ func (r *filebeatValidator) ValidateUpdate(ctx context.Context, oldObj *Filebeat
 	if newObj.Spec.DiscoverOutputName != nil && *newObj.Spec.DiscoverOutputName != "" {
 		found := false
 		for _, dr := range newObj.Spec.DiscoverRef {
+			if dr == nil {
+				continue
+			}
 			if dr.GetName() == *newObj.Spec.DiscoverOutputName {
 				found = true
 				break

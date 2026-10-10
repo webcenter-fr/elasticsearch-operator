@@ -668,3 +668,101 @@ pfJ8FlBrI6VNf5xHO14hLGS2A+WHopI8rosEUjssToEC
 	assert.Equal(t, []byte("managed-kafka-cluster-kafka-bootstrap:9092"), secrets[0].Data["KAFKA_BOOTSTRAP_SERVERS_CUSTOM"])
 	assert.NotEmpty(t, secrets[0].Data["KAFKA_USER_PASSWORD_CUSTOM"])
 }
+
+func TestBuildKafkaSecretsManagedKafkaListenerSelection(t *testing.T) {
+	// Status listeners order differs from spec listeners order:
+	// status is [tls, plain] while spec is [plain, tls].
+	kafkaCluster := &strimzicrd.Kafka{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "managed-kafka-cluster",
+			Namespace: "default",
+		},
+		Spec: &strimzicrd.KafkaSpec{
+			ClusterCa: &strimzicrd.KafkaSpecClusterCa{
+				GenerateCertificateAuthority: ptr.To(true),
+			},
+			Kafka: strimzicrd.KafkaSpecKafka{
+				Listeners: []strimzicrd.KafkaSpecKafkaListenersElem{
+					{
+						Name: "plain",
+						Type: "internal",
+						Port: 9092,
+						Tls:  true,
+					},
+					{
+						Name: "tls",
+						Type: "tls",
+						Port: 9093,
+						Tls:  true,
+						Authentication: &strimzicrd.KafkaSpecKafkaListenersElemAuthentication{
+							Type:     strimzicrd.KafkaSpecKafkaListenersElemAuthenticationTypeOauth,
+							ClientId: ptr.To("my-client-id"),
+						},
+					},
+				},
+			},
+		},
+		Status: &strimzicrd.KafkaStatus{
+			Listeners: []strimzicrd.KafkaStatusListenersElem{
+				{
+					Type:             ptr.To("tls"),
+					Name:             ptr.To("tls"),
+					BootstrapServers: ptr.To("managed-kafka-cluster-kafka-bootstrap:9093"),
+				},
+				{
+					Type:             ptr.To("internal"),
+					Name:             ptr.To("plain"),
+					BootstrapServers: ptr.To("managed-kafka-cluster-kafka-bootstrap:9092"),
+				},
+			},
+		},
+	}
+
+	buildKafka := func(targetListener string) *discovercrd.Kafka {
+		return &discovercrd.Kafka{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "test-kafka",
+				Namespace: "default",
+			},
+			Spec: discovercrd.KafkaSpec{
+				KafkaRef: discovercrd.KafkaRef{
+					ManagedKafkaRef: &discovercrd.KafkaManagedRef{
+						Name:           "managed-kafka-cluster",
+						TargetListener: targetListener,
+					},
+				},
+			},
+		}
+	}
+
+	// When no target listener is set, the internal listener must be selected
+	// even if its status index does not match its spec index
+	secrets, err := buildKafkaSecrets(buildKafka(""), kafkaCluster, nil, nil, nil)
+	assert.NoError(t, err)
+	assert.Equal(t, []byte("managed-kafka-cluster-kafka-bootstrap:9092"), secrets[0].Data["KAFKA_BOOTSTRAP_SERVERS_TEST_KAFKA"])
+	assert.Nil(t, secrets[0].Data["KAFKA_AUTH_TYPE_TEST_KAFKA"])
+	assert.Nil(t, secrets[0].Data["KAFKA_OAUTH_CLIENT_ID_TEST_KAFKA"])
+
+	// When the target listener is set, its bootstrap servers and its
+	// authentication must be used
+	secrets, err = buildKafkaSecrets(buildKafka("tls"), kafkaCluster, nil, nil, nil)
+	assert.NoError(t, err)
+	assert.Equal(t, []byte("managed-kafka-cluster-kafka-bootstrap:9093"), secrets[0].Data["KAFKA_BOOTSTRAP_SERVERS_TEST_KAFKA"])
+	assert.Equal(t, []byte("oauth"), secrets[0].Data["KAFKA_AUTH_TYPE_TEST_KAFKA"])
+	assert.Equal(t, []byte("my-client-id"), secrets[0].Data["KAFKA_OAUTH_CLIENT_ID_TEST_KAFKA"])
+
+	// When the target listener does not exist, it must fail instead of
+	// silently using another listener
+	_, err = buildKafkaSecrets(buildKafka("missing"), kafkaCluster, nil, nil, nil)
+	assert.Error(t, err)
+
+	// When a status listener has no bootstrap servers yet, it must fail
+	kafkaCluster.Status.Listeners[1].BootstrapServers = nil
+	_, err = buildKafkaSecrets(buildKafka("plain"), kafkaCluster, nil, nil, nil)
+	assert.Error(t, err)
+
+	// When no usable listener exists, it must fail
+	kafkaCluster.Status.Listeners = nil
+	_, err = buildKafkaSecrets(buildKafka(""), kafkaCluster, nil, nil, nil)
+	assert.Error(t, err)
+}

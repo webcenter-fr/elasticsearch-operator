@@ -75,12 +75,12 @@ func buildKafkaSecrets(kk *discovercrd.Kafka, kafkaCluster *strimzicrd.Kafka, se
 		secretForEnv.Data[fmt.Sprintf("KAFKA_BOOTSTRAP_SERVERS_%s", envSuffix)] = []byte(strings.Join(kk.Spec.KafkaRef.ExternalKafkaRef.Addresses, ","))
 
 		if secretUserKafka != nil && secretUserKafka.Data != nil {
-			secretForFile.Data["user.key"] = secretUserKafka.Data["user.key"]
-			secretForFile.Data["user.crt"] = secretUserKafka.Data["user.crt"]
 			if len(secretUserKafka.Data["user.key"]) > 0 {
+				secretForFile.Data["user.key"] = secretUserKafka.Data["user.key"]
 				userKey = secretUserKafka.Data["user.key"]
 			}
 			if len(secretUserKafka.Data["user.crt"]) > 0 {
+				secretForFile.Data["user.crt"] = secretUserKafka.Data["user.crt"]
 				userCrt = secretUserKafka.Data["user.crt"]
 			}
 			if len(secretUserKafka.Data["ca.crt"]) > 0 {
@@ -91,59 +91,93 @@ func buildKafkaSecrets(kk *discovercrd.Kafka, kafkaCluster *strimzicrd.Kafka, se
 
 	// When managed kafka
 	if kk.Spec.KafkaRef.IsManaged() && kafkaCluster != nil {
-		var bootstrapUrl string
-		var index int
+		var (
+			bootstrapUrl    string
+			listenerIndex   = -1
+			targetListener  = kk.Spec.KafkaRef.ManagedKafkaRef.TargetListener
+			statusListeners = kafkaCluster.Status.Listeners
+		)
 
-		// Search boostrap URL
-		for i, listener := range kafkaCluster.Status.Listeners {
-			if kk.Spec.KafkaRef.ManagedKafkaRef.TargetListener != "" {
-				if listener.Name != nil && *listener.Name == kk.Spec.KafkaRef.ManagedKafkaRef.TargetListener {
-					bootstrapUrl = *listener.BootstrapServers
-					index = i
-					break
+		// Search bootstrap URL from the status listeners
+		for i := range statusListeners {
+			listener := &statusListeners[i]
+			listenerName := ""
+			if listener.Name != nil {
+				listenerName = *listener.Name
+			}
+
+			if targetListener != "" {
+				// User asked for a specific listener, it must exist
+				if listenerName != targetListener {
+					continue
 				}
 			} else {
-				listenerType := kafkaCluster.Spec.Kafka.Listeners[i].Type
-				if listenerType == strimzicrd.KafkaSpecKafkaListenersElemTypeInternal || listenerType == strimzicrd.KafkaSpecKafkaListenersElemTypeClusterIp {
-					bootstrapUrl = *listener.BootstrapServers
-					index = i
-					break
+				// By default, select the first internal or clusterip listener
+				specListener := getSpecListener(kafkaCluster, listenerName, i)
+				if specListener == nil || (specListener.Type != strimzicrd.KafkaSpecKafkaListenersElemTypeInternal && specListener.Type != strimzicrd.KafkaSpecKafkaListenersElemTypeClusterIp) {
+					continue
 				}
 			}
+
+			if listener.BootstrapServers == nil {
+				return nil, errors.Errorf("Kafka listener %s has no bootstrap servers yet", listenerName)
+			}
+			bootstrapUrl = *listener.BootstrapServers
+			listenerIndex = i
+			break
 		}
-		if bootstrapUrl == "" && len(kafkaCluster.Status.Listeners) > 0 {
-			bootstrapUrl = *kafkaCluster.Status.Listeners[0].BootstrapServers
-			index = 0
+
+		if targetListener != "" && listenerIndex == -1 {
+			return nil, errors.Errorf("Target listener %s not found on Kafka %s", targetListener, kafkaCluster.Name)
+		}
+		if listenerIndex == -1 && len(statusListeners) > 0 {
+			if statusListeners[0].BootstrapServers == nil {
+				listenerName := ""
+				if statusListeners[0].Name != nil {
+					listenerName = *statusListeners[0].Name
+				}
+				return nil, errors.Errorf("Kafka listener %s has no bootstrap servers yet", listenerName)
+			}
+			bootstrapUrl = *statusListeners[0].BootstrapServers
+			listenerIndex = 0
+		}
+		if listenerIndex == -1 {
+			return nil, errors.Errorf("No usable listener found on Kafka %s", kafkaCluster.Name)
 		}
 		secretForEnv.Data[fmt.Sprintf("KAFKA_BOOTSTRAP_SERVERS_%s", envSuffix)] = []byte(bootstrapUrl)
 
 		// Discover auth type
-		if kafkaCluster.Spec.Kafka.Listeners[index].Authentication != nil {
-			secretForEnv.Data[fmt.Sprintf("KAFKA_AUTH_TYPE_%s", envSuffix)] = []byte(kafkaCluster.Spec.Kafka.Listeners[index].Authentication.Type)
-			if kafkaCluster.Spec.Kafka.Listeners[index].Authentication.Type == strimzicrd.KafkaSpecKafkaListenersElemAuthenticationTypeOauth {
+		var authorization *strimzicrd.KafkaSpecKafkaAuthorization
+		if kafkaCluster.Spec != nil {
+			authorization = kafkaCluster.Spec.Kafka.Authorization
+		}
+		authentication := getListenerAuthentication(kafkaCluster, statusListeners[listenerIndex], listenerIndex)
+		if authentication != nil {
+			secretForEnv.Data[fmt.Sprintf("KAFKA_AUTH_TYPE_%s", envSuffix)] = []byte(authentication.Type)
+			if authentication.Type == strimzicrd.KafkaSpecKafkaListenersElemAuthenticationTypeOauth {
 
-				if kafkaCluster.Spec.Kafka.Listeners[index].Authentication.ClientId != nil {
-					secretForEnv.Data[fmt.Sprintf("KAFKA_OAUTH_CLIENT_ID_%s", envSuffix)] = []byte(*kafkaCluster.Spec.Kafka.Listeners[index].Authentication.ClientId)
-				} else if kafkaCluster.Spec.Kafka.Authorization.ClientId != nil {
-					secretForEnv.Data[fmt.Sprintf("KAFKA_OAUTH_CLIENT_ID_%s", envSuffix)] = []byte(*kafkaCluster.Spec.Kafka.Authorization.ClientId)
+				if authentication.ClientId != nil {
+					secretForEnv.Data[fmt.Sprintf("KAFKA_OAUTH_CLIENT_ID_%s", envSuffix)] = []byte(*authentication.ClientId)
+				} else if authorization != nil && authorization.ClientId != nil {
+					secretForEnv.Data[fmt.Sprintf("KAFKA_OAUTH_CLIENT_ID_%s", envSuffix)] = []byte(*authorization.ClientId)
 				}
 
-				if kafkaCluster.Spec.Kafka.Listeners[index].Authentication.TokenEndpointUri != nil {
-					secretForEnv.Data[fmt.Sprintf("KAFKA_OAUTH_TOKEN_ENDPOINT_URI_%s", envSuffix)] = []byte(*kafkaCluster.Spec.Kafka.Listeners[index].Authentication.TokenEndpointUri)
-				} else if kafkaCluster.Spec.Kafka.Authorization.TokenEndpointUri != nil {
-					secretForEnv.Data[fmt.Sprintf("KAFKA_OAUTH_TOKEN_ENDPOINT_URI_%s", envSuffix)] = []byte(*kafkaCluster.Spec.Kafka.Authorization.TokenEndpointUri)
+				if authentication.TokenEndpointUri != nil {
+					secretForEnv.Data[fmt.Sprintf("KAFKA_OAUTH_TOKEN_ENDPOINT_URI_%s", envSuffix)] = []byte(*authentication.TokenEndpointUri)
+				} else if authorization != nil && authorization.TokenEndpointUri != nil {
+					secretForEnv.Data[fmt.Sprintf("KAFKA_OAUTH_TOKEN_ENDPOINT_URI_%s", envSuffix)] = []byte(*authorization.TokenEndpointUri)
 				}
 
-				if kafkaCluster.Spec.Kafka.Listeners[index].Authentication.ValidIssuerUri != nil {
-					secretForEnv.Data[fmt.Sprintf("KAFKA_OAUTH_VALID_ISSUER_URI_%s", envSuffix)] = []byte(*kafkaCluster.Spec.Kafka.Listeners[index].Authentication.ValidIssuerUri)
+				if authentication.ValidIssuerUri != nil {
+					secretForEnv.Data[fmt.Sprintf("KAFKA_OAUTH_VALID_ISSUER_URI_%s", envSuffix)] = []byte(*authentication.ValidIssuerUri)
 				}
 
-				if kafkaCluster.Spec.Kafka.Listeners[index].Authentication.JwksEndpointUri != nil {
-					secretForEnv.Data[fmt.Sprintf("KAFKA_OAUTH_JWKS_ENDPOINT_URI_%s", envSuffix)] = []byte(*kafkaCluster.Spec.Kafka.Listeners[index].Authentication.JwksEndpointUri)
+				if authentication.JwksEndpointUri != nil {
+					secretForEnv.Data[fmt.Sprintf("KAFKA_OAUTH_JWKS_ENDPOINT_URI_%s", envSuffix)] = []byte(*authentication.JwksEndpointUri)
 				}
 
-				if kafkaCluster.Spec.Kafka.Listeners[index].Authentication.UserNameClaim != nil {
-					secretForEnv.Data[fmt.Sprintf("KAFKA_OAUTH_USERNAME_CLAIM_%s", envSuffix)] = []byte(*kafkaCluster.Spec.Kafka.Listeners[index].Authentication.UserNameClaim)
+				if authentication.UserNameClaim != nil {
+					secretForEnv.Data[fmt.Sprintf("KAFKA_OAUTH_USERNAME_CLAIM_%s", envSuffix)] = []byte(*authentication.UserNameClaim)
 				}
 			}
 		}
@@ -159,13 +193,13 @@ func buildKafkaSecrets(kk *discovercrd.Kafka, kafkaCluster *strimzicrd.Kafka, se
 		}
 
 		// Add user certificate if is managed by Strimzi
-		if kk.Spec.KafkaRef.ManagedKafkaRef.UserRef != nil && secretUserKafka != nil {
-			secretForFile.Data["user.key"] = secretUserKafka.Data["user.key"]
-			secretForFile.Data["user.crt"] = secretUserKafka.Data["user.crt"]
+		if kk.Spec.KafkaRef.ManagedKafkaRef.UserRef != nil && secretUserKafka != nil && secretUserKafka.Data != nil {
 			if len(secretUserKafka.Data["user.key"]) > 0 {
+				secretForFile.Data["user.key"] = secretUserKafka.Data["user.key"]
 				userKey = secretUserKafka.Data["user.key"]
 			}
 			if len(secretUserKafka.Data["user.crt"]) > 0 {
+				secretForFile.Data["user.crt"] = secretUserKafka.Data["user.crt"]
 				userCrt = secretUserKafka.Data["user.crt"]
 			}
 			if len(secretUserKafka.Data["ca.crt"]) > 0 {

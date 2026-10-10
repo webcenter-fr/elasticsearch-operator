@@ -56,6 +56,9 @@ func (r *elasticsearchValidator) ValidateCreate(ctx context.Context, obj *Elasti
 	if err := obj.Spec.ElasticsearchRef.ValidateField(); err != nil {
 		allErrs = append(allErrs, err)
 	}
+	if err := obj.Spec.Discover.ValidateName(); err != nil {
+		allErrs = append(allErrs, err)
+	}
 
 	if len(allErrs) > 0 {
 		return nil, apierrors.NewInvalid(
@@ -72,6 +75,9 @@ func (r *elasticsearchValidator) ValidateUpdate(ctx context.Context, oldObj *Ela
 	var allErrs field.ErrorList
 
 	if err := newObj.Spec.ElasticsearchRef.ValidateField(); err != nil {
+		allErrs = append(allErrs, err)
+	}
+	if err := newObj.Spec.Discover.ValidateName(); err != nil {
 		allErrs = append(allErrs, err)
 	}
 

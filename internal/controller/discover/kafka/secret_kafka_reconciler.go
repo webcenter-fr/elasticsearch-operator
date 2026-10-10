@@ -152,6 +152,9 @@ func (r *secretKafkaReconciler) Read(ctx context.Context, o *discovercrd.Kafka, 
 			logger.Warnf("Secret not found %s/%s, try latter", o.Namespace, o.Spec.KafkaRef.ExternalKafkaRef.UserSecretRef.Name)
 			return read, reconcile.Result{RequeueAfter: 30 * time.Second}, nil
 		}
+
+		// Set secret ref in status
+		data["kafkaUserSecretRef"] = ptr.To(kafkaUserSecret.Name)
 	}
 
 	// Read custom CA secret

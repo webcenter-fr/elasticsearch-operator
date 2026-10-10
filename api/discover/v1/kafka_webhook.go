@@ -56,6 +56,9 @@ func (r *kafkaValidator) ValidateCreate(ctx context.Context, obj *Kafka) (admiss
 	if err := obj.Spec.KafkaRef.ValidateField(); err != nil {
 		allErrs = append(allErrs, err)
 	}
+	if err := obj.Spec.Discover.ValidateName(); err != nil {
+		allErrs = append(allErrs, err)
+	}
 
 	if len(allErrs) > 0 {
 		return nil, apierrors.NewInvalid(
@@ -72,6 +75,9 @@ func (r *kafkaValidator) ValidateUpdate(ctx context.Context, oldObj *Kafka, newO
 	var allErrs field.ErrorList
 
 	if err := newObj.Spec.KafkaRef.ValidateField(); err != nil {
+		allErrs = append(allErrs, err)
+	}
+	if err := newObj.Spec.Discover.ValidateName(); err != nil {
 		allErrs = append(allErrs, err)
 	}
 

@@ -244,4 +244,45 @@ func (t *TestSuite) TestMetricbeatWebhook() {
 	}
 	err = t.k8sClient.Create(context.Background(), o)
 	assert.Error(t.T(), err)
+
+	// Need failed when a discoverRef entry references many discover types
+	o = &Metricbeat{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "test-webhook-discover-many-types",
+			Namespace: "default",
+		},
+		Spec: MetricbeatSpec{
+			DiscoverRef: []*discovercrd.DiscoverRef{
+				{
+					Kafka: &corev1.LocalObjectReference{
+						Name: "test-kafka",
+					},
+					Elasticsearch: &corev1.LocalObjectReference{
+						Name: "test-elasticsearch",
+					},
+				},
+			},
+			DiscoverOutputName: ptr.To("test-elasticsearch"),
+			Deployment:         MetricbeatDeploymentSpec{},
+		},
+	}
+	err = t.k8sClient.Create(context.Background(), o)
+	assert.Error(t.T(), err)
+
+	// Need failed when a discoverRef entry references no discover type
+	o = &Metricbeat{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "test-webhook-discover-no-type",
+			Namespace: "default",
+		},
+		Spec: MetricbeatSpec{
+			DiscoverRef: []*discovercrd.DiscoverRef{
+				{},
+			},
+			DiscoverOutputName: ptr.To("test-elasticsearch"),
+			Deployment:         MetricbeatDeploymentSpec{},
+		},
+	}
+	err = t.k8sClient.Create(context.Background(), o)
+	assert.Error(t.T(), err)
 }

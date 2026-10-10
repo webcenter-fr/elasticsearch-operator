@@ -51,6 +51,9 @@ func buildConfigMaps(fb *beatcrd.Filebeat, es *elasticsearchcrd.Elasticsearch, l
 				return nil, errors.New("Cannot find kafka hosts environment variable in discover output secret")
 			}
 
+			sslConf := map[string]any{
+				"enabled": false,
+			}
 			filebeatConf["output.kafka"] = map[string]any{
 				"enabled":     true,
 				"client_id":   "${POD_NAME}",
@@ -60,22 +63,21 @@ func buildConfigMaps(fb *beatcrd.Filebeat, es *elasticsearchcrd.Elasticsearch, l
 					"reachable_only": true,
 				},
 				"required_acks": 1,
-				"ssl": map[string]any{
-					"enabled": false,
-				},
+				"ssl":           sslConf,
 			}
 
 			// Check if tls is enabled
-			if discoverOutputSecretFile.Data["ca.crt"] != nil {
-				filebeatConf["output.kafka"].(map[string]any)["ssl"].(map[string]any)["enabled"] = true
-				filebeatConf["output.kafka"].(map[string]any)["ssl"].(map[string]any)["certificate_authorities"] = []string{fmt.Sprintf("/usr/share/filebeat/discover/%s/ca.crt", discover.GetDiscoverMountPathFromAnnotations(discoverOutputSecretFile))}
-				filebeatConf["output.kafka"].(map[string]any)["ssl"].(map[string]any)["verification_mode"] = "full"
+			if len(discoverOutputSecretFile.Data["ca.crt"]) > 0 {
+				sslConf["enabled"] = true
+				sslConf["certificate_authorities"] = []string{fmt.Sprintf("/usr/share/filebeat/discover/%s/ca.crt", discover.GetDiscoverMountPathFromAnnotations(discoverOutputSecretFile))}
+				sslConf["verification_mode"] = "full"
 			}
 
 			// Check if authentication is enabled
-			if discoverOutputSecretFile.Data["user.crt"] != nil && discoverOutputSecretFile.Data["user.key"] != nil {
-				filebeatConf["output.kafka"].(map[string]any)["ssl"].(map[string]any)["certificate"] = fmt.Sprintf("/usr/share/filebeat/discover/%s/user.crt", discover.GetDiscoverMountPathFromAnnotations(discoverOutputSecretFile))
-				filebeatConf["output.kafka"].(map[string]any)["ssl"].(map[string]any)["key"] = fmt.Sprintf("/usr/share/filebeat/discover/%s/user.key", discover.GetDiscoverMountPathFromAnnotations(discoverOutputSecretFile))
+			if len(discoverOutputSecretFile.Data["user.crt"]) > 0 && len(discoverOutputSecretFile.Data["user.key"]) > 0 {
+				sslConf["enabled"] = true
+				sslConf["certificate"] = fmt.Sprintf("/usr/share/filebeat/discover/%s/user.crt", discover.GetDiscoverMountPathFromAnnotations(discoverOutputSecretFile))
+				sslConf["key"] = fmt.Sprintf("/usr/share/filebeat/discover/%s/user.key", discover.GetDiscoverMountPathFromAnnotations(discoverOutputSecretFile))
 			}
 
 		case discovercrd.DiscoverTypeLogstash:
@@ -91,13 +93,14 @@ func buildConfigMaps(fb *beatcrd.Filebeat, es *elasticsearchcrd.Elasticsearch, l
 				return nil, errors.New("Cannot find logstash hosts environment variable in discover output secret")
 			}
 
+			sslConf := map[string]any{
+				"enabled": false,
+			}
 			filebeatConf["output.logstash"] = map[string]any{
 				"enabled":     true,
 				"hosts":       []string{fmt.Sprintf("${%s}", logstashHostsEnvVar)},
 				"loadbalance": true,
-				"ssl": map[string]any{
-					"enabled": false,
-				},
+				"ssl":         sslConf,
 			}
 
 			// Check if tls is enabled
@@ -105,22 +108,22 @@ func buildConfigMaps(fb *beatcrd.Filebeat, es *elasticsearchcrd.Elasticsearch, l
 			if ls != nil && ls.Spec.Pki.IsEnabled() && ls.Spec.Pki.HasBeatCertificate() {
 				isTlsEnabled = true
 			}
-			// Logstash not managed
-			if ls == nil {
-				if discoverOutputSecretFile.Data["ca.crt"] != nil {
-					isTlsEnabled = true
-				}
+			if len(discoverOutputSecretFile.Data["ca.crt"]) > 0 {
+				isTlsEnabled = true
 			}
 			if isTlsEnabled {
-				filebeatConf["output.logstash"].(map[string]any)["ssl"].(map[string]any)["enabled"] = true
-				filebeatConf["output.logstash"].(map[string]any)["ssl"].(map[string]any)["certificate_authorities"] = []string{fmt.Sprintf("/usr/share/filebeat/discover/%s/ca.crt", discover.GetDiscoverMountPathFromAnnotations(discoverOutputSecretFile))}
-				filebeatConf["output.logstash"].(map[string]any)["ssl"].(map[string]any)["verification_mode"] = "full"
+				sslConf["enabled"] = true
+				if len(discoverOutputSecretFile.Data["ca.crt"]) > 0 {
+					sslConf["certificate_authorities"] = []string{fmt.Sprintf("/usr/share/filebeat/discover/%s/ca.crt", discover.GetDiscoverMountPathFromAnnotations(discoverOutputSecretFile))}
+					sslConf["verification_mode"] = "full"
+				}
 			}
 
 			// Check if authentication is enabled
-			if discoverOutputSecretFile.Data["user.crt"] != nil && discoverOutputSecretFile.Data["user.key"] != nil {
-				filebeatConf["output.logstash"].(map[string]any)["ssl"].(map[string]any)["certificate"] = fmt.Sprintf("/usr/share/filebeat/discover/%s/user.crt", discover.GetDiscoverMountPathFromAnnotations(discoverOutputSecretFile))
-				filebeatConf["output.logstash"].(map[string]any)["ssl"].(map[string]any)["key"] = fmt.Sprintf("/usr/share/filebeat/discover/%s/user.key", discover.GetDiscoverMountPathFromAnnotations(discoverOutputSecretFile))
+			if len(discoverOutputSecretFile.Data["user.crt"]) > 0 && len(discoverOutputSecretFile.Data["user.key"]) > 0 {
+				sslConf["enabled"] = true
+				sslConf["certificate"] = fmt.Sprintf("/usr/share/filebeat/discover/%s/user.crt", discover.GetDiscoverMountPathFromAnnotations(discoverOutputSecretFile))
+				sslConf["key"] = fmt.Sprintf("/usr/share/filebeat/discover/%s/user.key", discover.GetDiscoverMountPathFromAnnotations(discoverOutputSecretFile))
 			}
 		}
 	}

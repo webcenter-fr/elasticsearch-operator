@@ -301,6 +301,13 @@ func TestReadDiscoversSecrets(t *testing.T) {
 	assert.Nil(t, secrets)
 	assert.NotNil(t, res)
 	assert.NotZero(t, res.RequeueAfter)
+
+	// When a discover ref is nil
+	c = buildClient().Build()
+	secrets, res, err = ReadDiscoversSecrets(ctx, c, logger, o, []*discovercrd.DiscoverRef{nil})
+	assert.NoError(t, err)
+	assert.Empty(t, secrets)
+	assert.Nil(t, res)
 }
 
 func TestReadDiscoverOutputSecrets(t *testing.T) {

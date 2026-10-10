@@ -21,6 +21,7 @@ import (
 
 	"github.com/disaster37/operator-sdk-extra/v3/pkg/controller"
 	"github.com/sirupsen/logrus"
+	discovercrd "github.com/webcenter-fr/elasticsearch-operator/api/discover/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 
 	"k8s.io/apimachinery/pkg/util/validation/field"
@@ -68,6 +69,11 @@ func (r *logstashValidator) ValidateCreate(ctx context.Context, obj *Logstash) (
 		allErrs = append(allErrs, field.Invalid(field.NewPath("spec"), obj.Spec, "You need to provide Elasticsearch target or Discover target"))
 	}
 
+	// Check each discover ref references exactly one discover
+	if hasDiscoverRef {
+		allErrs = append(allErrs, discovercrd.ValidateDiscoverRefs(obj.Spec.DiscoverRef, field.NewPath("spec").Child("discoverRef"))...)
+	}
+
 	if hasLegacyRef {
 		if err := obj.Spec.ElasticsearchRef.ValidateField(); err != nil {
 			allErrs = append(allErrs, err)
@@ -98,6 +104,11 @@ func (r *logstashValidator) ValidateUpdate(ctx context.Context, oldObj *Logstash
 	// Check is set at least one target
 	if !hasLegacyRef && !hasDiscoverRef {
 		allErrs = append(allErrs, field.Invalid(field.NewPath("spec"), newObj.Spec, "You need to provide Elasticsearch target or Discover target"))
+	}
+
+	// Check each discover ref references exactly one discover
+	if hasDiscoverRef {
+		allErrs = append(allErrs, discovercrd.ValidateDiscoverRefs(newObj.Spec.DiscoverRef, field.NewPath("spec").Child("discoverRef"))...)
 	}
 
 	if hasLegacyRef {
