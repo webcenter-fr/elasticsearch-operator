@@ -11,6 +11,7 @@ import (
 	beatcrd "github.com/webcenter-fr/elasticsearch-operator/api/beat/v1"
 	elasticsearchcrd "github.com/webcenter-fr/elasticsearch-operator/api/elasticsearch/v1"
 	logstashcrd "github.com/webcenter-fr/elasticsearch-operator/api/logstash/v1"
+	"github.com/webcenter-fr/elasticsearch-operator/internal/controller/discover"
 	appv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -343,6 +344,9 @@ func buildStatefulsets(fb *beatcrd.Filebeat, es *elasticsearchcrd.Elasticsearch,
 	ptb.WithAffinity(corev1.Affinity{
 		PodAntiAffinity: antiAffinity,
 	}, k8sbuilder.OverwriteIfDefaultValue)
+
+	// Compute discovers
+	discover.ComputeDiscoverPod(ptb, cb, secretsChecksum, "/usr/share/filebeat")
 
 	// Compute containers
 	ptb.WithContainers([]corev1.Container{*cb.Container()}, k8sbuilder.Merge)

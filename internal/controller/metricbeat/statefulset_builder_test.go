@@ -7,6 +7,7 @@ import (
 	"github.com/disaster37/operator-sdk-extra/v3/pkg/test"
 	"github.com/stretchr/testify/assert"
 	beatcrd "github.com/webcenter-fr/elasticsearch-operator/api/beat/v1"
+	discovercrd "github.com/webcenter-fr/elasticsearch-operator/api/discover/v1"
 	elasticsearchcrd "github.com/webcenter-fr/elasticsearch-operator/api/elasticsearch/v1"
 	"github.com/webcenter-fr/elasticsearch-operator/api/shared"
 	appv1 "k8s.io/api/apps/v1"
@@ -348,4 +349,65 @@ func TestBuildStatefulset(t *testing.T) {
 	sts, err = buildStatefulsets(o, es, configMaps, extraSecrets, extraConfigMaps, false)
 	assert.NoError(t, err)
 	test.EqualFromYamlFile[*appv1.StatefulSet](t, "testdata/statefulset_complet.yml", sts[0], scheme.Scheme)
+}
+
+func TestBuildStatefulsetDiscoverOnly(t *testing.T) {
+	// Discover-only Metricbeat: no legacy ElasticsearchRef (zero value).
+	// The builder must not panic on nil SecretRef and must not inject
+	// Elasticsearch credentials env vars.
+	o := &beatcrd.Metricbeat{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: "default",
+			Name:      "test",
+		},
+		Spec: beatcrd.MetricbeatSpec{
+			DiscoverRef: []*discovercrd.DiscoverRef{
+				{
+					Elasticsearch: &corev1.LocalObjectReference{
+						Name: "my-discover",
+					},
+				},
+			},
+			DiscoverOutputName: ptr.To("my-discover"),
+			Deployment: beatcrd.MetricbeatDeploymentSpec{
+				Deployment: shared.Deployment{
+					Replicas: 1,
+				},
+			},
+		},
+	}
+	configMaps := []*corev1.ConfigMap{
+		{
+			ObjectMeta: metav1.ObjectMeta{
+				Namespace:   o.Namespace,
+				Name:        GetConfigMapConfigName(o),
+				Labels:      getLabels(o),
+				Annotations: getAnnotations(o),
+			},
+			Data: map[string]string{
+				"metricbeat.yml": "",
+			},
+		},
+	}
+
+	sts, err := buildStatefulsets(o, nil, configMaps, nil, nil, false)
+	assert.NoError(t, err)
+	assert.Len(t, sts, 1)
+
+	// No Elasticsearch credentials env vars must be injected
+	for _, container := range sts[0].Spec.Template.Spec.Containers {
+		if container.Name != "metricbeat" {
+			continue
+		}
+		for _, env := range container.Env {
+			assert.NotEqual(t, "ELASTICSEARCH_USERNAME", env.Name)
+			assert.NotEqual(t, "ELASTICSEARCH_PASSWORD", env.Name)
+		}
+	}
+
+	// No Elasticsearch CA volume must be mounted
+	for _, volume := range sts[0].Spec.Template.Spec.Volumes {
+		assert.NotEqual(t, "ca-elasticsearch", volume.Name)
+		assert.NotEqual(t, "ca-custom-elasticsearch", volume.Name)
+	}
 }

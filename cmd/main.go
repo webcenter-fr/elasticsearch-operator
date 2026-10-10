@@ -24,6 +24,7 @@ import (
 
 	// Import all Kubernetes client auth plugins (e.g. Azure, GCP, OIDC, etc.)
 	// to ensure that exec-entrypoint and run can make use of them.
+	strimzicrd "github.com/RedHatInsights/strimzi-client-go/apis/kafka.strimzi.io/v1beta2"
 	"github.com/disaster37/operator-sdk-extra/v3/pkg/controller"
 	"github.com/disaster37/operator-sdk-extra/v3/pkg/helper"
 	routev1 "github.com/openshift/api/route/v1"
@@ -48,6 +49,7 @@ import (
 
 	beatcrd "github.com/webcenter-fr/elasticsearch-operator/api/beat/v1"
 	cerebrocrd "github.com/webcenter-fr/elasticsearch-operator/api/cerebro/v1"
+	discovercrd "github.com/webcenter-fr/elasticsearch-operator/api/discover/v1"
 	elasticsearchcrd "github.com/webcenter-fr/elasticsearch-operator/api/elasticsearch/v1"
 	elasticsearchapicrd "github.com/webcenter-fr/elasticsearch-operator/api/elasticsearchapi/v1"
 	kibanacrd "github.com/webcenter-fr/elasticsearch-operator/api/kibana/v1"
@@ -55,6 +57,9 @@ import (
 	logstashcrd "github.com/webcenter-fr/elasticsearch-operator/api/logstash/v1"
 	cerebrocontrollers "github.com/webcenter-fr/elasticsearch-operator/internal/controller/cerebro"
 	"github.com/webcenter-fr/elasticsearch-operator/internal/controller/common"
+	discoverelasticsearchcontroller "github.com/webcenter-fr/elasticsearch-operator/internal/controller/discover/elasticsearch"
+	discoverkafkacontroller "github.com/webcenter-fr/elasticsearch-operator/internal/controller/discover/kafka"
+	discoverlogstashcontroller "github.com/webcenter-fr/elasticsearch-operator/internal/controller/discover/logstash"
 	elasticsearchcontrollers "github.com/webcenter-fr/elasticsearch-operator/internal/controller/elasticsearch"
 	elasticsearchapicontrollers "github.com/webcenter-fr/elasticsearch-operator/internal/controller/elasticsearchapi"
 	filebeatcontrollers "github.com/webcenter-fr/elasticsearch-operator/internal/controller/filebeat"
@@ -77,7 +82,9 @@ func init() {
 	utilruntime.Must(clientgoscheme.AddToScheme(scheme))
 	utilruntime.Must(monitoringv1.AddToScheme(scheme))
 	utilruntime.Must(routev1.AddToScheme(scheme))
+	utilruntime.Must(strimzicrd.AddToScheme(scheme))
 
+	utilruntime.Must(discovercrd.AddToScheme(scheme))
 	utilruntime.Must(elasticsearchcrd.AddToScheme(scheme))
 	utilruntime.Must(kibanacrd.AddToScheme(scheme))
 	utilruntime.Must(elasticsearchapicrd.AddToScheme(scheme))
@@ -219,6 +226,9 @@ func main() {
 	if helper.HasCRD(clientStd, routev1.SchemeGroupVersion) {
 		kubeCapability.HasRoute = true
 	}
+	if helper.HasCRD(clientStd, strimzicrd.GroupVersion) {
+		kubeCapability.HasStrimzi = true
+	}
 
 	// Add indexers
 	if err = controller.SetupIndexerWithManager(
@@ -228,6 +238,9 @@ func main() {
 		logstashcrd.SetupLogstashIndexer,
 		beatcrd.SetupFilebeatIndexer,
 		beatcrd.SetupMetricbeatIndexer,
+		discovercrd.SetupKafkaIndexer,
+		discovercrd.SetupLogstashIndexer,
+		discovercrd.SetupElasticsearchIndexer,
 		cerebrocrd.SetupCerebroIndexer,
 		cerebrocrd.SetupHostIndexer,
 		elasticsearchapicrd.SetupComponentTemplateIndexer,
@@ -255,6 +268,9 @@ func main() {
 			mgr.GetClient(),
 			beatcrd.SetupFilebeatWebhookWithManager(logrus.NewEntry(log)),
 			beatcrd.SetupMetricbeatWebhookWithManager(logrus.NewEntry(log)),
+			discovercrd.SetupKafkaWebhookWithManager(logrus.NewEntry(log)),
+			discovercrd.SetupLogstashWebhookWithManager(logrus.NewEntry(log)),
+			discovercrd.SetupElasticsearchWebhookWithManager(logrus.NewEntry(log)),
 			cerebrocrd.SetupHostWebhookWithManager(logrus.NewEntry(log)),
 			kibanacrd.SetupKibanaWebhookWithManager(logrus.NewEntry(log)),
 			logstashcrd.SetupLogstashWebhookWithManager(logrus.NewEntry(log)),
@@ -332,6 +348,24 @@ func main() {
 	metricbeatController := metricbeatcontrollers.NewMetricbeatReconciler(mgr.GetClient(), logrus.NewEntry(log), common.LegacyEventRecorder(mgr, "metricbeat-controller"), kubeCapability)
 	if err = metricbeatController.SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "Metricbeat")
+		os.Exit(1)
+	}
+
+	kafkaDiscoverController := discoverkafkacontroller.NewKafkaDiscoverReconciler(mgr.GetClient(), logrus.NewEntry(log), common.LegacyEventRecorder(mgr, "kafka-discover-controller"), kubeCapability)
+	if err = kafkaDiscoverController.SetupWithManager(mgr); err != nil {
+		setupLog.Error(err, "unable to create controller", "controller", "KafkaDiscover")
+		os.Exit(1)
+	}
+
+	logstashDiscoverController := discoverlogstashcontroller.NewLogstashDiscoverReconciler(mgr.GetClient(), logrus.NewEntry(log), common.LegacyEventRecorder(mgr, "logstash-discover-controller"), kubeCapability)
+	if err = logstashDiscoverController.SetupWithManager(mgr); err != nil {
+		setupLog.Error(err, "unable to create controller", "controller", "LogstashDiscover")
+		os.Exit(1)
+	}
+
+	elasticsearchDiscoverController := discoverelasticsearchcontroller.NewElasticsearchDiscoverReconciler(mgr.GetClient(), logrus.NewEntry(log), common.LegacyEventRecorder(mgr, "elasticsearch-discover-controller"), kubeCapability)
+	if err = elasticsearchDiscoverController.SetupWithManager(mgr); err != nil {
+		setupLog.Error(err, "unable to create controller", "controller", "ElasticsearchDiscover")
 		os.Exit(1)
 	}
 

@@ -5,12 +5,14 @@ go 1.27.0
 require (
 	dario.cat/mergo v1.0.2
 	emperror.dev/errors v0.8.1
+	github.com/RedHatInsights/strimzi-client-go v0.40.0
 	github.com/codingsince1985/checksum v1.3.0
 	github.com/davecgh/go-spew v1.1.2-0.20180830191138-d8f796af33cc
 	github.com/disaster37/elasticsearch/v9 v9.0.1
 	github.com/disaster37/es-handler/v9 v9.0.0
 	github.com/disaster37/generic-objectmatcher v1.0.2
 	github.com/disaster37/go-kibana-rest/v8 v8.5.0
+	github.com/disaster37/k8s-objectmatcher v1.8.8
 	github.com/disaster37/k8sbuilder v1.0.3
 	github.com/disaster37/kb-handler/v8 v8.0.4
 	github.com/disaster37/operator-sdk-extra/v3 v3.0.9
@@ -35,6 +37,7 @@ require (
 	k8s.io/utils v0.0.0-20260707023825-cf1189d6abe3
 	sigs.k8s.io/controller-runtime v0.24.1
 	sigs.k8s.io/yaml v1.6.0
+	software.sslmate.com/src/go-pkcs12 v0.6.0
 )
 
 require (
@@ -45,7 +48,6 @@ require (
 	github.com/blang/semver/v4 v4.0.0 // indirect
 	github.com/cenkalti/backoff/v5 v5.0.3 // indirect
 	github.com/cespare/xxhash/v2 v2.3.0 // indirect
-	github.com/disaster37/k8s-objectmatcher v1.8.8 // indirect
 	github.com/elastic/elastic-transport-go/v8 v8.11.0 // indirect
 	github.com/elastic/go-elasticsearch/v8 v8.19.7 // indirect
 	github.com/emicklei/go-restful/v3 v3.13.0 // indirect

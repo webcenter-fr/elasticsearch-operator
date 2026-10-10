@@ -1,0 +1,37 @@
+apiVersion: v1
+data:
+  filebeat.yml: |
+    filebeat:
+        config:
+            modules:
+                path: ${path.config}/modules.d/*.yml
+    http:
+        enabled: true
+        host: 0.0.0.0
+    output:
+        kafka:
+            client_id: ${POD_NAME}
+            compression: lz4
+            enabled: true
+            hosts:
+                - ${KAFKA_BOOTSTRAP_SERVERS_TEST_KAFKA}
+            partition:
+                round_robin:
+                    reachable_only: true
+            required_acks: 1
+            ssl:
+                certificate: /usr/share/filebeat/discover/test-kafka/user.crt
+                certificate_authorities:
+                    - /usr/share/filebeat/discover/test-kafka/ca.crt
+                enabled: true
+                key: /usr/share/filebeat/discover/test-kafka/user.key
+                verification_mode: full
+kind: ConfigMap
+metadata:
+  annotations:
+    filebeat.k8s.webcenter.fr: "true"
+  labels:
+    cluster: test
+    filebeat.k8s.webcenter.fr: "true"
+  name: test-config-fb
+  namespace: default

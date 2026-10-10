@@ -1,0 +1,17 @@
+apiVersion: discover.k8s.webcenter.fr/v1
+kind: Elasticsearch
+metadata:
+  labels:
+    app.kubernetes.io/name: elasticsearch
+    app.kubernetes.io/instance: elasticsearch-sample
+    app.kubernetes.io/part-of: bootstrap
+    app.kubernetes.io/managed-by: kustomize
+    app.kubernetes.io/created-by: bootstrap
+  name: elasticsearch-sample
+  namespace: default
+spec:
+  elasticsearchRef:
+    managed:
+      name: elasticsearch-sample
+    secretRef:
+      name: logstash-credentials
