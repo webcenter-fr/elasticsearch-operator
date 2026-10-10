@@ -485,7 +485,7 @@ func (r *statefulsetReconciler) checkUpgradePredicates(ctx context.Context, o *e
 
 	// Cluster-level safety predicates (health + started replicas)
 	stsList := &appv1.StatefulSetList{Items: []appv1.StatefulSet{*sts}}
-	ok, reason, err := orchestrator.CheckPredicates(ctx, stsList)
+	ok, reason, err := orchestrator.CheckPredicates(ctx, o, stsList)
 	if err != nil {
 		return nil, false, errors.Wrap(err, "Error when check rolling restart predicates")
 	}

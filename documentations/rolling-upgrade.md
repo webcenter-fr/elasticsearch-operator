@@ -32,9 +32,16 @@ to prepare the cluster before restarting pods:
 
 - **Elasticsearch >= 7.15.2** (`node-shutdown` strategy): the operator uses
   the [Node Shutdown API](https://www.elastic.co/guide/en/elasticsearch/reference/current/node-shutdown.html).
-  Before a pod is deleted, the operator registers a `restart` shutdown
-  request for the node. Elasticsearch then migrates shards away from the node
-  gracefully. **No cluster settings are changed.**
+  When a `restart` shutdown request is registered for a node, Elasticsearch
+  migrates shards away from it gracefully. **No cluster settings are
+  changed.**
+
+  > **Note:** the operator-driven pod deletion loop (register a `restart`
+  > shutdown request before deleting a pod, wait for its completion, clear it
+  > once the pod is back) is not enabled yet: StatefulSets still use the
+  > `RollingUpdate` strategy, so the StatefulSet controller restarts the pods
+  > one by one. The operator cleans up any completed `restart` shutdown
+  > requests when the rolling upgrade finishes.
 - **Elasticsearch < 7.15.2** (`allocation-filter` strategy): the operator sets
   transient cluster settings before the rolling restart and re-enables them
   afterwards:

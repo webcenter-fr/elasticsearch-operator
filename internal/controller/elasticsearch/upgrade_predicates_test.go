@@ -301,4 +301,19 @@ func TestApplyPredicatesError(t *testing.T) {
 		require.Error(t, err)
 		assert.Contains(t, err.Error(), "cluster_health_not_red")
 	})
+
+	t.Run("nil cluster health is propagated as error", func(t *testing.T) {
+		ctrl := gomock.NewController(t)
+		mockES := mocks.NewMockElasticsearchHandler(ctrl)
+		mockES.EXPECT().ClusterHealth().Return(nil, nil)
+
+		es := newTestES()
+		state := newTestState(es, mockES)
+		pod := corev1.Pod{ObjectMeta: metav1.ObjectMeta{Name: "test-data-es-0"}}
+
+		ok, _, err := ApplyPredicates(ctx, pod, state)
+		assert.False(t, ok)
+		require.Error(t, err)
+		assert.Contains(t, err.Error(), "cluster_health_not_red")
+	})
 }

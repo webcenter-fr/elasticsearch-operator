@@ -36,16 +36,28 @@ type UpgradeState struct {
 	Logger          *logrus.Entry
 }
 
+// Predicate names. They are the values accepted by the
+// elasticsearch.k8s.webcenter.fr/disable-upgrade-predicates annotation.
+const (
+	PredicateClusterHealthNotRed   = "cluster_health_not_red"
+	PredicateRequireStartedReplica = "require_started_replica_for_primary"
+	PredicateOneMasterAtATime      = "one_master_at_a_time"
+	PredicateSkipTerminatingPods   = "skip_terminating_pods"
+)
+
 // UpgradePredicates is the ordered list of safety predicates evaluated before
 // upgrading a pod. Predicates can be disabled individually (or all at once)
 // with the elasticsearch.k8s.webcenter.fr/disable-upgrade-predicates annotation.
 var UpgradePredicates = []UpgradePredicate{
 	{
-		Name: "cluster_health_not_red",
+		Name: PredicateClusterHealthNotRed,
 		Check: func(ctx context.Context, pod corev1.Pod, state *UpgradeState) (bool, string, error) {
 			health, err := state.ESHandler.ClusterHealth()
 			if err != nil {
 				return false, "", err
+			}
+			if health == nil {
+				return false, "", fmt.Errorf("cluster health response is nil")
 			}
 			if health.Status == "red" {
 				return false, "cluster health is RED", nil
@@ -54,7 +66,7 @@ var UpgradePredicates = []UpgradePredicate{
 		},
 	},
 	{
-		Name: "require_started_replica_for_primary",
+		Name: PredicateRequireStartedReplica,
 		Check: func(ctx context.Context, pod corev1.Pod, state *UpgradeState) (bool, string, error) {
 			// Don't upgrade a node hosting a primary shard if no STARTED
 			// replica exists elsewhere (when replicas are configured).
@@ -84,7 +96,7 @@ var UpgradePredicates = []UpgradePredicate{
 		},
 	},
 	{
-		Name: "one_master_at_a_time",
+		Name: PredicateOneMasterAtATime,
 		Check: func(ctx context.Context, pod corev1.Pod, state *UpgradeState) (bool, string, error) {
 			// Only restart one master-eligible node at a time
 			if !IsMasterRole(state.ES, GetNodeGroupNameFromPodName(state.ES, pod.Name)) {
@@ -99,7 +111,7 @@ var UpgradePredicates = []UpgradePredicate{
 		},
 	},
 	{
-		Name: "skip_terminating_pods",
+		Name: PredicateSkipTerminatingPods,
 		Check: func(ctx context.Context, pod corev1.Pod, state *UpgradeState) (bool, string, error) {
 			if pod.DeletionTimestamp != nil {
 				return false, "pod is already terminating", nil

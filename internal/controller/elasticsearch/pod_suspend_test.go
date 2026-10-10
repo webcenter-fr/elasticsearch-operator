@@ -3,6 +3,7 @@ package elasticsearch
 import (
 	"context"
 	"testing"
+	"time"
 
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
@@ -218,6 +219,65 @@ func TestReconcileSuspendedPods(t *testing.T) {
 	// pod with wrong labels -> NOT deleted (not even listed)
 	err = k8sClient.Get(ctx, client.ObjectKey{Namespace: "default", Name: "test-data-es-4"}, &corev1.Pod{})
 	assert.NoError(t, err, "pod test-data-es-4 should NOT be deleted")
+}
+
+func TestReconcileSuspendedPodsSkipsTerminatingPods(t *testing.T) {
+	ctx := context.Background()
+
+	scheme := runtime.NewScheme()
+	require.NoError(t, corev1.AddToScheme(scheme))
+
+	esLabels := map[string]string{
+		"cluster": "test",
+		elasticsearchcrd.ElasticsearchAnnotationKey: "true",
+	}
+
+	es := &elasticsearchcrd.Elasticsearch{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "test",
+			Namespace: "default",
+			Annotations: map[string]string{
+				elasticsearchcrd.ElasticsearchSuspendAnnotation: "test-data-es-0",
+			},
+		},
+	}
+
+	// Pod listed in the annotation and running but already terminating: it
+	// must NOT be deleted again, it will restart in suspended state on its own.
+	// The fake client requires a finalizer on objects with a deletionTimestamp.
+	now := metav1.Time{Time: time.Now()}
+	terminatingPod := &corev1.Pod{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:              "test-data-es-0",
+			Namespace:         "default",
+			Labels:            esLabels,
+			DeletionTimestamp: &now,
+			Finalizers:        []string{"test-finalizer"},
+		},
+		Status: corev1.PodStatus{
+			ContainerStatuses: []corev1.ContainerStatus{
+				{
+					Name: "elasticsearch",
+					State: corev1.ContainerState{
+						Running: &corev1.ContainerStateRunning{},
+					},
+				},
+			},
+		},
+	}
+
+	k8sClient := fake.NewClientBuilder().
+		WithScheme(scheme).
+		WithObjects(terminatingPod).
+		Build()
+
+	logger := logrus.NewEntry(logrus.New())
+	err := ReconcileSuspendedPods(ctx, k8sClient, es, logger)
+	require.NoError(t, err)
+
+	// Pod must still exist (not deleted again)
+	err = k8sClient.Get(ctx, client.ObjectKey{Namespace: "default", Name: "test-data-es-0"}, &corev1.Pod{})
+	assert.NoError(t, err, "terminating pod should NOT be deleted again")
 }
 
 func TestIsPodInSuspendedState(t *testing.T) {

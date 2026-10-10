@@ -13,6 +13,7 @@ import (
 
 	eshandler "github.com/disaster37/es-handler/v9"
 	"github.com/sirupsen/logrus"
+	elasticsearchcrd "github.com/webcenter-fr/elasticsearch-operator/api/elasticsearch/v1"
 	appv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -66,7 +67,12 @@ func NewRollingRestartOrchestrator(
 
 	nodeNameToID, err := esHandler.GetNodeNameToIDMap(ctx)
 	if err != nil {
-		return nil, fmt.Errorf("failed to get nodes info: %w", err)
+		// The node name -> ID map is only used to request per-node shutdowns
+		// (Node Shutdown API). It must not block the rolling restart lifecycle
+		// (especially the completion that re-enables shard allocation and
+		// rebalancing), so log and continue with an empty map.
+		logger.Warnf("Failed to get Elasticsearch node name to ID map, node shutdown requests will fail until it succeeds: %s", err)
+		nodeNameToID = map[string]string{}
 	}
 
 	return &RollingRestartOrchestrator{
@@ -275,50 +281,59 @@ func (r *RollingRestartOrchestrator) ClearNodeShutdown(ctx context.Context, podN
 // with a rolling restart of the given StatefulSets: the cluster health must
 // not be RED, and each pod hosting a primary shard must have at least one
 // STARTED replica elsewhere (when replicas are configured).
-func (r *RollingRestartOrchestrator) CheckPredicates(ctx context.Context, stsList *appv1.StatefulSetList) (bool, string, error) {
+// Each predicate can be disabled with the
+// elasticsearch.k8s.webcenter.fr/disable-upgrade-predicates annotation.
+func (r *RollingRestartOrchestrator) CheckPredicates(ctx context.Context, es *elasticsearchcrd.Elasticsearch, stsList *appv1.StatefulSetList) (bool, string, error) {
 	// Predicate 1: Cluster health must be green or yellow (not red)
-	health, err := r.esHandler.ClusterHealth()
-	if err != nil {
-		return false, "", fmt.Errorf("failed to get cluster health: %w", err)
-	}
-	if health.Status == "red" {
-		return false, "cluster health is RED", nil
+	if !IsPredicateDisabled(es, PredicateClusterHealthNotRed) {
+		health, err := r.esHandler.ClusterHealth()
+		if err != nil {
+			return false, "", fmt.Errorf("failed to get cluster health: %w", err)
+		}
+		if health == nil {
+			return false, "", fmt.Errorf("cluster health response is nil")
+		}
+		if health.Status == "red" {
+			return false, "cluster health is RED", nil
+		}
 	}
 
 	// Predicate 2: Check that each pod being upgraded has started replicas
 	// for its primaries (simplified version of ECK's require_started_replica)
-	shardsByNode, err := r.esHandler.GetShardsByNode(ctx)
-	if err != nil {
-		return false, "", fmt.Errorf("failed to get shards: %w", err)
-	}
-
-	for _, sts := range stsList.Items {
-		// Get pods for this StatefulSet
-		podList := &corev1.PodList{}
-		if err := r.k8sClient.List(ctx, podList, client.InNamespace(sts.Namespace), client.MatchingLabels(sts.Spec.Selector.MatchLabels)); err != nil {
-			return false, "", err
+	if !IsPredicateDisabled(es, PredicateRequireStartedReplica) {
+		shardsByNode, err := r.esHandler.GetShardsByNode(ctx)
+		if err != nil {
+			return false, "", fmt.Errorf("failed to get shards: %w", err)
 		}
 
-		for _, pod := range podList.Items {
-			shards := shardsByNode[pod.Name]
-			for _, shard := range shards {
-				if !shard.Primary {
-					continue
-				}
-				// Check if there's at least one STARTED replica for this primary
-				_, started, err := r.esHandler.CountStartedReplicas(ctx, shard.Index, shard.Shard, pod.Name)
-				if err != nil {
-					return false, "", err
-				}
-				// If replicas configured but none STARTED, block the restart
-				if started == 0 {
-					// Check if this shard has any replicas at all
-					total, _, err := r.esHandler.CountStartedReplicas(ctx, shard.Index, shard.Shard, "")
+		for _, sts := range stsList.Items {
+			// Get pods for this StatefulSet
+			podList := &corev1.PodList{}
+			if err := r.k8sClient.List(ctx, podList, client.InNamespace(sts.Namespace), client.MatchingLabels(sts.Spec.Selector.MatchLabels)); err != nil {
+				return false, "", err
+			}
+
+			for _, pod := range podList.Items {
+				shards := shardsByNode[pod.Name]
+				for _, shard := range shards {
+					if !shard.Primary {
+						continue
+					}
+					// Check if there's at least one STARTED replica for this primary
+					_, started, err := r.esHandler.CountStartedReplicas(ctx, shard.Index, shard.Shard, pod.Name)
 					if err != nil {
 						return false, "", err
 					}
-					if total > 0 {
-						return false, fmt.Sprintf("no STARTED replica for primary shard %s-%s on pod %s", shard.Index, shard.Shard, pod.Name), nil
+					// If replicas configured but none STARTED, block the restart
+					if started == 0 {
+						// Check if this shard has any replicas at all
+						total, _, err := r.esHandler.CountStartedReplicas(ctx, shard.Index, shard.Shard, "")
+						if err != nil {
+							return false, "", err
+						}
+						if total > 0 {
+							return false, fmt.Sprintf("no STARTED replica for primary shard %s-%s on pod %s", shard.Index, shard.Shard, pod.Name), nil
+						}
 					}
 				}
 			}

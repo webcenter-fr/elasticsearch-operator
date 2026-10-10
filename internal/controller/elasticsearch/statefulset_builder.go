@@ -465,9 +465,12 @@ fi
 		// feature, see elasticsearch.k8s.webcenter.fr/suspend annotation).
 		// The data volume is mounted read-only so `kubectl exec` can still
 		// access the PVC content while the pod is suspended.
+		// It reuses the Elasticsearch image (like the other init containers) so
+		// that internal registries / mirrors configured via spec.image keep
+		// working: the image only needs /bin/sh, grep and sleep.
 		scb := k8sbuilder.NewContainerBuilder().WithContainer(&corev1.Container{
 			Name:            SuspendInitContainerName,
-			Image:           "busybox:1.36",
+			Image:           GetContainerImage(es),
 			ImagePullPolicy: es.Spec.ImagePullPolicy,
 			SecurityContext: &corev1.SecurityContext{
 				Capabilities: &corev1.Capabilities{

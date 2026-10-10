@@ -10,6 +10,7 @@ import (
 	"github.com/disaster37/es-handler/v9/mocks"
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
+	elasticsearchcrd "github.com/webcenter-fr/elasticsearch-operator/api/elasticsearch/v1"
 	"go.uber.org/mock/gomock"
 	appv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -504,7 +505,7 @@ func TestCheckPredicates(t *testing.T) {
 
 		mockES.EXPECT().ClusterHealth().Return(&esapi.ClusterHealthResponse{Status: "red"}, nil)
 
-		ok, reason, err := orch.CheckPredicates(ctx, &appv1.StatefulSetList{})
+		ok, reason, err := orch.CheckPredicates(ctx, newTestES(), &appv1.StatefulSetList{})
 		assert.NoError(t, err)
 		assert.False(t, ok)
 		assert.Contains(t, reason, "RED")
@@ -518,7 +519,7 @@ func TestCheckPredicates(t *testing.T) {
 		mockES.EXPECT().ClusterHealth().Return(&esapi.ClusterHealthResponse{Status: "green"}, nil)
 		mockES.EXPECT().GetShardsByNode(ctx).Return(map[string][]eshandler.ShardInfo{}, nil)
 
-		ok, reason, err := orch.CheckPredicates(ctx, &appv1.StatefulSetList{})
+		ok, reason, err := orch.CheckPredicates(ctx, newTestES(), &appv1.StatefulSetList{})
 		assert.NoError(t, err)
 		assert.True(t, ok)
 		assert.Empty(t, reason)
@@ -540,7 +541,7 @@ func TestCheckPredicates(t *testing.T) {
 
 		stsList := &appv1.StatefulSetList{Items: []appv1.StatefulSet{*sts}}
 
-		ok, reason, err := orch.CheckPredicates(ctx, stsList)
+		ok, reason, err := orch.CheckPredicates(ctx, newTestES(), stsList)
 		assert.NoError(t, err)
 		assert.True(t, ok)
 		assert.Empty(t, reason)
@@ -563,7 +564,7 @@ func TestCheckPredicates(t *testing.T) {
 
 		stsList := &appv1.StatefulSetList{Items: []appv1.StatefulSet{*sts}}
 
-		ok, reason, err := orch.CheckPredicates(ctx, stsList)
+		ok, reason, err := orch.CheckPredicates(ctx, newTestES(), stsList)
 		assert.NoError(t, err)
 		assert.False(t, ok)
 		assert.Contains(t, reason, "no STARTED replica")
@@ -586,7 +587,62 @@ func TestCheckPredicates(t *testing.T) {
 
 		stsList := &appv1.StatefulSetList{Items: []appv1.StatefulSet{*sts}}
 
-		ok, reason, err := orch.CheckPredicates(ctx, stsList)
+		ok, reason, err := orch.CheckPredicates(ctx, newTestES(), stsList)
+		assert.NoError(t, err)
+		assert.True(t, ok)
+		assert.Empty(t, reason)
+	})
+
+	t.Run("nil cluster health returns an error", func(t *testing.T) {
+		ctrl := gomock.NewController(t)
+
+		orch, mockES := newOrchestrator(ctrl)
+
+		mockES.EXPECT().ClusterHealth().Return(nil, nil)
+
+		ok, _, err := orch.CheckPredicates(ctx, newTestES(), &appv1.StatefulSetList{})
+		assert.Error(t, err)
+		assert.False(t, ok)
+	})
+
+	t.Run("predicates disabled by annotation are skipped", func(t *testing.T) {
+		ctrl := gomock.NewController(t)
+
+		sts, pod := newStsAndPod()
+		// No ES call is expected: gomock fails the test on any unexpected call
+		orch, _ := newOrchestrator(ctrl, sts, pod)
+
+		es := newTestES()
+		es.Annotations = map[string]string{
+			elasticsearchcrd.ElasticsearchDisableUpgradePredicatesAnnotation: "*",
+		}
+
+		stsList := &appv1.StatefulSetList{Items: []appv1.StatefulSet{*sts}}
+
+		ok, reason, err := orch.CheckPredicates(ctx, es, stsList)
+		assert.NoError(t, err)
+		assert.True(t, ok)
+		assert.Empty(t, reason)
+	})
+
+	t.Run("only cluster health predicate disabled by annotation", func(t *testing.T) {
+		ctrl := gomock.NewController(t)
+
+		sts, pod := newStsAndPod()
+		orch, mockES := newOrchestrator(ctrl, sts, pod)
+
+		// ClusterHealth is not called (predicate disabled), but the shard
+		// predicate still runs.
+		mockES.EXPECT().GetShardsByNode(ctx).Return(map[string][]eshandler.ShardInfo{}, nil)
+
+		es := newTestES()
+		es.Annotations = map[string]string{
+			elasticsearchcrd.ElasticsearchDisableUpgradePredicatesAnnotation: PredicateClusterHealthNotRed,
+		}
+
+		stsList := &appv1.StatefulSetList{Items: []appv1.StatefulSet{*sts}}
+
+		ok, reason, err := orch.CheckPredicates(ctx, es, stsList)
 		assert.NoError(t, err)
 		assert.True(t, ok)
 		assert.Empty(t, reason)

@@ -13,6 +13,7 @@ import (
 	"github.com/sirupsen/logrus"
 	elasticsearchcrd "github.com/webcenter-fr/elasticsearch-operator/api/elasticsearch/v1"
 	corev1 "k8s.io/api/core/v1"
+	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/labels"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
@@ -75,11 +76,17 @@ func ReconcileSuspendedPods(ctx context.Context, c client.Client, es *elasticsea
 		isSuspended := IsPodInSuspendedState(pod)
 
 		switch {
-		case shouldSuspend && !isSuspended && IsPodRunning(pod):
+		case shouldSuspend && !isSuspended && pod.DeletionTimestamp == nil && IsPodRunning(pod):
 			// Pod should be suspended but is running: delete it (gracefully)
 			// so it restarts and gets blocked by the suspend-check init container.
+			// Pods already terminating are skipped: they will restart in
+			// suspended state on their own.
 			logger.Infof("Suspending pod %s: deleting running pod so it restarts in suspended state", pod.Name)
 			if err := c.Delete(ctx, pod); err != nil {
+				if k8serrors.IsNotFound(err) {
+					// Pod already deleted, nothing to do
+					continue
+				}
 				return fmt.Errorf("failed to delete pod %s for suspension: %w", pod.Name, err)
 			}
 
