@@ -90,7 +90,7 @@ func (r *secretKafkaReconciler) Read(ctx context.Context, o *discovercrd.Kafka, 
 			logger.Warnf("Kafka %s not yet exist, try again later", o.Spec.KafkaRef.ManagedKafkaRef.Name)
 			return read, reconcile.Result{RequeueAfter: 30 * time.Second}, nil
 		}
-		if kafkaCluster.Status.Listeners == nil || len(kafkaCluster.Status.Listeners) == 0 {
+		if kafkaCluster.Status == nil || len(kafkaCluster.Status.Listeners) == 0 {
 			logger.Warnf("Kafka %s not yet ready, try again later", o.Spec.KafkaRef.ManagedKafkaRef.Name)
 			return read, reconcile.Result{RequeueAfter: 30 * time.Second}, nil
 		}
@@ -121,7 +121,7 @@ func (r *secretKafkaReconciler) Read(ctx context.Context, o *discovercrd.Kafka, 
 				logger.Warnf("Kafka user not found %s/%s, try latter", namespace, o.Spec.KafkaRef.ManagedKafkaRef.UserRef.Name)
 				return read, reconcile.Result{RequeueAfter: 30 * time.Second}, nil
 			}
-			if kafkaUser.Status == nil {
+			if kafkaUser.Status == nil || kafkaUser.Status.Secret == nil {
 				logger.Warnf("Kafka user %s/%s not ready, try latter", namespace, o.Spec.KafkaRef.ManagedKafkaRef.UserRef.Name)
 				return read, reconcile.Result{RequeueAfter: 30 * time.Second}, nil
 			}

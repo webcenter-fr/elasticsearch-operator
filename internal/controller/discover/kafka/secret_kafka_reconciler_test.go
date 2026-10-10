@@ -14,6 +14,7 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/tools/record"
+	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 )
 
@@ -191,6 +192,120 @@ func TestSecretKafkaReconcilerReadWhenManagedClusterNotReady(t *testing.T) {
 	c := newKafkaTestClient(t, o).Build()
 	r := newSecretKafkaReconciler(c, record.NewFakeRecorder(10), true)
 
+	_, res, err := r.Read(ctx, o, map[string]any{}, logger)
+	assert.NoError(t, err)
+	assert.Equal(t, 30*time.Second, res.RequeueAfter)
+}
+
+func TestSecretKafkaReconcilerReadWhenManagedClusterStatusNil(t *testing.T) {
+	ctx := context.Background()
+	logger := logrus.NewEntry(logrus.New())
+
+	o := &discovercrd.Kafka{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: "default",
+			Name:      "test",
+		},
+		Spec: discovercrd.KafkaSpec{
+			KafkaRef: discovercrd.KafkaRef{
+				ManagedKafkaRef: &discovercrd.KafkaManagedRef{
+					Name: "managed-kafka",
+				},
+			},
+		},
+	}
+	// Kafka cluster exists but has no status yet (just created)
+	kafkaCluster := &strimzicrd.Kafka{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: "default",
+			Name:      "managed-kafka",
+		},
+		Spec: &strimzicrd.KafkaSpec{
+			Kafka: strimzicrd.KafkaSpecKafka{
+				Listeners: []strimzicrd.KafkaSpecKafkaListenersElem{
+					{
+						Name: "plain",
+						Port: 9092,
+						Type: strimzicrd.KafkaSpecKafkaListenersElemTypeInternal,
+					},
+				},
+			},
+			ClusterCa: &strimzicrd.KafkaSpecClusterCa{
+				GenerateCertificateAuthority: ptr.To(false),
+			},
+		},
+	}
+
+	c := newKafkaTestClient(t, o, kafkaCluster).Build()
+	r := newSecretKafkaReconciler(c, record.NewFakeRecorder(10), true)
+
+	// Must requeue instead of panicking on nil Status
+	_, res, err := r.Read(ctx, o, map[string]any{}, logger)
+	assert.NoError(t, err)
+	assert.Equal(t, 30*time.Second, res.RequeueAfter)
+}
+
+func TestSecretKafkaReconcilerReadWhenManagedUserSecretNotReady(t *testing.T) {
+	ctx := context.Background()
+	logger := logrus.NewEntry(logrus.New())
+
+	o := &discovercrd.Kafka{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: "default",
+			Name:      "test",
+		},
+		Spec: discovercrd.KafkaSpec{
+			KafkaRef: discovercrd.KafkaRef{
+				ManagedKafkaRef: &discovercrd.KafkaManagedRef{
+					Name: "managed-kafka",
+					UserRef: &corev1.LocalObjectReference{
+						Name: "my-user",
+					},
+				},
+			},
+		},
+	}
+	kafkaCluster := &strimzicrd.Kafka{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: "default",
+			Name:      "managed-kafka",
+		},
+		Spec: &strimzicrd.KafkaSpec{
+			Kafka: strimzicrd.KafkaSpecKafka{
+				Listeners: []strimzicrd.KafkaSpecKafkaListenersElem{
+					{
+						Name: "plain",
+						Port: 9092,
+						Type: strimzicrd.KafkaSpecKafkaListenersElemTypeInternal,
+					},
+				},
+			},
+			ClusterCa: &strimzicrd.KafkaSpecClusterCa{
+				GenerateCertificateAuthority: ptr.To(false),
+			},
+		},
+		Status: &strimzicrd.KafkaStatus{
+			Listeners: []strimzicrd.KafkaStatusListenersElem{
+				{
+					Name:             ptr.To("plain"),
+					BootstrapServers: ptr.To("managed-kafka:9092"),
+				},
+			},
+		},
+	}
+	// Kafka user exists but its status has no secret yet
+	kafkaUser := &strimzicrd.KafkaUser{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: "default",
+			Name:      "my-user",
+		},
+		Status: &strimzicrd.KafkaUserStatus{},
+	}
+
+	c := newKafkaTestClient(t, o, kafkaCluster, kafkaUser).Build()
+	r := newSecretKafkaReconciler(c, record.NewFakeRecorder(10), true)
+
+	// Must requeue instead of panicking on nil Status.Secret
 	_, res, err := r.Read(ctx, o, map[string]any{}, logger)
 	assert.NoError(t, err)
 	assert.Equal(t, 30*time.Second, res.RequeueAfter)

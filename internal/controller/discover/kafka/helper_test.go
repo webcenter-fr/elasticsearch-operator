@@ -3,10 +3,12 @@ package kafka
 import (
 	"testing"
 
+	strimzicrd "github.com/RedHatInsights/strimzi-client-go/apis/kafka.strimzi.io/v1beta2"
 	"github.com/stretchr/testify/assert"
 	discovercrd "github.com/webcenter-fr/elasticsearch-operator/api/discover/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/utils/ptr"
 )
 
 func TestGetSecretNameForFile(t *testing.T) {
@@ -69,4 +71,35 @@ func TestGetSecretNameForEnv(t *testing.T) {
 	}
 	result = GetSecretNameForEnv(kafka)
 	assert.Equal(t, "test-kafka-env", result)
+}
+
+func TestKafkaHaveClusterCa(t *testing.T) {
+	// Nil Kafka must not panic
+	assert.False(t, kafkaHaveClusterCa(nil))
+
+	// Nil Spec must not panic
+	assert.False(t, kafkaHaveClusterCa(&strimzicrd.Kafka{}))
+
+	// No ClusterCa configured: Strimzi generates the CA by default
+	assert.True(t, kafkaHaveClusterCa(&strimzicrd.Kafka{
+		Spec: &strimzicrd.KafkaSpec{},
+	}))
+
+	// ClusterCa with generation disabled
+	assert.False(t, kafkaHaveClusterCa(&strimzicrd.Kafka{
+		Spec: &strimzicrd.KafkaSpec{
+			ClusterCa: &strimzicrd.KafkaSpecClusterCa{
+				GenerateCertificateAuthority: ptr.To(false),
+			},
+		},
+	}))
+
+	// ClusterCa with generation enabled
+	assert.True(t, kafkaHaveClusterCa(&strimzicrd.Kafka{
+		Spec: &strimzicrd.KafkaSpec{
+			ClusterCa: &strimzicrd.KafkaSpecClusterCa{
+				GenerateCertificateAuthority: ptr.To(true),
+			},
+		},
+	}))
 }
