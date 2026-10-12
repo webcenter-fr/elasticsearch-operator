@@ -38,16 +38,24 @@ metadata:
    StatefulSet checksum, so changing the suspend list does not trigger a
    rolling restart.
 2. Every Elasticsearch pod runs a `suspend-check` init container (first in
-   the init container list). It loops while the pod's own name (`$HOSTNAME`)
-   is listed in `/suspended/suspended_pods.txt`:
+   the init container list). It blocks on `sleep infinity` while the pod's
+   own name (`$HOSTNAME`) is listed in `/suspended/suspended_pods.txt`:
 
    ```sh
-   while grep -qx "$HOSTNAME" /suspended/suspended_pods.txt 2>/dev/null; do
-     echo "Pod $HOSTNAME is suspended via elasticsearch.k8s.webcenter.fr/suspend annotation"
-     echo "Remove the pod name from the annotation to resume normal operation"
-     sleep 10
-   done
+   trap 'exit 0' TERM INT
+   if ! grep -qx "$HOSTNAME" /suspended/suspended_pods.txt 2>/dev/null; then
+     exit 0
+   fi
+   echo "Pod $HOSTNAME is suspended via elasticsearch.k8s.webcenter.fr/suspend annotation"
+   echo "Remove the pod name from the annotation to resume normal operation"
+   sleep infinity
    ```
+
+   The `sleep infinity` blocks without busy-polling; the `trap` ensures a
+   clean exit when the pod is deleted (resume/restart). A mounted ConfigMap
+   is not re-synced into a live container in real time, so the container
+   never re-checks the file on its own — resume relies on the pod being
+   recreated (see step 5).
 
 3. When you add a pod name to the annotation, the operator gracefully deletes
    the running pod. It restarts and is blocked by the `suspend-check` init
@@ -58,8 +66,9 @@ metadata:
    so the PVC content stays intact and can be inspected.
 5. To resume a pod, remove its name from the annotation (or remove the
    annotation entirely). The operator updates the
-   `<es-name>-suspended-pods-es` ConfigMap; the init container exits within
-   ~10 seconds and the pod starts normally.
+   `<es-name>-suspended-pods-es` ConfigMap **and deletes the suspended pod**;
+   the pod is recreated, its init container re-reads the updated ConfigMap
+   (the pod is no longer listed), exits, and Elasticsearch starts normally.
 
 ## Usage
 
