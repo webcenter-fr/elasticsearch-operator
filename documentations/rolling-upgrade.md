@@ -13,8 +13,8 @@ only one StatefulSet is upgraded at any time.
 2. Before applying the first update, it evaluates the safety predicates (see
    below). If a predicate blocks the upgrade, the operator retries every 30
    seconds until the cluster is safe.
-3. It prepares the cluster for the rolling restart using a version-aware
-   strategy (see below).
+3. It prepares the cluster for the rolling restart according to the rolling
+   restart policy (see below).
 4. It applies the update to **one** StatefulSet and sets the
    `StatefulsetUpgrade` condition to `True`. While this condition is `True`
    and the `StatefulsetReady` condition is `False`, only the StatefulSet
@@ -25,34 +25,70 @@ only one StatefulSet is upgraded at any time.
    (re-enables shard allocation/rebalancing or cleans up node shutdown
    requests) and resets the `StatefulsetUpgrade` condition.
 
-## Version-aware strategy
+## Rolling restart policy
 
-The operator detects the Elasticsearch version and selects the strategy used
-to prepare the cluster before restarting pods:
+The operator prepares the cluster before restarting pods according to the
+`spec.updateStrategy.rollingRestartPolicy` setting:
 
-- **Elasticsearch >= 7.15.2** (`node-shutdown` strategy): the operator uses
-  the [Node Shutdown API](https://www.elastic.co/guide/en/elasticsearch/reference/current/node-shutdown.html).
-  When a `restart` shutdown request is registered for a node, Elasticsearch
-  migrates shards away from it gracefully. **No cluster settings are
-  changed.**
+- **`graceful` (default)** — version-aware strategy:
+  - **Elasticsearch >= 7.15.2** (`node-shutdown` strategy): the operator uses
+    the [Node Shutdown API](https://www.elastic.co/guide/en/elasticsearch/reference/current/node-shutdown.html).
+    When a `restart` shutdown request is registered for a node, Elasticsearch
+    migrates shards away from it gracefully. **No cluster settings are
+    changed.**
 
-  > **Note:** the operator-driven pod deletion loop (register a `restart`
-  > shutdown request before deleting a pod, wait for its completion, clear it
-  > once the pod is back) is not enabled yet: StatefulSets still use the
-  > `RollingUpdate` strategy, so the StatefulSet controller restarts the pods
-  > one by one. The operator cleans up any completed `restart` shutdown
-  > requests when the rolling upgrade finishes.
-- **Elasticsearch < 7.15.2** (`allocation-filter` strategy): the operator sets
-  transient cluster settings before the rolling restart and re-enables them
-  afterwards:
-  - `cluster.routing.allocation.enable=primaries` (replica shard allocation is
-    disabled while pods are restarted)
-  - `cluster.routing.rebalance.enable=none` (shard rebalancing is disabled)
-  - a flush of all indices to speed up recovery
+    > **Note:** the operator-driven pod deletion loop (register a `restart`
+    > shutdown request before deleting a pod, wait for its completion, clear
+    > it once the pod is back) is not enabled yet: StatefulSets still use the
+    > `RollingUpdate` strategy, so the StatefulSet controller restarts the
+    > pods one by one. The operator cleans up any completed `restart`
+    > shutdown requests when the rolling upgrade finishes.
+  - **Elasticsearch < 7.15.2** (`allocation-filter` strategy): the operator
+    falls back to transient cluster settings, set before the rolling restart
+    and re-enabled afterwards:
+    - `cluster.routing.allocation.enable=primaries` (replica shard allocation
+      is disabled while pods are restarted)
+    - `cluster.routing.rebalance.enable=none` (shard rebalancing is disabled)
+    - a flush of all indices to speed up recovery
 
-  These settings are **transient**: they live in the cluster state only and
-  are automatically reset when the cluster restarts, so they never persist
-  across a full cluster restart.
+    These settings are **transient**: they live in the cluster state only and
+    are automatically reset when the cluster restarts, so they never persist
+    across a full cluster restart.
+- **`fast`** — force the `allocation-filter` strategy on **every** version
+  (same transient settings + flush as the `graceful` fallback above). No
+  shard migration is performed.
+
+### `graceful` vs `fast`
+
+| | `graceful` (default) | `fast` |
+|---|---|---|
+| Shard migration before restart | Yes (Node Shutdown API, ES >= 7.15.2) | No |
+| Disk usage during upgrade | Higher (shards migrated off each node) | Lower (no migration) |
+| Speed | Slower (waits for shard migration) | Faster |
+| Robustness | Graceful shard migration | Relies on already-started replicas |
+| ES < 7.15.2 | Falls back to `allocation-filter` | Same as the `graceful` fallback |
+
+### Example
+
+```yaml
+apiVersion: elasticsearch.k8s.webcenter.fr/v1
+kind: Elasticsearch
+metadata:
+  name: elasticsearch
+spec:
+  version: 8.11.0
+  updateStrategy:
+    rollingRestartPolicy: fast
+  nodeGroups:
+    - name: default
+      roles:
+        - master
+        - data
+      replicas: 3
+```
+
+When the field is absent (or set to `graceful`), the operator keeps the
+current version-aware behavior.
 
 ## Operator connectivity during an upgrade
 
@@ -108,14 +144,19 @@ During a rolling upgrade, the operator logs the following at INFO level:
 
 - `=== Rolling Upgrade Started: StatefulSet <name> ===` — the upgrade of a
   StatefulSet starts.
+- `Rolling restart policy from spec: <graceful|fast|(empty)>` — the policy
+  requested in `spec.updateStrategy.rollingRestartPolicy`.
+- `Rolling restart strategy resolved: <strategy> (ES version: <version>)<; reason>`
+  — the effective strategy, with the fallback reason when the request cannot
+  be honored (e.g. `graceful` on ES < 7.15.2, or an unknown policy value).
 - `Preparing for rolling restart using strategy: <strategy> (ES version: <version>)`
   — the selected strategy.
 - `Set transient cluster.routing.allocation.enable=primaries ...` /
   `Set transient cluster.routing.rebalance.enable=none ...` /
-  `Flushing indices for faster recovery` — legacy strategy preparation
-  (ES < 7.15.2 only).
+  `Flushing indices for faster recovery` — allocation-filter strategy
+  preparation (`graceful` on ES < 7.15.2, or `fast` on any version).
 - `Using Node Shutdown API strategy - no cluster settings to change` — Node
-  Shutdown API strategy (ES >= 7.15.2 only).
+  Shutdown API strategy (`graceful` on ES >= 7.15.2 only).
 - `StatefulSet <name> passed all safety predicates (<n> pod(s) checked)` — all
   predicates passed.
 - `Pod <name> blocked by predicate '<name>': <reason>` — a predicate blocked
@@ -127,7 +168,12 @@ During a rolling upgrade, the operator logs the following at INFO level:
 - `Clearing node shutdown for pod <name> (node ID: <id>)` — a completed node
   shutdown request was cleaned up.
 - `Re-enabling shard allocation (transient)` /
-  `Re-enabling routing rebalance (transient)` — legacy strategy cleanup.
+  `Re-enabling routing rebalance (transient)` — allocation-filter strategy
+  cleanup.
+- `Removing any leftover transient allocation settings` — Node Shutdown API
+  strategy cleanup: defensively clears any transient allocation settings
+  left over from a previous/interrupted `fast` run or a mid-upgrade policy
+  switch.
 - `=== Rolling Upgrade Completed: completing rolling restart ===` — the
   rolling upgrade is finished.
 - `Elasticsearch client configured with <n> addresses (<n-1> pod DNS via headless services + 1 global service)`
@@ -168,7 +214,8 @@ curl -X DELETE -u elastic:<password> https://<es-name>-es.<namespace>.svc:9200/_
 
 ### Inspect the transient allocation settings
 
-On ES < 7.15.2, check the transient settings during an upgrade:
+With the `allocation-filter` strategy (`graceful` on ES < 7.15.2, or `fast`
+on any version), check the transient settings during an upgrade:
 
 ```bash
 curl -u elastic:<password> "https://<es-name>-es.<namespace>.svc:9200/_cluster/settings?include_defaults=true&filter_path=transient"

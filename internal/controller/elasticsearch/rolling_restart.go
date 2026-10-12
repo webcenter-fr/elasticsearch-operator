@@ -28,7 +28,8 @@ const (
 	// Elasticsearch migrates shards away from the node gracefully before the
 	// pod is deleted, so no cluster settings need to be changed.
 	StrategyNodeShutdown RollingRestartStrategy = "node-shutdown"
-	// StrategyAllocationFilter uses transient allocation settings (ES < 7.15.2).
+	// StrategyAllocationFilter is used for the fast policy on every version,
+	// and as the graceful policy fallback on ES < 7.15.2.
 	// Replica shard allocation and shard rebalancing are disabled (transient,
 	// auto-reset on cluster restart) while pods are restarted one by one.
 	StrategyAllocationFilter RollingRestartStrategy = "allocation-filter"
@@ -41,38 +42,65 @@ type RollingRestartOrchestrator struct {
 	k8sClient    client.Client
 	logger       *logrus.Entry
 	strategy     RollingRestartStrategy
+	policy       elasticsearchcrd.RollingRestartPolicy
 	esVersion    string
 	nodeNameToID map[string]string // pod name -> ES node ID
 }
 
-// NewRollingRestartOrchestrator creates a new orchestrator. It detects the
-// Elasticsearch version to select the rolling restart strategy and builds the
-// pod name to node ID mapping used by the Node Shutdown API.
+// NewRollingRestartOrchestrator creates a new orchestrator. It resolves the
+// rolling restart strategy from the requested policy and the detected
+// Elasticsearch version, and builds the pod name to node ID mapping used by
+// the Node Shutdown API.
 func NewRollingRestartOrchestrator(
 	esHandler eshandler.ElasticsearchHandler,
 	k8sClient client.Client,
 	logger *logrus.Entry,
+	policy elasticsearchcrd.RollingRestartPolicy,
 ) (*RollingRestartOrchestrator, error) {
 	ctx := context.Background()
 
-	version, err := esHandler.GetVersion(ctx)
-	if err != nil {
-		return nil, fmt.Errorf("failed to get Elasticsearch version: %w", err)
+	logger.Infof("Rolling restart policy from spec: %s", policy)
+
+	var (
+		version        string
+		strategy       RollingRestartStrategy
+		strategyReason string
+	)
+
+	if policy == elasticsearchcrd.RollingRestartPolicyFast {
+		// Fast policy: force the allocation-filter strategy on every version.
+		// The version and the node name -> ID map are not needed.
+		strategy, strategyReason = resolveRollingRestartStrategy(policy, "")
+	} else {
+		// Graceful policy (also the defensive fallback for unknown values,
+		// rejected by the CRD enum): detect the version to resolve the
+		// strategy.
+		v, err := esHandler.GetVersion(ctx)
+		if err != nil {
+			return nil, fmt.Errorf("failed to get Elasticsearch version: %w", err)
+		}
+		version = v
+		strategy, strategyReason = resolveRollingRestartStrategy(policy, version)
 	}
 
-	strategy := StrategyAllocationFilter
-	if supportsNodeShutdown(version) {
-		strategy = StrategyNodeShutdown
+	reasonSuffix := ""
+	if strategyReason != "" {
+		reasonSuffix = "; " + strategyReason
 	}
+	logger.Infof("Rolling restart strategy resolved: %s (ES version: %q)%s", strategy, version, reasonSuffix)
 
-	nodeNameToID, err := esHandler.GetNodeNameToIDMap(ctx)
-	if err != nil {
-		// The node name -> ID map is only used to request per-node shutdowns
-		// (Node Shutdown API). It must not block the rolling restart lifecycle
-		// (especially the completion that re-enables shard allocation and
-		// rebalancing), so log and continue with an empty map.
-		logger.Warnf("Failed to get Elasticsearch node name to ID map, node shutdown requests will fail until it succeeds: %s", err)
-		nodeNameToID = map[string]string{}
+	nodeNameToID := map[string]string{}
+	if strategy == StrategyNodeShutdown {
+		nodeNameToIDMap, err := esHandler.GetNodeNameToIDMap(ctx)
+		if err != nil {
+			// The node name -> ID map is only used to request per-node shutdowns
+			// (Node Shutdown API). It must not block the rolling restart lifecycle
+			// (especially the completion that re-enables shard allocation and
+			// rebalancing), so log and continue with an empty map.
+			logger.Warnf("Failed to get Elasticsearch node name to ID map, node shutdown requests will fail until it succeeds: %s", err)
+			nodeNameToIDMap = map[string]string{}
+		}
+		nodeNameToID = nodeNameToIDMap
 	}
 
 	return &RollingRestartOrchestrator{
@@ -80,14 +108,50 @@ func NewRollingRestartOrchestrator(
 		k8sClient:    k8sClient,
 		logger:       logger,
 		strategy:     strategy,
+		policy:       policy,
 		esVersion:    version,
 		nodeNameToID: nodeNameToID,
 	}, nil
 }
 
+// resolveRollingRestartStrategy maps the user-requested policy and detected
+// Elasticsearch version to the effective strategy. It returns a human-readable
+// reason when the request cannot be honored (fallback), or "" when none.
+func resolveRollingRestartStrategy(policy elasticsearchcrd.RollingRestartPolicy, version string) (RollingRestartStrategy, string) {
+	switch policy {
+	case elasticsearchcrd.RollingRestartPolicyFast:
+		// Forced allocation-filter on every version: no fallback reason.
+		return StrategyAllocationFilter, ""
+	case "", elasticsearchcrd.RollingRestartPolicyGraceful:
+		if supportsNodeShutdown(version) {
+			return StrategyNodeShutdown, ""
+		}
+		return StrategyAllocationFilter, versionFallbackReason(version)
+	default:
+		// Unknown policy (rejected by the CRD enum, handled defensively):
+		// treat as graceful.
+		reason := fmt.Sprintf("unknown rolling restart policy %q; treating as graceful", policy)
+		if supportsNodeShutdown(version) {
+			return StrategyNodeShutdown, reason
+		}
+		return StrategyAllocationFilter, reason + "; " + versionFallbackReason(version)
+	}
+}
+
+// versionFallbackReason is the fallback reason used when the detected
+// Elasticsearch version does not support the Node Shutdown API.
+func versionFallbackReason(version string) string {
+	return fmt.Sprintf("Elasticsearch version %q does not support the Node Shutdown API (requires >= 7.15.2); falling back to allocation-filter", version)
+}
+
 // Strategy returns the rolling restart strategy selected for the cluster.
 func (r *RollingRestartOrchestrator) Strategy() RollingRestartStrategy {
 	return r.strategy
+}
+
+// Policy returns the rolling restart policy requested in the spec.
+func (r *RollingRestartOrchestrator) Policy() elasticsearchcrd.RollingRestartPolicy {
+	return r.policy
 }
 
 // ESVersion returns the detected Elasticsearch version.
@@ -144,7 +208,7 @@ func (r *RollingRestartOrchestrator) PrepareForRollingRestart(ctx context.Contex
 		return nil
 
 	case StrategyAllocationFilter:
-		// Legacy strategy: disable replica allocation and rebalancing (transient).
+		// Allocation-filter strategy: disable replica allocation and rebalancing (transient).
 		r.logger.Info("Set transient cluster.routing.allocation.enable=primaries (replica allocation disabled)")
 		if err := r.esHandler.DisableReplicaShardsAllocationTransient(); err != nil {
 			return fmt.Errorf("failed to disable replica allocation: %w", err)
@@ -173,6 +237,14 @@ func (r *RollingRestartOrchestrator) CompleteRollingRestart(ctx context.Context)
 
 	switch r.strategy {
 	case StrategyNodeShutdown:
+		// Node Shutdown path: defensively clear any transient allocation settings
+		// left over from a previous/interrupted "fast" run (or a mid-upgrade policy
+		// switch graceful<->fast).
+		r.logger.Info("Removing any leftover transient allocation settings")
+		if err := r.esHandler.RemoveTransientAllocationSettings(); err != nil {
+			r.logger.Warnf("Failed to remove transient allocation settings (non-blocking): %s", err)
+		}
+
 		// Clean up any remaining shutdown requests
 		r.logger.Info("Cleaning up node shutdown requests")
 		shutdowns, err := r.esHandler.GetAllNodeShutdowns(ctx)

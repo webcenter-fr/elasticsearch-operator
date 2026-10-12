@@ -45,6 +45,40 @@ func TestSupportsNodeShutdown(t *testing.T) {
 	}
 }
 
+func TestResolveRollingRestartStrategy(t *testing.T) {
+	tests := []struct {
+		name           string
+		policy         elasticsearchcrd.RollingRestartPolicy
+		version        string
+		expected       RollingRestartStrategy
+		reasonContains string
+	}{
+		{"graceful on ES >= 7.15.2 uses node-shutdown", elasticsearchcrd.RollingRestartPolicyGraceful, "8.11.0", StrategyNodeShutdown, ""},
+		{"graceful on ES < 7.15.2 falls back to allocation-filter", elasticsearchcrd.RollingRestartPolicyGraceful, "7.14.0", StrategyAllocationFilter, "does not support the Node Shutdown API"},
+		{"graceful with empty version falls back to allocation-filter", elasticsearchcrd.RollingRestartPolicyGraceful, "", StrategyAllocationFilter, "does not support the Node Shutdown API"},
+		{"graceful with unparseable version falls back to allocation-filter", elasticsearchcrd.RollingRestartPolicyGraceful, "invalid", StrategyAllocationFilter, "does not support the Node Shutdown API"},
+		{"empty policy behaves as graceful on ES >= 7.15.2", "", "8.11.0", StrategyNodeShutdown, ""},
+		{"empty policy behaves as graceful on ES < 7.15.2", "", "7.14.0", StrategyAllocationFilter, "does not support the Node Shutdown API"},
+		{"fast forces allocation-filter on ES >= 7.15.2", elasticsearchcrd.RollingRestartPolicyFast, "8.11.0", StrategyAllocationFilter, ""},
+		{"fast forces allocation-filter on ES < 7.15.2", elasticsearchcrd.RollingRestartPolicyFast, "7.14.0", StrategyAllocationFilter, ""},
+		{"fast forces allocation-filter with empty version", elasticsearchcrd.RollingRestartPolicyFast, "", StrategyAllocationFilter, ""},
+		{"fast forces allocation-filter with unparseable version", elasticsearchcrd.RollingRestartPolicyFast, "invalid", StrategyAllocationFilter, ""},
+		{"unknown policy on ES >= 7.15.2 falls back to graceful node-shutdown", "bogus", "8.11.0", StrategyNodeShutdown, `unknown rolling restart policy "bogus"; treating as graceful`},
+		{"unknown policy on ES < 7.15.2 falls back to graceful allocation-filter", "bogus", "7.14.0", StrategyAllocationFilter, `unknown rolling restart policy "bogus"; treating as graceful`},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			strategy, reason := resolveRollingRestartStrategy(tt.policy, tt.version)
+			assert.Equal(t, tt.expected, strategy)
+			if tt.reasonContains == "" {
+				assert.Empty(t, reason)
+			} else {
+				assert.Contains(t, reason, tt.reasonContains)
+			}
+		})
+	}
+}
+
 func TestRollingRestartOrchestratorAccessors(t *testing.T) {
 	ctrl := gomock.NewController(t)
 
@@ -57,12 +91,83 @@ func TestRollingRestartOrchestratorAccessors(t *testing.T) {
 		k8sClient:    k8sClient,
 		logger:       logger,
 		strategy:     StrategyNodeShutdown,
+		policy:       elasticsearchcrd.RollingRestartPolicyGraceful,
 		esVersion:    "8.11.0",
 		nodeNameToID: map[string]string{"pod-0": "n1"},
 	}
 
 	assert.Equal(t, StrategyNodeShutdown, orch.Strategy())
+	assert.Equal(t, elasticsearchcrd.RollingRestartPolicyGraceful, orch.Policy())
 	assert.Equal(t, "8.11.0", orch.ESVersion())
+}
+
+func TestNewRollingRestartOrchestratorPolicy(t *testing.T) {
+	ctx := context.Background()
+
+	t.Run("fast skips version detection and node map", func(t *testing.T) {
+		ctrl := gomock.NewController(t)
+
+		mockES := mocks.NewMockElasticsearchHandler(ctrl)
+		k8sClient := fake.NewClientBuilder().WithScheme(scheme.Scheme).Build()
+		logger := logrus.NewEntry(logrus.New())
+
+		// No GetVersion / GetNodeNameToIDMap call is expected: gomock fails
+		// the test on any unexpected call.
+		orch, err := NewRollingRestartOrchestrator(mockES, k8sClient, logger, elasticsearchcrd.RollingRestartPolicyFast)
+		assert.NoError(t, err)
+		assert.Equal(t, StrategyAllocationFilter, orch.Strategy())
+		assert.Equal(t, elasticsearchcrd.RollingRestartPolicyFast, orch.Policy())
+		assert.Empty(t, orch.ESVersion())
+	})
+
+	t.Run("graceful on ES >= 7.15.2 uses node-shutdown", func(t *testing.T) {
+		ctrl := gomock.NewController(t)
+
+		mockES := mocks.NewMockElasticsearchHandler(ctrl)
+		k8sClient := fake.NewClientBuilder().WithScheme(scheme.Scheme).Build()
+		logger := logrus.NewEntry(logrus.New())
+
+		mockES.EXPECT().GetVersion(ctx).Return("8.11.0", nil)
+		mockES.EXPECT().GetNodeNameToIDMap(ctx).Return(map[string]string{"pod-0": "n1"}, nil)
+
+		orch, err := NewRollingRestartOrchestrator(mockES, k8sClient, logger, elasticsearchcrd.RollingRestartPolicyGraceful)
+		assert.NoError(t, err)
+		assert.Equal(t, StrategyNodeShutdown, orch.Strategy())
+		assert.Equal(t, elasticsearchcrd.RollingRestartPolicyGraceful, orch.Policy())
+		assert.Equal(t, "8.11.0", orch.ESVersion())
+	})
+
+	t.Run("graceful on ES < 7.15.2 falls back to allocation-filter without node map", func(t *testing.T) {
+		ctrl := gomock.NewController(t)
+
+		mockES := mocks.NewMockElasticsearchHandler(ctrl)
+		k8sClient := fake.NewClientBuilder().WithScheme(scheme.Scheme).Build()
+		logger := logrus.NewEntry(logrus.New())
+
+		mockES.EXPECT().GetVersion(ctx).Return("7.14.0", nil)
+		// No GetNodeNameToIDMap call is expected: the map is only used by the
+		// Node Shutdown API.
+
+		orch, err := NewRollingRestartOrchestrator(mockES, k8sClient, logger, elasticsearchcrd.RollingRestartPolicyGraceful)
+		assert.NoError(t, err)
+		assert.Equal(t, StrategyAllocationFilter, orch.Strategy())
+		assert.Equal(t, "7.14.0", orch.ESVersion())
+	})
+
+	t.Run("graceful propagates version detection error", func(t *testing.T) {
+		ctrl := gomock.NewController(t)
+
+		mockES := mocks.NewMockElasticsearchHandler(ctrl)
+		k8sClient := fake.NewClientBuilder().WithScheme(scheme.Scheme).Build()
+		logger := logrus.NewEntry(logrus.New())
+
+		mockES.EXPECT().GetVersion(ctx).Return("", errors.New("connection refused"))
+
+		orch, err := NewRollingRestartOrchestrator(mockES, k8sClient, logger, elasticsearchcrd.RollingRestartPolicyGraceful)
+		assert.Error(t, err)
+		assert.Nil(t, orch)
+		assert.Contains(t, err.Error(), "failed to get Elasticsearch version")
+	})
 }
 
 func TestPrepareForRollingRestart(t *testing.T) {
@@ -196,6 +301,7 @@ func TestCompleteRollingRestart(t *testing.T) {
 			esVersion: "8.11.0",
 		}
 
+		mockES.EXPECT().RemoveTransientAllocationSettings().Return(nil)
 		mockES.EXPECT().GetAllNodeShutdowns(ctx).Return([]eshandler.NodeShutdownInfo{
 			{NodeID: "n1", Type: "restart", Status: eshandler.ShutdownComplete},
 			{NodeID: "n2", Type: "restart", Status: eshandler.ShutdownInProgress},

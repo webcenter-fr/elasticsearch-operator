@@ -6453,6 +6453,25 @@ spec:
                       Default to 365
                     type: integer
                 type: object
+              updateStrategy:
+                description: UpdateStrategy configures how the operator performs cluster
+                  upgrades.
+                properties:
+                  rollingRestartPolicy:
+                    default: graceful
+                    description: |-
+                      RollingRestartPolicy controls how pods are restarted during a rolling
+                      upgrade.
+                      - graceful (default): Node Shutdown API on ES >= 7.15.2, allocation
+                        filter on older versions.
+                      - fast: always use the allocation filter (transient
+                        cluster.routing.allocation.enable=primaries +
+                        cluster.routing.rebalance.enable=none + flush).
+                    enum:
+                    - graceful
+                    - fast
+                    type: string
+                type: object
               version:
                 default: latest
                 description: |-

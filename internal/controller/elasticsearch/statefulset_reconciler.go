@@ -400,7 +400,7 @@ func (r *statefulsetReconciler) Diff(ctx context.Context, o *elasticsearchcrd.El
 				if esHandler == nil {
 					return diff, res, errors.New("Elasticsearch handler is nil. We need to get it before continue to have ability to re activate balancing")
 				}
-				orchestrator, err := NewRollingRestartOrchestrator(esHandler, r.Client(), logger)
+				orchestrator, err := NewRollingRestartOrchestrator(esHandler, r.Client(), logger, o.Spec.UpdateStrategy.RollingRestartPolicy)
 				if err != nil {
 					return diff, res, errors.Wrap(err, "Error when create rolling restart orchestrator")
 				}
@@ -472,7 +472,7 @@ func (r *statefulsetReconciler) Diff(ctx context.Context, o *elasticsearchcrd.El
 // prepare the cluster) and true when the upgrade can proceed, or false when
 // a predicate blocked it (the caller should retry later).
 func (r *statefulsetReconciler) checkUpgradePredicates(ctx context.Context, o *elasticsearchcrd.Elasticsearch, sts *appv1.StatefulSet, esHandler elasticsearchhandler.ElasticsearchHandler, logger *logrus.Entry) (*RollingRestartOrchestrator, bool, error) {
-	orchestrator, err := NewRollingRestartOrchestrator(esHandler, r.Client(), logger)
+	orchestrator, err := NewRollingRestartOrchestrator(esHandler, r.Client(), logger, o.Spec.UpdateStrategy.RollingRestartPolicy)
 	if err != nil {
 		logger.Warnf("Error when create rolling restart orchestrator, delaying upgrade: %s", err)
 		return nil, false, nil
