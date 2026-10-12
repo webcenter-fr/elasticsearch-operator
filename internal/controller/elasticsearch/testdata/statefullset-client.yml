@@ -196,11 +196,13 @@ spec:
       initContainers:
       - args:
         - |-
-          while grep -qx "$HOSTNAME" /suspended/suspended_pods.txt 2>/dev/null; do
-            echo "Pod $HOSTNAME is suspended via elasticsearch.k8s.webcenter.fr/suspend annotation"
-            echo "Remove the pod name from the annotation to resume normal operation"
-            sleep 10
-          done
+          trap 'exit 0' TERM INT
+          if ! grep -qx "$HOSTNAME" /suspended/suspended_pods.txt 2>/dev/null; then
+            exit 0
+          fi
+          echo "Pod $HOSTNAME is suspended via elasticsearch.k8s.webcenter.fr/suspend annotation"
+          echo "Remove the pod name from the annotation to resume normal operation"
+          sleep infinity
         command:
         - /bin/sh
         - -c

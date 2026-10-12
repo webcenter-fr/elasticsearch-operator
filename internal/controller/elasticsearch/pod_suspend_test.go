@@ -186,7 +186,7 @@ func TestReconcileSuspendedPods(t *testing.T) {
 	pod1 := suspendedPod("test-data-es-1", esLabels)
 	// Pod NOT listed and running -> should NOT be deleted
 	pod2 := runningPod("test-data-es-2", esLabels)
-	// Pod NOT listed and suspended -> should NOT be deleted
+	// Pod NOT listed and suspended -> should be deleted (resume)
 	pod3 := suspendedPod("test-data-es-3", esLabels)
 	// Pod with wrong labels -> should be ignored
 	podWrongLabels := runningPod("test-data-es-4", map[string]string{"cluster": "other"})
@@ -212,9 +212,9 @@ func TestReconcileSuspendedPods(t *testing.T) {
 	err = k8sClient.Get(ctx, client.ObjectKey{Namespace: "default", Name: "test-data-es-2"}, &corev1.Pod{})
 	assert.NoError(t, err, "pod test-data-es-2 should NOT be deleted")
 
-	// pod-3: not listed and suspended -> NOT deleted
+	// pod-3: not listed and suspended -> deleted (resume)
 	err = k8sClient.Get(ctx, client.ObjectKey{Namespace: "default", Name: "test-data-es-3"}, &corev1.Pod{})
-	assert.NoError(t, err, "pod test-data-es-3 should NOT be deleted")
+	assert.True(t, apierrors.IsNotFound(err), "pod test-data-es-3 should be deleted to resume")
 
 	// pod with wrong labels -> NOT deleted (not even listed)
 	err = k8sClient.Get(ctx, client.ObjectKey{Namespace: "default", Name: "test-data-es-4"}, &corev1.Pod{})

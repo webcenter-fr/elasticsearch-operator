@@ -94,9 +94,21 @@ func ReconcileSuspendedPods(ctx context.Context, c client.Client, es *elasticsea
 			logger.Infof("Pod %s is suspended (downtime mode) - PVC remains mounted, use 'kubectl exec' to access data", pod.Name)
 
 		case !shouldSuspend && isSuspended:
-			// Pod is suspended but should not be: the init container will exit
-			// once the suspended-pods ConfigMap is updated.
-			logger.Infof("Pod %s is resuming from suspended state", pod.Name)
+			// Pod is suspended but no longer listed: delete it so it is recreated
+			// and the suspend-check init container re-reads the updated
+			// suspended-pods ConfigMap (the pod is not listed anymore, so it
+			// exits and Elasticsearch starts). A mounted ConfigMap is not
+			// re-synced into a live container, so deleting the pod is the
+			// simplest way to propagate the change without bumping the
+			// StatefulSet checksum (which would restart the whole cluster).
+			logger.Infof("Resuming pod %s: deleting suspended pod so it restarts in running state", pod.Name)
+			if err := c.Delete(ctx, pod); err != nil {
+				if k8serrors.IsNotFound(err) {
+					// Pod already deleted, nothing to do
+					continue
+				}
+				return fmt.Errorf("failed to delete pod %s to resume from suspension: %w", pod.Name, err)
+			}
 		}
 	}
 
