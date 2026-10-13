@@ -422,26 +422,55 @@ func (h *ElasticsearchReconciler) computeElasticsearchUrl(ctx context.Context, e
 	return fmt.Sprintf("%s://%s", scheme, url), nil
 }
 
-// getElasticsearchAddresses builds the list of Elasticsearch API addresses:
-// one DNS address per pod via the headless services (which publish not-ready
-// addresses, so the operator can always connect, even during a rolling
-// restart when pods are not ready), plus the global ClusterIP service as
-// fallback. Inspired by ECK's URL provider.
-func getElasticsearchAddresses(es *elasticsearchcrd.Elasticsearch) (addresses []string) {
-	scheme := "http"
-	if es.Spec.Tls.IsTlsEnabled() {
-		scheme = "https"
-	}
+// GetElasticsearchAddresses builds the list of Elasticsearch API addresses:
+// the global ClusterIP service first (it load-balances across ready pods),
+// then one DNS address per pod via the headless services. Headless services
+// publish not-ready addresses, so the operator can always connect, even during
+// a rolling restart when pods are not ready. Inspired by ECK's URL provider.
+func GetElasticsearchAddresses(es *elasticsearchcrd.Elasticsearch) (addresses []string) {
+	scheme := getElasticsearchScheme(es)
+
+	// Primary: the global ClusterIP service (load-balances across ready pods)
+	addresses = append(addresses, fmt.Sprintf("%s://%s.%s.svc:9200", scheme, GetGlobalServiceName(es), es.Namespace))
 
 	for _, nodeGroup := range es.Spec.NodeGroups {
-		headlessService := GetNodeGroupServiceNameHeadless(es, nodeGroup.Name)
-		for _, nodeName := range GetNodeGroupNodeNames(es, nodeGroup.Name) {
-			addresses = append(addresses, fmt.Sprintf("%s://%s.%s.%s.svc:9200", scheme, nodeName, headlessService, es.Namespace))
-		}
+		addresses = append(addresses, getNodeGroupPodAddresses(es, nodeGroup.Name, scheme)...)
 	}
 
-	// Fallback: the global ClusterIP service (load-balances across ready pods)
-	addresses = append(addresses, fmt.Sprintf("%s://%s.%s.svc:9200", scheme, GetGlobalServiceName(es), es.Namespace))
+	return addresses
+}
+
+// GetNodeGroupElasticsearchAddresses builds the list of Elasticsearch API
+// addresses for one node group: the node group ClusterIP service first, then
+// one DNS address per pod via its headless service (fallback).
+func GetNodeGroupElasticsearchAddresses(es *elasticsearchcrd.Elasticsearch, nodeGroupName string) (addresses []string) {
+	scheme := getElasticsearchScheme(es)
+
+	// Primary: the node group ClusterIP service (load-balances across ready pods)
+	addresses = append(addresses, fmt.Sprintf("%s://%s.%s.svc:9200", scheme, GetNodeGroupServiceName(es, nodeGroupName), es.Namespace))
+	addresses = append(addresses, getNodeGroupPodAddresses(es, nodeGroupName, scheme)...)
+
+	return addresses
+}
+
+// getElasticsearchScheme returns the http/https scheme to reach the
+// Elasticsearch API, depending on the TLS setting.
+func getElasticsearchScheme(es *elasticsearchcrd.Elasticsearch) string {
+	if es.Spec.Tls.IsTlsEnabled() {
+		return "https"
+	}
+
+	return "http"
+}
+
+// getNodeGroupPodAddresses builds one DNS address per pod of the node group
+// via its headless service.
+func getNodeGroupPodAddresses(es *elasticsearchcrd.Elasticsearch, nodeGroupName, scheme string) (addresses []string) {
+	headlessService := GetNodeGroupServiceNameHeadless(es, nodeGroupName)
+
+	for _, nodeName := range GetNodeGroupNodeNames(es, nodeGroupName) {
+		addresses = append(addresses, fmt.Sprintf("%s://%s.%s.%s.svc:9200", scheme, nodeName, headlessService, es.Namespace))
+	}
 
 	return addresses
 }
@@ -458,8 +487,8 @@ func (h *ElasticsearchReconciler) getElasticsearchHandler(ctx context.Context, e
 		return nil, err
 	}
 
-	addresses := getElasticsearchAddresses(es)
-	log.Infof("Elasticsearch client configured with %d addresses (%d pod DNS via headless services + 1 global service)", len(addresses), len(addresses)-1)
+	addresses := GetElasticsearchAddresses(es)
+	log.Infof("Elasticsearch client configured with %d addresses (1 service + %d pod DNS via headless services)", len(addresses), len(addresses)-1)
 
 	cfg := &elasticsearch.Config{
 		Addresses:         addresses,
@@ -468,6 +497,8 @@ func (h *ElasticsearchReconciler) getElasticsearchHandler(ctx context.Context, e
 		TLSSkipVerify:     es.Spec.Tls.IsSelfManagedSecretForTls(),
 		AllowInsecureHTTP: !es.Spec.Tls.IsTlsEnabled(),
 		Timeout:           common.ESClientTimeout,
+		RetryCount:        len(addresses),
+		RetryConditions:   elasticsearch.DefaultRetryConditions(),
 	}
 
 	// BYO TLS (user-provided CertificateSecretRef): verify the server certificate

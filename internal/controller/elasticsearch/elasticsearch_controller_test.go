@@ -1742,30 +1742,39 @@ func TestGetElasticsearchAddresses(t *testing.T) {
 		}
 	}
 
-	t.Run("one pod DNS address per pod plus the global service", func(t *testing.T) {
-		addresses := getElasticsearchAddresses(newES(false))
+	t.Run("global service first then one pod DNS address per pod", func(t *testing.T) {
+		addresses := GetElasticsearchAddresses(newES(false))
 		assert.Equal(t, []string{
+			"http://test-es.default.svc:9200",
 			"http://test-master-es-0.test-master-headless-es.default.svc:9200",
 			"http://test-master-es-1.test-master-headless-es.default.svc:9200",
 			"http://test-data-es-0.test-data-headless-es.default.svc:9200",
-			"http://test-es.default.svc:9200",
 		}, addresses)
 	})
 
 	t.Run("https scheme when TLS is enabled", func(t *testing.T) {
-		addresses := getElasticsearchAddresses(newES(true))
+		addresses := GetElasticsearchAddresses(newES(true))
 		assert.Equal(t, []string{
+			"https://test-es.default.svc:9200",
 			"https://test-master-es-0.test-master-headless-es.default.svc:9200",
 			"https://test-master-es-1.test-master-headless-es.default.svc:9200",
 			"https://test-data-es-0.test-data-headless-es.default.svc:9200",
-			"https://test-es.default.svc:9200",
 		}, addresses)
 	})
 
 	t.Run("no node group only returns the global service", func(t *testing.T) {
 		es := newES(false)
 		es.Spec.NodeGroups = nil
-		addresses := getElasticsearchAddresses(es)
+		addresses := GetElasticsearchAddresses(es)
 		assert.Equal(t, []string{"http://test-es.default.svc:9200"}, addresses)
+	})
+
+	t.Run("node group service first then its pod DNS addresses", func(t *testing.T) {
+		addresses := GetNodeGroupElasticsearchAddresses(newES(false), "master")
+		assert.Equal(t, []string{
+			"http://test-master-es.default.svc:9200",
+			"http://test-master-es-0.test-master-headless-es.default.svc:9200",
+			"http://test-master-es-1.test-master-headless-es.default.svc:9200",
+		}, addresses)
 	})
 }

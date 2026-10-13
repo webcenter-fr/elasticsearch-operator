@@ -92,18 +92,30 @@ current version-aware behavior.
 
 ## Operator connectivity during an upgrade
 
-The operator connects to the Elasticsearch API using one DNS address per pod,
-built from the headless services:
+The operator connects to the Elasticsearch API using the cluster service first,
+then one DNS address per pod built from the headless services:
 
 ```
+https://<es-name>-es.<namespace>.svc:9200
 https://<pod-name>.<es-name>-<node-group>-headless-es.<namespace>.svc:9200
 ```
 
-Headless services publish pod DNS records even when pods are **not ready**, so
-the operator can always reach a node — including during a rolling upgrade
-when pods are being restarted and are not ready yet. The global ClusterIP
-service (`<es-name>-es.<namespace>.svc:9200`) is appended as a fallback; it
-load-balances across ready pods only.
+The cluster service is a ClusterIP service that load-balances across the pods
+that are **ready**. The per-pod addresses go through the headless services,
+which publish pod DNS records even when pods are **not ready**; they are
+appended as a fallback so the operator can always reach a node during a rolling
+upgrade when pods are being restarted and are not ready yet.
+
+Retry/failover is enabled: the client retry count is set to the number of
+addresses and retries on connection errors, timeouts, HTTP 429 and HTTP 5xx
+responses. A request that fails against one address is therefore retried
+against the next address in the list (the client round-robins over the
+addresses on every attempt).
+
+The `elasticsearchapi` controllers (User, Role, RoleMapping, ILM, snapshot
+lifecycle policies, ...) use the same address list for managed clusters. When
+`targetNodeGroup` is set, they use the target node group's service first, then
+that node group's pods via its headless service.
 
 ## Safety predicates
 
@@ -176,7 +188,7 @@ During a rolling upgrade, the operator logs the following at INFO level:
   switch.
 - `=== Rolling Upgrade Completed: completing rolling restart ===` — the
   rolling upgrade is finished.
-- `Elasticsearch client configured with <n> addresses (<n-1> pod DNS via headless services + 1 global service)`
+- `Elasticsearch client configured with <n> addresses (1 service + <n-1> pod DNS via headless services)`
   — the operator's Elasticsearch client addresses.
 
 ## Troubleshooting
