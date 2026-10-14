@@ -5,15 +5,12 @@ import (
 	"reflect"
 	"time"
 
-	"golang.org/x/time/rate"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/tools/record"
-	"k8s.io/client-go/util/workqueue"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
-	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
 
 // FieldManager is the stable Server-Side Apply field manager name shared by
@@ -94,11 +91,4 @@ func LegacyEventRecorder(mgr manager.Manager, name string) record.EventRecorder 
 	//nolint:staticcheck // kept for the legacy disaster37 record.EventRecorder API
 	//lint:ignore SA1019 kept for the legacy disaster37 record.EventRecorder API
 	return mgr.GetEventRecorderFor(name)
-}
-
-func DefaultControllerRateLimiter() workqueue.TypedRateLimiter[reconcile.Request] {
-	return workqueue.NewTypedMaxOfRateLimiter[reconcile.Request](
-		workqueue.NewTypedItemExponentialFailureRateLimiter[reconcile.Request](1*time.Second, 1000*time.Second),
-		&workqueue.TypedBucketRateLimiter[reconcile.Request]{Limiter: rate.NewLimiter(rate.Limit(10), 100)},
-	)
 }
