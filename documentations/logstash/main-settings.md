@@ -23,6 +23,8 @@ You can use the following main setting to deploy Logstash:
 - **pipelines** (map of any): Each key is the file store on pipeline folder. Each value is the config on YAML format. It permit to set your pipeline spec. Default is `empty`.
 - **patterns** (map of string): Each key is the file store on pattern folder. Each value is the file contend. It permit to set your custom grok patterns. Default is `empty`.
 
+> **Deprecated**: `elasticsearchRef` is deprecated in favor of the Discover concept. Use `discoverRef` instead. See [Discover settings](discover-settings.md) and the [migration guide](#migration-to-discover).
+
 > The Logstash output is directly managed by your pipelines. So, the operator can't configure output for you.
 > Moreover, you need to create a dedicated account for your Logstash Pipeline.
 
@@ -133,3 +135,67 @@ data:
   username: ++++++++
   password: ++++++++
 ```
+
+## Migration to Discover
+
+The `elasticsearchRef` field is deprecated in favor of the Discover concept. The migration consists in creating an Elasticsearch Discover resource, then referencing it from Logstash with `discoverRef` and using the generated environment variables in your pipelines.
+
+**Before (deprecated static ref):**
+
+```yaml
+apiVersion: logstash.k8s.webcenter.fr/v1
+kind: Logstash
+metadata:
+  name: logstash
+spec:
+  elasticsearchRef:
+    managed:
+      name: my-elasticsearch
+    secretRef:
+      name: elasticsearch-credentials
+```
+
+**After (Discover):**
+
+```yaml
+# Step 1: Create the Discover resource
+apiVersion: discover.k8s.webcenter.fr/v1
+kind: Elasticsearch
+metadata:
+  name: my-elasticsearch-discover
+spec:
+  elasticsearchRef:
+    managed:
+      name: my-elasticsearch
+    secretRef:
+      name: elasticsearch-credentials
+---
+# Step 2: Reference it from Logstash and consume the generated variables
+apiVersion: logstash.k8s.webcenter.fr/v1
+kind: Logstash
+metadata:
+  name: logstash
+spec:
+  discoverRef:
+    - elasticsearch:
+        name: my-elasticsearch-discover
+  pipelines:
+    output.conf: |
+      input {
+        beats {
+          port => 5044
+        }
+      }
+      output {
+        elasticsearch {
+          hosts => "${ELASTICSEARCH_HOSTS_MY_ELASTICSEARCH_DISCOVER}"
+          index => "logs-%{+YYYY.MM.dd}"
+          user => "${ELASTICSEARCH_USERNAME_MY_ELASTICSEARCH_DISCOVER}"
+          password => "${ELASTICSEARCH_PASSWORD_MY_ELASTICSEARCH_DISCOVER}"
+          ssl_enabled => true
+          ssl_certificate_authorities => ["/usr/share/logstash/discover/my-elasticsearch-discover/ca.crt"]
+        }
+      }
+```
+
+See [Discover settings](discover-settings.md) for the complete reference.

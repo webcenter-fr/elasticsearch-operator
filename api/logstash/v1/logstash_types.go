@@ -20,6 +20,7 @@ import (
 	"github.com/disaster37/operator-sdk-extra/v3/pkg/apis"
 	"github.com/disaster37/operator-sdk-extra/v3/pkg/apis/multiphase"
 	"github.com/disaster37/operator-sdk-extra/v3/pkg/apis/workflow"
+	discovercrd "github.com/webcenter-fr/elasticsearch-operator/api/discover/v1"
 	"github.com/webcenter-fr/elasticsearch-operator/api/shared"
 	corev1 "k8s.io/api/core/v1"
 	policyv1 "k8s.io/api/policy/v1"
@@ -43,9 +44,15 @@ type LogstashSpec struct {
 
 	// ElasticsearchRef is the Elasticsearch ref to connect on.
 	// It will expose CA certificate and Elasticsearch URL as encironment variable to use it in logstash setting
+	// Deprecated: use DiscoverRef instead
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
 	// +optional
 	ElasticsearchRef shared.ElasticsearchRef `json:"elasticsearchRef,omitempty"`
+
+	// DiscoverRef permit to reference discover configuration
+	// +operator-sdk:csv:customresourcedefinitions:type=spec
+	// +optional
+	DiscoverRef []*discovercrd.DiscoverRef `json:"discoverRef,omitempty"`
 
 	// Version is the logstash version to use
 	// Default is use the latest

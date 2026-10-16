@@ -30,6 +30,8 @@ You can use the following main setting to deploy Filebeat:
     - **name** (string / require): The secret name
 - **modules** (map of any): Each key is the file store on modules.d folder. Each value is the YAML contend. It permit to enable and configure modules. Default is `empty`.
 
+> **Deprecated**: `elasticsearchRef` and `logstashRef` are deprecated in favor of the Discover concept. Use `discoverRef` and `discoverOutputName` instead. See [Discover settings](discover-settings.md) and the [migration guide](#migration-to-discover).
+
 
 **filebeat.yaml**:
 ```yaml
@@ -148,3 +150,49 @@ type: Opaque
 data:
   ca.crt: ++++++++
 ```
+
+## Migration to Discover
+
+The `elasticsearchRef` and `logstashRef` fields are deprecated in favor of the Discover concept. The migration consists in creating a Discover resource that describes the target, then referencing it from Filebeat with `discoverRef` and `discoverOutputName`.
+
+**Before (deprecated static ref):**
+
+```yaml
+apiVersion: beat.k8s.webcenter.fr/v1
+kind: Filebeat
+metadata:
+  name: filebeat
+spec:
+  logstashRef:
+    managed:
+      name: my-logstash
+      port: 5003
+```
+
+**After (Discover):**
+
+```yaml
+# Step 1: Create the Discover resource
+apiVersion: discover.k8s.webcenter.fr/v1
+kind: Logstash
+metadata:
+  name: my-logstash-discover
+spec:
+  logstashRef:
+    managed:
+      name: my-logstash
+      port: 5003
+---
+# Step 2: Reference it from Filebeat
+apiVersion: beat.k8s.webcenter.fr/v1
+kind: Filebeat
+metadata:
+  name: filebeat
+spec:
+  discoverRef:
+    - logstash:
+        name: my-logstash-discover
+  discoverOutputName: my-logstash-discover
+```
+
+See [Discover settings](discover-settings.md) for the complete reference.

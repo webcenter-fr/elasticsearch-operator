@@ -11,9 +11,11 @@ import (
 	"github.com/disaster37/operator-sdk-extra/v3/pkg/helper"
 	"github.com/sirupsen/logrus"
 	beatcrd "github.com/webcenter-fr/elasticsearch-operator/api/beat/v1"
+	discovercrd "github.com/webcenter-fr/elasticsearch-operator/api/discover/v1"
 	elasticsearchcrd "github.com/webcenter-fr/elasticsearch-operator/api/elasticsearch/v1"
 	logstashcrd "github.com/webcenter-fr/elasticsearch-operator/api/logstash/v1"
 	"github.com/webcenter-fr/elasticsearch-operator/internal/controller/common"
+	"github.com/webcenter-fr/elasticsearch-operator/internal/controller/discover"
 	corev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/labels"
@@ -48,10 +50,13 @@ func newConfiMapReconciler(client client.Client, recorder record.EventRecorder) 
 func (r *configMapReconciler) Read(ctx context.Context, o *beatcrd.Filebeat, data map[string]any, logger *logrus.Entry) (read multiphase.MultiPhaseRead[*corev1.ConfigMap], res reconcile.Result, err error) {
 	cmList := &corev1.ConfigMapList{}
 	var (
-		es                    *elasticsearchcrd.Elasticsearch
-		ls                    *logstashcrd.Logstash
-		elasticsearchCASecret *corev1.Secret
-		logstashCASecret      *corev1.Secret
+		es                       *elasticsearchcrd.Elasticsearch
+		ls                       *logstashcrd.Logstash
+		elasticsearchCASecret    *corev1.Secret
+		logstashCASecret         *corev1.Secret
+		discoverOutputSecretEnv  *corev1.Secret
+		discoverOutputSecretFile *corev1.Secret
+		discoverType             discovercrd.DiscoverType
 	)
 	read = multiphase.NewMultiPhaseRead[*corev1.ConfigMap]()
 
@@ -63,6 +68,19 @@ func (r *configMapReconciler) Read(ctx context.Context, o *beatcrd.Filebeat, dat
 		return read, res, errors.Wrapf(err, "Error when read configMap")
 	}
 	read.SetCurrentObjects(helper.ToSlicePtr(cmList.Items))
+
+	// Read discover output secrets
+	discoverOutput := o.SearchDiscoverOutputRef()
+	if discoverOutput != nil {
+		var discoverRes *reconcile.Result
+		discoverType, discoverOutputSecretEnv, discoverOutputSecretFile, discoverRes, err = discover.ReadDiscoverOutputSecrets(ctx, r.Client(), logger, o, discoverOutput)
+		if err != nil {
+			return read, res, errors.Wrap(err, "Error when read discover output secrets")
+		}
+		if discoverRes != nil {
+			return read, *discoverRes, nil
+		}
+	}
 
 	// Read Elasticsearch
 	if o.Spec.ElasticsearchRef != nil && o.Spec.ElasticsearchRef.IsManaged() {
@@ -122,7 +140,7 @@ func (r *configMapReconciler) Read(ctx context.Context, o *beatcrd.Filebeat, dat
 	}
 
 	// Generate expected node group configmaps
-	expectedCms, err := buildConfigMaps(o, es, ls, elasticsearchCASecret, logstashCASecret)
+	expectedCms, err := buildConfigMaps(o, es, ls, elasticsearchCASecret, logstashCASecret, discoverType, discoverOutputSecretEnv, discoverOutputSecretFile)
 	if err != nil {
 		return read, res, errors.Wrap(err, "Error when generate config maps")
 	}

@@ -1,0 +1,18 @@
+apiVersion: discover.k8s.webcenter.fr/v1
+kind: Kafka
+metadata:
+  labels:
+    app.kubernetes.io/name: kafka
+    app.kubernetes.io/instance: kafka-sample
+    app.kubernetes.io/part-of: bootstrap
+    app.kubernetes.io/managed-by: kustomize
+    app.kubernetes.io/created-by: bootstrap
+  name: kafka-sample
+  namespace: default
+spec:
+  kafkaRef:
+    managed:
+      name: kafka-sample-cluster
+      targetListener: tls
+      userRef:
+        name: filebeat-sample

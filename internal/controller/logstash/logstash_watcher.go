@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	logstashcrd "github.com/webcenter-fr/elasticsearch-operator/api/logstash/v1"
+	"github.com/webcenter-fr/elasticsearch-operator/internal/controller/discover"
 	"k8s.io/apimachinery/pkg/fields"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -149,6 +150,9 @@ func watchSecret(c client.Client) handler.MapFunc {
 		for _, k := range listLogstashs.Items {
 			reconcileRequests = append(reconcileRequests, reconcile.Request{NamespacedName: types.NamespacedName{Name: k.Name, Namespace: k.Namespace}})
 		}
+
+		// Discover secrets
+		reconcileRequests = append(reconcileRequests, discover.WatchDiscoverSecret[*logstashcrd.LogstashList, *logstashcrd.Logstash](c)(ctx, a)...)
 
 		return reconcileRequests
 	}

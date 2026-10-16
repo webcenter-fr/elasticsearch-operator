@@ -45,7 +45,7 @@ spec:
       name: elasticsearch-credentials
     elasticsearchCASecretRef:
       name: custom-ca-elasticsearch
-  module:
+  modules:
     elasticsearch-xpack.yml:
       - module: elasticsearch
         xpack.enabled: true

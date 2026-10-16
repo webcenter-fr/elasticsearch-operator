@@ -1,0 +1,17 @@
+apiVersion: discover.k8s.webcenter.fr/v1
+kind: Logstash
+metadata:
+  labels:
+    app.kubernetes.io/name: logstash
+    app.kubernetes.io/instance: logstash-sample
+    app.kubernetes.io/part-of: bootstrap
+    app.kubernetes.io/managed-by: kustomize
+    app.kubernetes.io/created-by: bootstrap
+  name: logstash-sample
+  namespace: default
+spec:
+  logstashRef:
+    managed:
+      name: logstash-sample
+      targetService: beat
+      port: 5003

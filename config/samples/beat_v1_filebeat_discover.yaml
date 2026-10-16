@@ -1,0 +1,47 @@
+apiVersion: beat.k8s.webcenter.fr/v1
+kind: Filebeat
+metadata:
+  labels:
+    app.kubernetes.io/name: filebeat
+    app.kubernetes.io/instance: filebeat-sample
+    app.kubernetes.io/part-of: bootstrap
+    app.kubernetes.io/managed-by: kustomize
+    app.kubernetes.io/created-by: bootstrap
+  name: filebeat-sample
+  namespace: default
+spec:
+  version: 8.6.0
+  discoverRef:
+    - kafka:
+        name: kafka-sample
+  discoverOutputName: kafka-sample
+  config:
+    filebeat:
+      shutdown_timeout: 5s
+    logging:
+      to_stderr: true
+      level: info
+    filebeat.inputs:
+      - type: log
+        paths:
+          - /var/log/*.log
+        fields:
+          event.dataset: "filebeat"
+          service.type: "filebeat"
+        fields_under_root: true
+  deployment:
+    replicas: 1
+    resources:
+      requests:
+        cpu: "100m"
+        memory: "256Mi"
+      limits:
+        cpu: "500m"
+        memory: "512Mi"
+    persistence:
+      volumeClaim:
+        accessModes: [ "ReadWriteOnce" ]
+        storageClassName: "local-path"
+        resources:
+          requests:
+            storage: 5Gi

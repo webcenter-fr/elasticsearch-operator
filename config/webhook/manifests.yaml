@@ -31,6 +31,26 @@ webhooks:
     service:
       name: webhook-service
       namespace: system
+      path: /validate-discover-k8s-webcenter-fr-v1-elasticsearch
+  failurePolicy: Fail
+  name: elasticsearch.discover.k8s.webcenter.fr
+  rules:
+  - apiGroups:
+    - discover.k8s.webcenter.fr
+    apiVersions:
+    - v1
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - elasticsearches
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: webhook-service
+      namespace: system
       path: /validate-beat-k8s-webcenter-fr-v1-filebeat
   failurePolicy: Fail
   name: filebeat.beat.k8s.webcenter.fr
@@ -111,6 +131,26 @@ webhooks:
     service:
       name: webhook-service
       namespace: system
+      path: /validate-discover-k8s-webcenter-fr-v1-kafka
+  failurePolicy: Fail
+  name: kafka.discover.k8s.webcenter.fr
+  rules:
+  - apiGroups:
+    - discover.k8s.webcenter.fr
+    apiVersions:
+    - v1
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - kafkas
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: webhook-service
+      namespace: system
       path: /validate-kibana-k8s-webcenter-fr-v1-kibana
   failurePolicy: Fail
   name: kibana.kibana.k8s.webcenter.fr
@@ -144,6 +184,26 @@ webhooks:
     - UPDATE
     resources:
     - licenses
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: webhook-service
+      namespace: system
+      path: /validate-discover-k8s-webcenter-fr-v1-logstash
+  failurePolicy: Fail
+  name: logstash.discover.k8s.webcenter.fr
+  rules:
+  - apiGroups:
+    - discover.k8s.webcenter.fr
+    apiVersions:
+    - v1
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - logstashes
   sideEffects: None
 - admissionReviewVersions:
   - v1

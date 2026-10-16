@@ -1,0 +1,65 @@
+apiVersion: logstash.k8s.webcenter.fr/v1
+kind: Logstash
+metadata:
+  labels:
+    app.kubernetes.io/name: logstash
+    app.kubernetes.io/instance: logstash-sample
+    app.kubernetes.io/part-of: bootstrap
+    app.kubernetes.io/managed-by: kustomize
+    app.kubernetes.io/created-by: bootstrap
+  name: logstash-sample
+  namespace: default
+spec:
+  version: 8.6.0
+  discoverRef:
+    - kafka:
+        name: kafka-sample
+    - elasticsearch:
+        name: elasticsearch-sample
+  config:
+    pipeline.workers: 2
+    queue.type: persisted
+    queue.max_bytes: 5gb
+    log.format: json
+  pipelines:
+    logs.conf: |
+      input {
+        kafka {
+          bootstrap_servers => "${KAFKA_BOOTSTRAP_SERVERS_KAFKA_SAMPLE}"
+          topics => ["logs"]
+          group_id => "logstash-sample"
+          codec => json
+        }
+      }
+      filter {
+        mutate {
+          add_field => { "processed_by" => "logstash-sample" }
+        }
+      }
+      output {
+        elasticsearch {
+          hosts => "${ELASTICSEARCH_HOSTS_ELASTICSEARCH_SAMPLE}"
+          index => "logs-%{+YYYY.MM.dd}"
+          user => "${ELASTICSEARCH_USERNAME_ELASTICSEARCH_SAMPLE}"
+          password => "${ELASTICSEARCH_PASSWORD_ELASTICSEARCH_SAMPLE}"
+          ssl_enabled => true
+          ssl_certificate_authorities => ["/usr/share/logstash/discover/elasticsearch-sample/ca.crt"]
+        }
+      }
+  deployment:
+    replicas: 1
+    jvm: "-Xmx1g -Xms1g"
+    resources:
+      requests:
+        cpu: "250m"
+        memory: "1Gi"
+      limits:
+        cpu: "1000m"
+        memory: "1300Mi"
+    persistence:
+      volumeClaim:
+        accessModes: [ "ReadWriteOnce" ]
+        storageClassName: "local-path"
+        resources:
+          requests:
+            storage: 5Gi

@@ -11,8 +11,10 @@ import (
 	"github.com/disaster37/operator-sdk-extra/v3/pkg/helper"
 	"github.com/sirupsen/logrus"
 	beatcrd "github.com/webcenter-fr/elasticsearch-operator/api/beat/v1"
+	discovercrd "github.com/webcenter-fr/elasticsearch-operator/api/discover/v1"
 	elasticsearchcrd "github.com/webcenter-fr/elasticsearch-operator/api/elasticsearch/v1"
 	"github.com/webcenter-fr/elasticsearch-operator/internal/controller/common"
+	"github.com/webcenter-fr/elasticsearch-operator/internal/controller/discover"
 	corev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/labels"
@@ -48,8 +50,11 @@ func (r *configMapReconciler) Read(ctx context.Context, o *beatcrd.Metricbeat, d
 	cmList := &corev1.ConfigMapList{}
 	read = multiphase.NewMultiPhaseRead[*corev1.ConfigMap]()
 	var (
-		es                    *elasticsearchcrd.Elasticsearch
-		elasticsearchCASecret *corev1.Secret
+		es                       *elasticsearchcrd.Elasticsearch
+		elasticsearchCASecret    *corev1.Secret
+		discoverOutputSecretEnv  *corev1.Secret
+		discoverOutputSecretFile *corev1.Secret
+		discoverType             discovercrd.DiscoverType
 	)
 
 	labelSelectors, err := labels.Parse(fmt.Sprintf("cluster=%s,%s=true", o.Name, beatcrd.MetricbeatAnnotationKey))
@@ -60,6 +65,19 @@ func (r *configMapReconciler) Read(ctx context.Context, o *beatcrd.Metricbeat, d
 		return read, res, errors.Wrapf(err, "Error when read configMap")
 	}
 	read.SetCurrentObjects(helper.ToSlicePtr(cmList.Items))
+
+	// Read discover output secrets
+	discoverOutput := o.SearchDiscoverOutputRef()
+	if discoverOutput != nil {
+		var discoverRes *reconcile.Result
+		discoverType, discoverOutputSecretEnv, discoverOutputSecretFile, discoverRes, err = discover.ReadDiscoverOutputSecrets(ctx, r.Client(), logger, o, discoverOutput)
+		if err != nil {
+			return read, res, errors.Wrap(err, "Error when read discover output secrets")
+		}
+		if discoverRes != nil {
+			return read, *discoverRes, nil
+		}
+	}
 
 	// Read Elasticsearch
 	if o.Spec.ElasticsearchRef.IsManaged() {
@@ -88,7 +106,7 @@ func (r *configMapReconciler) Read(ctx context.Context, o *beatcrd.Metricbeat, d
 	}
 
 	// Generate expected node group configmaps
-	expectedCms, err := buildConfigMaps(o, es, elasticsearchCASecret)
+	expectedCms, err := buildConfigMaps(o, es, elasticsearchCASecret, discoverType, discoverOutputSecretEnv, discoverOutputSecretFile)
 	if err != nil {
 		return read, res, errors.Wrap(err, "Error when generate configmaps")
 	}

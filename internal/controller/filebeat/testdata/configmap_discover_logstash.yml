@@ -1,0 +1,32 @@
+apiVersion: v1
+data:
+  filebeat.yml: |
+    filebeat:
+        config:
+            modules:
+                path: ${path.config}/modules.d/*.yml
+    http:
+        enabled: true
+        host: 0.0.0.0
+    output:
+        logstash:
+            enabled: true
+            hosts:
+                - ${LOGSTASH_HOSTS_TEST_LOGSTASH}
+            loadbalance: true
+            ssl:
+                certificate: /usr/share/filebeat/discover/test-logstash/user.crt
+                certificate_authorities:
+                    - /usr/share/filebeat/discover/test-logstash/ca.crt
+                enabled: true
+                key: /usr/share/filebeat/discover/test-logstash/user.key
+                verification_mode: full
+kind: ConfigMap
+metadata:
+  annotations:
+    filebeat.k8s.webcenter.fr: "true"
+  labels:
+    cluster: test
+    filebeat.k8s.webcenter.fr: "true"
+  name: test-config-fb
+  namespace: default

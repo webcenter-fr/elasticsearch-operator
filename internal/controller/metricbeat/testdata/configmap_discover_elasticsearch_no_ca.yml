@@ -1,0 +1,23 @@
+apiVersion: v1
+data:
+  metricbeat.yml: |
+    http:
+        enabled: true
+        host: 0.0.0.0
+    metricbeat:
+        config:
+            modules:
+                path: ${path.config}/modules.d/*.yml
+    output:
+        elasticsearch:
+            hosts:
+                - ${ELASTICSEARCH_HOSTS_TEST_ELASTICSEARCH}
+kind: ConfigMap
+metadata:
+  annotations:
+    metricbeat.k8s.webcenter.fr: "true"
+  labels:
+    cluster: test
+    metricbeat.k8s.webcenter.fr: "true"
+  name: test-config-mb
+  namespace: default

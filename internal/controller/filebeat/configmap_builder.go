@@ -6,8 +6,10 @@ import (
 
 	"emperror.dev/errors"
 	beatcrd "github.com/webcenter-fr/elasticsearch-operator/api/beat/v1"
+	discovercrd "github.com/webcenter-fr/elasticsearch-operator/api/discover/v1"
 	elasticsearchcrd "github.com/webcenter-fr/elasticsearch-operator/api/elasticsearch/v1"
 	logstashcrd "github.com/webcenter-fr/elasticsearch-operator/api/logstash/v1"
+	"github.com/webcenter-fr/elasticsearch-operator/internal/controller/discover"
 	elasticsearchcontrollers "github.com/webcenter-fr/elasticsearch-operator/internal/controller/elasticsearch"
 	logstashcontrollers "github.com/webcenter-fr/elasticsearch-operator/internal/controller/logstash"
 	"github.com/webcenter-fr/elasticsearch-operator/pkg/helper"
@@ -17,7 +19,7 @@ import (
 )
 
 // BuildConfigMap permit to generate config maps
-func buildConfigMaps(fb *beatcrd.Filebeat, es *elasticsearchcrd.Elasticsearch, ls *logstashcrd.Logstash, elasticsearchCASecret *corev1.Secret, logstashCASecret *corev1.Secret) (configMaps []*corev1.ConfigMap, err error) {
+func buildConfigMaps(fb *beatcrd.Filebeat, es *elasticsearchcrd.Elasticsearch, ls *logstashcrd.Logstash, elasticsearchCASecret *corev1.Secret, logstashCASecret *corev1.Secret, discoverOutputType discovercrd.DiscoverType, discoverOutputSecretEnv *corev1.Secret, discoverOutputSecretFile *corev1.Secret) (configMaps []*corev1.ConfigMap, err error) {
 	configMaps = make([]*corev1.ConfigMap, 0, 1)
 	var cm *corev1.ConfigMap
 
@@ -33,7 +35,101 @@ func buildConfigMaps(fb *beatcrd.Filebeat, es *elasticsearchcrd.Elasticsearch, l
 		},
 	}
 
+	// Compute discover output
+	if discoverOutputType != "" {
+		switch discoverOutputType {
+		case discovercrd.DiscoverTypeKafka:
+			// Get the environment variables for kafka hosts
+			kafkaHostsEnvVar := ""
+			for key := range discoverOutputSecretEnv.Data {
+				if strings.HasPrefix(key, "KAFKA_BOOTSTRAP_SERVERS_") {
+					kafkaHostsEnvVar = key
+					break
+				}
+			}
+			if kafkaHostsEnvVar == "" {
+				return nil, errors.New("Cannot find kafka hosts environment variable in discover output secret")
+			}
+
+			sslConf := map[string]any{
+				"enabled": false,
+			}
+			filebeatConf["output.kafka"] = map[string]any{
+				"enabled":     true,
+				"client_id":   "${POD_NAME}",
+				"compression": "lz4",
+				"hosts":       []string{fmt.Sprintf("${%s}", kafkaHostsEnvVar)},
+				"partition.round_robin": map[string]any{
+					"reachable_only": true,
+				},
+				"required_acks": 1,
+				"ssl":           sslConf,
+			}
+
+			// Check if tls is enabled
+			if len(discoverOutputSecretFile.Data["ca.crt"]) > 0 {
+				sslConf["enabled"] = true
+				sslConf["certificate_authorities"] = []string{fmt.Sprintf("/usr/share/filebeat/discover/%s/ca.crt", discover.GetDiscoverMountPathFromAnnotations(discoverOutputSecretFile))}
+				sslConf["verification_mode"] = "full"
+			}
+
+			// Check if authentication is enabled
+			if len(discoverOutputSecretFile.Data["user.crt"]) > 0 && len(discoverOutputSecretFile.Data["user.key"]) > 0 {
+				sslConf["enabled"] = true
+				sslConf["certificate"] = fmt.Sprintf("/usr/share/filebeat/discover/%s/user.crt", discover.GetDiscoverMountPathFromAnnotations(discoverOutputSecretFile))
+				sslConf["key"] = fmt.Sprintf("/usr/share/filebeat/discover/%s/user.key", discover.GetDiscoverMountPathFromAnnotations(discoverOutputSecretFile))
+			}
+
+		case discovercrd.DiscoverTypeLogstash:
+			// Get the environment variables for logstash hosts
+			logstashHostsEnvVar := ""
+			for key := range discoverOutputSecretEnv.Data {
+				if strings.HasPrefix(key, "LOGSTASH_HOSTS_") {
+					logstashHostsEnvVar = key
+					break
+				}
+			}
+			if logstashHostsEnvVar == "" {
+				return nil, errors.New("Cannot find logstash hosts environment variable in discover output secret")
+			}
+
+			sslConf := map[string]any{
+				"enabled": false,
+			}
+			filebeatConf["output.logstash"] = map[string]any{
+				"enabled":     true,
+				"hosts":       []string{fmt.Sprintf("${%s}", logstashHostsEnvVar)},
+				"loadbalance": true,
+				"ssl":         sslConf,
+			}
+
+			// Check if tls is enabled
+			isTlsEnabled := false
+			if ls != nil && ls.Spec.Pki.IsEnabled() && ls.Spec.Pki.HasBeatCertificate() {
+				isTlsEnabled = true
+			}
+			if len(discoverOutputSecretFile.Data["ca.crt"]) > 0 {
+				isTlsEnabled = true
+			}
+			if isTlsEnabled {
+				sslConf["enabled"] = true
+				if len(discoverOutputSecretFile.Data["ca.crt"]) > 0 {
+					sslConf["certificate_authorities"] = []string{fmt.Sprintf("/usr/share/filebeat/discover/%s/ca.crt", discover.GetDiscoverMountPathFromAnnotations(discoverOutputSecretFile))}
+					sslConf["verification_mode"] = "full"
+				}
+			}
+
+			// Check if authentication is enabled
+			if len(discoverOutputSecretFile.Data["user.crt"]) > 0 && len(discoverOutputSecretFile.Data["user.key"]) > 0 {
+				sslConf["enabled"] = true
+				sslConf["certificate"] = fmt.Sprintf("/usr/share/filebeat/discover/%s/user.crt", discover.GetDiscoverMountPathFromAnnotations(discoverOutputSecretFile))
+				sslConf["key"] = fmt.Sprintf("/usr/share/filebeat/discover/%s/user.key", discover.GetDiscoverMountPathFromAnnotations(discoverOutputSecretFile))
+			}
+		}
+	}
+
 	// Logstash output
+	// deprecated in favor of discover
 	if fb.Spec.LogstashRef != nil {
 		logstashHosts := make([]string, 0, 1)
 		if ls != nil {
