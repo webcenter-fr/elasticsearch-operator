@@ -23,7 +23,7 @@ func GetElasticsearchHandler(ctx context.Context, o client.Object, esRef shared.
 	var secretNS types.NamespacedName
 	secretName := ""
 	isManaged := false
-	addresses := []string{}
+	var addresses []string
 	selfSignedCertificate := false
 	allowInsecureHTTP := false
 	if esRef.IsManaged() {
@@ -41,16 +41,15 @@ func GetElasticsearchHandler(ctx context.Context, o client.Object, esRef shared.
 		// Get secret that store credential
 		secretName = elasticsearchcontrollers.GetSecretNameForCredentials(es)
 
-		serviceName := elasticsearchcontrollers.GetGlobalServiceName(es)
 		if esRef.ManagedElasticsearchRef.TargetNodeGroup != "" {
-			serviceName = elasticsearchcontrollers.GetNodeGroupServiceName(es, esRef.ManagedElasticsearchRef.TargetNodeGroup)
+			addresses = elasticsearchcontrollers.GetNodeGroupElasticsearchAddresses(es, esRef.ManagedElasticsearchRef.TargetNodeGroup)
+		} else {
+			addresses = elasticsearchcontrollers.GetElasticsearchAddresses(es)
 		}
 
 		if !es.Spec.Tls.IsTlsEnabled() {
-			addresses = append(addresses, fmt.Sprintf("http://%s.%s.svc:9200", serviceName, es.Namespace))
 			allowInsecureHTTP = true
 		} else {
-			addresses = append(addresses, fmt.Sprintf("https://%s.%s.svc:9200", serviceName, es.Namespace))
 			selfSignedCertificate = true
 		}
 
@@ -90,6 +89,8 @@ func GetElasticsearchHandler(ctx context.Context, o client.Object, esRef shared.
 		log.Errorf("Error when get resource: %s", err.Error())
 		return nil, err
 	}
+
+	log.Infof("Elasticsearch client configured with %d addresses (managed: %t)", len(addresses), isManaged)
 
 	cfg := &elasticsearch.Config{
 		Addresses:         addresses,

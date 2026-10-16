@@ -2,6 +2,7 @@ package elasticsearch
 
 import (
 	"fmt"
+	"sort"
 	"strings"
 
 	"emperror.dev/errors"
@@ -132,7 +133,38 @@ func buildConfigMaps(es *elasticsearchcrd.Elasticsearch) (configMaps []*corev1.C
 
 	configMaps = append(configMaps, configMap)
 
+	// Compute configmap that stores the suspended pod names (pod downtime feature).
+	// It is consumed by the suspend-check init container of each pod. It is NOT
+	// of type "config" so it is excluded from the StatefulSet checksum: changing
+	// the suspend list must not trigger a rolling restart.
+	configMaps = append(configMaps, buildSuspendedPodsConfigMap(es))
+
 	return configMaps, nil
+}
+
+// buildSuspendedPodsConfigMap creates a ConfigMap listing the pods to suspend
+// (downtime mode). It is consumed by the suspend-check init container of each pod.
+func buildSuspendedPodsConfigMap(es *elasticsearchcrd.Elasticsearch) *corev1.ConfigMap {
+	suspendedPods := GetSuspendedPodNames(es)
+	names := make([]string, 0, len(suspendedPods))
+	for name := range suspendedPods {
+		names = append(names, name)
+	}
+	sort.Strings(names)
+
+	return &corev1.ConfigMap{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: es.Namespace,
+			Name:      GetSuspendedPodsConfigMapName(es),
+			Labels:    getLabels(es),
+			Annotations: getAnnotations(es, map[string]string{
+				fmt.Sprintf("%s/type", elasticsearchcrd.ElasticsearchAnnotationKey): "suspend",
+			}),
+		},
+		Data: map[string]string{
+			"suspended_pods.txt": strings.Join(names, "\n"),
+		},
+	}
 }
 
 // computeInitialMasterNodes create the list of all master nodes

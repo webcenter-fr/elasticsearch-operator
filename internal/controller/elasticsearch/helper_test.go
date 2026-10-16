@@ -793,3 +793,28 @@ func TestGetServiceAccountName(t *testing.T) {
 
 	assert.Equal(t, "test-es", GetServiceAccountName(o))
 }
+
+func TestGetNodeGroupNameFromPodName(t *testing.T) {
+	o := &elasticsearchcrd.Elasticsearch{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: "default",
+			Name:      "test",
+		},
+		Spec: elasticsearchcrd.ElasticsearchSpec{
+			NodeGroups: []elasticsearchcrd.ElasticsearchNodeGroupSpec{
+				{Name: "master"},
+				{Name: "data"},
+			},
+		},
+	}
+
+	assert.Equal(t, "master", GetNodeGroupNameFromPodName(o, "test-master-es-0"))
+	assert.Equal(t, "data", GetNodeGroupNameFromPodName(o, "test-data-es-12"))
+	// Node group name containing "-es"
+	assert.Equal(t, "my-es", GetNodeGroupNameFromPodName(o, "test-my-es-es-0"))
+	// Pod of another cluster
+	assert.Equal(t, "", GetNodeGroupNameFromPodName(o, "other-master-es-0"))
+	// Malformed pod names
+	assert.Equal(t, "", GetNodeGroupNameFromPodName(o, "test-master-es"))
+	assert.Equal(t, "", GetNodeGroupNameFromPodName(o, ""))
+}

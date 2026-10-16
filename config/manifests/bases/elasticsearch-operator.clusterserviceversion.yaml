@@ -2704,6 +2704,19 @@ spec:
           Default to 365
         displayName: Validity Days
         path: tls.validityDays
+      - description: UpdateStrategy configures how the operator performs cluster upgrades.
+        displayName: Update Strategy
+        path: updateStrategy
+      - description: |-
+          RollingRestartPolicy controls how pods are restarted during a rolling
+          upgrade.
+          - graceful (default): Node Shutdown API on ES >= 7.15.2, allocation
+            filter on older versions.
+          - fast: always use the allocation filter (transient
+            cluster.routing.allocation.enable=primaries +
+            cluster.routing.rebalance.enable=none + flush).
+        displayName: Rolling Restart Policy
+        path: updateStrategy.rollingRestartPolicy
       - description: |-
           Version is the Elasticsearch version to use
           Default is use the latest
