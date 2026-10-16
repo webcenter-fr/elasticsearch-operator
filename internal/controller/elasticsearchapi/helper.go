@@ -23,7 +23,7 @@ func GetElasticsearchHandler(ctx context.Context, o client.Object, esRef shared.
 	var secretNS types.NamespacedName
 	secretName := ""
 	isManaged := false
-	addresses := []string{}
+	var addresses []string
 	selfSignedCertificate := false
 	allowInsecureHTTP := false
 	if esRef.IsManaged() {
