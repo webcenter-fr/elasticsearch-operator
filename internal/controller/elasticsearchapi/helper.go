@@ -97,8 +97,6 @@ func GetElasticsearchHandler(ctx context.Context, o client.Object, esRef shared.
 		TLSSkipVerify:     selfSignedCertificate,
 		AllowInsecureHTTP: allowInsecureHTTP,
 		Timeout:           common.ESClientTimeout,
-		RetryCount:        len(addresses),
-		RetryConditions:   elasticsearch.DefaultRetryConditions(),
 	}
 
 	if isManaged {

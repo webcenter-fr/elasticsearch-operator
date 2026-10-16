@@ -7,7 +7,7 @@ require (
 	emperror.dev/errors v0.8.1
 	github.com/codingsince1985/checksum v1.3.0
 	github.com/davecgh/go-spew v1.1.2-0.20180830191138-d8f796af33cc
-	github.com/disaster37/elasticsearch/v9 v9.0.1
+	github.com/disaster37/elasticsearch/v9 v9.0.2
 	github.com/disaster37/es-handler/v9 v9.0.1
 	github.com/disaster37/generic-objectmatcher v1.0.2
 	github.com/disaster37/go-kibana-rest/v8 v8.5.0
@@ -26,7 +26,6 @@ require (
 	github.com/thoas/go-funk v0.9.3
 	go.uber.org/mock v0.5.2
 	golang.org/x/crypto v0.57.0
-	golang.org/x/time v0.15.0
 	gopkg.in/yaml.v3 v3.0.1
 	k8s.io/api v0.36.4
 	k8s.io/apiextensions-apiserver v0.36.4
@@ -125,6 +124,7 @@ require (
 	golang.org/x/sys v0.48.0 // indirect
 	golang.org/x/term v0.46.0 // indirect
 	golang.org/x/text v0.42.0 // indirect
+	golang.org/x/time v0.15.0 // indirect
 	gomodules.xyz/jsonpatch/v2 v2.5.0 // indirect
 	google.golang.org/genproto/googleapis/api v0.0.0-20260928230214-8a89bd6388cc // indirect
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20260928230214-8a89bd6388cc // indirect

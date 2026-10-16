@@ -106,11 +106,14 @@ which publish pod DNS records even when pods are **not ready**; they are
 appended as a fallback so the operator can always reach a node during a rolling
 upgrade when pods are being restarted and are not ready yet.
 
-Retry/failover is enabled: the client retry count is set to the number of
-addresses and retries on connection errors, timeouts, HTTP 429 and HTTP 5xx
-responses. A request that fails against one address is therefore retried
-against the next address in the list (the client round-robins over the
-addresses on every attempt).
+Retry/failover is enabled automatically by the client library (v9.0.2+)
+whenever more than one address is configured: the retry count is set to the
+number of addresses and the default retry conditions retry on connection
+errors, timeouts, HTTP 429 and HTTP 5xx responses. The operator no longer
+configures this explicitly. A request that fails against one address is
+therefore retried against the next address in the list (the client round-robins
+over the addresses on every attempt). With a single address the client keeps
+its default of no retry.
 
 The `elasticsearchapi` controllers (User, Role, RoleMapping, ILM, snapshot
 lifecycle policies, ...) use the same address list for managed clusters. When

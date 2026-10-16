@@ -497,8 +497,6 @@ func (h *ElasticsearchReconciler) getElasticsearchHandler(ctx context.Context, e
 		TLSSkipVerify:     es.Spec.Tls.IsSelfManagedSecretForTls(),
 		AllowInsecureHTTP: !es.Spec.Tls.IsTlsEnabled(),
 		Timeout:           common.ESClientTimeout,
-		RetryCount:        len(addresses),
-		RetryConditions:   elasticsearch.DefaultRetryConditions(),
 	}
 
 	// BYO TLS (user-provided CertificateSecretRef): verify the server certificate
