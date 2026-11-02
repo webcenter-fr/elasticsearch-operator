@@ -51,8 +51,8 @@ github.com/elastic/elastic-transport-go/v8 v8.11.0 h1:taYmqC2M6+fZt/+W+ENYh/W5L9
 github.com/elastic/elastic-transport-go/v8 v8.11.0/go.mod h1:DZQ0szCNywc9F+C9l/Kkd4n69SvJVj0I3yK1Of7s3l8=
 github.com/elastic/go-elasticsearch/v8 v8.19.7 h1:fMsWcVgPDJMtyptspSmn4SDHykovo4ppaAbBNLK9mKE=
 github.com/elastic/go-elasticsearch/v8 v8.19.7/go.mod h1:jeWebApE1oFEW/hKZqx/IRYmP/aa2+WMJkOfk+AduSI=
-github.com/elastic/go-ucfg v0.9.1 h1:OwbVLC9pAmHqlBDq5owRC7HbfldsLuqPqrwg23n17BQ=
-github.com/elastic/go-ucfg v0.9.1/go.mod h1:6Z66LNkFK5xAlWg3Ny7qgtrvBUadaAcor+kYxw2pXBk=
+github.com/elastic/go-ucfg v0.9.2 h1:dPsyXR6bAswZw+YW7cl8ZM95POyF6lVrrSi/+KOg2b0=
+github.com/elastic/go-ucfg v0.9.2/go.mod h1:6Z66LNkFK5xAlWg3Ny7qgtrvBUadaAcor+kYxw2pXBk=
 github.com/emicklei/go-restful/v3 v3.13.0 h1:C4Bl2xDndpU6nJ4bc1jXd+uTmYPVUwkD6bFY/oTyCes=
 github.com/emicklei/go-restful/v3 v3.13.0/go.mod h1:6n3XBCmQQb25CM2LCACGz8ukIrRry+4bhvbpWn3mrbc=
 github.com/evanphx/json-patch v5.9.11+incompatible h1:ixHHqfcGvxhWkniF1tWxBHA0yb4Z+d1UQi45df52xW8=
