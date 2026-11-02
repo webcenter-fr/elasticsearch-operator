@@ -28,6 +28,33 @@ import (
 
 const (
 	ElasticsearchAnnotationKey = "elasticsearch.k8s.webcenter.fr"
+
+	// ElasticsearchSuspendAnnotation permits to suspend pods (downtime mode).
+	// The value is a comma-separated list of pod names. Suspended pods stay in
+	// Init state with their PVC mounted, so `kubectl exec` can still access data.
+	ElasticsearchSuspendAnnotation = ElasticsearchAnnotationKey + "/suspend"
+
+	// ElasticsearchDisableUpgradePredicatesAnnotation permits to disable upgrade
+	// safety predicates. The value is a comma-separated list of predicate names,
+	// or "*" to disable all of them.
+	ElasticsearchDisableUpgradePredicatesAnnotation = ElasticsearchAnnotationKey + "/disable-upgrade-predicates"
+)
+
+// RollingRestartPolicy controls how the operator prepares the cluster before
+// restarting pods during a rolling restart.
+// +kubebuilder:validation:Enum=graceful;fast
+type RollingRestartPolicy string
+
+const (
+	// RollingRestartPolicyGraceful is the default: use the Node Shutdown API
+	// on ES >= 7.15.2 (graceful shard migration) and fall back to the
+	// allocation-filter approach on older versions.
+	RollingRestartPolicyGraceful RollingRestartPolicy = "graceful"
+	// RollingRestartPolicyFast forces the allocation-filter approach on every
+	// version: transient cluster.routing.allocation.enable=primaries +
+	// cluster.routing.rebalance.enable=none + flush. Faster and uses less
+	// disk, but does not migrate shards gracefully.
+	RollingRestartPolicyFast RollingRestartPolicy = "fast"
 )
 
 // EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!
@@ -100,6 +127,27 @@ type ElasticsearchSpec struct {
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
 	// +optional
 	Monitoring shared.MonitoringSpec `json:"monitoring,omitempty"`
+
+	// UpdateStrategy configures how the operator performs cluster upgrades.
+	// +operator-sdk:csv:customresourcedefinitions:type=spec
+	// +optional
+	UpdateStrategy ElasticsearchUpdateStrategySpec `json:"updateStrategy,omitempty"`
+}
+
+// ElasticsearchUpdateStrategySpec configures how the operator performs
+// cluster upgrades.
+type ElasticsearchUpdateStrategySpec struct {
+	// RollingRestartPolicy controls how pods are restarted during a rolling
+	// upgrade.
+	// - graceful (default): Node Shutdown API on ES >= 7.15.2, allocation
+	//   filter on older versions.
+	// - fast: always use the allocation filter (transient
+	//   cluster.routing.allocation.enable=primaries +
+	//   cluster.routing.rebalance.enable=none + flush).
+	// +operator-sdk:csv:customresourcedefinitions:type=spec
+	// +optional
+	// +kubebuilder:default=graceful
+	RollingRestartPolicy RollingRestartPolicy `json:"rollingRestartPolicy,omitempty"`
 }
 
 type ElasticsearchEndpointSpec struct {

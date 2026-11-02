@@ -8,6 +8,7 @@ You can use the following main setting to deploy Elasticsearch:
 - **clusterName** (string): The cluster name. Default is use the Elasticsearch custom resource name
 - **setVMMaxMapCount** (boolean): Set VMMaxMapCount on kubernetes nodes where Elasticsearch is deployed. Default to `true`
 - **pluginsList** (slice of string): The list of plugins to install on runtime (just before run Elasticsearch). Use it for test purpose. For production, please build custom image to embedded your plugins. Default to `empty`
+- **updateStrategy.rollingRestartPolicy** (string): How the operator prepares the cluster before restarting pods during a rolling upgrade. `graceful` uses the Node Shutdown API on Elasticsearch >= 7.15.2 (graceful shard migration) and falls back to transient allocation settings on older versions. `fast` always uses the transient allocation settings (faster, less disk usage, but no graceful shard migration). Default to `graceful`
 
 
 **elasticsearch.yaml**:

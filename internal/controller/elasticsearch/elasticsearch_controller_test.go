@@ -1712,3 +1712,69 @@ func (t *ElasticsearchControllerTestSuite) TestElasticsearchControllerSANDrift()
 	assert.Contains(t.T(), after.DNSNames, "new.example.com", "API cert must be re-issued with the new SAN")
 	assert.NotEqual(t.T(), before.DNSNames, after.DNSNames)
 }
+
+func TestGetElasticsearchAddresses(t *testing.T) {
+	newES := func(tlsEnabled bool) *elasticsearchcrd.Elasticsearch {
+		return &elasticsearchcrd.Elasticsearch{
+			ObjectMeta: metav1.ObjectMeta{
+				Namespace: "default",
+				Name:      "test",
+			},
+			Spec: elasticsearchcrd.ElasticsearchSpec{
+				Tls: shared.TlsSpec{
+					Enabled: ptr.To(tlsEnabled),
+				},
+				NodeGroups: []elasticsearchcrd.ElasticsearchNodeGroupSpec{
+					{
+						Name: "master",
+						Deployment: shared.Deployment{
+							Replicas: 2,
+						},
+					},
+					{
+						Name: "data",
+						Deployment: shared.Deployment{
+							Replicas: 1,
+						},
+					},
+				},
+			},
+		}
+	}
+
+	t.Run("global service first then one pod DNS address per pod", func(t *testing.T) {
+		addresses := GetElasticsearchAddresses(newES(false))
+		assert.Equal(t, []string{
+			"http://test-es.default.svc:9200",
+			"http://test-master-es-0.test-master-headless-es.default.svc:9200",
+			"http://test-master-es-1.test-master-headless-es.default.svc:9200",
+			"http://test-data-es-0.test-data-headless-es.default.svc:9200",
+		}, addresses)
+	})
+
+	t.Run("https scheme when TLS is enabled", func(t *testing.T) {
+		addresses := GetElasticsearchAddresses(newES(true))
+		assert.Equal(t, []string{
+			"https://test-es.default.svc:9200",
+			"https://test-master-es-0.test-master-headless-es.default.svc:9200",
+			"https://test-master-es-1.test-master-headless-es.default.svc:9200",
+			"https://test-data-es-0.test-data-headless-es.default.svc:9200",
+		}, addresses)
+	})
+
+	t.Run("no node group only returns the global service", func(t *testing.T) {
+		es := newES(false)
+		es.Spec.NodeGroups = nil
+		addresses := GetElasticsearchAddresses(es)
+		assert.Equal(t, []string{"http://test-es.default.svc:9200"}, addresses)
+	})
+
+	t.Run("node group service first then its pod DNS addresses", func(t *testing.T) {
+		addresses := GetNodeGroupElasticsearchAddresses(newES(false), "master")
+		assert.Equal(t, []string{
+			"http://test-master-es.default.svc:9200",
+			"http://test-master-es-0.test-master-headless-es.default.svc:9200",
+			"http://test-master-es-1.test-master-headless-es.default.svc:9200",
+		}, addresses)
+	})
+}

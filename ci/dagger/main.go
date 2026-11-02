@@ -125,7 +125,7 @@ func (h *ElasticsearchOperator) GenerateBundle(
 	previousVersion string,
 ) *dagger.Directory {
 	return h.SDK().GenerateBundle(
-		fmt.Sprintf("%s:%s", registry, repository),
+		fmt.Sprintf("%s/%s", registry, repository),
 		version,
 		dagger.OperatorSDKSDKGenerateBundleOpts{
 			Channels:        channels,
