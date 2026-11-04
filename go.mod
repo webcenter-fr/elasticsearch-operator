@@ -17,7 +17,7 @@ require (
 	github.com/disaster37/operator-sdk-extra/v3 v3.0.9
 	github.com/elastic/go-ucfg v0.9.1
 	github.com/google/go-cmp v0.7.0
-	github.com/magiconair/properties v1.18.11
+	github.com/magiconair/properties v1.18.12
 	github.com/openshift/api v0.0.0-20260819011109-af5c920502e2
 	github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring v0.93.1
 	github.com/prometheus/client_golang v1.24.1
