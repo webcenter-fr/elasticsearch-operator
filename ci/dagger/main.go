@@ -71,7 +71,7 @@ func New(
 			name,
 			dagger.OperatorSDKOpts{
 				Container:            golangCtr,
-				SdkVersion:           sdkVersion,
+				SDKVersion:           sdkVersion,
 				OpmVersion:           opmVersion,
 				ControllerGenVersion: controllerGenVersion,
 				CleanCrdVersion:      cleanCrdVersion,
