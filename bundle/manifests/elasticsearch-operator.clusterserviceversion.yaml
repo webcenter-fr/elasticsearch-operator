@@ -10,6 +10,80 @@ metadata:
           "metadata": {
             "labels": {
               "app.kubernetes.io/created-by": "bootstrap",
+              "app.kubernetes.io/instance": "filebeat-discover-sample",
+              "app.kubernetes.io/managed-by": "kustomize",
+              "app.kubernetes.io/name": "filebeat",
+              "app.kubernetes.io/part-of": "bootstrap"
+            },
+            "name": "filebeat-discover-sample",
+            "namespace": "default"
+          },
+          "spec": {
+            "config": {
+              "filebeat": {
+                "shutdown_timeout": "5s"
+              },
+              "filebeat.inputs": [
+                {
+                  "fields": {
+                    "event.dataset": "filebeat",
+                    "service.type": "filebeat"
+                  },
+                  "fields_under_root": true,
+                  "paths": [
+                    "/var/log/*.log"
+                  ],
+                  "type": "log"
+                }
+              ],
+              "logging": {
+                "level": "info",
+                "to_stderr": true
+              }
+            },
+            "deployment": {
+              "persistence": {
+                "volumeClaim": {
+                  "accessModes": [
+                    "ReadWriteOnce"
+                  ],
+                  "resources": {
+                    "requests": {
+                      "storage": "5Gi"
+                    }
+                  },
+                  "storageClassName": "local-path"
+                }
+              },
+              "replicas": 1,
+              "resources": {
+                "limits": {
+                  "cpu": "500m",
+                  "memory": "512Mi"
+                },
+                "requests": {
+                  "cpu": "100m",
+                  "memory": "256Mi"
+                }
+              }
+            },
+            "discoverOutputName": "kafka-sample",
+            "discoverRef": [
+              {
+                "kafka": {
+                  "name": "kafka-sample"
+                }
+              }
+            ],
+            "version": "8.6.0"
+          }
+        },
+        {
+          "apiVersion": "beat.k8s.webcenter.fr/v1",
+          "kind": "Filebeat",
+          "metadata": {
+            "labels": {
+              "app.kubernetes.io/created-by": "bootstrap",
               "app.kubernetes.io/instance": "filebeat-sample",
               "app.kubernetes.io/managed-by": "kustomize",
               "app.kubernetes.io/name": "filebeat",
@@ -190,7 +264,7 @@ metadata:
                 "namespace": "elk-monitoring"
               }
             },
-            "module": {
+            "modules": {
               "elasticsearch-xpack.yml": [
                 {
                   "hosts": "https://elasticsearch.elk.svc:9200",
@@ -269,6 +343,81 @@ metadata:
               "namespace": "elk-monitoring"
             },
             "elasticsearchRef": "elasticsearch"
+          }
+        },
+        {
+          "apiVersion": "discover.k8s.webcenter.fr/v1",
+          "kind": "Elasticsearch",
+          "metadata": {
+            "labels": {
+              "app.kubernetes.io/created-by": "bootstrap",
+              "app.kubernetes.io/instance": "elasticsearch-sample",
+              "app.kubernetes.io/managed-by": "kustomize",
+              "app.kubernetes.io/name": "elasticsearch",
+              "app.kubernetes.io/part-of": "bootstrap"
+            },
+            "name": "elasticsearch-sample",
+            "namespace": "default"
+          },
+          "spec": {
+            "elasticsearchRef": {
+              "managed": {
+                "name": "elasticsearch-sample"
+              },
+              "secretRef": {
+                "name": "logstash-credentials"
+              }
+            }
+          }
+        },
+        {
+          "apiVersion": "discover.k8s.webcenter.fr/v1",
+          "kind": "Kafka",
+          "metadata": {
+            "labels": {
+              "app.kubernetes.io/created-by": "bootstrap",
+              "app.kubernetes.io/instance": "kafka-sample",
+              "app.kubernetes.io/managed-by": "kustomize",
+              "app.kubernetes.io/name": "kafka",
+              "app.kubernetes.io/part-of": "bootstrap"
+            },
+            "name": "kafka-sample",
+            "namespace": "default"
+          },
+          "spec": {
+            "kafkaRef": {
+              "managed": {
+                "name": "kafka-sample-cluster",
+                "targetListener": "tls",
+                "userRef": {
+                  "name": "filebeat-sample"
+                }
+              }
+            }
+          }
+        },
+        {
+          "apiVersion": "discover.k8s.webcenter.fr/v1",
+          "kind": "Logstash",
+          "metadata": {
+            "labels": {
+              "app.kubernetes.io/created-by": "bootstrap",
+              "app.kubernetes.io/instance": "logstash-sample",
+              "app.kubernetes.io/managed-by": "kustomize",
+              "app.kubernetes.io/name": "logstash",
+              "app.kubernetes.io/part-of": "bootstrap"
+            },
+            "name": "logstash-sample",
+            "namespace": "default"
+          },
+          "spec": {
+            "logstashRef": {
+              "managed": {
+                "name": "logstash-sample",
+                "port": 5003,
+                "targetService": "beat"
+              }
+            }
           }
         },
         {
@@ -768,6 +917,72 @@ metadata:
           "metadata": {
             "labels": {
               "app.kubernetes.io/created-by": "bootstrap",
+              "app.kubernetes.io/instance": "logstash-discover-sample",
+              "app.kubernetes.io/managed-by": "kustomize",
+              "app.kubernetes.io/name": "logstash",
+              "app.kubernetes.io/part-of": "bootstrap"
+            },
+            "name": "logstash-discover-sample",
+            "namespace": "default"
+          },
+          "spec": {
+            "config": {
+              "log.format": "json",
+              "pipeline.workers": 2,
+              "queue.max_bytes": "5gb",
+              "queue.type": "persisted"
+            },
+            "deployment": {
+              "jvm": "-Xmx1g -Xms1g",
+              "persistence": {
+                "volumeClaim": {
+                  "accessModes": [
+                    "ReadWriteOnce"
+                  ],
+                  "resources": {
+                    "requests": {
+                      "storage": "5Gi"
+                    }
+                  },
+                  "storageClassName": "local-path"
+                }
+              },
+              "replicas": 1,
+              "resources": {
+                "limits": {
+                  "cpu": "1000m",
+                  "memory": "1300Mi"
+                },
+                "requests": {
+                  "cpu": "250m",
+                  "memory": "1Gi"
+                }
+              }
+            },
+            "discoverRef": [
+              {
+                "kafka": {
+                  "name": "kafka-sample"
+                }
+              },
+              {
+                "elasticsearch": {
+                  "name": "elasticsearch-sample"
+                }
+              }
+            ],
+            "pipelines": {
+              "logs.conf": "input {\n  kafka {\n    bootstrap_servers =\u003e \"${KAFKA_BOOTSTRAP_SERVERS_KAFKA_SAMPLE}\"\n    topics =\u003e [\"logs\"]\n    group_id =\u003e \"logstash-sample\"\n    codec =\u003e json\n  }\n}\nfilter {\n  mutate {\n    add_field =\u003e { \"processed_by\" =\u003e \"logstash-sample\" }\n  }\n}\noutput {\n  elasticsearch {\n    hosts =\u003e \"${ELASTICSEARCH_HOSTS_ELASTICSEARCH_SAMPLE}\"\n    index =\u003e \"logs-%{+YYYY.MM.dd}\"\n    user =\u003e \"${ELASTICSEARCH_USERNAME_ELASTICSEARCH_SAMPLE}\"\n    password =\u003e \"${ELASTICSEARCH_PASSWORD_ELASTICSEARCH_SAMPLE}\"\n    ssl_enabled =\u003e true\n    ssl_certificate_authorities =\u003e [\"/usr/share/logstash/discover/elasticsearch-sample/ca.crt\"]\n  }\n}\n"
+            },
+            "version": "8.6.0"
+          }
+        },
+        {
+          "apiVersion": "logstash.k8s.webcenter.fr/v1",
+          "kind": "Logstash",
+          "metadata": {
+            "labels": {
+              "app.kubernetes.io/created-by": "bootstrap",
               "app.kubernetes.io/instance": "logstash-sample",
               "app.kubernetes.io/managed-by": "kustomize",
               "app.kubernetes.io/name": "logstash",
@@ -863,10 +1078,10 @@ metadata:
         }
       ]
     capabilities: Basic Install
-    createdAt: "2026-10-14T09:08:51Z"
-    operators.operatorframework.io/builder: operator-sdk-v1.42.3
+    createdAt: "2026-11-04T13:33:53Z"
+    operators.operatorframework.io/builder: operator-sdk-v1.39.2
     operators.operatorframework.io/project_layout: go.kubebuilder.io/v4
-  name: elasticsearch-operator.v1.0.4-rc.432
+  name: elasticsearch-operator.v1.0.4-rc.450
   namespace: placeholder
 spec:
   apiservicedefinitions: {}
@@ -924,6 +1139,73 @@ spec:
       - description: Settings is the component setting
         displayName: Settings
         path: settings
+      version: v1
+    - description: |-
+        Elasticsearch is the Schema for the elasticsearches API.
+        It will generate and maintain secret that store CA certificate for Elasticsearch.
+        It will also maintain the URL to connect on Elasticsearch cluster.
+      displayName: Elasticsearch
+      kind: Elasticsearch
+      name: elasticsearches.discover.k8s.webcenter.fr
+      resources:
+      - kind: Secret
+        name: ""
+        version: v1
+      specDescriptors:
+      - description: |-
+          ElasticsearchCaSecretRef is the secret that store your custom CA certificate to connect on Elasticsearch API.
+          It need to have the following keys: ca.crt
+        displayName: Elasticsearch Ca Secret Ref
+        path: elasticsearchRef.elasticsearchCASecretRef
+      - description: ExternalElasticsearchRef is the external Elasticsearch cluster
+          not managed by operator
+        displayName: External Elasticsearch Ref
+        path: elasticsearchRef.external
+      - description: ManagedElasticsearchRef is the managed Elasticsearch cluster
+          by operator
+        displayName: Managed Elasticsearch Ref
+        path: elasticsearchRef.managed
+      - description: |-
+          SecretName is the secret that contain the setting to connect on Elasticsearch. It can be auto computed for managed Elasticsearch.
+          It need to contain the keys `username` and `password`.
+        displayName: Secret Ref
+        path: elasticsearchRef.secretRef
+      - description: |-
+          Name is the logical name
+          it used to compute the environment key suffix on secret targetSecretEnvRef
+          it used to compute the mount path of secret targetSecretFileRef
+          Default to the name of the Discover resource
+        displayName: Name
+        path: name
+      - description: |-
+          TargetSecretEnvRef defines the secret where to store discovered information as env variables
+          You can find here bootstrap servers, user, password ...
+          Default to the name of the Discover resource with suffix "-env"
+        displayName: Target Secret Env Ref
+        path: targetSecretEnvRef
+      - description: |-
+          TargetSecretFileRef defines the secret where to store discovered information as files
+          You can find here certificate, private key, keystore, truststore ...
+          Default to the name of the Discover resource with suffix "-file"
+        displayName: Target Secret File Ref
+        path: targetSecretRef
+      statusDescriptors:
+      - description: ElasticsearchCASecretRef is the secret that store CA certificate
+          to connect on Elasticsearch cluster
+        displayName: Elasticsearch CASecret Ref
+        path: elasticsearchCASecretRef
+      - description: ElasticsearchUserSecretRef is the secret that store all information
+          to connect on Elasticsearch cluster
+        displayName: Elasticsearch User Secret Ref
+        path: elasticsearchUserSecretRef
+      - description: SecretEnvRef is the name of the secret where env-based information
+          is stored
+        displayName: Secret Env Ref
+        path: secretEnvRef
+      - description: SecretFileRef is the name of the secret where file-based information
+          is stored
+        displayName: Secret File Ref
+        path: secretFileRef
       version: v1
     - description: Elasticsearch is the Schema for the elasticsearchs API
       displayName: Elasticsearch
@@ -1454,9 +1736,26 @@ spec:
       - description: Tolerations permit to set toleration on pod
         displayName: Tolerations
         path: deployment.tolerations
+      - description: DiscoverOutputName permit to set the discover name that will
+          be use to generate output
+        displayName: Discover Output Name
+        path: discoverOutputName
+      - description: DiscoverRef permit to reference discover configuration
+        displayName: Discover Ref
+        path: discoverRef
+      - description: Elasticsearch permit to reference an Elasticsearch discover
+        displayName: Elasticsearch
+        path: discoverRef[0].elasticsearch
+      - description: Kafka permit to reference a Kafka discover
+        displayName: Kafka
+        path: discoverRef[0].kafka
+      - description: Logstash permit to reference a Logstash discover
+        displayName: Logstash
+        path: discoverRef[0].logstash
       - description: |-
           ElasticsearchRef is the Elasticsearch ref to connect on.
           It will generate Elasticsearch output bas eon it
+          Deprecated: use DiscoverRef and DiscoverOutputName instead
         displayName: Elasticsearch Ref
         path: elasticsearchRef
       - description: |-
@@ -1523,6 +1822,7 @@ spec:
       - description: |-
           LogstashRef is the Logstash ref to connect on.
           It will generate Logstash output base on it
+          Deprecated: use DiscoverRef and DiscoverOutputName instead
         displayName: Logstash Ref
         path: logstashRef
       - description: ExternalLogstahsRef is the external Logstash instance not managed
@@ -1868,6 +2168,92 @@ spec:
         displayName: Version
         path: version
       version: v1
+    - description: |-
+        Kafka is the Schema for the kafkas API.
+        It will generate and maintain secret that store all information to connect on Kafka cluster
+        Ca certificate, Ca trustore, Ca trustore password, user certificate, user key,  user keystore, user keystore password, user trustore, user trustore password and bootstrap URL
+      displayName: Kafka
+      kind: Kafka
+      name: kafkas.discover.k8s.webcenter.fr
+      resources:
+      - kind: Secret
+        name: ""
+        version: v1
+      specDescriptors:
+      - description: ExternalKafkaRef is the external Kafka instance not managed by
+          Strimzi operator
+        displayName: External Kafka Ref
+        path: kafkaRef.external
+      - description: Addresses is the list of Kafka addresses
+        displayName: Addresses
+        path: kafkaRef.external.addresses
+      - description: |-
+          UserSecretRef is the secret that store your user SSL certificate / key.
+          It must have 2 entry:
+            - user.crt: is the user certificate
+            - user.key: is the user private key
+        displayName: User Secret Ref
+        path: kafkaRef.external.userSecretRef
+      - description: |-
+          KafkaCaSecretRef is the secret that store your custom CA certificates to connect on Kafka.
+          It will add all entry that finish by *.crt or *.pem
+          If Kafka is managed and use internal PKI no need to set it. I will use it by design
+        displayName: Kafka Ca Secret Ref
+        path: kafkaRef.kafkaCASecretRef
+      - description: ManagedKafkaRef is the managed Kafka instance by Strimzi operator
+        displayName: Managed Kafka Ref
+        path: kafkaRef.managed
+      - description: Name is the Kafka cluster deployed by operator
+        displayName: Name
+        path: kafkaRef.managed.name
+      - description: |-
+          Namespace is the namespace where Kafka is deployed by operator
+          No need to set if is deployed on the same namespace
+        displayName: Namespace
+        path: kafkaRef.managed.namespace
+      - description: TargetListener is the target listener that expose Kafka cluster
+        displayName: Target Listener
+        path: kafkaRef.managed.targetListener
+      - description: UserRef is the user reference to connect on Kafka.
+        displayName: User Ref
+        path: kafkaRef.managed.userRef
+      - description: |-
+          Name is the logical name
+          it used to compute the environment key suffix on secret targetSecretEnvRef
+          it used to compute the mount path of secret targetSecretFileRef
+          Default to the name of the Discover resource
+        displayName: Name
+        path: name
+      - description: |-
+          TargetSecretEnvRef defines the secret where to store discovered information as env variables
+          You can find here bootstrap servers, user, password ...
+          Default to the name of the Discover resource with suffix "-env"
+        displayName: Target Secret Env Ref
+        path: targetSecretEnvRef
+      - description: |-
+          TargetSecretFileRef defines the secret where to store discovered information as files
+          You can find here certificate, private key, keystore, truststore ...
+          Default to the name of the Discover resource with suffix "-file"
+        displayName: Target Secret File Ref
+        path: targetSecretRef
+      statusDescriptors:
+      - description: KafkaCASecretRef is the secret that store CA certificate to connect
+          on Kafka cluster
+        displayName: Kafka CASecret Ref
+        path: kafkaCASecretRef
+      - description: KafkaUserSecretRef is the secret that store all information to
+          connect on Kafka cluster
+        displayName: Kafka User Secret Ref
+        path: kafkaUserSecretRef
+      - description: SecretEnvRef is the name of the secret where env-based information
+          is stored
+        displayName: Secret Env Ref
+        path: secretEnvRef
+      - description: SecretFileRef is the name of the secret where file-based information
+          is stored
+        displayName: Secret File Ref
+        path: secretFileRef
+      version: v1
     - description: Kibana is the Schema for the kibanas API
       displayName: Kibana
       kind: Kibana
@@ -2137,6 +2523,100 @@ spec:
         displayName: License Type
         path: licenseType
       version: v1
+    - description: |-
+        Logstash is the Schema for the logstashes API.
+        It will generate and maintain secret that store CA certificate for Logstash.
+        It will also maintain the URL to connect on Logstash.
+      displayName: Logstash
+      kind: Logstash
+      name: logstashes.discover.k8s.webcenter.fr
+      resources:
+      - kind: Secret
+        name: ""
+        version: v1
+      specDescriptors:
+      - description: |-
+          LogstashRef is the Logstash ref to connect on.
+          It will generate Logstash output base on it
+        displayName: Logstash Ref
+        path: logstashRef
+      - description: ExternalLogstahsRef is the external Logstash instance not managed
+          by operator
+        displayName: External Logstash Ref
+        path: logstashRef.external
+      - description: Addresses is the list of Logstash addresses
+        displayName: Addresses
+        path: logstashRef.external.addresses
+      - description: |-
+          UserSecretRef is the secret that store your user SSL certificate / key.
+          It must have 2 entry:
+            - user.key: the user private key
+            - user.crt: the user certificate
+        displayName: User Secret Ref
+        path: logstashRef.external.userSecretRef
+      - description: |-
+          LogstashCaSecretRef is the secret that store your custom CA certificates to connect on Logstash via beat protocole.
+          It will add all entry that finish by *.crt or *.pem
+          If Logstash is managed and use internal PKI no need to set it. I will use it by design
+        displayName: Logstash Ca Secret Ref
+        path: logstashRef.logstashCASecretRef
+      - description: ManagedLogstashRef is the managed Logstash instance by operator
+        displayName: Managed Logstash Ref
+        path: logstashRef.managed
+      - description: Name is the Logstash cluster deployed by operator
+        displayName: Name
+        path: logstashRef.managed.name
+      - description: |-
+          Namespace is the namespace where Logstash is deployed by operator
+          No need to set if is deployed on the same namespace
+        displayName: Namespace
+        path: logstashRef.managed.namespace
+      - description: Port is the port number to connect on service
+        displayName: Port
+        path: logstashRef.managed.port
+      - description: TargetService is the target service that expose the beat protocole
+        displayName: Target Service
+        path: logstashRef.managed.targetService
+      - description: UserRef is the user reference to connect on Logstash.
+        displayName: User Ref
+        path: logstashRef.managed.userRef
+      - description: |-
+          Name is the logical name
+          it used to compute the environment key suffix on secret targetSecretEnvRef
+          it used to compute the mount path of secret targetSecretFileRef
+          Default to the name of the Discover resource
+        displayName: Name
+        path: name
+      - description: |-
+          TargetSecretEnvRef defines the secret where to store discovered information as env variables
+          You can find here bootstrap servers, user, password ...
+          Default to the name of the Discover resource with suffix "-env"
+        displayName: Target Secret Env Ref
+        path: targetSecretEnvRef
+      - description: |-
+          TargetSecretFileRef defines the secret where to store discovered information as files
+          You can find here certificate, private key, keystore, truststore ...
+          Default to the name of the Discover resource with suffix "-file"
+        displayName: Target Secret File Ref
+        path: targetSecretRef
+      statusDescriptors:
+      - description: LogstashCASecretRef is the secret that store CA certificate to
+          connect on Logstash
+        displayName: Logstash CASecret Ref
+        path: logstashCASecretRef
+      - description: LogstashUserSecretRef is the secret that store user certificates
+          to connect on Logstash
+        displayName: Logstash User Secret Ref
+        path: logstashUserSecretRef
+      - description: SecretEnvRef is the name of the secret where env-based information
+          is stored
+        displayName: Secret Env Ref
+        path: secretEnvRef
+      - description: SecretFileRef is the name of the secret where file-based information
+          is stored
+        displayName: Secret File Ref
+        path: secretFileRef
+      version: v1
     - description: Logstash is the Schema for the logstashes API
       displayName: Logstash
       kind: Logstash
@@ -2254,9 +2734,22 @@ spec:
       - description: Tolerations permit to set toleration on pod
         displayName: Tolerations
         path: deployment.tolerations
+      - description: DiscoverRef permit to reference discover configuration
+        displayName: Discover Ref
+        path: discoverRef
+      - description: Elasticsearch permit to reference an Elasticsearch discover
+        displayName: Elasticsearch
+        path: discoverRef[0].elasticsearch
+      - description: Kafka permit to reference a Kafka discover
+        displayName: Kafka
+        path: discoverRef[0].kafka
+      - description: Logstash permit to reference a Logstash discover
+        displayName: Logstash
+        path: discoverRef[0].logstash
       - description: |-
           ElasticsearchRef is the Elasticsearch ref to connect on.
           It will expose CA certificate and Elasticsearch URL as encironment variable to use it in logstash setting
+          Deprecated: use DiscoverRef instead
         displayName: Elasticsearch Ref
         path: elasticsearchRef
       - description: |-
@@ -2601,9 +3094,26 @@ spec:
       - description: Tolerations permit to set toleration on pod
         displayName: Tolerations
         path: deployment.tolerations
+      - description: DiscoverOutputName permit to set the discover name that will
+          be use to generate output
+        displayName: Discover Output Name
+        path: discoverOutputName
+      - description: DiscoverRef permit to reference discover configuration
+        displayName: Discover Ref
+        path: discoverRef
+      - description: Elasticsearch permit to reference an Elasticsearch discover
+        displayName: Elasticsearch
+        path: discoverRef[0].elasticsearch
+      - description: Kafka permit to reference a Kafka discover
+        displayName: Kafka
+        path: discoverRef[0].kafka
+      - description: Logstash permit to reference a Logstash discover
+        displayName: Logstash
+        path: discoverRef[0].logstash
       - description: |-
           ElasticsearchRef is the Elasticsearch ref to connect on.
           It will generate Elasticsearch output bas on it
+          Deprecated: use DiscoverRef and DiscoverOutputName instead
         displayName: Elasticsearch Ref
         path: elasticsearchRef
       - description: |-
@@ -3315,6 +3825,38 @@ spec:
           - patch
           - update
         - apiGroups:
+          - discover.k8s.webcenter.fr
+          resources:
+          - elasticsearches
+          - kafkas
+          - logstashes
+          verbs:
+          - create
+          - delete
+          - get
+          - list
+          - patch
+          - update
+          - watch
+        - apiGroups:
+          - discover.k8s.webcenter.fr
+          resources:
+          - elasticsearches/finalizers
+          - kafkas/finalizers
+          - logstashes/finalizers
+          verbs:
+          - update
+        - apiGroups:
+          - discover.k8s.webcenter.fr
+          resources:
+          - elasticsearches/status
+          - kafkas/status
+          - logstashes/status
+          verbs:
+          - get
+          - patch
+          - update
+        - apiGroups:
           - elasticsearch.k8s.webcenter.fr
           resources:
           - elasticsearches
@@ -3393,6 +3935,15 @@ spec:
           - get
           - patch
           - update
+        - apiGroups:
+          - kafka.strimzi.io
+          resources:
+          - kafkas
+          - kafkausers
+          verbs:
+          - get
+          - list
+          - watch
         - apiGroups:
           - kibana.k8s.webcenter.fr
           resources:
@@ -3608,7 +4159,7 @@ spec:
                   value: INFO
                 - name: LOG_FORMATTER
                   value: json
-                image: quay.io/webcenter/elasticsearch-operator:1.0.4-rc.432
+                image: quay.io/webcenter/elasticsearch-operator:1.0.4-rc.450
                 livenessProbe:
                   httpGet:
                     path: /healthz
@@ -3712,7 +4263,7 @@ spec:
     name: webcenter.fr
     url: https://github.com/webcenter-fr/elasticsearch-operator
   replaces: elasticsearch-operator.v0.0.48
-  version: 1.0.4-rc.432
+  version: 1.0.4-rc.450
   webhookdefinitions:
   - admissionReviewVersions:
     - v1
@@ -3735,6 +4286,26 @@ spec:
     timeoutSeconds: 30
     type: ValidatingAdmissionWebhook
     webhookPath: /validate-elasticsearchapi-k8s-webcenter-fr-v1-componenttemplate
+  - admissionReviewVersions:
+    - v1
+    containerPort: 443
+    deploymentName: elasticsearch-operator-elasticsearch-operator
+    failurePolicy: Fail
+    generateName: elasticsearch.discover.k8s.webcenter.fr
+    rules:
+    - apiGroups:
+      - discover.k8s.webcenter.fr
+      apiVersions:
+      - v1
+      operations:
+      - CREATE
+      - UPDATE
+      resources:
+      - elasticsearches
+    sideEffects: None
+    targetPort: 9443
+    type: ValidatingAdmissionWebhook
+    webhookPath: /validate-discover-k8s-webcenter-fr-v1-elasticsearch
   - admissionReviewVersions:
     - v1
     containerPort: 443
@@ -3820,6 +4391,26 @@ spec:
     containerPort: 443
     deploymentName: elasticsearch-operator-elasticsearch-operator
     failurePolicy: Fail
+    generateName: kafka.discover.k8s.webcenter.fr
+    rules:
+    - apiGroups:
+      - discover.k8s.webcenter.fr
+      apiVersions:
+      - v1
+      operations:
+      - CREATE
+      - UPDATE
+      resources:
+      - kafkas
+    sideEffects: None
+    targetPort: 9443
+    type: ValidatingAdmissionWebhook
+    webhookPath: /validate-discover-k8s-webcenter-fr-v1-kafka
+  - admissionReviewVersions:
+    - v1
+    containerPort: 443
+    deploymentName: elasticsearch-operator-elasticsearch-operator
+    failurePolicy: Fail
     generateName: kibana.kibana.k8s.webcenter.fr
     rules:
     - apiGroups:
@@ -3855,6 +4446,26 @@ spec:
     targetPort: 9443
     type: ValidatingAdmissionWebhook
     webhookPath: /validate-elasticsearchapi-k8s-webcenter-fr-v1-license
+  - admissionReviewVersions:
+    - v1
+    containerPort: 443
+    deploymentName: elasticsearch-operator-elasticsearch-operator
+    failurePolicy: Fail
+    generateName: logstash.discover.k8s.webcenter.fr
+    rules:
+    - apiGroups:
+      - discover.k8s.webcenter.fr
+      apiVersions:
+      - v1
+      operations:
+      - CREATE
+      - UPDATE
+      resources:
+      - logstashes
+    sideEffects: None
+    targetPort: 9443
+    type: ValidatingAdmissionWebhook
+    webhookPath: /validate-discover-k8s-webcenter-fr-v1-logstash
   - admissionReviewVersions:
     - v1
     containerPort: 443
