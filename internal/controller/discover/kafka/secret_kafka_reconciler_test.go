@@ -144,6 +144,20 @@ func TestSecretKafkaReconcilerReadExternal(t *testing.T) {
 	assert.True(t, diff.NeedCreate())
 	assert.Len(t, diff.GetObjectsToCreate(), 2)
 	assert.False(t, diff.NeedDelete())
+	for _, s := range read.GetExpectedObjects() {
+		assert.Equal(t, "v1", s.APIVersion)
+		assert.Equal(t, "Secret", s.Kind)
+	}
+
+	// Second Read with existing secrets must preserve generated p12 and passwords
+	c = newKafkaTestClient(t, o, userSecret, read.GetExpectedObjects()[0], read.GetExpectedObjects()[1]).Build()
+	r = newSecretKafkaReconciler(c, record.NewFakeRecorder(10), false)
+	read2, _, err := r.Read(ctx, o, map[string]any{}, logger)
+	assert.NoError(t, err)
+	assert.Equal(t, read.GetExpectedObjects()[0].Data["KAFKA_USER_PASSWORD_TEST"], read2.GetExpectedObjects()[0].Data["KAFKA_USER_PASSWORD_TEST"])
+	assert.Equal(t, read.GetExpectedObjects()[0].Data["KAFKA_CA_TRUSTSTORE_PASSWORD_TEST"], read2.GetExpectedObjects()[0].Data["KAFKA_CA_TRUSTSTORE_PASSWORD_TEST"])
+	assert.Equal(t, read.GetExpectedObjects()[1].Data["user.p12"], read2.GetExpectedObjects()[1].Data["user.p12"])
+	assert.Equal(t, read.GetExpectedObjects()[1].Data["ca.p12"], read2.GetExpectedObjects()[1].Data["ca.p12"])
 }
 
 func TestSecretKafkaReconcilerReadWhenManagedWithoutStrimzi(t *testing.T) {

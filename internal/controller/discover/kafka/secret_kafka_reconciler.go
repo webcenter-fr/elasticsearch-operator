@@ -1,13 +1,13 @@
 package kafka
 
 import (
+	"bytes"
 	"context"
 	"fmt"
 	"time"
 
 	"emperror.dev/errors"
 	strimzicrd "github.com/RedHatInsights/strimzi-client-go/apis/kafka.strimzi.io/v1beta2"
-	"github.com/disaster37/k8s-objectmatcher/patch"
 	"github.com/disaster37/operator-sdk-extra/v3/pkg/apis/shared"
 	"github.com/disaster37/operator-sdk-extra/v3/pkg/controller/multiphase"
 	"github.com/disaster37/operator-sdk-extra/v3/pkg/helper"
@@ -20,7 +20,6 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/tools/record"
 	"k8s.io/utils/ptr"
-	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
@@ -174,81 +173,63 @@ func (r *secretKafkaReconciler) Read(ctx context.Context, o *discovercrd.Kafka, 
 	if err != nil {
 		return read, res, errors.Wrap(err, "Error when build expected secret")
 	}
+
+	preserveKafkaGeneratedKeystores(o, read.GetCurrentObjects(), expectedSecretsKafka)
+
+	common.InjectTypeMeta(r.Client().Scheme(), expectedSecretsKafka...)
 	read.SetExpectedObjects(expectedSecretsKafka)
 
 	return read, res, nil
 }
 
-// Diff permit to check if Kafka secrets are up to date
-func (r *secretKafkaReconciler) Diff(ctx context.Context, o *discovercrd.Kafka, read multiphase.MultiPhaseRead[*corev1.Secret], data map[string]any, logger *logrus.Entry) (diff multiphase.MultiPhaseDiff[*corev1.Secret], res reconcile.Result, err error) {
-	diff = multiphase.NewMultiPhaseDiff[*corev1.Secret]()
+// preserveKafkaGeneratedKeystores reuses existing generated PKCS#12 keystores/truststores
+// and passwords when the underlying certificates have not changed, avoiding unnecessary
+// secret mutations and pod rollouts on every SSA apply loop.
+func preserveKafkaGeneratedKeystores(o *discovercrd.Kafka, currentSecrets, expectedSecrets []*corev1.Secret) {
 	envSuffix := getEnvSuffix(o)
-	tmpCurrentObjects := make([]*corev1.Secret, len(read.GetCurrentObjects()))
-	copy(tmpCurrentObjects, read.GetCurrentObjects())
+	userPassKey := fmt.Sprintf("KAFKA_USER_PASSWORD_%s", envSuffix)
+	caPassKey := fmt.Sprintf("KAFKA_CA_TRUSTSTORE_PASSWORD_%s", envSuffix)
 
-	// We need to clone the expected object to remove the generated trustore and keystore
-	// We need to clone actual object to remove the trustore and keystore
-	// This permit to avoid reconcile on each loop because of theses generated data
-
-	for _, expected := range read.GetExpectedObjects() {
-		isFound := false
-
-		// Set ownerReferences on expected object before to diff them
-		err = ctrl.SetControllerReference(o, expected, r.Client().Scheme())
-		if err != nil {
-			return diff, res, errors.Wrapf(err, "Error when set owner reference on object '%s'", expected.GetName())
-		}
-
-		for i, current := range tmpCurrentObjects {
-			if expected.Name == current.Name {
-				isFound = true
-				expectedClone := expected.DeepCopy()
-				delete(expectedClone.Data, "user.p12")
-				delete(expectedClone.Data, "ca.p12")
-				delete(expectedClone.Data, fmt.Sprintf("KAFKA_USER_PASSWORD_%s", envSuffix))
-				delete(expectedClone.Data, fmt.Sprintf("KAFKA_CA_TRUSTSTORE_PASSWORD_%s", envSuffix))
-				currentClone := current.DeepCopy()
-				delete(currentClone.Data, "user.p12")
-				delete(currentClone.Data, "ca.p12")
-				delete(currentClone.Data, fmt.Sprintf("KAFKA_USER_PASSWORD_%s", envSuffix))
-				delete(currentClone.Data, fmt.Sprintf("KAFKA_CA_TRUSTSTORE_PASSWORD_%s", envSuffix))
-
-				// Calculate diff
-				patchResult, err := patch.DefaultPatchMaker.Calculate(currentClone, expectedClone)
-				if err != nil {
-					return diff, res, errors.Wrapf(err, "Error when calculate diff for secret %s/%s", current.Namespace, current.Name)
-				}
-				if !patchResult.IsEmpty() {
-					updatedObject := patchResult.Patched.(*corev1.Secret)
-					updatedObject.Data = expected.Data
-					diff.AddDiff(fmt.Sprintf("diff %s: %s", updatedObject.GetName(), string(patchResult.Patch)))
-					diff.AddObjectToUpdate(updatedObject)
-					logger.Debugf("Need update object '%s'", updatedObject.GetName())
-				}
-
-				// Remove items found
-				tmpCurrentObjects = helper.DeleteItemFromSlice(tmpCurrentObjects, i)
-
-				break
-			}
-		}
-
-		if !isFound {
-			// Need create object
-			diff.AddDiff(fmt.Sprintf("Need Create object '%s'", expected.GetName()))
-			diff.AddObjectToCreate(expected)
-
-			logger.Debugf("Need create object '%s'", expected.GetName())
-		}
+	currentByName := make(map[string]*corev1.Secret, len(currentSecrets))
+	for _, s := range currentSecrets {
+		currentByName[s.Name] = s
 	}
 
-	// Need delete
-	if len(tmpCurrentObjects) > 0 {
-		diff.SetObjectsToDelete(tmpCurrentObjects)
-		for _, object := range tmpCurrentObjects {
-			diff.AddDiff(fmt.Sprintf("Need delete object '%s'", object.GetName()))
-		}
+	expectedEnv := currentByName[GetSecretNameForEnv(o)]
+	expectedFile := currentByName[GetSecretNameForFile(o)]
+	if expectedEnv == nil || expectedFile == nil {
+		return
 	}
 
-	return diff, res, nil
+	var newEnv, newFile *corev1.Secret
+	for _, s := range expectedSecrets {
+		switch s.Name {
+		case GetSecretNameForEnv(o):
+			newEnv = s
+		case GetSecretNameForFile(o):
+			newFile = s
+		}
+	}
+	if newEnv == nil || newFile == nil {
+		return
+	}
+
+	// Preserve user.p12 + password if user.crt and user.key are unchanged
+	if len(newFile.Data["user.p12"]) > 0 &&
+		len(expectedFile.Data["user.p12"]) > 0 &&
+		len(expectedEnv.Data[userPassKey]) > 0 &&
+		bytes.Equal(newFile.Data["user.crt"], expectedFile.Data["user.crt"]) &&
+		bytes.Equal(newFile.Data["user.key"], expectedFile.Data["user.key"]) {
+		newFile.Data["user.p12"] = expectedFile.Data["user.p12"]
+		newEnv.Data[userPassKey] = expectedEnv.Data[userPassKey]
+	}
+
+	// Preserve ca.p12 + password if ca.crt is unchanged
+	if len(newFile.Data["ca.p12"]) > 0 &&
+		len(expectedFile.Data["ca.p12"]) > 0 &&
+		len(expectedEnv.Data[caPassKey]) > 0 &&
+		bytes.Equal(newFile.Data["ca.crt"], expectedFile.Data["ca.crt"]) {
+		newFile.Data["ca.p12"] = expectedFile.Data["ca.p12"]
+		newEnv.Data[caPassKey] = expectedEnv.Data[caPassKey]
+	}
 }

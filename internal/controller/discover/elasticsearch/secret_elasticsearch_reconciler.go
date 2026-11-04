@@ -6,7 +6,6 @@ import (
 	"time"
 
 	"emperror.dev/errors"
-	"github.com/disaster37/k8s-objectmatcher/patch"
 	"github.com/disaster37/operator-sdk-extra/v3/pkg/apis/shared"
 	"github.com/disaster37/operator-sdk-extra/v3/pkg/controller/multiphase"
 	"github.com/disaster37/operator-sdk-extra/v3/pkg/helper"
@@ -21,7 +20,6 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/tools/record"
 	"k8s.io/utils/ptr"
-	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
@@ -132,66 +130,8 @@ func (r *secretElasticsearchReconciler) Read(ctx context.Context, o *discovercrd
 	if err != nil {
 		return read, res, errors.Wrap(err, "Error when build expected secret")
 	}
+	common.InjectTypeMeta(r.Client().Scheme(), expectedSecretsElasticsearch...)
 	read.SetExpectedObjects(expectedSecretsElasticsearch)
 
 	return read, res, nil
-}
-
-// Diff permit to check if Elasticsearch secrets are up to date
-func (r *secretElasticsearchReconciler) Diff(ctx context.Context, o *discovercrd.Elasticsearch, read multiphase.MultiPhaseRead[*corev1.Secret], data map[string]any, logger *logrus.Entry) (diff multiphase.MultiPhaseDiff[*corev1.Secret], res reconcile.Result, err error) {
-	diff = multiphase.NewMultiPhaseDiff[*corev1.Secret]()
-	tmpCurrentObjects := make([]*corev1.Secret, len(read.GetCurrentObjects()))
-	copy(tmpCurrentObjects, read.GetCurrentObjects())
-
-	for _, expected := range read.GetExpectedObjects() {
-		isFound := false
-
-		// Set ownerReferences on expected object before to diff them
-		err = ctrl.SetControllerReference(o, expected, r.Client().Scheme())
-		if err != nil {
-			return diff, res, errors.Wrapf(err, "Error when set owner reference on object '%s'", expected.GetName())
-		}
-
-		for i, current := range tmpCurrentObjects {
-			if expected.Name == current.Name {
-				isFound = true
-
-				// Calculate diff
-				patchResult, err := patch.DefaultPatchMaker.Calculate(current, expected)
-				if err != nil {
-					return diff, res, errors.Wrapf(err, "Error when calculate diff for secret %s/%s", current.Namespace, current.Name)
-				}
-				if !patchResult.IsEmpty() {
-					updatedObject := patchResult.Patched.(*corev1.Secret)
-					updatedObject.Data = expected.Data
-					diff.AddDiff(fmt.Sprintf("diff %s: %s", updatedObject.GetName(), string(patchResult.Patch)))
-					diff.AddObjectToUpdate(updatedObject)
-					logger.Debugf("Need update object '%s'", updatedObject.GetName())
-				}
-
-				// Remove items found
-				tmpCurrentObjects = helper.DeleteItemFromSlice(tmpCurrentObjects, i)
-
-				break
-			}
-		}
-
-		if !isFound {
-			// Need create object
-			diff.AddDiff(fmt.Sprintf("Need Create object '%s'", expected.GetName()))
-			diff.AddObjectToCreate(expected)
-
-			logger.Debugf("Need create object '%s'", expected.GetName())
-		}
-	}
-
-	// Need delete
-	if len(tmpCurrentObjects) > 0 {
-		diff.SetObjectsToDelete(tmpCurrentObjects)
-		for _, object := range tmpCurrentObjects {
-			diff.AddDiff(fmt.Sprintf("Need delete object '%s'", object.GetName()))
-		}
-	}
-
-	return diff, res, nil
 }

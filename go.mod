@@ -12,7 +12,6 @@ require (
 	github.com/disaster37/es-handler/v9 v9.0.0
 	github.com/disaster37/generic-objectmatcher v1.0.2
 	github.com/disaster37/go-kibana-rest/v8 v8.5.0
-	github.com/disaster37/k8s-objectmatcher v1.8.8
 	github.com/disaster37/k8sbuilder v1.0.3
 	github.com/disaster37/kb-handler/v8 v8.0.4
 	github.com/disaster37/operator-sdk-extra/v3 v3.0.9
@@ -48,6 +47,7 @@ require (
 	github.com/blang/semver/v4 v4.0.0 // indirect
 	github.com/cenkalti/backoff/v5 v5.0.3 // indirect
 	github.com/cespare/xxhash/v2 v2.3.0 // indirect
+	github.com/disaster37/k8s-objectmatcher v1.8.8 // indirect
 	github.com/elastic/elastic-transport-go/v8 v8.11.0 // indirect
 	github.com/elastic/go-elasticsearch/v8 v8.19.7 // indirect
 	github.com/emicklei/go-restful/v3 v3.13.0 // indirect

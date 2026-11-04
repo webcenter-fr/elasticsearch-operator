@@ -1,12 +1,12 @@
 package logstash
 
 import (
+	"bytes"
 	"context"
 	"fmt"
 	"time"
 
 	"emperror.dev/errors"
-	"github.com/disaster37/k8s-objectmatcher/patch"
 	"github.com/disaster37/operator-sdk-extra/v3/pkg/apis/shared"
 	"github.com/disaster37/operator-sdk-extra/v3/pkg/controller/multiphase"
 	"github.com/disaster37/operator-sdk-extra/v3/pkg/helper"
@@ -21,7 +21,6 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/tools/record"
 	"k8s.io/utils/ptr"
-	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
@@ -149,73 +148,52 @@ func (r *secretLogstashReconciler) Read(ctx context.Context, o *discovercrd.Logs
 	if err != nil {
 		return read, res, errors.Wrap(err, "Error when build expected secret")
 	}
+
+	preserveLogstashGeneratedKeystore(o, read.GetCurrentObjects(), expectedSecretsLogstash)
+
+	common.InjectTypeMeta(r.Client().Scheme(), expectedSecretsLogstash...)
 	read.SetExpectedObjects(expectedSecretsLogstash)
 
 	return read, res, nil
 }
 
-// Diff permit to check if Logstash secrets are up to date
-func (r *secretLogstashReconciler) Diff(ctx context.Context, o *discovercrd.Logstash, read multiphase.MultiPhaseRead[*corev1.Secret], data map[string]any, logger *logrus.Entry) (diff multiphase.MultiPhaseDiff[*corev1.Secret], res reconcile.Result, err error) {
-	diff = multiphase.NewMultiPhaseDiff[*corev1.Secret]()
+// preserveLogstashGeneratedKeystore reuses the existing generated PKCS#12 keystore and
+// password when the underlying user certificate and key have not changed, avoiding
+// unnecessary secret mutations and pod rollouts on every SSA apply loop.
+func preserveLogstashGeneratedKeystore(o *discovercrd.Logstash, currentSecrets, expectedSecrets []*corev1.Secret) {
 	envSuffix := getEnvSuffix(o)
-	tmpCurrentObjects := make([]*corev1.Secret, len(read.GetCurrentObjects()))
-	copy(tmpCurrentObjects, read.GetCurrentObjects())
+	userPassKey := fmt.Sprintf("LOGSTASH_USER_PASSWORD_%s", envSuffix)
 
-	for _, expected := range read.GetExpectedObjects() {
-		isFound := false
-
-		// Set ownerReferences on expected object before to diff them
-		err = ctrl.SetControllerReference(o, expected, r.Client().Scheme())
-		if err != nil {
-			return diff, res, errors.Wrapf(err, "Error when set owner reference on object '%s'", expected.GetName())
-		}
-
-		for i, current := range tmpCurrentObjects {
-			if expected.Name == current.Name {
-				isFound = true
-				expectedClone := expected.DeepCopy()
-				delete(expectedClone.Data, "user.p12")
-				delete(expectedClone.Data, fmt.Sprintf("LOGSTASH_USER_PASSWORD_%s", envSuffix))
-				currentClone := current.DeepCopy()
-				delete(currentClone.Data, "user.p12")
-				delete(currentClone.Data, fmt.Sprintf("LOGSTASH_USER_PASSWORD_%s", envSuffix))
-
-				// Calculate diff
-				patchResult, err := patch.DefaultPatchMaker.Calculate(currentClone, expectedClone)
-				if err != nil {
-					return diff, res, errors.Wrapf(err, "Error when calculate diff for secret %s/%s", current.Namespace, current.Name)
-				}
-				if !patchResult.IsEmpty() {
-					updatedObject := patchResult.Patched.(*corev1.Secret)
-					updatedObject.Data = expected.Data
-					diff.AddDiff(fmt.Sprintf("diff %s: %s", updatedObject.GetName(), string(patchResult.Patch)))
-					diff.AddObjectToUpdate(updatedObject)
-					logger.Debugf("Need update object '%s'", updatedObject.GetName())
-				}
-
-				// Remove items found
-				tmpCurrentObjects = helper.DeleteItemFromSlice(tmpCurrentObjects, i)
-
-				break
-			}
-		}
-
-		if !isFound {
-			// Need create object
-			diff.AddDiff(fmt.Sprintf("Need Create object '%s'", expected.GetName()))
-			diff.AddObjectToCreate(expected)
-
-			logger.Debugf("Need create object '%s'", expected.GetName())
-		}
+	currentByName := make(map[string]*corev1.Secret, len(currentSecrets))
+	for _, s := range currentSecrets {
+		currentByName[s.Name] = s
 	}
 
-	// Need delete
-	if len(tmpCurrentObjects) > 0 {
-		diff.SetObjectsToDelete(tmpCurrentObjects)
-		for _, object := range tmpCurrentObjects {
-			diff.AddDiff(fmt.Sprintf("Need delete object '%s'", object.GetName()))
-		}
+	currentEnv := currentByName[GetSecretNameForEnv(o)]
+	currentFile := currentByName[GetSecretNameForFile(o)]
+	if currentEnv == nil || currentFile == nil {
+		return
 	}
 
-	return diff, res, nil
+	var newEnv, newFile *corev1.Secret
+	for _, s := range expectedSecrets {
+		switch s.Name {
+		case GetSecretNameForEnv(o):
+			newEnv = s
+		case GetSecretNameForFile(o):
+			newFile = s
+		}
+	}
+	if newEnv == nil || newFile == nil {
+		return
+	}
+
+	if len(newFile.Data["user.p12"]) > 0 &&
+		len(currentFile.Data["user.p12"]) > 0 &&
+		len(currentEnv.Data[userPassKey]) > 0 &&
+		bytes.Equal(newFile.Data["user.crt"], currentFile.Data["user.crt"]) &&
+		bytes.Equal(newFile.Data["user.key"], currentFile.Data["user.key"]) {
+		newFile.Data["user.p12"] = currentFile.Data["user.p12"]
+		newEnv.Data[userPassKey] = currentEnv.Data[userPassKey]
+	}
 }

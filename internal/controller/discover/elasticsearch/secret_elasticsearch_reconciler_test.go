@@ -100,6 +100,10 @@ func TestSecretElasticsearchReconcilerReadExternal(t *testing.T) {
 	assert.True(t, diff.NeedCreate())
 	assert.Len(t, diff.GetObjectsToCreate(), 2)
 	assert.False(t, diff.NeedDelete())
+	for _, s := range read.GetExpectedObjects() {
+		assert.Equal(t, "v1", s.APIVersion)
+		assert.Equal(t, "Secret", s.Kind)
+	}
 }
 
 func TestSecretElasticsearchReconcilerReadWhenManagedClusterNotReady(t *testing.T) {
