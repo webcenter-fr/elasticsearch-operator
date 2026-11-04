@@ -70,7 +70,12 @@ func New(
 			src.WithoutDirectory("ci"),
 			name,
 			dagger.OperatorSDKOpts{
-				Container: golangCtr,
+				Container:            golangCtr,
+				SdkVersion:           sdkVersion,
+				OpmVersion:           opmVersion,
+				ControllerGenVersion: controllerGenVersion,
+				CleanCrdVersion:      cleanCrdVersion,
+				KustomizeVersion:     kustomizeVersion,
 			},
 		),
 	}
