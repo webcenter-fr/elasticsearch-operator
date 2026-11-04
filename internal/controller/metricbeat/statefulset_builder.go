@@ -10,6 +10,7 @@ import (
 	"github.com/disaster37/k8sbuilder"
 	beatcrd "github.com/webcenter-fr/elasticsearch-operator/api/beat/v1"
 	elasticsearchcrd "github.com/webcenter-fr/elasticsearch-operator/api/elasticsearch/v1"
+	"github.com/webcenter-fr/elasticsearch-operator/internal/controller/discover"
 	appv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -127,7 +128,8 @@ func buildStatefulsets(mb *beatcrd.Metricbeat, es *elasticsearchcrd.Elasticsearc
 				},
 			},
 		}, k8sbuilder.Merge)
-	} else {
+	} else if mb.Spec.ElasticsearchRef.IsExternal() {
+		// SecretRef is guaranteed to be set by the check at the top of this function
 		cb.WithEnv([]corev1.EnvVar{
 			{
 				Name: "ELASTICSEARCH_USERNAME",
@@ -324,6 +326,9 @@ func buildStatefulsets(mb *beatcrd.Metricbeat, es *elasticsearchcrd.Elasticsearc
 	ptb.WithAffinity(corev1.Affinity{
 		PodAntiAffinity: antiAffinity,
 	}, k8sbuilder.OverwriteIfDefaultValue)
+
+	// Compute discovers
+	discover.ComputeDiscoverPod(ptb, cb, secretsChecksum, "/usr/share/metricbeat")
 
 	// Compute containers
 	ptb.WithContainers([]corev1.Container{*cb.Container()}, k8sbuilder.Merge)

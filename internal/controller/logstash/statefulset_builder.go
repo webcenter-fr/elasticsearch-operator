@@ -10,6 +10,7 @@ import (
 	"github.com/disaster37/k8sbuilder"
 	elasticsearchcrd "github.com/webcenter-fr/elasticsearch-operator/api/elasticsearch/v1"
 	logstashcrd "github.com/webcenter-fr/elasticsearch-operator/api/logstash/v1"
+	"github.com/webcenter-fr/elasticsearch-operator/internal/controller/discover"
 	elasticsearchcontrollers "github.com/webcenter-fr/elasticsearch-operator/internal/controller/elasticsearch"
 	appv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -353,6 +354,9 @@ func buildStatefulsets(ls *logstashcrd.Logstash, es *elasticsearchcrd.Elasticsea
 	ptb.WithAffinity(corev1.Affinity{
 		PodAntiAffinity: antiAffinity,
 	}, k8sbuilder.OverwriteIfDefaultValue)
+
+	// Compute discovers
+	discover.ComputeDiscoverPod(ptb, cb, secretsChecksum, "/usr/share/logstash")
 
 	// Compute containers
 	ptb.WithContainers([]corev1.Container{*cb.Container()}, k8sbuilder.Merge)

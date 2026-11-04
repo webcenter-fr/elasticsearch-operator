@@ -21,6 +21,7 @@ import (
 
 	"github.com/disaster37/operator-sdk-extra/v3/pkg/controller"
 	"github.com/sirupsen/logrus"
+	discovercrd "github.com/webcenter-fr/elasticsearch-operator/api/discover/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 
 	"k8s.io/apimachinery/pkg/util/validation/field"
@@ -55,8 +56,28 @@ var _ admission.Validator[*Logstash] = &logstashValidator{}
 func (r *logstashValidator) ValidateCreate(ctx context.Context, obj *Logstash) (admission.Warnings, error) {
 	var allErrs field.ErrorList
 
-	if err := obj.Spec.ElasticsearchRef.ValidateField(); err != nil {
-		allErrs = append(allErrs, err)
+	// Check only one target pattern: either legacy ref or discover refs
+	hasLegacyRef := obj.Spec.ElasticsearchRef.IsManaged() || obj.Spec.ElasticsearchRef.IsExternal()
+	hasDiscoverRef := len(obj.Spec.DiscoverRef) > 0
+
+	if hasLegacyRef && hasDiscoverRef {
+		allErrs = append(allErrs, field.Invalid(field.NewPath("spec"), obj.Spec, "You can't use elasticsearchRef and discoverRef at the same time"))
+	}
+
+	// Check is set at least one target
+	if !hasLegacyRef && !hasDiscoverRef {
+		allErrs = append(allErrs, field.Invalid(field.NewPath("spec"), obj.Spec, "You need to provide Elasticsearch target or Discover target"))
+	}
+
+	// Check each discover ref references exactly one discover
+	if hasDiscoverRef {
+		allErrs = append(allErrs, discovercrd.ValidateDiscoverRefs(obj.Spec.DiscoverRef, field.NewPath("spec").Child("discoverRef"))...)
+	}
+
+	if hasLegacyRef {
+		if err := obj.Spec.ElasticsearchRef.ValidateField(); err != nil {
+			allErrs = append(allErrs, err)
+		}
 	}
 
 	if len(allErrs) > 0 {
@@ -72,8 +93,28 @@ func (r *logstashValidator) ValidateCreate(ctx context.Context, obj *Logstash) (
 func (r *logstashValidator) ValidateUpdate(ctx context.Context, oldObj *Logstash, newObj *Logstash) (admission.Warnings, error) {
 	var allErrs field.ErrorList
 
-	if err := newObj.Spec.ElasticsearchRef.ValidateField(); err != nil {
-		allErrs = append(allErrs, err)
+	// Check only one target pattern: either legacy ref or discover refs
+	hasLegacyRef := newObj.Spec.ElasticsearchRef.IsManaged() || newObj.Spec.ElasticsearchRef.IsExternal()
+	hasDiscoverRef := len(newObj.Spec.DiscoverRef) > 0
+
+	if hasLegacyRef && hasDiscoverRef {
+		allErrs = append(allErrs, field.Invalid(field.NewPath("spec"), newObj.Spec, "You can't use elasticsearchRef and discoverRef at the same time"))
+	}
+
+	// Check is set at least one target
+	if !hasLegacyRef && !hasDiscoverRef {
+		allErrs = append(allErrs, field.Invalid(field.NewPath("spec"), newObj.Spec, "You need to provide Elasticsearch target or Discover target"))
+	}
+
+	// Check each discover ref references exactly one discover
+	if hasDiscoverRef {
+		allErrs = append(allErrs, discovercrd.ValidateDiscoverRefs(newObj.Spec.DiscoverRef, field.NewPath("spec").Child("discoverRef"))...)
+	}
+
+	if hasLegacyRef {
+		if err := newObj.Spec.ElasticsearchRef.ValidateField(); err != nil {
+			allErrs = append(allErrs, err)
+		}
 	}
 
 	if len(allErrs) > 0 {

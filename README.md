@@ -106,6 +106,13 @@ You can use the following resources:
   - [Snapshot repository](documentations/elasticsearchapi/snapshot-repository.md)
   - [Watch](documentations/elasticsearchapi/watch.md)
 
+## Discover external services
+
+The Discover concept lets workloads (Filebeat, Logstash, Metricbeat) consume connection information (certificates, credentials, URLs) from external services through generated secrets. You can define:
+  - [Kafka Discover](documentations/discover/kafka.md)
+  - [Logstash Discover](documentations/discover/logstash.md)
+  - [Elasticsearch Discover](documentations/discover/elasticsearch.md)
+
 ## Deploy Kibana
 
 To deploy Kibana, you need to set a custom resource of type `Kibana`.
@@ -157,6 +164,7 @@ You can read complete documentation per sub section
   - [Deployment settings](documentations/logstash/deployment-settings.md)
   - [Endpoint settings](documentations/logstash/endpoint-settings.md)
   - [Monitoring settings](documentations/logstash/monitoring-settings.md)
+  - [Discover settings](documentations/logstash/discover-settings.md)
 
 ## Deploy Filebeat
 
@@ -181,6 +189,7 @@ You can read complete documentation per sub section
   - [Endpoint settings](documentations/filebeat/endpoint-settings.md)
   - [Monitoring settings](documentations/filebeat/monitoring-settings.md)
   - [PKI settings](documentations/filebeat/pki-settings.md)
+  - [Discover settings](documentations/filebeat/discover-settings.md)
 
 ## Deploy Metricbeat
 
@@ -197,6 +206,7 @@ You can read some samples:
 You can read complete documentation per sub section
   - [Main settings](documentations/metricbeat/main-settings.md)
   - [Deployment settings](documentations/metricbeat/deployment-settings.md)
+  - [Discover settings](documentations/metricbeat/discover-settings.md)
 
 ## Deploy Cerebro
 

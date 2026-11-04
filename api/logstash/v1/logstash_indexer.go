@@ -64,6 +64,20 @@ func SetupLogstashIndexer(k8sManager manager.Manager) (err error) {
 		return err
 	}
 
+	if err = k8sManager.GetFieldIndexer().IndexField(context.Background(), &Logstash{}, "spec.discover.name", func(o client.Object) []string {
+		p := o.(*Logstash)
+		res := make([]string, 0, len(p.Spec.DiscoverRef))
+		for _, dr := range p.Spec.DiscoverRef {
+			if dr == nil {
+				continue
+			}
+			res = append(res, dr.GetName())
+		}
+		return res
+	}); err != nil {
+		return err
+	}
+
 	if err = k8sManager.GetFieldIndexer().IndexField(context.Background(), &Logstash{}, "spec.deployment.additionalVolumes.configMap.name", func(o client.Object) []string {
 		p := o.(*Logstash)
 		volumeNames := make([]string, 0, len(p.Spec.Deployment.AdditionalVolumes))

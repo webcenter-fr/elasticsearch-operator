@@ -205,7 +205,7 @@ spec:
   elasticsearchRef:
     managed:
       name: elasticsearch-monitoring
-  module:
+  modules:
     elasticsearch-xpack.yml:
       - module: elasticsearch
         xpack.enabled: true

@@ -58,7 +58,7 @@ func New(
 	// unsupported"). It is installed in /usr/local/bin because /go/bin is
 	// shadowed by a cache mount in the golang module. The PATH is overridden so
 	// /usr/local/bin is checked before the (cached) /go/bin binaries.
-	golangCtr := dag.Container().From("golang:1.27.2").
+	golangCtr := dag.Container().From("golang:1.27.3").
 		WithEnvVariable("PATH", "/usr/local/bin:/go/bin:/usr/local/go/bin:/usr/local/sbin:/usr/sbin:/usr/bin:/sbin:/bin").
 		WithEnvVariable("GOBIN", "/usr/local/bin").
 		WithExec([]string{"go", "install", "golang.org/x/vuln/cmd/govulncheck@v1.8.0"}).
@@ -70,7 +70,12 @@ func New(
 			src.WithoutDirectory("ci"),
 			name,
 			dagger.OperatorSDKOpts{
-				Container: golangCtr,
+				Container:            golangCtr,
+				SDKVersion:           sdkVersion,
+				OpmVersion:           opmVersion,
+				ControllerGenVersion: controllerGenVersion,
+				CleanCrdVersion:      cleanCrdVersion,
+				KustomizeVersion:     kustomizeVersion,
 			},
 		),
 	}
@@ -264,7 +269,7 @@ func (h *ElasticsearchOperator) CI(
 
 		_, err = kubeCtr.
 			WithExec(helper.ForgeCommand("kubectl apply -n default --server-side=true -f config/samples/elasticsearch_v1_elasticsearch.yaml")).
-			WithExec(helper.ForgeCommand("kubectl -n default wait --for=condition=Ready=True --all elasticsearch --timeout=180s")).
+			WithExec(helper.ForgeCommand("kubectl -n default wait --for=condition=Ready=True --all elasticsearches.elasticsearch.k8s.webcenter.fr --timeout=180s")).
 			Stdout(ctx)
 
 		// Get operators logs and Elasticsearch logs

@@ -108,6 +108,38 @@ rules:
   - patch
   - update
 - apiGroups:
+  - discover.k8s.webcenter.fr
+  resources:
+  - elasticsearches
+  - kafkas
+  - logstashes
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - discover.k8s.webcenter.fr
+  resources:
+  - elasticsearches/finalizers
+  - kafkas/finalizers
+  - logstashes/finalizers
+  verbs:
+  - update
+- apiGroups:
+  - discover.k8s.webcenter.fr
+  resources:
+  - elasticsearches/status
+  - kafkas/status
+  - logstashes/status
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
   - elasticsearch.k8s.webcenter.fr
   resources:
   - elasticsearches
@@ -186,6 +218,15 @@ rules:
   - get
   - patch
   - update
+- apiGroups:
+  - kafka.strimzi.io
+  resources:
+  - kafkas
+  - kafkausers
+  verbs:
+  - get
+  - list
+  - watch
 - apiGroups:
   - kibana.k8s.webcenter.fr
   resources:

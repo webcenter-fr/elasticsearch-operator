@@ -2,6 +2,7 @@ package v1
 
 import (
 	"github.com/disaster37/operator-sdk-extra/v3/pkg/object"
+	discovercrd "github.com/webcenter-fr/elasticsearch-operator/api/discover/v1"
 )
 
 // GetStatus implement the object.MultiPhaseObject
@@ -25,4 +26,9 @@ func (h *Metricbeat) IsPdb() bool {
 	}
 
 	return false
+}
+
+// SearchDiscoverOutputRef permit to find discover ref used for output
+func (h Metricbeat) SearchDiscoverOutputRef() *discovercrd.DiscoverRef {
+	return discovercrd.FindDiscoverRef(h.Spec.DiscoverRef, h.Spec.DiscoverOutputName)
 }

@@ -5,6 +5,7 @@ go 1.27.0
 require (
 	dario.cat/mergo v1.0.2
 	emperror.dev/errors v0.8.1
+	github.com/RedHatInsights/strimzi-client-go v0.40.0
 	github.com/codingsince1985/checksum v1.3.0
 	github.com/davecgh/go-spew v1.1.2-0.20180830191138-d8f796af33cc
 	github.com/disaster37/elasticsearch/v9 v9.0.2
@@ -34,6 +35,7 @@ require (
 	k8s.io/utils v0.0.0-20260707023825-cf1189d6abe3
 	sigs.k8s.io/controller-runtime v0.24.1
 	sigs.k8s.io/yaml v1.6.0
+	software.sslmate.com/src/go-pkcs12 v0.6.0
 )
 
 require (

@@ -245,4 +245,40 @@ resources:
   webhooks:
     validation: true
     webhookVersion: v1
+- api:
+    crdVersion: v1
+    namespaced: true
+  controller: true
+  domain: k8s.webcenter.fr
+  group: discover
+  kind: Kafka
+  path: github.com/webcenter-fr/elasticsearch-operator/api/discover/v1
+  version: v1
+  webhooks:
+    validation: true
+    webhookVersion: v1
+- api:
+    crdVersion: v1
+    namespaced: true
+  controller: true
+  domain: k8s.webcenter.fr
+  group: discover
+  kind: Logstash
+  path: github.com/webcenter-fr/elasticsearch-operator/api/discover/v1
+  version: v1
+  webhooks:
+    validation: true
+    webhookVersion: v1
+- api:
+    crdVersion: v1
+    namespaced: true
+  controller: true
+  domain: k8s.webcenter.fr
+  group: discover
+  kind: Elasticsearch
+  path: github.com/webcenter-fr/elasticsearch-operator/api/discover/v1
+  version: v1
+  webhooks:
+    validation: true
+    webhookVersion: v1
 version: "3"

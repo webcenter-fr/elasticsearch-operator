@@ -3,6 +3,7 @@ package v1
 import (
 	"github.com/disaster37/operator-sdk-extra/v3/pkg/apis/workflow"
 	"github.com/disaster37/operator-sdk-extra/v3/pkg/object"
+	discovercrd "github.com/webcenter-fr/elasticsearch-operator/api/discover/v1"
 	"k8s.io/apimachinery/pkg/util/validation/field"
 )
 
@@ -60,4 +61,9 @@ func (h FilebeatPkiSpec) IsEnabled() bool {
 // GetWorkflowStatus implement the workflow.WorkflowStatusGetter interface
 func (s *FilebeatStatus) GetWorkflowStatus() *workflow.WorkflowStatus {
 	return &s.TlsWorkflowStatus
+}
+
+// SearchDiscoverOutputRef permit to find discover ref used for output
+func (h Filebeat) SearchDiscoverOutputRef() *discovercrd.DiscoverRef {
+	return discovercrd.FindDiscoverRef(h.Spec.DiscoverRef, h.Spec.DiscoverOutputName)
 }

@@ -22,6 +22,9 @@ resources:
 - bases/kibanaapi.k8s.webcenter.fr_userspaces.yaml
 - bases/kibanaapi.k8s.webcenter.fr_roles.yaml
 - bases/kibanaapi.k8s.webcenter.fr_logstashpipelines.yaml
+- bases/discover.k8s.webcenter.fr_kafkas.yaml
+- bases/discover.k8s.webcenter.fr_logstashes.yaml
+- bases/discover.k8s.webcenter.fr_elasticsearches.yaml
 #+kubebuilder:scaffold:crdkustomizeresource
 
 # [WEBHOOK] To enable webhook, uncomment all the sections with [WEBHOOK] prefix.

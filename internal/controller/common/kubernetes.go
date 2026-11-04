@@ -4,4 +4,5 @@ package common
 type KubernetesCapability struct {
 	HasRoute      bool
 	HasPrometheus bool
+	HasStrimzi    bool
 }
