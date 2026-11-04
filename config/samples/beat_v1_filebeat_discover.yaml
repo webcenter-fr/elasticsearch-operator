@@ -3,11 +3,11 @@ kind: Filebeat
 metadata:
   labels:
     app.kubernetes.io/name: filebeat
-    app.kubernetes.io/instance: filebeat-sample
+    app.kubernetes.io/instance: filebeat-discover-sample
     app.kubernetes.io/part-of: bootstrap
     app.kubernetes.io/managed-by: kustomize
     app.kubernetes.io/created-by: bootstrap
-  name: filebeat-sample
+  name: filebeat-discover-sample
   namespace: default
 spec:
   version: 8.6.0

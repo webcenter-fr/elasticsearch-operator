@@ -3,11 +3,11 @@ kind: Logstash
 metadata:
   labels:
     app.kubernetes.io/name: logstash
-    app.kubernetes.io/instance: logstash-sample
+    app.kubernetes.io/instance: logstash-discover-sample
     app.kubernetes.io/part-of: bootstrap
     app.kubernetes.io/managed-by: kustomize
     app.kubernetes.io/created-by: bootstrap
-  name: logstash-sample
+  name: logstash-discover-sample
   namespace: default
 spec:
   version: 8.6.0
