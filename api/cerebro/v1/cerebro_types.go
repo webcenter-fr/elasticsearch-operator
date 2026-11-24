@@ -72,7 +72,29 @@ type CerebroSpec struct {
 
 type CerebroDeploymentSpec struct {
 	shared.Deployment `json:",inline"`
+
+	// ConfigUpdateStrategy controls whether generated config changes roll the pod.
+	// HotReload is the default because Cerebro hot-reloads generated `hosts` changes
+	// without a pod restart; it requires a Cerebro image that contains this feature.
+	// Set to Restart when pinning a pre-hot-reload image or when a pod rollout is preferred.
+	// +operator-sdk:csv:customresourcedefinitions:type=spec
+	// +optional
+	// +kubebuilder:default=HotReload
+	ConfigUpdateStrategy ConfigUpdateStrategy `json:"configUpdateStrategy,omitempty"`
 }
+
+// ConfigUpdateStrategy defines how changes to the generated Cerebro
+// configuration ConfigMap (<name>-config-cb) are applied to running pods.
+// +kubebuilder:validation:Enum=Restart;HotReload
+type ConfigUpdateStrategy string
+
+const (
+	// ConfigUpdateStrategyRestart rolls the Deployment when the generated config changes.
+	ConfigUpdateStrategyRestart ConfigUpdateStrategy = "Restart"
+	// ConfigUpdateStrategyHotReload keeps the pod running and relies on Cerebro's
+	// in-process config watcher to apply reloadable settings (hosts).
+	ConfigUpdateStrategyHotReload ConfigUpdateStrategy = "HotReload"
+)
 
 // CerebroStatus defines the observed state of Cerebro
 type CerebroStatus struct {

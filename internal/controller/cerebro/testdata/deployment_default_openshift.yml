@@ -104,9 +104,11 @@ spec:
           name: tmp
       terminationGracePeriodSeconds: 30
       volumes:
-      - configMap:
-          name: test-config-cb
-        name: config
+      - name: config
+        projected:
+          sources:
+          - configMap:
+              name: test-config-cb
       - emptyDir: {}
         name: data
       - emptyDir: {}

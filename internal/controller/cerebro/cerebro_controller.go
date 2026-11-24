@@ -174,6 +174,14 @@ func (h *CerebroReconciler) Configure(ctx context.Context, req reconcile.Request
 			legacyVersion, defaultImage, defaultVersion)
 	}
 
+	if !shouldRolloutOnGeneratedConfigChange(o) {
+		if ver := effectiveVersion(o); isKnownPreHotReloadVersion(ver) {
+			h.Recorder().Eventf(o, corev1.EventTypeWarning, "ConfigUpdateStrategy",
+				"HotReload requires a Cerebro image with config hot-reload support; spec.version=%q may ignore config changes. Set spec.deployment.configUpdateStrategy=Restart or upgrade the image.",
+				ver)
+		}
+	}
+
 	return h.MultiPhaseReconcilerAction.Configure(ctx, req, o, data, logger)
 }
 

@@ -34,8 +34,15 @@ func buildDeployments(cerebro *cerebrocrd.Cerebro, secretsChecksum []*corev1.Sec
 	dpls = make([]*appv1.Deployment, 0, 1)
 	checksumAnnotations := map[string]string{}
 
-	// checksum for configmap
+	// Generated <name>-config-cb ConfigMap is mounted via a projected volume.
+	// Under HotReload (default), omit its pod-template checksum so Host/config
+	// updates do not restart the pod. External ConfigMaps consumed via env/envFrom
+	// and all Secrets are env-injected and always retain checksums in both modes.
+	generatedCMName := GetConfigMapName(cerebro)
 	for _, cm := range configMapsChecksum {
+		if cm.Name == generatedCMName && !shouldRolloutOnGeneratedConfigChange(cerebro) {
+			continue
+		}
 		sum, err := computeChecksum(cm.Name, cm.Data)
 		if err != nil {
 			return nil, err
@@ -231,8 +238,10 @@ func buildDeployments(cerebro *cerebrocrd.Cerebro, secretsChecksum []*corev1.Sec
 	ptb.WithAnnotations(map[string]string{
 		cerebrocrd.CerebroAnnotationKey: "true",
 	}).
-		WithAnnotations(cerebro.Spec.Deployment.Annotations, k8sbuilder.Merge).
-		WithAnnotations(checksumAnnotations, k8sbuilder.Merge)
+		WithAnnotations(cerebro.Spec.Deployment.Annotations, k8sbuilder.Merge)
+	for k, v := range checksumAnnotations {
+		ptb.PodTemplate().Annotations[k] = v
+	}
 
 	// Compute NodeSelector
 	ptb.WithNodeSelector(cerebro.Spec.Deployment.NodeSelector, k8sbuilder.Merge)
@@ -251,9 +260,15 @@ func buildDeployments(cerebro *cerebrocrd.Cerebro, secretsChecksum []*corev1.Sec
 		{
 			Name: "config",
 			VolumeSource: corev1.VolumeSource{
-				ConfigMap: &corev1.ConfigMapVolumeSource{
-					LocalObjectReference: corev1.LocalObjectReference{
-						Name: GetConfigMapName(cerebro),
+				Projected: &corev1.ProjectedVolumeSource{
+					Sources: []corev1.VolumeProjection{
+						{
+							ConfigMap: &corev1.ConfigMapProjection{
+								LocalObjectReference: corev1.LocalObjectReference{
+									Name: GetConfigMapName(cerebro),
+								},
+							},
+						},
 					},
 				},
 			},

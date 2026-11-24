@@ -11,6 +11,10 @@ metadata:
 spec:
   deployment:
     replicas: 1
+    # HotReload is the default (shown explicitly for clarity): generated `hosts`
+    # updates reload in-process without restarting the pod. Requires a Cerebro image
+    # with hot-reload support; set to Restart when pinning an older Cerebro image.
+    configUpdateStrategy: HotReload
     resources:
       limits:
         cpu: 500m

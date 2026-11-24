@@ -1090,6 +1090,14 @@ spec:
     - kind: Cerebro
       name: cerebroes.cerebro.k8s.webcenter.fr
       version: v1
+      specDescriptors:
+      - description: |-
+          ConfigUpdateStrategy controls whether generated config changes roll the pod.
+          HotReload is the default because Cerebro hot-reloads generated `hosts` changes
+          without a pod restart; it requires a Cerebro image that contains this feature.
+          Set to Restart when pinning a pre-hot-reload image or when a pod rollout is preferred.
+        displayName: Config Update Strategy
+        path: deployment.configUpdateStrategy
     - description: ComponentTemplate is the Schema for the componenttemplates API
       displayName: Component Template
       kind: ComponentTemplate

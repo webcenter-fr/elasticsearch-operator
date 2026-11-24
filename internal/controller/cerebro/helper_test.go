@@ -162,3 +162,45 @@ func TestGetAnnotations(t *testing.T) {
 
 	assert.Equal(t, expectedAnnotations, getAnnotations(o, map[string]string{"foo": "bar"}))
 }
+
+func TestShouldRolloutOnGeneratedConfigChange(t *testing.T) {
+	assert.False(t, shouldRolloutOnGeneratedConfigChange(nil))
+	assert.False(t, shouldRolloutOnGeneratedConfigChange(&cerebrocrd.Cerebro{}))
+	assert.False(t, shouldRolloutOnGeneratedConfigChange(&cerebrocrd.Cerebro{
+		Spec: cerebrocrd.CerebroSpec{
+			Deployment: cerebrocrd.CerebroDeploymentSpec{
+				ConfigUpdateStrategy: cerebrocrd.ConfigUpdateStrategyHotReload,
+			},
+		},
+	}))
+	assert.True(t, shouldRolloutOnGeneratedConfigChange(&cerebrocrd.Cerebro{
+		Spec: cerebrocrd.CerebroSpec{
+			Deployment: cerebrocrd.CerebroDeploymentSpec{
+				ConfigUpdateStrategy: cerebrocrd.ConfigUpdateStrategyRestart,
+			},
+		},
+	}))
+}
+
+func TestEffectiveVersionAndPreHotReloadWarning(t *testing.T) {
+	cases := []struct {
+		version     string
+		wantVersion string
+		wantPreHot  bool
+	}{
+		{"", defaultVersion, true},
+		{"latest", defaultVersion, true},
+		{"v0.1.0", "v0.1.0", true},
+		{"0.0.6", "0.0.6", true},
+		{"v0.0.6", "v0.0.6", true},
+		{"0.0.7", "0.0.7", false},
+		{"v0.2.0", "v0.2.0", false},
+		{"dev", "dev", false},
+	}
+	for _, tc := range cases {
+		o := &cerebrocrd.Cerebro{Spec: cerebrocrd.CerebroSpec{Version: tc.version}}
+		assert.Equal(t, tc.wantVersion, effectiveVersion(o), "version %q", tc.version)
+		assert.Equal(t, tc.wantPreHot, isKnownPreHotReloadVersion(effectiveVersion(o)), "version %q", tc.version)
+	}
+	assert.Equal(t, defaultVersion, effectiveVersion(nil))
+}

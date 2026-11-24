@@ -39,6 +39,8 @@ func (t *CerebroControllerTestSuite) TestCerebroController() {
 		doCreateCerebroStep(),
 		doUpdateCerebroStep(),
 		doAddHostStep(),
+		doRestartStrategyStep(),
+		doRestartStrategyConfigChangeStep(),
 		doMigrateLegacySecretStep(),
 		doDeleteCerebroStep(),
 	}
@@ -51,6 +53,24 @@ func doCreateCerebroStep() test.TestStep[*cerebrocrd.Cerebro] {
 		Name: "create",
 		Do: func(c client.Client, key types.NamespacedName, o *cerebrocrd.Cerebro, data map[string]any) (err error) {
 			logrus.Infof("=== Add new Cerebro %s/%s ===\n\n", key.Namespace, key.Name)
+
+			invalid := &cerebrocrd.Cerebro{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      key.Name + "-invalid",
+					Namespace: key.Namespace,
+				},
+				Spec: cerebrocrd.CerebroSpec{
+					Deployment: cerebrocrd.CerebroDeploymentSpec{
+						ConfigUpdateStrategy: "Invalid",
+					},
+				},
+			}
+			if err := c.Create(context.Background(), invalid); err == nil {
+				_ = c.Delete(context.Background(), invalid)
+				return errors.New("expected invalid configUpdateStrategy to be rejected")
+			} else if !k8serrors.IsInvalid(err) {
+				return fmt.Errorf("expected Invalid error for configUpdateStrategy, got %v", err)
+			}
 
 			cb := &cerebrocrd.Cerebro{
 				ObjectMeta: metav1.ObjectMeta{
@@ -165,6 +185,18 @@ func doCreateCerebroStep() test.TestStep[*cerebrocrd.Cerebro] {
 				t.Fatal(err)
 			}
 			assert.NotEmpty(t, dpl.OwnerReferences)
+			assert.Equal(t, cerebrocrd.ConfigUpdateStrategyHotReload, cb.Spec.Deployment.ConfigUpdateStrategy)
+			assert.Contains(t, dpl.Spec.Template.Annotations, fmt.Sprintf("%s/secret-%s", cerebrocrd.CerebroAnnotationKey, GetSecretNameForApplication(cb)))
+			assert.NotContains(t, dpl.Spec.Template.Annotations, fmt.Sprintf("%s/configmap-%s", cerebrocrd.CerebroAnnotationKey, GetConfigMapName(cb)))
+			var configVolume *corev1.Volume
+			for i := range dpl.Spec.Template.Spec.Volumes {
+				if dpl.Spec.Template.Spec.Volumes[i].Name == "config" {
+					configVolume = &dpl.Spec.Template.Spec.Volumes[i]
+				}
+			}
+			if assert.NotNil(t, configVolume) {
+				assert.NotNil(t, configVolume.Projected)
+			}
 
 			// Status must be update
 			assert.NotEmpty(t, cb.Status.PhaseName)
@@ -314,6 +346,12 @@ func doAddHostStep() test.TestStep[*cerebrocrd.Cerebro] {
 				return err
 			}
 
+			dpl := &appv1.Deployment{}
+			if err = c.Get(context.Background(), types.NamespacedName{Namespace: key.Namespace, Name: GetDeploymentName(o)}, dpl); err != nil {
+				return err
+			}
+			data["podTemplateBefore"] = dpl.Spec.Template.DeepCopy()
+
 			// Add elasticsearch cluster
 			es := &elasticsearchcrd.Elasticsearch{
 				ObjectMeta: metav1.ObjectMeta{
@@ -423,6 +461,86 @@ func doAddHostStep() test.TestStep[*cerebrocrd.Cerebro] {
 			assert.Contains(t, cm.Data["application.yaml"], fmt.Sprintf("name: %s", key.Name))
 			assert.Contains(t, cm.Data["application.yaml"], fmt.Sprintf("host: https://%s-es.%s.svc:9200", key.Name, key.Namespace))
 
+			dpl := &appv1.Deployment{}
+			if err = c.Get(context.Background(), types.NamespacedName{Namespace: key.Namespace, Name: GetDeploymentName(cb)}, dpl); err != nil {
+				t.Fatal(err)
+			}
+			before, ok := data["podTemplateBefore"].(*corev1.PodTemplateSpec)
+			if !ok {
+				t.Fatal("podTemplateBefore missing")
+			}
+			assert.Equal(t, *before, dpl.Spec.Template)
+
+			return nil
+		},
+	}
+}
+
+func doRestartStrategyStep() test.TestStep[*cerebrocrd.Cerebro] {
+	return test.TestStep[*cerebrocrd.Cerebro]{
+		Name: "restartStrategy",
+		Do: func(c client.Client, key types.NamespacedName, o *cerebrocrd.Cerebro, data map[string]any) (err error) {
+			logrus.Infof("=== Switch Cerebro %s/%s to Restart strategy ===\n\n", key.Namespace, key.Name)
+			if o == nil {
+				return errors.New("Cerebro is null")
+			}
+			o.Spec.Deployment.ConfigUpdateStrategy = cerebrocrd.ConfigUpdateStrategyRestart
+			return c.Update(context.Background(), o)
+		},
+		Check: func(t *testing.T, c client.Client, key types.NamespacedName, o *cerebrocrd.Cerebro, data map[string]any) (err error) {
+			annoKey := fmt.Sprintf("%s/configmap-%s", cerebrocrd.CerebroAnnotationKey, GetConfigMapName(o))
+			dpl := &appv1.Deployment{}
+			isTimeout, err := test.RunWithTimeout(func() error {
+				if err := c.Get(context.Background(), types.NamespacedName{Namespace: key.Namespace, Name: GetDeploymentName(o)}, dpl); err != nil {
+					return err
+				}
+				if _, ok := dpl.Spec.Template.Annotations[annoKey]; ok {
+					return nil
+				}
+				return errors.New("generated config checksum annotation not yet set")
+			}, time.Second*30, time.Second*1)
+			if err != nil || isTimeout {
+				t.Fatalf("Restart strategy did not add the generated config checksum: %v", err)
+			}
+			assert.Contains(t, dpl.Spec.Template.Annotations, annoKey)
+			return nil
+		},
+	}
+}
+
+func doRestartStrategyConfigChangeStep() test.TestStep[*cerebrocrd.Cerebro] {
+	return test.TestStep[*cerebrocrd.Cerebro]{
+		Name: "restartStrategyConfigChange",
+		Do: func(c client.Client, key types.NamespacedName, o *cerebrocrd.Cerebro, data map[string]any) (err error) {
+			logrus.Infof("=== Change Cerebro %s/%s config under Restart strategy ===\n\n", key.Namespace, key.Name)
+			if o == nil {
+				return errors.New("Cerebro is null")
+			}
+			dpl := &appv1.Deployment{}
+			if err := c.Get(context.Background(), types.NamespacedName{Namespace: key.Namespace, Name: GetDeploymentName(o)}, dpl); err != nil {
+				return err
+			}
+			data["oldConfigChecksum"] = dpl.Spec.Template.Annotations[fmt.Sprintf("%s/configmap-%s", cerebrocrd.CerebroAnnotationKey, GetConfigMapName(o))]
+			o.Spec.Config = ptr.To("rest:\n  history:\n    size: 100\n")
+			return c.Update(context.Background(), o)
+		},
+		Check: func(t *testing.T, c client.Client, key types.NamespacedName, o *cerebrocrd.Cerebro, data map[string]any) (err error) {
+			old, _ := data["oldConfigChecksum"].(string)
+			annoKey := fmt.Sprintf("%s/configmap-%s", cerebrocrd.CerebroAnnotationKey, GetConfigMapName(o))
+			dpl := &appv1.Deployment{}
+			isTimeout, err := test.RunWithTimeout(func() error {
+				if err := c.Get(context.Background(), types.NamespacedName{Namespace: key.Namespace, Name: GetDeploymentName(o)}, dpl); err != nil {
+					return err
+				}
+				current := dpl.Spec.Template.Annotations[annoKey]
+				if current != "" && current != old {
+					return nil
+				}
+				return errors.New("generated config checksum not yet updated")
+			}, time.Second*30, time.Second*1)
+			if err != nil || isTimeout {
+				t.Fatalf("config change under Restart strategy did not roll the pod template: %v", err)
+			}
 			return nil
 		},
 	}
