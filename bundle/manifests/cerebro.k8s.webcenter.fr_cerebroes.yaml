@@ -71,6 +71,17 @@ spec:
                       type: string
                     description: Annotations permit to set annotation on deployment
                     type: object
+                  configUpdateStrategy:
+                    default: HotReload
+                    description: |-
+                      ConfigUpdateStrategy controls whether generated config changes roll the pod.
+                      HotReload is the default because Cerebro hot-reloads generated `hosts` changes
+                      without a pod restart; it requires a Cerebro image that contains this feature.
+                      Set to Restart when pinning a pre-hot-reload image or when a pod rollout is preferred.
+                    enum:
+                    - Restart
+                    - HotReload
+                    type: string
                   env:
                     description: Env permit to set some environment variable on containers
                     items:

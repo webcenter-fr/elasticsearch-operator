@@ -19,7 +19,6 @@ spec:
     metadata:
       annotations:
         cerebro.k8s.webcenter.fr: "true"
-        cerebro.k8s.webcenter.fr/configmap-test-config-cb: 4677e065adcece668a79cf48025751d600fb28898b195e198a263f76fa015660
         cerebro.k8s.webcenter.fr/secret-keystore: e0254a8990817d8a00deb6123c4a2a7ea7ae48428a65d9514257b3baedc1fb6e
       labels:
         cerebro.k8s.webcenter.fr: "true"
@@ -128,9 +127,11 @@ spec:
         operator: Equal
         value: kibana
       volumes:
-      - configMap:
-          name: test-config-cb
-        name: config
+      - name: config
+        projected:
+          sources:
+          - configMap:
+              name: test-config-cb
       - emptyDir: {}
         name: data
       - emptyDir: {}

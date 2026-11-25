@@ -2,6 +2,7 @@ package cerebro
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"time"
 
@@ -62,6 +63,9 @@ func (r *deploymentReconciler) Read(ctx context.Context, o *cerebrocrd.Cerebro, 
 		dpl = nil
 	}
 	if dpl != nil {
+		if err = migrateLegacyDeployment(ctx, r.Client(), o, dpl, logger); err != nil {
+			return read, res, err
+		}
 		read.AddCurrentObject(dpl)
 	}
 
@@ -76,15 +80,19 @@ func (r *deploymentReconciler) Read(ctx context.Context, o *cerebrocrd.Cerebro, 
 	}
 	secretsChecksum = append(secretsChecksum, s)
 
-	// Read configMaps to generate checksum
-	labelSelectors, err := labels.Parse(fmt.Sprintf("cluster=%s,%s=true", o.Name, cerebrocrd.CerebroAnnotationKey))
-	if err != nil {
-		return read, res, errors.Wrap(err, "Error when generate label selector")
+	// Read generated configMaps for checksum only when the Restart strategy is
+	// explicit. Under HotReload (default) the generated ConfigMap is mounted via
+	// a projected volume and must not roll the pod.
+	if shouldRolloutOnGeneratedConfigChange(o) {
+		labelSelectors, err := labels.Parse(fmt.Sprintf("cluster=%s,%s=true", o.Name, cerebrocrd.CerebroAnnotationKey))
+		if err != nil {
+			return read, res, errors.Wrap(err, "Error when generate label selector")
+		}
+		if err = r.Client().List(ctx, cmList, &client.ListOptions{Namespace: o.Namespace, LabelSelector: labelSelectors}); err != nil {
+			return read, res, errors.Wrapf(err, "Error when read configMap")
+		}
+		configMapsChecksum = append(configMapsChecksum, helper.ToSlicePtr(cmList.Items)...)
 	}
-	if err = r.Client().List(ctx, cmList, &client.ListOptions{Namespace: o.Namespace, LabelSelector: labelSelectors}); err != nil {
-		return read, res, errors.Wrapf(err, "Error when read configMap")
-	}
-	configMapsChecksum = append(configMapsChecksum, helper.ToSlicePtr(cmList.Items)...)
 
 	// Read extra Env to generate checksum if secret or configmap
 	for _, env := range o.Spec.Deployment.Env {
@@ -157,4 +165,73 @@ func (r *deploymentReconciler) Read(ctx context.Context, o *cerebrocrd.Cerebro, 
 	read.SetExpectedObjects(expectedDeployments)
 
 	return read, res, nil
+}
+
+// migrateLegacyDeployment clears fields owned by pre-SSA managers that would
+// otherwise collide with the projected config volume or linger across strategy
+// changes: a stale generated-ConfigMap checksum annotation (HotReload only) and
+// a legacy volumes[name=config].configMap source (all strategies).
+func migrateLegacyDeployment(ctx context.Context, c client.Client, o *cerebrocrd.Cerebro, dpl *appv1.Deployment, logger *logrus.Entry) error {
+	cmName := GetConfigMapName(o)
+	legacyAnnoKey := fmt.Sprintf("%s/configmap-%s", cerebrocrd.CerebroAnnotationKey, cmName)
+
+	stripStaleAnno := false
+	if !shouldRolloutOnGeneratedConfigChange(o) && dpl.Spec.Template.Annotations != nil {
+		_, stripStaleAnno = dpl.Spec.Template.Annotations[legacyAnnoKey]
+	}
+
+	migrateLegacyVol := false
+	for _, v := range dpl.Spec.Template.Spec.Volumes {
+		if v.Name == "config" && v.ConfigMap != nil {
+			migrateLegacyVol = true
+			break
+		}
+	}
+
+	if !stripStaleAnno && !migrateLegacyVol {
+		return nil
+	}
+
+	templatePatch := map[string]any{}
+	if stripStaleAnno {
+		templatePatch["metadata"] = map[string]any{
+			"annotations": map[string]any{
+				legacyAnnoKey: nil,
+			},
+		}
+	}
+	if migrateLegacyVol {
+		templatePatch["spec"] = map[string]any{
+			"volumes": []map[string]any{
+				{
+					"name":      "config",
+					"configMap": nil,
+					"projected": map[string]any{
+						"sources": []map[string]any{
+							{
+								"configMap": map[string]any{
+									"name": cmName,
+								},
+							},
+						},
+					},
+				},
+			},
+		}
+	}
+
+	patchBytes, err := json.Marshal(map[string]any{
+		"spec": map[string]any{
+			"template": templatePatch,
+		},
+	})
+	if err != nil {
+		return errors.Wrapf(err, "Error when marshal legacy migration patch for deployment %s", dpl.Name)
+	}
+
+	logger.Infof("Migrate deployment %s (stripStaleConfigMapAnnotation=%t, migrateProjectedVolume=%t)", dpl.Name, stripStaleAnno, migrateLegacyVol)
+	if err := c.Patch(ctx, dpl, client.RawPatch(types.StrategicMergePatchType, patchBytes)); err != nil {
+		return errors.Wrapf(err, "Error when patch legacy fields on deployment %s", dpl.Name)
+	}
+	return nil
 }

@@ -49,17 +49,44 @@ func GetDeploymentName(cb *cerebrocrd.Cerebro) (name string) {
 
 // GetContainerImage permit to get the image name
 func GetContainerImage(cb *cerebrocrd.Cerebro) string {
-	version := defaultVersion
-	if cb.Spec.Version != "" && cb.Spec.Version != legacyVersion {
-		version = cb.Spec.Version
-	}
-
 	image := defaultImage
 	if cb.Spec.Image != "" {
 		image = cb.Spec.Image
 	}
 
-	return fmt.Sprintf("%s:%s", image, version)
+	return fmt.Sprintf("%s:%s", image, effectiveVersion(cb))
+}
+
+// effectiveVersion returns the resolved image version tag used for the container
+// (remapping empty or legacy "latest" to defaultVersion, matching GetContainerImage).
+func effectiveVersion(cb *cerebrocrd.Cerebro) string {
+	if cb == nil || cb.Spec.Version == "" || cb.Spec.Version == legacyVersion {
+		return defaultVersion
+	}
+	return cb.Spec.Version
+}
+
+// isKnownPreHotReloadVersion reports whether version is one of the known Cerebro
+// tags released prior to config hot-reload support.
+// NOTE: Review this list at release time when defaultVersion is bumped to a
+// hot-reload-capable Cerebro release.
+func isKnownPreHotReloadVersion(version string) bool {
+	switch version {
+	case "", legacyVersion, "v0.1.0", "0.1.0", "0.0.6", "v0.0.6", "0.0.5", "v0.0.5", "0.0.4", "v0.0.4":
+		return true
+	default:
+		return false
+	}
+}
+
+// shouldRolloutOnGeneratedConfigChange reports whether generated ConfigMap
+// changes should roll the Deployment. Only the explicit Restart strategy
+// does so; the zero value behaves as the HotReload default.
+func shouldRolloutOnGeneratedConfigChange(cb *cerebrocrd.Cerebro) bool {
+	if cb == nil {
+		return false
+	}
+	return cb.Spec.Deployment.ConfigUpdateStrategy == cerebrocrd.ConfigUpdateStrategyRestart
 }
 
 // IsLegacyVersion returns true when spec.version still carries the obsolete
